@@ -6,8 +6,7 @@
 #'
 #' @return data.frame with column types correctly set.
 #'
-#' @export
-
+#' @export r_data_types
 r_data_types = function(dataset, factor_size = 10) {
   ## Make sure NA is correctly encoded
   new_data = dataset

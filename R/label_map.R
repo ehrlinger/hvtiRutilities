@@ -11,7 +11,7 @@
 #' dta$label <- avsd_label_map$label[match(dta$name, avsd_label_map$key)]
 #'
 #'
-#' @export
+#' @export label_map
 label_map = function(built) {
   return(data.frame(
     key = names(built),
