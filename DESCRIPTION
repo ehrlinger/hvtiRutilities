@@ -1,0 +1,33 @@
+Package: hvtiRutilities
+Type: Package
+Title: A collection of utilities for use by HVTI CORR group at the Cleveland Clinic
+Version: 0.1.0
+Authors@R: c(
+    person(
+      "John", "Ehrlinger",
+      email = "ehrlinj@ccf.org",
+      role = c("aut", "cre")
+    )
+  )
+Maintainer: John Ehrlinger <john.ehrlinger@gmail.com>
+License: GPL-3
+Encoding: UTF-8
+VignetteBuilder: knitr
+URL: https://github.com/ehrlinger/hviRutilities, http://ehrlinger.github.io/hviRutilities/
+BugReports: https://github.com/ehrlinger/hviRutilities/issues
+Description: R utilities for the clinical investigations statistics group within
+  The Heart \& Vascular Institute at the Cleveland Clinic.
+Depends:
+    R (>= 4.1.0)
+Imports:
+    dplyr,
+    labelled
+Suggests:
+    knitr,
+    testthat,
+    RColorBrewer,
+    gridExtra,
+    scales,
+    tidyverse
+RoxygenNote: 7.3.2
+LazyData: true
