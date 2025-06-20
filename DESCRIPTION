@@ -10,7 +10,7 @@ Authors@R: c(
     )
   )
 Maintainer: John Ehrlinger <john.ehrlinger@gmail.com>
-License: GPL-3
+License: GPL (>= 3)
 Encoding: UTF-8
 VignetteBuilder: knitr
 URL: https://github.com/ehrlinger/hviRutilities, http://ehrlinger.github.io/hviRutilities/
