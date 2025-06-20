@@ -35,3 +35,4 @@ framed.sty
 ^pkgdown$
 ^LICENSE\.md$
 ^[\.]Rproj$$
+^codecov\.yml$
