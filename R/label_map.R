@@ -1,5 +1,5 @@
 ##=============================================================================
-## Build a lookup map of data labels
+#' Build a lookup map of data labels
 #'
 #' ### Insert new labels at the end
 #' labelled::var_label(built) = list(

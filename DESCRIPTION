@@ -30,4 +30,3 @@ Suggests:
     scales,
     tidyverse
 RoxygenNote: 7.3.2
-LazyData: true

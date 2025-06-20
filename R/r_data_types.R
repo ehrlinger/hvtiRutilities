@@ -1,17 +1,3 @@
-####******************************************************************
-####******************************************************************
-####
-####  ----------------------------------------------------------------
-####  Written by:
-####  ----------------------------------------------------------------
-####    John Ehrlinger, Ph.D.
-####
-####    email:  ehrlinj@ccf.org
-####    URL:    https://github.com/ehrlinger/ggRandomForests
-####  ----------------------------------------------------------------
-####
-####******************************************************************
-####******************************************************************
 #' Handle type conversion and NA assignment for general cases.
 #'
 #' @param dataset input data
@@ -21,7 +7,7 @@
 #' @return data.frame with column types correctly set.
 #'
 #' @export
-#'
+
 r_data_types = function(dataset, factor_size = 10) {
   ## Make sure NA is correctly encoded
   new_data = dataset
