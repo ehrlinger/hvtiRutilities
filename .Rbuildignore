@@ -34,3 +34,4 @@ framed.sty
 ^docs$
 ^pkgdown$
 ^LICENSE\.md$
+^[\.]Rproj$$
