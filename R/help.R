@@ -20,7 +20,7 @@
 #'  dataset in R at the Cleveland Clinic Heart, Vascular and Thoracic Institute
 #'  (HVTI) Clinical Outcome Registries and Research (CORR) department.
 #'
-#' @name hvtirutilites-package
+#' @name hvtiRutilities-package
 #'
 ################
 NULL
