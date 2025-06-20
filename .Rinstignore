@@ -3,12 +3,13 @@
 ^\.Rproj\.user$     # used for temporary files. 
 ^README\.Rmd$       # An Rmarkdown file used to generate README.md
 ^cran-comments\.md$ # Comments for CRAN submission
+^NEWS\.md$          # A news file written in Markdown
 ^\.travis\.yml$    # Used for continuous integration testing with traviswercker.yml
 ^\.coveralls\.yml$
 ^packrat$
 ^\.Rprofile$
 ^\.RData
-.travis.yml
+.travis.xml
 cran-comments.md
 Sweave.sty
 useR2014.pdf
@@ -25,13 +26,3 @@ framed.sty
 #^inst/doc/randomForest\.*
 #^inst/doc/Regression-rfsrc*
 
-^CRAN-RELEASE$
-^CRAN-SUBMISSION$
-^\.github$
-^doc$
-^Meta$
-^_pkgdown\.yml$
-^docs$
-^pkgdown$
-^LICENSE\.md$
-^codecov\.yml$
