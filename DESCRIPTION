@@ -13,7 +13,7 @@ Maintainer: John Ehrlinger <john.ehrlinger@gmail.com>
 License: GPL (>= 3)
 Encoding: UTF-8
 VignetteBuilder: knitr
-URL: https://github.com/ehrlinger/hviRutilities, http://ehrlinger.github.io/hviRutilities/
+URL: https://github.com/ehrlinger/hviRutilities, http://ehrlinger.github.io/hviRutilities/, https://ehrlinger.github.io/hvtiRutilities/
 BugReports: https://github.com/ehrlinger/hviRutilities/issues
 Description: R utilities for the clinical investigations statistics group within
   The Heart \& Vascular Institute at the Cleveland Clinic.
