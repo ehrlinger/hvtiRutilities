@@ -15,15 +15,26 @@ r_data_types = function(dataset, factor_size = 10) {
   new_data <- new_data |>
     dplyr::mutate(dplyr::across(dplyr::where(is.character), ~ na_if(., "NA")))
 
+  ## Encode date time features
+
+  new_data <- new_data |>
+    dplyr::mutate(dplyr::across(dplyr::where(is.character &
+                                               dplyr::contains("dt_")),
+                                       lubridate::as_datetime()))
+
   ##                   Auto encode logicals and factors
   ## Set modes correctly. For binary variables: transform to logical
   ## Check for range of 0,1, NA
   new_data <- new_data |>
-    dplyr::mutate(dplyr::across(dplyr::where(\(x) dplyr::n_distinct(x, na.rm = TRUE) < 3), ~ as.logical(.)))
+    dplyr::mutate(dplyr::across(dplyr::where(\(x)
+                                             dplyr::n_distinct(x,
+                                                               na.rm = TRUE) < 3),
+                                ~ as.logical(.)))
 
   # Convert character features to factors
   new_data <- new_data |>
-    dplyr::mutate(dplyr::across(dplyr::where(is.character), ~ factor(. , exclude = NA)))
+    dplyr::mutate(dplyr::across(dplyr::where(is.character),
+                                ~ factor(. , exclude = NA)))
 
   ## Convert features with fewer than n=10 unique values
   ## to factor
@@ -32,6 +43,7 @@ r_data_types = function(dataset, factor_size = 10) {
       dplyr::where(
         \(x) dplyr::n_distinct(x, na.rm = TRUE) < factor_size &
           dplyr::n_distinct(x, na.rm = TRUE) > 2 &
+          !is.factor(x) &
           is.numeric(x)
       ),
       ~ factor(. , exclude = NA)
