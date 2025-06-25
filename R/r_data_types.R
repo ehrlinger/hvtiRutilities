@@ -16,11 +16,11 @@ r_data_types = function(dataset, factor_size = 10) {
     dplyr::mutate(dplyr::across(dplyr::where(is.character), ~ na_if(., "NA")))
 
   ## Encode date time features
-
-  new_data <- new_data |>
-    dplyr::mutate(dplyr::across(dplyr::where(is.character &
-                                               dplyr::contains("dt_")),
-                                       lubridate::as_datetime()))
+#
+#   new_data <- new_data |>
+#     dplyr::mutate(dplyr::across(dplyr::where(is.character &
+#                                                dplyr::contains("dt_")),
+#                                        lubridate::as_datetime()))
 
   ##                   Auto encode logicals and factors
   ## Set modes correctly. For binary variables: transform to logical
