@@ -28,5 +28,7 @@ sample_data <- function(n = 100) {
       dta$char,
       labels = c("male", "female")
     )))
+  dta$factor <- factor(sample(c("C1", "C2", "C3", "C4", "C5"),
+                              size=n, replace = TRUE))
   return(dta)
 }
