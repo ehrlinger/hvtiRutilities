@@ -3,7 +3,12 @@
 
 <!-- badges: start -->
   [![Codecov test coverage](https://codecov.io/gh/ehrlinger/hvtiRutilities/graph/badge.svg)](https://app.codecov.io/gh/ehrlinger/hvtiRutilities)
-  <!-- badges: end -->
+
+[![active](http://www.repostatus.org/badges/latest/active.svg)](http://www.repostatus.org/badges/latest/active.svg)
+
+[![R-CMD-check](https://github.com/ehrlinger/hvtiRutilities/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ehrlinger/hvtiRutilities/actions/workflows/R-CMD-check.yaml)
+
+<!-- badges: end -->
 The goal of hvtiRutilities is to ...
 
 ## Installation
