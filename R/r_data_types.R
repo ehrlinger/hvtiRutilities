@@ -6,14 +6,17 @@
 #'
 #' @return data.frame with column types correctly set.
 #'
+#' @import lubridate
 #' @export r_data_types
 r_data_types = function(dataset, factor_size = 10) {
   ## Make sure NA is correctly encoded
   new_data = dataset
   new_data <- new_data |>
-    dplyr::mutate(dplyr::across(dplyr::where(is.character), ~ na_if(., "na")))
+    dplyr::mutate(dplyr::across(dplyr::where(is.character),
+                                ~ dplyr::na_if(., "na")))
   new_data <- new_data |>
-    dplyr::mutate(dplyr::across(dplyr::where(is.character), ~ na_if(., "NA")))
+    dplyr::mutate(dplyr::across(dplyr::where(is.character),
+                                ~ dplyr::na_if(., "NA")))
 
   ## Encode date time features
 #
@@ -26,10 +29,11 @@ r_data_types = function(dataset, factor_size = 10) {
   ## Set modes correctly. For binary variables: transform to logical
   ## Check for range of 0,1, NA
   new_data <- new_data |>
-    dplyr::mutate(dplyr::across(dplyr::where(\(x)
-                                             dplyr::n_distinct(x,
-                                                               na.rm = TRUE) < 3),
-                                ~ as.logical(.)))
+    dplyr::mutate(
+      dplyr::across(
+        dplyr::where(\(x) !is.factor(x) &
+                       dplyr::n_distinct(x, na.rm = TRUE) < 3),
+        ~ as.logical(.)))
 
   # Convert character features to factors
   new_data <- new_data |>
