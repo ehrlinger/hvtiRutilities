@@ -1,7 +1,7 @@
 Package: hvtiRutilities
 Type: Package
 Title: A collection of utilities for use by HVTI CORR group at the Cleveland Clinic
-Version: 0.1.0
+Version: 0.1.1
 Authors@R: c(
     person(
       "John", "Ehrlinger",
@@ -12,7 +12,6 @@ Authors@R: c(
 Maintainer: John Ehrlinger <john.ehrlinger@gmail.com>
 License: GPL (>= 3)
 Encoding: UTF-8
-VignetteBuilder: knitr
 URL: https://github.com/ehrlinger/hviRutilities, http://ehrlinger.github.io/hviRutilities/, https://ehrlinger.github.io/hvtiRutilities/
 BugReports: https://github.com/ehrlinger/hviRutilities/issues
 Description: R utilities for the clinical investigations statistics group within
@@ -24,7 +23,6 @@ Imports:
     labelled,
     lubridate
 Suggests:
-    knitr,
     testthat,
     tidyverse
 RoxygenNote: 7.3.2
