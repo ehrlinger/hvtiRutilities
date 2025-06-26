@@ -1,19 +1,19 @@
 Package: hvtiRutilities
 Type: Package
-Title: A collection of utilities for use by HVTI CORR group at the Cleveland Clinic
+Title: A Collection of Utilities for Use by HVTI CORR Group at the Cleveland Clinic
 Version: 0.1.1
 Authors@R: c(
     person(
       "John", "Ehrlinger",
-      email = "ehrlinj@ccf.org",
+      email = "john.ehrlinger@gmail.com",
       role = c("aut", "cre")
     )
   )
 Maintainer: John Ehrlinger <john.ehrlinger@gmail.com>
 License: GPL (>= 3)
 Encoding: UTF-8
-URL: https://github.com/ehrlinger/hviRutilities, http://ehrlinger.github.io/hviRutilities/, https://ehrlinger.github.io/hvtiRutilities/
-BugReports: https://github.com/ehrlinger/hviRutilities/issues
+URL: https://github.com/ehrlinger/hvtiRutilities, https://ehrlinger.github.io/hvtiRutilities/
+BugReports: https://github.com/ehrlinger/hvtiRutilities/issues
 Description: R utilities for the clinical investigations statistics group within
   The Heart \& Vascular Institute at the Cleveland Clinic.
 Depends:
@@ -23,6 +23,7 @@ Imports:
     labelled,
     lubridate
 Suggests:
-    testthat,
+    testthat (>= 3.0.0),
     tidyverse
 RoxygenNote: 7.3.2
+Config/testthat/edition: 3
