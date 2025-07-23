@@ -8,50 +8,34 @@
 #'
 #' @import lubridate
 #' @export r_data_types
+### Update to function
 r_data_types = function(dataset, factor_size = 10) {
-  ## Make sure NA is correctly encoded
+  keep_label = labelled::var_label(dataset, unlist = F, null_action = "fill")
+
   new_data = dataset
-  new_data <- new_data |>
-    dplyr::mutate(dplyr::across(dplyr::where(is.character),
-                                ~ dplyr::na_if(., "na")))
-  new_data <- new_data |>
-    dplyr::mutate(dplyr::across(dplyr::where(is.character),
-                                ~ dplyr::na_if(., "NA")))
+  new_data <- dplyr::mutate(new_data, dplyr::across(dplyr::where(is.character), ~
+                                                      dplyr::na_if(., "na")))
+  new_data <- dplyr::mutate(new_data, dplyr::across(dplyr::where(is.character), ~
+                                                      dplyr::na_if(., "NA")))
+  new_data <- dplyr::mutate(new_data, dplyr::across(
+    dplyr::where(function(x)
+      ! is.factor(x) &
+        dplyr::n_distinct(x, na.rm = TRUE) < 3),
+    ~ as.logical(.)
+  ))
+  new_data <- dplyr::mutate(new_data, dplyr::across(dplyr::where(is.character), ~
+                                                      factor(., exclude = NA)))
+  new_data <- dplyr::mutate(new_data, dplyr::across(
+    dplyr::where(
+      function(x)
+        dplyr::n_distinct(x, na.rm = TRUE) < factor_size &
+        dplyr::n_distinct(x, na.rm = TRUE) >
+        2 &
+        !is.factor(x) & is.numeric(x)
+    ),
+    ~ factor(., exclude = NA)
+  ))
 
-  ## Encode date time features
-#
-#   new_data <- new_data |>
-#     dplyr::mutate(dplyr::across(dplyr::where(is.character &
-#                                                dplyr::contains("dt_")),
-#                                        lubridate::as_datetime()))
-
-  ##                   Auto encode logicals and factors
-  ## Set modes correctly. For binary variables: transform to logical
-  ## Check for range of 0,1, NA
-  new_data <- new_data |>
-    dplyr::mutate(
-      dplyr::across(
-        dplyr::where(\(x) !is.factor(x) &
-                       dplyr::n_distinct(x, na.rm = TRUE) < 3),
-        ~ as.logical(.)))
-
-  # Convert character features to factors
-  new_data <- new_data |>
-    dplyr::mutate(dplyr::across(dplyr::where(is.character),
-                                ~ factor(. , exclude = NA)))
-
-  ## Convert features with fewer than n=10 unique values
-  ## to factor
-  new_data <- new_data |>
-    dplyr::mutate(dplyr::across(
-      dplyr::where(
-        \(x) dplyr::n_distinct(x, na.rm = TRUE) < factor_size &
-          dplyr::n_distinct(x, na.rm = TRUE) > 2 &
-          !is.factor(x) &
-          is.numeric(x)
-      ),
-      ~ factor(. , exclude = NA)
-    ))
-
+  labelled::var_label(new_data) = keep_label
   return(new_data)
 }
