@@ -4,17 +4,24 @@
 \alias{r_data_types}
 \title{Handle type conversion and NA assignment for general cases.}
 \usage{
-r_data_types(dataset, factor_size = 10)
+r_data_types(dataset, factor_size = 10, skip = NULL)
 }
 \arguments{
 \item{dataset}{input data}
 
 \item{factor_size}{If a feature has fewer than factor_size unique
 values, make it a factor.}
+
+\item{skip}{name of column to NOT convert.}
 }
 \value{
 data.frame with column types correctly set.
 }
 \description{
 Handle type conversion and NA assignment for general cases.
+}
+\examples{
+ datasets::mtcars
+  mtcars$vs # binary but numeric coding
+  mtcars |> r_data_types(skip = "vs") # compare vs and am binary variables
 }
