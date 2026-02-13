@@ -20,9 +20,10 @@ Description: R utilities for the clinical investigations statistics group within
   The Heart \& Vascular Institute at the Cleveland Clinic.
 Depends: R (>= 4.1.0)
 Imports: dplyr, labelled
-Suggests: testthat (>= 3.0.0), tidyverse
+Suggests: knitr, rmarkdown, testthat (>= 3.0.0), tidyverse
+VignetteBuilder: knitr
 RoxygenNote: 7.3.3
 Config/testthat/edition: 3
 NeedsCompilation: no
-Packaged: 2026-02-13 16:03:06 UTC; ehrlinj
+Packaged: 2026-02-13 16:14:51 UTC; ehrlinj
 Author: John Ehrlinger [aut, cre]

@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<meta name="author" content="John Ehrlinger" />
+
+<meta name="date" content="2026-02-13" />
+
+<title>Getting Started with hvtiRutilities</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Getting Started with hvtiRutilities</h1>
+<h4 class="author">John Ehrlinger</h4>
+<h4 class="date">2026-02-13</h4>
+
+
+
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>The <code>hvtiRutilities</code> package provides utility functions
+for working with clinical research data at the Cleveland Clinic Heart,
+Vascular and Thoracic Institute (HVTI). It simplifies common data
+preparation tasks when importing and cleaning datasets, particularly
+those originating from SAS.</p>
+<div id="main-functions" class="section level3">
+<h3>Main Functions</h3>
+<ul>
+<li><strong><code>r_data_types()</code></strong>: Automatically infer
+and convert data types based on content</li>
+<li><strong><code>label_map()</code></strong>: Extract variable labels
+from labeled datasets into a lookup table</li>
+<li><strong><code>sample_data()</code></strong>: Generate sample
+datasets for testing and examples</li>
+</ul>
+</div>
+<div id="installation" class="section level3">
+<h3>Installation</h3>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="co"># Install from GitHub</span></span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="co"># install.packages(&quot;pak&quot;)</span></span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>pak<span class="sc">::</span><span class="fu">pak</span>(<span class="st">&quot;ehrlinger/hvtiRutilities&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">library</span>(hvtiRutilities)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="co">#&gt;  hvtiRutilities 0.1.3 </span></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co">#&gt;  </span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="co">#&gt;  Type hvtiRutilities.news() to see new features, changes, and bug fixes. </span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="co">#&gt; </span></span></code></pre></div>
+</div>
+</div>
+<div id="basic-usage" class="section level2">
+<h2>Basic Usage</h2>
+<div id="automatic-type-conversion-with-r_data_types" class="section level3">
+<h3>Automatic Type Conversion with <code>r_data_types()</code></h3>
+<p>The <code>r_data_types()</code> function intelligently converts
+column types based on their content:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="co"># Generate sample data with various types</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>dta <span class="ot">&lt;-</span> <span class="fu">sample_data</span>(<span class="at">n =</span> <span class="dv">100</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co"># Examine original structure</span></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="fu">str</span>(dta)</span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="co">#&gt; &#39;data.frame&#39;:    100 obs. of  7 variables:</span></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="co">#&gt;  $ id     : int  1 2 3 4 5 6 7 8 9 10 ...</span></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="co">#&gt;  $ boolean: int  2 1 1 2 2 1 2 2 1 2 ...</span></span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a><span class="co">#&gt;  $ logical: chr  &quot;T&quot; &quot;F&quot; &quot;F&quot; &quot;T&quot; ...</span></span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="co">#&gt;  $ f_real : num  0.9031 0.0779 0.562 0.6933 0.0779 ...</span></span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a><span class="co">#&gt;  $ float  : num  -1.002 1.675 0.13 0.801 -1.545 ...</span></span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a><span class="co">#&gt;  $ char   : chr  &quot;male&quot; &quot;female&quot; &quot;female&quot; &quot;male&quot; ...</span></span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a><span class="co">#&gt;  $ factor : Factor w/ 5 levels &quot;C1&quot;,&quot;C2&quot;,&quot;C3&quot;,..: 3 1 2 3 2 1 4 1 5 3 ...</span></span></code></pre></div>
+<p>Notice that the sample data has: - <code>boolean</code>: integer
+values (1, 2) - <code>logical</code>: character values (“F”, “T”) -
+<code>char</code>: character values (“male”, “female”)</p>
+<p>Now let’s apply automatic type conversion:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co"># Convert types automatically</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>dta_converted <span class="ot">&lt;-</span> <span class="fu">r_data_types</span>(dta)</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co"># Examine converted structure</span></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="fu">str</span>(dta_converted)</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt; &#39;data.frame&#39;:    100 obs. of  7 variables:</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt;  $ id     : int  1 2 3 4 5 6 7 8 9 10 ...</span></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;label&quot;)= chr &quot;id&quot;</span></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co">#&gt;  $ boolean: logi  TRUE TRUE TRUE TRUE TRUE TRUE ...</span></span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;label&quot;)= chr &quot;boolean&quot;</span></span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="co">#&gt;  $ logical: Factor w/ 2 levels &quot;F&quot;,&quot;T&quot;: 2 1 1 2 2 1 2 2 1 2 ...</span></span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;label&quot;)= chr &quot;logical&quot;</span></span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a><span class="co">#&gt;  $ f_real : Factor w/ 9 levels &quot;0.0104085060302168&quot;,..: 8 2 5 7 2 4 5 2 2 8 ...</span></span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;label&quot;)= chr &quot;f_real&quot;</span></span>
+<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a><span class="co">#&gt;  $ float  : num  -1.002 1.675 0.13 0.801 -1.545 ...</span></span>
+<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;label&quot;)= chr &quot;float&quot;</span></span>
+<span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a><span class="co">#&gt;  $ char   : Factor w/ 2 levels &quot;female&quot;,&quot;male&quot;: 2 1 1 2 1 2 1 1 2 2 ...</span></span>
+<span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;label&quot;)= chr &quot;char&quot;</span></span>
+<span id="cb4-19"><a href="#cb4-19" tabindex="-1"></a><span class="co">#&gt;  $ factor : Factor w/ 5 levels &quot;C1&quot;,&quot;C2&quot;,&quot;C3&quot;,..: 3 1 2 3 2 1 4 1 5 3 ...</span></span>
+<span id="cb4-20"><a href="#cb4-20" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;label&quot;)= chr &quot;factor&quot;</span></span></code></pre></div>
+<p>After conversion: - <code>boolean</code>: converted to logical
+(TRUE/FALSE) because it has exactly 2 unique values -
+<code>logical</code>: converted to factor (categorical variable) -
+<code>char</code>: converted to factor (categorical variable) -
+Continuous variables (<code>float</code>, <code>f_real</code>) remain
+numeric</p>
+</div>
+<div id="transformation-rules" class="section level3">
+<h3>Transformation Rules</h3>
+<p>The function applies transformations in this order:</p>
+<ol style="list-style-type: decimal">
+<li>Character strings “NA”, “na”, “Na”, “nA” → actual <code>NA</code>
+values</li>
+<li>Numeric/integer with exactly 2 unique values →
+<code>logical</code></li>
+<li>Character columns → <code>factor</code></li>
+<li>Numeric with 3 to <code>factor_size</code> unique values →
+<code>factor</code></li>
+<li>Optionally: logical → <code>factor</code> (if
+<code>binary_factor = TRUE</code>)</li>
+</ol>
+</div>
+</div>
+<div id="working-with-real-data" class="section level2">
+<h2>Working with Real Data</h2>
+<div id="example-mtcars-dataset" class="section level3">
+<h3>Example: mtcars Dataset</h3>
+<p>Let’s apply this to the built-in <code>mtcars</code> dataset:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="co"># Original mtcars</span></span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="fu">str</span>(mtcars[, <span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>])</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co">#&gt; &#39;data.frame&#39;:    32 obs. of  5 variables:</span></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt;  $ mpg : num  21 21 22.8 21.4 18.7 18.1 14.3 24.4 22.8 19.2 ...</span></span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="co">#&gt;  $ cyl : num  6 6 4 6 8 6 8 4 4 6 ...</span></span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt;  $ disp: num  160 160 108 258 360 ...</span></span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="co">#&gt;  $ hp  : num  110 110 93 110 175 105 245 62 95 123 ...</span></span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="co">#&gt;  $ drat: num  3.9 3.9 3.85 3.08 3.15 2.76 3.21 3.69 3.92 3.92 ...</span></span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="co"># Apply type conversion</span></span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>mtcars_clean <span class="ot">&lt;-</span> <span class="fu">r_data_types</span>(mtcars)</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="fu">str</span>(mtcars_clean[, <span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>])</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co">#&gt; &#39;data.frame&#39;:    32 obs. of  5 variables:</span></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co">#&gt;  $ mpg : num  21 21 22.8 21.4 18.7 18.1 14.3 24.4 22.8 19.2 ...</span></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;label&quot;)= chr &quot;mpg&quot;</span></span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="co">#&gt;  $ cyl : Factor w/ 3 levels &quot;4&quot;,&quot;6&quot;,&quot;8&quot;: 2 2 1 2 3 2 3 1 1 2 ...</span></span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;label&quot;)= chr &quot;cyl&quot;</span></span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="co">#&gt;  $ disp: num  160 160 108 258 360 ...</span></span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;label&quot;)= chr &quot;disp&quot;</span></span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="co">#&gt;  $ hp  : num  110 110 93 110 175 105 245 62 95 123 ...</span></span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;label&quot;)= chr &quot;hp&quot;</span></span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="co">#&gt;  $ drat: num  3.9 3.9 3.85 3.08 3.15 2.76 3.21 3.69 3.92 3.92 ...</span></span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;label&quot;)= chr &quot;drat&quot;</span></span></code></pre></div>
+<p>Notice: - <code>cyl</code> (3 unique values: 4, 6, 8) → factor -
+<code>vs</code> (2 unique values: 0, 1) → logical - <code>am</code> (2
+unique values: 0, 1) → logical - <code>gear</code> (3 unique values) →
+factor - <code>carb</code> (6 unique values) → factor</p>
+</div>
+<div id="controlling-factor-conversion" class="section level3">
+<h3>Controlling Factor Conversion</h3>
+<p>Use <code>factor_size</code> to control when numeric variables become
+factors:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co"># More strict: only convert if &lt; 5 unique values</span></span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>mtcars_strict <span class="ot">&lt;-</span> <span class="fu">r_data_types</span>(mtcars, <span class="at">factor_size =</span> <span class="dv">5</span>)</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co"># Check cylinder variable</span></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="fu">class</span>(mtcars_clean<span class="sc">$</span>cyl)  <span class="co"># factor (3 unique &lt; 10)</span></span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="co">#&gt; [1] &quot;factor&quot;</span></span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="fu">class</span>(mtcars_strict<span class="sc">$</span>cyl) <span class="co"># factor (3 unique &lt; 5)</span></span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="co">#&gt; [1] &quot;factor&quot;</span></span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a></span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="co"># Check carb variable</span></span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="fu">class</span>(mtcars_clean<span class="sc">$</span>carb)  <span class="co"># factor (6 unique &lt; 10)</span></span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co">#&gt; [1] &quot;factor&quot;</span></span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a><span class="fu">class</span>(mtcars_strict<span class="sc">$</span>carb) <span class="co"># integer (6 unique NOT &lt; 5)</span></span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a><span class="co">#&gt; [1] &quot;numeric&quot;</span></span></code></pre></div>
+</div>
+<div id="skipping-specific-variables" class="section level3">
+<h3>Skipping Specific Variables</h3>
+<p>Sometimes you want to preserve certain variables in their original
+form:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="co"># Keep vs and am as numeric instead of converting to logical</span></span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>mtcars_partial <span class="ot">&lt;-</span> <span class="fu">r_data_types</span>(mtcars, <span class="at">skip_vars =</span> <span class="fu">c</span>(<span class="st">&quot;vs&quot;</span>, <span class="st">&quot;am&quot;</span>))</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a></span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="co"># Compare</span></span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="fu">class</span>(mtcars_clean<span class="sc">$</span>vs)    <span class="co"># logical (converted)</span></span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt; [1] &quot;logical&quot;</span></span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="fu">class</span>(mtcars_partial<span class="sc">$</span>vs)  <span class="co"># numeric (preserved)</span></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co">#&gt; [1] &quot;numeric&quot;</span></span></code></pre></div>
+</div>
+<div id="binary-variables-as-factors" class="section level3">
+<h3>Binary Variables as Factors</h3>
+<p>By default, binary variables become logical. Use
+<code>binary_factor = TRUE</code> to make them factors instead:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>mtcars_factor <span class="ot">&lt;-</span> <span class="fu">r_data_types</span>(mtcars, <span class="at">binary_factor =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="co"># Compare</span></span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="fu">class</span>(mtcars_clean<span class="sc">$</span>vs)   <span class="co"># logical</span></span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="co">#&gt; [1] &quot;logical&quot;</span></span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="fu">class</span>(mtcars_factor<span class="sc">$</span>vs)  <span class="co"># factor</span></span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="co">#&gt; [1] &quot;factor&quot;</span></span></code></pre></div>
+<p>This can be useful for modeling or visualization where factor levels
+are preferred.</p>
+</div>
+</div>
+<div id="working-with-variable-labels" class="section level2">
+<h2>Working with Variable Labels</h2>
+<div id="creating-and-extracting-labels" class="section level3">
+<h3>Creating and Extracting Labels</h3>
+<p>Variable labels are common in clinical datasets, especially those
+imported from SAS. The <code>label_map()</code> function creates a
+lookup table:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">library</span>(labelled)</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a></span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="co"># Create a dataset with labels</span></span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>patient_data <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>  <span class="at">patient_id =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>,</span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>  <span class="at">age =</span> <span class="fu">c</span>(<span class="dv">45</span>, <span class="dv">52</span>, <span class="dv">38</span>, <span class="dv">61</span>, <span class="dv">29</span>),</span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a>  <span class="at">sex =</span> <span class="fu">c</span>(<span class="st">&quot;M&quot;</span>, <span class="st">&quot;F&quot;</span>, <span class="st">&quot;M&quot;</span>, <span class="st">&quot;F&quot;</span>, <span class="st">&quot;M&quot;</span>),</span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a>  <span class="at">sbp =</span> <span class="fu">c</span>(<span class="dv">120</span>, <span class="dv">135</span>, <span class="dv">118</span>, <span class="dv">142</span>, <span class="dv">125</span>),</span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a>  <span class="at">dbp =</span> <span class="fu">c</span>(<span class="dv">80</span>, <span class="dv">85</span>, <span class="dv">75</span>, <span class="dv">90</span>, <span class="dv">82</span>),</span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a>  <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span></span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a>)</span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a></span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a><span class="co"># Add descriptive labels (as would come from SAS)</span></span>
+<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a><span class="fu">var_label</span>(patient_data<span class="sc">$</span>patient_id) <span class="ot">&lt;-</span> <span class="st">&quot;Patient Identifier&quot;</span></span>
+<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a><span class="fu">var_label</span>(patient_data<span class="sc">$</span>age) <span class="ot">&lt;-</span> <span class="st">&quot;Age at Enrollment (years)&quot;</span></span>
+<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a><span class="fu">var_label</span>(patient_data<span class="sc">$</span>sex) <span class="ot">&lt;-</span> <span class="st">&quot;Biological Sex&quot;</span></span>
+<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a><span class="fu">var_label</span>(patient_data<span class="sc">$</span>sbp) <span class="ot">&lt;-</span> <span class="st">&quot;Systolic Blood Pressure (mmHg)&quot;</span></span>
+<span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a><span class="fu">var_label</span>(patient_data<span class="sc">$</span>dbp) <span class="ot">&lt;-</span> <span class="st">&quot;Diastolic Blood Pressure (mmHg)&quot;</span></span>
+<span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a></span>
+<span id="cb10-20"><a href="#cb10-20" tabindex="-1"></a><span class="co"># Extract labels into a lookup table</span></span>
+<span id="cb10-21"><a href="#cb10-21" tabindex="-1"></a>labels <span class="ot">&lt;-</span> <span class="fu">label_map</span>(patient_data)</span>
+<span id="cb10-22"><a href="#cb10-22" tabindex="-1"></a><span class="fu">print</span>(labels)</span>
+<span id="cb10-23"><a href="#cb10-23" tabindex="-1"></a><span class="co">#&gt;                   key                           label</span></span>
+<span id="cb10-24"><a href="#cb10-24" tabindex="-1"></a><span class="co">#&gt; patient_id patient_id              Patient Identifier</span></span>
+<span id="cb10-25"><a href="#cb10-25" tabindex="-1"></a><span class="co">#&gt; age               age       Age at Enrollment (years)</span></span>
+<span id="cb10-26"><a href="#cb10-26" tabindex="-1"></a><span class="co">#&gt; sex               sex                  Biological Sex</span></span>
+<span id="cb10-27"><a href="#cb10-27" tabindex="-1"></a><span class="co">#&gt; sbp               sbp  Systolic Blood Pressure (mmHg)</span></span>
+<span id="cb10-28"><a href="#cb10-28" tabindex="-1"></a><span class="co">#&gt; dbp               dbp Diastolic Blood Pressure (mmHg)</span></span></code></pre></div>
+</div>
+<div id="using-labels-in-analysis" class="section level3">
+<h3>Using Labels in Analysis</h3>
+<p>The label map is useful for creating publication-ready tables and
+plots:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="co"># Create a summary statistics table</span></span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>summary_stats <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>  <span class="at">variable =</span> <span class="fu">c</span>(<span class="st">&quot;age&quot;</span>, <span class="st">&quot;sbp&quot;</span>, <span class="st">&quot;dbp&quot;</span>),</span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a>  <span class="at">mean =</span> <span class="fu">c</span>(<span class="fu">mean</span>(patient_data<span class="sc">$</span>age),</span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a>           <span class="fu">mean</span>(patient_data<span class="sc">$</span>sbp),</span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a>           <span class="fu">mean</span>(patient_data<span class="sc">$</span>dbp)),</span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a>  <span class="at">sd =</span> <span class="fu">c</span>(<span class="fu">sd</span>(patient_data<span class="sc">$</span>age),</span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a>         <span class="fu">sd</span>(patient_data<span class="sc">$</span>sbp),</span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a>         <span class="fu">sd</span>(patient_data<span class="sc">$</span>dbp))</span>
+<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a>)</span>
+<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a></span>
+<span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a><span class="co"># Add descriptive labels</span></span>
+<span id="cb11-13"><a href="#cb11-13" tabindex="-1"></a>summary_stats<span class="sc">$</span>description <span class="ot">&lt;-</span> labels<span class="sc">$</span>label[<span class="fu">match</span>(summary_stats<span class="sc">$</span>variable, labels<span class="sc">$</span>key)]</span>
+<span id="cb11-14"><a href="#cb11-14" tabindex="-1"></a></span>
+<span id="cb11-15"><a href="#cb11-15" tabindex="-1"></a><span class="fu">print</span>(summary_stats)</span>
+<span id="cb11-16"><a href="#cb11-16" tabindex="-1"></a><span class="co">#&gt;   variable  mean       sd                     description</span></span>
+<span id="cb11-17"><a href="#cb11-17" tabindex="-1"></a><span class="co">#&gt; 1      age  45.0 12.34909       Age at Enrollment (years)</span></span>
+<span id="cb11-18"><a href="#cb11-18" tabindex="-1"></a><span class="co">#&gt; 2      sbp 128.0 10.22252  Systolic Blood Pressure (mmHg)</span></span>
+<span id="cb11-19"><a href="#cb11-19" tabindex="-1"></a><span class="co">#&gt; 3      dbp  82.4  5.59464 Diastolic Blood Pressure (mmHg)</span></span></code></pre></div>
+</div>
+<div id="labels-persist-through-transformations" class="section level3">
+<h3>Labels Persist Through Transformations</h3>
+<p>Labels are preserved when using <code>r_data_types()</code>:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="co"># Convert types</span></span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>patient_clean <span class="ot">&lt;-</span> <span class="fu">r_data_types</span>(patient_data, <span class="at">skip_vars =</span> <span class="st">&quot;patient_id&quot;</span>)</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a></span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a><span class="co"># Labels are preserved</span></span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a><span class="fu">var_label</span>(patient_clean<span class="sc">$</span>age)</span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Age at Enrollment (years)&quot;</span></span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a><span class="fu">var_label</span>(patient_clean<span class="sc">$</span>sex)</span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Biological Sex&quot;</span></span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a></span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a><span class="co"># Extract labels from converted data</span></span>
+<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a>labels_clean <span class="ot">&lt;-</span> <span class="fu">label_map</span>(patient_clean)</span>
+<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a><span class="fu">identical</span>(labels, labels_clean)  <span class="co"># TRUE</span></span>
+<span id="cb12-13"><a href="#cb12-13" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
+</div>
+</div>
+<div id="complete-workflow-example" class="section level2">
+<h2>Complete Workflow Example</h2>
+<p>Here’s a complete real-world workflow for preparing clinical
+data:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="co"># Step 1: Generate sample clinical data</span></span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>)</span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>clinical <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>  <span class="at">id =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">50</span>,</span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a>  <span class="at">center =</span> <span class="fu">sample</span>(<span class="fu">c</span>(<span class="st">&quot;Site A&quot;</span>, <span class="st">&quot;Site B&quot;</span>, <span class="st">&quot;Site C&quot;</span>), <span class="dv">50</span>, <span class="at">replace =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a>  <span class="at">treatment =</span> <span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>, <span class="dv">50</span>, <span class="at">replace =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a>  <span class="at">age =</span> <span class="fu">round</span>(<span class="fu">rnorm</span>(<span class="dv">50</span>, <span class="at">mean =</span> <span class="dv">55</span>, <span class="at">sd =</span> <span class="dv">12</span>)),</span>
+<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a>  <span class="at">sex =</span> <span class="fu">sample</span>(<span class="fu">c</span>(<span class="st">&quot;M&quot;</span>, <span class="st">&quot;F&quot;</span>), <span class="dv">50</span>, <span class="at">replace =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a>  <span class="at">outcome =</span> <span class="fu">sample</span>(<span class="dv">0</span><span class="sc">:</span><span class="dv">1</span>, <span class="dv">50</span>, <span class="at">replace =</span> <span class="cn">TRUE</span>, <span class="at">prob =</span> <span class="fu">c</span>(<span class="fl">0.3</span>, <span class="fl">0.7</span>)),</span>
+<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a>  <span class="at">followup_days =</span> <span class="fu">round</span>(<span class="fu">runif</span>(<span class="dv">50</span>, <span class="dv">30</span>, <span class="dv">730</span>)),</span>
+<span id="cb13-11"><a href="#cb13-11" tabindex="-1"></a>  <span class="at">adverse_event =</span> <span class="fu">sample</span>(<span class="fu">c</span>(<span class="st">&quot;None&quot;</span>, <span class="st">&quot;Mild&quot;</span>, <span class="st">&quot;Moderate&quot;</span>, <span class="st">&quot;Severe&quot;</span>, <span class="st">&quot;NA&quot;</span>),</span>
+<span id="cb13-12"><a href="#cb13-12" tabindex="-1"></a>                         <span class="dv">50</span>, <span class="at">replace =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb13-13"><a href="#cb13-13" tabindex="-1"></a>  <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span></span>
+<span id="cb13-14"><a href="#cb13-14" tabindex="-1"></a>)</span>
+<span id="cb13-15"><a href="#cb13-15" tabindex="-1"></a></span>
+<span id="cb13-16"><a href="#cb13-16" tabindex="-1"></a><span class="co"># Step 2: Add variable labels (as from SAS import)</span></span>
+<span id="cb13-17"><a href="#cb13-17" tabindex="-1"></a><span class="fu">var_label</span>(clinical<span class="sc">$</span>id) <span class="ot">&lt;-</span> <span class="st">&quot;Patient ID&quot;</span></span>
+<span id="cb13-18"><a href="#cb13-18" tabindex="-1"></a><span class="fu">var_label</span>(clinical<span class="sc">$</span>center) <span class="ot">&lt;-</span> <span class="st">&quot;Enrollment Center&quot;</span></span>
+<span id="cb13-19"><a href="#cb13-19" tabindex="-1"></a><span class="fu">var_label</span>(clinical<span class="sc">$</span>treatment) <span class="ot">&lt;-</span> <span class="st">&quot;Treatment Arm (1-4)&quot;</span></span>
+<span id="cb13-20"><a href="#cb13-20" tabindex="-1"></a><span class="fu">var_label</span>(clinical<span class="sc">$</span>age) <span class="ot">&lt;-</span> <span class="st">&quot;Age at Enrollment (years)&quot;</span></span>
+<span id="cb13-21"><a href="#cb13-21" tabindex="-1"></a><span class="fu">var_label</span>(clinical<span class="sc">$</span>sex) <span class="ot">&lt;-</span> <span class="st">&quot;Biological Sex&quot;</span></span>
+<span id="cb13-22"><a href="#cb13-22" tabindex="-1"></a><span class="fu">var_label</span>(clinical<span class="sc">$</span>outcome) <span class="ot">&lt;-</span> <span class="st">&quot;Primary Outcome (0=Failure, 1=Success)&quot;</span></span>
+<span id="cb13-23"><a href="#cb13-23" tabindex="-1"></a><span class="fu">var_label</span>(clinical<span class="sc">$</span>followup_days) <span class="ot">&lt;-</span> <span class="st">&quot;Days of Follow-up&quot;</span></span>
+<span id="cb13-24"><a href="#cb13-24" tabindex="-1"></a><span class="fu">var_label</span>(clinical<span class="sc">$</span>adverse_event) <span class="ot">&lt;-</span> <span class="st">&quot;Most Severe Adverse Event&quot;</span></span>
+<span id="cb13-25"><a href="#cb13-25" tabindex="-1"></a></span>
+<span id="cb13-26"><a href="#cb13-26" tabindex="-1"></a><span class="co"># Step 3: Clean and convert types</span></span>
+<span id="cb13-27"><a href="#cb13-27" tabindex="-1"></a>clinical_clean <span class="ot">&lt;-</span> <span class="fu">r_data_types</span>(</span>
+<span id="cb13-28"><a href="#cb13-28" tabindex="-1"></a>  clinical,</span>
+<span id="cb13-29"><a href="#cb13-29" tabindex="-1"></a>  <span class="at">factor_size =</span> <span class="dv">5</span>,      <span class="co"># Only convert if &lt; 5 unique values</span></span>
+<span id="cb13-30"><a href="#cb13-30" tabindex="-1"></a>  <span class="at">skip_vars =</span> <span class="st">&quot;id&quot;</span>      <span class="co"># Keep ID as integer</span></span>
+<span id="cb13-31"><a href="#cb13-31" tabindex="-1"></a>)</span>
+<span id="cb13-32"><a href="#cb13-32" tabindex="-1"></a></span>
+<span id="cb13-33"><a href="#cb13-33" tabindex="-1"></a><span class="co"># Step 4: Examine results</span></span>
+<span id="cb13-34"><a href="#cb13-34" tabindex="-1"></a><span class="fu">str</span>(clinical_clean)</span>
+<span id="cb13-35"><a href="#cb13-35" tabindex="-1"></a><span class="co">#&gt; &#39;data.frame&#39;:    50 obs. of  8 variables:</span></span>
+<span id="cb13-36"><a href="#cb13-36" tabindex="-1"></a><span class="co">#&gt;  $ id           : int  1 2 3 4 5 6 7 8 9 10 ...</span></span>
+<span id="cb13-37"><a href="#cb13-37" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;label&quot;)= chr &quot;Patient ID&quot;</span></span>
+<span id="cb13-38"><a href="#cb13-38" tabindex="-1"></a><span class="co">#&gt;  $ center       : Factor w/ 3 levels &quot;Site A&quot;,&quot;Site B&quot;,..: 3 3 3 2 3 2 2 2 3 1 ...</span></span>
+<span id="cb13-39"><a href="#cb13-39" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;label&quot;)= chr &quot;Enrollment Center&quot;</span></span>
+<span id="cb13-40"><a href="#cb13-40" tabindex="-1"></a><span class="co">#&gt;  $ treatment    : Factor w/ 4 levels &quot;1&quot;,&quot;2&quot;,&quot;3&quot;,&quot;4&quot;: 1 1 4 4 3 1 2 1 1 3 ...</span></span>
+<span id="cb13-41"><a href="#cb13-41" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;label&quot;)= chr &quot;Treatment Arm (1-4)&quot;</span></span>
+<span id="cb13-42"><a href="#cb13-42" tabindex="-1"></a><span class="co">#&gt;  $ age          : num  42 49 74 42 75 52 49 46 81 39 ...</span></span>
+<span id="cb13-43"><a href="#cb13-43" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;label&quot;)= chr &quot;Age at Enrollment (years)&quot;</span></span>
+<span id="cb13-44"><a href="#cb13-44" tabindex="-1"></a><span class="co">#&gt;  $ sex          : Factor w/ 2 levels &quot;F&quot;,&quot;M&quot;: 1 1 2 2 1 1 1 1 2 1 ...</span></span>
+<span id="cb13-45"><a href="#cb13-45" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;label&quot;)= chr &quot;Biological Sex&quot;</span></span>
+<span id="cb13-46"><a href="#cb13-46" tabindex="-1"></a><span class="co">#&gt;  $ outcome      : logi  FALSE FALSE FALSE TRUE FALSE TRUE ...</span></span>
+<span id="cb13-47"><a href="#cb13-47" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;label&quot;)= chr &quot;Primary Outcome (0=Failure, 1=Success)&quot;</span></span>
+<span id="cb13-48"><a href="#cb13-48" tabindex="-1"></a><span class="co">#&gt;  $ followup_days: num  375 303 355 529 69 278 592 615 196 278 ...</span></span>
+<span id="cb13-49"><a href="#cb13-49" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;label&quot;)= chr &quot;Days of Follow-up&quot;</span></span>
+<span id="cb13-50"><a href="#cb13-50" tabindex="-1"></a><span class="co">#&gt;  $ adverse_event: Factor w/ 4 levels &quot;Mild&quot;,&quot;Moderate&quot;,..: 4 1 NA 3 3 1 3 1 NA 3 ...</span></span>
+<span id="cb13-51"><a href="#cb13-51" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;label&quot;)= chr &quot;Most Severe Adverse Event&quot;</span></span>
+<span id="cb13-52"><a href="#cb13-52" tabindex="-1"></a></span>
+<span id="cb13-53"><a href="#cb13-53" tabindex="-1"></a><span class="co"># Step 5: Extract labels for reporting</span></span>
+<span id="cb13-54"><a href="#cb13-54" tabindex="-1"></a>label_lookup <span class="ot">&lt;-</span> <span class="fu">label_map</span>(clinical_clean)</span>
+<span id="cb13-55"><a href="#cb13-55" tabindex="-1"></a></span>
+<span id="cb13-56"><a href="#cb13-56" tabindex="-1"></a><span class="co"># Step 6: Use in analysis</span></span>
+<span id="cb13-57"><a href="#cb13-57" tabindex="-1"></a><span class="co"># Count by treatment</span></span>
+<span id="cb13-58"><a href="#cb13-58" tabindex="-1"></a><span class="fu">table</span>(clinical_clean<span class="sc">$</span>treatment)</span>
+<span id="cb13-59"><a href="#cb13-59" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb13-60"><a href="#cb13-60" tabindex="-1"></a><span class="co">#&gt;  1  2  3  4 </span></span>
+<span id="cb13-61"><a href="#cb13-61" tabindex="-1"></a><span class="co">#&gt; 15 13 12 10</span></span>
+<span id="cb13-62"><a href="#cb13-62" tabindex="-1"></a></span>
+<span id="cb13-63"><a href="#cb13-63" tabindex="-1"></a><span class="co"># Outcome by treatment (using labels)</span></span>
+<span id="cb13-64"><a href="#cb13-64" tabindex="-1"></a>outcome_summary <span class="ot">&lt;-</span> <span class="fu">aggregate</span>(</span>
+<span id="cb13-65"><a href="#cb13-65" tabindex="-1"></a>  outcome <span class="sc">~</span> treatment,</span>
+<span id="cb13-66"><a href="#cb13-66" tabindex="-1"></a>  <span class="at">data =</span> clinical_clean,</span>
+<span id="cb13-67"><a href="#cb13-67" tabindex="-1"></a>  <span class="at">FUN =</span> <span class="cf">function</span>(x) <span class="fu">c</span>(<span class="at">n =</span> <span class="fu">length</span>(x), <span class="at">success =</span> <span class="fu">sum</span>(x), <span class="at">rate =</span> <span class="fu">mean</span>(x))</span>
+<span id="cb13-68"><a href="#cb13-68" tabindex="-1"></a>)</span>
+<span id="cb13-69"><a href="#cb13-69" tabindex="-1"></a><span class="fu">print</span>(outcome_summary)</span>
+<span id="cb13-70"><a href="#cb13-70" tabindex="-1"></a><span class="co">#&gt;   treatment  outcome.n outcome.success outcome.rate</span></span>
+<span id="cb13-71"><a href="#cb13-71" tabindex="-1"></a><span class="co">#&gt; 1         1 15.0000000       9.0000000    0.6000000</span></span>
+<span id="cb13-72"><a href="#cb13-72" tabindex="-1"></a><span class="co">#&gt; 2         2 13.0000000       8.0000000    0.6153846</span></span>
+<span id="cb13-73"><a href="#cb13-73" tabindex="-1"></a><span class="co">#&gt; 3         3 12.0000000       9.0000000    0.7500000</span></span>
+<span id="cb13-74"><a href="#cb13-74" tabindex="-1"></a><span class="co">#&gt; 4         4 10.0000000       7.0000000    0.7000000</span></span></code></pre></div>
+<div id="handling-missing-data" class="section level3">
+<h3>Handling Missing Data</h3>
+<p>The function automatically handles character NA variants:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="co"># Data with various NA representations</span></span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>messy <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>  <span class="at">var1 =</span> <span class="fu">c</span>(<span class="st">&quot;NA&quot;</span>, <span class="st">&quot;value1&quot;</span>, <span class="st">&quot;na&quot;</span>, <span class="st">&quot;value2&quot;</span>, <span class="st">&quot;nA&quot;</span>),</span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a>  <span class="at">var2 =</span> <span class="fu">c</span>(<span class="st">&quot;NA&quot;</span>, <span class="st">&quot;A&quot;</span>, <span class="st">&quot;na&quot;</span>, <span class="st">&quot;B&quot;</span>, <span class="st">&quot;C&quot;</span>),</span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a>  <span class="at">var3 =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="cn">NA</span>, <span class="dv">4</span>, <span class="dv">5</span>),</span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a>  <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span></span>
+<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a>)</span>
+<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a></span>
+<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a>clean <span class="ot">&lt;-</span> <span class="fu">r_data_types</span>(messy)</span>
+<span id="cb14-10"><a href="#cb14-10" tabindex="-1"></a></span>
+<span id="cb14-11"><a href="#cb14-11" tabindex="-1"></a><span class="co"># Character NAs converted to true NA</span></span>
+<span id="cb14-12"><a href="#cb14-12" tabindex="-1"></a><span class="fu">sum</span>(<span class="fu">is.na</span>(clean<span class="sc">$</span>var1))  <span class="co"># 3 NAs</span></span>
+<span id="cb14-13"><a href="#cb14-13" tabindex="-1"></a><span class="co">#&gt; [1] 3</span></span>
+<span id="cb14-14"><a href="#cb14-14" tabindex="-1"></a><span class="fu">levels</span>(clean<span class="sc">$</span>var1)       <span class="co"># Only &quot;value1&quot; and &quot;value2&quot;</span></span>
+<span id="cb14-15"><a href="#cb14-15" tabindex="-1"></a><span class="co">#&gt; [1] &quot;value1&quot; &quot;value2&quot;</span></span>
+<span id="cb14-16"><a href="#cb14-16" tabindex="-1"></a></span>
+<span id="cb14-17"><a href="#cb14-17" tabindex="-1"></a><span class="fu">sum</span>(<span class="fu">is.na</span>(clean<span class="sc">$</span>var2))  <span class="co"># 2 NAs</span></span>
+<span id="cb14-18"><a href="#cb14-18" tabindex="-1"></a><span class="co">#&gt; [1] 2</span></span>
+<span id="cb14-19"><a href="#cb14-19" tabindex="-1"></a><span class="fu">levels</span>(clean<span class="sc">$</span>var2)       <span class="co"># &quot;A&quot;, &quot;B&quot;, &quot;C&quot;</span></span>
+<span id="cb14-20"><a href="#cb14-20" tabindex="-1"></a><span class="co">#&gt; [1] &quot;A&quot; &quot;B&quot; &quot;C&quot;</span></span></code></pre></div>
+</div>
+</div>
+<div id="advanced-usage" class="section level2">
+<h2>Advanced Usage</h2>
+<div id="custom-workflows-for-specific-data-types" class="section level3">
+<h3>Custom Workflows for Specific Data Types</h3>
+<p>For datasets with specific requirements:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="co"># Lab results with reference ranges</span></span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a>labs <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a>  <span class="at">patient =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">20</span>,</span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a>  <span class="at">test_name =</span> <span class="fu">rep</span>(<span class="fu">c</span>(<span class="st">&quot;Glucose&quot;</span>, <span class="st">&quot;HbA1c&quot;</span>), <span class="dv">10</span>),</span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a>  <span class="at">value =</span> <span class="fu">c</span>(<span class="fu">rnorm</span>(<span class="dv">10</span>, <span class="dv">100</span>, <span class="dv">15</span>), <span class="fu">rnorm</span>(<span class="dv">10</span>, <span class="fl">6.5</span>, <span class="dv">1</span>)),</span>
+<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a>  <span class="at">unit =</span> <span class="fu">rep</span>(<span class="fu">c</span>(<span class="st">&quot;mg/dL&quot;</span>, <span class="st">&quot;%&quot;</span>), <span class="dv">10</span>),</span>
+<span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a>  <span class="at">flag =</span> <span class="fu">sample</span>(<span class="fu">c</span>(<span class="st">&quot;Normal&quot;</span>, <span class="st">&quot;High&quot;</span>, <span class="st">&quot;Low&quot;</span>), <span class="dv">20</span>, <span class="at">replace =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a>  <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span></span>
+<span id="cb15-9"><a href="#cb15-9" tabindex="-1"></a>)</span>
+<span id="cb15-10"><a href="#cb15-10" tabindex="-1"></a></span>
+<span id="cb15-11"><a href="#cb15-11" tabindex="-1"></a><span class="co"># Convert with specific settings</span></span>
+<span id="cb15-12"><a href="#cb15-12" tabindex="-1"></a>labs_clean <span class="ot">&lt;-</span> <span class="fu">r_data_types</span>(</span>
+<span id="cb15-13"><a href="#cb15-13" tabindex="-1"></a>  labs,</span>
+<span id="cb15-14"><a href="#cb15-14" tabindex="-1"></a>  <span class="at">skip_vars =</span> <span class="fu">c</span>(<span class="st">&quot;patient&quot;</span>, <span class="st">&quot;value&quot;</span>),  <span class="co"># Preserve ID and numeric values</span></span>
+<span id="cb15-15"><a href="#cb15-15" tabindex="-1"></a>  <span class="at">factor_size =</span> <span class="dv">4</span>                      <span class="co"># Conservative factor conversion</span></span>
+<span id="cb15-16"><a href="#cb15-16" tabindex="-1"></a>)</span>
+<span id="cb15-17"><a href="#cb15-17" tabindex="-1"></a></span>
+<span id="cb15-18"><a href="#cb15-18" tabindex="-1"></a><span class="fu">str</span>(labs_clean)</span>
+<span id="cb15-19"><a href="#cb15-19" tabindex="-1"></a><span class="co">#&gt; &#39;data.frame&#39;:    20 obs. of  5 variables:</span></span>
+<span id="cb15-20"><a href="#cb15-20" tabindex="-1"></a><span class="co">#&gt;  $ patient  : int  1 2 3 4 5 6 7 8 9 10 ...</span></span>
+<span id="cb15-21"><a href="#cb15-21" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;label&quot;)= chr &quot;patient&quot;</span></span>
+<span id="cb15-22"><a href="#cb15-22" tabindex="-1"></a><span class="co">#&gt;  $ test_name: Factor w/ 2 levels &quot;Glucose&quot;,&quot;HbA1c&quot;: 1 2 1 2 1 2 1 2 1 2 ...</span></span>
+<span id="cb15-23"><a href="#cb15-23" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;label&quot;)= chr &quot;test_name&quot;</span></span>
+<span id="cb15-24"><a href="#cb15-24" tabindex="-1"></a><span class="co">#&gt;  $ value    : num  85.1 125.1 93.4 89.2 81.5 ...</span></span>
+<span id="cb15-25"><a href="#cb15-25" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;label&quot;)= chr &quot;value&quot;</span></span>
+<span id="cb15-26"><a href="#cb15-26" tabindex="-1"></a><span class="co">#&gt;  $ unit     : Factor w/ 2 levels &quot;%&quot;,&quot;mg/dL&quot;: 2 1 2 1 2 1 2 1 2 1 ...</span></span>
+<span id="cb15-27"><a href="#cb15-27" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;label&quot;)= chr &quot;unit&quot;</span></span>
+<span id="cb15-28"><a href="#cb15-28" tabindex="-1"></a><span class="co">#&gt;  $ flag     : Factor w/ 3 levels &quot;High&quot;,&quot;Low&quot;,&quot;Normal&quot;: 1 2 2 3 1 2 3 3 2 1 ...</span></span>
+<span id="cb15-29"><a href="#cb15-29" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;label&quot;)= chr &quot;flag&quot;</span></span></code></pre></div>
+</div>
+<div id="integration-with-data-import" class="section level3">
+<h3>Integration with Data Import</h3>
+<p>Typical workflow when importing from SAS:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="co"># Read SAS dataset (example - not run)</span></span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a><span class="co"># library(haven)</span></span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a><span class="co"># sas_data &lt;- read_sas(&quot;path/to/data.sas7bdat&quot;)</span></span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a></span>
+<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a><span class="co"># Apply type conversion and extract labels</span></span>
+<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a><span class="co"># clean_data &lt;- r_data_types(sas_data, factor_size = 15)</span></span>
+<span id="cb16-7"><a href="#cb16-7" tabindex="-1"></a><span class="co"># variable_labels &lt;- label_map(clean_data)</span></span>
+<span id="cb16-8"><a href="#cb16-8" tabindex="-1"></a></span>
+<span id="cb16-9"><a href="#cb16-9" tabindex="-1"></a><span class="co"># Save labels for documentation</span></span>
+<span id="cb16-10"><a href="#cb16-10" tabindex="-1"></a><span class="co"># write.csv(variable_labels, &quot;data_dictionary.csv&quot;, row.names = FALSE)</span></span></code></pre></div>
+</div>
+</div>
+<div id="best-practices" class="section level2">
+<h2>Best Practices</h2>
+<div id="when-to-use-r_data_types" class="section level3">
+<h3>When to Use <code>r_data_types()</code></h3>
+<p><strong>Use it when:</strong> - Importing data from SAS, SPSS, or
+other statistical software - Working with datasets where types aren’t
+correctly inferred - You have many categorical variables coded as
+integers - You need consistent type handling across multiple
+datasets</p>
+<p><strong>Skip it when:</strong> - Your data types are already correct
+- You need very specific type conversions not covered by the function -
+Working with specialized data structures (time series, spatial data,
+etc.)</p>
+</div>
+<div id="recommended-settings-by-use-case" class="section level3">
+<h3>Recommended Settings by Use Case</h3>
+<p><strong>Exploratory Analysis:</strong></p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a>data_clean <span class="ot">&lt;-</span> <span class="fu">r_data_types</span>(data, <span class="at">factor_size =</span> <span class="dv">10</span>)</span></code></pre></div>
+<p><strong>Modeling/Regression:</strong></p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a>data_clean <span class="ot">&lt;-</span> <span class="fu">r_data_types</span>(data, <span class="at">factor_size =</span> <span class="dv">5</span>, <span class="at">binary_factor =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
+<p><strong>Descriptive Statistics/Tables:</strong></p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a>data_clean <span class="ot">&lt;-</span> <span class="fu">r_data_types</span>(data, <span class="at">factor_size =</span> <span class="dv">15</span>, <span class="at">binary_factor =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
+</div>
+<div id="checking-results" class="section level3">
+<h3>Checking Results</h3>
+<p>Always verify the conversions make sense:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a><span class="co"># Before</span></span>
+<span id="cb20-2"><a href="#cb20-2" tabindex="-1"></a><span class="fu">str</span>(original_data)</span>
+<span id="cb20-3"><a href="#cb20-3" tabindex="-1"></a><span class="fu">summary</span>(original_data)</span>
+<span id="cb20-4"><a href="#cb20-4" tabindex="-1"></a></span>
+<span id="cb20-5"><a href="#cb20-5" tabindex="-1"></a><span class="co"># After</span></span>
+<span id="cb20-6"><a href="#cb20-6" tabindex="-1"></a><span class="fu">str</span>(clean_data)</span>
+<span id="cb20-7"><a href="#cb20-7" tabindex="-1"></a><span class="fu">summary</span>(clean_data)</span>
+<span id="cb20-8"><a href="#cb20-8" tabindex="-1"></a></span>
+<span id="cb20-9"><a href="#cb20-9" tabindex="-1"></a><span class="co"># Check specific variables</span></span>
+<span id="cb20-10"><a href="#cb20-10" tabindex="-1"></a><span class="fu">table</span>(clean_data<span class="sc">$</span>categorical_var)</span></code></pre></div>
+</div>
+</div>
+<div id="summary" class="section level2">
+<h2>Summary</h2>
+<p>The <code>hvtiRutilities</code> package streamlines data preparation
+for clinical research:</p>
+<ul>
+<li><strong><code>r_data_types()</code></strong>: Automatic, intelligent
+type conversion</li>
+<li><strong><code>label_map()</code></strong>: Easy extraction of
+variable labels</li>
+<li><strong><code>sample_data()</code></strong>: Generate test data</li>
+</ul>
+<p>Key features: - Preserves variable labels through transformations -
+Handles multiple NA representations - Flexible control over factor
+conversion - Works with data.frames, tibbles, and data.tables</p>
+<p>For more information: - Package documentation:
+<code>?r_data_types</code>, <code>?label_map</code> - GitHub: <a href="https://github.com/ehrlinger/hvtiRutilities" class="uri">https://github.com/ehrlinger/hvtiRutilities</a> - Issues: <a href="https://github.com/ehrlinger/hvtiRutilities/issues" class="uri">https://github.com/ehrlinger/hvtiRutilities/issues</a> -
+Release notes: Run <code>hvtiRutilities.news()</code> in R</p>
+</div>
+<div id="session-information" class="section level2">
+<h2>Session Information</h2>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span>
+<span id="cb21-2"><a href="#cb21-2" tabindex="-1"></a><span class="co">#&gt; R version 4.5.2 (2025-10-31)</span></span>
+<span id="cb21-3"><a href="#cb21-3" tabindex="-1"></a><span class="co">#&gt; Platform: aarch64-apple-darwin20</span></span>
+<span id="cb21-4"><a href="#cb21-4" tabindex="-1"></a><span class="co">#&gt; Running under: macOS Tahoe 26.3</span></span>
+<span id="cb21-5"><a href="#cb21-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb21-6"><a href="#cb21-6" tabindex="-1"></a><span class="co">#&gt; Matrix products: default</span></span>
+<span id="cb21-7"><a href="#cb21-7" tabindex="-1"></a><span class="co">#&gt; BLAS:   /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libBLAS.dylib </span></span>
+<span id="cb21-8"><a href="#cb21-8" tabindex="-1"></a><span class="co">#&gt; LAPACK: /Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/lib/libRlapack.dylib;  LAPACK version 3.12.1</span></span>
+<span id="cb21-9"><a href="#cb21-9" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb21-10"><a href="#cb21-10" tabindex="-1"></a><span class="co">#&gt; locale:</span></span>
+<span id="cb21-11"><a href="#cb21-11" tabindex="-1"></a><span class="co">#&gt; [1] C/C.UTF-8/C.UTF-8/C/C.UTF-8/C.UTF-8</span></span>
+<span id="cb21-12"><a href="#cb21-12" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb21-13"><a href="#cb21-13" tabindex="-1"></a><span class="co">#&gt; time zone: America/New_York</span></span>
+<span id="cb21-14"><a href="#cb21-14" tabindex="-1"></a><span class="co">#&gt; tzcode source: internal</span></span>
+<span id="cb21-15"><a href="#cb21-15" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb21-16"><a href="#cb21-16" tabindex="-1"></a><span class="co">#&gt; attached base packages:</span></span>
+<span id="cb21-17"><a href="#cb21-17" tabindex="-1"></a><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
+<span id="cb21-18"><a href="#cb21-18" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb21-19"><a href="#cb21-19" tabindex="-1"></a><span class="co">#&gt; other attached packages:</span></span>
+<span id="cb21-20"><a href="#cb21-20" tabindex="-1"></a><span class="co">#&gt; [1] labelled_2.16.0      hvtiRutilities_0.1.3</span></span>
+<span id="cb21-21"><a href="#cb21-21" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb21-22"><a href="#cb21-22" tabindex="-1"></a><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
+<span id="cb21-23"><a href="#cb21-23" tabindex="-1"></a><span class="co">#&gt;  [1] vctrs_0.7.0      cli_3.6.5        knitr_1.51       rlang_1.1.7     </span></span>
+<span id="cb21-24"><a href="#cb21-24" tabindex="-1"></a><span class="co">#&gt;  [5] xfun_0.56        forcats_1.0.1    otel_0.2.0       haven_2.5.5     </span></span>
+<span id="cb21-25"><a href="#cb21-25" tabindex="-1"></a><span class="co">#&gt;  [9] generics_0.1.4   jsonlite_2.0.0   glue_1.8.0       htmltools_0.5.9 </span></span>
+<span id="cb21-26"><a href="#cb21-26" tabindex="-1"></a><span class="co">#&gt; [13] sass_0.4.10      hms_1.1.4        rmarkdown_2.30   evaluate_1.0.5  </span></span>
+<span id="cb21-27"><a href="#cb21-27" tabindex="-1"></a><span class="co">#&gt; [17] jquerylib_0.1.4  tibble_3.3.1     fastmap_1.2.0    yaml_2.3.12     </span></span>
+<span id="cb21-28"><a href="#cb21-28" tabindex="-1"></a><span class="co">#&gt; [21] lifecycle_1.0.5  compiler_4.5.2   dplyr_1.1.4      pkgconfig_2.0.3 </span></span>
+<span id="cb21-29"><a href="#cb21-29" tabindex="-1"></a><span class="co">#&gt; [25] digest_0.6.39    R6_2.6.1         tidyselect_1.2.1 pillar_1.11.1   </span></span>
+<span id="cb21-30"><a href="#cb21-30" tabindex="-1"></a><span class="co">#&gt; [29] magrittr_2.0.4   bslib_0.9.0      withr_3.0.2      tools_4.5.2     </span></span>
+<span id="cb21-31"><a href="#cb21-31" tabindex="-1"></a><span class="co">#&gt; [33] cachem_1.1.0</span></span></code></pre></div>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
