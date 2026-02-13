@@ -22,7 +22,7 @@ a data.frame containing a sample dataset
 
 ``` r
 # create the data set
-dta <- sample_data(n =100)
+dta <- sample_data(n = 100)
 udta <- r_data_types(dta)
 lmap <- label_map(dta)
 ```

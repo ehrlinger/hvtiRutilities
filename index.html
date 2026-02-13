@@ -33,6 +33,7 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
+<li class="nav-item"><a class="nav-link" href="articles/hvtiRutilities.html">Get started</a></li>
 <li class="nav-item"><a class="nav-link" href="reference/index.html">Reference</a></li>
 <li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
       </ul>
@@ -65,7 +66,42 @@
 
 
 <!-- badges: end -->
-<p>The goal of hvtiRutilities is to …</p>
+<div class="section level2">
+<h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
+</h2>
+<p>hvtiRutilities provides utility functions for working with clinical research data at the Cleveland Clinic Heart, Vascular and Thoracic Institute (HVTI) Clinical Outcomes Registries and Research (CORR) department. The package simplifies common data preparation tasks when working with SAS datasets in R.</p>
+<div class="section level3">
+<h3 id="main-functions">Main Functions<a class="anchor" aria-label="anchor" href="#main-functions"></a>
+</h3>
+<ul>
+<li>
+<strong><code><a href="reference/r_data_types.html">r_data_types()</a></code></strong>: Automatically infer and convert data types in a dataset
+<ul>
+<li>Converts character columns to factors</li>
+<li>Detects binary numeric variables (0/1) and converts to logical</li>
+<li>Converts numeric variables with few unique values to factors</li>
+<li>Handles various NA representations (“NA”, “na”, etc.)</li>
+<li>Preserves variable labels from SAS/labelled data</li>
+</ul>
+</li>
+<li>
+<strong><code><a href="reference/label_map.html">label_map()</a></code></strong>: Extract variable labels from labeled datasets
+<ul>
+<li>Creates a lookup table mapping variable names to their labels</li>
+<li>Useful for working with SAS datasets that have variable labels</li>
+<li>Returns a data frame with <code>key</code> (variable name) and <code>label</code> columns</li>
+</ul>
+</li>
+<li>
+<strong><code><a href="reference/sample_data.html">sample_data()</a></code></strong>: Generate sample datasets for testing
+<ul>
+<li>Creates datasets with various column types for testing package functions</li>
+<li>Useful for examples and unit tests</li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
@@ -75,12 +111,105 @@
 <span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"ehrlinger/hvtiRutilities"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="example">Example<a class="anchor" aria-label="anchor" href="#example"></a>
+<h2 id="usage-examples">Usage Examples<a class="anchor" aria-label="anchor" href="#usage-examples"></a>
 </h2>
-<p>This is a basic example which shows you how to solve a common problem:</p>
+<div class="section level3">
+<h3 id="automatic-type-conversion">Automatic Type Conversion<a class="anchor" aria-label="anchor" href="#automatic-type-conversion"></a>
+</h3>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/ehrlinger/hvtiRutilities" class="external-link">hvtiRutilities</a></span><span class="op">)</span></span>
-<span><span class="co">## basic example code</span></span></code></pre></div>
+<span></span>
+<span><span class="co"># Create sample data</span></span>
+<span><span class="va">dta</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/sample_data.html">sample_data</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Examine original types</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">dta</span><span class="op">)</span></span>
+<span><span class="co"># boolean: int (values: 1, 2)</span></span>
+<span><span class="co"># logical: chr (values: "F", "T")</span></span>
+<span><span class="co"># char: chr (values: "male", "female")</span></span>
+<span></span>
+<span><span class="co"># Apply automatic type conversion</span></span>
+<span><span class="va">dta_converted</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/r_data_types.html">r_data_types</a></span><span class="op">(</span><span class="va">dta</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Examine converted types</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">dta_converted</span><span class="op">)</span></span>
+<span><span class="co"># boolean: logi (binary 1/2 → TRUE/FALSE)</span></span>
+<span><span class="co"># logical: Factor (character → factor)</span></span>
+<span><span class="co"># char: Factor (character → factor)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="skip-specific-columns">Skip Specific Columns<a class="anchor" aria-label="anchor" href="#skip-specific-columns"></a>
+</h3>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Skip conversion for specific variables</span></span>
+<span><span class="va">dta_partial</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/r_data_types.html">r_data_types</a></span><span class="op">(</span><span class="va">dta</span>, skip_vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"boolean"</span>, <span class="st">"char"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co"># boolean and char remain unchanged, others are converted</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="control-factor-creation">Control Factor Creation<a class="anchor" aria-label="anchor" href="#control-factor-creation"></a>
+</h3>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Convert only variables with fewer than 5 unique values to factors</span></span>
+<span><span class="va">dta_strict</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/r_data_types.html">r_data_types</a></span><span class="op">(</span><span class="va">dta</span>, factor_size <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Keep binary variables as factors instead of logical</span></span>
+<span><span class="va">dta_factors</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/r_data_types.html">r_data_types</a></span><span class="op">(</span><span class="va">dta</span>, binary_factor <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="working-with-variable-labels">Working with Variable Labels<a class="anchor" aria-label="anchor" href="#working-with-variable-labels"></a>
+</h3>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Create labeled data (common with SAS imports)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://larmarange.github.io/labelled/" class="external-link">labelled</a></span><span class="op">)</span></span>
+<span><span class="va">dta</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>  age <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">25</span>, <span class="fl">30</span>, <span class="fl">35</span><span class="op">)</span>,</span>
+<span>  sex <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"M"</span>, <span class="st">"F"</span>, <span class="st">"M"</span><span class="op">)</span>,</span>
+<span>  bp <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">120</span>, <span class="fl">130</span>, <span class="fl">125</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://larmarange.github.io/labelled/reference/var_label.html" class="external-link">var_label</a></span><span class="op">(</span><span class="va">dta</span><span class="op">$</span><span class="va">age</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="st">"Patient Age (years)"</span></span>
+<span><span class="fu"><a href="https://larmarange.github.io/labelled/reference/var_label.html" class="external-link">var_label</a></span><span class="op">(</span><span class="va">dta</span><span class="op">$</span><span class="va">sex</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="st">"Patient Sex"</span></span>
+<span><span class="fu"><a href="https://larmarange.github.io/labelled/reference/var_label.html" class="external-link">var_label</a></span><span class="op">(</span><span class="va">dta</span><span class="op">$</span><span class="va">bp</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="st">"Systolic Blood Pressure (mmHg)"</span></span>
+<span></span>
+<span><span class="co"># Extract labels as a lookup table</span></span>
+<span><span class="va">labels</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/label_map.html">label_map</a></span><span class="op">(</span><span class="va">dta</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">labels</span><span class="op">)</span></span>
+<span><span class="co">#   key                              label</span></span>
+<span><span class="co"># 1 age        Patient Age (years)</span></span>
+<span><span class="co"># 2 sex                    Patient Sex</span></span>
+<span><span class="co"># 3  bp  Systolic Blood Pressure (mmHg)</span></span>
+<span></span>
+<span><span class="co"># Use for matching/joining</span></span>
+<span><span class="va">summary_table</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>variable <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"age"</span>, <span class="st">"bp"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">summary_table</span><span class="op">$</span><span class="va">label</span> <span class="op">&lt;-</span> <span class="va">labels</span><span class="op">$</span><span class="va">label</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/match.html" class="external-link">match</a></span><span class="op">(</span><span class="va">summary_table</span><span class="op">$</span><span class="va">variable</span>, <span class="va">labels</span><span class="op">$</span><span class="va">key</span><span class="op">)</span><span class="op">]</span></span></code></pre></div>
+</div>
+</div>
+<div class="section level2">
+<h2 id="key-features">Key Features<a class="anchor" aria-label="anchor" href="#key-features"></a>
+</h2>
+<ul>
+<li>
+<strong>Preserves variable labels</strong>: All functions maintain SAS/labelled variable attributes</li>
+<li>
+<strong>Handles NA variants</strong>: Automatically converts “NA”, “na”, “Na”, “nA” strings to actual NA values</li>
+<li>
+<strong>Type-safe</strong>: Returns the same data structure class as input (data.frame, tibble, data.table, etc.)</li>
+<li>
+<strong>Flexible control</strong>: Multiple parameters to customize type conversion behavior</li>
+</ul>
+</div>
+<div class="section level2">
+<h2 id="getting-help">Getting Help<a class="anchor" aria-label="anchor" href="#getting-help"></a>
+</h2>
+<ul>
+<li>For bug reports and feature requests: <a href="https://github.com/ehrlinger/hvtiRutilities/issues" class="external-link">GitHub Issues</a>
+</li>
+<li>For package news and changes: Run <code><a href="reference/hvtiRutilities.news.html">hvtiRutilities.news()</a></code> in R</li>
+</ul>
+</div>
+<div class="section level2">
+<h2 id="license">License<a class="anchor" aria-label="anchor" href="#license"></a>
+</h2>
+<p>GPL (&gt;= 3)</p>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="package-badges">

@@ -1,6 +1,32 @@
 # hvtiRutilities
 
-The goal of hvtiRutilities is to …
+## Overview
+
+hvtiRutilities provides utility functions for working with clinical
+research data at the Cleveland Clinic Heart, Vascular and Thoracic
+Institute (HVTI) Clinical Outcomes Registries and Research (CORR)
+department. The package simplifies common data preparation tasks when
+working with SAS datasets in R.
+
+### Main Functions
+
+- **[`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)**:
+  Automatically infer and convert data types in a dataset
+  - Converts character columns to factors
+  - Detects binary numeric variables (0/1) and converts to logical
+  - Converts numeric variables with few unique values to factors
+  - Handles various NA representations (“NA”, “na”, etc.)
+  - Preserves variable labels from SAS/labelled data
+- **[`label_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)**:
+  Extract variable labels from labeled datasets
+  - Creates a lookup table mapping variable names to their labels
+  - Useful for working with SAS datasets that have variable labels
+  - Returns a data frame with `key` (variable name) and `label` columns
+- **[`sample_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/sample_data.md)**:
+  Generate sample datasets for testing
+  - Creates datasets with various column types for testing package
+    functions
+  - Useful for examples and unit tests
 
 ## Installation
 
@@ -12,11 +38,96 @@ You can install the development version of hvtiRutilities from
 pak::pak("ehrlinger/hvtiRutilities")
 ```
 
-## Example
+## Usage Examples
 
-This is a basic example which shows you how to solve a common problem:
+### Automatic Type Conversion
 
 ``` r
 library(hvtiRutilities)
-## basic example code
+
+# Create sample data
+dta <- sample_data(n = 100)
+
+# Examine original types
+str(dta)
+# boolean: int (values: 1, 2)
+# logical: chr (values: "F", "T")
+# char: chr (values: "male", "female")
+
+# Apply automatic type conversion
+dta_converted <- r_data_types(dta)
+
+# Examine converted types
+str(dta_converted)
+# boolean: logi (binary 1/2 → TRUE/FALSE)
+# logical: Factor (character → factor)
+# char: Factor (character → factor)
 ```
+
+### Skip Specific Columns
+
+``` r
+# Skip conversion for specific variables
+dta_partial <- r_data_types(dta, skip_vars = c("boolean", "char"))
+# boolean and char remain unchanged, others are converted
+```
+
+### Control Factor Creation
+
+``` r
+# Convert only variables with fewer than 5 unique values to factors
+dta_strict <- r_data_types(dta, factor_size = 5)
+
+# Keep binary variables as factors instead of logical
+dta_factors <- r_data_types(dta, binary_factor = TRUE)
+```
+
+### Working with Variable Labels
+
+``` r
+# Create labeled data (common with SAS imports)
+library(labelled)
+dta <- data.frame(
+  age = c(25, 30, 35),
+  sex = c("M", "F", "M"),
+  bp = c(120, 130, 125)
+)
+var_label(dta$age) <- "Patient Age (years)"
+var_label(dta$sex) <- "Patient Sex"
+var_label(dta$bp) <- "Systolic Blood Pressure (mmHg)"
+
+# Extract labels as a lookup table
+labels <- label_map(dta)
+print(labels)
+#   key                              label
+# 1 age        Patient Age (years)
+# 2 sex                    Patient Sex
+# 3  bp  Systolic Blood Pressure (mmHg)
+
+# Use for matching/joining
+summary_table <- data.frame(variable = c("age", "bp"))
+summary_table$label <- labels$label[match(summary_table$variable, labels$key)]
+```
+
+## Key Features
+
+- **Preserves variable labels**: All functions maintain SAS/labelled
+  variable attributes
+- **Handles NA variants**: Automatically converts “NA”, “na”, “Na”, “nA”
+  strings to actual NA values
+- **Type-safe**: Returns the same data structure class as input
+  (data.frame, tibble, data.table, etc.)
+- **Flexible control**: Multiple parameters to customize type conversion
+  behavior
+
+## Getting Help
+
+- For bug reports and feature requests: [GitHub
+  Issues](https://github.com/ehrlinger/hvtiRutilities/issues)
+- For package news and changes: Run
+  [`hvtiRutilities.news()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvtiRutilities.news.md)
+  in R
+
+## License
+
+GPL (\>= 3)

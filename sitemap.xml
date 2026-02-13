@@ -1,10 +1,14 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/404.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/LICENSE.html</loc></url>
+<url><loc>https://ehrlinger.github.io/hvtiRutilities/articles/hvtiRutilities.html</loc></url>
+<url><loc>https://ehrlinger.github.io/hvtiRutilities/articles/index.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/authors.html</loc></url>
+<url><loc>https://ehrlinger.github.io/hvtiRutilities/copilot-instructions.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/index.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/news/index.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/hvtiRutilities-package.html</loc></url>
+<url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/hvtiRutilities.news.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/index.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/label_map.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.html</loc></url>
