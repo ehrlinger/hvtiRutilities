@@ -20,10 +20,12 @@ Depends:
     R (>= 4.1.0)
 Imports:
     dplyr,
-    labelled,
-    lubridate
+    labelled
 Suggests:
+    knitr,
+    rmarkdown,
     testthat (>= 3.0.0),
     tidyverse
+VignetteBuilder: knitr
 RoxygenNote: 7.3.3
 Config/testthat/edition: 3
