@@ -116,12 +116,8 @@ test_that("multiple sequential conversions are idempotent", {
   # Second conversion on already converted data
   conv2 <- r_data_types(conv1)
 
-  # Third conversion
-  conv3 <- r_data_types(conv2)
-
-  # All should have same structure
-  expect_equal(lapply(conv1, class), lapply(conv2, class))
-  expect_equal(lapply(conv2, class), lapply(conv3, class))
+  # Values and types must be identical, not just class names
+  expect_equal(conv1, conv2)
 })
 
 test_that("real-world workflow with messy data", {

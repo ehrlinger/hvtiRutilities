@@ -15,6 +15,8 @@
 #'   \item Optionally converts logical columns to factors if \code{binary_factor = TRUE}
 #' }
 #'
+#' Date, POSIXct, and POSIXlt columns are never altered by type conversion.
+#'
 #' @param dataset A data frame, tibble, data.table, or similar tabular object
 #' @param factor_size Integer threshold for factor conversion. Numeric variables
 #'   with fewer than this many unique values (but more than 2) will be converted
@@ -55,28 +57,38 @@ r_data_types <- function(dataset,
                          factor_size = 10,
                          skip_vars = NULL,
                          binary_factor = FALSE) {
-  # Retain all labels for our data
-  keep_label <- labelled::var_label(dataset, unlist = FALSE,
-                                    null_action = "fill")
-
-  # Separate our skipped columns if needed first.
-  if (!is.null(skip_vars) && all(skip_vars %in% colnames(dataset))) {
-    skip_dta <- dataset |> dplyr::select(dplyr::all_of(skip_vars))
-    new_data <- dataset |> dplyr::select(!dplyr::all_of(skip_vars))
-  } else if (!is.null(skip_vars) &&
-             any(!(skip_vars %in% colnames(dataset)))) {
-    stop("One or more columns in 'skip_vars' not found in dataset.")
-  } else {
-    new_data <- dataset
+  # Validate inputs before doing any work
+  if (!is.data.frame(dataset)) {
+    stop("'dataset' must be a data.frame or similar tabular object.")
   }
 
-  # Check factorsize
-  if (!is.numeric(factor_size) || factor_size <= 1) {
+  if (!is.numeric(factor_size) || is.nan(factor_size) || factor_size <= 1) {
     stop("'factor_size' must be a numeric value greater than 1.")
   } else if (factor_size %% 1 != 0) {
     stop("'factor_size' must be a whole number (integer).")
   } else if (factor_size > 50) {
     stop("'factor_size' must be 50 or less to avoid excessive factor creation. You specified ", factor_size, ".")
+  }
+
+  if (!is.null(skip_vars)) {
+    if (!is.character(skip_vars)) {
+      stop("'skip_vars' must be a character vector of column names.")
+    }
+    if (any(!(skip_vars %in% colnames(dataset)))) {
+      stop("One or more columns in 'skip_vars' not found in dataset.")
+    }
+  }
+
+  # Retain all labels for our data
+  keep_label <- labelled::var_label(dataset, unlist = FALSE,
+                                    null_action = "fill")
+
+  # Separate our skipped columns if needed first.
+  if (!is.null(skip_vars)) {
+    skip_dta <- dataset |> dplyr::select(dplyr::all_of(skip_vars))
+    new_data <- dataset |> dplyr::select(!dplyr::all_of(skip_vars))
+  } else {
+    new_data <- dataset
   }
 
   # Convert Variables to new types
@@ -89,7 +101,8 @@ r_data_types <- function(dataset,
   new_data <- dplyr::mutate(new_data, dplyr::across(dplyr::where(function(x) {
     !is.factor(x) &
       !is.character(x) &
-      dplyr::n_distinct(x, na.rm = TRUE) < 3
+      !inherits(x, c("Date", "POSIXct", "POSIXlt")) &
+      dplyr::n_distinct(x, na.rm = TRUE) == 2
   }), ~ as.logical(.)))
   new_data <- dplyr::mutate(new_data, dplyr::across(dplyr::where(is.character),
                                                     ~ factor(., exclude = NA)))

@@ -1,3 +1,50 @@
+# hvtiRutilities 0.1.4
+
+## New Features
+
+* Added `generate_survival_data()`: generates a synthetic cardiac surgery
+  survival cohort with 22 clinical variables, Weibull-distributed survival
+  times, reoperation outcome, and variable labels
+
+## Bug Fixes
+
+* Fixed `r_data_types()` silently corrupting Date, POSIXct, and POSIXlt
+  columns that had exactly 2 unique values (they were converted to logical)
+* Fixed `r_data_types()` incorrectly converting constant columns (1 unique
+  value) to logical; binary detection now requires exactly 2 unique values
+* Fixed `r_data_types()` producing a cryptic "missing value where TRUE/FALSE
+  needed" error when `factor_size = NaN`
+* Fixed `r_data_types()` giving a misleading "not found in dataset" error
+  when `skip_vars` was not a character vector
+* Fixed `generate_survival_data()` producing `NaN` in `iv_reop` for patients
+  with very short follow-up times
+* Fixed `generate_survival_data()` permanently altering the global RNG state;
+  the session's RNG is now saved and restored on exit
+
+## Improvements
+
+* `r_data_types()` now validates all inputs before doing any work, so errors
+  are raised immediately with clear messages
+* `r_data_types()` input validation now explicitly checks that `dataset` is a
+  data.frame, `skip_vars` is a character vector, and `factor_size` is not NaN
+* `generate_survival_data()` now uses `labelled::var_label()` consistently
+  to attach labels instead of `attr()` directly
+* Removed leftover `if (interactive())` development block from
+  `generate_survival_data.R`
+* Added new vignette `survival-data` demonstrating `generate_survival_data()`
+  and its integration with `r_data_types()` and `label_map()`
+
+## Tests
+
+* Added 27 tests for `generate_survival_data()` covering structure, column
+  types, outcome validity, reproducibility, RNG side-effect safety, and
+  variable labels
+* Updated POSIXct test to verify preservation without `skip_vars` (the
+  previous test only verified the `skip_vars` workaround)
+* Strengthened idempotency test to assert full value equality across
+  sequential conversions, not just column class equality
+* Updated `skip_vars` type-error test to match the improved error message
+
 # hvtiRutilities 0.1.3
 
 ## Bug Fixes

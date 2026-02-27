@@ -32,6 +32,12 @@ hvtiRutilities provides utility functions for working with clinical research dat
   - Creates datasets with various column types for testing package functions
   - Useful for examples and unit tests
 
+- **`generate_survival_data()`**: Simulate a cardiac surgery survival cohort
+  - Generates realistic patient-level data including demographics, pre-operative labs, cardiac function, and surgical variables
+  - Survival times from a Weibull model with clinically-motivated linear predictor (LVEF, age, hemoglobin, NYHA class, eGFR)
+  - Includes reoperation outcome and administrative censoring up to 15 years
+  - Variable labels attached for compatibility with `haven` and `label_map()`
+
 ## Installation
 
 You can install the development version of hvtiRutilities from [GitHub](https://github.com/) with:
@@ -112,6 +118,27 @@ summary_table <- data.frame(variable = c("age", "bp"))
 summary_table$label <- labels$label[match(summary_table$variable, labels$key)]
 ```
 
+### Generating Survival Data
+
+```r
+# Simulate a cardiac surgery cohort (reproducible)
+dta <- generate_survival_data(n = 500, seed = 1024)
+
+# Event and reoperation rates
+mean(dta$dead)   # ~death rate
+mean(dta$reop)   # ~reoperation rate
+
+# Integrate with the rest of the package
+model_data <- r_data_types(
+  dta,
+  factor_size = 5,
+  skip_vars = c("ccfid", "iv_dead", "iv_reop")
+)
+
+# Extract variable labels for reporting
+lmap <- label_map(model_data)
+```
+
 ## Key Features
 
 - **Preserves variable labels**: All functions maintain SAS/labelled variable attributes
@@ -121,6 +148,8 @@ summary_table$label <- labels$label[match(summary_table$variable, labels$key)]
 
 ## Getting Help
 
+- Package documentation: `?r_data_types`, `?label_map`, `?generate_survival_data`
+- Vignettes: `vignette("hvtiRutilities")`, `vignette("survival-data")`
 - For bug reports and feature requests: [GitHub Issues](https://github.com/ehrlinger/hvtiRutilities/issues)
 - For package news and changes: Run `hvtiRutilities.news()` in R
 
