@@ -2,18 +2,17 @@
 
 ## Overview
 
-The
-[`generate_survival_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/generate_survival_data.md)
-function creates a realistic synthetic cardiac surgery cohort suitable
-for testing and demonstrating survival analysis workflows. Survival
-times are drawn from a Weibull distribution with a linear predictor
-built from clinical variables (LVEF, age, hemoglobin, NYHA class, eGFR),
-and administrative censoring is applied at up to 15 years.
+The `generate_survival_data()` function creates a realistic synthetic
+cardiac surgery cohort suitable for testing and demonstrating survival
+analysis workflows. Survival times are drawn from a Weibull distribution
+with a linear predictor built from clinical variables (LVEF, age,
+hemoglobin, NYHA class, eGFR), and administrative censoring is applied
+at up to 15 years.
 
 ``` r
 library(hvtiRutilities)
 #> 
-#>  hvtiRutilities 0.2.0 
+#>  hvtiRutilities 0.3.0 
 #>  
 #>  Type hvtiRutilities.news() to see new features, changes, and bug fixes. 
 #> 
@@ -131,9 +130,8 @@ hist(
 ## Integration with `r_data_types()` and `label_map()`
 
 The dataset arrives with variable labels attached and several columns
-that benefit from type conversion. The
-[`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
-function handles these automatically.
+that benefit from type conversion. The `r_data_types()` function handles
+these automatically.
 
 ``` r
 # Convert types: keep IDs and continuous outcomes as-is
@@ -285,7 +283,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] hvtiRutilities_0.2.0
+#> [1] hvtiRutilities_0.3.0
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] vctrs_0.7.1       cli_3.6.5         knitr_1.51        rlang_1.1.7      

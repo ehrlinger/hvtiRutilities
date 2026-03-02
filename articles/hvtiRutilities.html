@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -93,13 +93,13 @@ those originating from SAS.</p>
 </h3>
 <ul>
 <li>
-<strong><code><a href="../reference/r_data_types.html">r_data_types()</a></code></strong>: Automatically infer
+<strong><code>r_data_types()</code></strong>: Automatically infer
 and convert data types based on content</li>
 <li>
-<strong><code><a href="../reference/label_map.html">label_map()</a></code></strong>: Extract variable labels
+<strong><code>label_map()</code></strong>: Extract variable labels
 from labeled datasets into a lookup table</li>
 <li>
-<strong><code><a href="../reference/sample_data.html">sample_data()</a></code></strong>: Generate sample
+<strong><code>sample_data()</code></strong>: Generate sample
 datasets for testing and examples</li>
 </ul>
 </div>
@@ -113,7 +113,7 @@ datasets for testing and examples</li>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/ehrlinger/hvtiRutilities" class="external-link">hvtiRutilities</a></span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;  hvtiRutilities 0.2.0 </span></span>
+<span><span class="co">#&gt;  hvtiRutilities 0.3.0 </span></span>
 <span><span class="co">#&gt;  </span></span>
 <span><span class="co">#&gt;  Type hvtiRutilities.news() to see new features, changes, and bug fixes. </span></span>
 <span><span class="co">#&gt; </span></span></code></pre></div>
@@ -125,11 +125,11 @@ datasets for testing and examples</li>
 <div class="section level3">
 <h3 id="automatic-type-conversion-with-r_data_types">Automatic Type Conversion with <code>r_data_types()</code><a class="anchor" aria-label="anchor" href="#automatic-type-conversion-with-r_data_types"></a>
 </h3>
-<p>The <code><a href="../reference/r_data_types.html">r_data_types()</a></code> function intelligently converts
+<p>The <code>r_data_types()</code> function intelligently converts
 column types based on their content:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Generate sample data with various types</span></span>
-<span><span class="va">dta</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sample_data.html">sample_data</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span>
+<span><span class="va">dta</span> <span class="op">&lt;-</span> <span class="fu">sample_data</span><span class="op">(</span>n <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Examine original structure</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">dta</span><span class="op">)</span></span>
@@ -147,7 +147,7 @@ values (1, 2) - <code>logical</code>: character values (“F”, “T”) -
 <p>Now let’s apply automatic type conversion:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Convert types automatically</span></span>
-<span><span class="va">dta_converted</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/r_data_types.html">r_data_types</a></span><span class="op">(</span><span class="va">dta</span><span class="op">)</span></span>
+<span><span class="va">dta_converted</span> <span class="op">&lt;-</span> <span class="fu">r_data_types</span><span class="op">(</span><span class="va">dta</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Examine converted structure</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">dta_converted</span><span class="op">)</span></span>
@@ -211,7 +211,7 @@ values</li>
 <span><span class="co">#&gt;  $ drat: num  3.9 3.9 3.85 3.08 3.15 2.76 3.21 3.69 3.92 3.92 ...</span></span></code></pre></div>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Apply type conversion</span></span>
-<span><span class="va">mtcars_clean</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/r_data_types.html">r_data_types</a></span><span class="op">(</span><span class="va">mtcars</span><span class="op">)</span></span>
+<span><span class="va">mtcars_clean</span> <span class="op">&lt;-</span> <span class="fu">r_data_types</span><span class="op">(</span><span class="va">mtcars</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">mtcars_clean</span><span class="op">[</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="co">#&gt; 'data.frame':    32 obs. of  5 variables:</span></span>
 <span><span class="co">#&gt;  $ mpg : num  21 21 22.8 21.4 18.7 18.1 14.3 24.4 22.8 19.2 ...</span></span>
@@ -236,7 +236,7 @@ factor - <code>carb</code> (6 unique values) → factor</p>
 factors:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># More strict: only convert if &lt; 5 unique values</span></span>
-<span><span class="va">mtcars_strict</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/r_data_types.html">r_data_types</a></span><span class="op">(</span><span class="va">mtcars</span>, factor_size <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
+<span><span class="va">mtcars_strict</span> <span class="op">&lt;-</span> <span class="fu">r_data_types</span><span class="op">(</span><span class="va">mtcars</span>, factor_size <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Check cylinder variable</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/class.html" class="external-link">class</a></span><span class="op">(</span><span class="va">mtcars_clean</span><span class="op">$</span><span class="va">cyl</span><span class="op">)</span>  <span class="co"># factor (3 unique &lt; 10)</span></span>
@@ -257,7 +257,7 @@ factors:</p>
 form:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Keep vs and am as numeric instead of converting to logical</span></span>
-<span><span class="va">mtcars_partial</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/r_data_types.html">r_data_types</a></span><span class="op">(</span><span class="va">mtcars</span>, skip_vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"vs"</span>, <span class="st">"am"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">mtcars_partial</span> <span class="op">&lt;-</span> <span class="fu">r_data_types</span><span class="op">(</span><span class="va">mtcars</span>, skip_vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"vs"</span>, <span class="st">"am"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Compare</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/class.html" class="external-link">class</a></span><span class="op">(</span><span class="va">mtcars_clean</span><span class="op">$</span><span class="va">vs</span><span class="op">)</span>    <span class="co"># logical (converted)</span></span>
@@ -271,7 +271,7 @@ form:</p>
 <p>By default, binary variables become logical. Use
 <code>binary_factor = TRUE</code> to make them factors instead:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">mtcars_factor</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/r_data_types.html">r_data_types</a></span><span class="op">(</span><span class="va">mtcars</span>, binary_factor <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">mtcars_factor</span> <span class="op">&lt;-</span> <span class="fu">r_data_types</span><span class="op">(</span><span class="va">mtcars</span>, binary_factor <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Compare</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/class.html" class="external-link">class</a></span><span class="op">(</span><span class="va">mtcars_clean</span><span class="op">$</span><span class="va">vs</span><span class="op">)</span>   <span class="co"># logical</span></span>
@@ -289,7 +289,7 @@ are preferred.</p>
 <h3 id="creating-and-extracting-labels">Creating and Extracting Labels<a class="anchor" aria-label="anchor" href="#creating-and-extracting-labels"></a>
 </h3>
 <p>Variable labels are common in clinical datasets, especially those
-imported from SAS. The <code><a href="../reference/label_map.html">label_map()</a></code> function creates a
+imported from SAS. The <code>label_map()</code> function creates a
 lookup table:</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://larmarange.github.io/labelled/" class="external-link">labelled</a></span><span class="op">)</span></span>
@@ -312,7 +312,7 @@ lookup table:</p>
 <span><span class="fu"><a href="https://larmarange.github.io/labelled/reference/var_label.html" class="external-link">var_label</a></span><span class="op">(</span><span class="va">patient_data</span><span class="op">$</span><span class="va">dbp</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="st">"Diastolic Blood Pressure (mmHg)"</span></span>
 <span></span>
 <span><span class="co"># Extract labels into a lookup table</span></span>
-<span><span class="va">labels</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/label_map.html">label_map</a></span><span class="op">(</span><span class="va">patient_data</span><span class="op">)</span></span>
+<span><span class="va">labels</span> <span class="op">&lt;-</span> <span class="fu">label_map</span><span class="op">(</span><span class="va">patient_data</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">labels</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                   key                           label</span></span>
 <span><span class="co">#&gt; patient_id patient_id              Patient Identifier</span></span>
@@ -350,10 +350,10 @@ plots:</p>
 <div class="section level3">
 <h3 id="labels-persist-through-transformations">Labels Persist Through Transformations<a class="anchor" aria-label="anchor" href="#labels-persist-through-transformations"></a>
 </h3>
-<p>Labels are preserved when using <code><a href="../reference/r_data_types.html">r_data_types()</a></code>:</p>
+<p>Labels are preserved when using <code>r_data_types()</code>:</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Convert types</span></span>
-<span><span class="va">patient_clean</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/r_data_types.html">r_data_types</a></span><span class="op">(</span><span class="va">patient_data</span>, skip_vars <span class="op">=</span> <span class="st">"patient_id"</span><span class="op">)</span></span>
+<span><span class="va">patient_clean</span> <span class="op">&lt;-</span> <span class="fu">r_data_types</span><span class="op">(</span><span class="va">patient_data</span>, skip_vars <span class="op">=</span> <span class="st">"patient_id"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Labels are preserved</span></span>
 <span><span class="fu"><a href="https://larmarange.github.io/labelled/reference/var_label.html" class="external-link">var_label</a></span><span class="op">(</span><span class="va">patient_clean</span><span class="op">$</span><span class="va">age</span><span class="op">)</span></span>
@@ -362,7 +362,7 @@ plots:</p>
 <span><span class="co">#&gt; [1] "Biological Sex"</span></span>
 <span></span>
 <span><span class="co"># Extract labels from converted data</span></span>
-<span><span class="va">labels_clean</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/label_map.html">label_map</a></span><span class="op">(</span><span class="va">patient_clean</span><span class="op">)</span></span>
+<span><span class="va">labels_clean</span> <span class="op">&lt;-</span> <span class="fu">label_map</span><span class="op">(</span><span class="va">patient_clean</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/identical.html" class="external-link">identical</a></span><span class="op">(</span><span class="va">labels</span>, <span class="va">labels_clean</span><span class="op">)</span>  <span class="co"># TRUE</span></span>
 <span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
 </div>
@@ -399,7 +399,7 @@ data:</p>
 <span><span class="fu"><a href="https://larmarange.github.io/labelled/reference/var_label.html" class="external-link">var_label</a></span><span class="op">(</span><span class="va">clinical</span><span class="op">$</span><span class="va">adverse_event</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="st">"Most Severe Adverse Event"</span></span>
 <span></span>
 <span><span class="co"># Step 3: Clean and convert types</span></span>
-<span><span class="va">clinical_clean</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/r_data_types.html">r_data_types</a></span><span class="op">(</span></span>
+<span><span class="va">clinical_clean</span> <span class="op">&lt;-</span> <span class="fu">r_data_types</span><span class="op">(</span></span>
 <span>  <span class="va">clinical</span>,</span>
 <span>  factor_size <span class="op">=</span> <span class="fl">5</span>,      <span class="co"># Only convert if &lt; 5 unique values</span></span>
 <span>  skip_vars <span class="op">=</span> <span class="st">"id"</span>      <span class="co"># Keep ID as integer</span></span>
@@ -426,7 +426,7 @@ data:</p>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Most Severe Adverse Event"</span></span>
 <span></span>
 <span><span class="co"># Step 5: Extract labels for reporting</span></span>
-<span><span class="va">label_lookup</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/label_map.html">label_map</a></span><span class="op">(</span><span class="va">clinical_clean</span><span class="op">)</span></span>
+<span><span class="va">label_lookup</span> <span class="op">&lt;-</span> <span class="fu">label_map</span><span class="op">(</span><span class="va">clinical_clean</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Step 6: Use in analysis</span></span>
 <span><span class="co"># Count by treatment</span></span>
@@ -460,7 +460,7 @@ data:</p>
 <span>  stringsAsFactors <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">clean</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/r_data_types.html">r_data_types</a></span><span class="op">(</span><span class="va">messy</span><span class="op">)</span></span>
+<span><span class="va">clean</span> <span class="op">&lt;-</span> <span class="fu">r_data_types</span><span class="op">(</span><span class="va">messy</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Character NAs converted to true NA</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">clean</span><span class="op">$</span><span class="va">var1</span><span class="op">)</span><span class="op">)</span>  <span class="co"># 3 NAs</span></span>
@@ -493,7 +493,7 @@ data:</p>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Convert with specific settings</span></span>
-<span><span class="va">labs_clean</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/r_data_types.html">r_data_types</a></span><span class="op">(</span></span>
+<span><span class="va">labs_clean</span> <span class="op">&lt;-</span> <span class="fu">r_data_types</span><span class="op">(</span></span>
 <span>  <span class="va">labs</span>,</span>
 <span>  skip_vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"patient"</span>, <span class="st">"value"</span><span class="op">)</span>,  <span class="co"># Preserve ID and numeric values</span></span>
 <span>  factor_size <span class="op">=</span> <span class="fl">4</span>                      <span class="co"># Conservative factor conversion</span></span>
@@ -550,13 +550,13 @@ etc.)</p>
 </h3>
 <p><strong>Exploratory Analysis:</strong></p>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">data_clean</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/r_data_types.html">r_data_types</a></span><span class="op">(</span><span class="va">data</span>, factor_size <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">data_clean</span> <span class="op">&lt;-</span> <span class="fu">r_data_types</span><span class="op">(</span><span class="va">data</span>, factor_size <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span></code></pre></div>
 <p><strong>Modeling/Regression:</strong></p>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">data_clean</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/r_data_types.html">r_data_types</a></span><span class="op">(</span><span class="va">data</span>, factor_size <span class="op">=</span> <span class="fl">5</span>, binary_factor <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">data_clean</span> <span class="op">&lt;-</span> <span class="fu">r_data_types</span><span class="op">(</span><span class="va">data</span>, factor_size <span class="op">=</span> <span class="fl">5</span>, binary_factor <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
 <p><strong>Descriptive Statistics/Tables:</strong></p>
 <div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">data_clean</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/r_data_types.html">r_data_types</a></span><span class="op">(</span><span class="va">data</span>, factor_size <span class="op">=</span> <span class="fl">15</span>, binary_factor <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">data_clean</span> <span class="op">&lt;-</span> <span class="fu">r_data_types</span><span class="op">(</span><span class="va">data</span>, factor_size <span class="op">=</span> <span class="fl">15</span>, binary_factor <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="checking-results">Checking Results<a class="anchor" aria-label="anchor" href="#checking-results"></a>
@@ -582,20 +582,20 @@ etc.)</p>
 for clinical research:</p>
 <ul>
 <li>
-<strong><code><a href="../reference/r_data_types.html">r_data_types()</a></code></strong>: Automatic, intelligent
+<strong><code>r_data_types()</code></strong>: Automatic, intelligent
 type conversion</li>
 <li>
-<strong><code><a href="../reference/label_map.html">label_map()</a></code></strong>: Easy extraction of
+<strong><code>label_map()</code></strong>: Easy extraction of
 variable labels</li>
 <li>
-<strong><code><a href="../reference/sample_data.html">sample_data()</a></code></strong>: Generate test data</li>
+<strong><code>sample_data()</code></strong>: Generate test data</li>
 </ul>
 <p>Key features: - Preserves variable labels through transformations -
 Handles multiple NA representations - Flexible control over factor
 conversion - Works with data.frames, tibbles, and data.tables</p>
 <p>For more information: - Package documentation:
-<code><a href="../reference/r_data_types.html">?r_data_types</a></code>, <code><a href="../reference/label_map.html">?label_map</a></code> - GitHub: <a href="https://github.com/ehrlinger/hvtiRutilities" class="external-link uri">https://github.com/ehrlinger/hvtiRutilities</a> - Issues: <a href="https://github.com/ehrlinger/hvtiRutilities/issues" class="external-link uri">https://github.com/ehrlinger/hvtiRutilities/issues</a> -
-Release notes: Run <code><a href="../reference/hvtiRutilities.news.html">hvtiRutilities.news()</a></code> in R</p>
+<code>?r_data_types</code>, <code>?label_map</code> - GitHub: <a href="https://github.com/ehrlinger/hvtiRutilities" class="external-link uri">https://github.com/ehrlinger/hvtiRutilities</a> - Issues: <a href="https://github.com/ehrlinger/hvtiRutilities/issues" class="external-link uri">https://github.com/ehrlinger/hvtiRutilities/issues</a> -
+Release notes: Run <code>hvtiRutilities.news()</code> in R</p>
 </div>
 <div class="section level2">
 <h2 id="session-information">Session Information<a class="anchor" aria-label="anchor" href="#session-information"></a>
@@ -623,7 +623,7 @@ Release notes: Run <code><a href="../reference/hvtiRutilities.news.html">hvtiRut
 <span><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; other attached packages:</span></span>
-<span><span class="co">#&gt; [1] labelled_2.16.0      hvtiRutilities_0.2.0</span></span>
+<span><span class="co">#&gt; [1] labelled_2.16.0      hvtiRutilities_0.3.0</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
 <span><span class="co">#&gt;  [1] vctrs_0.7.1       cli_3.6.5         knitr_1.51        rlang_1.1.7      </span></span>

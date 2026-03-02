@@ -10,12 +10,11 @@ from SAS.
 
 ### Main Functions
 
-- **[`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)**:
-  Automatically infer and convert data types based on content
-- **[`label_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)**:
-  Extract variable labels from labeled datasets into a lookup table
-- **[`sample_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/sample_data.md)**:
-  Generate sample datasets for testing and examples
+- **`r_data_types()`**: Automatically infer and convert data types based
+  on content
+- **`label_map()`**: Extract variable labels from labeled datasets into
+  a lookup table
+- **`sample_data()`**: Generate sample datasets for testing and examples
 
 ### Installation
 
@@ -28,7 +27,7 @@ pak::pak("ehrlinger/hvtiRutilities")
 ``` r
 library(hvtiRutilities)
 #> 
-#>  hvtiRutilities 0.2.0 
+#>  hvtiRutilities 0.3.0 
 #>  
 #>  Type hvtiRutilities.news() to see new features, changes, and bug fixes. 
 #> 
@@ -38,9 +37,8 @@ library(hvtiRutilities)
 
 ### Automatic Type Conversion with `r_data_types()`
 
-The
-[`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
-function intelligently converts column types based on their content:
+The `r_data_types()` function intelligently converts column types based
+on their content:
 
 ``` r
 # Generate sample data with various types
@@ -199,9 +197,7 @@ preferred.
 ### Creating and Extracting Labels
 
 Variable labels are common in clinical datasets, especially those
-imported from SAS. The
-[`label_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)
-function creates a lookup table:
+imported from SAS. The `label_map()` function creates a lookup table:
 
 ``` r
 library(labelled)
@@ -262,8 +258,7 @@ print(summary_stats)
 
 ### Labels Persist Through Transformations
 
-Labels are preserved when using
-[`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md):
+Labels are preserved when using `r_data_types()`:
 
 ``` r
 # Convert types
@@ -499,25 +494,18 @@ table(clean_data$categorical_var)
 The `hvtiRutilities` package streamlines data preparation for clinical
 research:
 
-- **[`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)**:
-  Automatic, intelligent type conversion
-- **[`label_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)**:
-  Easy extraction of variable labels
-- **[`sample_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/sample_data.md)**:
-  Generate test data
+- **`r_data_types()`**: Automatic, intelligent type conversion
+- **`label_map()`**: Easy extraction of variable labels
+- **`sample_data()`**: Generate test data
 
 Key features: - Preserves variable labels through transformations -
 Handles multiple NA representations - Flexible control over factor
 conversion - Works with data.frames, tibbles, and data.tables
 
-For more information: - Package documentation:
-[`?r_data_types`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md),
-[`?label_map`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md) -
-GitHub: <https://github.com/ehrlinger/hvtiRutilities> - Issues:
-<https://github.com/ehrlinger/hvtiRutilities/issues> - Release notes:
-Run
-[`hvtiRutilities.news()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvtiRutilities.news.md)
-in R
+For more information: - Package documentation: `?r_data_types`,
+`?label_map` - GitHub: <https://github.com/ehrlinger/hvtiRutilities> -
+Issues: <https://github.com/ehrlinger/hvtiRutilities/issues> - Release
+notes: Run `hvtiRutilities.news()` in R
 
 ## Session Information
 
@@ -544,7 +532,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] labelled_2.16.0      hvtiRutilities_0.2.0
+#> [1] labelled_2.16.0      hvtiRutilities_0.3.0
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] vctrs_0.7.1       cli_3.6.5         knitr_1.51        rlang_1.1.7      

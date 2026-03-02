@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -83,7 +83,7 @@ Ehrlinger</h4>
 <div class="section level2">
 <h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
 </h2>
-<p>The <code><a href="../reference/generate_survival_data.html">generate_survival_data()</a></code> function creates a
+<p>The <code>generate_survival_data()</code> function creates a
 realistic synthetic cardiac surgery cohort suitable for testing and
 demonstrating survival analysis workflows. Survival times are drawn from
 a Weibull distribution with a linear predictor built from clinical
@@ -92,7 +92,7 @@ censoring is applied at up to 15 years.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/ehrlinger/hvtiRutilities" class="external-link">hvtiRutilities</a></span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;  hvtiRutilities 0.2.0 </span></span>
+<span><span class="co">#&gt;  hvtiRutilities 0.3.0 </span></span>
 <span><span class="co">#&gt;  </span></span>
 <span><span class="co">#&gt;  Type hvtiRutilities.news() to see new features, changes, and bug fixes. </span></span>
 <span><span class="co">#&gt; </span></span></code></pre></div>
@@ -102,7 +102,7 @@ censoring is applied at up to 15 years.</p>
 </h2>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
-<span><span class="va">dta</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/generate_survival_data.html">generate_survival_data</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">500</span>, seed <span class="op">=</span> <span class="fl">1024</span><span class="op">)</span></span>
+<span><span class="va">dta</span> <span class="op">&lt;-</span> <span class="fu">generate_survival_data</span><span class="op">(</span>n <span class="op">=</span> <span class="fl">500</span>, seed <span class="op">=</span> <span class="fl">1024</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">dta</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 500  22</span></span>
@@ -226,11 +226,11 @@ cardiac function, and surgical variables.</p>
 <code>label_map()</code><a class="anchor" aria-label="anchor" href="#integration-with-r_data_types-and-label_map"></a>
 </h2>
 <p>The dataset arrives with variable labels attached and several columns
-that benefit from type conversion. The <code><a href="../reference/r_data_types.html">r_data_types()</a></code>
+that benefit from type conversion. The <code>r_data_types()</code>
 function handles these automatically.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Convert types: keep IDs and continuous outcomes as-is</span></span>
-<span><span class="va">model_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/r_data_types.html">r_data_types</a></span><span class="op">(</span></span>
+<span><span class="va">model_data</span> <span class="op">&lt;-</span> <span class="fu">r_data_types</span><span class="op">(</span></span>
 <span>  <span class="va">dta</span>,</span>
 <span>  factor_size <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>  skip_vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ccfid"</span>, <span class="st">"iv_dead"</span>, <span class="st">"iv_reop"</span><span class="op">)</span></span>
@@ -269,7 +269,7 @@ function handles these automatically.</p>
 <h3 id="extracting-variable-labels">Extracting Variable Labels<a class="anchor" aria-label="anchor" href="#extracting-variable-labels"></a>
 </h3>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">lmap</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/label_map.html">label_map</a></span><span class="op">(</span><span class="va">model_data</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">lmap</span> <span class="op">&lt;-</span> <span class="fu">label_map</span><span class="op">(</span><span class="va">model_data</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">lmap</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                       key                                 label</span></span>
 <span><span class="co">#&gt; ccfid               ccfid                            Patient ID</span></span>
@@ -344,14 +344,14 @@ descriptive names.</p>
 <p>The <code>seed</code> argument ensures reproducible datasets for
 testing:</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dta_a</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/generate_survival_data.html">generate_survival_data</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">100</span>, seed <span class="op">=</span> <span class="fl">99</span><span class="op">)</span></span>
-<span><span class="va">dta_b</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/generate_survival_data.html">generate_survival_data</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">100</span>, seed <span class="op">=</span> <span class="fl">99</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">dta_a</span> <span class="op">&lt;-</span> <span class="fu">generate_survival_data</span><span class="op">(</span>n <span class="op">=</span> <span class="fl">100</span>, seed <span class="op">=</span> <span class="fl">99</span><span class="op">)</span></span>
+<span><span class="va">dta_b</span> <span class="op">&lt;-</span> <span class="fu">generate_survival_data</span><span class="op">(</span>n <span class="op">=</span> <span class="fl">100</span>, seed <span class="op">=</span> <span class="fl">99</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/identical.html" class="external-link">identical</a></span><span class="op">(</span><span class="va">dta_a</span>, <span class="va">dta_b</span><span class="op">)</span>  <span class="co"># TRUE</span></span>
 <span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
 <p>Different seeds produce different datasets:</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dta_c</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/generate_survival_data.html">generate_survival_data</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">100</span>, seed <span class="op">=</span> <span class="fl">7</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">dta_c</span> <span class="op">&lt;-</span> <span class="fu">generate_survival_data</span><span class="op">(</span>n <span class="op">=</span> <span class="fl">100</span>, seed <span class="op">=</span> <span class="fl">7</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/identical.html" class="external-link">identical</a></span><span class="op">(</span><span class="va">dta_a</span>, <span class="va">dta_c</span><span class="op">)</span>  <span class="co"># FALSE</span></span>
 <span><span class="co">#&gt; [1] FALSE</span></span></code></pre></div>
 </div>
@@ -381,7 +381,7 @@ testing:</p>
 <span><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; other attached packages:</span></span>
-<span><span class="co">#&gt; [1] hvtiRutilities_0.2.0</span></span>
+<span><span class="co">#&gt; [1] hvtiRutilities_0.3.0</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
 <span><span class="co">#&gt;  [1] vctrs_0.7.1       cli_3.6.5         knitr_1.51        rlang_1.1.7      </span></span>

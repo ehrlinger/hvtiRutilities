@@ -10,25 +10,23 @@ working with SAS datasets in R.
 
 ### Main Functions
 
-- **[`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)**:
-  Automatically infer and convert data types in a dataset
+- **`r_data_types()`**: Automatically infer and convert data types in a
+  dataset
   - Converts character columns to factors
   - Detects binary numeric variables (0/1) and converts to logical
   - Converts numeric variables with few unique values to factors
   - Handles various NA representations (“NA”, “na”, etc.)
   - Preserves variable labels from SAS/labelled data
-- **[`label_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)**:
-  Extract variable labels from labeled datasets
+- **`label_map()`**: Extract variable labels from labeled datasets
   - Creates a lookup table mapping variable names to their labels
   - Useful for working with SAS datasets that have variable labels
   - Returns a data frame with `key` (variable name) and `label` columns
-- **[`sample_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/sample_data.md)**:
-  Generate sample datasets for testing
+- **`sample_data()`**: Generate sample datasets for testing
   - Creates datasets with various column types for testing package
     functions
   - Useful for examples and unit tests
-- **[`generate_survival_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/generate_survival_data.md)**:
-  Simulate a cardiac surgery survival cohort
+- **`generate_survival_data()`**: Simulate a cardiac surgery survival
+  cohort
   - Generates realistic patient-level data including demographics,
     pre-operative labs, cardiac function, and surgical variables
   - Survival times from a Weibull model with clinically-motivated linear
@@ -36,7 +34,7 @@ working with SAS datasets in R.
   - Includes reoperation outcome and administrative censoring up to 15
     years
   - Variable labels attached for compatibility with `haven` and
-    [`label_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)
+    `label_map()`
 
 ## Installation
 
@@ -153,18 +151,14 @@ lmap <- label_map(model_data)
 
 ## Getting Help
 
-- Package documentation:
-  [`?r_data_types`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md),
-  [`?label_map`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md),
-  [`?generate_survival_data`](https://ehrlinger.github.io/hvtiRutilities/reference/generate_survival_data.md)
+- Package documentation: `?r_data_types`, `?label_map`,
+  `?generate_survival_data`
 - Vignettes:
   [`vignette("hvtiRutilities")`](https://ehrlinger.github.io/hvtiRutilities/articles/hvtiRutilities.md),
   [`vignette("survival-data")`](https://ehrlinger.github.io/hvtiRutilities/articles/survival-data.md)
 - For bug reports and feature requests: [GitHub
   Issues](https://github.com/ehrlinger/hvtiRutilities/issues)
-- For package news and changes: Run
-  [`hvtiRutilities.news()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvtiRutilities.news.md)
-  in R
+- For package news and changes: Run `hvtiRutilities.news()` in R
 
 ## License
 
