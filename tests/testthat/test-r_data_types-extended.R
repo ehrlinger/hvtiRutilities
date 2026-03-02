@@ -55,15 +55,24 @@ test_that("r_data_types preserves Date columns", {
   expect_s3_class(result$date, "Date")
 })
 
-test_that("r_data_types preserves POSIXct columns with skip_vars", {
+test_that("r_data_types preserves POSIXct columns without skip_vars", {
   dta <- data.frame(
     timestamp = as.POSIXct(c("2023-01-01 10:00:00", "2023-01-01 11:00:00")),
     value = 1:2
   )
-  # Skip timestamp to preserve it (otherwise it might be converted)
-  result <- r_data_types(dta, skip_vars = "timestamp")
+  result <- r_data_types(dta)
 
   expect_s3_class(result$timestamp, "POSIXct")
+})
+
+test_that("r_data_types preserves Date columns with exactly 2 unique values", {
+  dta <- data.frame(
+    date = as.Date(c("2023-01-01", "2023-01-01", "2023-01-02")),
+    value = 1:3
+  )
+  result <- r_data_types(dta)
+
+  expect_s3_class(result$date, "Date")
 })
 
 test_that("r_data_types preserves ordered factors", {
@@ -244,7 +253,7 @@ test_that("errors when skip_vars is not character", {
 
   expect_error(
     r_data_types(dta, skip_vars = 1),
-    "not found in dataset|'x' must be a vector"
+    "character vector"
   )
 })
 

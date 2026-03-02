@@ -1,0 +1,165 @@
+---
+title: "Simulating Cardiac Surgery Survival Data"
+author: "John Ehrlinger"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Simulating Cardiac Surgery Survival Data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 5
+)
+```
+
+## Overview
+
+The `generate_survival_data()` function creates a realistic synthetic cardiac surgery cohort suitable for testing and demonstrating survival analysis workflows. Survival times are drawn from a Weibull distribution with a linear predictor built from clinical variables (LVEF, age, hemoglobin, NYHA class, eGFR), and administrative censoring is applied at up to 15 years.
+
+```{r}
+library(hvtiRutilities)
+```
+
+## Generating the Dataset
+
+```{r}
+set.seed(42)
+dta <- generate_survival_data(n = 500, seed = 1024)
+
+dim(dta)
+names(dta)
+```
+
+The dataset contains 22 columns covering patient identifiers, survival outcomes, reoperation, demographics, pre-operative labs, cardiac function, and surgical variables.
+
+## Data Structure
+
+```{r}
+str(dta)
+```
+
+Key columns:
+
+| Column | Description |
+|---|---|
+| `ccfid` | Patient identifier |
+| `iv_dead` | Observed follow-up time (years) |
+| `dead` | Event indicator (1 = death, 0 = censored) |
+| `reop` | Reoperation indicator |
+| `iv_reop` | Time to reoperation (years; `NA` if no reoperation) |
+
+## Outcome Summary
+
+```{r}
+# Event rates
+cat("Death rate:       ", round(mean(dta$dead), 3), "\n")
+cat("Reoperation rate: ", round(mean(dta$reop), 3), "\n")
+
+# Follow-up distribution
+summary(dta$iv_dead)
+```
+
+```{r}
+hist(
+  dta$iv_dead,
+  breaks = 30,
+  main = "Distribution of Follow-up Time",
+  xlab = "Follow-up (years)",
+  col = "steelblue",
+  border = "white"
+)
+```
+
+## Integration with `r_data_types()` and `label_map()`
+
+The dataset arrives with variable labels attached and several columns that benefit from type conversion. The `r_data_types()` function handles these automatically.
+
+```{r}
+# Convert types: keep IDs and continuous outcomes as-is
+model_data <- r_data_types(
+  dta,
+  factor_size = 5,
+  skip_vars = c("ccfid", "iv_dead", "iv_reop")
+)
+
+str(model_data[, c("dead", "reop", "sex", "nyha_class", "diabetes", "hypertension")])
+```
+
+After conversion:
+
+- `dead` and `reop` (2 unique values) → `logical`
+- `sex`, `diabetes`, `hypertension` (character) → `factor`
+- `nyha_class` was already an ordered `factor`
+
+### Extracting Variable Labels
+
+```{r}
+lmap <- label_map(model_data)
+print(lmap)
+```
+
+The label map is useful for annotating tables and plots with descriptive names.
+
+## Preparing Data for Survival Analysis
+
+```{r}
+# Drop admin columns to match a typical model_data setup
+model_data <- model_data[, !names(model_data) %in% c("ccfid", "reop", "iv_reop")]
+
+# Outcome variable breakdown
+table(model_data$dead)
+```
+
+```{r}
+# Kaplan-Meier style summary by NYHA class (base R)
+nyha_levels <- levels(model_data$nyha_class)
+
+median_fu <- sapply(nyha_levels, function(lvl) {
+  sub <- model_data[model_data$nyha_class == lvl, ]
+  median(sub$iv_dead)
+})
+
+event_rate <- sapply(nyha_levels, function(lvl) {
+  sub <- model_data[model_data$nyha_class == lvl, ]
+  mean(sub$dead)
+})
+
+nyha_summary <- data.frame(
+  nyha_class   = nyha_levels,
+  n            = table(model_data$nyha_class),
+  median_fu_yr = round(median_fu, 2),
+  death_rate   = round(event_rate, 3)
+)
+
+print(nyha_summary)
+```
+
+## Reproducibility
+
+The `seed` argument ensures reproducible datasets for testing:
+
+```{r}
+dta_a <- generate_survival_data(n = 100, seed = 99)
+dta_b <- generate_survival_data(n = 100, seed = 99)
+
+identical(dta_a, dta_b)  # TRUE
+```
+
+Different seeds produce different datasets:
+
+```{r}
+dta_c <- generate_survival_data(n = 100, seed = 7)
+identical(dta_a, dta_c)  # FALSE
+```
+
+## Session Information
+
+```{r}
+sessionInfo()
+```
