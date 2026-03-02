@@ -16,10 +16,11 @@
 #' applied uniformly between 1 and 15 years. Reoperation probability is
 #' modelled via a logistic function of bypass time and NYHA class.
 #'
-#' The returned data frame includes the three columns excluded from
+#' The returned data frame includes the five columns excluded from
 #' \code{model_data} in the template (\code{ccfid}, \code{reop},
-#' \code{iv_reop}), plus the survival outcome (\code{iv_dead}, \code{dead})
-#' and 17 clinical predictors spanning demographics, pre-operative labs,
+#' \code{iv_reop}, \code{origin_year}, \code{iv_opyrs}), plus the survival
+#' outcome (\code{iv_dead}, \code{dead}) and 17 clinical predictors spanning
+#' demographics, pre-operative labs,
 #' cardiac function, and surgical variables.
 #'
 #' The global RNG state is saved and restored on exit, so calling this
@@ -29,9 +30,13 @@
 #' @param seed Integer. Random seed passed to \code{\link{set.seed}} for
 #'   reproducibility. Default \code{1024}.
 #'
-#' @return A \code{data.frame} with \code{n} rows and 22 columns:
+#' @return A \code{data.frame} with \code{n} rows and 24 columns:
 #' \describe{
 #'   \item{ccfid}{Character. Patient identifier (\code{"PT00001"}, …).}
+#'   \item{origin_year}{Integer. Calendar year corresponding to \code{iv_opyrs = 0}
+#'     (randomly sampled between 1998 and 2018).}
+#'   \item{iv_opyrs}{Numeric. Observation interval length in years measured
+#'     from \code{origin_year}; always greater than or equal to \code{iv_dead}.}
 #'   \item{iv_dead}{Numeric. Observed follow-up time in years (min of true
 #'     survival time and administrative censoring time).}
 #'   \item{dead}{Integer. Event indicator: \code{1} = death, \code{0} =
@@ -84,7 +89,8 @@
 #' summary(dta$iv_dead)     # follow-up distribution
 #'
 #' # Drop admin columns to match model_data in the Quarto template
-#' model_data <- dta[, !names(dta) %in% c("ccfid", "reop", "iv_reop")]
+#' model_data <- dta[, !names(dta) %in% c("ccfid", "reop", "iv_reop",
+#'   "origin_year", "iv_opyrs")]
 generate_survival_data <- function(n = 500, seed = 1024) {
   # Save and restore global RNG state to avoid side effects on the session
   old_rng_state <- if (exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) {
@@ -179,6 +185,12 @@ generate_survival_data <- function(n = 500, seed = 1024) {
   censor_time <- runif(n, min = 1, max = 15)
   dead        <- as.integer(iv_dead <= censor_time)
   iv_dead     <- pmin(iv_dead, censor_time)
+  iv_dead     <- round(iv_dead, 2)
+  iv_opyrs    <- round(censor_time, 2)
+  iv_opyrs    <- pmax(iv_opyrs, iv_dead)
+
+  # Calendar origin year anchoring iv_opyrs = 0
+  origin_year <- as.integer(sample(1998:2018, n, replace = TRUE))
 
   ## ---- Reoperation ----
   reop_prob   <- plogis(-2.5 + 0.01 * bypass_time + 0.02 * (as.integer(nyha_class) - 1))
@@ -190,6 +202,8 @@ generate_survival_data <- function(n = 500, seed = 1024) {
   ## ---- Assemble data frame ----
   dta <- data.frame(
     ccfid,
+    origin_year,
+    iv_opyrs,
     iv_dead, dead,
     reop, iv_reop,
     age, sex, bmi,
@@ -203,6 +217,8 @@ generate_survival_data <- function(n = 500, seed = 1024) {
   ## ---- Variable labels ----
   labelled::var_label(dta) <- list(
     ccfid        = "Patient ID",
+    origin_year  = "Calendar year for iv_opyrs = 0",
+    iv_opyrs     = "Observation interval (years) since origin_year",
     iv_dead      = "Follow-up time to death (years)",
     dead         = "Death indicator (1=dead, 0=censored)",
     reop         = "Reoperation (1=yes, 0=no)",
