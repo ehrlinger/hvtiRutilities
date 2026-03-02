@@ -2,6 +2,8 @@
 
 ## All functions
 
+- [`generate_survival_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/generate_survival_data.md)
+  : Generate Synthetic Cardiac Surgery Survival Data
 - [`hvtiRutilities-package`](https://ehrlinger.github.io/hvtiRutilities/reference/hvtiRutilities-package.md)
   : hvtiRutilities: Utilities to work with SAS data in R.
 - [`hvtiRutilities.news()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvtiRutilities.news.md)
