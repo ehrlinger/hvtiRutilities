@@ -72,7 +72,10 @@
 #' \code{\link[survival]{Surv}},
 #' \code{\link[haven]{read_sas}}
 #'
-#' @export generate_survival_data
+#' @importFrom labelled var_label
+#' @importFrom stats rnorm rweibull runif rbinom plogis
+#' 
+#' @export
 #'
 #' @examples
 #' dta <- generate_survival_data(n = 200, seed = 42)
