@@ -2,12 +2,13 @@
 
 ## Overview
 
-The `generate_survival_data()` function creates a realistic synthetic
-cardiac surgery cohort suitable for testing and demonstrating survival
-analysis workflows. Survival times are drawn from a Weibull distribution
-with a linear predictor built from clinical variables (LVEF, age,
-hemoglobin, NYHA class, eGFR), and administrative censoring is applied
-at up to 15 years.
+The
+[`generate_survival_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/generate_survival_data.md)
+function creates a realistic synthetic cardiac surgery cohort suitable
+for testing and demonstrating survival analysis workflows. Survival
+times are drawn from a Weibull distribution with a linear predictor
+built from clinical variables (LVEF, age, hemoglobin, NYHA class, eGFR),
+and administrative censoring is applied at up to 15 years.
 
 ``` r
 library(hvtiRutilities)
@@ -25,33 +26,37 @@ set.seed(42)
 dta <- generate_survival_data(n = 500, seed = 1024)
 
 dim(dta)
-#> [1] 500  22
+#> [1] 500  24
 names(dta)
-#>  [1] "ccfid"        "iv_dead"      "dead"         "reop"         "iv_reop"     
-#>  [6] "age"          "sex"          "bmi"          "hgb_bs"       "wbc_bs"      
-#> [11] "plate_bs"     "gfr_bs"       "lvefvs_b"     "lvmass_b"     "lvmsi_b"     
-#> [16] "stvoli_b"     "stvold_b"     "bypass_time"  "xclamp_time"  "nyha_class"  
-#> [21] "diabetes"     "hypertension"
+#>  [1] "ccfid"        "origin_year"  "iv_opyrs"     "iv_dead"      "dead"        
+#>  [6] "reop"         "iv_reop"      "age"          "sex"          "bmi"         
+#> [11] "hgb_bs"       "wbc_bs"       "plate_bs"     "gfr_bs"       "lvefvs_b"    
+#> [16] "lvmass_b"     "lvmsi_b"      "stvoli_b"     "stvold_b"     "bypass_time" 
+#> [21] "xclamp_time"  "nyha_class"   "diabetes"     "hypertension"
 ```
 
-The dataset contains 22 columns covering patient identifiers, survival
-outcomes, reoperation, demographics, pre-operative labs, cardiac
-function, and surgical variables.
+The dataset contains 24 columns covering patient identifiers, calendar
+anchors, survival outcomes, reoperation, demographics, pre-operative
+labs, cardiac function, and surgical variables.
 
 ## Data Structure
 
 ``` r
 str(dta)
-#> 'data.frame':    500 obs. of  22 variables:
+#> 'data.frame':    500 obs. of  24 variables:
 #>  $ ccfid       : chr  "PT00001" "PT00002" "PT00003" "PT00004" ...
 #>   ..- attr(*, "label")= chr "Patient ID"
+#>  $ origin_year : int  2002 2001 2018 1998 2007 2003 2011 2010 2003 2014 ...
+#>   ..- attr(*, "label")= chr "Calendar year for iv_opyrs = 0"
+#>  $ iv_opyrs    : num  5.13 4.03 10.51 12.84 3.17 ...
+#>   ..- attr(*, "label")= chr "Observation interval (years) since origin_year"
 #>  $ iv_dead     : num  5.13 4.03 10.51 12.84 3.17 ...
 #>   ..- attr(*, "label")= chr "Follow-up time to death (years)"
 #>  $ dead        : int  0 0 0 0 0 0 1 0 1 0 ...
 #>   ..- attr(*, "label")= chr "Death indicator (1=dead, 0=censored)"
-#>  $ reop        : int  1 0 1 0 0 0 0 0 0 0 ...
+#>  $ reop        : int  0 0 1 0 1 0 0 0 0 0 ...
 #>   ..- attr(*, "label")= chr "Reoperation (1=yes, 0=no)"
-#>  $ iv_reop     : num  0.37 NA 1.08 NA NA NA NA NA NA NA ...
+#>  $ iv_reop     : num  NA NA 4.37 NA 1.39 NA NA NA NA NA ...
 #>   ..- attr(*, "label")= chr "Follow-up time to reoperation (years)"
 #>  $ age         : num  33.3 39.2 14.5 30.3 48.7 13.4 39.3 76.1 60.4 52.1 ...
 #>   ..- attr(*, "label")= chr "Age at surgery (years)"
@@ -91,13 +96,15 @@ str(dta)
 
 Key columns:
 
-| Column    | Description                                         |
-|-----------|-----------------------------------------------------|
-| `ccfid`   | Patient identifier                                  |
-| `iv_dead` | Observed follow-up time (years)                     |
-| `dead`    | Event indicator (1 = death, 0 = censored)           |
-| `reop`    | Reoperation indicator                               |
-| `iv_reop` | Time to reoperation (years; `NA` if no reoperation) |
+| Column        | Description                                                   |
+|---------------|---------------------------------------------------------------|
+| `ccfid`       | Patient identifier                                            |
+| `origin_year` | Calendar year corresponding to `iv_opyrs = 0`                 |
+| `iv_opyrs`    | Observation interval length (years) anchored at `origin_year` |
+| `iv_dead`     | Observed follow-up time (years)                               |
+| `dead`        | Event indicator (1 = death, 0 = censored)                     |
+| `reop`        | Reoperation indicator                                         |
+| `iv_reop`     | Time to reoperation (years; `NA` if no reoperation)           |
 
 ## Outcome Summary
 
@@ -106,12 +113,12 @@ Key columns:
 cat("Death rate:       ", round(mean(dta$dead), 3), "\n")
 #> Death rate:        0.54
 cat("Reoperation rate: ", round(mean(dta$reop), 3), "\n")
-#> Reoperation rate:  0.18
+#> Reoperation rate:  0.202
 
 # Follow-up distribution
 summary(dta$iv_dead)
 #>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-#>   0.060   2.783   4.383   5.149   6.915  14.896
+#>   0.060   2.783   4.385   5.149   6.915  14.900
 ```
 
 ``` r
@@ -130,22 +137,23 @@ hist(
 ## Integration with `r_data_types()` and `label_map()`
 
 The dataset arrives with variable labels attached and several columns
-that benefit from type conversion. The `r_data_types()` function handles
-these automatically.
+that benefit from type conversion. The
+[`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
+function handles these automatically.
 
 ``` r
 # Convert types: keep IDs and continuous outcomes as-is
 model_data <- r_data_types(
   dta,
   factor_size = 5,
-  skip_vars = c("ccfid", "iv_dead", "iv_reop")
+  skip_vars = c("ccfid", "iv_dead", "iv_reop", "iv_opyrs")
 )
 
 str(model_data[, c("dead", "reop", "sex", "nyha_class", "diabetes", "hypertension")])
 #> 'data.frame':    500 obs. of  6 variables:
 #>  $ dead        : logi  FALSE FALSE FALSE FALSE FALSE FALSE ...
 #>   ..- attr(*, "label")= chr "Death indicator (1=dead, 0=censored)"
-#>  $ reop        : logi  TRUE FALSE TRUE FALSE FALSE FALSE ...
+#>  $ reop        : logi  FALSE FALSE TRUE FALSE TRUE FALSE ...
 #>   ..- attr(*, "label")= chr "Reoperation (1=yes, 0=no)"
 #>  $ sex         : Factor w/ 2 levels "Female","Male": 1 1 1 1 1 2 2 1 1 1 ...
 #>   ..- attr(*, "label")= chr "Sex"
@@ -168,29 +176,31 @@ After conversion:
 ``` r
 lmap <- label_map(model_data)
 print(lmap)
-#>                       key                                 label
-#> ccfid               ccfid                            Patient ID
-#> iv_dead           iv_dead       Follow-up time to death (years)
-#> dead                 dead  Death indicator (1=dead, 0=censored)
-#> reop                 reop             Reoperation (1=yes, 0=no)
-#> iv_reop           iv_reop Follow-up time to reoperation (years)
-#> age                   age                Age at surgery (years)
-#> sex                   sex                                   Sex
-#> bmi                   bmi               Body mass index (kg/m2)
-#> hgb_bs             hgb_bs            Baseline hemoglobin (g/dL)
-#> wbc_bs             wbc_bs             Baseline WBC count (K/uL)
-#> plate_bs         plate_bs        Baseline platelet count (K/uL)
-#> gfr_bs             gfr_bs         Baseline eGFR (mL/min/1.73m2)
-#> lvefvs_b         lvefvs_b     Baseline LV ejection fraction (%)
-#> lvmass_b         lvmass_b                  Baseline LV mass (g)
-#> lvmsi_b           lvmsi_b         Baseline LV mass index (g/m2)
-#> stvoli_b         stvoli_b  Baseline SV index - systolic (mL/m2)
-#> stvold_b         stvold_b Baseline SV index - diastolic (mL/m2)
-#> bypass_time   bypass_time     Cardiopulmonary bypass time (min)
-#> xclamp_time   xclamp_time         Aortic cross-clamp time (min)
-#> nyha_class     nyha_class                 NYHA functional class
-#> diabetes         diabetes                     Diabetes mellitus
-#> hypertension hypertension                          Hypertension
+#>                       key                                          label
+#> ccfid               ccfid                                     Patient ID
+#> origin_year   origin_year                 Calendar year for iv_opyrs = 0
+#> iv_opyrs         iv_opyrs Observation interval (years) since origin_year
+#> iv_dead           iv_dead                Follow-up time to death (years)
+#> dead                 dead           Death indicator (1=dead, 0=censored)
+#> reop                 reop                      Reoperation (1=yes, 0=no)
+#> iv_reop           iv_reop          Follow-up time to reoperation (years)
+#> age                   age                         Age at surgery (years)
+#> sex                   sex                                            Sex
+#> bmi                   bmi                        Body mass index (kg/m2)
+#> hgb_bs             hgb_bs                     Baseline hemoglobin (g/dL)
+#> wbc_bs             wbc_bs                      Baseline WBC count (K/uL)
+#> plate_bs         plate_bs                 Baseline platelet count (K/uL)
+#> gfr_bs             gfr_bs                  Baseline eGFR (mL/min/1.73m2)
+#> lvefvs_b         lvefvs_b              Baseline LV ejection fraction (%)
+#> lvmass_b         lvmass_b                           Baseline LV mass (g)
+#> lvmsi_b           lvmsi_b                  Baseline LV mass index (g/m2)
+#> stvoli_b         stvoli_b           Baseline SV index - systolic (mL/m2)
+#> stvold_b         stvold_b          Baseline SV index - diastolic (mL/m2)
+#> bypass_time   bypass_time              Cardiopulmonary bypass time (min)
+#> xclamp_time   xclamp_time                  Aortic cross-clamp time (min)
+#> nyha_class     nyha_class                          NYHA functional class
+#> diabetes         diabetes                              Diabetes mellitus
+#> hypertension hypertension                                   Hypertension
 ```
 
 The label map is useful for annotating tables and plots with descriptive
@@ -200,7 +210,8 @@ names.
 
 ``` r
 # Drop admin columns to match a typical model_data setup
-model_data <- model_data[, !names(model_data) %in% c("ccfid", "reop", "iv_reop")]
+model_data <- model_data[, !names(model_data) %in% c("ccfid", "reop", "iv_reop",
+  "origin_year", "iv_opyrs")]
 
 # Outcome variable breakdown
 table(model_data$dead)

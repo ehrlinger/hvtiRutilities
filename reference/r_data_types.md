@@ -61,6 +61,8 @@ The function applies the following transformations in order:
 5.  Optionally converts logical columns to factors if
     `binary_factor = TRUE`
 
+Date, POSIXct, and POSIXlt columns are never altered by type conversion.
+
 ## Examples
 
 ``` r

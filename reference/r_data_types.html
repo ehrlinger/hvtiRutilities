@@ -11,7 +11,7 @@ various NA representations. Preserves variable labels from SAS/labelled data."><
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -101,7 +101,8 @@ instead of logical. Default is FALSE (convert to logical).</p></dd>
 <li><p>Converts remaining character columns to factors</p></li>
 <li><p>Converts numeric columns with 3 to <code>factor_size</code> unique values to factors</p></li>
 <li><p>Optionally converts logical columns to factors if <code>binary_factor = TRUE</code></p></li>
-</ol></div>
+</ol><p>Date, POSIXct, and POSIXlt columns are never altered by type conversion.</p>
+    </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>

@@ -72,9 +72,9 @@
                         <h4 data-toc-skip class="author">John
 Ehrlinger</h4>
             
-            <h4 data-toc-skip class="date">2026-03-02</h4>
+            <h4 data-toc-skip class="date">2026-03-03</h4>
       
-      <small class="dont-index">Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/Prod_0.3.0/vignettes/survival-data.Rmd" class="external-link"><code>vignettes/survival-data.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/vignettes/survival-data.Rmd" class="external-link"><code>vignettes/survival-data.Rmd</code></a></small>
       <div class="d-none name"><code>survival-data.Rmd</code></div>
     </div>
 
@@ -83,7 +83,7 @@ Ehrlinger</h4>
 <div class="section level2">
 <h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
 </h2>
-<p>The <code>generate_survival_data()</code> function creates a
+<p>The <code><a href="../reference/generate_survival_data.html">generate_survival_data()</a></code> function creates a
 realistic synthetic cardiac surgery cohort suitable for testing and
 demonstrating survival analysis workflows. Survival times are drawn from
 a Weibull distribution with a linear predictor built from clinical
@@ -102,35 +102,39 @@ censoring is applied at up to 15 years.</p>
 </h2>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
-<span><span class="va">dta</span> <span class="op">&lt;-</span> <span class="fu">generate_survival_data</span><span class="op">(</span>n <span class="op">=</span> <span class="fl">500</span>, seed <span class="op">=</span> <span class="fl">1024</span><span class="op">)</span></span>
+<span><span class="va">dta</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/generate_survival_data.html">generate_survival_data</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">500</span>, seed <span class="op">=</span> <span class="fl">1024</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">dta</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 500  22</span></span>
+<span><span class="co">#&gt; [1] 500  24</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">dta</span><span class="op">)</span></span>
-<span><span class="co">#&gt;  [1] "ccfid"        "iv_dead"      "dead"         "reop"         "iv_reop"     </span></span>
-<span><span class="co">#&gt;  [6] "age"          "sex"          "bmi"          "hgb_bs"       "wbc_bs"      </span></span>
-<span><span class="co">#&gt; [11] "plate_bs"     "gfr_bs"       "lvefvs_b"     "lvmass_b"     "lvmsi_b"     </span></span>
-<span><span class="co">#&gt; [16] "stvoli_b"     "stvold_b"     "bypass_time"  "xclamp_time"  "nyha_class"  </span></span>
-<span><span class="co">#&gt; [21] "diabetes"     "hypertension"</span></span></code></pre></div>
-<p>The dataset contains 22 columns covering patient identifiers,
-survival outcomes, reoperation, demographics, pre-operative labs,
-cardiac function, and surgical variables.</p>
+<span><span class="co">#&gt;  [1] "ccfid"        "origin_year"  "iv_opyrs"     "iv_dead"      "dead"        </span></span>
+<span><span class="co">#&gt;  [6] "reop"         "iv_reop"      "age"          "sex"          "bmi"         </span></span>
+<span><span class="co">#&gt; [11] "hgb_bs"       "wbc_bs"       "plate_bs"     "gfr_bs"       "lvefvs_b"    </span></span>
+<span><span class="co">#&gt; [16] "lvmass_b"     "lvmsi_b"      "stvoli_b"     "stvold_b"     "bypass_time" </span></span>
+<span><span class="co">#&gt; [21] "xclamp_time"  "nyha_class"   "diabetes"     "hypertension"</span></span></code></pre></div>
+<p>The dataset contains 24 columns covering patient identifiers,
+calendar anchors, survival outcomes, reoperation, demographics,
+pre-operative labs, cardiac function, and surgical variables.</p>
 </div>
 <div class="section level2">
 <h2 id="data-structure">Data Structure<a class="anchor" aria-label="anchor" href="#data-structure"></a>
 </h2>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">dta</span><span class="op">)</span></span>
-<span><span class="co">#&gt; 'data.frame':    500 obs. of  22 variables:</span></span>
+<span><span class="co">#&gt; 'data.frame':    500 obs. of  24 variables:</span></span>
 <span><span class="co">#&gt;  $ ccfid       : chr  "PT00001" "PT00002" "PT00003" "PT00004" ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Patient ID"</span></span>
+<span><span class="co">#&gt;  $ origin_year : int  2002 2001 2018 1998 2007 2003 2011 2010 2003 2014 ...</span></span>
+<span><span class="co">#&gt;   ..- attr(*, "label")= chr "Calendar year for iv_opyrs = 0"</span></span>
+<span><span class="co">#&gt;  $ iv_opyrs    : num  5.13 4.03 10.51 12.84 3.17 ...</span></span>
+<span><span class="co">#&gt;   ..- attr(*, "label")= chr "Observation interval (years) since origin_year"</span></span>
 <span><span class="co">#&gt;  $ iv_dead     : num  5.13 4.03 10.51 12.84 3.17 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Follow-up time to death (years)"</span></span>
 <span><span class="co">#&gt;  $ dead        : int  0 0 0 0 0 0 1 0 1 0 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Death indicator (1=dead, 0=censored)"</span></span>
-<span><span class="co">#&gt;  $ reop        : int  1 0 1 0 0 0 0 0 0 0 ...</span></span>
+<span><span class="co">#&gt;  $ reop        : int  0 0 1 0 1 0 0 0 0 0 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Reoperation (1=yes, 0=no)"</span></span>
-<span><span class="co">#&gt;  $ iv_reop     : num  0.37 NA 1.08 NA NA NA NA NA NA NA ...</span></span>
+<span><span class="co">#&gt;  $ iv_reop     : num  NA NA 4.37 NA 1.39 NA NA NA NA NA ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Follow-up time to reoperation (years)"</span></span>
 <span><span class="co">#&gt;  $ age         : num  33.3 39.2 14.5 30.3 48.7 13.4 39.3 76.1 60.4 52.1 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Age at surgery (years)"</span></span>
@@ -168,6 +172,10 @@ cardiac function, and surgical variables.</p>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Hypertension"</span></span></code></pre></div>
 <p>Key columns:</p>
 <table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
 <thead><tr class="header">
 <th>Column</th>
 <th>Description</th>
@@ -176,6 +184,17 @@ cardiac function, and surgical variables.</p>
 <tr class="odd">
 <td><code>ccfid</code></td>
 <td>Patient identifier</td>
+</tr>
+<tr class="even">
+<td><code>origin_year</code></td>
+<td>Calendar year corresponding to <code>iv_opyrs = 0</code>
+</td>
+</tr>
+<tr class="odd">
+<td><code>iv_opyrs</code></td>
+<td>Observation interval length (years) anchored at
+<code>origin_year</code>
+</td>
 </tr>
 <tr class="even">
 <td><code>iv_dead</code></td>
@@ -204,12 +223,12 @@ cardiac function, and surgical variables.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Death rate:       "</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">dta</span><span class="op">$</span><span class="va">dead</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Death rate:        0.54</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Reoperation rate: "</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">dta</span><span class="op">$</span><span class="va">reop</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Reoperation rate:  0.18</span></span>
+<span><span class="co">#&gt; Reoperation rate:  0.202</span></span>
 <span></span>
 <span><span class="co"># Follow-up distribution</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">dta</span><span class="op">$</span><span class="va">iv_dead</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. </span></span>
-<span><span class="co">#&gt;   0.060   2.783   4.383   5.149   6.915  14.896</span></span></code></pre></div>
+<span><span class="co">#&gt;   0.060   2.783   4.385   5.149   6.915  14.900</span></span></code></pre></div>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/hist.html" class="external-link">hist</a></span><span class="op">(</span></span>
 <span>  <span class="va">dta</span><span class="op">$</span><span class="va">iv_dead</span>,</span>
@@ -226,21 +245,21 @@ cardiac function, and surgical variables.</p>
 <code>label_map()</code><a class="anchor" aria-label="anchor" href="#integration-with-r_data_types-and-label_map"></a>
 </h2>
 <p>The dataset arrives with variable labels attached and several columns
-that benefit from type conversion. The <code>r_data_types()</code>
+that benefit from type conversion. The <code><a href="../reference/r_data_types.html">r_data_types()</a></code>
 function handles these automatically.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Convert types: keep IDs and continuous outcomes as-is</span></span>
-<span><span class="va">model_data</span> <span class="op">&lt;-</span> <span class="fu">r_data_types</span><span class="op">(</span></span>
+<span><span class="va">model_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/r_data_types.html">r_data_types</a></span><span class="op">(</span></span>
 <span>  <span class="va">dta</span>,</span>
 <span>  factor_size <span class="op">=</span> <span class="fl">5</span>,</span>
-<span>  skip_vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ccfid"</span>, <span class="st">"iv_dead"</span>, <span class="st">"iv_reop"</span><span class="op">)</span></span>
+<span>  skip_vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ccfid"</span>, <span class="st">"iv_dead"</span>, <span class="st">"iv_reop"</span>, <span class="st">"iv_opyrs"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">model_data</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"dead"</span>, <span class="st">"reop"</span>, <span class="st">"sex"</span>, <span class="st">"nyha_class"</span>, <span class="st">"diabetes"</span>, <span class="st">"hypertension"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="co">#&gt; 'data.frame':    500 obs. of  6 variables:</span></span>
 <span><span class="co">#&gt;  $ dead        : logi  FALSE FALSE FALSE FALSE FALSE FALSE ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Death indicator (1=dead, 0=censored)"</span></span>
-<span><span class="co">#&gt;  $ reop        : logi  TRUE FALSE TRUE FALSE FALSE FALSE ...</span></span>
+<span><span class="co">#&gt;  $ reop        : logi  FALSE FALSE TRUE FALSE TRUE FALSE ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Reoperation (1=yes, 0=no)"</span></span>
 <span><span class="co">#&gt;  $ sex         : Factor w/ 2 levels "Female","Male": 1 1 1 1 1 2 2 1 1 1 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Sex"</span></span>
@@ -269,31 +288,33 @@ function handles these automatically.</p>
 <h3 id="extracting-variable-labels">Extracting Variable Labels<a class="anchor" aria-label="anchor" href="#extracting-variable-labels"></a>
 </h3>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">lmap</span> <span class="op">&lt;-</span> <span class="fu">label_map</span><span class="op">(</span><span class="va">model_data</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">lmap</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/label_map.html">label_map</a></span><span class="op">(</span><span class="va">model_data</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">lmap</span><span class="op">)</span></span>
-<span><span class="co">#&gt;                       key                                 label</span></span>
-<span><span class="co">#&gt; ccfid               ccfid                            Patient ID</span></span>
-<span><span class="co">#&gt; iv_dead           iv_dead       Follow-up time to death (years)</span></span>
-<span><span class="co">#&gt; dead                 dead  Death indicator (1=dead, 0=censored)</span></span>
-<span><span class="co">#&gt; reop                 reop             Reoperation (1=yes, 0=no)</span></span>
-<span><span class="co">#&gt; iv_reop           iv_reop Follow-up time to reoperation (years)</span></span>
-<span><span class="co">#&gt; age                   age                Age at surgery (years)</span></span>
-<span><span class="co">#&gt; sex                   sex                                   Sex</span></span>
-<span><span class="co">#&gt; bmi                   bmi               Body mass index (kg/m2)</span></span>
-<span><span class="co">#&gt; hgb_bs             hgb_bs            Baseline hemoglobin (g/dL)</span></span>
-<span><span class="co">#&gt; wbc_bs             wbc_bs             Baseline WBC count (K/uL)</span></span>
-<span><span class="co">#&gt; plate_bs         plate_bs        Baseline platelet count (K/uL)</span></span>
-<span><span class="co">#&gt; gfr_bs             gfr_bs         Baseline eGFR (mL/min/1.73m2)</span></span>
-<span><span class="co">#&gt; lvefvs_b         lvefvs_b     Baseline LV ejection fraction (%)</span></span>
-<span><span class="co">#&gt; lvmass_b         lvmass_b                  Baseline LV mass (g)</span></span>
-<span><span class="co">#&gt; lvmsi_b           lvmsi_b         Baseline LV mass index (g/m2)</span></span>
-<span><span class="co">#&gt; stvoli_b         stvoli_b  Baseline SV index - systolic (mL/m2)</span></span>
-<span><span class="co">#&gt; stvold_b         stvold_b Baseline SV index - diastolic (mL/m2)</span></span>
-<span><span class="co">#&gt; bypass_time   bypass_time     Cardiopulmonary bypass time (min)</span></span>
-<span><span class="co">#&gt; xclamp_time   xclamp_time         Aortic cross-clamp time (min)</span></span>
-<span><span class="co">#&gt; nyha_class     nyha_class                 NYHA functional class</span></span>
-<span><span class="co">#&gt; diabetes         diabetes                     Diabetes mellitus</span></span>
-<span><span class="co">#&gt; hypertension hypertension                          Hypertension</span></span></code></pre></div>
+<span><span class="co">#&gt;                       key                                          label</span></span>
+<span><span class="co">#&gt; ccfid               ccfid                                     Patient ID</span></span>
+<span><span class="co">#&gt; origin_year   origin_year                 Calendar year for iv_opyrs = 0</span></span>
+<span><span class="co">#&gt; iv_opyrs         iv_opyrs Observation interval (years) since origin_year</span></span>
+<span><span class="co">#&gt; iv_dead           iv_dead                Follow-up time to death (years)</span></span>
+<span><span class="co">#&gt; dead                 dead           Death indicator (1=dead, 0=censored)</span></span>
+<span><span class="co">#&gt; reop                 reop                      Reoperation (1=yes, 0=no)</span></span>
+<span><span class="co">#&gt; iv_reop           iv_reop          Follow-up time to reoperation (years)</span></span>
+<span><span class="co">#&gt; age                   age                         Age at surgery (years)</span></span>
+<span><span class="co">#&gt; sex                   sex                                            Sex</span></span>
+<span><span class="co">#&gt; bmi                   bmi                        Body mass index (kg/m2)</span></span>
+<span><span class="co">#&gt; hgb_bs             hgb_bs                     Baseline hemoglobin (g/dL)</span></span>
+<span><span class="co">#&gt; wbc_bs             wbc_bs                      Baseline WBC count (K/uL)</span></span>
+<span><span class="co">#&gt; plate_bs         plate_bs                 Baseline platelet count (K/uL)</span></span>
+<span><span class="co">#&gt; gfr_bs             gfr_bs                  Baseline eGFR (mL/min/1.73m2)</span></span>
+<span><span class="co">#&gt; lvefvs_b         lvefvs_b              Baseline LV ejection fraction (%)</span></span>
+<span><span class="co">#&gt; lvmass_b         lvmass_b                           Baseline LV mass (g)</span></span>
+<span><span class="co">#&gt; lvmsi_b           lvmsi_b                  Baseline LV mass index (g/m2)</span></span>
+<span><span class="co">#&gt; stvoli_b         stvoli_b           Baseline SV index - systolic (mL/m2)</span></span>
+<span><span class="co">#&gt; stvold_b         stvold_b          Baseline SV index - diastolic (mL/m2)</span></span>
+<span><span class="co">#&gt; bypass_time   bypass_time              Cardiopulmonary bypass time (min)</span></span>
+<span><span class="co">#&gt; xclamp_time   xclamp_time                  Aortic cross-clamp time (min)</span></span>
+<span><span class="co">#&gt; nyha_class     nyha_class                          NYHA functional class</span></span>
+<span><span class="co">#&gt; diabetes         diabetes                              Diabetes mellitus</span></span>
+<span><span class="co">#&gt; hypertension hypertension                                   Hypertension</span></span></code></pre></div>
 <p>The label map is useful for annotating tables and plots with
 descriptive names.</p>
 </div>
@@ -303,7 +324,8 @@ descriptive names.</p>
 </h2>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Drop admin columns to match a typical model_data setup</span></span>
-<span><span class="va">model_data</span> <span class="op">&lt;-</span> <span class="va">model_data</span><span class="op">[</span>, <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">model_data</span><span class="op">)</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ccfid"</span>, <span class="st">"reop"</span>, <span class="st">"iv_reop"</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="va">model_data</span> <span class="op">&lt;-</span> <span class="va">model_data</span><span class="op">[</span>, <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">model_data</span><span class="op">)</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ccfid"</span>, <span class="st">"reop"</span>, <span class="st">"iv_reop"</span>,</span>
+<span>  <span class="st">"origin_year"</span>, <span class="st">"iv_opyrs"</span><span class="op">)</span><span class="op">]</span></span>
 <span></span>
 <span><span class="co"># Outcome variable breakdown</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">model_data</span><span class="op">$</span><span class="va">dead</span><span class="op">)</span></span>
@@ -344,14 +366,14 @@ descriptive names.</p>
 <p>The <code>seed</code> argument ensures reproducible datasets for
 testing:</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dta_a</span> <span class="op">&lt;-</span> <span class="fu">generate_survival_data</span><span class="op">(</span>n <span class="op">=</span> <span class="fl">100</span>, seed <span class="op">=</span> <span class="fl">99</span><span class="op">)</span></span>
-<span><span class="va">dta_b</span> <span class="op">&lt;-</span> <span class="fu">generate_survival_data</span><span class="op">(</span>n <span class="op">=</span> <span class="fl">100</span>, seed <span class="op">=</span> <span class="fl">99</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">dta_a</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/generate_survival_data.html">generate_survival_data</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">100</span>, seed <span class="op">=</span> <span class="fl">99</span><span class="op">)</span></span>
+<span><span class="va">dta_b</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/generate_survival_data.html">generate_survival_data</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">100</span>, seed <span class="op">=</span> <span class="fl">99</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/identical.html" class="external-link">identical</a></span><span class="op">(</span><span class="va">dta_a</span>, <span class="va">dta_b</span><span class="op">)</span>  <span class="co"># TRUE</span></span>
 <span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
 <p>Different seeds produce different datasets:</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dta_c</span> <span class="op">&lt;-</span> <span class="fu">generate_survival_data</span><span class="op">(</span>n <span class="op">=</span> <span class="fl">100</span>, seed <span class="op">=</span> <span class="fl">7</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">dta_c</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/generate_survival_data.html">generate_survival_data</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">100</span>, seed <span class="op">=</span> <span class="fl">7</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/identical.html" class="external-link">identical</a></span><span class="op">(</span><span class="va">dta_a</span>, <span class="va">dta_c</span><span class="op">)</span>  <span class="co"># FALSE</span></span>
 <span><span class="co">#&gt; [1] FALSE</span></span></code></pre></div>
 </div>
