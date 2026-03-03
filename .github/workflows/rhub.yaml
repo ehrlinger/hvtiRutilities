@@ -56,6 +56,8 @@ jobs:
         with:
           token: ${{ secrets.RHUB_TOKEN }}
           job-config: ${{ matrix.config.job-config }}
+      - name: Install devtools
+        run: Rscript -e 'if (!requireNamespace("devtools", quietly = TRUE)) install.packages("devtools", repos = "https://cloud.r-project.org")'
       - name: Generate documentation
         run: Rscript -e 'devtools::document()'
       - uses: r-hub/actions/setup-deps@v1
