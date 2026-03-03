@@ -8,14 +8,14 @@ test_that("returns data.frame with correct dimensions", {
 
   expect_s3_class(dta, "data.frame")
   expect_equal(nrow(dta), 100)
-  expect_equal(ncol(dta), 22)
+  expect_equal(ncol(dta), 24)
 })
 
 test_that("returns all expected columns in the correct order", {
   dta <- generate_survival_data(n = 10)
 
   expected_cols <- c(
-    "ccfid", "iv_dead", "dead", "reop", "iv_reop",
+    "ccfid", "origin_year", "iv_opyrs", "iv_dead", "dead", "reop", "iv_reop",
     "age", "sex", "bmi",
     "hgb_bs", "wbc_bs", "plate_bs", "gfr_bs",
     "lvefvs_b", "lvmass_b", "lvmsi_b", "stvoli_b", "stvold_b",
@@ -31,6 +31,8 @@ test_that("column types are correct", {
   dta <- generate_survival_data(n = 200)
 
   expect_type(dta$ccfid, "character")
+  expect_type(dta$origin_year, "integer")
+  expect_type(dta$iv_opyrs, "double")
   expect_type(dta$iv_dead, "double")
   expect_type(dta$dead, "integer")
   expect_type(dta$reop, "integer")
@@ -79,6 +81,21 @@ test_that("iv_dead is always positive", {
   dta <- generate_survival_data(n = 500)
 
   expect_true(all(dta$iv_dead > 0))
+})
+
+test_that("origin_year falls within expected range", {
+  dta <- generate_survival_data(n = 500)
+
+  expect_true(all(dta$origin_year >= 1998L))
+  expect_true(all(dta$origin_year <= 2018L))
+})
+
+test_that("iv_opyrs bounds observable follow-up", {
+  dta <- generate_survival_data(n = 500)
+
+  expect_true(all(dta$iv_opyrs >= dta$iv_dead))
+  expect_true(all(dta$iv_opyrs > 0))
+  expect_true(all(dta$iv_opyrs <= 15))
 })
 
 test_that("iv_reop is NA when reop is 0", {
@@ -174,11 +191,11 @@ test_that("does not permanently alter the global RNG state", {
 
 # Variable labels ----
 
-test_that("all 22 columns have variable labels", {
+test_that("all 24 columns have variable labels", {
   dta <- generate_survival_data(n = 10)
   lmap <- label_map(dta)
 
-  expect_equal(nrow(lmap), 22)
+  expect_equal(nrow(lmap), 24)
   # Labels should differ from column names (i.e., they are real labels)
   expect_false(all(lmap$key == lmap$label))
 })

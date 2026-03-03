@@ -36,7 +36,7 @@ dim(dta)
 names(dta)
 ```
 
-The dataset contains 22 columns covering patient identifiers, survival outcomes, reoperation, demographics, pre-operative labs, cardiac function, and surgical variables.
+The dataset contains 24 columns covering patient identifiers, calendar anchors, survival outcomes, reoperation, demographics, pre-operative labs, cardiac function, and surgical variables.
 
 ## Data Structure
 
@@ -49,6 +49,8 @@ Key columns:
 | Column | Description |
 |---|---|
 | `ccfid` | Patient identifier |
+| `origin_year` | Calendar year corresponding to `iv_opyrs = 0` |
+| `iv_opyrs` | Observation interval length (years) anchored at `origin_year` |
 | `iv_dead` | Observed follow-up time (years) |
 | `dead` | Event indicator (1 = death, 0 = censored) |
 | `reop` | Reoperation indicator |
@@ -85,7 +87,7 @@ The dataset arrives with variable labels attached and several columns that benef
 model_data <- r_data_types(
   dta,
   factor_size = 5,
-  skip_vars = c("ccfid", "iv_dead", "iv_reop")
+  skip_vars = c("ccfid", "iv_dead", "iv_reop", "iv_opyrs")
 )
 
 str(model_data[, c("dead", "reop", "sex", "nyha_class", "diabetes", "hypertension")])
@@ -110,7 +112,8 @@ The label map is useful for annotating tables and plots with descriptive names.
 
 ```{r}
 # Drop admin columns to match a typical model_data setup
-model_data <- model_data[, !names(model_data) %in% c("ccfid", "reop", "iv_reop")]
+model_data <- model_data[, !names(model_data) %in% c("ccfid", "reop", "iv_reop",
+  "origin_year", "iv_opyrs")]
 
 # Outcome variable breakdown
 table(model_data$dead)
