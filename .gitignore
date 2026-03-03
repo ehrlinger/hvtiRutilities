@@ -8,7 +8,7 @@
 00install.out
 Sweave.sty
 inst/doc/randomForestRegression*
-inst/doc/randomForestSruvival*
+inst/doc/randomForestSurvival*
 vignettes/*.log
 vignettes/*.gz
 vignettes/*.bbl
@@ -21,7 +21,6 @@ jss.cls
 jss.bst
 jsslogo.jpg
 *.bbl
-man/*.Rd
 
 inst/doc
 ..Rcheck/*
