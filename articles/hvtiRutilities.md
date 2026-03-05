@@ -26,7 +26,11 @@ pak::pak("ehrlinger/hvtiRutilities")
 ```
 
 ``` r
-library(hvtiRutilities)
+if (requireNamespace("hvtiRutilities", quietly = TRUE)) {
+  library("hvtiRutilities") # Use installed package when available
+} else {
+  pkgload::load_all(export_all = FALSE, helpers = FALSE, quiet = TRUE)
+}
 #> 
 #>  hvtiRutilities 0.3.0 
 #>  
