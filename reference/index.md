@@ -15,3 +15,7 @@
 - [`sample_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/sample_data.md)
   : sample_data creates a generated data set to test the included
   methods.
+- [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
+  : Create or update a dataset manifest file
+- [`verify_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md)
+  : Verify all datasets listed in a manifest

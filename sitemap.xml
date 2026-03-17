@@ -1,6 +1,7 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/404.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/LICENSE.html</loc></url>
+<url><loc>https://ehrlinger.github.io/hvtiRutilities/articles/dataset-versioning.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/articles/hvtiRutilities.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/articles/index.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/articles/survival-data.html</loc></url>
@@ -14,5 +15,7 @@
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/label_map.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/sample_data.html</loc></url>
+<url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.html</loc></url>
+<url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.html</loc></url>
 </urlset>
 

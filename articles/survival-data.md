@@ -13,7 +13,7 @@ and administrative censoring is applied at up to 15 years.
 ``` r
 library(hvtiRutilities)
 #> 
-#>  hvtiRutilities 0.3.1 
+#>  hvtiRutilities 0.4.0 
 #>  
 #>  Type hvtiRutilities.news() to see new features, changes, and bug fixes. 
 #> 
@@ -294,7 +294,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] hvtiRutilities_0.3.1
+#> [1] hvtiRutilities_0.4.0
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] vctrs_0.7.1       cli_3.6.5         knitr_1.51        rlang_1.1.7      
