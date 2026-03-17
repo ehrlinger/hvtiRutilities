@@ -1,15 +1,39 @@
 ## =============================================================================
 ## Internal helper: auto-detect row count by file extension
-## Supported: .csv  .sas7bdat  .xlsx  .xls
+## Supported (lightweight): .csv
+## Supported (heavy, opt-in via options(manifest.allow_heavy_rowcount = TRUE)):
+##   .sas7bdat  .xlsx  .xls
 ## All other types require the caller to supply n_rows explicitly.
 #' @importFrom utils count.fields
 .auto_count_rows <- function(file) {
   ext <- tolower(tools::file_ext(file))
-  switch(ext,
-    csv      = length(count.fields(file, sep = ",")) - 1L,
-    sas7bdat = nrow(haven::read_sas(file)),
-    xlsx     = ,
-    xls      = nrow(readxl::read_excel(file)),
+  allow_heavy <- isTRUE(getOption("manifest.allow_heavy_rowcount", FALSE))
+  switch(
+    ext,
+    csv = length(count.fields(file, sep = ",")) - 1L,
+    sas7bdat = {
+      if (!allow_heavy) {
+        stop(
+          "Automatic row counting for SAS files (.sas7bdat) loads the entire ",
+          "dataset into memory and is disabled by default. ",
+          "Either supply n_rows explicitly or enable this behavior with ",
+          "options(manifest.allow_heavy_rowcount = TRUE)."
+        )
+      }
+      nrow(haven::read_sas(file))
+    },
+    xlsx = ,
+    xls = {
+      if (!allow_heavy) {
+        stop(
+          "Automatic row counting for Excel files (.xls/.xlsx) loads the ",
+          "entire workbook into memory and is disabled by default. ",
+          "Either supply n_rows explicitly or enable this behavior with ",
+          "options(manifest.allow_heavy_rowcount = TRUE)."
+        )
+      }
+      nrow(readxl::read_excel(file))
+    },
     stop(
       "Cannot auto-detect n_rows for file type '.", ext, "'. ",
       "Supported formats: csv, sas7bdat, xlsx, xls. ",
@@ -28,10 +52,14 @@
 #' in place; otherwise a new entry is appended.  The manifest is intended to be
 #' committed to version control while the data files themselves are not.
 #'
-#' Row counts are detected automatically for \strong{CSV}
-#' (\code{.csv}), \strong{SAS} (\code{.sas7bdat}), and \strong{Excel}
-#' (\code{.xlsx}, \code{.xls}) files.  For any other format supply
-#' \code{n_rows} explicitly.
+#' Row counts are detected automatically for \strong{CSV} (\code{.csv}) files.
+#' For \strong{SAS} (\code{.sas7bdat}) and \strong{Excel} (\code{.xlsx},
+#' \code{.xls}) files, automatic row counting is considered "heavy" because it
+#' loads the entire dataset/workbook into memory; it is therefore disabled by
+#' default and only performed when
+#' \code{options(manifest.allow_heavy_rowcount = TRUE)} is set.  For any other
+#' format, or when heavy counting is disabled, supply \code{n_rows}
+#' explicitly.
 #'
 #' @param file Character. Path to the dataset file.
 #' @param manifest_path Character. Path to the manifest YAML file.
@@ -41,7 +69,9 @@
 #'   from the source system.  Stored as \code{"YYYY-MM-DD"}.  Defaults to
 #'   today's date.
 #' @param n_rows Integer. Number of data rows.  When \code{NULL} (default) the
-#'   row count is detected automatically from CSV, SAS, and Excel files.  For
+#'   row count is detected automatically from CSV files, and from SAS/Excel
+#'   files only when \code{options(manifest.allow_heavy_rowcount = TRUE)} is
+#'   set.
 #'   all other file types supply this value explicitly.
 #' @param source Character. Free-text description of the data source (e.g.
 #'   \code{"Epic EMR, query v4.2, ICD mapping v3.2"}).
