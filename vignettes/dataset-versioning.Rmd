@@ -1,0 +1,323 @@
+---
+title: "Dataset Version Tracking with manifest.yaml"
+author: "John Ehrlinger"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Dataset Version Tracking with manifest.yaml}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 5
+)
+```
+
+## The Problem: Datasets Drift
+
+A dataset pulled from Epic today is **not** the same file you will get if you
+pull it again tomorrow — even when no one intentionally changed anything.
+Backfilled lab results, corrected ICD codes, and updated patient status all
+mean that re-running an extraction silently changes the underlying numbers.
+
+The standard defence is a three-step protocol:
+
+1. **Name every dataset by its extract date** — `cohort_20240115.csv`,
+   `labs_20240801.sas7bdat`.  Never overwrite an existing dated file; a new
+   pull gets a new filename.
+2. **Record a SHA-256 checksum** the moment a file lands on disk.  A single
+   changed byte produces a completely different hash.
+3. **Verify the checksums before every analysis run** so that any drift is
+   caught immediately, before results are generated.
+
+`hvtiRutilities` provides two functions that implement this protocol:
+
+| Function | Purpose |
+|---|---|
+| `update_manifest()` | Register a dataset (or update its entry) in `manifest.yaml` |
+| `verify_manifest()` | Check every registered dataset before an analysis runs |
+
+## Setup
+
+```{r}
+if (requireNamespace("hvtiRutilities", quietly = TRUE)) {
+  library("hvtiRutilities")
+} else {
+  pkgload::load_all(export_all = FALSE, helpers = FALSE, quiet = TRUE)
+}
+```
+
+For this vignette we work in a temporary directory that mimics a real project's
+`datasets/` folder.
+
+```{r}
+datasets_dir <- file.path(tempdir(), "datasets")
+dir.create(datasets_dir, showWarnings = FALSE)
+manifest_path <- file.path(tempdir(), "manifest.yaml")
+```
+
+## Registering Datasets
+
+### CSV — automatic row count
+
+Generate a synthetic cohort (using `generate_survival_data()`) and write it as
+a date-stamped CSV.
+
+```{r}
+set.seed(42)
+cohort <- generate_survival_data(n = 200, seed = 42)
+
+cohort_file <- file.path(datasets_dir, "cohort_20240115.csv")
+write.csv(cohort, cohort_file, row.names = FALSE)
+```
+
+Register it in the manifest.  Row count is detected automatically from the CSV
+header; only the SHA-256 is computed from the raw bytes.
+
+```{r}
+update_manifest(
+  file         = cohort_file,
+  manifest_path = manifest_path,
+  extract_date = "2024-01-15",
+  source       = "Epic EMR, query v4.2, ICD mapping v3.2",
+  sort_key     = "ccfid"
+)
+```
+
+Add a second file — a simulated labs extract pulled on the same date.
+
+```{r}
+set.seed(7)
+labs <- data.frame(
+  ccfid   = cohort$ccfid,
+  hgb     = round(rnorm(200, mean = 13.5, sd = 1.8), 1),
+  egfr    = round(rnorm(200, mean = 72,   sd = 18),   0),
+  bnp     = round(exp(rnorm(200, mean = 4.8, sd = 0.9)), 0)
+)
+
+labs_file <- file.path(datasets_dir, "labs_20240115.csv")
+write.csv(labs, labs_file, row.names = FALSE)
+
+update_manifest(
+  file          = labs_file,
+  manifest_path = manifest_path,
+  extract_date  = "2024-01-15",
+  source        = "Epic EMR, labs module — Hgb, eGFR, BNP",
+  sort_key      = "ccfid"
+)
+```
+
+### Inspecting the manifest
+
+The manifest is a plain YAML file committed to version control alongside your
+analysis scripts (but **not** alongside the data files, which stay out of git).
+
+```{r}
+cat(paste(readLines(manifest_path), collapse = "\n"))
+```
+
+Each entry records exactly what is needed to re-verify the file later:
+`extract_date`, `n_rows`, `sha256`, and any provenance notes you supply.
+
+### SAS datasets — automatic row count
+
+Files exported directly from SAS (`.sas7bdat`) are handled the same way.
+`update_manifest()` calls `haven::read_sas()` internally to count rows;
+the checksum is always computed from the raw file bytes.
+
+```{r eval=FALSE}
+update_manifest(
+  file          = here::here("datasets", "cohort_20240115.sas7bdat"),
+  manifest_path = here::here("manifest.yaml"),
+  extract_date  = "2024-01-15",
+  source        = "SAS CORR registry extract, query v3.1",
+  sort_key      = "pat_id"
+)
+```
+
+### Excel workbooks — automatic row count
+
+Adjudication logs, crosswalk tables, and other curator-maintained datasets
+often arrive as `.xlsx` files.  `update_manifest()` calls
+`readxl::read_excel()` to count rows.
+
+```{r eval=FALSE}
+update_manifest(
+  file          = here::here("datasets", "adjudication_20240115.xlsx"),
+  manifest_path = here::here("manifest.yaml"),
+  extract_date  = "2024-01-15",
+  source        = "Clinical Events Committee adjudication log, v2"
+)
+```
+
+### Other formats — supply `n_rows` explicitly
+
+For RDS, Feather, Parquet, or any format not listed above, pass `n_rows`
+directly.  The SHA-256 is still computed from the raw bytes.
+
+```{r eval=FALSE}
+update_manifest(
+  file          = here::here("datasets", "cohort_20240115.rds"),
+  manifest_path = here::here("manifest.yaml"),
+  extract_date  = "2024-01-15",
+  n_rows        = nrow(readRDS(here::here("datasets", "cohort_20240115.rds"))),
+  source        = "RDS cached from Epic pull"
+)
+```
+
+## Verifying Before Every Analysis
+
+Place `verify_manifest()` at the very top of every analysis script and Quarto
+document — before any data are loaded and before any results are produced.
+
+```{r}
+verify_manifest(
+  manifest_path = manifest_path,
+  data_dir      = datasets_dir
+)
+```
+
+The function prints one confirmation line per file and returns invisibly.  If
+everything is clean, your script continues.
+
+### Typical script header
+
+```{r eval=FALSE}
+library(hvtiRutilities)
+library(here)
+
+# Abort immediately if any registered dataset has changed
+verify_manifest(here("manifest.yaml"))
+
+# Only reached if all checksums pass
+cohort <- read.csv(here("datasets", "cohort_20240115.csv"))
+labs   <- read.csv(here("datasets", "labs_20240115.csv"))
+```
+
+## What Happens When Data Changes
+
+Suppose the data warehouse silently updates `cohort_20240115.csv` overnight.
+`verify_manifest()` catches it the moment the next analysis run starts.
+
+```{r error=TRUE}
+# Simulate a silent dataset change
+cohort_modified <- cohort
+cohort_modified$age[1] <- cohort_modified$age[1] + 1L
+write.csv(cohort_modified, cohort_file, row.names = FALSE)
+
+# verify_manifest stops immediately
+verify_manifest(
+  manifest_path = manifest_path,
+  data_dir      = datasets_dir
+)
+```
+
+The error message names the affected file and shows both the expected and
+actual SHA-256 values, giving you an unambiguous audit trail.
+
+### Collecting all failures at once
+
+During development it can be useful to see every problem before fixing any of
+them.  Set `stop_on_error = FALSE` to collect warnings instead of stopping.
+
+```{r warning=TRUE}
+report <- verify_manifest(
+  manifest_path = manifest_path,
+  data_dir      = datasets_dir,
+  stop_on_error = FALSE
+)
+
+report[report$status == "FAIL", c("file", "message")]
+```
+
+### Updating the manifest after a legitimate re-pull
+
+If a new extract is intentional — a corrected pull, an updated query — call
+`update_manifest()` again with the same filename.  The existing entry is
+replaced in place and the new checksum is recorded.
+
+```{r}
+# Re-register after the legitimate change
+update_manifest(
+  file          = cohort_file,
+  manifest_path = manifest_path,
+  extract_date  = "2024-01-15",
+  source        = "Epic EMR, query v4.2, ICD mapping v3.2 — corrected age for pt 1"
+)
+
+# Verification now passes again
+verify_manifest(
+  manifest_path = manifest_path,
+  data_dir      = datasets_dir
+)
+```
+
+## A New Pull for a Different Project
+
+When the same registry is pulled again months later for a different analysis,
+it gets a **new filename** — never overwriting the original.
+
+```{r}
+set.seed(99)
+cohort_aug <- generate_survival_data(n = 315, seed = 99)
+
+cohort_aug_file <- file.path(datasets_dir, "cohort_20240801.csv")
+write.csv(cohort_aug, cohort_aug_file, row.names = FALSE)
+
+update_manifest(
+  file          = cohort_aug_file,
+  manifest_path = manifest_path,
+  extract_date  = "2024-08-01",
+  source        = "Epic EMR, query v4.2, ICD mapping v3.3 — LVAD sub-study cohort",
+  sort_key      = "ccfid"
+)
+```
+
+The manifest now tracks all three files independently.
+
+```{r}
+m <- yaml::read_yaml(manifest_path)
+do.call(rbind, lapply(m$datasets, function(e)
+  data.frame(file = e$file, extract_date = e$extract_date,
+             n_rows = e$n_rows, stringsAsFactors = FALSE)
+))
+```
+
+Verification covers all of them in a single call.
+
+```{r}
+verify_manifest(
+  manifest_path = manifest_path,
+  data_dir      = datasets_dir
+)
+```
+
+## Policy Recommendations
+
+| Stage | Action |
+|---|---|
+| **On every data pull** | Run `update_manifest()` immediately and commit `manifest.yaml` to git |
+| **Top of every analysis script** | Call `verify_manifest()` — before loading any data |
+| **At manuscript submission** | Tag the git commit; freeze `manifest.yaml`; do not re-pull data |
+| **For a new project or re-pull** | Use a new date-stamped filename; add a new `update_manifest()` entry |
+| **`.gitignore`** | Add `datasets/` — commit the manifest, not the data |
+
+## Summary
+
+- `update_manifest()` records the SHA-256 checksum, row count, extract date,
+  and optional provenance fields for CSV, SAS, Excel, or any file type.
+- `verify_manifest()` checks every registered dataset before results are
+  produced; one changed byte triggers an immediate, informative error.
+- The combination makes dataset drift **detectable** and the audit trail
+  **reproducible** from first pull to manuscript submission.
+
+## Session Information
+
+```{r}
+sessionInfo()
+```
