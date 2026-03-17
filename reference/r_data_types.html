@@ -11,7 +11,7 @@ various NA representations. Preserves variable labels from SAS/labelled data."><
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -111,12 +111,12 @@ instead of logical. Default is FALSE (convert to logical).</p></dd>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">dta</span><span class="op">)</span>  <span class="co"># Original types</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 'data.frame':	100 obs. of  7 variables:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  $ id     : int  1 2 3 4 5 6 7 8 9 10 ...</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  $ boolean: int  1 2 2 1 1 1 1 2 1 1 ...</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  $ logical: chr  "F" "T" "T" "F" ...</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  $ f_real : num  0.5118 0.5118 0.8356 0.0115 0.9963 ...</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  $ float  : num  0.132 -1.866 -0.921 1.204 0.267 ...</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  $ char   : chr  "female" "female" "male" "female" ...</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 2 3 5 1 5 2 1 1 4 1 ...</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  $ boolean: int  1 1 2 1 1 2 1 1 1 2 ...</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  $ logical: chr  "F" "F" "T" "F" ...</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  $ f_real : num  0.508 0.404 0.806 0.418 0.806 ...</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  $ float  : num  0.118 -0.284 0.498 1.61 1.861 ...</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  $ char   : chr  "male" "male" "male" "male" ...</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 3 1 5 1 4 3 1 2 1 1 ...</span>
 <span class="r-in"><span><span class="va">dta_converted</span> <span class="op">&lt;-</span> <span class="fu">r_data_types</span><span class="op">(</span><span class="va">dta</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">dta_converted</span><span class="op">)</span>  <span class="co"># Converted types</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 'data.frame':	100 obs. of  7 variables:</span>
@@ -124,15 +124,15 @@ instead of logical. Default is FALSE (convert to logical).</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   ..- attr(*, "label")= chr "id"</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  $ boolean: logi  TRUE TRUE TRUE TRUE TRUE TRUE ...</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   ..- attr(*, "label")= chr "boolean"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  $ logical: Factor w/ 2 levels "F","T": 1 2 2 1 1 1 1 2 1 1 ...</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  $ logical: Factor w/ 2 levels "F","T": 1 1 2 1 1 2 1 1 1 2 ...</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   ..- attr(*, "label")= chr "logical"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  $ f_real : Factor w/ 9 levels "0.0114795379340649",..: 4 4 6 1 9 4 7 9 9 3 ...</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  $ f_real : Factor w/ 9 levels "0.218431008746848",..: 4 2 8 3 8 7 8 8 9 3 ...</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   ..- attr(*, "label")= chr "f_real"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  $ float  : num  0.132 -1.866 -0.921 1.204 0.267 ...</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  $ float  : num  0.118 -0.284 0.498 1.61 1.861 ...</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   ..- attr(*, "label")= chr "float"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  $ char   : Factor w/ 2 levels "female","male": 1 1 2 1 1 2 2 2 1 1 ...</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  $ char   : Factor w/ 2 levels "female","male": 2 2 2 2 1 2 2 1 2 1 ...</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   ..- attr(*, "label")= chr "char"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 2 3 5 1 5 2 1 1 4 1 ...</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 3 1 5 1 4 3 1 2 1 1 ...</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   ..- attr(*, "label")= chr "factor"</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Real data example with mtcars</span></span></span>

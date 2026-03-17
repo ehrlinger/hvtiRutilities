@@ -32,7 +32,7 @@ if (requireNamespace("hvtiRutilities", quietly = TRUE)) {
   pkgload::load_all(export_all = FALSE, helpers = FALSE, quiet = TRUE)
 }
 #> 
-#>  hvtiRutilities 0.3.0 
+#>  hvtiRutilities 0.3.1 
 #>  
 #>  Type hvtiRutilities.news() to see new features, changes, and bug fixes. 
 #> 
@@ -527,7 +527,7 @@ in R
 
 ``` r
 sessionInfo()
-#> R version 4.5.2 (2025-10-31)
+#> R version 4.5.3 (2026-03-11)
 #> Platform: x86_64-pc-linux-gnu
 #> Running under: Ubuntu 24.04.3 LTS
 #> 
@@ -548,17 +548,17 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] labelled_2.16.0      hvtiRutilities_0.3.0
+#> [1] labelled_2.16.0      hvtiRutilities_0.3.1
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] vctrs_0.7.1       cli_3.6.5         knitr_1.51        rlang_1.1.7      
-#>  [5] xfun_0.56         forcats_1.0.1     haven_2.5.5       generics_0.1.4   
-#>  [9] textshaping_1.0.4 jsonlite_2.0.0    glue_1.8.0        htmltools_0.5.9  
-#> [13] ragg_1.5.0        sass_0.4.10       hms_1.1.4         rmarkdown_2.30   
-#> [17] tibble_3.3.1      evaluate_1.0.5    jquerylib_0.1.4   fastmap_1.2.0    
-#> [21] yaml_2.3.12       lifecycle_1.0.5   compiler_4.5.2    dplyr_1.2.0      
-#> [25] fs_1.6.6          pkgconfig_2.0.3   systemfonts_1.3.1 digest_0.6.39    
-#> [29] R6_2.6.1          tidyselect_1.2.1  pillar_1.11.1     magrittr_2.0.4   
-#> [33] bslib_0.10.0      withr_3.0.2       tools_4.5.2       pkgdown_2.2.0    
-#> [37] cachem_1.1.0      desc_1.4.3
+#>  [5] xfun_0.56         forcats_1.0.1     otel_0.2.0        haven_2.5.5      
+#>  [9] generics_0.1.4    textshaping_1.0.5 jsonlite_2.0.0    glue_1.8.0       
+#> [13] htmltools_0.5.9   ragg_1.5.1        sass_0.4.10       hms_1.1.4        
+#> [17] rmarkdown_2.30    tibble_3.3.1      evaluate_1.0.5    jquerylib_0.1.4  
+#> [21] fastmap_1.2.0     yaml_2.3.12       lifecycle_1.0.5   compiler_4.5.3   
+#> [25] dplyr_1.2.0       fs_1.6.7          pkgconfig_2.0.3   htmlwidgets_1.6.4
+#> [29] systemfonts_1.3.2 digest_0.6.39     R6_2.6.1          tidyselect_1.2.1 
+#> [33] pillar_1.11.1     magrittr_2.0.4    bslib_0.10.0      withr_3.0.2      
+#> [37] tools_4.5.3       pkgdown_2.2.0     cachem_1.1.0      desc_1.4.3
 ```
