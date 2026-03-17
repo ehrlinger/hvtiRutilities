@@ -110,7 +110,18 @@ update_manifest <- function(file,
   manifest <- if (file.exists(manifest_path)) {
     yaml::read_yaml(manifest_path)
   } else {
-    list(datasets = list())
+    list()
+  }
+
+  # Normalize and validate manifest structure
+  if (is.null(manifest) || !is.list(manifest)) {
+    manifest <- list()
+  }
+  if (is.null(manifest$datasets)) {
+    manifest$datasets <- list()
+  }
+  if (!is.list(manifest$datasets)) {
+    stop("Invalid manifest: 'datasets' field must be a list.")
   }
 
   existing <- vapply(
