@@ -3,7 +3,7 @@
 .Rproj
 .Rhistory
 .RData
-..Rcheck
+*.Rcheck/
 00check.log
 00install.out
 Sweave.sty
@@ -23,7 +23,6 @@ jsslogo.jpg
 *.bbl
 
 inst/doc
-..Rcheck/*
 vignettes/ggRandomForests-regression_cache/*
 vignettes/ggRandomForests-survival_cache/*
 vignettes/rmd-rf/*

@@ -1,7 +1,7 @@
 Package: hvtiRutilities
 Type: Package
 Title: A Collection of Utilities for Use by HVTI CORR Group at the Cleveland Clinic
-Version: 0.3.1
+Version: 0.4.0
 Date: 2026-03-17
 Authors@R: c(
     person(
@@ -20,15 +20,21 @@ Description: R utilities for the clinical investigations statistics group within
 Depends:
     R (>= 4.1.0)
 Imports:
+    digest,
     dplyr,
-    labelled
+    haven,
+    labelled,
+    readxl,
+    tools,
+    yaml
 Suggests:
     knitr,
     rmarkdown,
     testthat (>= 3.0.0),
     tidyverse,
     tibble,
-    pkgload
+    pkgload,
+    writexl
 VignetteBuilder: knitr
 RoxygenNote: 7.3.3
 Config/testthat/edition: 3

@@ -1,8 +1,0 @@
-hvtiRutilities-package
-                        hvtiRutilities: Utilities to work with SAS data
-                        in R.
-hvtiRutilities.news     Display the NEWS file
-label_map               Build a lookup map of data labels
-r_data_types            Automatically infer and convert data types
-sample_data             sample_data creates a generated data set to
-                        test the included methods.
