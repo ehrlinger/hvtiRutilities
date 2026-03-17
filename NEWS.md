@@ -1,3 +1,31 @@
+# hvtiRutilities 0.4.0
+
+## New Features
+
+* Added `update_manifest()`: records dataset metadata — SHA-256 checksum, row
+  count, extract date, and optional provenance fields — into a `manifest.yaml`
+  file. Supports CSV, SAS (`.sas7bdat`), and Excel (`.xlsx`/`.xls`) files with
+  automatic row-count detection; any other format accepts an explicit `n_rows`
+  argument.
+* Added `verify_manifest()`: reads a `manifest.yaml` produced by
+  `update_manifest()` and, for every entry, verifies that the file exists, its
+  SHA-256 checksum matches, and (for CSV/SAS/Excel) its row count matches.
+  Place at the top of every analysis script to detect dataset drift before
+  results are generated.
+* Added vignette *"Dataset Version Tracking with manifest.yaml"* demonstrating
+  the full manifest workflow from registration to verification.
+
+## Dependencies
+
+* Added `digest`, `haven`, `readxl`, and `yaml` to `Imports` to support the
+  new manifest functions.
+* Added `writexl` to `Suggests` (used in manifest tests for Excel round-trips).
+
+## CI
+
+* GitHub Actions workflows now trigger on the `main` branch only (removed
+  `master` branch triggers).
+
 # hvtiRutilities 0.1.4
 
 ## New Features

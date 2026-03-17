@@ -25,7 +25,6 @@ Imports:
     haven,
     labelled,
     readxl,
-    tools,
     yaml
 Suggests:
     knitr,
