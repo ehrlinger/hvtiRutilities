@@ -2,7 +2,9 @@
 # hvtiRutilities
 
 <!-- badges: start -->
-  [![Codecov test coverage](https://codecov.io/gh/ehrlinger/hvtiRutilities/graph/badge.svg)](https://app.codecov.io/gh/ehrlinger/hvtiRutilities)
+  [![CRAN version](https://img.shields.io/badge/dynamic/regex?url=https%3A%2F%2Fraw.githubusercontent.com%2Fehrlinger%2FhvtiRutilities%2Fmain%2FDESCRIPTION&search=Version%3A%20(%5B%5Cd.%5D%2B)&replace=%241&label=package%20version)](https://github.com/ehrlinger/hvtiRutilities/blob/main/DESCRIPTION)
+
+[![Codecov test coverage](https://codecov.io/gh/ehrlinger/hvtiRutilities/graph/badge.svg)](https://app.codecov.io/gh/ehrlinger/hvtiRutilities)
 
 [![active](http://www.repostatus.org/badges/latest/active.svg)](http://www.repostatus.org/badges/latest/active.svg)
 
