@@ -25,7 +25,9 @@ from the source system.  Stored as \code{"YYYY-MM-DD"}.  Defaults to
 today's date.}
 
 \item{n_rows}{Integer. Number of data rows.  When \code{NULL} (default) the
-row count is detected automatically from CSV, SAS, and Excel files.  For
+row count is detected automatically from CSV files, and from SAS/Excel
+files only when \code{options(manifest.allow_heavy_rowcount = TRUE)} is
+set.
 all other file types supply this value explicitly.}
 
 \item{source}{Character. Free-text description of the data source (e.g.
@@ -44,10 +46,14 @@ If the manifest already contains an entry for the named file it is updated
 in place; otherwise a new entry is appended.  The manifest is intended to be
 committed to version control while the data files themselves are not.
 
-Row counts are detected automatically for \strong{CSV}
-(\code{.csv}), \strong{SAS} (\code{.sas7bdat}), and \strong{Excel}
-(\code{.xlsx}, \code{.xls}) files.  For any other format supply
-\code{n_rows} explicitly.
+Row counts are detected automatically for \strong{CSV} (\code{.csv}) files.
+For \strong{SAS} (\code{.sas7bdat}) and \strong{Excel} (\code{.xlsx},
+\code{.xls}) files, automatic row counting is considered "heavy" because it
+loads the entire dataset/workbook into memory; it is therefore disabled by
+default and only performed when
+\code{options(manifest.allow_heavy_rowcount = TRUE)} is set.  For any other
+format, or when heavy counting is disabled, supply \code{n_rows}
+explicitly.
 }
 \examples{
 \dontrun{

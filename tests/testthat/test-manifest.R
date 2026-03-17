@@ -88,7 +88,26 @@ test_that("update_manifest [CSV] appends a second distinct file", {
 # update_manifest — SAS
 # ---------------------------------------------------------------------------
 
+test_that("update_manifest [SAS] errors without allow_heavy_rowcount option", {
+  tmp <- tempdir()
+  sas <- write_temp_sas(n = 5, name = "cohort_guard.sas7bdat", dir = tmp)
+  expect_error(
+    update_manifest(file = sas, manifest_path = file.path(tmp, "m_guard.yaml")),
+    "allow_heavy_rowcount"
+  )
+})
+
+test_that("update_manifest [Excel] errors without allow_heavy_rowcount option", {
+  tmp <- tempdir()
+  xlsx <- write_temp_excel(n = 5, name = "cohort_guard.xlsx", dir = tmp)
+  expect_error(
+    update_manifest(file = xlsx, manifest_path = file.path(tmp, "m_guard_xl.yaml")),
+    "allow_heavy_rowcount"
+  )
+})
+
 test_that("update_manifest [SAS] creates entry with correct row count", {
+  withr::local_options(manifest.allow_heavy_rowcount = TRUE)
   tmp <- tempdir()
   sas <- write_temp_sas(n = 12, dir = tmp)
   mpath <- file.path(tmp, "manifest_sas.yaml")
@@ -114,6 +133,7 @@ test_that("update_manifest [SAS] creates entry with correct row count", {
 # ---------------------------------------------------------------------------
 
 test_that("update_manifest [Excel] creates entry with correct row count", {
+  withr::local_options(manifest.allow_heavy_rowcount = TRUE)
   tmp <- tempdir()
   xlsx <- write_temp_excel(n = 7, dir = tmp)
   mpath <- file.path(tmp, "manifest_xlsx.yaml")
@@ -217,6 +237,7 @@ test_that("verify_manifest [CSV] detects missing file", {
 # ---------------------------------------------------------------------------
 
 test_that("verify_manifest [SAS] passes when file is unchanged", {
+  withr::local_options(manifest.allow_heavy_rowcount = TRUE)
   tmp <- tempdir()
   sas <- write_temp_sas(n = 6, name = "labs_verify.sas7bdat", dir = tmp)
   mpath <- file.path(tmp, "manifest_vsas.yaml")
@@ -231,6 +252,7 @@ test_that("verify_manifest [SAS] passes when file is unchanged", {
 # ---------------------------------------------------------------------------
 
 test_that("verify_manifest [Excel] passes when file is unchanged", {
+  withr::local_options(manifest.allow_heavy_rowcount = TRUE)
   tmp <- tempdir()
   xlsx <- write_temp_excel(n = 4, name = "adj_verify.xlsx", dir = tmp)
   mpath <- file.path(tmp, "manifest_vxlsx.yaml")
@@ -245,6 +267,7 @@ test_that("verify_manifest [Excel] passes when file is unchanged", {
 # ---------------------------------------------------------------------------
 
 test_that("verify_manifest handles CSV + SAS + Excel in one manifest", {
+  withr::local_options(manifest.allow_heavy_rowcount = TRUE)
   tmp <- tempdir()
   csv  <- write_temp_csv(n = 5,  name = "multi_cohort.csv",   dir = tmp)
   sas  <- write_temp_sas(n = 8,  name = "multi_labs.sas7bdat",dir = tmp)
