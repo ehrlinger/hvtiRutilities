@@ -233,10 +233,22 @@ verify_manifest <- function(manifest_path = "manifest.yaml",
     # Row-count cross-check for supported formats
     ext <- tolower(tools::file_ext(fpath))
     if (ext %in% c("csv", "sas7bdat", "xlsx", "xls") && !is.null(entry$n_rows)) {
-      actual_rows <- tryCatch(
+      actual_rows_result <- tryCatch(
         .auto_count_rows(fpath),
-        error = function(e) NA_integer_
+        error = function(e) e
       )
+      if (inherits(actual_rows_result, "error")) {
+        return(data.frame(
+          file    = entry$file,
+          status  = "FAIL",
+          message = paste0(
+            "Row count auto-detection failed: ",
+            conditionMessage(actual_rows_result)
+          ),
+          stringsAsFactors = FALSE
+        ))
+      }
+      actual_rows <- actual_rows_result
       if (!is.na(actual_rows) &&
           !identical(actual_rows, as.integer(entry$n_rows))) {
         return(data.frame(
