@@ -1,11 +1,12 @@
 Package: hvtiRutilities
 Type: Package
 Title: A Collection of Utilities for Use by HVTI CORR Group at the Cleveland Clinic
-Version: 0.3.0
+Version: 0.3.1
+Date: 2026-03-17
 Authors@R: c(
     person(
       "John", "Ehrlinger",
-      email = "john.ehrlinger@gmail.com",
+      email = "ehrlinj@ccf.org",
       role = c("aut", "cre")
     )
   )
