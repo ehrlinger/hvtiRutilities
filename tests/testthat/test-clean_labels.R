@@ -24,6 +24,26 @@ test_that("apply_label_overrides applies overrides from YAML file", {
   expect_equal(result$label[result$key == "bmi"], "Body Mass Index")
 })
 
+test_that("apply_label_overrides honors label maps with metadata columns", {
+  tmp <- tempfile(fileext = ".yml")
+  on.exit(unlink(tmp))
+
+  writeLines("bmi: 'Body Mass Index'", tmp)
+
+  dta <- data.frame(age = 1:3, bmi = 4:6)
+  labelled::var_label(dta$age) <- "Patient Age"
+  labelled::var_label(dta$bmi) <- "BMI"
+
+  lmap <- label_map(dta)
+  lmap$notes <- c("baseline", "baseline")
+
+  result <- apply_label_overrides(lmap, overrides_file = tmp)
+
+  expect_equal(result$label[result$key == "bmi"], "Body Mass Index")
+  expect_equal(result$notes[result$key == "age"], "baseline")
+  expect_equal(result$notes[result$key == "bmi"], "baseline")
+})
+
 test_that("apply_label_overrides returns unchanged map when file does not exist", {
   dta <- data.frame(age = 1:3)
   labelled::var_label(dta$age) <- "Patient Age"
@@ -93,6 +113,9 @@ test_that("clean_labels is a working alias for apply_label_overrides", {
   labelled::var_label(dta$age) <- "Patient Age"
   lmap <- label_map(dta)
 
-  result <- clean_labels(lmap, overrides_file = tmp)
+  expect_warning(
+    result <- clean_labels(lmap, overrides_file = tmp),
+    "apply_label_overrides"
+  )
   expect_equal(result$label[result$key == "age"], "Age (years)")
 })

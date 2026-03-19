@@ -43,6 +43,21 @@ test_that("add_labels handles mix of new and existing keys in map", {
   expect_equal(result$label[result$key == "sex"], "Patient Sex")
 })
 
+test_that("add_labels treats label maps with metadata columns as label maps", {
+  lmap <- data.frame(
+    key = c("age", "sex"),
+    label = c("Patient Age", "Patient Sex"),
+    notes = c("primary", "demographics"),
+    stringsAsFactors = FALSE
+  )
+
+  result <- add_labels(lmap, c(bmi = "Body Mass Index"))
+
+  expect_equal(result$label[result$key == "bmi"], "Body Mass Index")
+  expect_true("notes" %in% names(result))
+  expect_true(is.na(result$notes[result$key == "bmi"]))
+})
+
 # Data frame mode (labels applied directly) ----
 
 test_that("add_labels applies labels directly to a data frame", {

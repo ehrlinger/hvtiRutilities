@@ -181,8 +181,7 @@ add_labels <- function(label_map_df, new_labels) {
     stop("new_labels must be a named character vector.", call. = FALSE)
   }
 
-  is_label_map <- all(c("key", "label") %in% names(label_map_df)) &&
-    ncol(label_map_df) == 2
+  is_label_map <- all(c("key", "label") %in% names(label_map_df))
 
   if (is_label_map) {
     # Update the label map data frame
@@ -199,6 +198,13 @@ add_labels <- function(label_map_df, new_labels) {
         label = unname(new_labels[!existing]),
         stringsAsFactors = FALSE
       )
+      missing_cols <- setdiff(names(label_map_df), names(new_rows))
+      if (length(missing_cols) > 0) {
+        for (col in missing_cols) {
+          new_rows[[col]] <- NA
+        }
+      }
+      new_rows <- new_rows[names(label_map_df)]
       label_map_df <- rbind(label_map_df, new_rows)
     }
     return(label_map_df)
@@ -319,5 +325,10 @@ apply_label_overrides <- function(label_map_df,
 #' unlink(tmp)
 clean_labels <- function(label_map_df,
                          overrides_file = "labels_overrides.yml") {
+  .Deprecated(
+    "apply_label_overrides",
+    package = "hvtiRutilities",
+    msg = "clean_labels() is deprecated; use apply_label_overrides() instead."
+  )
   apply_label_overrides(label_map_df, overrides_file = overrides_file)
 }
