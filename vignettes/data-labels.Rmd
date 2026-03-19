@@ -1,0 +1,392 @@
+---
+title: "Data Label Handling Best Practices"
+author: "John Ehrlinger"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Data Label Handling Best Practices}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 5
+)
+```
+
+## Why Labels Matter
+
+Variable labels are the bridge between raw data and human-readable output.
+A column named `lvefvs_b` means nothing in a table or plot caption, but
+"Baseline LV Ejection Fraction (%)" tells the reader exactly what they are
+looking at. In clinical research, where results go directly into
+manuscripts, grant submissions, and regulatory filings, unlabeled output is
+unprofessional and error-prone.
+
+SAS datasets carry variable labels natively. When you import them into R
+with `haven::read_sas()`, the `labelled` package preserves those labels as
+column attributes. `hvtiRutilities` provides a set of functions to extract,
+look up, register, and override these labels throughout the analysis
+lifecycle.
+
+```{r}
+library(hvtiRutilities)
+library(labelled)
+```
+
+## The Label Lifecycle
+
+A typical clinical analysis has four phases where labels matter:
+
+1. **Ingestion** --- labels arrive with the data (SAS import) or need to be
+   created (CSV import)
+2. **Transformation** --- derived variables (ratios, bins, indices) need new
+   labels
+3. **Override** --- study-specific abbreviations or corrections
+4. **Consumption** --- labels appear in plots, tables, and data dictionaries
+
+### Phase 1: Extracting Labels at Ingestion
+
+`label_map()` extracts all variable labels into a lookup table:
+
+```{r}
+# Simulated SAS-style dataset with labels
+dta <- generate_survival_data(n = 200, seed = 42)
+
+lmap <- label_map(dta)
+head(lmap, 10)
+```
+
+The result is a two-column data frame: `key` (variable name) and `label`
+(descriptive text). Every column in the data gets an entry. Unlabeled
+columns fall back to the variable name itself.
+
+#### Detecting Missing Labels
+
+When data arrives from a plain CSV (no labels), `label_map()` warns you:
+
+```{r warning=TRUE}
+csv_data <- data.frame(
+  pat_id = 1:5,
+  hgb = c(12.1, 14.3, 10.8, 13.5, 11.2),
+  egfr = c(88, 72, 45, 91, 63)
+)
+
+# This triggers a warning --- most columns lack labels
+lmap_csv <- label_map(csv_data)
+print(lmap_csv)
+```
+
+The warning is intentional: it prevents the common mistake of generating
+plots and tables with cryptic variable names like `hgb` and `egfr` and
+not noticing until a collaborator asks what they mean.
+
+### Phase 2: Labeling Derived Variables
+
+After ingestion, you'll create new variables --- age groups, risk scores,
+ratios, indicator flags. These variables have no labels because they didn't
+exist in the original data.
+
+#### Method A: Label the data directly (preferred)
+
+The best practice is to label the data frame itself using `add_labels()`.
+Labels travel with the data through `dplyr` operations, so they are never
+out of sync:
+
+```{r}
+# Create derived variables
+dta$age_group <- cut(dta$age,
+  breaks = c(0, 30, 50, 70, Inf),
+  labels = c("<30", "30-50", "50-70", ">70")
+)
+dta$ef_low <- dta$lvefvs_b < 40
+
+# Label them directly on the data frame
+dta <- add_labels(dta, c(
+  age_group = "Age Group at Surgery",
+  ef_low    = "Reduced Ejection Fraction (<40%)"
+))
+
+# Verify
+var_label(dta$age_group)
+var_label(dta$ef_low)
+```
+
+When you label the data directly, any subsequent call to `label_map()`
+automatically picks up the new labels:
+
+```{r}
+lmap <- label_map(dta)
+lmap[lmap$key %in% c("age_group", "ef_low"), ]
+```
+
+#### Method B: Update the label map (for reporting)
+
+Sometimes the label map is created once and passed to a reporting module
+that generates tables and figures. In that case, update the map directly:
+
+```{r}
+# Start from the base data
+lmap <- label_map(generate_survival_data(n = 100, seed = 7))
+
+# Register labels for variables you plan to create
+lmap <- add_labels(lmap, c(
+  age_group  = "Age Group at Surgery",
+  ef_low     = "Reduced Ejection Fraction (<40%)",
+  risk_score = "Composite Risk Score"
+))
+
+tail(lmap, 4)
+```
+
+#### Which method should I use?
+
+| Scenario | Method | Reason |
+|---|---|---|
+| Adding columns to a data frame | `add_labels(data, ...)` | Labels travel with the data |
+| Building a reporting table/dictionary | `add_labels(lmap, ...)` | The map is the artifact being consumed |
+| Quick lookup for a plot title | `get_label(lmap, var)` | Safe, readable, errors on typos |
+
+### Phase 3: Study-Specific Overrides
+
+Different studies use different abbreviations and naming conventions. An
+AVSD study might want "Common AVV" shortened to "CAVV"; a mitral valve
+study might need different terminology entirely. Hard-coding these
+replacements in shared functions is fragile.
+
+`apply_label_overrides()` reads a YAML file and applies the overrides to
+a label map. If the file doesn't exist, nothing happens --- making it safe
+to call unconditionally.
+
+```{r}
+# Create a study-specific overrides file
+tmp_overrides <- tempfile(fileext = ".yml")
+writeLines(c(
+  "lvefvs_b: 'Baseline LVEF (%)'",
+  "hgb_bs: 'Hemoglobin (g/dL)'",
+  "gfr_bs: 'eGFR (mL/min/1.73m2)'",
+  "nyha_class: 'NYHA Class'"
+), tmp_overrides)
+
+# Start with the default labels
+lmap <- label_map(generate_survival_data(n = 50, seed = 1))
+
+# Apply study-specific overrides
+lmap <- apply_label_overrides(lmap, overrides_file = tmp_overrides)
+lmap[lmap$key %in% c("lvefvs_b", "hgb_bs", "gfr_bs", "nyha_class"), ]
+```
+
+```{r include=FALSE}
+unlink(tmp_overrides)
+```
+
+In a real project, `labels_overrides.yml` lives alongside `config.yml` in
+the project root and is committed to version control. Each study gets its
+own file; shared analysis code never contains hard-coded label replacements.
+
+#### Example `labels_overrides.yml`
+
+```yaml
+# AVSD study label overrides
+cavv_area: "Common AVV Area (cm2)"
+ed_area: "End-Diastolic Area (cm2)"
+es_area: "End-Systolic Area (cm2)"
+bsa_idx: "BSA-Indexed Value"
+```
+
+### Phase 4: Using Labels in Output
+
+#### Safe single-variable lookup with `get_label()`
+
+The `get_label()` function replaces the error-prone `match()` pattern. It
+errors on typos instead of silently returning `NA`:
+
+```{r}
+lmap <- label_map(generate_survival_data(n = 50, seed = 42))
+
+# Use in plot titles
+get_label(lmap, "age")
+get_label(lmap, "lvefvs_b")
+```
+
+```{r error=TRUE}
+# Typo --- clear error instead of silent NA
+get_label(lmap, "ages")
+```
+
+#### Building a data dictionary
+
+```{r}
+dta <- generate_survival_data(n = 200, seed = 42)
+lmap <- label_map(dta)
+
+# Build a type-annotated data dictionary
+dict <- data.frame(
+  variable    = lmap$key,
+  label       = lmap$label,
+  type        = vapply(dta, function(x) class(x)[1], character(1)),
+  n_unique    = vapply(dta, function(x) length(unique(x)), integer(1)),
+  pct_missing = vapply(dta, function(x) round(mean(is.na(x)) * 100, 1), numeric(1))
+)
+head(dict, 12)
+```
+
+#### Labels in summary tables
+
+```{r}
+# Numeric summary with labels
+num_vars <- c("age", "bmi", "hgb_bs", "gfr_bs", "lvefvs_b")
+summary_tbl <- data.frame(
+  variable = num_vars,
+  label    = vapply(num_vars, function(v) get_label(lmap, v), character(1)),
+  mean     = vapply(num_vars, function(v) round(mean(dta[[v]]), 1), numeric(1)),
+  sd       = vapply(num_vars, function(v) round(sd(dta[[v]]), 1), numeric(1)),
+  median   = vapply(num_vars, function(v) round(median(dta[[v]]), 1), numeric(1))
+)
+print(summary_tbl)
+```
+
+#### Labels in plots
+
+```{r fig.height=4}
+var <- "lvefvs_b"
+hist(dta[[var]],
+  main = get_label(lmap, var),
+  xlab = get_label(lmap, var),
+  col  = "steelblue",
+  border = "white",
+  breaks = 20
+)
+```
+
+## Complete Workflow
+
+Putting it all together --- a realistic analysis setup:
+
+```{r}
+# 1. Load data (simulated here; in practice: haven::read_sas())
+dta <- generate_survival_data(n = 500, seed = 2024)
+
+# 2. Convert types
+dta_clean <- r_data_types(dta,
+  factor_size = 5,
+  skip_vars   = c("ccfid", "iv_dead", "iv_reop", "iv_opyrs")
+)
+
+# 3. Create derived variables with labels
+dta_clean$age_group <- cut(dta_clean$age,
+  breaks = c(0, 30, 50, 70, Inf),
+  labels = c("<30", "30-50", "50-70", ">70")
+)
+dta_clean$ef_category <- cut(dta_clean$lvefvs_b,
+  breaks = c(0, 35, 50, Inf),
+  labels = c("Reduced", "Borderline", "Normal")
+)
+dta_clean <- add_labels(dta_clean, c(
+  age_group   = "Age Group at Surgery",
+  ef_category = "Ejection Fraction Category"
+))
+
+# 4. Extract label map for reporting
+lmap <- label_map(dta_clean)
+
+# 5. Verify: all variables have real labels
+stopifnot(!any(lmap$key == lmap$label))
+
+# 6. Summary using labels
+cat("Variables:", nrow(lmap), "\n")
+cat("All labeled:", !any(lmap$key == lmap$label), "\n")
+head(lmap, 10)
+```
+
+## Labels and `r_data_types()`
+
+Labels are preserved through type conversion. This is handled automatically
+--- you don't need to do anything special:
+
+```{r}
+dta <- sample_data(n = 50)
+
+# Before conversion
+var_label(dta$char)
+
+# After conversion
+dta_clean <- r_data_types(dta, skip_vars = "id")
+var_label(dta_clean$char)
+
+# Labels survive the round-trip
+lmap_before <- label_map(dta)
+lmap_after  <- label_map(dta_clean)
+identical(lmap_before, lmap_after)
+```
+
+## Anti-Patterns to Avoid
+
+### 1. Hard-coded label replacements in shared code
+
+```{r eval=FALSE}
+# BAD: study-specific logic in shared helper
+clean_labels <- function(labels) {
+  labels$label <- gsub("Common AVV", "CAVV", labels$label)
+  labels$label <- gsub("End-distole", "End-Diastolic", labels$label)
+  labels
+}
+```
+
+This breaks the moment anyone uses the code for a different study. Use
+`apply_label_overrides()` with a per-study YAML file instead.
+
+### 2. Creating derived variables without labels
+
+```{r eval=FALSE}
+# BAD: new column has no label
+dta$risk_score <- dta$age * 0.1 + as.integer(dta$nyha_class) * 0.5
+
+# GOOD: label it immediately
+dta$risk_score <- dta$age * 0.1 + as.integer(dta$nyha_class) * 0.5
+dta <- add_labels(dta, c(risk_score = "Composite Risk Score"))
+```
+
+### 3. Using `match()` without error checking
+
+```{r eval=FALSE}
+# BAD: typo returns NA silently
+title <- lmap$label[match("ages", lmap$key)]  # NA, no warning
+
+# GOOD: get_label() catches the typo
+title <- get_label(lmap, "ages")  # Error: 'ages' not found in label map
+```
+
+### 4. Labeling the map instead of the data
+
+```{r eval=FALSE}
+# FRAGILE: map goes stale when you modify the data
+dta$ratio <- dta$a / dta$b
+lmap <- add_labels(lmap, c(ratio = "A/B Ratio"))
+# ... 50 lines later, someone renames 'ratio' to 'ab_ratio'
+# lmap still says "ratio" --- silent mismatch
+
+# BETTER: label the data, extract the map later
+dta$ratio <- dta$a / dta$b
+dta <- add_labels(dta, c(ratio = "A/B Ratio"))
+lmap <- label_map(dta)  # always in sync
+```
+
+## Function Reference
+
+| Function | Purpose |
+|---|---|
+| `label_map(data)` | Extract all labels into a lookup table |
+| `get_label(lmap, var)` | Look up one label with error checking |
+| `add_labels(data, labels)` | Label a data frame or update a label map |
+| `apply_label_overrides(lmap, file)` | Apply study-specific overrides from YAML |
+
+## Session Information
+
+```{r}
+sessionInfo()
+```

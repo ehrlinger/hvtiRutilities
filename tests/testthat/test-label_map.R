@@ -45,7 +45,7 @@ test_that("label_map can be used for matching operations", {
 
 test_that("label_map handles dataset without labels", {
   dta <- data.frame(a = 1:3, b = 4:6)
-  result <- label_map(dta)
+  expect_warning(result <- label_map(dta), "lack descriptive labels")
 
   expect_s3_class(result, "data.frame")
   expect_equal(result$key, c("a", "b"))

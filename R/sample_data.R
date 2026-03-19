@@ -1,16 +1,32 @@
-#' sample_data creates a generated data set to test the included methods.
+#' Generate a sample dataset for testing
 #'
-#' The \code{data.frame} contains a collection of columns with sample data
+#' Creates a data frame with labeled columns of various types, suitable for
+#' demonstrating \code{\link{r_data_types}} and \code{\link{label_map}}.
 #'
-#' @param n number of records to include
+#' @param n Number of records to generate. Default \code{100}.
 #'
-#' @return a data.frame containing a sample dataset
+#' @return A data frame with \code{n} rows and 7 labeled columns:
+#' \describe{
+#'   \item{id}{Integer sequence (Patient Identifier)}
+#'   \item{boolean}{Integer 1/2 (Binary Indicator)}
+#'   \item{logical}{Character "F"/"T" (Logical Status)}
+#'   \item{f_real}{Uniform random values (Random Uniform Value)}
+#'   \item{float}{Normal random values (Random Normal Value)}
+#'   \item{char}{Character "male"/"female" (Gender)}
+#'   \item{factor}{Factor C1-C5 (Category Group)}
+#' }
 #'
 #' @examples
-#' # create the data set
+#' # Create and inspect labeled data
+#' dta <- sample_data(n = 20)
+#' str(dta)
+#' label_map(dta)
+#'
+#' # Full workflow: generate, convert types, extract labels
 #' dta <- sample_data(n = 100)
-#' udta <- r_data_types(dta)
-#' lmap <- label_map(dta)
+#' dta_clean <- r_data_types(dta, skip_vars = "id")
+#' lmap <- label_map(dta_clean)
+#' print(lmap)
 #'
 #' @export sample_data
 sample_data <- function(n = 100) {
@@ -23,5 +39,16 @@ sample_data <- function(n = 100) {
   dta$factor <- factor(sample(c("C1", "C2", "C3", "C4", "C5"),
     size = n, replace = TRUE
   ))
-  return(dta)
+
+  labelled::var_label(dta) <- list(
+    id      = "Patient Identifier",
+    boolean = "Binary Indicator",
+    logical = "Logical Status",
+    f_real  = "Random Uniform Value",
+    float   = "Random Normal Value",
+    char    = "Gender",
+    factor  = "Category Group"
+  )
+
+  dta
 }

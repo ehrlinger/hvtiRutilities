@@ -26,7 +26,10 @@ The `hvtiRutilities` package provides utility functions for working with clinica
 
 - **`r_data_types()`**: Automatically infer and convert data types based on content
 - **`label_map()`**: Extract variable labels from labeled datasets into a lookup table
-- **`sample_data()`**: Generate sample datasets for testing and examples
+- **`get_label()`**: Safely look up a single variable's label (with error checking)
+- **`add_labels()`**: Register labels for derived variables on data frames or label maps
+- **`apply_label_overrides()`**: Apply study-specific label overrides from a YAML file
+- **`sample_data()`**: Generate labeled sample datasets for testing and examples
 
 ### Installation
 
@@ -159,55 +162,45 @@ This can be useful for modeling or visualization where factor levels are preferr
 
 ## Working with Variable Labels
 
-### Creating and Extracting Labels
+Variable labels are common in clinical datasets, especially those imported
+from SAS. `hvtiRutilities` provides a complete label management toolkit.
+For a comprehensive guide including best practices and anti-patterns, see
+`vignette("data-labels")`.
 
-Variable labels are common in clinical datasets, especially those imported from SAS. The `label_map()` function creates a lookup table:
+### Extracting and Looking Up Labels
 
 ```{r}
 library(labelled)
 
-# Create a dataset with labels
-patient_data <- data.frame(
-  patient_id = 1:5,
-  age = c(45, 52, 38, 61, 29),
-  sex = c("M", "F", "M", "F", "M"),
-  sbp = c(120, 135, 118, 142, 125),
-  dbp = c(80, 85, 75, 90, 82),
-  stringsAsFactors = FALSE
-)
+# Generate labeled data (as would come from SAS import)
+dta <- generate_survival_data(n = 100, seed = 42)
 
-# Add descriptive labels (as would come from SAS)
-var_label(patient_data$patient_id) <- "Patient Identifier"
-var_label(patient_data$age) <- "Age at Enrollment (years)"
-var_label(patient_data$sex) <- "Biological Sex"
-var_label(patient_data$sbp) <- "Systolic Blood Pressure (mmHg)"
-var_label(patient_data$dbp) <- "Diastolic Blood Pressure (mmHg)"
-
-# Extract labels into a lookup table
-labels <- label_map(patient_data)
-print(labels)
+# Extract all labels into a lookup table
+lmap <- label_map(dta)
+head(lmap, 8)
 ```
 
-### Using Labels in Analysis
-
-The label map is useful for creating publication-ready tables and plots:
+Use `get_label()` for safe single-variable lookup --- it errors on typos
+instead of silently returning `NA`:
 
 ```{r}
-# Create a summary statistics table
-summary_stats <- data.frame(
-  variable = c("age", "sbp", "dbp"),
-  mean = c(mean(patient_data$age),
-           mean(patient_data$sbp),
-           mean(patient_data$dbp)),
-  sd = c(sd(patient_data$age),
-         sd(patient_data$sbp),
-         sd(patient_data$dbp))
+get_label(lmap, "age")
+get_label(lmap, "lvefvs_b")
+```
+
+### Labeling Derived Variables
+
+When you create new variables, label them immediately using `add_labels()`:
+
+```{r}
+dta$age_group <- cut(dta$age,
+  breaks = c(0, 40, 60, Inf),
+  labels = c("<40", "40-60", ">60")
 )
 
-# Add descriptive labels
-summary_stats$description <- labels$label[match(summary_stats$variable, labels$key)]
-
-print(summary_stats)
+# Label the data frame directly --- labels travel with the data
+dta <- add_labels(dta, c(age_group = "Age Group at Surgery"))
+var_label(dta$age_group)
 ```
 
 ### Labels Persist Through Transformations
@@ -215,16 +208,13 @@ print(summary_stats)
 Labels are preserved when using `r_data_types()`:
 
 ```{r}
-# Convert types
-patient_clean <- r_data_types(patient_data, skip_vars = "patient_id")
+dta <- sample_data(n = 50)
+lmap_before <- label_map(dta)
 
-# Labels are preserved
-var_label(patient_clean$age)
-var_label(patient_clean$sex)
+dta_clean <- r_data_types(dta, skip_vars = "id")
+lmap_after <- label_map(dta_clean)
 
-# Extract labels from converted data
-labels_clean <- label_map(patient_clean)
-identical(labels, labels_clean)  # TRUE
+identical(lmap_before, lmap_after)  # TRUE
 ```
 
 ## Complete Workflow Example
@@ -404,8 +394,11 @@ table(clean_data$categorical_var)
 The `hvtiRutilities` package streamlines data preparation for clinical research:
 
 - **`r_data_types()`**: Automatic, intelligent type conversion
-- **`label_map()`**: Easy extraction of variable labels
-- **`sample_data()`**: Generate test data
+- **`label_map()`**: Extract variable labels into a lookup table
+- **`get_label()`**: Safe single-variable label lookup
+- **`add_labels()`**: Register labels for derived variables
+- **`apply_label_overrides()`**: Apply study-specific overrides from YAML
+- **`sample_data()`** / **`generate_survival_data()`**: Generate labeled test data
 
 Key features:
 - Preserves variable labels through transformations
@@ -413,10 +406,11 @@ Key features:
 - Flexible control over factor conversion
 - Works with data.frames, tibbles, and data.tables
 
-For more information:
-- Package documentation: `?r_data_types`, `?label_map`
+For more detailed guides:
+- Label handling: `vignette("data-labels")`
+- Dataset versioning: `vignette("dataset-versioning")`
+- Survival data: `vignette("survival-data")`
 - GitHub: https://github.com/ehrlinger/hvtiRutilities
-- Issues: https://github.com/ehrlinger/hvtiRutilities/issues
 - Release notes: Run `hvtiRutilities.news()` in R
 
 ## Session Information

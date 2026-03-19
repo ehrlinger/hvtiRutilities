@@ -1,3 +1,15 @@
+# hvtiRutilities 1.0.0.9000
+
+## Maintenance
+
+* Start prerelease cycle at 1.0.0.9000.
+
+# hvtiRutilities 0.4.1
+
+## Maintenance
+
+* Bumped package metadata for the upcoming release cycle.
+
 # hvtiRutilities 0.1.4
 
 ## New Features

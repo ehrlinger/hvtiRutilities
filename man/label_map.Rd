@@ -22,23 +22,36 @@ A data frame with two columns:
 Extracts variable labels from a labeled dataset and returns them as a
 data frame with variable names (keys) and their corresponding labels.
 This is particularly useful when working with SAS datasets that include
-variable labels.
+variable labels, or any dataset labeled with the \code{labelled} package.
+
+A warning is issued when more than 50\% of columns lack descriptive labels
+(i.e., the label is identical to the variable name). This typically indicates
+the data was imported from a source without labels (e.g., plain CSV) and
+labels should be supplied via \code{\link{add_labels}} or a
+\code{labels_overrides.yml} file (see \code{\link{apply_label_overrides}}).
 }
 \examples{
-# Create a dataset with labels
-library(labelled)
-dta <- data.frame(
-  age = c(25, 30, 35),
-  sex = c("M", "F", "M")
+# Generate labeled survival data
+dta <- generate_survival_data(n = 50, seed = 42)
+lmap <- label_map(dta)
+head(lmap)
+
+# Use for publication-ready tables
+summary_vars <- c("age", "bmi", "hgb_bs")
+tbl <- data.frame(
+  variable = summary_vars,
+  description = lmap$label[match(summary_vars, lmap$key)],
+  mean = sapply(dta[summary_vars], mean)
 )
-var_label(dta$age) <- "Patient Age"
-var_label(dta$sex) <- "Patient Sex"
+print(tbl)
 
-# Build the label map
-label_lookup <- label_map(dta)
-print(label_lookup)
-
-# Use for matching in summary tables
-summary <- data.frame(variable = c("age", "sex"))
-summary$description <- label_lookup$label[match(summary$variable, label_lookup$key)]
+# With sample data (has labels)
+dta <- sample_data(n = 20)
+label_map(dta)
+}
+\seealso{
+\code{\link{get_label}} for looking up a single label,
+  \code{\link{add_labels}} for registering labels for derived variables,
+  \code{\link{apply_label_overrides}} for applying study-specific overrides
+  from a YAML file.
 }
