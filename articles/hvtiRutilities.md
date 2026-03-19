@@ -14,8 +14,14 @@ from SAS.
   Automatically infer and convert data types based on content
 - **[`label_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)**:
   Extract variable labels from labeled datasets into a lookup table
+- **[`get_label()`](https://ehrlinger.github.io/hvtiRutilities/reference/get_label.md)**:
+  Safely look up a single variable’s label (with error checking)
+- **[`add_labels()`](https://ehrlinger.github.io/hvtiRutilities/reference/add_labels.md)**:
+  Register labels for derived variables on data frames or label maps
+- **[`apply_label_overrides()`](https://ehrlinger.github.io/hvtiRutilities/reference/apply_label_overrides.md)**:
+  Apply study-specific label overrides from a YAML file
 - **[`sample_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/sample_data.md)**:
-  Generate sample datasets for testing and examples
+  Generate labeled sample datasets for testing and examples
 
 ### Installation
 
@@ -32,7 +38,7 @@ if (requireNamespace("hvtiRutilities", quietly = TRUE)) {
   pkgload::load_all(export_all = FALSE, helpers = FALSE, quiet = TRUE)
 }
 #> 
-#>  hvtiRutilities 0.4.0 
+#>  hvtiRutilities 1.0.0.9000 
 #>  
 #>  Type hvtiRutilities.news() to see new features, changes, and bug fixes. 
 #> 
@@ -54,12 +60,19 @@ dta <- sample_data(n = 100)
 str(dta)
 #> 'data.frame':    100 obs. of  7 variables:
 #>  $ id     : int  1 2 3 4 5 6 7 8 9 10 ...
+#>   ..- attr(*, "label")= chr "Patient Identifier"
 #>  $ boolean: int  1 1 2 1 1 2 1 1 1 2 ...
+#>   ..- attr(*, "label")= chr "Binary Indicator"
 #>  $ logical: chr  "F" "F" "T" "F" ...
+#>   ..- attr(*, "label")= chr "Logical Status"
 #>  $ f_real : num  0.508 0.404 0.806 0.418 0.806 ...
+#>   ..- attr(*, "label")= chr "Random Uniform Value"
 #>  $ float  : num  0.118 -0.284 0.498 1.61 1.861 ...
+#>   ..- attr(*, "label")= chr "Random Normal Value"
 #>  $ char   : chr  "male" "male" "male" "male" ...
+#>   ..- attr(*, "label")= chr "Gender"
 #>  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 3 1 5 1 4 3 1 2 1 1 ...
+#>   ..- attr(*, "label")= chr "Category Group"
 ```
 
 Notice that the sample data has: - `boolean`: integer values (1, 2) -
@@ -76,19 +89,19 @@ dta_converted <- r_data_types(dta)
 str(dta_converted)
 #> 'data.frame':    100 obs. of  7 variables:
 #>  $ id     : int  1 2 3 4 5 6 7 8 9 10 ...
-#>   ..- attr(*, "label")= chr "id"
+#>   ..- attr(*, "label")= chr "Patient Identifier"
 #>  $ boolean: logi  TRUE TRUE TRUE TRUE TRUE TRUE ...
-#>   ..- attr(*, "label")= chr "boolean"
+#>   ..- attr(*, "label")= chr "Binary Indicator"
 #>  $ logical: Factor w/ 2 levels "F","T": 1 1 2 1 1 2 1 1 1 2 ...
-#>   ..- attr(*, "label")= chr "logical"
+#>   ..- attr(*, "label")= chr "Logical Status"
 #>  $ f_real : Factor w/ 9 levels "0.218431008746848",..: 4 2 8 3 8 7 8 8 9 3 ...
-#>   ..- attr(*, "label")= chr "f_real"
+#>   ..- attr(*, "label")= chr "Random Uniform Value"
 #>  $ float  : num  0.118 -0.284 0.498 1.61 1.861 ...
-#>   ..- attr(*, "label")= chr "float"
+#>   ..- attr(*, "label")= chr "Random Normal Value"
 #>  $ char   : Factor w/ 2 levels "female","male": 2 2 2 2 1 2 2 1 2 1 ...
-#>   ..- attr(*, "label")= chr "char"
+#>   ..- attr(*, "label")= chr "Gender"
 #>  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 3 1 5 1 4 3 1 2 1 1 ...
-#>   ..- attr(*, "label")= chr "factor"
+#>   ..- attr(*, "label")= chr "Category Group"
 ```
 
 After conversion: - `boolean`: converted to logical (TRUE/FALSE) because
@@ -200,68 +213,61 @@ preferred.
 
 ## Working with Variable Labels
 
-### Creating and Extracting Labels
-
 Variable labels are common in clinical datasets, especially those
-imported from SAS. The
-[`label_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)
-function creates a lookup table:
+imported from SAS. `hvtiRutilities` provides a complete label management
+toolkit. For a comprehensive guide including best practices and
+anti-patterns, see
+[`vignette("data-labels")`](https://ehrlinger.github.io/hvtiRutilities/articles/data-labels.md).
+
+### Extracting and Looking Up Labels
 
 ``` r
 library(labelled)
 
-# Create a dataset with labels
-patient_data <- data.frame(
-  patient_id = 1:5,
-  age = c(45, 52, 38, 61, 29),
-  sex = c("M", "F", "M", "F", "M"),
-  sbp = c(120, 135, 118, 142, 125),
-  dbp = c(80, 85, 75, 90, 82),
-  stringsAsFactors = FALSE
-)
+# Generate labeled data (as would come from SAS import)
+dta <- generate_survival_data(n = 100, seed = 42)
 
-# Add descriptive labels (as would come from SAS)
-var_label(patient_data$patient_id) <- "Patient Identifier"
-var_label(patient_data$age) <- "Age at Enrollment (years)"
-var_label(patient_data$sex) <- "Biological Sex"
-var_label(patient_data$sbp) <- "Systolic Blood Pressure (mmHg)"
-var_label(patient_data$dbp) <- "Diastolic Blood Pressure (mmHg)"
-
-# Extract labels into a lookup table
-labels <- label_map(patient_data)
-print(labels)
-#>                   key                           label
-#> patient_id patient_id              Patient Identifier
-#> age               age       Age at Enrollment (years)
-#> sex               sex                  Biological Sex
-#> sbp               sbp  Systolic Blood Pressure (mmHg)
-#> dbp               dbp Diastolic Blood Pressure (mmHg)
+# Extract all labels into a lookup table
+lmap <- label_map(dta)
+head(lmap, 8)
+#>                     key                                          label
+#> ccfid             ccfid                                     Patient ID
+#> origin_year origin_year                 Calendar year for iv_opyrs = 0
+#> iv_opyrs       iv_opyrs Observation interval (years) since origin_year
+#> iv_dead         iv_dead                Follow-up time to death (years)
+#> dead               dead           Death indicator (1=dead, 0=censored)
+#> reop               reop                      Reoperation (1=yes, 0=no)
+#> iv_reop         iv_reop          Follow-up time to reoperation (years)
+#> age                 age                         Age at surgery (years)
 ```
 
-### Using Labels in Analysis
-
-The label map is useful for creating publication-ready tables and plots:
+Use
+[`get_label()`](https://ehrlinger.github.io/hvtiRutilities/reference/get_label.md)
+for safe single-variable lookup — it errors on typos instead of silently
+returning `NA`:
 
 ``` r
-# Create a summary statistics table
-summary_stats <- data.frame(
-  variable = c("age", "sbp", "dbp"),
-  mean = c(mean(patient_data$age),
-           mean(patient_data$sbp),
-           mean(patient_data$dbp)),
-  sd = c(sd(patient_data$age),
-         sd(patient_data$sbp),
-         sd(patient_data$dbp))
+get_label(lmap, "age")
+#> [1] "Age at surgery (years)"
+get_label(lmap, "lvefvs_b")
+#> [1] "Baseline LV ejection fraction (%)"
+```
+
+### Labeling Derived Variables
+
+When you create new variables, label them immediately using
+[`add_labels()`](https://ehrlinger.github.io/hvtiRutilities/reference/add_labels.md):
+
+``` r
+dta$age_group <- cut(dta$age,
+  breaks = c(0, 40, 60, Inf),
+  labels = c("<40", "40-60", ">60")
 )
 
-# Add descriptive labels
-summary_stats$description <- labels$label[match(summary_stats$variable, labels$key)]
-
-print(summary_stats)
-#>   variable  mean       sd                     description
-#> 1      age  45.0 12.34909       Age at Enrollment (years)
-#> 2      sbp 128.0 10.22252  Systolic Blood Pressure (mmHg)
-#> 3      dbp  82.4  5.59464 Diastolic Blood Pressure (mmHg)
+# Label the data frame directly --- labels travel with the data
+dta <- add_labels(dta, c(age_group = "Age Group at Surgery"))
+var_label(dta$age_group)
+#> [1] "Age Group at Surgery"
 ```
 
 ### Labels Persist Through Transformations
@@ -270,18 +276,13 @@ Labels are preserved when using
 [`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md):
 
 ``` r
-# Convert types
-patient_clean <- r_data_types(patient_data, skip_vars = "patient_id")
+dta <- sample_data(n = 50)
+lmap_before <- label_map(dta)
 
-# Labels are preserved
-var_label(patient_clean$age)
-#> [1] "Age at Enrollment (years)"
-var_label(patient_clean$sex)
-#> [1] "Biological Sex"
+dta_clean <- r_data_types(dta, skip_vars = "id")
+lmap_after <- label_map(dta_clean)
 
-# Extract labels from converted data
-labels_clean <- label_map(patient_clean)
-identical(labels, labels_clean)  # TRUE
+identical(lmap_before, lmap_after)  # TRUE
 #> [1] TRUE
 ```
 
@@ -506,19 +507,29 @@ research:
 - **[`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)**:
   Automatic, intelligent type conversion
 - **[`label_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)**:
-  Easy extraction of variable labels
-- **[`sample_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/sample_data.md)**:
-  Generate test data
+  Extract variable labels into a lookup table
+- **[`get_label()`](https://ehrlinger.github.io/hvtiRutilities/reference/get_label.md)**:
+  Safe single-variable label lookup
+- **[`add_labels()`](https://ehrlinger.github.io/hvtiRutilities/reference/add_labels.md)**:
+  Register labels for derived variables
+- **[`apply_label_overrides()`](https://ehrlinger.github.io/hvtiRutilities/reference/apply_label_overrides.md)**:
+  Apply study-specific overrides from YAML
+- **[`sample_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/sample_data.md)**
+  /
+  **[`generate_survival_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/generate_survival_data.md)**:
+  Generate labeled test data
 
 Key features: - Preserves variable labels through transformations -
 Handles multiple NA representations - Flexible control over factor
 conversion - Works with data.frames, tibbles, and data.tables
 
-For more information: - Package documentation:
-[`?r_data_types`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md),
-[`?label_map`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md) -
-GitHub: <https://github.com/ehrlinger/hvtiRutilities> - Issues:
-<https://github.com/ehrlinger/hvtiRutilities/issues> - Release notes:
+For more detailed guides: - Label handling:
+[`vignette("data-labels")`](https://ehrlinger.github.io/hvtiRutilities/articles/data-labels.md) -
+Dataset versioning:
+[`vignette("dataset-versioning")`](https://ehrlinger.github.io/hvtiRutilities/articles/dataset-versioning.md) -
+Survival data:
+[`vignette("survival-data")`](https://ehrlinger.github.io/hvtiRutilities/articles/survival-data.md) -
+GitHub: <https://github.com/ehrlinger/hvtiRutilities> - Release notes:
 Run
 [`hvtiRutilities.news()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvtiRutilities.news.md)
 in R
@@ -548,7 +559,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] labelled_2.16.0      hvtiRutilities_0.4.0
+#> [1] labelled_2.16.0           hvtiRutilities_1.0.0.9000
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] vctrs_0.7.1       cli_3.6.5         knitr_1.51        rlang_1.1.7      
