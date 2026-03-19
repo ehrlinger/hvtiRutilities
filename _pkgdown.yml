@@ -64,6 +64,7 @@ reference:
 
 - title: Package Utilities
   contents:
+  - hvtiRutilities-package
   - hvtiRutilities.news
 
 articles:
