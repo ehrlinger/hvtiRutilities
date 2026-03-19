@@ -2,23 +2,39 @@
 % Please edit documentation in R/sample_data.R
 \name{sample_data}
 \alias{sample_data}
-\title{sample_data creates a generated data set to test the included methods.}
+\title{Generate a sample dataset for testing}
 \usage{
 sample_data(n = 100)
 }
 \arguments{
-\item{n}{number of records to include}
+\item{n}{Number of records to generate. Default \code{100}.}
 }
 \value{
-a data.frame containing a sample dataset
+A data frame with \code{n} rows and 7 labeled columns:
+\describe{
+  \item{id}{Integer sequence (Patient Identifier)}
+  \item{boolean}{Integer 1/2 (Binary Indicator)}
+  \item{logical}{Character "F"/"T" (Logical Status)}
+  \item{f_real}{Uniform random values (Random Uniform Value)}
+  \item{float}{Normal random values (Random Normal Value)}
+  \item{char}{Character "male"/"female" (Gender)}
+  \item{factor}{Factor C1-C5 (Category Group)}
+}
 }
 \description{
-The \code{data.frame} contains a collection of columns with sample data
+Creates a data frame with labeled columns of various types, suitable for
+demonstrating \code{\link{r_data_types}} and \code{\link{label_map}}.
 }
 \examples{
-# create the data set
+# Create and inspect labeled data
+dta <- sample_data(n = 20)
+str(dta)
+label_map(dta)
+
+# Full workflow: generate, convert types, extract labels
 dta <- sample_data(n = 100)
-udta <- r_data_types(dta)
-lmap <- label_map(dta)
+dta_clean <- r_data_types(dta, skip_vars = "id")
+lmap <- label_map(dta_clean)
+print(lmap)
 
 }

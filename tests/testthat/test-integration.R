@@ -4,13 +4,8 @@ library(hvtiRutilities)
 # Integration tests - workflows combining multiple functions ----
 
 test_that("complete workflow: sample_data -> r_data_types -> label_map", {
-  # Generate sample data
+  # Generate sample data (now includes labels)
   dta <- sample_data(n = 50)
-
-  # Add labels
-  labelled::var_label(dta$id) <- "Patient ID"
-  labelled::var_label(dta$boolean) <- "Binary Indicator"
-  labelled::var_label(dta$char) <- "Gender"
 
   # Convert types
   dta_converted <- r_data_types(dta)
@@ -22,7 +17,7 @@ test_that("complete workflow: sample_data -> r_data_types -> label_map", {
   expect_equal(nrow(dta_converted), 50)
   expect_equal(nrow(label_lookup), ncol(dta))
   expect_equal(label_lookup$key, names(dta))
-  expect_true("Patient ID" %in% label_lookup$label)
+  expect_true("Patient Identifier" %in% label_lookup$label)
   expect_true("Gender" %in% label_lookup$label)
 })
 
@@ -56,7 +51,6 @@ test_that("r_data_types then label_map preserves all labels", {
 
 test_that("label_map works on both original and converted data", {
   dta <- sample_data(n = 30)
-  labelled::var_label(dta$boolean) <- "Test Variable"
 
   # Label map on original
   labels_orig <- label_map(dta)

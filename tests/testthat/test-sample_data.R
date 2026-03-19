@@ -41,3 +41,14 @@ test_that("sample_data logical column has expected values", {
   dta <- sample_data(n = 100)
   expect_true(all(dta$logical %in% c("F", "T")))
 })
+
+test_that("sample_data columns have variable labels", {
+  dta <- sample_data(n = 10)
+  lmap <- label_map(dta)
+
+  # All labels should be descriptive (not just variable names)
+  expect_false(any(lmap$key == lmap$label))
+  expect_equal(lmap$label[lmap$key == "id"], "Patient Identifier")
+  expect_equal(lmap$label[lmap$key == "char"], "Gender")
+  expect_equal(lmap$label[lmap$key == "factor"], "Category Group")
+})

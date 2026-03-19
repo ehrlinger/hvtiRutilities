@@ -34,6 +34,52 @@ navbar:
       icon: fa-linkedin
       href: https://www.linkedin.com/in/ehrlinger/
       aria-label: LinkedIn
+
+reference:
+- title: Data Type Conversion
+  desc: Automatically infer and convert column types
+  contents:
+  - r_data_types
+
+- title: Variable Labels
+  desc: Extract, look up, register, and override variable labels
+  contents:
+  - label_map
+  - get_label
+  - add_labels
+  - apply_label_overrides
+  - clean_labels
+
+- title: Dataset Versioning
+  desc: Track and verify dataset integrity with SHA-256 checksums
+  contents:
+  - update_manifest
+  - verify_manifest
+
+- title: Data Generation
+  desc: Generate labeled sample and synthetic datasets
+  contents:
+  - generate_survival_data
+  - sample_data
+
+- title: Package Utilities
+  contents:
+  - hvtiRutilities.news
+
+articles:
+- title: Getting Started
+  contents:
+  - hvtiRutilities
+
+- title: Core Workflows
+  contents:
+  - data-labels
+  - dataset-versioning
+
+- title: Specialized Topics
+  contents:
+  - survival-data
+
 footer:
   structure:
     left: developed_by
@@ -42,4 +88,3 @@ footer:
     developed_by: John Ehrlinger
     built_with_pkgdown: This site was built using [pkgdown](https://pkgdown.r-lib.org/)!&nbsp;&nbsp;<img
       src='https://pkgdown.r-lib.org/logo.png' alt='pkgdown logo' width='25'>
-
