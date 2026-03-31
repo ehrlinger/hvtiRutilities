@@ -125,6 +125,68 @@ get_label <- function(label_map_df, variable) {
 }
 
 ## =============================================================================
+#' Look up labels for multiple variables at once
+#'
+#' @description
+#' A vectorized companion to \code{\link{get_label}}. Returns a named character
+#' vector of labels for one or more variable names, making it convenient to
+#' label axes, table columns, or multi-panel plots in a single call.
+#'
+#' Variables not found in the label map cause an error (just like
+#' \code{get_label}), so typos are caught immediately.
+#'
+#' @param label_map_df A data frame with \code{key} and \code{label} columns,
+#'   as returned by \code{\link{label_map}}.
+#' @param variables A character vector of variable names to look up.
+#'
+#' @return A named character vector with names equal to \code{variables}
+#'   and values equal to the corresponding labels.
+#'
+#' @seealso \code{\link{get_label}} for single-variable lookup,
+#'   \code{\link{label_map}} to extract a label map from data.
+#'
+#' @export
+#'
+#' @examples
+#' dta <- generate_survival_data(n = 50, seed = 42)
+#' lmap <- label_map(dta)
+#'
+#' # Look up several labels at once
+#' get_labels(lmap, c("age", "bmi", "hgb_bs"))
+#'
+#' # Useful for table column headers
+#' vars <- c("age", "bmi", "lvefvs_b")
+#' headers <- get_labels(lmap, vars)
+#' print(headers)
+get_labels <- function(label_map_df, variables) {
+  if (!is.data.frame(label_map_df) ||
+      !all(c("key", "label") %in% names(label_map_df))) {
+    stop("label_map_df must be a data frame with 'key' and 'label' columns.",
+         call. = FALSE)
+  }
+  if (!is.character(variables) || length(variables) == 0L) {
+    stop("'variables' must be a character vector with at least one element.",
+         call. = FALSE)
+  }
+
+  idx <- match(variables, label_map_df$key)
+  missing <- variables[is.na(idx)]
+  if (length(missing) > 0L) {
+    stop(
+      sprintf(
+        "Variable%s not found in label map: %s",
+        if (length(missing) > 1L) "s" else "",
+        paste0("'", missing, "'", collapse = ", ")
+      ),
+      call. = FALSE
+    )
+  }
+  result <- label_map_df$label[idx]
+  names(result) <- variables
+  result
+}
+
+## =============================================================================
 #' Add or update labels in a label map
 #'
 #' @description
@@ -223,23 +285,32 @@ add_labels <- function(label_map_df, new_labels) {
 #' Apply label overrides from a YAML file
 #'
 #' @description
-#' Reads label overrides from a YAML file and applies them to a label map.
-#' This allows study-specific label replacements (e.g., abbreviations,
-#' corrections) to be configured externally rather than hard-coded in
-#' analysis scripts.
+#' Reads label overrides from a YAML file and applies them to a label map
+#' \strong{or} directly to a data frame. This allows study-specific label
+#' replacements (e.g., abbreviations, corrections) to be configured
+#' externally rather than hard-coded in analysis scripts.
 #'
 #' The YAML file should contain a simple mapping of variable names to labels.
-#' If the file does not exist, the label map is returned unchanged — making
+#' If the file does not exist, the input is returned unchanged --- making
 #' it safe to call unconditionally in shared code.
 #'
-#' @param label_map_df A data frame with \code{key} and \code{label} columns,
-#'   as returned by \code{\link{label_map}}.
+#' When \code{data} is a label map (a data frame with \code{key} and
+#' \code{label} columns), the overrides are applied to the map. When
+#' \code{data} is any other data frame, labels are applied directly to
+#' the data via \code{\link{add_labels}}, which is the preferred
+#' data-first workflow.
+#'
+#' @param data A data frame: either a label map (with \code{key} and
+#'   \code{label} columns, as returned by \code{\link{label_map}}), or any
+#'   data frame whose columns should be labeled directly.
 #' @param overrides_file Path to a YAML file containing label overrides.
 #'   Defaults to \code{"labels_overrides.yml"} in the current working directory.
 #'
-#' @return The label map with overrides applied. Variables not mentioned in
-#'   the YAML file are left unchanged. Variables in the YAML file that are
-#'   not in the label map are appended.
+#' @return When given a label map: the updated label map data frame.
+#'   When given a data frame: the data frame with labels applied via
+#'   \code{labelled::var_label()}.
+#'   In both cases, variables not mentioned in the YAML file are left
+#'   unchanged.
 #'
 #' @details
 #' The YAML file format is a simple mapping of variable names to labels:
@@ -268,34 +339,37 @@ add_labels <- function(label_map_df, new_labels) {
 #'   "bsa_ratio: 'Body Surface Area Ratio'"
 #' ), tmp)
 #'
+#' # --- On a label map ---
 #' dta <- generate_survival_data(n = 50, seed = 42)
 #' lmap <- label_map(dta)
-#'
-#' # Apply study-specific overrides
 #' lmap <- apply_label_overrides(lmap, overrides_file = tmp)
 #' lmap[lmap$key == "age", ]
+#'
+#' # --- Directly on data (preferred) ---
+#' dta <- apply_label_overrides(dta, overrides_file = tmp)
+#' labelled::var_label(dta$age)
+#'
 #' unlink(tmp)
-apply_label_overrides <- function(label_map_df,
+apply_label_overrides <- function(data,
                                   overrides_file = "labels_overrides.yml") {
-  if (!is.data.frame(label_map_df) ||
-      !all(c("key", "label") %in% names(label_map_df))) {
-    stop("label_map_df must be a data frame with 'key' and 'label' columns.",
+  if (!is.data.frame(data)) {
+    stop("'data' must be a data frame (either a label map or a dataset).",
          call. = FALSE)
   }
 
   if (!file.exists(overrides_file)) {
-    return(label_map_df)
+    return(data)
   }
 
   overrides <- yaml::read_yaml(overrides_file)
 
   if (!is.list(overrides) || length(overrides) == 0) {
-    return(label_map_df)
+    return(data)
   }
 
   # Convert to named character vector and apply via add_labels
   override_vec <- vapply(overrides, as.character, character(1))
-  add_labels(label_map_df, override_vec)
+  add_labels(data, override_vec)
 }
 
 ## =============================================================================
@@ -306,7 +380,11 @@ apply_label_overrides <- function(label_map_df,
 #' \code{clean_labels()} has been renamed for clarity. This function is
 #' kept as an alias for backward compatibility.
 #'
-#' @inheritParams apply_label_overrides
+#' @param label_map_df A data frame (label map or dataset) passed to
+#'   \code{\link{apply_label_overrides}}.
+#' @param overrides_file Path to a YAML file containing label overrides.
+#'   Defaults to \code{"labels_overrides.yml"}.
+#'
 #' @inherit apply_label_overrides return
 #'
 #' @export

@@ -7,16 +7,18 @@
 clean_labels(label_map_df, overrides_file = "labels_overrides.yml")
 }
 \arguments{
-\item{label_map_df}{A data frame with \code{key} and \code{label} columns,
-as returned by \code{\link{label_map}}.}
+\item{label_map_df}{A data frame (label map or dataset) passed to
+\code{\link{apply_label_overrides}}.}
 
 \item{overrides_file}{Path to a YAML file containing label overrides.
-Defaults to \code{"labels_overrides.yml"} in the current working directory.}
+Defaults to \code{"labels_overrides.yml"}.}
 }
 \value{
-The label map with overrides applied. Variables not mentioned in
-  the YAML file are left unchanged. Variables in the YAML file that are
-  not in the label map are appended.
+When given a label map: the updated label map data frame.
+  When given a data frame: the data frame with labels applied via
+  \code{labelled::var_label()}.
+  In both cases, variables not mentioned in the YAML file are left
+  unchanged.
 }
 \description{
 \strong{Deprecated.} Use \code{\link{apply_label_overrides}()} instead.

@@ -36,6 +36,11 @@ navbar:
       aria-label: LinkedIn
 
 reference:
+- title: Data Import
+  desc: Read clinical data files with automatic type conversion
+  contents:
+  - read_clinical_data
+
 - title: Data Type Conversion
   desc: Automatically infer and convert column types
   contents:
@@ -46,9 +51,16 @@ reference:
   contents:
   - label_map
   - get_label
+  - get_labels
   - add_labels
   - apply_label_overrides
   - clean_labels
+
+- title: Data Documentation
+  desc: Build data dictionaries and compare dataset versions
+  contents:
+  - data_dictionary
+  - compare_datasets
 
 - title: Dataset Versioning
   desc: Track and verify dataset integrity with SHA-256 checksums

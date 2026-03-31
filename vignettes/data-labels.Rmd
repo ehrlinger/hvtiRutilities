@@ -220,29 +220,27 @@ get_label(lmap, "ages")
 
 #### Building a data dictionary
 
+Use `data_dictionary()` to generate a complete, type-annotated data
+dictionary in one call:
+
 ```{r}
 dta <- generate_survival_data(n = 200, seed = 42)
-lmap <- label_map(dta)
-
-# Build a type-annotated data dictionary
-dict <- data.frame(
-  variable    = lmap$key,
-  label       = lmap$label,
-  type        = vapply(dta, function(x) class(x)[1], character(1)),
-  n_unique    = vapply(dta, function(x) length(unique(x)), integer(1)),
-  pct_missing = vapply(dta, function(x) round(mean(is.na(x)) * 100, 1), numeric(1))
-)
+dict <- data_dictionary(dta)
 head(dict, 12)
 ```
 
 #### Labels in summary tables
 
+Use `get_labels()` (vectorized) to look up multiple labels at once:
+
 ```{r}
+lmap <- label_map(dta)
+
 # Numeric summary with labels
 num_vars <- c("age", "bmi", "hgb_bs", "gfr_bs", "lvefvs_b")
 summary_tbl <- data.frame(
   variable = num_vars,
-  label    = vapply(num_vars, function(v) get_label(lmap, v), character(1)),
+  label    = get_labels(lmap, num_vars),
   mean     = vapply(num_vars, function(v) round(mean(dta[[v]]), 1), numeric(1)),
   sd       = vapply(num_vars, function(v) round(sd(dta[[v]]), 1), numeric(1)),
   median   = vapply(num_vars, function(v) round(median(dta[[v]]), 1), numeric(1))
@@ -382,8 +380,10 @@ lmap <- label_map(dta)  # always in sync
 |---|---|
 | `label_map(data)` | Extract all labels into a lookup table |
 | `get_label(lmap, var)` | Look up one label with error checking |
+| `get_labels(lmap, vars)` | Look up multiple labels at once (vectorized) |
 | `add_labels(data, labels)` | Label a data frame or update a label map |
-| `apply_label_overrides(lmap, file)` | Apply study-specific overrides from YAML |
+| `apply_label_overrides(data, file)` | Apply study-specific overrides from YAML (works on label maps or data frames) |
+| `data_dictionary(data)` | Build a type-annotated data dictionary |
 
 ## Session Information
 
