@@ -86,7 +86,7 @@ data_dictionary <- function(data) {
   } else if (is.logical(vals)) {
     sprintf("TRUE: %.0f%%", mean(vals) * 100)
   } else if (is.factor(vals) || is.character(vals)) {
-    lvls <- if (is.factor(vals)) levels(vals) else sort(unique(vals))
+    lvls <- if (is.factor(vals)) levels(droplevels(vals)) else sort(unique(vals))
     n <- length(lvls)
     preview <- paste(utils::head(lvls, 5), collapse = ", ")
     if (n > 5) preview <- paste0(preview, ", ...")
