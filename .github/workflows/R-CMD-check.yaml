@@ -39,7 +39,7 @@ jobs:
           r-version: ${{ matrix.config.r }}
           http-user-agent: ${{ matrix.config.http-user-agent }}
           use-public-rspm: true
-          rtools-version: '42'
+          rtools-version: '44'
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
@@ -53,3 +53,4 @@ jobs:
         with:
           upload-snapshots: true
           build_args: 'c("--no-manual","--compact-vignettes=gs+qpdf")'
+          error_on: '"warning"'

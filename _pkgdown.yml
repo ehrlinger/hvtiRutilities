@@ -80,6 +80,7 @@ articles:
 - title: Specialized Topics
   contents:
   - survival-data
+  - reproducible-seeds
 
 footer:
   structure:
