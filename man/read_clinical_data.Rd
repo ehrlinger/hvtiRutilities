@@ -29,7 +29,10 @@ which package reads which format and ensures labels are preserved.
 Supported formats:
 \describe{
   \item{\code{.sas7bdat}}{SAS datasets via \code{haven::read_sas()}}
-  \item{\code{.csv}}{Comma-separated files via \code{utils::read.csv()}}
+  \item{\code{.csv}}{Comma-separated files via \code{utils::read.csv()} with
+    \code{check.names = FALSE}, so column names are preserved exactly as
+    written in the file (spaces, hyphens, and special characters are not
+    silently converted to \code{.}).}
   \item{\code{.xlsx}, \code{.xls}}{Excel workbooks via
     \code{readxl::read_excel()}}
   \item{\code{.rds}}{R serialized objects via \code{readRDS()}}

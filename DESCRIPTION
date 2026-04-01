@@ -30,13 +30,15 @@ Imports:
 Suggests:
     knitr,
     quarto,
+    randomForestSRC,
     rmarkdown,
     testthat (>= 3.0.0),
     tidyverse,
     tibble,
     pkgload,
+    varpro,
     withr,
     writexl
-VignetteBuilder: knitr
+VignetteBuilder: quarto
 RoxygenNote: 7.3.3
 Config/testthat/edition: 3
