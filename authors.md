@@ -7,7 +7,7 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/ehrlinger/hvtiRutilities/blob/main/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/ehrlinger/hvtiRutilities/blob/v1.0.0.9004/DESCRIPTION)
 
 Ehrlinger J (2026). *hvtiRutilities: A Collection of Utilities for Use
 by HVTI CORR Group at the Cleveland Clinic*. R package version
