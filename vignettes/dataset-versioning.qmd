@@ -1,11 +1,11 @@
 ---
 title: "Dataset Version Tracking with manifest.yaml"
 author: "John Ehrlinger"
-date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
+date: today
+format: html
 vignette: >
   %\VignetteIndexEntry{Dataset Version Tracking with manifest.yaml}
-  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEngine{quarto::html}
   %\VignetteEncoding{UTF-8}
 ---
 

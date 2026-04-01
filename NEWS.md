@@ -1,3 +1,50 @@
+# hvtiRutilities 1.0.0.9004
+
+## Bug fixes
+
+- `read_clinical_data()`: files with no extension now produce a clear error
+  ("Cannot determine file type: … has no extension") instead of the
+  misleading `Unsupported file type: '..'` message. The unsupported-extension
+  error also now includes the full file path for easier diagnosis.
+
+## Tests
+
+- `test-read_clinical_data.R`: strengthened the tibble-coercion assertion from
+  `expect_true(is.data.frame(result))` (TRUE for tibbles) to
+  `expect_equal(class(result), "data.frame")` so the test actually protects
+  against `as.data.frame()` being removed or bypassed.
+
+## Documentation
+
+- `vignettes/reproducible-seeds.qmd`: section heading "Using the Seed with
+  varpro" and narrative references to the package now use the correct CRAN
+  casing `varPro`; function-name references (`varpro()`, `unsupv.varpro()`)
+  remain lowercase as those are the exported function names.
+
+# hvtiRutilities 1.0.0.9003
+
+## Bug fixes
+
+- Fixed `Suggests` entry for `varPro`: package name on CRAN is `varPro`
+  (camelCase), not `varpro` (lowercase). The case mismatch caused `pak`
+  lockfile resolution to fail with "Can't find package called varpro".
+  Updated the corresponding `varPro::varpro()` call in
+  `vignettes/reproducible-seeds.qmd` to match.
+
+# hvtiRutilities 1.0.0.9002
+
+## Documentation
+
+- All vignettes migrated from R Markdown (`.Rmd`) to Quarto (`.qmd`). Added
+  `quarto` to `Suggests`.
+
+## Bug fixes
+
+- `read_clinical_data()`: CSV files are now read with `check.names = FALSE` so
+  column names containing spaces, hyphens, or special characters are preserved
+  exactly as written, preventing silent name mangling that could break
+  downstream label lookups.
+
 # hvtiRutilities 1.0.0.9000
 
 ## Maintenance

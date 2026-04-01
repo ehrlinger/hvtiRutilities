@@ -4,29 +4,38 @@
 \alias{apply_label_overrides}
 \title{Apply label overrides from a YAML file}
 \usage{
-apply_label_overrides(label_map_df, overrides_file = "labels_overrides.yml")
+apply_label_overrides(data, overrides_file = "labels_overrides.yml")
 }
 \arguments{
-\item{label_map_df}{A data frame with \code{key} and \code{label} columns,
-as returned by \code{\link{label_map}}.}
+\item{data}{A data frame: either a label map (with \code{key} and
+\code{label} columns, as returned by \code{\link{label_map}}), or any
+data frame whose columns should be labeled directly.}
 
 \item{overrides_file}{Path to a YAML file containing label overrides.
 Defaults to \code{"labels_overrides.yml"} in the current working directory.}
 }
 \value{
-The label map with overrides applied. Variables not mentioned in
-  the YAML file are left unchanged. Variables in the YAML file that are
-  not in the label map are appended.
+When given a label map: the updated label map data frame.
+  When given a data frame: the data frame with labels applied via
+  \code{labelled::var_label()}.
+  In both cases, variables not mentioned in the YAML file are left
+  unchanged.
 }
 \description{
-Reads label overrides from a YAML file and applies them to a label map.
-This allows study-specific label replacements (e.g., abbreviations,
-corrections) to be configured externally rather than hard-coded in
-analysis scripts.
+Reads label overrides from a YAML file and applies them to a label map
+\strong{or} directly to a data frame. This allows study-specific label
+replacements (e.g., abbreviations, corrections) to be configured
+externally rather than hard-coded in analysis scripts.
 
 The YAML file should contain a simple mapping of variable names to labels.
-If the file does not exist, the label map is returned unchanged — making
+If the file does not exist, the input is returned unchanged --- making
 it safe to call unconditionally in shared code.
+
+When \code{data} is a label map (a data frame with \code{key} and
+\code{label} columns), the overrides are applied to the map. When
+\code{data} is any other data frame, labels are applied directly to
+the data via \code{\link{add_labels}}, which is the preferred
+data-first workflow.
 }
 \details{
 The YAML file format is a simple mapping of variable names to labels:
@@ -50,12 +59,16 @@ writeLines(c(
   "bsa_ratio: 'Body Surface Area Ratio'"
 ), tmp)
 
+# --- On a label map ---
 dta <- generate_survival_data(n = 50, seed = 42)
 lmap <- label_map(dta)
-
-# Apply study-specific overrides
 lmap <- apply_label_overrides(lmap, overrides_file = tmp)
 lmap[lmap$key == "age", ]
+
+# --- Directly on data (preferred) ---
+dta <- apply_label_overrides(dta, overrides_file = tmp)
+labelled::var_label(dta$age)
+
 unlink(tmp)
 }
 \seealso{

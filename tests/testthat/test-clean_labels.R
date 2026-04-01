@@ -68,11 +68,53 @@ test_that("apply_label_overrides returns unchanged map for empty YAML", {
   expect_identical(result, lmap)
 })
 
-test_that("apply_label_overrides rejects invalid label_map_df", {
+test_that("apply_label_overrides rejects non-data-frame", {
   expect_error(
-    apply_label_overrides(data.frame(a = 1), overrides_file = "x.yml"),
-    "data frame with 'key' and 'label' columns"
+    apply_label_overrides("not a df", overrides_file = "x.yml"),
+    "must be a data frame"
   )
+})
+
+# apply_label_overrides on data frames (data-first mode) ----
+
+test_that("apply_label_overrides applies overrides directly to data", {
+  tmp <- tempfile(fileext = ".yml")
+  on.exit(unlink(tmp))
+
+  writeLines(c(
+    "age: 'Patient Age (years)'",
+    "bmi: 'Body Mass Index'"
+  ), tmp)
+
+  dta <- data.frame(age = 1:3, bmi = 4:6)
+  labelled::var_label(dta$age) <- "Patient Age"
+  labelled::var_label(dta$bmi) <- "BMI"
+
+  result <- apply_label_overrides(dta, overrides_file = tmp)
+
+  expect_equal(labelled::var_label(result$age), "Patient Age (years)")
+  expect_equal(labelled::var_label(result$bmi), "Body Mass Index")
+})
+
+test_that("apply_label_overrides on data ignores non-existent columns", {
+  tmp <- tempfile(fileext = ".yml")
+  on.exit(unlink(tmp))
+  writeLines("nonexistent: 'Ghost Label'", tmp)
+
+  dta <- data.frame(age = 1:3)
+  labelled::var_label(dta$age) <- "Patient Age"
+
+  result <- apply_label_overrides(dta, overrides_file = tmp)
+  expect_equal(labelled::var_label(result$age), "Patient Age")
+  expect_equal(ncol(result), 1)
+})
+
+test_that("apply_label_overrides on data returns unchanged when no file", {
+  dta <- data.frame(age = 1:3)
+  labelled::var_label(dta$age) <- "Age"
+
+  result <- apply_label_overrides(dta, overrides_file = "nonexistent.yml")
+  expect_equal(labelled::var_label(result$age), "Age")
 })
 
 test_that("apply_label_overrides supports study-specific abbreviation overrides", {

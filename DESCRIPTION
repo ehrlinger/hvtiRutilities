@@ -1,8 +1,8 @@
 Package: hvtiRutilities
 Type: Package
 Title: A Collection of Utilities for Use by HVTI CORR Group at the Cleveland Clinic
-Version: 1.0.0.9000
-Date: 2026-03-19
+Version: 1.0.0.9004
+Date: 2026-04-01
 Authors@R: c(
     person(
       "John", "Ehrlinger",
@@ -29,13 +29,16 @@ Imports:
     yaml
 Suggests:
     knitr,
+    quarto,
+    randomForestSRC,
     rmarkdown,
     testthat (>= 3.0.0),
     tidyverse,
     tibble,
     pkgload,
+    varPro,
     withr,
     writexl
-VignetteBuilder: knitr
+VignetteBuilder: quarto
 RoxygenNote: 7.3.3
 Config/testthat/edition: 3

@@ -1,11 +1,11 @@
 ---
 title: "Getting Started with hvtiRutilities"
 author: "John Ehrlinger"
-date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
+date: today
+format: html
 vignette: >
   %\VignetteIndexEntry{Getting Started with hvtiRutilities}
-  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEngine{quarto::html}
   %\VignetteEncoding{UTF-8}
 ---
 
@@ -24,11 +24,14 @@ The `hvtiRutilities` package provides utility functions for working with clinica
 
 ### Main Functions
 
+- **`read_clinical_data()`**: Read SAS, CSV, Excel, or RDS files with automatic type conversion
 - **`r_data_types()`**: Automatically infer and convert data types based on content
 - **`label_map()`**: Extract variable labels from labeled datasets into a lookup table
-- **`get_label()`**: Safely look up a single variable's label (with error checking)
+- **`get_label()`** / **`get_labels()`**: Safely look up one or many variable labels
 - **`add_labels()`**: Register labels for derived variables on data frames or label maps
 - **`apply_label_overrides()`**: Apply study-specific label overrides from a YAML file
+- **`data_dictionary()`**: Build a type-annotated data dictionary from any labeled dataset
+- **`compare_datasets()`**: Summarise differences between two data pulls
 - **`sample_data()`**: Generate labeled sample datasets for testing and examples
 
 ### Installation
@@ -325,20 +328,19 @@ str(labs_clean)
 
 ### Integration with Data Import
 
-Typical workflow when importing from SAS:
+Use `read_clinical_data()` to read and convert in one step:
 
 ```{r eval=FALSE}
-# Read SAS dataset (example - not run)
-# library(haven)
-# sas_data <- read_sas("path/to/data.sas7bdat")
+# Read SAS, CSV, or Excel — auto-detects format and converts types
+dta <- read_clinical_data("path/to/data.sas7bdat", factor_size = 15)
 
-# Apply type conversion and extract labels
-# clean_data <- r_data_types(sas_data, factor_size = 15)
-# variable_labels <- label_map(clean_data)
-
-# Save labels for documentation
-# write.csv(variable_labels, "data_dictionary.csv", row.names = FALSE)
+# Build a data dictionary for documentation
+dict <- data_dictionary(dta)
+write.csv(dict, "data_dictionary.csv", row.names = FALSE)
 ```
+
+`read_clinical_data()` supports `.sas7bdat`, `.csv`, `.xlsx`, `.xls`, and
+`.rds` files. Set `convert_types = FALSE` to skip automatic type conversion.
 
 ## Best Practices
 
@@ -393,11 +395,14 @@ table(clean_data$categorical_var)
 
 The `hvtiRutilities` package streamlines data preparation for clinical research:
 
+- **`read_clinical_data()`**: One-step import from SAS, CSV, Excel, or RDS
 - **`r_data_types()`**: Automatic, intelligent type conversion
 - **`label_map()`**: Extract variable labels into a lookup table
-- **`get_label()`**: Safe single-variable label lookup
+- **`get_label()`** / **`get_labels()`**: Safe label lookup (single or vectorized)
 - **`add_labels()`**: Register labels for derived variables
-- **`apply_label_overrides()`**: Apply study-specific overrides from YAML
+- **`apply_label_overrides()`**: Apply study-specific overrides from YAML (label maps or data)
+- **`data_dictionary()`**: Build a type-annotated data dictionary
+- **`compare_datasets()`**: Audit differences between two data pulls
 - **`sample_data()`** / **`generate_survival_data()`**: Generate labeled test data
 
 Key features:
@@ -410,6 +415,7 @@ For more detailed guides:
 - Label handling: `vignette("data-labels")`
 - Dataset versioning: `vignette("dataset-versioning")`
 - Survival data: `vignette("survival-data")`
+- Reproducible seeds: `vignette("reproducible-seeds")`
 - GitHub: https://github.com/ehrlinger/hvtiRutilities
 - Release notes: Run `hvtiRutilities.news()` in R
 
