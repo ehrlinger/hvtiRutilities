@@ -1,11 +1,11 @@
 ---
 title: "Simulating Cardiac Surgery Survival Data"
 author: "John Ehrlinger"
-date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
+date: today
+format: html
 vignette: >
   %\VignetteIndexEntry{Simulating Cardiac Surgery Survival Data}
-  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEngine{quarto::html}
   %\VignetteEncoding{UTF-8}
 ---
 

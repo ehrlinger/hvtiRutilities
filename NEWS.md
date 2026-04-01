@@ -1,3 +1,17 @@
+# hvtiRutilities 1.0.0.9002
+
+## Documentation
+
+- All vignettes migrated from R Markdown (`.Rmd`) to Quarto (`.qmd`). Added
+  `quarto` to `Suggests`.
+
+## Bug fixes
+
+- `read_clinical_data()`: CSV files are now read with `check.names = FALSE` so
+  column names containing spaces, hyphens, or special characters are preserved
+  exactly as written, preventing silent name mangling that could break
+  downstream label lookups.
+
 # hvtiRutilities 1.0.0.9000
 
 ## Maintenance

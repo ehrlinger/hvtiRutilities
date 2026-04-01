@@ -1,11 +1,11 @@
 ---
 title: "Reproducible Seeds in R and SAS"
 author: "John Ehrlinger"
-date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
+date: today
+format: html
 vignette: >
   %\VignetteIndexEntry{Reproducible Seeds in R and SAS}
-  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEngine{quarto::html}
   %\VignetteEncoding{UTF-8}
 ---
 
