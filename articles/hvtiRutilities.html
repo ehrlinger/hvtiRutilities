@@ -12,7 +12,9 @@
 <link href="../deps/Fira_Code-0.4.10/font.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Getting Started with hvtiRutilities">
+<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><script src="hvtiRutilities_files/libs/quarto-html/popper.min.js"></script><script src="hvtiRutilities_files/libs/quarto-html/tippy.umd.min.js"></script><link href="hvtiRutilities_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="hvtiRutilities_files/libs/quarto-html/light-border.css" rel="stylesheet">
+<!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Getting Started with hvtiRutilities">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -22,7 +24,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0.9004</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,87 +57,77 @@
 
 
   </div>
-</nav><div class="container template-article">
-
-
-
-
+</nav><div class="container template-quarto">
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Getting Started with hvtiRutilities</h1>
-                        <h4 data-toc-skip class="author">John
-Ehrlinger</h4>
-            
-            <h4 data-toc-skip class="date">2026-03-26</h4>
-      
-      <small class="dont-index">Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/vignettes/hvtiRutilities.Rmd" class="external-link"><code>vignettes/hvtiRutilities.Rmd</code></a></small>
-      <div class="d-none name"><code>hvtiRutilities.Rmd</code></div>
+
+      <p class="author">John Ehrlinger</p>
+      <p class="date">2026-04-01</p>
+
+      <small class="dont-index">Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/vignettes/hvtiRutilities.qmd" class="external-link"><code>vignettes/hvtiRutilities.qmd</code></a></small>
+      <div class="d-none name"><code></code></div>
     </div>
 
-    
-    
-<div class="section level2">
-<h2 id="introduction">Introduction<a class="anchor" aria-label="anchor" href="#introduction"></a>
+
+
+
+
+
+    <section class="level2"><h2 id="introduction">Introduction<a class="anchor" aria-label="anchor" href="#introduction"></a>
 </h2>
-<p>The <code>hvtiRutilities</code> package provides utility functions
-for working with clinical research data at the Cleveland Clinic Heart,
-Vascular and Thoracic Institute (HVTI). It simplifies common data
-preparation tasks when importing and cleaning datasets, particularly
-those originating from SAS.</p>
-<div class="section level3">
-<h3 id="main-functions">Main Functions<a class="anchor" aria-label="anchor" href="#main-functions"></a>
+<p>The <code>hvtiRutilities</code> package provides utility functions for working with clinical research data at the Cleveland Clinic Heart, Vascular and Thoracic Institute (HVTI). It simplifies common data preparation tasks when importing and cleaning datasets, particularly those originating from SAS.</p>
+<section class="level3"><h3 id="main-functions">Main Functions<a class="anchor" aria-label="anchor" href="#main-functions"></a>
 </h3>
 <ul>
 <li>
-<strong><code><a href="../reference/r_data_types.html">r_data_types()</a></code></strong>: Automatically infer
-and convert data types based on content</li>
+<strong><code><a href="../reference/read_clinical_data.html">read_clinical_data()</a></code></strong>: Read SAS, CSV, Excel, or RDS files with automatic type conversion</li>
 <li>
-<strong><code><a href="../reference/label_map.html">label_map()</a></code></strong>: Extract variable labels
-from labeled datasets into a lookup table</li>
+<strong><code><a href="../reference/r_data_types.html">r_data_types()</a></code></strong>: Automatically infer and convert data types based on content</li>
 <li>
-<strong><code><a href="../reference/get_label.html">get_label()</a></code></strong>: Safely look up a single
-variable’s label (with error checking)</li>
+<strong><code><a href="../reference/label_map.html">label_map()</a></code></strong>: Extract variable labels from labeled datasets into a lookup table</li>
 <li>
-<strong><code><a href="../reference/add_labels.html">add_labels()</a></code></strong>: Register labels for
-derived variables on data frames or label maps</li>
+<strong><code><a href="../reference/get_label.html">get_label()</a></code></strong> / <strong><code><a href="../reference/get_labels.html">get_labels()</a></code></strong>: Safely look up one or many variable labels</li>
 <li>
-<strong><code><a href="../reference/apply_label_overrides.html">apply_label_overrides()</a></code></strong>: Apply
-study-specific label overrides from a YAML file</li>
+<strong><code><a href="../reference/add_labels.html">add_labels()</a></code></strong>: Register labels for derived variables on data frames or label maps</li>
 <li>
-<strong><code><a href="../reference/sample_data.html">sample_data()</a></code></strong>: Generate labeled sample
-datasets for testing and examples</li>
-</ul>
-</div>
-<div class="section level3">
-<h3 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
+<strong><code><a href="../reference/apply_label_overrides.html">apply_label_overrides()</a></code></strong>: Apply study-specific label overrides from a YAML file</li>
+<li>
+<strong><code><a href="../reference/data_dictionary.html">data_dictionary()</a></code></strong>: Build a type-annotated data dictionary from any labeled dataset</li>
+<li>
+<strong><code><a href="../reference/compare_datasets.html">compare_datasets()</a></code></strong>: Summarise differences between two data pulls</li>
+<li>
+<strong><code><a href="../reference/sample_data.html">sample_data()</a></code></strong>: Generate labeled sample datasets for testing and examples</li>
+</ul></section><section class="level3"><h3 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h3>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Install from GitHub</span></span>
 <span><span class="co"># install.packages("pak")</span></span>
 <span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"ehrlinger/hvtiRutilities"</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"hvtiRutilities"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="st"><a href="https://github.com/ehrlinger/hvtiRutilities" class="external-link">"hvtiRutilities"</a></span><span class="op">)</span> <span class="co"># Use installed package when available</span></span>
 <span><span class="op">}</span> <span class="kw">else</span> <span class="op">{</span></span>
 <span>  <span class="fu">pkgload</span><span class="fu">::</span><span class="fu"><a href="https://pkgload.r-lib.org/reference/load_all.html" class="external-link">load_all</a></span><span class="op">(</span>export_all <span class="op">=</span> <span class="cn">FALSE</span>, helpers <span class="op">=</span> <span class="cn">FALSE</span>, quiet <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;  hvtiRutilities 1.0.0.9000 </span></span>
+<span><span class="co">#&gt;  hvtiRutilities 1.0.0.9004 </span></span>
 <span><span class="co">#&gt;  </span></span>
 <span><span class="co">#&gt;  Type hvtiRutilities.news() to see new features, changes, and bug fixes. </span></span>
 <span><span class="co">#&gt; </span></span></code></pre></div>
 </div>
-</div>
-<div class="section level2">
-<h2 id="basic-usage">Basic Usage<a class="anchor" aria-label="anchor" href="#basic-usage"></a>
+</section></section><section class="level2"><h2 id="basic-usage">Basic Usage<a class="anchor" aria-label="anchor" href="#basic-usage"></a>
 </h2>
-<div class="section level3">
-<h3 id="automatic-type-conversion-with-r_data_types">Automatic Type Conversion with <code>r_data_types()</code><a class="anchor" aria-label="anchor" href="#automatic-type-conversion-with-r_data_types"></a>
+<section class="level3"><h3 id="automatic-type-conversion-with-r_data_types">Automatic Type Conversion with <code>r_data_types()</code>
+<a class="anchor" aria-label="anchor" href="#automatic-type-conversion-with-r_data_types"></a>
 </h3>
-<p>The <code><a href="../reference/r_data_types.html">r_data_types()</a></code> function intelligently converts
-column types based on their content:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<p>The <code><a href="../reference/r_data_types.html">r_data_types()</a></code> function intelligently converts column types based on their content:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Generate sample data with various types</span></span>
 <span><span class="va">dta</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sample_data.html">sample_data</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span>
 <span></span>
@@ -144,23 +136,23 @@ column types based on their content:</p>
 <span><span class="co">#&gt; 'data.frame':    100 obs. of  7 variables:</span></span>
 <span><span class="co">#&gt;  $ id     : int  1 2 3 4 5 6 7 8 9 10 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Patient Identifier"</span></span>
-<span><span class="co">#&gt;  $ boolean: int  1 1 2 1 1 2 1 1 1 2 ...</span></span>
+<span><span class="co">#&gt;  $ boolean: int  1 2 2 1 1 1 2 2 1 2 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Binary Indicator"</span></span>
-<span><span class="co">#&gt;  $ logical: chr  "F" "F" "T" "F" ...</span></span>
+<span><span class="co">#&gt;  $ logical: chr  "F" "T" "T" "F" ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Logical Status"</span></span>
-<span><span class="co">#&gt;  $ f_real : num  0.508 0.404 0.806 0.418 0.806 ...</span></span>
+<span><span class="co">#&gt;  $ f_real : num  0.5443 0.0907 0.9553 0.8635 0.8635 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Random Uniform Value"</span></span>
-<span><span class="co">#&gt;  $ float  : num  0.118 -0.284 0.498 1.61 1.861 ...</span></span>
+<span><span class="co">#&gt;  $ float  : num  0.3154 -0.2823 0.0782 0.4971 -0.6831 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Random Normal Value"</span></span>
-<span><span class="co">#&gt;  $ char   : chr  "male" "male" "male" "male" ...</span></span>
+<span><span class="co">#&gt;  $ char   : chr  "female" "male" "female" "male" ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Gender"</span></span>
-<span><span class="co">#&gt;  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 3 1 5 1 4 3 1 2 1 1 ...</span></span>
+<span><span class="co">#&gt;  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 2 4 3 3 4 3 1 2 3 4 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Category Group"</span></span></code></pre></div>
-<p>Notice that the sample data has: - <code>boolean</code>: integer
-values (1, 2) - <code>logical</code>: character values (“F”, “T”) -
-<code>char</code>: character values (“male”, “female”)</p>
+</div>
+<p>Notice that the sample data has: - <code>boolean</code>: integer values (1, 2) - <code>logical</code>: character values (“F”, “T”) - <code>char</code>: character values (“male”, “female”)</p>
 <p>Now let’s apply automatic type conversion:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Convert types automatically</span></span>
 <span><span class="va">dta_converted</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/r_data_types.html">r_data_types</a></span><span class="op">(</span><span class="va">dta</span><span class="op">)</span></span>
 <span></span>
@@ -171,51 +163,37 @@ values (1, 2) - <code>logical</code>: character values (“F”, “T”) -
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Patient Identifier"</span></span>
 <span><span class="co">#&gt;  $ boolean: logi  TRUE TRUE TRUE TRUE TRUE TRUE ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Binary Indicator"</span></span>
-<span><span class="co">#&gt;  $ logical: Factor w/ 2 levels "F","T": 1 1 2 1 1 2 1 1 1 2 ...</span></span>
+<span><span class="co">#&gt;  $ logical: Factor w/ 2 levels "F","T": 1 2 2 1 1 1 2 2 1 2 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Logical Status"</span></span>
-<span><span class="co">#&gt;  $ f_real : Factor w/ 9 levels "0.218431008746848",..: 4 2 8 3 8 7 8 8 9 3 ...</span></span>
+<span><span class="co">#&gt;  $ f_real : Factor w/ 9 levels "0.049357142066583",..: 5 2 9 7 7 1 4 9 5 8 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Random Uniform Value"</span></span>
-<span><span class="co">#&gt;  $ float  : num  0.118 -0.284 0.498 1.61 1.861 ...</span></span>
+<span><span class="co">#&gt;  $ float  : num  0.3154 -0.2823 0.0782 0.4971 -0.6831 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Random Normal Value"</span></span>
-<span><span class="co">#&gt;  $ char   : Factor w/ 2 levels "female","male": 2 2 2 2 1 2 2 1 2 1 ...</span></span>
+<span><span class="co">#&gt;  $ char   : Factor w/ 2 levels "female","male": 1 2 1 2 2 2 2 2 2 2 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Gender"</span></span>
-<span><span class="co">#&gt;  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 3 1 5 1 4 3 1 2 1 1 ...</span></span>
+<span><span class="co">#&gt;  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 2 4 3 3 4 3 1 2 3 4 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Category Group"</span></span></code></pre></div>
-<p>After conversion: - <code>boolean</code>: converted to logical
-(TRUE/FALSE) because it has exactly 2 unique values -
-<code>logical</code>: converted to factor (categorical variable) -
-<code>char</code>: converted to factor (categorical variable) -
-Continuous variables (<code>float</code>, <code>f_real</code>) remain
-numeric</p>
 </div>
-<div class="section level3">
-<h3 id="transformation-rules">Transformation Rules<a class="anchor" aria-label="anchor" href="#transformation-rules"></a>
+<p>After conversion: - <code>boolean</code>: converted to logical (TRUE/FALSE) because it has exactly 2 unique values - <code>logical</code>: converted to factor (categorical variable) - <code>char</code>: converted to factor (categorical variable) - Continuous variables (<code>float</code>, <code>f_real</code>) remain numeric</p>
+</section><section class="level3"><h3 id="transformation-rules">Transformation Rules<a class="anchor" aria-label="anchor" href="#transformation-rules"></a>
 </h3>
 <p>The function applies transformations in this order:</p>
-<ol style="list-style-type: decimal">
-<li>Character strings “NA”, “na”, “Na”, “nA” → actual <code>NA</code>
-values</li>
-<li>Numeric/integer with exactly 2 unique values →
-<code>logical</code>
+<ol type="1">
+<li>Character strings “NA”, “na”, “Na”, “nA” → actual <code>NA</code> values</li>
+<li>Numeric/integer with exactly 2 unique values → <code>logical</code>
 </li>
 <li>Character columns → <code>factor</code>
 </li>
-<li>Numeric with 3 to <code>factor_size</code> unique values →
-<code>factor</code>
+<li>Numeric with 3 to <code>factor_size</code> unique values → <code>factor</code>
 </li>
-<li>Optionally: logical → <code>factor</code> (if
-<code>binary_factor = TRUE</code>)</li>
-</ol>
-</div>
-</div>
-<div class="section level2">
-<h2 id="working-with-real-data">Working with Real Data<a class="anchor" aria-label="anchor" href="#working-with-real-data"></a>
+<li>Optionally: logical → <code>factor</code> (if <code>binary_factor = TRUE</code>)</li>
+</ol></section></section><section class="level2"><h2 id="working-with-real-data">Working with Real Data<a class="anchor" aria-label="anchor" href="#working-with-real-data"></a>
 </h2>
-<div class="section level3">
-<h3 id="example-mtcars-dataset">Example: mtcars Dataset<a class="anchor" aria-label="anchor" href="#example-mtcars-dataset"></a>
+<section class="level3"><h3 id="example-mtcars-dataset">Example: mtcars Dataset<a class="anchor" aria-label="anchor" href="#example-mtcars-dataset"></a>
 </h3>
 <p>Let’s apply this to the built-in <code>mtcars</code> dataset:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Original mtcars</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">mtcars</span><span class="op">[</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="co">#&gt; 'data.frame':    32 obs. of  5 variables:</span></span>
@@ -224,7 +202,9 @@ values</li>
 <span><span class="co">#&gt;  $ disp: num  160 160 108 258 360 ...</span></span>
 <span><span class="co">#&gt;  $ hp  : num  110 110 93 110 175 105 245 62 95 123 ...</span></span>
 <span><span class="co">#&gt;  $ drat: num  3.9 3.9 3.85 3.08 3.15 2.76 3.21 3.69 3.92 3.92 ...</span></span></code></pre></div>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Apply type conversion</span></span>
 <span><span class="va">mtcars_clean</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/r_data_types.html">r_data_types</a></span><span class="op">(</span><span class="va">mtcars</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">mtcars_clean</span><span class="op">[</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">]</span><span class="op">)</span></span>
@@ -239,17 +219,13 @@ values</li>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "hp"</span></span>
 <span><span class="co">#&gt;  $ drat: num  3.9 3.9 3.85 3.08 3.15 2.76 3.21 3.69 3.92 3.92 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "drat"</span></span></code></pre></div>
-<p>Notice: - <code>cyl</code> (3 unique values: 4, 6, 8) → factor -
-<code>vs</code> (2 unique values: 0, 1) → logical - <code>am</code> (2
-unique values: 0, 1) → logical - <code>gear</code> (3 unique values) →
-factor - <code>carb</code> (6 unique values) → factor</p>
 </div>
-<div class="section level3">
-<h3 id="controlling-factor-conversion">Controlling Factor Conversion<a class="anchor" aria-label="anchor" href="#controlling-factor-conversion"></a>
+<p>Notice: - <code>cyl</code> (3 unique values: 4, 6, 8) → factor - <code>vs</code> (2 unique values: 0, 1) → logical - <code>am</code> (2 unique values: 0, 1) → logical - <code>gear</code> (3 unique values) → factor - <code>carb</code> (6 unique values) → factor</p>
+</section><section class="level3"><h3 id="controlling-factor-conversion">Controlling Factor Conversion<a class="anchor" aria-label="anchor" href="#controlling-factor-conversion"></a>
 </h3>
-<p>Use <code>factor_size</code> to control when numeric variables become
-factors:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<p>Use <code>factor_size</code> to control when numeric variables become factors:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># More strict: only convert if &lt; 5 unique values</span></span>
 <span><span class="va">mtcars_strict</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/r_data_types.html">r_data_types</a></span><span class="op">(</span><span class="va">mtcars</span>, factor_size <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
 <span></span>
@@ -265,12 +241,11 @@ factors:</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/class.html" class="external-link">class</a></span><span class="op">(</span><span class="va">mtcars_strict</span><span class="op">$</span><span class="va">carb</span><span class="op">)</span> <span class="co"># integer (6 unique NOT &lt; 5)</span></span>
 <span><span class="co">#&gt; [1] "numeric"</span></span></code></pre></div>
 </div>
-<div class="section level3">
-<h3 id="skipping-specific-variables">Skipping Specific Variables<a class="anchor" aria-label="anchor" href="#skipping-specific-variables"></a>
+</section><section class="level3"><h3 id="skipping-specific-variables">Skipping Specific Variables<a class="anchor" aria-label="anchor" href="#skipping-specific-variables"></a>
 </h3>
-<p>Sometimes you want to preserve certain variables in their original
-form:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<p>Sometimes you want to preserve certain variables in their original form:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Keep vs and am as numeric instead of converting to logical</span></span>
 <span><span class="va">mtcars_partial</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/r_data_types.html">r_data_types</a></span><span class="op">(</span><span class="va">mtcars</span>, skip_vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"vs"</span>, <span class="st">"am"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
@@ -280,12 +255,11 @@ form:</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/class.html" class="external-link">class</a></span><span class="op">(</span><span class="va">mtcars_partial</span><span class="op">$</span><span class="va">vs</span><span class="op">)</span>  <span class="co"># numeric (preserved)</span></span>
 <span><span class="co">#&gt; [1] "numeric"</span></span></code></pre></div>
 </div>
-<div class="section level3">
-<h3 id="binary-variables-as-factors">Binary Variables as Factors<a class="anchor" aria-label="anchor" href="#binary-variables-as-factors"></a>
+</section><section class="level3"><h3 id="binary-variables-as-factors">Binary Variables as Factors<a class="anchor" aria-label="anchor" href="#binary-variables-as-factors"></a>
 </h3>
-<p>By default, binary variables become logical. Use
-<code>binary_factor = TRUE</code> to make them factors instead:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<p>By default, binary variables become logical. Use <code>binary_factor = TRUE</code> to make them factors instead:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mtcars_factor</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/r_data_types.html">r_data_types</a></span><span class="op">(</span><span class="va">mtcars</span>, binary_factor <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Compare</span></span>
@@ -293,21 +267,15 @@ form:</p>
 <span><span class="co">#&gt; [1] "logical"</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/class.html" class="external-link">class</a></span><span class="op">(</span><span class="va">mtcars_factor</span><span class="op">$</span><span class="va">vs</span><span class="op">)</span>  <span class="co"># factor</span></span>
 <span><span class="co">#&gt; [1] "factor"</span></span></code></pre></div>
-<p>This can be useful for modeling or visualization where factor levels
-are preferred.</p>
 </div>
-</div>
-<div class="section level2">
-<h2 id="working-with-variable-labels">Working with Variable Labels<a class="anchor" aria-label="anchor" href="#working-with-variable-labels"></a>
+<p>This can be useful for modeling or visualization where factor levels are preferred.</p>
+</section></section><section class="level2"><h2 id="working-with-variable-labels">Working with Variable Labels<a class="anchor" aria-label="anchor" href="#working-with-variable-labels"></a>
 </h2>
-<p>Variable labels are common in clinical datasets, especially those
-imported from SAS. <code>hvtiRutilities</code> provides a complete label
-management toolkit. For a comprehensive guide including best practices
-and anti-patterns, see <code><a href="../articles/data-labels.html">vignette("data-labels")</a></code>.</p>
-<div class="section level3">
-<h3 id="extracting-and-looking-up-labels">Extracting and Looking Up Labels<a class="anchor" aria-label="anchor" href="#extracting-and-looking-up-labels"></a>
+<p>Variable labels are common in clinical datasets, especially those imported from SAS. <code>hvtiRutilities</code> provides a complete label management toolkit. For a comprehensive guide including best practices and anti-patterns, see <code><a href="../articles/data-labels.html">vignette("data-labels")</a></code>.</p>
+<section class="level3"><h3 id="extracting-and-looking-up-labels">Extracting and Looking Up Labels<a class="anchor" aria-label="anchor" href="#extracting-and-looking-up-labels"></a>
 </h3>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://larmarange.github.io/labelled/" class="external-link">labelled</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Generate labeled data (as would come from SAS import)</span></span>
@@ -325,20 +293,20 @@ and anti-patterns, see <code><a href="../articles/data-labels.html">vignette("da
 <span><span class="co">#&gt; reop               reop                      Reoperation (1=yes, 0=no)</span></span>
 <span><span class="co">#&gt; iv_reop         iv_reop          Follow-up time to reoperation (years)</span></span>
 <span><span class="co">#&gt; age                 age                         Age at surgery (years)</span></span></code></pre></div>
-<p>Use <code><a href="../reference/get_label.html">get_label()</a></code> for safe single-variable lookup — it
-errors on typos instead of silently returning <code>NA</code>:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+</div>
+<p>Use <code><a href="../reference/get_label.html">get_label()</a></code> for safe single-variable lookup — it errors on typos instead of silently returning <code>NA</code>:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/get_label.html">get_label</a></span><span class="op">(</span><span class="va">lmap</span>, <span class="st">"age"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "Age at surgery (years)"</span></span>
 <span><span class="fu"><a href="../reference/get_label.html">get_label</a></span><span class="op">(</span><span class="va">lmap</span>, <span class="st">"lvefvs_b"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "Baseline LV ejection fraction (%)"</span></span></code></pre></div>
 </div>
-<div class="section level3">
-<h3 id="labeling-derived-variables">Labeling Derived Variables<a class="anchor" aria-label="anchor" href="#labeling-derived-variables"></a>
+</section><section class="level3"><h3 id="labeling-derived-variables">Labeling Derived Variables<a class="anchor" aria-label="anchor" href="#labeling-derived-variables"></a>
 </h3>
-<p>When you create new variables, label them immediately using
-<code><a href="../reference/add_labels.html">add_labels()</a></code>:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<p>When you create new variables, label them immediately using <code><a href="../reference/add_labels.html">add_labels()</a></code>:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dta</span><span class="op">$</span><span class="va">age_group</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cut.html" class="external-link">cut</a></span><span class="op">(</span><span class="va">dta</span><span class="op">$</span><span class="va">age</span>,</span>
 <span>  breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">40</span>, <span class="fl">60</span>, <span class="cn">Inf</span><span class="op">)</span>,</span>
 <span>  labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"&lt;40"</span>, <span class="st">"40-60"</span>, <span class="st">"&gt;60"</span><span class="op">)</span></span>
@@ -349,11 +317,11 @@ errors on typos instead of silently returning <code>NA</code>:</p>
 <span><span class="fu"><a href="https://larmarange.github.io/labelled/reference/var_label.html" class="external-link">var_label</a></span><span class="op">(</span><span class="va">dta</span><span class="op">$</span><span class="va">age_group</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "Age Group at Surgery"</span></span></code></pre></div>
 </div>
-<div class="section level3">
-<h3 id="labels-persist-through-transformations">Labels Persist Through Transformations<a class="anchor" aria-label="anchor" href="#labels-persist-through-transformations"></a>
+</section><section class="level3"><h3 id="labels-persist-through-transformations">Labels Persist Through Transformations<a class="anchor" aria-label="anchor" href="#labels-persist-through-transformations"></a>
 </h3>
 <p>Labels are preserved when using <code><a href="../reference/r_data_types.html">r_data_types()</a></code>:</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dta</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sample_data.html">sample_data</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">50</span><span class="op">)</span></span>
 <span><span class="va">lmap_before</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/label_map.html">label_map</a></span><span class="op">(</span><span class="va">dta</span><span class="op">)</span></span>
 <span></span>
@@ -363,13 +331,11 @@ errors on typos instead of silently returning <code>NA</code>:</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/identical.html" class="external-link">identical</a></span><span class="op">(</span><span class="va">lmap_before</span>, <span class="va">lmap_after</span><span class="op">)</span>  <span class="co"># TRUE</span></span>
 <span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
 </div>
-</div>
-<div class="section level2">
-<h2 id="complete-workflow-example">Complete Workflow Example<a class="anchor" aria-label="anchor" href="#complete-workflow-example"></a>
+</section></section><section class="level2"><h2 id="complete-workflow-example">Complete Workflow Example<a class="anchor" aria-label="anchor" href="#complete-workflow-example"></a>
 </h2>
-<p>Here’s a complete real-world workflow for preparing clinical
-data:</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<p>Here’s a complete real-world workflow for preparing clinical data:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Step 1: Generate sample clinical data</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span>
 <span><span class="va">clinical</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
@@ -444,11 +410,12 @@ data:</p>
 <span><span class="co">#&gt; 2         2 13.0000000       8.0000000    0.6153846</span></span>
 <span><span class="co">#&gt; 3         3 12.0000000       9.0000000    0.7500000</span></span>
 <span><span class="co">#&gt; 4         4 10.0000000       7.0000000    0.7000000</span></span></code></pre></div>
-<div class="section level3">
-<h3 id="handling-missing-data">Handling Missing Data<a class="anchor" aria-label="anchor" href="#handling-missing-data"></a>
+</div>
+<section class="level3"><h3 id="handling-missing-data">Handling Missing Data<a class="anchor" aria-label="anchor" href="#handling-missing-data"></a>
 </h3>
 <p>The function automatically handles character NA variants:</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Data with various NA representations</span></span>
 <span><span class="va">messy</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  var1 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"NA"</span>, <span class="st">"value1"</span>, <span class="st">"na"</span>, <span class="st">"value2"</span>, <span class="st">"nA"</span><span class="op">)</span>,</span>
@@ -470,15 +437,13 @@ data:</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/levels.html" class="external-link">levels</a></span><span class="op">(</span><span class="va">clean</span><span class="op">$</span><span class="va">var2</span><span class="op">)</span>       <span class="co"># "A", "B", "C"</span></span>
 <span><span class="co">#&gt; [1] "A" "B" "C"</span></span></code></pre></div>
 </div>
-</div>
-<div class="section level2">
-<h2 id="advanced-usage">Advanced Usage<a class="anchor" aria-label="anchor" href="#advanced-usage"></a>
+</section></section><section class="level2"><h2 id="advanced-usage">Advanced Usage<a class="anchor" aria-label="anchor" href="#advanced-usage"></a>
 </h2>
-<div class="section level3">
-<h3 id="custom-workflows-for-specific-data-types">Custom Workflows for Specific Data Types<a class="anchor" aria-label="anchor" href="#custom-workflows-for-specific-data-types"></a>
+<section class="level3"><h3 id="custom-workflows-for-specific-data-types">Custom Workflows for Specific Data Types<a class="anchor" aria-label="anchor" href="#custom-workflows-for-specific-data-types"></a>
 </h3>
 <p>For datasets with specific requirements:</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Lab results with reference ranges</span></span>
 <span><span class="va">labs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  patient <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">20</span>,</span>
@@ -509,57 +474,48 @@ data:</p>
 <span><span class="co">#&gt;  $ flag     : Factor w/ 3 levels "High","Low","Normal": 1 2 2 3 1 2 3 3 2 1 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "flag"</span></span></code></pre></div>
 </div>
-<div class="section level3">
-<h3 id="integration-with-data-import">Integration with Data Import<a class="anchor" aria-label="anchor" href="#integration-with-data-import"></a>
+</section><section class="level3"><h3 id="integration-with-data-import">Integration with Data Import<a class="anchor" aria-label="anchor" href="#integration-with-data-import"></a>
 </h3>
-<p>Typical workflow when importing from SAS:</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Read SAS dataset (example - not run)</span></span>
-<span><span class="co"># library(haven)</span></span>
-<span><span class="co"># sas_data &lt;- read_sas("path/to/data.sas7bdat")</span></span>
+<p>Use <code><a href="../reference/read_clinical_data.html">read_clinical_data()</a></code> to read and convert in one step:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Read SAS, CSV, or Excel — auto-detects format and converts types</span></span>
+<span><span class="va">dta</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/read_clinical_data.html">read_clinical_data</a></span><span class="op">(</span><span class="st">"path/to/data.sas7bdat"</span>, factor_size <span class="op">=</span> <span class="fl">15</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Apply type conversion and extract labels</span></span>
-<span><span class="co"># clean_data &lt;- r_data_types(sas_data, factor_size = 15)</span></span>
-<span><span class="co"># variable_labels &lt;- label_map(clean_data)</span></span>
-<span></span>
-<span><span class="co"># Save labels for documentation</span></span>
-<span><span class="co"># write.csv(variable_labels, "data_dictionary.csv", row.names = FALSE)</span></span></code></pre></div>
+<span><span class="co"># Build a data dictionary for documentation</span></span>
+<span><span class="va">dict</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/data_dictionary.html">data_dictionary</a></span><span class="op">(</span><span class="va">dta</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/write.table.html" class="external-link">write.csv</a></span><span class="op">(</span><span class="va">dict</span>, <span class="st">"data_dictionary.csv"</span>, row.names <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
 </div>
-</div>
-<div class="section level2">
-<h2 id="best-practices">Best Practices<a class="anchor" aria-label="anchor" href="#best-practices"></a>
+<p><code><a href="../reference/read_clinical_data.html">read_clinical_data()</a></code> supports <code>.sas7bdat</code>, <code>.csv</code>, <code>.xlsx</code>, <code>.xls</code>, and <code>.rds</code> files. Set <code>convert_types = FALSE</code> to skip automatic type conversion.</p>
+</section></section><section class="level2"><h2 id="best-practices">Best Practices<a class="anchor" aria-label="anchor" href="#best-practices"></a>
 </h2>
-<div class="section level3">
-<h3 id="when-to-use-r_data_types">When to Use <code>r_data_types()</code><a class="anchor" aria-label="anchor" href="#when-to-use-r_data_types"></a>
+<section class="level3"><h3 id="when-to-use-r_data_types">When to Use <code>r_data_types()</code>
+<a class="anchor" aria-label="anchor" href="#when-to-use-r_data_types"></a>
 </h3>
-<p><strong>Use it when:</strong> - Importing data from SAS, SPSS, or
-other statistical software - Working with datasets where types aren’t
-correctly inferred - You have many categorical variables coded as
-integers - You need consistent type handling across multiple
-datasets</p>
-<p><strong>Skip it when:</strong> - Your data types are already correct
-- You need very specific type conversions not covered by the function -
-Working with specialized data structures (time series, spatial data,
-etc.)</p>
-</div>
-<div class="section level3">
-<h3 id="recommended-settings-by-use-case">Recommended Settings by Use Case<a class="anchor" aria-label="anchor" href="#recommended-settings-by-use-case"></a>
+<p><strong>Use it when:</strong> - Importing data from SAS, SPSS, or other statistical software - Working with datasets where types aren’t correctly inferred - You have many categorical variables coded as integers - You need consistent type handling across multiple datasets</p>
+<p><strong>Skip it when:</strong> - Your data types are already correct - You need very specific type conversions not covered by the function - Working with specialized data structures (time series, spatial data, etc.)</p>
+</section><section class="level3"><h3 id="recommended-settings-by-use-case">Recommended Settings by Use Case<a class="anchor" aria-label="anchor" href="#recommended-settings-by-use-case"></a>
 </h3>
 <p><strong>Exploratory Analysis:</strong></p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">data_clean</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/r_data_types.html">r_data_types</a></span><span class="op">(</span><span class="va">data</span>, factor_size <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span></code></pre></div>
+</div>
 <p><strong>Modeling/Regression:</strong></p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">data_clean</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/r_data_types.html">r_data_types</a></span><span class="op">(</span><span class="va">data</span>, factor_size <span class="op">=</span> <span class="fl">5</span>, binary_factor <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+</div>
 <p><strong>Descriptive Statistics/Tables:</strong></p>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">data_clean</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/r_data_types.html">r_data_types</a></span><span class="op">(</span><span class="va">data</span>, factor_size <span class="op">=</span> <span class="fl">15</span>, binary_factor <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 </div>
-<div class="section level3">
-<h3 id="checking-results">Checking Results<a class="anchor" aria-label="anchor" href="#checking-results"></a>
+</section><section class="level3"><h3 id="checking-results">Checking Results<a class="anchor" aria-label="anchor" href="#checking-results"></a>
 </h3>
 <p>Always verify the conversions make sense:</p>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Before</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">original_data</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">original_data</span><span class="op">)</span></span>
@@ -571,50 +527,39 @@ etc.)</p>
 <span><span class="co"># Check specific variables</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">clean_data</span><span class="op">$</span><span class="va">categorical_var</span><span class="op">)</span></span></code></pre></div>
 </div>
-</div>
-<div class="section level2">
-<h2 id="summary">Summary<a class="anchor" aria-label="anchor" href="#summary"></a>
+</section></section><section class="level2"><h2 id="summary">Summary<a class="anchor" aria-label="anchor" href="#summary"></a>
 </h2>
-<p>The <code>hvtiRutilities</code> package streamlines data preparation
-for clinical research:</p>
+<p>The <code>hvtiRutilities</code> package streamlines data preparation for clinical research:</p>
 <ul>
 <li>
-<strong><code><a href="../reference/r_data_types.html">r_data_types()</a></code></strong>: Automatic, intelligent
-type conversion</li>
+<strong><code><a href="../reference/read_clinical_data.html">read_clinical_data()</a></code></strong>: One-step import from SAS, CSV, Excel, or RDS</li>
 <li>
-<strong><code><a href="../reference/label_map.html">label_map()</a></code></strong>: Extract variable labels
-into a lookup table</li>
+<strong><code><a href="../reference/r_data_types.html">r_data_types()</a></code></strong>: Automatic, intelligent type conversion</li>
 <li>
-<strong><code><a href="../reference/get_label.html">get_label()</a></code></strong>: Safe single-variable
-label lookup</li>
+<strong><code><a href="../reference/label_map.html">label_map()</a></code></strong>: Extract variable labels into a lookup table</li>
 <li>
-<strong><code><a href="../reference/add_labels.html">add_labels()</a></code></strong>: Register labels for
-derived variables</li>
+<strong><code><a href="../reference/get_label.html">get_label()</a></code></strong> / <strong><code><a href="../reference/get_labels.html">get_labels()</a></code></strong>: Safe label lookup (single or vectorized)</li>
 <li>
-<strong><code><a href="../reference/apply_label_overrides.html">apply_label_overrides()</a></code></strong>: Apply
-study-specific overrides from YAML</li>
+<strong><code><a href="../reference/add_labels.html">add_labels()</a></code></strong>: Register labels for derived variables</li>
 <li>
-<strong><code><a href="../reference/sample_data.html">sample_data()</a></code></strong> /
-<strong><code><a href="../reference/generate_survival_data.html">generate_survival_data()</a></code></strong>: Generate labeled
-test data</li>
+<strong><code><a href="../reference/apply_label_overrides.html">apply_label_overrides()</a></code></strong>: Apply study-specific overrides from YAML (label maps or data)</li>
+<li>
+<strong><code><a href="../reference/data_dictionary.html">data_dictionary()</a></code></strong>: Build a type-annotated data dictionary</li>
+<li>
+<strong><code><a href="../reference/compare_datasets.html">compare_datasets()</a></code></strong>: Audit differences between two data pulls</li>
+<li>
+<strong><code><a href="../reference/sample_data.html">sample_data()</a></code></strong> / <strong><code><a href="../reference/generate_survival_data.html">generate_survival_data()</a></code></strong>: Generate labeled test data</li>
 </ul>
-<p>Key features: - Preserves variable labels through transformations -
-Handles multiple NA representations - Flexible control over factor
-conversion - Works with data.frames, tibbles, and data.tables</p>
-<p>For more detailed guides: - Label handling:
-<code><a href="../articles/data-labels.html">vignette("data-labels")</a></code> - Dataset versioning:
-<code><a href="../articles/dataset-versioning.html">vignette("dataset-versioning")</a></code> - Survival data:
-<code><a href="../articles/survival-data.html">vignette("survival-data")</a></code> - GitHub: <a href="https://github.com/ehrlinger/hvtiRutilities" class="external-link uri">https://github.com/ehrlinger/hvtiRutilities</a> - Release
-notes: Run <code><a href="../reference/hvtiRutilities.news.html">hvtiRutilities.news()</a></code> in R</p>
-</div>
-<div class="section level2">
-<h2 id="session-information">Session Information<a class="anchor" aria-label="anchor" href="#session-information"></a>
+<p>Key features: - Preserves variable labels through transformations - Handles multiple NA representations - Flexible control over factor conversion - Works with data.frames, tibbles, and data.tables</p>
+<p>For more detailed guides: - Label handling: <code><a href="../articles/data-labels.html">vignette("data-labels")</a></code> - Dataset versioning: <code><a href="../articles/dataset-versioning.html">vignette("dataset-versioning")</a></code> - Survival data: <code><a href="../articles/survival-data.html">vignette("survival-data")</a></code> - Reproducible seeds: <code><a href="../articles/reproducible-seeds.html">vignette("reproducible-seeds")</a></code> - GitHub: https://github.com/ehrlinger/hvtiRutilities - Release notes: Run <code><a href="../reference/hvtiRutilities.news.html">hvtiRutilities.news()</a></code> in R</p>
+</section><section class="level2"><h2 id="session-information">Session Information<a class="anchor" aria-label="anchor" href="#session-information"></a>
 </h2>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; R version 4.5.3 (2026-03-11)</span></span>
 <span><span class="co">#&gt; Platform: x86_64-pc-linux-gnu</span></span>
-<span><span class="co">#&gt; Running under: Ubuntu 24.04.3 LTS</span></span>
+<span><span class="co">#&gt; Running under: Ubuntu 24.04.4 LTS</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Matrix products: default</span></span>
 <span><span class="co">#&gt; BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 </span></span>
@@ -633,24 +578,103 @@ notes: Run <code><a href="../reference/hvtiRutilities.news.html">hvtiRutilities.
 <span><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; other attached packages:</span></span>
-<span><span class="co">#&gt; [1] labelled_2.16.0           hvtiRutilities_1.0.0.9000</span></span>
+<span><span class="co">#&gt; [1] labelled_2.16.0           hvtiRutilities_1.0.0.9004</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
-<span><span class="co">#&gt;  [1] vctrs_0.7.2       cli_3.6.5         knitr_1.51        rlang_1.1.7      </span></span>
-<span><span class="co">#&gt;  [5] xfun_0.57         forcats_1.0.1     otel_0.2.0        haven_2.5.5      </span></span>
-<span><span class="co">#&gt;  [9] generics_0.1.4    textshaping_1.0.5 jsonlite_2.0.0    glue_1.8.0       </span></span>
-<span><span class="co">#&gt; [13] htmltools_0.5.9   ragg_1.5.2        sass_0.4.10       hms_1.1.4        </span></span>
-<span><span class="co">#&gt; [17] rmarkdown_2.30    tibble_3.3.1      evaluate_1.0.5    jquerylib_0.1.4  </span></span>
-<span><span class="co">#&gt; [21] fastmap_1.2.0     yaml_2.3.12       lifecycle_1.0.5   compiler_4.5.3   </span></span>
-<span><span class="co">#&gt; [25] dplyr_1.2.0       fs_2.0.1          pkgconfig_2.0.3   htmlwidgets_1.6.4</span></span>
-<span><span class="co">#&gt; [29] systemfonts_1.3.2 digest_0.6.39     R6_2.6.1          tidyselect_1.2.1 </span></span>
-<span><span class="co">#&gt; [33] pillar_1.11.1     magrittr_2.0.4    bslib_0.10.0      withr_3.0.2      </span></span>
-<span><span class="co">#&gt; [37] tools_4.5.3       pkgdown_2.2.0     cachem_1.1.0      desc_1.4.3</span></span></code></pre></div>
+<span><span class="co">#&gt;  [1] vctrs_0.7.2      cli_3.6.5        knitr_1.51       rlang_1.1.7     </span></span>
+<span><span class="co">#&gt;  [5] xfun_0.57        forcats_1.0.1    haven_2.5.5      generics_0.1.4  </span></span>
+<span><span class="co">#&gt;  [9] jsonlite_2.0.0   glue_1.8.0       htmltools_0.5.9  hms_1.1.4       </span></span>
+<span><span class="co">#&gt; [13] rmarkdown_2.31   evaluate_1.0.5   tibble_3.3.1     fastmap_1.2.0   </span></span>
+<span><span class="co">#&gt; [17] yaml_2.3.12      lifecycle_1.0.5  compiler_4.5.3   dplyr_1.2.0     </span></span>
+<span><span class="co">#&gt; [21] pkgconfig_2.0.3  digest_0.6.39    R6_2.6.1         tidyselect_1.2.1</span></span>
+<span><span class="co">#&gt; [25] pillar_1.11.1    magrittr_2.0.4   tools_4.5.3      withr_3.0.2</span></span></code></pre></div>
 </div>
-  </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
+</section><script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'light-border',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config);
+    }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script></main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
 </div>
-
 
 
     <footer><div class="pkgdown-footer-left">

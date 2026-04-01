@@ -152,7 +152,8 @@ session.
 
 ## See also
 
-`rfsrc`, [`Surv`](https://rdrr.io/pkg/survival/man/Surv.html),
+[`rfsrc`](https://www.randomforestsrc.org//reference/rfsrc.html),
+[`Surv`](https://rdrr.io/pkg/survival/man/Surv.html),
 [`read_sas`](https://haven.tidyverse.org/reference/read_sas.html)
 
 ## Examples

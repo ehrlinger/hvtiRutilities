@@ -17,9 +17,13 @@ the `labelled` package preserves those labels as column attributes.
 register, and override these labels throughout the analysis lifecycle.
 
 ``` r
-library(hvtiRutilities)
+if (requireNamespace("hvtiRutilities", quietly = TRUE)) {
+  library("hvtiRutilities")
+} else {
+  pkgload::load_all(export_all = FALSE, helpers = FALSE, quiet = TRUE)
+}
 #> 
-#>  hvtiRutilities 1.0.0.9000 
+#>  hvtiRutilities 1.0.0.9004 
 #>  
 #>  Type hvtiRutilities.news() to see new features, changes, and bug fixes. 
 #> 
@@ -251,18 +255,13 @@ get_label(lmap, "ages")
 
 #### Building a data dictionary
 
+Use
+[`data_dictionary()`](https://ehrlinger.github.io/hvtiRutilities/reference/data_dictionary.md)
+to generate a complete, type-annotated data dictionary in one call:
+
 ``` r
 dta <- generate_survival_data(n = 200, seed = 42)
-lmap <- label_map(dta)
-
-# Build a type-annotated data dictionary
-dict <- data.frame(
-  variable    = lmap$key,
-  label       = lmap$label,
-  type        = vapply(dta, function(x) class(x)[1], character(1)),
-  n_unique    = vapply(dta, function(x) length(unique(x)), integer(1)),
-  pct_missing = vapply(dta, function(x) round(mean(is.na(x)) * 100, 1), numeric(1))
-)
+dict <- data_dictionary(dta)
 head(dict, 12)
 #>                variable                                          label
 #> ccfid             ccfid                                     Patient ID
@@ -277,29 +276,48 @@ head(dict, 12)
 #> bmi                 bmi                        Body mass index (kg/m2)
 #> hgb_bs           hgb_bs                     Baseline hemoglobin (g/dL)
 #> wbc_bs           wbc_bs                      Baseline WBC count (K/uL)
-#>                  type n_unique pct_missing
+#>                 class n_unique pct_missing
 #> ccfid       character      200         0.0
 #> origin_year   integer       21         0.0
 #> iv_opyrs      numeric      183         0.0
 #> iv_dead       numeric      184         0.0
 #> dead          integer        2         0.0
 #> reop          integer        2         0.0
-#> iv_reop       numeric       32        83.5
+#> iv_reop       numeric       31        83.5
 #> age           numeric      165         0.0
 #> sex            factor        2         0.0
 #> bmi           numeric      123         0.0
 #> hgb_bs        numeric       66         0.0
 #> wbc_bs        numeric      172         0.0
+#>                                                                  summary
+#> ccfid       200 levels: PT00001, PT00002, PT00003, PT00004, PT00005, ...
+#> origin_year                                           1998 / 2008 / 2018
+#> iv_opyrs                                             1.06 / 7.87 / 14.99
+#> iv_dead                                               0.25 / 4.1 / 13.98
+#> dead                                                           0 / 1 / 1
+#> reop                                                           0 / 0 / 1
+#> iv_reop                                               0.04 / 1.29 / 9.92
+#> age                                                       1 / 44.75 / 85
+#> sex                                               2 levels: Female, Male
+#> bmi                                                    15 / 26.65 / 41.8
+#> hgb_bs                                                     7.6 / 13 / 18
+#> wbc_bs                                                1.5 / 7.35 / 15.53
 ```
 
 #### Labels in summary tables
 
+Use
+[`get_labels()`](https://ehrlinger.github.io/hvtiRutilities/reference/get_labels.md)
+(vectorized) to look up multiple labels at once:
+
 ``` r
+lmap <- label_map(dta)
+
 # Numeric summary with labels
 num_vars <- c("age", "bmi", "hgb_bs", "gfr_bs", "lvefvs_b")
 summary_tbl <- data.frame(
   variable = num_vars,
-  label    = vapply(num_vars, function(v) get_label(lmap, v), character(1)),
+  label    = get_labels(lmap, num_vars),
   mean     = vapply(num_vars, function(v) round(mean(dta[[v]]), 1), numeric(1)),
   sd       = vapply(num_vars, function(v) round(sd(dta[[v]]), 1), numeric(1)),
   median   = vapply(num_vars, function(v) round(median(dta[[v]]), 1), numeric(1))
@@ -460,12 +478,14 @@ lmap <- label_map(dta)  # always in sync
 
 ## Function Reference
 
-| Function                            | Purpose                                  |
-|-------------------------------------|------------------------------------------|
-| `label_map(data)`                   | Extract all labels into a lookup table   |
-| `get_label(lmap, var)`              | Look up one label with error checking    |
-| `add_labels(data, labels)`          | Label a data frame or update a label map |
-| `apply_label_overrides(lmap, file)` | Apply study-specific overrides from YAML |
+| Function                            | Purpose                                                                       |
+|-------------------------------------|-------------------------------------------------------------------------------|
+| `label_map(data)`                   | Extract all labels into a lookup table                                        |
+| `get_label(lmap, var)`              | Look up one label with error checking                                         |
+| `get_labels(lmap, vars)`            | Look up multiple labels at once (vectorized)                                  |
+| `add_labels(data, labels)`          | Label a data frame or update a label map                                      |
+| `apply_label_overrides(data, file)` | Apply study-specific overrides from YAML (works on label maps or data frames) |
+| `data_dictionary(data)`             | Build a type-annotated data dictionary                                        |
 
 ## Session Information
 
@@ -473,7 +493,7 @@ lmap <- label_map(dta)  # always in sync
 sessionInfo()
 #> R version 4.5.3 (2026-03-11)
 #> Platform: x86_64-pc-linux-gnu
-#> Running under: Ubuntu 24.04.3 LTS
+#> Running under: Ubuntu 24.04.4 LTS
 #> 
 #> Matrix products: default
 #> BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 
@@ -492,17 +512,14 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] labelled_2.16.0           hvtiRutilities_1.0.0.9000
+#> [1] labelled_2.16.0           hvtiRutilities_1.0.0.9004
 #> 
 #> loaded via a namespace (and not attached):
-#>  [1] vctrs_0.7.2       cli_3.6.5         knitr_1.51        rlang_1.1.7      
-#>  [5] xfun_0.57         forcats_1.0.1     otel_0.2.0        haven_2.5.5      
-#>  [9] generics_0.1.4    textshaping_1.0.5 jsonlite_2.0.0    glue_1.8.0       
-#> [13] htmltools_0.5.9   ragg_1.5.2        sass_0.4.10       hms_1.1.4        
-#> [17] rmarkdown_2.30    tibble_3.3.1      evaluate_1.0.5    jquerylib_0.1.4  
-#> [21] fastmap_1.2.0     yaml_2.3.12       lifecycle_1.0.5   compiler_4.5.3   
-#> [25] dplyr_1.2.0       fs_2.0.1          pkgconfig_2.0.3   htmlwidgets_1.6.4
-#> [29] systemfonts_1.3.2 digest_0.6.39     R6_2.6.1          tidyselect_1.2.1 
-#> [33] pillar_1.11.1     magrittr_2.0.4    bslib_0.10.0      withr_3.0.2      
-#> [37] tools_4.5.3       pkgdown_2.2.0     cachem_1.1.0      desc_1.4.3
+#>  [1] vctrs_0.7.2      cli_3.6.5        knitr_1.51       rlang_1.1.7     
+#>  [5] xfun_0.57        forcats_1.0.1    haven_2.5.5      generics_0.1.4  
+#>  [9] jsonlite_2.0.0   glue_1.8.0       htmltools_0.5.9  hms_1.1.4       
+#> [13] rmarkdown_2.31   evaluate_1.0.5   tibble_3.3.1     fastmap_1.2.0   
+#> [17] yaml_2.3.12      lifecycle_1.0.5  compiler_4.5.3   dplyr_1.2.0     
+#> [21] pkgconfig_2.0.3  digest_0.6.39    R6_2.6.1         tidyselect_1.2.1
+#> [25] pillar_1.11.1    magrittr_2.0.4   tools_4.5.3      withr_3.0.2
 ```

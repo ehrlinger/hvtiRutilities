@@ -15,19 +15,21 @@ clean_labels(label_map_df, overrides_file = "labels_overrides.yml")
 
 - label_map_df:
 
-  A data frame with `key` and `label` columns, as returned by
-  [`label_map`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md).
+  A data frame (label map or dataset) passed to
+  [`apply_label_overrides`](https://ehrlinger.github.io/hvtiRutilities/reference/apply_label_overrides.md).
 
 - overrides_file:
 
   Path to a YAML file containing label overrides. Defaults to
-  `"labels_overrides.yml"` in the current working directory.
+  `"labels_overrides.yml"`.
 
 ## Value
 
-The label map with overrides applied. Variables not mentioned in the
-YAML file are left unchanged. Variables in the YAML file that are not in
-the label map are appended.
+When given a label map: the updated label map data frame. When given a
+data frame: the data frame with labels applied via
+[`labelled::var_label()`](https://larmarange.github.io/labelled/reference/var_label.html).
+In both cases, variables not mentioned in the YAML file are left
+unchanged.
 
 ## Examples
 

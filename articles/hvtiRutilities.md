@@ -10,16 +10,24 @@ from SAS.
 
 ### Main Functions
 
+- **[`read_clinical_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_clinical_data.md)**:
+  Read SAS, CSV, Excel, or RDS files with automatic type conversion
 - **[`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)**:
   Automatically infer and convert data types based on content
 - **[`label_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)**:
   Extract variable labels from labeled datasets into a lookup table
-- **[`get_label()`](https://ehrlinger.github.io/hvtiRutilities/reference/get_label.md)**:
-  Safely look up a single variable’s label (with error checking)
+- **[`get_label()`](https://ehrlinger.github.io/hvtiRutilities/reference/get_label.md)**
+  /
+  **[`get_labels()`](https://ehrlinger.github.io/hvtiRutilities/reference/get_labels.md)**:
+  Safely look up one or many variable labels
 - **[`add_labels()`](https://ehrlinger.github.io/hvtiRutilities/reference/add_labels.md)**:
   Register labels for derived variables on data frames or label maps
 - **[`apply_label_overrides()`](https://ehrlinger.github.io/hvtiRutilities/reference/apply_label_overrides.md)**:
   Apply study-specific label overrides from a YAML file
+- **[`data_dictionary()`](https://ehrlinger.github.io/hvtiRutilities/reference/data_dictionary.md)**:
+  Build a type-annotated data dictionary from any labeled dataset
+- **[`compare_datasets()`](https://ehrlinger.github.io/hvtiRutilities/reference/compare_datasets.md)**:
+  Summarise differences between two data pulls
 - **[`sample_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/sample_data.md)**:
   Generate labeled sample datasets for testing and examples
 
@@ -38,7 +46,7 @@ if (requireNamespace("hvtiRutilities", quietly = TRUE)) {
   pkgload::load_all(export_all = FALSE, helpers = FALSE, quiet = TRUE)
 }
 #> 
-#>  hvtiRutilities 1.0.0.9000 
+#>  hvtiRutilities 1.0.0.9004 
 #>  
 #>  Type hvtiRutilities.news() to see new features, changes, and bug fixes. 
 #> 
@@ -61,17 +69,17 @@ str(dta)
 #> 'data.frame':    100 obs. of  7 variables:
 #>  $ id     : int  1 2 3 4 5 6 7 8 9 10 ...
 #>   ..- attr(*, "label")= chr "Patient Identifier"
-#>  $ boolean: int  1 1 2 1 1 2 1 1 1 2 ...
+#>  $ boolean: int  1 2 2 1 1 1 2 2 1 2 ...
 #>   ..- attr(*, "label")= chr "Binary Indicator"
-#>  $ logical: chr  "F" "F" "T" "F" ...
+#>  $ logical: chr  "F" "T" "T" "F" ...
 #>   ..- attr(*, "label")= chr "Logical Status"
-#>  $ f_real : num  0.508 0.404 0.806 0.418 0.806 ...
+#>  $ f_real : num  0.5443 0.0907 0.9553 0.8635 0.8635 ...
 #>   ..- attr(*, "label")= chr "Random Uniform Value"
-#>  $ float  : num  0.118 -0.284 0.498 1.61 1.861 ...
+#>  $ float  : num  0.3154 -0.2823 0.0782 0.4971 -0.6831 ...
 #>   ..- attr(*, "label")= chr "Random Normal Value"
-#>  $ char   : chr  "male" "male" "male" "male" ...
+#>  $ char   : chr  "female" "male" "female" "male" ...
 #>   ..- attr(*, "label")= chr "Gender"
-#>  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 3 1 5 1 4 3 1 2 1 1 ...
+#>  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 2 4 3 3 4 3 1 2 3 4 ...
 #>   ..- attr(*, "label")= chr "Category Group"
 ```
 
@@ -92,15 +100,15 @@ str(dta_converted)
 #>   ..- attr(*, "label")= chr "Patient Identifier"
 #>  $ boolean: logi  TRUE TRUE TRUE TRUE TRUE TRUE ...
 #>   ..- attr(*, "label")= chr "Binary Indicator"
-#>  $ logical: Factor w/ 2 levels "F","T": 1 1 2 1 1 2 1 1 1 2 ...
+#>  $ logical: Factor w/ 2 levels "F","T": 1 2 2 1 1 1 2 2 1 2 ...
 #>   ..- attr(*, "label")= chr "Logical Status"
-#>  $ f_real : Factor w/ 9 levels "0.218431008746848",..: 4 2 8 3 8 7 8 8 9 3 ...
+#>  $ f_real : Factor w/ 9 levels "0.049357142066583",..: 5 2 9 7 7 1 4 9 5 8 ...
 #>   ..- attr(*, "label")= chr "Random Uniform Value"
-#>  $ float  : num  0.118 -0.284 0.498 1.61 1.861 ...
+#>  $ float  : num  0.3154 -0.2823 0.0782 0.4971 -0.6831 ...
 #>   ..- attr(*, "label")= chr "Random Normal Value"
-#>  $ char   : Factor w/ 2 levels "female","male": 2 2 2 2 1 2 2 1 2 1 ...
+#>  $ char   : Factor w/ 2 levels "female","male": 1 2 1 2 2 2 2 2 2 2 ...
 #>   ..- attr(*, "label")= chr "Gender"
-#>  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 3 1 5 1 4 3 1 2 1 1 ...
+#>  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 2 4 3 3 4 3 1 2 3 4 ...
 #>   ..- attr(*, "label")= chr "Category Group"
 ```
 
@@ -434,20 +442,22 @@ str(labs_clean)
 
 ### Integration with Data Import
 
-Typical workflow when importing from SAS:
+Use
+[`read_clinical_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_clinical_data.md)
+to read and convert in one step:
 
 ``` r
-# Read SAS dataset (example - not run)
-# library(haven)
-# sas_data <- read_sas("path/to/data.sas7bdat")
+# Read SAS, CSV, or Excel — auto-detects format and converts types
+dta <- read_clinical_data("path/to/data.sas7bdat", factor_size = 15)
 
-# Apply type conversion and extract labels
-# clean_data <- r_data_types(sas_data, factor_size = 15)
-# variable_labels <- label_map(clean_data)
-
-# Save labels for documentation
-# write.csv(variable_labels, "data_dictionary.csv", row.names = FALSE)
+# Build a data dictionary for documentation
+dict <- data_dictionary(dta)
+write.csv(dict, "data_dictionary.csv", row.names = FALSE)
 ```
+
+[`read_clinical_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_clinical_data.md)
+supports `.sas7bdat`, `.csv`, `.xlsx`, `.xls`, and `.rds` files. Set
+`convert_types = FALSE` to skip automatic type conversion.
 
 ## Best Practices
 
@@ -504,16 +514,24 @@ table(clean_data$categorical_var)
 The `hvtiRutilities` package streamlines data preparation for clinical
 research:
 
+- **[`read_clinical_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_clinical_data.md)**:
+  One-step import from SAS, CSV, Excel, or RDS
 - **[`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)**:
   Automatic, intelligent type conversion
 - **[`label_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)**:
   Extract variable labels into a lookup table
-- **[`get_label()`](https://ehrlinger.github.io/hvtiRutilities/reference/get_label.md)**:
-  Safe single-variable label lookup
+- **[`get_label()`](https://ehrlinger.github.io/hvtiRutilities/reference/get_label.md)**
+  /
+  **[`get_labels()`](https://ehrlinger.github.io/hvtiRutilities/reference/get_labels.md)**:
+  Safe label lookup (single or vectorized)
 - **[`add_labels()`](https://ehrlinger.github.io/hvtiRutilities/reference/add_labels.md)**:
   Register labels for derived variables
 - **[`apply_label_overrides()`](https://ehrlinger.github.io/hvtiRutilities/reference/apply_label_overrides.md)**:
-  Apply study-specific overrides from YAML
+  Apply study-specific overrides from YAML (label maps or data)
+- **[`data_dictionary()`](https://ehrlinger.github.io/hvtiRutilities/reference/data_dictionary.md)**:
+  Build a type-annotated data dictionary
+- **[`compare_datasets()`](https://ehrlinger.github.io/hvtiRutilities/reference/compare_datasets.md)**:
+  Audit differences between two data pulls
 - **[`sample_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/sample_data.md)**
   /
   **[`generate_survival_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/generate_survival_data.md)**:
@@ -529,8 +547,9 @@ Dataset versioning:
 [`vignette("dataset-versioning")`](https://ehrlinger.github.io/hvtiRutilities/articles/dataset-versioning.md) -
 Survival data:
 [`vignette("survival-data")`](https://ehrlinger.github.io/hvtiRutilities/articles/survival-data.md) -
-GitHub: <https://github.com/ehrlinger/hvtiRutilities> - Release notes:
-Run
+Reproducible seeds:
+[`vignette("reproducible-seeds")`](https://ehrlinger.github.io/hvtiRutilities/articles/reproducible-seeds.md) -
+GitHub: https://github.com/ehrlinger/hvtiRutilities - Release notes: Run
 [`hvtiRutilities.news()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvtiRutilities.news.md)
 in R
 
@@ -540,7 +559,7 @@ in R
 sessionInfo()
 #> R version 4.5.3 (2026-03-11)
 #> Platform: x86_64-pc-linux-gnu
-#> Running under: Ubuntu 24.04.3 LTS
+#> Running under: Ubuntu 24.04.4 LTS
 #> 
 #> Matrix products: default
 #> BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 
@@ -559,17 +578,14 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] labelled_2.16.0           hvtiRutilities_1.0.0.9000
+#> [1] labelled_2.16.0           hvtiRutilities_1.0.0.9004
 #> 
 #> loaded via a namespace (and not attached):
-#>  [1] vctrs_0.7.2       cli_3.6.5         knitr_1.51        rlang_1.1.7      
-#>  [5] xfun_0.57         forcats_1.0.1     otel_0.2.0        haven_2.5.5      
-#>  [9] generics_0.1.4    textshaping_1.0.5 jsonlite_2.0.0    glue_1.8.0       
-#> [13] htmltools_0.5.9   ragg_1.5.2        sass_0.4.10       hms_1.1.4        
-#> [17] rmarkdown_2.30    tibble_3.3.1      evaluate_1.0.5    jquerylib_0.1.4  
-#> [21] fastmap_1.2.0     yaml_2.3.12       lifecycle_1.0.5   compiler_4.5.3   
-#> [25] dplyr_1.2.0       fs_2.0.1          pkgconfig_2.0.3   htmlwidgets_1.6.4
-#> [29] systemfonts_1.3.2 digest_0.6.39     R6_2.6.1          tidyselect_1.2.1 
-#> [33] pillar_1.11.1     magrittr_2.0.4    bslib_0.10.0      withr_3.0.2      
-#> [37] tools_4.5.3       pkgdown_2.2.0     cachem_1.1.0      desc_1.4.3
+#>  [1] vctrs_0.7.2      cli_3.6.5        knitr_1.51       rlang_1.1.7     
+#>  [5] xfun_0.57        forcats_1.0.1    haven_2.5.5      generics_0.1.4  
+#>  [9] jsonlite_2.0.0   glue_1.8.0       htmltools_0.5.9  hms_1.1.4       
+#> [13] rmarkdown_2.31   evaluate_1.0.5   tibble_3.3.1     fastmap_1.2.0   
+#> [17] yaml_2.3.12      lifecycle_1.0.5  compiler_4.5.3   dplyr_1.2.0     
+#> [21] pkgconfig_2.0.3  digest_0.6.39    R6_2.6.1         tidyselect_1.2.1
+#> [25] pillar_1.11.1    magrittr_2.0.4   tools_4.5.3      withr_3.0.2
 ```

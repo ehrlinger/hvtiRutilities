@@ -1,26 +1,34 @@
 # Apply label overrides from a YAML file
 
-Reads label overrides from a YAML file and applies them to a label map.
-This allows study-specific label replacements (e.g., abbreviations,
-corrections) to be configured externally rather than hard-coded in
-analysis scripts.
+Reads label overrides from a YAML file and applies them to a label map
+**or** directly to a data frame. This allows study-specific label
+replacements (e.g., abbreviations, corrections) to be configured
+externally rather than hard-coded in analysis scripts.
 
 The YAML file should contain a simple mapping of variable names to
-labels. If the file does not exist, the label map is returned unchanged
-— making it safe to call unconditionally in shared code.
+labels. If the file does not exist, the input is returned unchanged —
+making it safe to call unconditionally in shared code.
+
+When `data` is a label map (a data frame with `key` and `label`
+columns), the overrides are applied to the map. When `data` is any other
+data frame, labels are applied directly to the data via
+[`add_labels`](https://ehrlinger.github.io/hvtiRutilities/reference/add_labels.md),
+which is the preferred data-first workflow.
 
 ## Usage
 
 ``` r
-apply_label_overrides(label_map_df, overrides_file = "labels_overrides.yml")
+apply_label_overrides(data, overrides_file = "labels_overrides.yml")
 ```
 
 ## Arguments
 
-- label_map_df:
+- data:
 
-  A data frame with `key` and `label` columns, as returned by
-  [`label_map`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md).
+  A data frame: either a label map (with `key` and `label` columns, as
+  returned by
+  [`label_map`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)),
+  or any data frame whose columns should be labeled directly.
 
 - overrides_file:
 
@@ -29,9 +37,11 @@ apply_label_overrides(label_map_df, overrides_file = "labels_overrides.yml")
 
 ## Value
 
-The label map with overrides applied. Variables not mentioned in the
-YAML file are left unchanged. Variables in the YAML file that are not in
-the label map are appended.
+When given a label map: the updated label map data frame. When given a
+data frame: the data frame with labels applied via
+[`labelled::var_label()`](https://larmarange.github.io/labelled/reference/var_label.html).
+In both cases, variables not mentioned in the YAML file are left
+unchanged.
 
 ## Details
 
@@ -63,13 +73,18 @@ writeLines(c(
   "bsa_ratio: 'Body Surface Area Ratio'"
 ), tmp)
 
+# --- On a label map ---
 dta <- generate_survival_data(n = 50, seed = 42)
 lmap <- label_map(dta)
-
-# Apply study-specific overrides
 lmap <- apply_label_overrides(lmap, overrides_file = tmp)
 lmap[lmap$key == "age", ]
 #>     key               label
 #> age age Patient Age (years)
+
+# --- Directly on data (preferred) ---
+dta <- apply_label_overrides(dta, overrides_file = tmp)
+labelled::var_label(dta$age)
+#> [1] "Patient Age (years)"
+
 unlink(tmp)
 ```

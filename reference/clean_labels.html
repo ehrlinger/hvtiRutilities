@@ -11,7 +11,7 @@ kept as an alias for backward compatibility."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0.9004</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -62,20 +62,22 @@ kept as an alias for backward compatibility.</p>
 
 
 <dl><dt id="arg-label-map-df">label_map_df<a class="anchor" aria-label="anchor" href="#arg-label-map-df"></a></dt>
-<dd><p>A data frame with <code>key</code> and <code>label</code> columns,
-as returned by <code><a href="label_map.html">label_map</a></code>.</p></dd>
+<dd><p>A data frame (label map or dataset) passed to
+<code><a href="apply_label_overrides.html">apply_label_overrides</a></code>.</p></dd>
 
 
 <dt id="arg-overrides-file">overrides_file<a class="anchor" aria-label="anchor" href="#arg-overrides-file"></a></dt>
 <dd><p>Path to a YAML file containing label overrides.
-Defaults to <code>"labels_overrides.yml"</code> in the current working directory.</p></dd>
+Defaults to <code>"labels_overrides.yml"</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>The label map with overrides applied. Variables not mentioned in
-  the YAML file are left unchanged. Variables in the YAML file that are
-  not in the label map are appended.</p>
+    <p>When given a label map: the updated label map data frame.
+  When given a data frame: the data frame with labels applied via
+  <code><a href="https://larmarange.github.io/labelled/reference/var_label.html" class="external-link">labelled::var_label()</a></code>.
+  In both cases, variables not mentioned in the YAML file are left
+  unchanged.</p>
     </div>
 
     <div class="section level2">

@@ -12,7 +12,9 @@
 <link href="../deps/Fira_Code-0.4.10/font.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Simulating Cardiac Surgery Survival Data">
+<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><script src="survival-data_files/libs/quarto-html/popper.min.js"></script><script src="survival-data_files/libs/quarto-html/tippy.umd.min.js"></script><link href="survival-data_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="survival-data_files/libs/quarto-html/light-border.css" rel="stylesheet">
+<!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Simulating Cardiac Surgery Survival Data">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -22,7 +24,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0.9004</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,47 +57,44 @@
 
 
   </div>
-</nav><div class="container template-article">
-
-
-
-
+</nav><div class="container template-quarto">
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Simulating Cardiac Surgery Survival Data</h1>
-                        <h4 data-toc-skip class="author">John
-Ehrlinger</h4>
-            
-            <h4 data-toc-skip class="date">2026-03-26</h4>
-      
-      <small class="dont-index">Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/vignettes/survival-data.Rmd" class="external-link"><code>vignettes/survival-data.Rmd</code></a></small>
-      <div class="d-none name"><code>survival-data.Rmd</code></div>
+
+      <p class="author">John Ehrlinger</p>
+      <p class="date">2026-04-01</p>
+
+      <small class="dont-index">Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/vignettes/survival-data.qmd" class="external-link"><code>vignettes/survival-data.qmd</code></a></small>
+      <div class="d-none name"><code></code></div>
     </div>
 
-    
-    
-<div class="section level2">
-<h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
+
+
+
+
+
+    <section class="level2"><h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
 </h2>
-<p>The <code><a href="../reference/generate_survival_data.html">generate_survival_data()</a></code> function creates a
-realistic synthetic cardiac surgery cohort suitable for testing and
-demonstrating survival analysis workflows. Survival times are drawn from
-a Weibull distribution with a linear predictor built from clinical
-variables (LVEF, age, hemoglobin, NYHA class, eGFR), and administrative
-censoring is applied at up to 15 years.</p>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/ehrlinger/hvtiRutilities" class="external-link">hvtiRutilities</a></span><span class="op">)</span></span>
+<p>The <code><a href="../reference/generate_survival_data.html">generate_survival_data()</a></code> function creates a realistic synthetic cardiac surgery cohort suitable for testing and demonstrating survival analysis workflows. Survival times are drawn from a Weibull distribution with a linear predictor built from clinical variables (LVEF, age, hemoglobin, NYHA class, eGFR), and administrative censoring is applied at up to 15 years.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"hvtiRutilities"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="st"><a href="https://github.com/ehrlinger/hvtiRutilities" class="external-link">"hvtiRutilities"</a></span><span class="op">)</span></span>
+<span><span class="op">}</span> <span class="kw">else</span> <span class="op">{</span></span>
+<span>  <span class="fu">pkgload</span><span class="fu">::</span><span class="fu"><a href="https://pkgload.r-lib.org/reference/load_all.html" class="external-link">load_all</a></span><span class="op">(</span>export_all <span class="op">=</span> <span class="cn">FALSE</span>, helpers <span class="op">=</span> <span class="cn">FALSE</span>, quiet <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="op">}</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;  hvtiRutilities 1.0.0.9000 </span></span>
+<span><span class="co">#&gt;  hvtiRutilities 1.0.0.9004 </span></span>
 <span><span class="co">#&gt;  </span></span>
 <span><span class="co">#&gt;  Type hvtiRutilities.news() to see new features, changes, and bug fixes. </span></span>
 <span><span class="co">#&gt; </span></span></code></pre></div>
 </div>
-<div class="section level2">
-<h2 id="generating-the-dataset">Generating the Dataset<a class="anchor" aria-label="anchor" href="#generating-the-dataset"></a>
+</section><section class="level2"><h2 id="generating-the-dataset">Generating the Dataset<a class="anchor" aria-label="anchor" href="#generating-the-dataset"></a>
 </h2>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
 <span><span class="va">dta</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/generate_survival_data.html">generate_survival_data</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">500</span>, seed <span class="op">=</span> <span class="fl">1024</span><span class="op">)</span></span>
 <span></span>
@@ -107,14 +106,12 @@ censoring is applied at up to 15 years.</p>
 <span><span class="co">#&gt; [11] "hgb_bs"       "wbc_bs"       "plate_bs"     "gfr_bs"       "lvefvs_b"    </span></span>
 <span><span class="co">#&gt; [16] "lvmass_b"     "lvmsi_b"      "stvoli_b"     "stvold_b"     "bypass_time" </span></span>
 <span><span class="co">#&gt; [21] "xclamp_time"  "nyha_class"   "diabetes"     "hypertension"</span></span></code></pre></div>
-<p>The dataset contains 24 columns covering patient identifiers,
-calendar anchors, survival outcomes, reoperation, demographics,
-pre-operative labs, cardiac function, and surgical variables.</p>
 </div>
-<div class="section level2">
-<h2 id="data-structure">Data Structure<a class="anchor" aria-label="anchor" href="#data-structure"></a>
+<p>The dataset contains 24 columns covering patient identifiers, calendar anchors, survival outcomes, reoperation, demographics, pre-operative labs, cardiac function, and surgical variables.</p>
+</section><section class="level2"><h2 id="data-structure">Data Structure<a class="anchor" aria-label="anchor" href="#data-structure"></a>
 </h2>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">dta</span><span class="op">)</span></span>
 <span><span class="co">#&gt; 'data.frame':    500 obs. of  24 variables:</span></span>
 <span><span class="co">#&gt;  $ ccfid       : chr  "PT00001" "PT00002" "PT00003" "PT00004" ...</span></span>
@@ -165,11 +162,12 @@ pre-operative labs, cardiac function, and surgical variables.</p>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Diabetes mellitus"</span></span>
 <span><span class="co">#&gt;  $ hypertension: Factor w/ 2 levels "No","Yes": 2 1 1 1 1 1 1 2 1 2 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Hypertension"</span></span></code></pre></div>
+</div>
 <p>Key columns:</p>
-<table class="table">
+<table class="table caption-top">
 <colgroup>
-<col width="50%">
-<col width="50%">
+<col style="width: 50%">
+<col style="width: 50%">
 </colgroup>
 <thead><tr class="header">
 <th>Column</th>
@@ -187,8 +185,7 @@ pre-operative labs, cardiac function, and surgical variables.</p>
 </tr>
 <tr class="odd">
 <td><code>iv_opyrs</code></td>
-<td>Observation interval length (years) anchored at
-<code>origin_year</code>
+<td>Observation interval length (years) anchored at <code>origin_year</code>
 </td>
 </tr>
 <tr class="even">
@@ -208,12 +205,10 @@ pre-operative labs, cardiac function, and surgical variables.</p>
 <td>Time to reoperation (years; <code>NA</code> if no reoperation)</td>
 </tr>
 </tbody>
-</table>
-</div>
-<div class="section level2">
-<h2 id="outcome-summary">Outcome Summary<a class="anchor" aria-label="anchor" href="#outcome-summary"></a>
+</table></section><section class="level2"><h2 id="outcome-summary">Outcome Summary<a class="anchor" aria-label="anchor" href="#outcome-summary"></a>
 </h2>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Event rates</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Death rate:       "</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">dta</span><span class="op">$</span><span class="va">dead</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Death rate:        0.54</span></span>
@@ -224,7 +219,9 @@ pre-operative labs, cardiac function, and surgical variables.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">dta</span><span class="op">$</span><span class="va">iv_dead</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. </span></span>
 <span><span class="co">#&gt;   0.060   2.783   4.385   5.149   6.915  14.900</span></span></code></pre></div>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/hist.html" class="external-link">hist</a></span><span class="op">(</span></span>
 <span>  <span class="va">dta</span><span class="op">$</span><span class="va">iv_dead</span>,</span>
 <span>  breaks <span class="op">=</span> <span class="fl">30</span>,</span>
@@ -233,16 +230,19 @@ pre-operative labs, cardiac function, and surgical variables.</p>
 <span>  col <span class="op">=</span> <span class="st">"steelblue"</span>,</span>
 <span>  border <span class="op">=</span> <span class="st">"white"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p><img src="survival-data_files/figure-html/unnamed-chunk-5-1.png" class="r-plt" alt="" width="672"></p>
+<div class="cell-output-display">
+<div>
+<figure><p><img src="survival-data_files/figure-html/unnamed-chunk-5-1.png" width="672"></p>
+</figure>
 </div>
-<div class="section level2">
-<h2 id="integration-with-r_data_types-and-label_map">Integration with <code>r_data_types()</code> and
-<code>label_map()</code><a class="anchor" aria-label="anchor" href="#integration-with-r_data_types-and-label_map"></a>
+</div>
+</div>
+</section><section class="level2"><h2 id="integration-with-r_data_types-and-label_map">Integration with <code>r_data_types()</code> and <code>label_map()</code>
+<a class="anchor" aria-label="anchor" href="#integration-with-r_data_types-and-label_map"></a>
 </h2>
-<p>The dataset arrives with variable labels attached and several columns
-that benefit from type conversion. The <code><a href="../reference/r_data_types.html">r_data_types()</a></code>
-function handles these automatically.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<p>The dataset arrives with variable labels attached and several columns that benefit from type conversion. The <code><a href="../reference/r_data_types.html">r_data_types()</a></code> function handles these automatically.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Convert types: keep IDs and continuous outcomes as-is</span></span>
 <span><span class="va">model_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/r_data_types.html">r_data_types</a></span><span class="op">(</span></span>
 <span>  <span class="va">dta</span>,</span>
@@ -264,25 +264,23 @@ function handles these automatically.</p>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Diabetes mellitus"</span></span>
 <span><span class="co">#&gt;  $ hypertension: Factor w/ 2 levels "No","Yes": 2 1 1 1 1 1 1 2 1 2 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Hypertension"</span></span></code></pre></div>
+</div>
 <p>After conversion:</p>
 <ul>
 <li>
-<code>dead</code> and <code>reop</code> (2 unique values) →
-<code>logical</code>
+<code>dead</code> and <code>reop</code> (2 unique values) → <code>logical</code>
 </li>
 <li>
-<code>sex</code>, <code>diabetes</code>, <code>hypertension</code>
-(character) → <code>factor</code>
+<code>sex</code>, <code>diabetes</code>, <code>hypertension</code> (character) → <code>factor</code>
 </li>
 <li>
-<code>nyha_class</code> was already an ordered
-<code>factor</code>
+<code>nyha_class</code> was already an ordered <code>factor</code>
 </li>
 </ul>
-<div class="section level3">
-<h3 id="extracting-variable-labels">Extracting Variable Labels<a class="anchor" aria-label="anchor" href="#extracting-variable-labels"></a>
+<section class="level3"><h3 id="extracting-variable-labels">Extracting Variable Labels<a class="anchor" aria-label="anchor" href="#extracting-variable-labels"></a>
 </h3>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">lmap</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/label_map.html">label_map</a></span><span class="op">(</span><span class="va">model_data</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">lmap</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                       key                                          label</span></span>
@@ -310,14 +308,12 @@ function handles these automatically.</p>
 <span><span class="co">#&gt; nyha_class     nyha_class                          NYHA functional class</span></span>
 <span><span class="co">#&gt; diabetes         diabetes                              Diabetes mellitus</span></span>
 <span><span class="co">#&gt; hypertension hypertension                                   Hypertension</span></span></code></pre></div>
-<p>The label map is useful for annotating tables and plots with
-descriptive names.</p>
 </div>
-</div>
-<div class="section level2">
-<h2 id="preparing-data-for-survival-analysis">Preparing Data for Survival Analysis<a class="anchor" aria-label="anchor" href="#preparing-data-for-survival-analysis"></a>
+<p>The label map is useful for annotating tables and plots with descriptive names.</p>
+</section></section><section class="level2"><h2 id="preparing-data-for-survival-analysis">Preparing Data for Survival Analysis<a class="anchor" aria-label="anchor" href="#preparing-data-for-survival-analysis"></a>
 </h2>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Drop admin columns to match a typical model_data setup</span></span>
 <span><span class="va">model_data</span> <span class="op">&lt;-</span> <span class="va">model_data</span><span class="op">[</span>, <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">model_data</span><span class="op">)</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ccfid"</span>, <span class="st">"reop"</span>, <span class="st">"iv_reop"</span>,</span>
 <span>  <span class="st">"origin_year"</span>, <span class="st">"iv_opyrs"</span><span class="op">)</span><span class="op">]</span></span>
@@ -327,7 +323,9 @@ descriptive names.</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; FALSE  TRUE </span></span>
 <span><span class="co">#&gt;   230   270</span></span></code></pre></div>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Kaplan-Meier style summary by NYHA class (base R)</span></span>
 <span><span class="va">nyha_levels</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/levels.html" class="external-link">levels</a></span><span class="op">(</span><span class="va">model_data</span><span class="op">$</span><span class="va">nyha_class</span><span class="op">)</span></span>
 <span></span>
@@ -355,31 +353,32 @@ descriptive names.</p>
 <span><span class="co">#&gt; III        III    III    151         3.95      0.596</span></span>
 <span><span class="co">#&gt; IV          IV     IV     47         3.45      0.681</span></span></code></pre></div>
 </div>
-<div class="section level2">
-<h2 id="reproducibility">Reproducibility<a class="anchor" aria-label="anchor" href="#reproducibility"></a>
+</section><section class="level2"><h2 id="reproducibility">Reproducibility<a class="anchor" aria-label="anchor" href="#reproducibility"></a>
 </h2>
-<p>The <code>seed</code> argument ensures reproducible datasets for
-testing:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<p>The <code>seed</code> argument ensures reproducible datasets for testing:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dta_a</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/generate_survival_data.html">generate_survival_data</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">100</span>, seed <span class="op">=</span> <span class="fl">99</span><span class="op">)</span></span>
 <span><span class="va">dta_b</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/generate_survival_data.html">generate_survival_data</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">100</span>, seed <span class="op">=</span> <span class="fl">99</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/identical.html" class="external-link">identical</a></span><span class="op">(</span><span class="va">dta_a</span>, <span class="va">dta_b</span><span class="op">)</span>  <span class="co"># TRUE</span></span>
 <span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
+</div>
 <p>Different seeds produce different datasets:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dta_c</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/generate_survival_data.html">generate_survival_data</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">100</span>, seed <span class="op">=</span> <span class="fl">7</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/identical.html" class="external-link">identical</a></span><span class="op">(</span><span class="va">dta_a</span>, <span class="va">dta_c</span><span class="op">)</span>  <span class="co"># FALSE</span></span>
 <span><span class="co">#&gt; [1] FALSE</span></span></code></pre></div>
 </div>
-<div class="section level2">
-<h2 id="session-information">Session Information<a class="anchor" aria-label="anchor" href="#session-information"></a>
+</section><section class="level2"><h2 id="session-information">Session Information<a class="anchor" aria-label="anchor" href="#session-information"></a>
 </h2>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; R version 4.5.3 (2026-03-11)</span></span>
 <span><span class="co">#&gt; Platform: x86_64-pc-linux-gnu</span></span>
-<span><span class="co">#&gt; Running under: Ubuntu 24.04.3 LTS</span></span>
+<span><span class="co">#&gt; Running under: Ubuntu 24.04.4 LTS</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Matrix products: default</span></span>
 <span><span class="co">#&gt; BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 </span></span>
@@ -398,25 +397,104 @@ testing:</p>
 <span><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; other attached packages:</span></span>
-<span><span class="co">#&gt; [1] hvtiRutilities_1.0.0.9000</span></span>
+<span><span class="co">#&gt; [1] hvtiRutilities_1.0.0.9004</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
-<span><span class="co">#&gt;  [1] vctrs_0.7.2       cli_3.6.5         knitr_1.51        rlang_1.1.7      </span></span>
-<span><span class="co">#&gt;  [5] xfun_0.57         forcats_1.0.1     otel_0.2.0        haven_2.5.5      </span></span>
-<span><span class="co">#&gt;  [9] generics_0.1.4    textshaping_1.0.5 jsonlite_2.0.0    glue_1.8.0       </span></span>
-<span><span class="co">#&gt; [13] htmltools_0.5.9   ragg_1.5.2        sass_0.4.10       hms_1.1.4        </span></span>
-<span><span class="co">#&gt; [17] rmarkdown_2.30    tibble_3.3.1      evaluate_1.0.5    jquerylib_0.1.4  </span></span>
-<span><span class="co">#&gt; [21] fastmap_1.2.0     yaml_2.3.12       lifecycle_1.0.5   compiler_4.5.3   </span></span>
-<span><span class="co">#&gt; [25] dplyr_1.2.0       fs_2.0.1          pkgconfig_2.0.3   htmlwidgets_1.6.4</span></span>
-<span><span class="co">#&gt; [29] labelled_2.16.0   systemfonts_1.3.2 digest_0.6.39     R6_2.6.1         </span></span>
-<span><span class="co">#&gt; [33] tidyselect_1.2.1  pillar_1.11.1     magrittr_2.0.4    bslib_0.10.0     </span></span>
-<span><span class="co">#&gt; [37] withr_3.0.2       tools_4.5.3       pkgdown_2.2.0     cachem_1.1.0     </span></span>
-<span><span class="co">#&gt; [41] desc_1.4.3</span></span></code></pre></div>
+<span><span class="co">#&gt;  [1] vctrs_0.7.2      cli_3.6.5        knitr_1.51       rlang_1.1.7     </span></span>
+<span><span class="co">#&gt;  [5] xfun_0.57        forcats_1.0.1    haven_2.5.5      generics_0.1.4  </span></span>
+<span><span class="co">#&gt;  [9] jsonlite_2.0.0   glue_1.8.0       htmltools_0.5.9  hms_1.1.4       </span></span>
+<span><span class="co">#&gt; [13] rmarkdown_2.31   evaluate_1.0.5   tibble_3.3.1     fastmap_1.2.0   </span></span>
+<span><span class="co">#&gt; [17] yaml_2.3.12      lifecycle_1.0.5  compiler_4.5.3   dplyr_1.2.0     </span></span>
+<span><span class="co">#&gt; [21] pkgconfig_2.0.3  labelled_2.16.0  digest_0.6.39    R6_2.6.1        </span></span>
+<span><span class="co">#&gt; [25] tidyselect_1.2.1 pillar_1.11.1    magrittr_2.0.4   tools_4.5.3     </span></span>
+<span><span class="co">#&gt; [29] withr_3.0.2</span></span></code></pre></div>
 </div>
-  </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
+</section><script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'light-border',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config);
+    }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script></main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
 </div>
-
 
 
     <footer><div class="pkgdown-footer-left">

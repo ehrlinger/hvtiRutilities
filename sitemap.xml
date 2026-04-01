@@ -5,6 +5,7 @@
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/articles/dataset-versioning.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/articles/hvtiRutilities.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/articles/index.html</loc></url>
+<url><loc>https://ehrlinger.github.io/hvtiRutilities/articles/reproducible-seeds.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/articles/survival-data.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/authors.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/index.html</loc></url>
@@ -12,13 +13,17 @@
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/add_labels.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/apply_label_overrides.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/clean_labels.html</loc></url>
+<url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/compare_datasets.html</loc></url>
+<url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/data_dictionary.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/generate_survival_data.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/get_label.html</loc></url>
+<url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/get_labels.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/hvtiRutilities-package.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/hvtiRutilities.news.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/index.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/label_map.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.html</loc></url>
+<url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/read_clinical_data.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/sample_data.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.html</loc></url>

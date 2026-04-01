@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0.9004</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -41,6 +41,43 @@
       <small>Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.0.0.9004" id="hvtirutilities-1009004">hvtiRutilities 1.0.0.9004<a class="anchor" aria-label="anchor" href="#hvtirutilities-1009004"></a></h2>
+<div class="section level3">
+<h3 id="bug-fixes-1-0-0-9004">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-0-0-9004"></a></h3>
+<ul><li>
+<code><a href="../reference/read_clinical_data.html">read_clinical_data()</a></code>: files with no extension now produce a clear error (“Cannot determine file type: … has no extension”) instead of the misleading <code>Unsupported file type: '..'</code> message. The unsupported-extension error also now includes the full file path for easier diagnosis.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="tests-1-0-0-9004">Tests<a class="anchor" aria-label="anchor" href="#tests-1-0-0-9004"></a></h3>
+<ul><li>
+<code>test-read_clinical_data.R</code>: strengthened the tibble-coercion assertion from <code>expect_true(is.data.frame(result))</code> (TRUE for tibbles) to <code>expect_equal(class(result), "data.frame")</code> so the test actually protects against <code><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame()</a></code> being removed or bypassed.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="documentation-1-0-0-9004">Documentation<a class="anchor" aria-label="anchor" href="#documentation-1-0-0-9004"></a></h3>
+<ul><li>
+<code>vignettes/reproducible-seeds.qmd</code>: section heading “Using the Seed with varpro” and narrative references to the package now use the correct CRAN casing <code>varPro</code>; function-name references (<code>varpro()</code>, <code>unsupv.varpro()</code>) remain lowercase as those are the exported function names.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.0.0.9003" id="hvtirutilities-1009003">hvtiRutilities 1.0.0.9003<a class="anchor" aria-label="anchor" href="#hvtirutilities-1009003"></a></h2>
+<div class="section level3">
+<h3 id="bug-fixes-1-0-0-9003">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-0-0-9003"></a></h3>
+<ul><li>Fixed <code>Suggests</code> entry for <code>varPro</code>: package name on CRAN is <code>varPro</code> (camelCase), not <code>varpro</code> (lowercase). The case mismatch caused <code>pak</code> lockfile resolution to fail with “Can’t find package called varpro”. Updated the corresponding <code><a href="https://www.randomforestsrc.org/reference/varpro.html" class="external-link">varPro::varpro()</a></code> call in <code>vignettes/reproducible-seeds.qmd</code> to match.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.0.0.9002" id="hvtirutilities-1009002">hvtiRutilities 1.0.0.9002<a class="anchor" aria-label="anchor" href="#hvtirutilities-1009002"></a></h2>
+<div class="section level3">
+<h3 id="documentation-1-0-0-9002">Documentation<a class="anchor" aria-label="anchor" href="#documentation-1-0-0-9002"></a></h3>
+<ul><li>All vignettes migrated from R Markdown (<code>.Rmd</code>) to Quarto (<code>.qmd</code>). Added <code>quarto</code> to <code>Suggests</code>.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-1-0-0-9002">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-0-0-9002"></a></h3>
+<ul><li>
+<code><a href="../reference/read_clinical_data.html">read_clinical_data()</a></code>: CSV files are now read with <code>check.names = FALSE</code> so column names containing spaces, hyphens, or special characters are preserved exactly as written, preventing silent name mangling that could break downstream label lookups.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.0.0.9000" id="hvtirutilities-1009000">hvtiRutilities 1.0.0.9000<a class="anchor" aria-label="anchor" href="#hvtirutilities-1009000"></a></h2>
 <div class="section level3">

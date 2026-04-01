@@ -12,7 +12,9 @@
 <link href="../deps/Fira_Code-0.4.10/font.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Data Label Handling Best Practices">
+<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><script src="data-labels_files/libs/quarto-html/popper.min.js"></script><script src="data-labels_files/libs/quarto-html/tippy.umd.min.js"></script><link href="data-labels_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="data-labels_files/libs/quarto-html/light-border.css" rel="stylesheet">
+<!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Data Label Handling Best Practices">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -22,7 +24,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0.9004</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,74 +57,60 @@
 
 
   </div>
-</nav><div class="container template-article">
-
-
-
-
+</nav><div class="container template-quarto">
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Data Label Handling Best Practices</h1>
-                        <h4 data-toc-skip class="author">John
-Ehrlinger</h4>
-            
-            <h4 data-toc-skip class="date">2026-03-26</h4>
-      
-      <small class="dont-index">Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/vignettes/data-labels.Rmd" class="external-link"><code>vignettes/data-labels.Rmd</code></a></small>
-      <div class="d-none name"><code>data-labels.Rmd</code></div>
+
+      <p class="author">John Ehrlinger</p>
+      <p class="date">2026-04-01</p>
+
+      <small class="dont-index">Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/vignettes/data-labels.qmd" class="external-link"><code>vignettes/data-labels.qmd</code></a></small>
+      <div class="d-none name"><code></code></div>
     </div>
 
-    
-    
-<div class="section level2">
-<h2 id="why-labels-matter">Why Labels Matter<a class="anchor" aria-label="anchor" href="#why-labels-matter"></a>
+
+
+
+
+
+    <section class="level2"><h2 id="why-labels-matter">Why Labels Matter<a class="anchor" aria-label="anchor" href="#why-labels-matter"></a>
 </h2>
-<p>Variable labels are the bridge between raw data and human-readable
-output. A column named <code>lvefvs_b</code> means nothing in a table or
-plot caption, but “Baseline LV Ejection Fraction (%)” tells the reader
-exactly what they are looking at. In clinical research, where results go
-directly into manuscripts, grant submissions, and regulatory filings,
-unlabeled output is unprofessional and error-prone.</p>
-<p>SAS datasets carry variable labels natively. When you import them
-into R with <code><a href="https://haven.tidyverse.org/reference/read_sas.html" class="external-link">haven::read_sas()</a></code>, the <code>labelled</code>
-package preserves those labels as column attributes.
-<code>hvtiRutilities</code> provides a set of functions to extract, look
-up, register, and override these labels throughout the analysis
-lifecycle.</p>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/ehrlinger/hvtiRutilities" class="external-link">hvtiRutilities</a></span><span class="op">)</span></span>
+<p>Variable labels are the bridge between raw data and human-readable output. A column named <code>lvefvs_b</code> means nothing in a table or plot caption, but “Baseline LV Ejection Fraction (%)” tells the reader exactly what they are looking at. In clinical research, where results go directly into manuscripts, grant submissions, and regulatory filings, unlabeled output is unprofessional and error-prone.</p>
+<p>SAS datasets carry variable labels natively. When you import them into R with <code><a href="https://haven.tidyverse.org/reference/read_sas.html" class="external-link">haven::read_sas()</a></code>, the <code>labelled</code> package preserves those labels as column attributes. <code>hvtiRutilities</code> provides a set of functions to extract, look up, register, and override these labels throughout the analysis lifecycle.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"hvtiRutilities"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="st"><a href="https://github.com/ehrlinger/hvtiRutilities" class="external-link">"hvtiRutilities"</a></span><span class="op">)</span></span>
+<span><span class="op">}</span> <span class="kw">else</span> <span class="op">{</span></span>
+<span>  <span class="fu">pkgload</span><span class="fu">::</span><span class="fu"><a href="https://pkgload.r-lib.org/reference/load_all.html" class="external-link">load_all</a></span><span class="op">(</span>export_all <span class="op">=</span> <span class="cn">FALSE</span>, helpers <span class="op">=</span> <span class="cn">FALSE</span>, quiet <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="op">}</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;  hvtiRutilities 1.0.0.9000 </span></span>
+<span><span class="co">#&gt;  hvtiRutilities 1.0.0.9004 </span></span>
 <span><span class="co">#&gt;  </span></span>
 <span><span class="co">#&gt;  Type hvtiRutilities.news() to see new features, changes, and bug fixes. </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://larmarange.github.io/labelled/" class="external-link">labelled</a></span><span class="op">)</span></span></code></pre></div>
 </div>
-<div class="section level2">
-<h2 id="the-label-lifecycle">The Label Lifecycle<a class="anchor" aria-label="anchor" href="#the-label-lifecycle"></a>
+</section><section class="level2"><h2 id="the-label-lifecycle">The Label Lifecycle<a class="anchor" aria-label="anchor" href="#the-label-lifecycle"></a>
 </h2>
 <p>A typical clinical analysis has four phases where labels matter:</p>
-<ol style="list-style-type: decimal">
+<ol type="1">
 <li>
-<strong>Ingestion</strong> — labels arrive with the data (SAS
-import) or need to be created (CSV import)</li>
+<strong>Ingestion</strong> — labels arrive with the data (SAS import) or need to be created (CSV import)</li>
 <li>
-<strong>Transformation</strong> — derived variables (ratios, bins,
-indices) need new labels</li>
+<strong>Transformation</strong> — derived variables (ratios, bins, indices) need new labels</li>
 <li>
-<strong>Override</strong> — study-specific abbreviations or
-corrections</li>
+<strong>Override</strong> — study-specific abbreviations or corrections</li>
 <li>
-<strong>Consumption</strong> — labels appear in plots, tables, and
-data dictionaries</li>
+<strong>Consumption</strong> — labels appear in plots, tables, and data dictionaries</li>
 </ol>
-<div class="section level3">
-<h3 id="phase-1-extracting-labels-at-ingestion">Phase 1: Extracting Labels at Ingestion<a class="anchor" aria-label="anchor" href="#phase-1-extracting-labels-at-ingestion"></a>
+<section class="level3"><h3 id="phase-1-extracting-labels-at-ingestion">Phase 1: Extracting Labels at Ingestion<a class="anchor" aria-label="anchor" href="#phase-1-extracting-labels-at-ingestion"></a>
 </h3>
-<p><code><a href="../reference/label_map.html">label_map()</a></code> extracts all variable labels into a lookup
-table:</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<p><code><a href="../reference/label_map.html">label_map()</a></code> extracts all variable labels into a lookup table:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Simulated SAS-style dataset with labels</span></span>
 <span><span class="va">dta</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/generate_survival_data.html">generate_survival_data</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">200</span>, seed <span class="op">=</span> <span class="fl">42</span><span class="op">)</span></span>
 <span></span>
@@ -139,16 +127,13 @@ table:</p>
 <span><span class="co">#&gt; age                 age                         Age at surgery (years)</span></span>
 <span><span class="co">#&gt; sex                 sex                                            Sex</span></span>
 <span><span class="co">#&gt; bmi                 bmi                        Body mass index (kg/m2)</span></span></code></pre></div>
-<p>The result is a two-column data frame: <code>key</code> (variable
-name) and <code>label</code> (descriptive text). Every column in the
-data gets an entry. Unlabeled columns fall back to the variable name
-itself.</p>
-<div class="section level4">
-<h4 id="detecting-missing-labels">Detecting Missing Labels<a class="anchor" aria-label="anchor" href="#detecting-missing-labels"></a>
+</div>
+<p>The result is a two-column data frame: <code>key</code> (variable name) and <code>label</code> (descriptive text). Every column in the data gets an entry. Unlabeled columns fall back to the variable name itself.</p>
+<section class="level4"><h4 id="detecting-missing-labels">Detecting Missing Labels<a class="anchor" aria-label="anchor" href="#detecting-missing-labels"></a>
 </h4>
-<p>When data arrives from a plain CSV (no labels),
-<code><a href="../reference/label_map.html">label_map()</a></code> warns you:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<p>When data arrives from a plain CSV (no labels), <code><a href="../reference/label_map.html">label_map()</a></code> warns you:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">csv_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  pat_id <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">5</span>,</span>
 <span>  hgb <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">12.1</span>, <span class="fl">14.3</span>, <span class="fl">10.8</span>, <span class="fl">13.5</span>, <span class="fl">11.2</span><span class="op">)</span>,</span>
@@ -164,25 +149,16 @@ itself.</p>
 <span><span class="co">#&gt; pat_id pat_id pat_id</span></span>
 <span><span class="co">#&gt; hgb       hgb    hgb</span></span>
 <span><span class="co">#&gt; egfr     egfr   egfr</span></span></code></pre></div>
-<p>The warning is intentional: it prevents the common mistake of
-generating plots and tables with cryptic variable names like
-<code>hgb</code> and <code>egfr</code> and not noticing until a
-collaborator asks what they mean.</p>
 </div>
-</div>
-<div class="section level3">
-<h3 id="phase-2-labeling-derived-variables">Phase 2: Labeling Derived Variables<a class="anchor" aria-label="anchor" href="#phase-2-labeling-derived-variables"></a>
+<p>The warning is intentional: it prevents the common mistake of generating plots and tables with cryptic variable names like <code>hgb</code> and <code>egfr</code> and not noticing until a collaborator asks what they mean.</p>
+</section></section><section class="level3"><h3 id="phase-2-labeling-derived-variables">Phase 2: Labeling Derived Variables<a class="anchor" aria-label="anchor" href="#phase-2-labeling-derived-variables"></a>
 </h3>
-<p>After ingestion, you’ll create new variables — age groups, risk
-scores, ratios, indicator flags. These variables have no labels because
-they didn’t exist in the original data.</p>
-<div class="section level4">
-<h4 id="method-a-label-the-data-directly-preferred">Method A: Label the data directly (preferred)<a class="anchor" aria-label="anchor" href="#method-a-label-the-data-directly-preferred"></a>
+<p>After ingestion, you’ll create new variables — age groups, risk scores, ratios, indicator flags. These variables have no labels because they didn’t exist in the original data.</p>
+<section class="level4"><h4 id="method-a-label-the-data-directly-preferred">Method A: Label the data directly (preferred)<a class="anchor" aria-label="anchor" href="#method-a-label-the-data-directly-preferred"></a>
 </h4>
-<p>The best practice is to label the data frame itself using
-<code><a href="../reference/add_labels.html">add_labels()</a></code>. Labels travel with the data through
-<code>dplyr</code> operations, so they are never out of sync:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<p>The best practice is to label the data frame itself using <code><a href="../reference/add_labels.html">add_labels()</a></code>. Labels travel with the data through <code>dplyr</code> operations, so they are never out of sync:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Create derived variables</span></span>
 <span><span class="va">dta</span><span class="op">$</span><span class="va">age_group</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cut.html" class="external-link">cut</a></span><span class="op">(</span><span class="va">dta</span><span class="op">$</span><span class="va">age</span>,</span>
 <span>  breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">30</span>, <span class="fl">50</span>, <span class="fl">70</span>, <span class="cn">Inf</span><span class="op">)</span>,</span>
@@ -201,22 +177,21 @@ they didn’t exist in the original data.</p>
 <span><span class="co">#&gt; [1] "Age Group at Surgery"</span></span>
 <span><span class="fu"><a href="https://larmarange.github.io/labelled/reference/var_label.html" class="external-link">var_label</a></span><span class="op">(</span><span class="va">dta</span><span class="op">$</span><span class="va">ef_low</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "Reduced Ejection Fraction (&lt;40%)"</span></span></code></pre></div>
-<p>When you label the data directly, any subsequent call to
-<code><a href="../reference/label_map.html">label_map()</a></code> automatically picks up the new labels:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+</div>
+<p>When you label the data directly, any subsequent call to <code><a href="../reference/label_map.html">label_map()</a></code> automatically picks up the new labels:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">lmap</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/label_map.html">label_map</a></span><span class="op">(</span><span class="va">dta</span><span class="op">)</span></span>
 <span><span class="va">lmap</span><span class="op">[</span><span class="va">lmap</span><span class="op">$</span><span class="va">key</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"age_group"</span>, <span class="st">"ef_low"</span><span class="op">)</span>, <span class="op">]</span></span>
 <span><span class="co">#&gt;                 key                            label</span></span>
 <span><span class="co">#&gt; age_group age_group             Age Group at Surgery</span></span>
 <span><span class="co">#&gt; ef_low       ef_low Reduced Ejection Fraction (&lt;40%)</span></span></code></pre></div>
 </div>
-<div class="section level4">
-<h4 id="method-b-update-the-label-map-for-reporting">Method B: Update the label map (for reporting)<a class="anchor" aria-label="anchor" href="#method-b-update-the-label-map-for-reporting"></a>
+</section><section class="level4"><h4 id="method-b-update-the-label-map-for-reporting">Method B: Update the label map (for reporting)<a class="anchor" aria-label="anchor" href="#method-b-update-the-label-map-for-reporting"></a>
 </h4>
-<p>Sometimes the label map is created once and passed to a reporting
-module that generates tables and figures. In that case, update the map
-directly:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<p>Sometimes the label map is created once and passed to a reporting module that generates tables and figures. In that case, update the map directly:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Start from the base data</span></span>
 <span><span class="va">lmap</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/label_map.html">label_map</a></span><span class="op">(</span><span class="fu"><a href="../reference/generate_survival_data.html">generate_survival_data</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">100</span>, seed <span class="op">=</span> <span class="fl">7</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
@@ -234,14 +209,13 @@ directly:</p>
 <span><span class="co">#&gt; 2                  ef_low Reduced Ejection Fraction (&lt;40%)</span></span>
 <span><span class="co">#&gt; 3              risk_score             Composite Risk Score</span></span></code></pre></div>
 </div>
-<div class="section level4">
-<h4 id="which-method-should-i-use">Which method should I use?<a class="anchor" aria-label="anchor" href="#which-method-should-i-use"></a>
+</section><section class="level4"><h4 id="which-method-should-i-use">Which method should I use?<a class="anchor" aria-label="anchor" href="#which-method-should-i-use"></a>
 </h4>
-<table class="table">
+<table class="table caption-top">
 <colgroup>
-<col width="33%">
-<col width="33%">
-<col width="33%">
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
 </colgroup>
 <thead><tr class="header">
 <th>Scenario</th>
@@ -265,20 +239,12 @@ directly:</p>
 <td>Safe, readable, errors on typos</td>
 </tr>
 </tbody>
-</table>
-</div>
-</div>
-<div class="section level3">
-<h3 id="phase-3-study-specific-overrides">Phase 3: Study-Specific Overrides<a class="anchor" aria-label="anchor" href="#phase-3-study-specific-overrides"></a>
+</table></section></section><section class="level3"><h3 id="phase-3-study-specific-overrides">Phase 3: Study-Specific Overrides<a class="anchor" aria-label="anchor" href="#phase-3-study-specific-overrides"></a>
 </h3>
-<p>Different studies use different abbreviations and naming conventions.
-An AVSD study might want “Common AVV” shortened to “CAVV”; a mitral
-valve study might need different terminology entirely. Hard-coding these
-replacements in shared functions is fragile.</p>
-<p><code><a href="../reference/apply_label_overrides.html">apply_label_overrides()</a></code> reads a YAML file and applies
-the overrides to a label map. If the file doesn’t exist, nothing happens
-— making it safe to call unconditionally.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<p>Different studies use different abbreviations and naming conventions. An AVSD study might want “Common AVV” shortened to “CAVV”; a mitral valve study might need different terminology entirely. Hard-coding these replacements in shared functions is fragile.</p>
+<p><code><a href="../reference/apply_label_overrides.html">apply_label_overrides()</a></code> reads a YAML file and applies the overrides to a label map. If the file doesn’t exist, nothing happens — making it safe to call unconditionally.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Create a study-specific overrides file</span></span>
 <span><span class="va">tmp_overrides</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span>fileext <span class="op">=</span> <span class="st">".yml"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/writeLines.html" class="external-link">writeLines</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
@@ -299,30 +265,24 @@ the overrides to a label map. If the file doesn’t exist, nothing happens
 <span><span class="co">#&gt; gfr_bs         gfr_bs eGFR (mL/min/1.73m2)</span></span>
 <span><span class="co">#&gt; lvefvs_b     lvefvs_b    Baseline LVEF (%)</span></span>
 <span><span class="co">#&gt; nyha_class nyha_class           NYHA Class</span></span></code></pre></div>
-<p>In a real project, <code>labels_overrides.yml</code> lives alongside
-<code>config.yml</code> in the project root and is committed to version
-control. Each study gets its own file; shared analysis code never
-contains hard-coded label replacements.</p>
-<div class="section level4">
-<h4 id="example-labels_overrides-yml">Example <code>labels_overrides.yml</code><a class="anchor" aria-label="anchor" href="#example-labels_overrides-yml"></a>
+</div>
+<p>In a real project, <code>labels_overrides.yml</code> lives alongside <code>config.yml</code> in the project root and is committed to version control. Each study gets its own file; shared analysis code never contains hard-coded label replacements.</p>
+<section class="level4"><h4 id="example-labels_overrides-yml">Example <code>labels_overrides.yml</code>
+<a class="anchor" aria-label="anchor" href="#example-labels_overrides-yml"></a>
 </h4>
-<div class="sourceCode" id="cb8"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="co"># AVSD study label overrides</span></span>
-<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="fu">cavv_area</span><span class="kw">:</span><span class="at"> </span><span class="st">"Common AVV Area (cm2)"</span></span>
-<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="fu">ed_area</span><span class="kw">:</span><span class="at"> </span><span class="st">"End-Diastolic Area (cm2)"</span></span>
-<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="fu">es_area</span><span class="kw">:</span><span class="at"> </span><span class="st">"End-Systolic Area (cm2)"</span></span>
-<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="fu">bsa_idx</span><span class="kw">:</span><span class="at"> </span><span class="st">"BSA-Indexed Value"</span></span></code></pre></div>
-</div>
-</div>
-<div class="section level3">
-<h3 id="phase-4-using-labels-in-output">Phase 4: Using Labels in Output<a class="anchor" aria-label="anchor" href="#phase-4-using-labels-in-output"></a>
+<div class="sourceCode" id="cb8"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># AVSD study label overrides</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cavv_area</span><span class="kw">:</span><span class="at"> </span><span class="st">"Common AVV Area (cm2)"</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="fu">ed_area</span><span class="kw">:</span><span class="at"> </span><span class="st">"End-Diastolic Area (cm2)"</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="fu">es_area</span><span class="kw">:</span><span class="at"> </span><span class="st">"End-Systolic Area (cm2)"</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="fu">bsa_idx</span><span class="kw">:</span><span class="at"> </span><span class="st">"BSA-Indexed Value"</span></span></code></pre></div>
+</section></section><section class="level3"><h3 id="phase-4-using-labels-in-output">Phase 4: Using Labels in Output<a class="anchor" aria-label="anchor" href="#phase-4-using-labels-in-output"></a>
 </h3>
-<div class="section level4">
-<h4 id="safe-single-variable-lookup-with-get_label">Safe single-variable lookup with <code>get_label()</code><a class="anchor" aria-label="anchor" href="#safe-single-variable-lookup-with-get_label"></a>
+<section class="level4"><h4 id="safe-single-variable-lookup-with-get_label">Safe single-variable lookup with <code>get_label()</code>
+<a class="anchor" aria-label="anchor" href="#safe-single-variable-lookup-with-get_label"></a>
 </h4>
-<p>The <code><a href="../reference/get_label.html">get_label()</a></code> function replaces the error-prone
-<code><a href="https://rdrr.io/r/base/match.html" class="external-link">match()</a></code> pattern. It errors on typos instead of silently
-returning <code>NA</code>:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<p>The <code><a href="../reference/get_label.html">get_label()</a></code> function replaces the error-prone <code><a href="https://rdrr.io/r/base/match.html" class="external-link">match()</a></code> pattern. It errors on typos instead of silently returning <code>NA</code>:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">lmap</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/label_map.html">label_map</a></span><span class="op">(</span><span class="fu"><a href="../reference/generate_survival_data.html">generate_survival_data</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">50</span>, seed <span class="op">=</span> <span class="fl">42</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Use in plot titles</span></span>
@@ -330,27 +290,21 @@ returning <code>NA</code>:</p>
 <span><span class="co">#&gt; [1] "Age at surgery (years)"</span></span>
 <span><span class="fu"><a href="../reference/get_label.html">get_label</a></span><span class="op">(</span><span class="va">lmap</span>, <span class="st">"lvefvs_b"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "Baseline LV ejection fraction (%)"</span></span></code></pre></div>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Typo --- clear error instead of silent NA</span></span>
 <span><span class="fu"><a href="../reference/get_label.html">get_label</a></span><span class="op">(</span><span class="va">lmap</span>, <span class="st">"ages"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00; font-weight: bold;">Error</span><span style="font-weight: bold;">:</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> Variable 'ages' not found in label map.</span></span></code></pre></div>
+<span><span class="co">#&gt; Error:</span></span>
+<span><span class="co">#&gt; ! Variable 'ages' not found in label map.</span></span></code></pre></div>
 </div>
-<div class="section level4">
-<h4 id="building-a-data-dictionary">Building a data dictionary<a class="anchor" aria-label="anchor" href="#building-a-data-dictionary"></a>
+</section><section class="level4"><h4 id="building-a-data-dictionary">Building a data dictionary<a class="anchor" aria-label="anchor" href="#building-a-data-dictionary"></a>
 </h4>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<p>Use <code><a href="../reference/data_dictionary.html">data_dictionary()</a></code> to generate a complete, type-annotated data dictionary in one call:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dta</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/generate_survival_data.html">generate_survival_data</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">200</span>, seed <span class="op">=</span> <span class="fl">42</span><span class="op">)</span></span>
-<span><span class="va">lmap</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/label_map.html">label_map</a></span><span class="op">(</span><span class="va">dta</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Build a type-annotated data dictionary</span></span>
-<span><span class="va">dict</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span>  variable    <span class="op">=</span> <span class="va">lmap</span><span class="op">$</span><span class="va">key</span>,</span>
-<span>  label       <span class="op">=</span> <span class="va">lmap</span><span class="op">$</span><span class="va">label</span>,</span>
-<span>  type        <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">vapply</a></span><span class="op">(</span><span class="va">dta</span>, <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/class.html" class="external-link">class</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>, <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">character</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>  n_unique    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">vapply</a></span><span class="op">(</span><span class="va">dta</span>, <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">integer</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>  pct_missing <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">vapply</a></span><span class="op">(</span><span class="va">dta</span>, <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="op">)</span> <span class="op">*</span> <span class="fl">100</span>, <span class="fl">1</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">numeric</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
+<span><span class="va">dict</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/data_dictionary.html">data_dictionary</a></span><span class="op">(</span><span class="va">dta</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">dict</span>, <span class="fl">12</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                variable                                          label</span></span>
 <span><span class="co">#&gt; ccfid             ccfid                                     Patient ID</span></span>
@@ -365,29 +319,45 @@ returning <code>NA</code>:</p>
 <span><span class="co">#&gt; bmi                 bmi                        Body mass index (kg/m2)</span></span>
 <span><span class="co">#&gt; hgb_bs           hgb_bs                     Baseline hemoglobin (g/dL)</span></span>
 <span><span class="co">#&gt; wbc_bs           wbc_bs                      Baseline WBC count (K/uL)</span></span>
-<span><span class="co">#&gt;                  type n_unique pct_missing</span></span>
+<span><span class="co">#&gt;                 class n_unique pct_missing</span></span>
 <span><span class="co">#&gt; ccfid       character      200         0.0</span></span>
 <span><span class="co">#&gt; origin_year   integer       21         0.0</span></span>
 <span><span class="co">#&gt; iv_opyrs      numeric      183         0.0</span></span>
 <span><span class="co">#&gt; iv_dead       numeric      184         0.0</span></span>
 <span><span class="co">#&gt; dead          integer        2         0.0</span></span>
 <span><span class="co">#&gt; reop          integer        2         0.0</span></span>
-<span><span class="co">#&gt; iv_reop       numeric       32        83.5</span></span>
+<span><span class="co">#&gt; iv_reop       numeric       31        83.5</span></span>
 <span><span class="co">#&gt; age           numeric      165         0.0</span></span>
 <span><span class="co">#&gt; sex            factor        2         0.0</span></span>
 <span><span class="co">#&gt; bmi           numeric      123         0.0</span></span>
 <span><span class="co">#&gt; hgb_bs        numeric       66         0.0</span></span>
-<span><span class="co">#&gt; wbc_bs        numeric      172         0.0</span></span></code></pre></div>
+<span><span class="co">#&gt; wbc_bs        numeric      172         0.0</span></span>
+<span><span class="co">#&gt;                                                                  summary</span></span>
+<span><span class="co">#&gt; ccfid       200 levels: PT00001, PT00002, PT00003, PT00004, PT00005, ...</span></span>
+<span><span class="co">#&gt; origin_year                                           1998 / 2008 / 2018</span></span>
+<span><span class="co">#&gt; iv_opyrs                                             1.06 / 7.87 / 14.99</span></span>
+<span><span class="co">#&gt; iv_dead                                               0.25 / 4.1 / 13.98</span></span>
+<span><span class="co">#&gt; dead                                                           0 / 1 / 1</span></span>
+<span><span class="co">#&gt; reop                                                           0 / 0 / 1</span></span>
+<span><span class="co">#&gt; iv_reop                                               0.04 / 1.29 / 9.92</span></span>
+<span><span class="co">#&gt; age                                                       1 / 44.75 / 85</span></span>
+<span><span class="co">#&gt; sex                                               2 levels: Female, Male</span></span>
+<span><span class="co">#&gt; bmi                                                    15 / 26.65 / 41.8</span></span>
+<span><span class="co">#&gt; hgb_bs                                                     7.6 / 13 / 18</span></span>
+<span><span class="co">#&gt; wbc_bs                                                1.5 / 7.35 / 15.53</span></span></code></pre></div>
 </div>
-<div class="section level4">
-<h4 id="labels-in-summary-tables">Labels in summary tables<a class="anchor" aria-label="anchor" href="#labels-in-summary-tables"></a>
+</section><section class="level4"><h4 id="labels-in-summary-tables">Labels in summary tables<a class="anchor" aria-label="anchor" href="#labels-in-summary-tables"></a>
 </h4>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Numeric summary with labels</span></span>
+<p>Use <code><a href="../reference/get_labels.html">get_labels()</a></code> (vectorized) to look up multiple labels at once:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">lmap</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/label_map.html">label_map</a></span><span class="op">(</span><span class="va">dta</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Numeric summary with labels</span></span>
 <span><span class="va">num_vars</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"age"</span>, <span class="st">"bmi"</span>, <span class="st">"hgb_bs"</span>, <span class="st">"gfr_bs"</span>, <span class="st">"lvefvs_b"</span><span class="op">)</span></span>
 <span><span class="va">summary_tbl</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  variable <span class="op">=</span> <span class="va">num_vars</span>,</span>
-<span>  label    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">vapply</a></span><span class="op">(</span><span class="va">num_vars</span>, <span class="kw">function</span><span class="op">(</span><span class="va">v</span><span class="op">)</span> <span class="fu"><a href="../reference/get_label.html">get_label</a></span><span class="op">(</span><span class="va">lmap</span>, <span class="va">v</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">character</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  label    <span class="op">=</span> <span class="fu"><a href="../reference/get_labels.html">get_labels</a></span><span class="op">(</span><span class="va">lmap</span>, <span class="va">num_vars</span><span class="op">)</span>,</span>
 <span>  mean     <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">vapply</a></span><span class="op">(</span><span class="va">num_vars</span>, <span class="kw">function</span><span class="op">(</span><span class="va">v</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">dta</span><span class="op">[[</span><span class="va">v</span><span class="op">]</span><span class="op">]</span><span class="op">)</span>, <span class="fl">1</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">numeric</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  sd       <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">vapply</a></span><span class="op">(</span><span class="va">num_vars</span>, <span class="kw">function</span><span class="op">(</span><span class="va">v</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/sd.html" class="external-link">sd</a></span><span class="op">(</span><span class="va">dta</span><span class="op">[[</span><span class="va">v</span><span class="op">]</span><span class="op">]</span><span class="op">)</span>, <span class="fl">1</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">numeric</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  median   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">vapply</a></span><span class="op">(</span><span class="va">num_vars</span>, <span class="kw">function</span><span class="op">(</span><span class="va">v</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/median.html" class="external-link">median</a></span><span class="op">(</span><span class="va">dta</span><span class="op">[[</span><span class="va">v</span><span class="op">]</span><span class="op">]</span><span class="op">)</span>, <span class="fl">1</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">numeric</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
@@ -400,10 +370,10 @@ returning <code>NA</code>:</p>
 <span><span class="co">#&gt; gfr_bs     gfr_bs     Baseline eGFR (mL/min/1.73m2) 76.2 19.4   75.8</span></span>
 <span><span class="co">#&gt; lvefvs_b lvefvs_b Baseline LV ejection fraction (%) 54.0  9.2   53.8</span></span></code></pre></div>
 </div>
-<div class="section level4">
-<h4 id="labels-in-plots">Labels in plots<a class="anchor" aria-label="anchor" href="#labels-in-plots"></a>
+</section><section class="level4"><h4 id="labels-in-plots">Labels in plots<a class="anchor" aria-label="anchor" href="#labels-in-plots"></a>
 </h4>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">var</span> <span class="op">&lt;-</span> <span class="st">"lvefvs_b"</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/hist.html" class="external-link">hist</a></span><span class="op">(</span><span class="va">dta</span><span class="op">[[</span><span class="va">var</span><span class="op">]</span><span class="op">]</span>,</span>
 <span>  main <span class="op">=</span> <span class="fu"><a href="../reference/get_label.html">get_label</a></span><span class="op">(</span><span class="va">lmap</span>, <span class="va">var</span><span class="op">)</span>,</span>
@@ -412,15 +382,18 @@ returning <code>NA</code>:</p>
 <span>  border <span class="op">=</span> <span class="st">"white"</span>,</span>
 <span>  breaks <span class="op">=</span> <span class="fl">20</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p><img src="data-labels_files/figure-html/unnamed-chunk-13-1.png" class="r-plt" alt="" width="672"></p>
+<div class="cell-output-display">
+<div>
+<figure><p><img src="data-labels_files/figure-html/unnamed-chunk-13-1.png" width="672"></p>
+</figure>
 </div>
 </div>
 </div>
-<div class="section level2">
-<h2 id="complete-workflow">Complete Workflow<a class="anchor" aria-label="anchor" href="#complete-workflow"></a>
+</section></section></section><section class="level2"><h2 id="complete-workflow">Complete Workflow<a class="anchor" aria-label="anchor" href="#complete-workflow"></a>
 </h2>
 <p>Putting it all together — a realistic analysis setup:</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># 1. Load data (simulated here; in practice: haven::read_sas())</span></span>
 <span><span class="va">dta</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/generate_survival_data.html">generate_survival_data</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">500</span>, seed <span class="op">=</span> <span class="fl">2024</span><span class="op">)</span></span>
 <span></span>
@@ -468,12 +441,12 @@ returning <code>NA</code>:</p>
 <span><span class="co">#&gt; sex                 sex                                            Sex</span></span>
 <span><span class="co">#&gt; bmi                 bmi                        Body mass index (kg/m2)</span></span></code></pre></div>
 </div>
-<div class="section level2">
-<h2 id="labels-and-r_data_types">Labels and <code>r_data_types()</code><a class="anchor" aria-label="anchor" href="#labels-and-r_data_types"></a>
+</section><section class="level2"><h2 id="labels-and-r_data_types">Labels and <code>r_data_types()</code>
+<a class="anchor" aria-label="anchor" href="#labels-and-r_data_types"></a>
 </h2>
-<p>Labels are preserved through type conversion. This is handled
-automatically — you don’t need to do anything special:</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<p>Labels are preserved through type conversion. This is handled automatically — you don’t need to do anything special:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dta</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sample_data.html">sample_data</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">50</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Before conversion</span></span>
@@ -491,27 +464,24 @@ automatically — you don’t need to do anything special:</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/identical.html" class="external-link">identical</a></span><span class="op">(</span><span class="va">lmap_before</span>, <span class="va">lmap_after</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
 </div>
-<div class="section level2">
-<h2 id="anti-patterns-to-avoid">Anti-Patterns to Avoid<a class="anchor" aria-label="anchor" href="#anti-patterns-to-avoid"></a>
+</section><section class="level2"><h2 id="anti-patterns-to-avoid">Anti-Patterns to Avoid<a class="anchor" aria-label="anchor" href="#anti-patterns-to-avoid"></a>
 </h2>
-<div class="section level3">
-<h3 id="hard-coded-label-replacements-in-shared-code">1. Hard-coded label replacements in shared code<a class="anchor" aria-label="anchor" href="#hard-coded-label-replacements-in-shared-code"></a>
+<section class="level3"><h3 id="hard-coded-label-replacements-in-shared-code">1. Hard-coded label replacements in shared code<a class="anchor" aria-label="anchor" href="#hard-coded-label-replacements-in-shared-code"></a>
 </h3>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># BAD: study-specific logic in shared helper</span></span>
 <span><span class="va">clean_labels</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">labels</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">labels</span><span class="op">$</span><span class="va">label</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">gsub</a></span><span class="op">(</span><span class="st">"Common AVV"</span>, <span class="st">"CAVV"</span>, <span class="va">labels</span><span class="op">$</span><span class="va">label</span><span class="op">)</span></span>
 <span>  <span class="va">labels</span><span class="op">$</span><span class="va">label</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">gsub</a></span><span class="op">(</span><span class="st">"End-distole"</span>, <span class="st">"End-Diastolic"</span>, <span class="va">labels</span><span class="op">$</span><span class="va">label</span><span class="op">)</span></span>
 <span>  <span class="va">labels</span></span>
 <span><span class="op">}</span></span></code></pre></div>
-<p>This breaks the moment anyone uses the code for a different study.
-Use <code><a href="../reference/apply_label_overrides.html">apply_label_overrides()</a></code> with a per-study YAML file
-instead.</p>
 </div>
-<div class="section level3">
-<h3 id="creating-derived-variables-without-labels">2. Creating derived variables without labels<a class="anchor" aria-label="anchor" href="#creating-derived-variables-without-labels"></a>
+<p>This breaks the moment anyone uses the code for a different study. Use <code><a href="../reference/apply_label_overrides.html">apply_label_overrides()</a></code> with a per-study YAML file instead.</p>
+</section><section class="level3"><h3 id="creating-derived-variables-without-labels">2. Creating derived variables without labels<a class="anchor" aria-label="anchor" href="#creating-derived-variables-without-labels"></a>
 </h3>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># BAD: new column has no label</span></span>
 <span><span class="va">dta</span><span class="op">$</span><span class="va">risk_score</span> <span class="op">&lt;-</span> <span class="va">dta</span><span class="op">$</span><span class="va">age</span> <span class="op">*</span> <span class="fl">0.1</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">as.integer</a></span><span class="op">(</span><span class="va">dta</span><span class="op">$</span><span class="va">nyha_class</span><span class="op">)</span> <span class="op">*</span> <span class="fl">0.5</span></span>
 <span></span>
@@ -519,20 +489,20 @@ instead.</p>
 <span><span class="va">dta</span><span class="op">$</span><span class="va">risk_score</span> <span class="op">&lt;-</span> <span class="va">dta</span><span class="op">$</span><span class="va">age</span> <span class="op">*</span> <span class="fl">0.1</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">as.integer</a></span><span class="op">(</span><span class="va">dta</span><span class="op">$</span><span class="va">nyha_class</span><span class="op">)</span> <span class="op">*</span> <span class="fl">0.5</span></span>
 <span><span class="va">dta</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/add_labels.html">add_labels</a></span><span class="op">(</span><span class="va">dta</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>risk_score <span class="op">=</span> <span class="st">"Composite Risk Score"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 </div>
-<div class="section level3">
-<h3 id="using-match-without-error-checking">3. Using <code>match()</code> without error checking<a class="anchor" aria-label="anchor" href="#using-match-without-error-checking"></a>
+</section><section class="level3"><h3 id="using-match-without-error-checking">3. Using <code>match()</code> without error checking<a class="anchor" aria-label="anchor" href="#using-match-without-error-checking"></a>
 </h3>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># BAD: typo returns NA silently</span></span>
 <span><span class="va">title</span> <span class="op">&lt;-</span> <span class="va">lmap</span><span class="op">$</span><span class="va">label</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/match.html" class="external-link">match</a></span><span class="op">(</span><span class="st">"ages"</span>, <span class="va">lmap</span><span class="op">$</span><span class="va">key</span><span class="op">)</span><span class="op">]</span>  <span class="co"># NA, no warning</span></span>
 <span></span>
 <span><span class="co"># GOOD: get_label() catches the typo</span></span>
 <span><span class="va">title</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_label.html">get_label</a></span><span class="op">(</span><span class="va">lmap</span>, <span class="st">"ages"</span><span class="op">)</span>  <span class="co"># Error: 'ages' not found in label map</span></span></code></pre></div>
 </div>
-<div class="section level3">
-<h3 id="labeling-the-map-instead-of-the-data">4. Labeling the map instead of the data<a class="anchor" aria-label="anchor" href="#labeling-the-map-instead-of-the-data"></a>
+</section><section class="level3"><h3 id="labeling-the-map-instead-of-the-data">4. Labeling the map instead of the data<a class="anchor" aria-label="anchor" href="#labeling-the-map-instead-of-the-data"></a>
 </h3>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># FRAGILE: map goes stale when you modify the data</span></span>
 <span><span class="va">dta</span><span class="op">$</span><span class="va">ratio</span> <span class="op">&lt;-</span> <span class="va">dta</span><span class="op">$</span><span class="va">a</span> <span class="op">/</span> <span class="va">dta</span><span class="op">$</span><span class="va">b</span></span>
 <span><span class="va">lmap</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/add_labels.html">add_labels</a></span><span class="op">(</span><span class="va">lmap</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>ratio <span class="op">=</span> <span class="st">"A/B Ratio"</span><span class="op">)</span><span class="op">)</span></span>
@@ -544,14 +514,12 @@ instead.</p>
 <span><span class="va">dta</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/add_labels.html">add_labels</a></span><span class="op">(</span><span class="va">dta</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>ratio <span class="op">=</span> <span class="st">"A/B Ratio"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">lmap</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/label_map.html">label_map</a></span><span class="op">(</span><span class="va">dta</span><span class="op">)</span>  <span class="co"># always in sync</span></span></code></pre></div>
 </div>
-</div>
-<div class="section level2">
-<h2 id="function-reference">Function Reference<a class="anchor" aria-label="anchor" href="#function-reference"></a>
+</section></section><section class="level2"><h2 id="function-reference">Function Reference<a class="anchor" aria-label="anchor" href="#function-reference"></a>
 </h2>
-<table class="table">
+<table class="table caption-top">
 <colgroup>
-<col width="50%">
-<col width="50%">
+<col style="width: 50%">
+<col style="width: 50%">
 </colgroup>
 <thead><tr class="header">
 <th>Function</th>
@@ -567,24 +535,30 @@ instead.</p>
 <td>Look up one label with error checking</td>
 </tr>
 <tr class="odd">
+<td><code>get_labels(lmap, vars)</code></td>
+<td>Look up multiple labels at once (vectorized)</td>
+</tr>
+<tr class="even">
 <td><code>add_labels(data, labels)</code></td>
 <td>Label a data frame or update a label map</td>
 </tr>
+<tr class="odd">
+<td><code>apply_label_overrides(data, file)</code></td>
+<td>Apply study-specific overrides from YAML (works on label maps or data frames)</td>
+</tr>
 <tr class="even">
-<td><code>apply_label_overrides(lmap, file)</code></td>
-<td>Apply study-specific overrides from YAML</td>
+<td><code>data_dictionary(data)</code></td>
+<td>Build a type-annotated data dictionary</td>
 </tr>
 </tbody>
-</table>
-</div>
-<div class="section level2">
-<h2 id="session-information">Session Information<a class="anchor" aria-label="anchor" href="#session-information"></a>
+</table></section><section class="level2"><h2 id="session-information">Session Information<a class="anchor" aria-label="anchor" href="#session-information"></a>
 </h2>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; R version 4.5.3 (2026-03-11)</span></span>
 <span><span class="co">#&gt; Platform: x86_64-pc-linux-gnu</span></span>
-<span><span class="co">#&gt; Running under: Ubuntu 24.04.3 LTS</span></span>
+<span><span class="co">#&gt; Running under: Ubuntu 24.04.4 LTS</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Matrix products: default</span></span>
 <span><span class="co">#&gt; BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 </span></span>
@@ -603,24 +577,103 @@ instead.</p>
 <span><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; other attached packages:</span></span>
-<span><span class="co">#&gt; [1] labelled_2.16.0           hvtiRutilities_1.0.0.9000</span></span>
+<span><span class="co">#&gt; [1] labelled_2.16.0           hvtiRutilities_1.0.0.9004</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
-<span><span class="co">#&gt;  [1] vctrs_0.7.2       cli_3.6.5         knitr_1.51        rlang_1.1.7      </span></span>
-<span><span class="co">#&gt;  [5] xfun_0.57         forcats_1.0.1     otel_0.2.0        haven_2.5.5      </span></span>
-<span><span class="co">#&gt;  [9] generics_0.1.4    textshaping_1.0.5 jsonlite_2.0.0    glue_1.8.0       </span></span>
-<span><span class="co">#&gt; [13] htmltools_0.5.9   ragg_1.5.2        sass_0.4.10       hms_1.1.4        </span></span>
-<span><span class="co">#&gt; [17] rmarkdown_2.30    tibble_3.3.1      evaluate_1.0.5    jquerylib_0.1.4  </span></span>
-<span><span class="co">#&gt; [21] fastmap_1.2.0     yaml_2.3.12       lifecycle_1.0.5   compiler_4.5.3   </span></span>
-<span><span class="co">#&gt; [25] dplyr_1.2.0       fs_2.0.1          pkgconfig_2.0.3   htmlwidgets_1.6.4</span></span>
-<span><span class="co">#&gt; [29] systemfonts_1.3.2 digest_0.6.39     R6_2.6.1          tidyselect_1.2.1 </span></span>
-<span><span class="co">#&gt; [33] pillar_1.11.1     magrittr_2.0.4    bslib_0.10.0      withr_3.0.2      </span></span>
-<span><span class="co">#&gt; [37] tools_4.5.3       pkgdown_2.2.0     cachem_1.1.0      desc_1.4.3</span></span></code></pre></div>
+<span><span class="co">#&gt;  [1] vctrs_0.7.2      cli_3.6.5        knitr_1.51       rlang_1.1.7     </span></span>
+<span><span class="co">#&gt;  [5] xfun_0.57        forcats_1.0.1    haven_2.5.5      generics_0.1.4  </span></span>
+<span><span class="co">#&gt;  [9] jsonlite_2.0.0   glue_1.8.0       htmltools_0.5.9  hms_1.1.4       </span></span>
+<span><span class="co">#&gt; [13] rmarkdown_2.31   evaluate_1.0.5   tibble_3.3.1     fastmap_1.2.0   </span></span>
+<span><span class="co">#&gt; [17] yaml_2.3.12      lifecycle_1.0.5  compiler_4.5.3   dplyr_1.2.0     </span></span>
+<span><span class="co">#&gt; [21] pkgconfig_2.0.3  digest_0.6.39    R6_2.6.1         tidyselect_1.2.1</span></span>
+<span><span class="co">#&gt; [25] pillar_1.11.1    magrittr_2.0.4   tools_4.5.3      withr_3.0.2</span></span></code></pre></div>
 </div>
-  </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
+</section><script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'light-border',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config);
+    }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script></main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
 </div>
-
 
 
     <footer><div class="pkgdown-footer-left">

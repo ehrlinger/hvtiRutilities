@@ -16,3 +16,5 @@
 
 - [Simulating Cardiac Surgery Survival
   Data](https://ehrlinger.github.io/hvtiRutilities/articles/survival-data.md):
+- [Reproducible Seeds in R and
+  SAS](https://ehrlinger.github.io/hvtiRutilities/articles/reproducible-seeds.md):
