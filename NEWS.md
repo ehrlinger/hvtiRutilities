@@ -1,3 +1,13 @@
+# hvtiRutilities 1.0.0.9003
+
+## Bug fixes
+
+- Fixed `Suggests` entry for `varPro`: package name on CRAN is `varPro`
+  (camelCase), not `varpro` (lowercase). The case mismatch caused `pak`
+  lockfile resolution to fail with "Can't find package called varpro".
+  Updated the corresponding `varPro::varpro()` call in
+  `vignettes/reproducible-seeds.qmd` to match.
+
 # hvtiRutilities 1.0.0.9002
 
 ## Documentation

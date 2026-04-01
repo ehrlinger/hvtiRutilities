@@ -119,7 +119,7 @@ convention as `randomForestSRC` — **negative integers only**:
 ```{r varpro-seed}
 cfg <- yaml::read_yaml("config.yml")
 
-vp <- varpro::varpro(
+vp <- varPro::varpro(
   Surv(time, status) ~ .,
   data = cohort,
   seed = -cfg$seed
