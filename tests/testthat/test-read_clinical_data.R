@@ -106,6 +106,6 @@ test_that("read_clinical_data returns data.frame from tibble sources", {
 
   result <- read_clinical_data(tmp, convert_types = FALSE)
 
-  # readxl returns a tibble; we coerce to data.frame
-  expect_true(is.data.frame(result))
+  # readxl returns a tibble; verify the tibble class is fully dropped
+  expect_equal(class(result), "data.frame")
 })

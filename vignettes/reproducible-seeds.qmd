@@ -110,9 +110,9 @@ This seed is **independent** of R's global RNG state — `rfsrc()` does not call
 for any base-R randomness in your script, and `seed = -cfg$seed` for the forest
 itself.
 
-### Using the Seed with varpro
+### Using the Seed with varPro
 
-The `varpro` package (model-independent variable selection via rule-based
+The `varPro` package (model-independent variable selection via rule-based
 variable priority) also accepts a `seed` argument, following the same
 convention as `randomForestSRC` — **negative integers only**:
 
@@ -221,7 +221,7 @@ This means:
 This is a key difference: in R, seed order matters globally; in SAS, each
 procedure is self-contained.
 
-### randomForestSRC / varpro
+### randomForestSRC / varPro
 
 These packages use their own internal C-level PRNG, separate from R's global
 state. The `seed` argument (negative integer) initialises that internal
@@ -231,7 +231,7 @@ happened earlier in the R session.
 
 ### Implications for Multi-Script Projects
 
-| Concern | R (`set.seed`) | SAS (`seed=`) | randomForestSRC / varpro (`seed=`) |
+| Concern | R (`set.seed`) | SAS (`seed=`) | randomForestSRC / varPro (`seed=`) |
 |---|---|---|---|
 | Seed scope | Global — governs everything until the next call | Per-procedure | Per-call (internal C PRNG) |
 | Script ordering sensitivity | High — reordering random calls changes results | Low — each procedure re-seeds | Low — each call re-seeds |

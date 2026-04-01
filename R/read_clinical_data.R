@@ -64,6 +64,13 @@ read_clinical_data <- function(file, convert_types = TRUE, ...) {
 
   ext <- tolower(tools::file_ext(file))
 
+  if (!nzchar(ext))
+    stop(
+      "Cannot determine file type: '", file, "' has no extension. ",
+      "Supported formats: .sas7bdat, .csv, .xlsx, .xls, .rds",
+      call. = FALSE
+    )
+
   data <- switch(
     ext,
     sas7bdat = haven::read_sas(file),
@@ -73,7 +80,7 @@ read_clinical_data <- function(file, convert_types = TRUE, ...) {
     xls      = readxl::read_excel(file),
     rds      = readRDS(file),
     stop(
-      "Unsupported file type: '.", ext, "'. ",
+      "Unsupported file type: '.", ext, "' in '", file, "'. ",
       "Supported formats: .sas7bdat, .csv, .xlsx, .xls, .rds",
       call. = FALSE
     )

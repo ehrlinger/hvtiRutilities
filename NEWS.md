@@ -1,3 +1,26 @@
+# hvtiRutilities 1.0.0.9004
+
+## Bug fixes
+
+- `read_clinical_data()`: files with no extension now produce a clear error
+  ("Cannot determine file type: … has no extension") instead of the
+  misleading `Unsupported file type: '..'` message. The unsupported-extension
+  error also now includes the full file path for easier diagnosis.
+
+## Tests
+
+- `test-read_clinical_data.R`: strengthened the tibble-coercion assertion from
+  `expect_true(is.data.frame(result))` (TRUE for tibbles) to
+  `expect_equal(class(result), "data.frame")` so the test actually protects
+  against `as.data.frame()` being removed or bypassed.
+
+## Documentation
+
+- `vignettes/reproducible-seeds.qmd`: section heading "Using the Seed with
+  varpro" and narrative references to the package now use the correct CRAN
+  casing `varPro`; function-name references (`varpro()`, `unsupv.varpro()`)
+  remain lowercase as those are the exported function names.
+
 # hvtiRutilities 1.0.0.9003
 
 ## Bug fixes
