@@ -23,7 +23,11 @@ knitr::opts_chunk$set(
 The `generate_survival_data()` function creates a realistic synthetic cardiac surgery cohort suitable for testing and demonstrating survival analysis workflows. Survival times are drawn from a Weibull distribution with a linear predictor built from clinical variables (LVEF, age, hemoglobin, NYHA class, eGFR), and administrative censoring is applied at up to 15 years.
 
 ```{r}
-library(hvtiRutilities)
+if (requireNamespace("hvtiRutilities", quietly = TRUE)) {
+  library("hvtiRutilities")
+} else {
+  pkgload::load_all(export_all = FALSE, helpers = FALSE, quiet = TRUE)
+}
 ```
 
 ## Generating the Dataset

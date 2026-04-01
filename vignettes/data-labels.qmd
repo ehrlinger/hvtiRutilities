@@ -34,7 +34,11 @@ look up, register, and override these labels throughout the analysis
 lifecycle.
 
 ```{r}
-library(hvtiRutilities)
+if (requireNamespace("hvtiRutilities", quietly = TRUE)) {
+  library("hvtiRutilities")
+} else {
+  pkgload::load_all(export_all = FALSE, helpers = FALSE, quiet = TRUE)
+}
 library(labelled)
 ```
 
