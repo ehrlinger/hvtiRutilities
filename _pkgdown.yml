@@ -37,20 +37,20 @@ navbar:
     articles:
       text: Articles
       menu:
-      - text: "Getting Started"
-        href: articles/hvtiRutilities.html
-      - text: "---"
-      - text: "Core Workflows"
-      - text: "Data Label Handling Best Practices"
-        href: articles/data-labels.html
-      - text: "Dataset Version Tracking"
-        href: articles/dataset-versioning.html
-      - text: "---"
-      - text: "Specialized Topics"
-      - text: "Simulating Cardiac Surgery Survival Data"
-        href: articles/survival-data.html
-      - text: "Reproducible Seeds in R and SAS"
-        href: articles/reproducible-seeds.html
+        - text: "Getting Started"
+          href: articles/hvtiRutilities.html
+        - text: "---"
+        - text: "Core Workflows"
+        - text: "Data Label Handling Best Practices"
+          href: articles/data-labels.html
+        - text: "Dataset Version Tracking"
+          href: articles/dataset-versioning.html
+        - text: "---"
+        - text: "Specialized Topics"
+        - text: "Simulating Cardiac Surgery Survival Data"
+          href: articles/survival-data.html
+        - text: "Reproducible Seeds in R and SAS"
+          href: articles/reproducible-seeds.html
 
 reference:
 - title: Data Import
