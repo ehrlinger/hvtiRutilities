@@ -1,0 +1,3 @@
+%macro beta;
+  proc print data=work.old; run;
+%mend beta;
