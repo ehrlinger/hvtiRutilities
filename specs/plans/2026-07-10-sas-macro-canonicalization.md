@@ -1433,7 +1433,11 @@ Expected: FAIL — `could not find function "write_macro_manifest"`
 #' }
 #' }
 write_macro_manifest <- function(x, path) {
-  defs <- x[!is.na(x$macro), , drop = FALSE]
+  # File-level drop rows (rules 1-3) carry macro = "" so that base-R
+  # `df[df$macro == name, ]` subsetting in the tests does not inject phantom
+  # NA rows. Real macro definitions always have a non-empty name, so nzchar()
+  # cleanly separates definitions from whole-file drops.
+  defs <- x[!is.na(x$macro) & nzchar(x$macro), , drop = FALSE]
   macros <- sort(unique(defs$macro))
 
   entries <- lapply(macros, function(m) {
@@ -1491,7 +1495,8 @@ write_macro_manifest <- function(x, path) {
 #' }
 #' }
 write_collision_report <- function(x, path) {
-  defs <- x[!is.na(x$macro), , drop = FALSE]
+  # nzchar() excludes file-level drop rows (macro = ""); see write_macro_manifest.
+  defs <- x[!is.na(x$macro) & nzchar(x$macro), , drop = FALSE]
 
   counts <- table(defs$macro)
   multi <- sort(names(counts[counts > 1L]))
