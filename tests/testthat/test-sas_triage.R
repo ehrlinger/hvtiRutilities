@@ -47,9 +47,16 @@ test_that(".strip_variant_suffix removes known variant markers", {
 # sas_triage — file-level rules 1-3
 # ---------------------------------------------------------------------------
 
+# A "Copy of *" file cannot be committed as a fixture: the space makes it a
+# non-portable file name that R CMD check flags. So build it at runtime.
 test_that("rule 1 drops 'Copy of' files", {
-  res <- sas_triage(fx_dir())
-  row <- res[res$file == "Copy of alpha.sas", ]
+  d <- withr::local_tempdir()
+  body <- c("%macro keep;", "  proc print; run;", "%mend keep;")
+  writeLines(body, file.path(d, "keep.sas"))
+  writeLines(body, file.path(d, "Copy of keep.sas"))
+
+  res <- sas_triage(d)
+  row <- res[res$file == "Copy of keep.sas", ]
 
   expect_equal(nrow(row), 1L)
   expect_equal(row$decision, "drop")
@@ -57,9 +64,17 @@ test_that("rule 1 drops 'Copy of' files", {
   expect_match(row$evidence, "filename-prefix duplicate")
 })
 
+# A "*.sas~" backup cannot be committed as a fixture: R CMD build strips
+# tilde-suffixed files from the tarball, so it would be absent under
+# R CMD check. Build it at runtime instead.
 test_that("rule 2 drops editor backups", {
-  res <- sas_triage(fx_dir())
-  row <- res[res$file == "beta.sas~", ]
+  d <- withr::local_tempdir()
+  body <- c("%macro keep;", "  proc print; run;", "%mend keep;")
+  writeLines(body, file.path(d, "keep.sas"))
+  writeLines(body, file.path(d, "keep.sas~"))
+
+  res <- sas_triage(d)
+  row <- res[res$file == "keep.sas~", ]
 
   expect_equal(row$decision, "drop")
   expect_equal(row$rule, 2L)
