@@ -1,0 +1,31 @@
+# =============================================================================
+# Human canonicalization decisions for the SAS macro library (Phase 0).
+#
+# sas_triage() marks a macro `ambiguous` when it is defined in >=2 files with
+# divergent bodies. It NEVER guesses which is canonical. Resolve each by adding
+# an entry below, then re-run:
+#
+#   sas_triage(dir, overrides = "specs/artifacts/macro_overrides.yaml")
+#
+# Each entry requires: macro, canonical_file, rationale, decided_by, decided_on.
+#
+# 26 macro names are ambiguous. Only the 7 PUBLIC entry points below actually
+# need porting to R; the other 19 are private inline helpers (skip, mrg,
+# bnprev, break, ...) that retire with the SAS and can be resolved later or
+# left ambiguous. See specs/artifacts/collision_report.md for the full list,
+# file counts, and distinct-body counts.
+#
+# PRIORITY — the 7 ambiguous PUBLIC entry points, awaiting your decision:
+#   linregm, logistc, mw_var, np_ice, repeat, std_dif, usmatchd
+#
+# Template (delete this comment block's example and fill in real decisions):
+#
+# - macro: std_dif
+#   canonical_file: std_dif.sas
+#   rationale: >
+#     Five divergent bodies. std_dif.sas is the version called by
+#     tp.dc.stddiff.summarytable.sas; std_dif_wt.sas is the weighted variant
+#     and should be ported separately as std_dif(weights=).
+#   decided_by: JE
+#   decided_on: 2026-07-10
+# =============================================================================
