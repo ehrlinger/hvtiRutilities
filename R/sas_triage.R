@@ -54,6 +54,34 @@
 }
 
 ## =============================================================================
+## Internal: enumerate immediate subdirectories and count the .sas files they
+## hold. sas_triage() scans only the top level; these counts are recorded so
+## that excluded files are visible in the artifacts rather than silently absent.
+.scan_excluded_dirs <- function(dir) {
+  subs <- list.dirs(dir, recursive = FALSE, full.names = TRUE)
+  if (length(subs) == 0L) {
+    return(data.frame(
+      directory = character(0), n_sas = integer(0),
+      stringsAsFactors = FALSE
+    ))
+  }
+
+  counts <- vapply(subs, function(s) {
+    length(list.files(s, pattern = "\\.sas$", ignore.case = TRUE,
+                      recursive = TRUE))
+  }, integer(1))
+
+  out <- data.frame(
+    directory = basename(subs),
+    n_sas     = as.integer(counts),
+    stringsAsFactors = FALSE
+  )
+  out <- out[order(out$directory), , drop = FALSE]
+  rownames(out) <- NULL
+  out
+}
+
+## =============================================================================
 ## Internal: read and validate the overrides file.
 .read_overrides <- function(path) {
   if (is.null(path)) {
@@ -244,5 +272,6 @@ sas_triage <- function(dir, overrides = NULL) {
 
   out <- out[order(out$macro, out$file, na.last = TRUE), , drop = FALSE]
   rownames(out) <- NULL
+  attr(out, "excluded_dirs") <- .scan_excluded_dirs(dir)
   out
 }

@@ -184,3 +184,29 @@ test_that("an override naming an unknown macro errors", {
 
   expect_error(sas_triage(fx_dir(), overrides = ov), "does_not_exist")
 })
+
+# ---------------------------------------------------------------------------
+# Subdirectory exclusions are recorded, not silently dropped
+# ---------------------------------------------------------------------------
+
+test_that(".scan_excluded_dirs counts .sas files in each subdirectory", {
+  d <- withr::local_tempdir()
+  writeLines("%macro top; %mend top;", file.path(d, "top.sas"))
+  dir.create(file.path(d, "archive"))
+  writeLines("%macro a; %mend a;", file.path(d, "archive", "a.sas"))
+  writeLines("%macro b; %mend b;", file.path(d, "archive", "b.sas"))
+
+  res <- hvtiRutilities:::.scan_excluded_dirs(d)
+
+  expect_equal(nrow(res), 1L)
+  expect_equal(res$directory, "archive")
+  expect_equal(res$n_sas, 2L)
+})
+
+test_that("sas_triage attaches excluded directories as an attribute", {
+  res <- sas_triage(fx_dir())
+  ex <- attr(res, "excluded_dirs")
+
+  expect_s3_class(ex, "data.frame")
+  expect_true(all(c("directory", "n_sas") %in% names(ex)))
+})

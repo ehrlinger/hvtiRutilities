@@ -117,6 +117,17 @@ write_collision_report <- function(x, path) {
   }
 
   lines <- c(lines, "", sprintf("Total colliding names: %d", length(multi)))
+
+  ex <- attr(x, "excluded_dirs")
+  if (!is.null(ex) && nrow(ex) > 0L) {
+    lines <- c(
+      lines, "", "## Excluded subdirectories", "",
+      "Not triaged. Counts recorded so the omission is visible.", "",
+      "| Directory | `.sas` files |", "|---|---|",
+      sprintf("| `%s` | %d |", ex$directory, ex$n_sas)
+    )
+  }
+
   writeLines(lines, path)
   invisible(path)
 }
