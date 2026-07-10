@@ -23,16 +23,28 @@ The program decomposes along the `tp.<prefix>` naming convention the template
 repo already encodes:
 
 - **Phase 0 (this spec)** — canonicalize the macro library.
-- **Phase 1** — build a SAS oracle: synthetic fixtures, a harness driving the
-  SAS server, and a golden-output corpus.
+- **Phase 1** — build a SAS oracle: synthetic fixtures, a harness, and a
+  golden-output corpus. **SAS runs on a separate system**, not on the
+  workstation where the R packages are developed. Phase 1 must therefore treat
+  harness execution as a cross-system transfer, not a local subprocess call.
 - **Phases 2..N** — port by prefix to package: `bd`/`vars`/`dt` →
   `hvtiRutilities`; `hp`/`np`/`lp`/`dp`/`fp`/`cp`/`gp` → `hvtiPlotR`;
-  `lm`/`cm`/`pm`/`rm` → `hvtiPropensityScores`; `ac`/`hz`/`hs`/`nd`/`ce` → a new
-  survival/hazard package (nothing existing owns this); `mm`/`gm`/`bh`/`bl`/`bc`/`nm`
-  → modeling, owner to be decided in a later spec.
+  `lm`/`cm`/`pm`/`rm` → `hvtiPropensityScores`; `ac`/`hz`/`hs`/`nd`/`ce` →
+  `TemporalHazard`; `mm`/`gm`/`bh`/`bl`/`bc`/`nm` → modeling, owner to be
+  decided in a later spec (`multimix`, in `mixhazard/`, is a candidate for the
+  mixed-effects subset).
+
+`TemporalHazard` (v1.1.0.9000, 27 R files) is a CRAN-target package. Anything
+ported into it inherits the full release gate: `R CMD check --as-cran` with the
+manual build, and an overall check-time budget under 10 minutes. This
+constrains Phase 2 design and is recorded here so it is not discovered late.
 
 Phase 0 must complete before Phase 1, because a golden output computed from a
 non-canonical macro is confidently wrong and poisons every phase downstream.
+
+Phase 0 itself has **no SAS dependency** (see *Heuristic lint*), so it runs
+entirely on the R development workstation and is unaffected by SAS living
+elsewhere.
 
 ## Problem
 
@@ -257,10 +269,11 @@ lints clean but would not compile survives to rule 4–6, which is acceptable: t
 failure mode is "a human looks at it," not "a broken macro is silently declared
 canonical."
 
-Rejected alternative: driving the SAS server in `obs=0` / syntax-check mode.
-Authoritative, but couples Phase 0 to server availability and makes the result
-non-reproducible for anyone without access. Deferred; may be revisited if lint
-proves insufficient.
+Rejected alternative: driving SAS in `obs=0` / syntax-check mode.
+Authoritative, but SAS runs on a separate system, so this would couple Phase 0
+to a cross-system round-trip and make triage non-reproducible for anyone without
+access to that host. Deferred; may be revisited if lint proves insufficient, and
+is a natural add-on once the Phase 1 transfer mechanism exists.
 
 ### Overrides
 
@@ -356,12 +369,20 @@ Critical assertions:
 
 ## Open questions deferred to Phase 1
 
+- **Cross-system execution.** SAS lives on a separate host. The harness must
+  ship canonical macros plus synthetic fixtures to that host, run them, and
+  retrieve outputs. Open: transfer mechanism, whether it can be scripted or
+  requires a human in the loop, and whether the host can reach this repository
+  at all. This determines whether Phase 1 is an automated pipeline or a
+  batched hand-off.
 - Synthetic fixture design: exercising censoring patterns, competing events, and
   missingness without carrying patient data. The existing `naftel.ssd` fixture is
-  real clinical data and cannot be committed.
+  real clinical data and cannot be committed, and must not be transferred to any
+  host not already approved for PHI.
 - Golden-output format and floating-point tolerance policy.
 - Harness `%include` ordering, given that shadowing is now known to be real.
-- Ownership of the ~46 survival/hazard templates that no current package claims,
-  and of the `mm`/`gm`/`bh`/`bl`/`bc`/`nm` modeling group.
+- Ownership of the `mm`/`gm`/`bh`/`bl`/`bc`/`nm` modeling group.
 - Disposition of the 40 files in `table_mac/`, `readin_samples/`,
   `logis_reclassi/`, `repeat_test/`.
+- Disposition of `hazard/`, which contains no `DESCRIPTION` and is not an R
+  package.
