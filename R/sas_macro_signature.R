@@ -46,7 +46,7 @@ sas_macro_signature <- function(file) {
     stop("File does not exist: ", file, call. = FALSE)
   }
 
-  lines <- readLines(file, warn = FALSE)
+  lines <- .read_sas_lines(file)
 
   macro_name <- .header_field(lines, "MACRO NAME:[[:space:]]*([A-Za-z0-9_]+)")
   short_desc <- .header_field(lines, "SHORT DESC:[[:space:]]*(.*?)[[:space:]]*$")

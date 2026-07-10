@@ -1,4 +1,17 @@
 ## =============================================================================
+## Internal: read a SAS source file tolerantly.
+## Legacy CORR macros are Latin-1 / Windows-1252 encoded (Greek letters, micro
+## signs, smart quotes in comments). Reading them in a UTF-8 session without an
+## encoding leaves invalid multibyte sequences that later crash tolower()/grepl()
+## with "invalid multibyte string". A latin1 connection maps every byte and
+## marks the strings so downstream ASCII-range matching is safe.
+.read_sas_lines <- function(file) {
+  con <- file(file, open = "r", encoding = "latin1")
+  on.exit(close(con))
+  readLines(con, warn = FALSE)
+}
+
+## =============================================================================
 ## Internal: normalize a macro body prior to hashing.
 ## Case-folds and collapses all whitespace runs to a single space, so that
 ## cosmetic reformatting does not register as a semantic difference.
@@ -66,7 +79,7 @@ sas_macro_defs <- function(file) {
     stop("File does not exist: ", file, call. = FALSE)
   }
 
-  lines <- readLines(file, warn = FALSE)
+  lines <- .read_sas_lines(file)
 
   start_re <- "^[[:space:]]*%macro[[:space:]]+([a-z_][a-z0-9_]*)"
   mend_re <- "^[[:space:]]*%mend"

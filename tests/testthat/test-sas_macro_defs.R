@@ -7,9 +7,40 @@ library(hvtiRutilities)
 
 fx <- function(name) testthat::test_path("fixtures", name)
 
+# Write a .sas file containing a byte that is valid Latin-1 but invalid UTF-8
+# (0xB5, a lone continuation byte = "micro sign"). Committing such a file would
+# be non-portable, so it is built at runtime. Mirrors the 7 Latin-1 files found
+# in the real macro library.
+write_latin1_sas <- function() {
+  path <- tempfile(fileext = ".sas")
+  writeBin(
+    c(charToRaw("* threshold "), as.raw(0xB5), charToRaw("g comment\n"),
+      charToRaw("%macro latin1(dsn);\n  data &dsn.; run;\n%mend latin1;\n")),
+    path
+  )
+  path
+}
+
 # ---------------------------------------------------------------------------
 # sas_macro_defs — extraction
 # ---------------------------------------------------------------------------
+
+test_that("sas_macro_defs reads a Latin-1 file without an encoding crash", {
+  p <- write_latin1_sas()
+
+  res <- sas_macro_defs(p)
+
+  expect_equal(nrow(res), 1L)
+  expect_equal(res$macro, "latin1")
+  expect_true(nzchar(res$body_hash))
+})
+
+test_that(".sas_lint and sas_macro_signature survive Latin-1 bytes", {
+  p <- write_latin1_sas()
+
+  expect_true(hvtiRutilities:::.sas_lint(p)$valid)
+  expect_silent(sas_macro_signature(p))
+})
 
 test_that("sas_macro_defs extracts a single definition", {
   res <- sas_macro_defs(fx("alpha.sas"))

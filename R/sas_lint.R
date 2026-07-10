@@ -14,7 +14,7 @@
 ## Returns list(valid = logical(1), failures = character()).
 ## Never throws: a broken file is data, and the caller records it as evidence.
 .sas_lint <- function(file) {
-  lines <- readLines(file, warn = FALSE)
+  lines <- .read_sas_lines(file)
   lower <- tolower(lines)
   failures <- character(0)
 
