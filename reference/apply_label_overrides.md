@@ -47,6 +47,7 @@ unchanged.
 
 The YAML file format is a simple mapping of variable names to labels:
 
+
     age_binned: "Age Group"
     bsa_ratio: "BSA Ratio"
     cavv_area: "Common AVV Area"

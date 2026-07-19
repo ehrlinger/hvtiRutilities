@@ -20,14 +20,15 @@ The standard defence is a three-step protocol:
 
 `hvtiRutilities` provides two functions that implement this protocol:
 
-| Function                                                                                       | Purpose                                                     |
-|------------------------------------------------------------------------------------------------|-------------------------------------------------------------|
+| Function | Purpose |
+|----|----|
 | [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md) | Register a dataset (or update its entry) in `manifest.yaml` |
-| [`verify_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md) | Check every registered dataset before an analysis runs      |
+| [`verify_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md) | Check every registered dataset before an analysis runs |
 
 ## Setup
 
 ``` r
+
 if (requireNamespace("hvtiRutilities", quietly = TRUE)) {
   library("hvtiRutilities")
 } else {
@@ -44,6 +45,7 @@ For this vignette we work in a temporary directory that mimics a real
 project’s `datasets/` folder.
 
 ``` r
+
 datasets_dir <- file.path(tempdir(), "datasets")
 dir.create(datasets_dir, showWarnings = FALSE)
 manifest_path <- file.path(tempdir(), "manifest.yaml")
@@ -58,6 +60,7 @@ Generate a synthetic cohort (using
 and write it as a date-stamped CSV.
 
 ``` r
+
 set.seed(42)
 cohort <- generate_survival_data(n = 200, seed = 42)
 
@@ -69,6 +72,7 @@ Register it in the manifest. Row count is detected automatically from
 the CSV header; only the SHA-256 is computed from the raw bytes.
 
 ``` r
+
 update_manifest(
   file         = cohort_file,
   manifest_path = manifest_path,
@@ -82,6 +86,7 @@ update_manifest(
 Add a second file — a simulated labs extract pulled on the same date.
 
 ``` r
+
 set.seed(7)
 labs <- data.frame(
   ccfid   = cohort$ccfid,
@@ -110,6 +115,7 @@ your analysis scripts (but **not** alongside the data files, which stay
 out of git).
 
 ``` r
+
 cat(paste(readLines(manifest_path), collapse = "\n"))
 #> datasets:
 #> - file: cohort_20240115.csv
@@ -139,6 +145,7 @@ internally to count rows; the checksum is always computed from the raw
 file bytes.
 
 ``` r
+
 update_manifest(
   file          = here::here("datasets", "cohort_20240115.sas7bdat"),
   manifest_path = here::here("manifest.yaml"),
@@ -158,6 +165,7 @@ calls
 to count rows.
 
 ``` r
+
 update_manifest(
   file          = here::here("datasets", "adjudication_20240115.xlsx"),
   manifest_path = here::here("manifest.yaml"),
@@ -172,6 +180,7 @@ For RDS, Feather, Parquet, or any format not listed above, pass `n_rows`
 directly. The SHA-256 is still computed from the raw bytes.
 
 ``` r
+
 update_manifest(
   file          = here::here("datasets", "cohort_20240115.rds"),
   manifest_path = here::here("manifest.yaml"),
@@ -189,6 +198,7 @@ at the very top of every analysis script and Quarto document — before
 any data are loaded and before any results are produced.
 
 ``` r
+
 verify_manifest(
   manifest_path = manifest_path,
   data_dir      = datasets_dir
@@ -203,6 +213,7 @@ invisibly. If everything is clean, your script continues.
 ### Typical script header
 
 ``` r
+
 library(hvtiRutilities)
 library(here)
 
@@ -222,6 +233,7 @@ overnight.
 catches it the moment the next analysis run starts.
 
 ``` r
+
 # Simulate a silent dataset change
 cohort_modified <- cohort
 cohort_modified$age[1] <- cohort_modified$age[1] + 1L
@@ -250,6 +262,7 @@ any of them. Set `stop_on_error = FALSE` to collect warnings instead of
 stopping.
 
 ``` r
+
 report <- verify_manifest(
   manifest_path = manifest_path,
   data_dir      = datasets_dir,
@@ -277,6 +290,7 @@ again with the same filename. The existing entry is replaced in place
 and the new checksum is recorded.
 
 ``` r
+
 # Re-register after the legitimate change
 update_manifest(
   file          = cohort_file,
@@ -301,6 +315,7 @@ When the same registry is pulled again months later for a different
 analysis, it gets a **new filename** — never overwriting the original.
 
 ``` r
+
 set.seed(99)
 cohort_aug <- generate_survival_data(n = 315, seed = 99)
 
@@ -320,6 +335,7 @@ update_manifest(
 The manifest now tracks all three files independently.
 
 ``` r
+
 m <- yaml::read_yaml(manifest_path)
 do.call(rbind, lapply(m$datasets, function(e)
   data.frame(file = e$file, extract_date = e$extract_date,
@@ -334,6 +350,7 @@ do.call(rbind, lapply(m$datasets, function(e)
 Verification covers all of them in a single call.
 
 ``` r
+
 verify_manifest(
   manifest_path = manifest_path,
   data_dir      = datasets_dir
@@ -345,13 +362,13 @@ verify_manifest(
 
 ## Policy Recommendations
 
-| Stage                            | Action                                                                                                                                           |
-|----------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
-| **On every data pull**           | Run [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md) immediately and commit `manifest.yaml` to git |
-| **Top of every analysis script** | Call [`verify_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md) — before loading any data                    |
-| **At manuscript submission**     | Tag the git commit; freeze `manifest.yaml`; do not re-pull data                                                                                  |
-| **For a new project or re-pull** | Use a new date-stamped filename; add a new [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md) entry  |
-| **`.gitignore`**                 | Add `datasets/` — commit the manifest, not the data                                                                                              |
+| Stage | Action |
+|----|----|
+| **On every data pull** | Run [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md) immediately and commit `manifest.yaml` to git |
+| **Top of every analysis script** | Call [`verify_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md) — before loading any data |
+| **At manuscript submission** | Tag the git commit; freeze `manifest.yaml`; do not re-pull data |
+| **For a new project or re-pull** | Use a new date-stamped filename; add a new [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md) entry |
+| **`.gitignore`** | Add `datasets/` — commit the manifest, not the data |
 
 ## Summary
 
@@ -367,8 +384,9 @@ verify_manifest(
 ## Session Information
 
 ``` r
+
 sessionInfo()
-#> R version 4.5.3 (2026-03-11)
+#> R version 4.6.1 (2026-06-24)
 #> Platform: x86_64-pc-linux-gnu
 #> Running under: Ubuntu 24.04.4 LTS
 #> 
@@ -392,11 +410,12 @@ sessionInfo()
 #> [1] hvtiRutilities_1.0.0.9004
 #> 
 #> loaded via a namespace (and not attached):
-#>  [1] digest_0.6.39    R6_2.6.1         labelled_2.16.0  fastmap_1.2.0   
-#>  [5] tidyselect_1.2.1 xfun_0.57        magrittr_2.0.4   glue_1.8.0      
-#>  [9] tibble_3.3.1     knitr_1.51       pkgconfig_2.0.3  htmltools_0.5.9 
-#> [13] generics_0.1.4   rmarkdown_2.31   dplyr_1.2.0      lifecycle_1.0.5 
-#> [17] cli_3.6.5        vctrs_0.7.2      compiler_4.5.3   forcats_1.0.1   
-#> [21] haven_2.5.5      tools_4.5.3      hms_1.1.4        pillar_1.11.1   
-#> [25] evaluate_1.0.5   yaml_2.3.12      rlang_1.1.7      jsonlite_2.0.0
+#>  [1] vctrs_0.7.3      cli_3.6.6        knitr_1.51       rlang_1.3.0     
+#>  [5] xfun_0.60        otel_0.2.0       forcats_1.0.1    haven_2.5.5     
+#>  [9] generics_0.1.4   jsonlite_2.0.0   glue_1.8.1       htmltools_0.5.9 
+#> [13] hms_1.1.4        rmarkdown_2.31   evaluate_1.0.5   tibble_3.3.1    
+#> [17] fastmap_1.2.0    yaml_2.3.12      lifecycle_1.0.5  compiler_4.6.1  
+#> [21] dplyr_1.2.1      pkgconfig_2.0.3  labelled_2.16.0  digest_0.6.39   
+#> [25] R6_2.6.1         tidyselect_1.2.1 pillar_1.11.1    magrittr_2.0.5  
+#> [29] tools_4.6.1
 ```

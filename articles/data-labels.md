@@ -17,6 +17,7 @@ the `labelled` package preserves those labels as column attributes.
 register, and override these labels throughout the analysis lifecycle.
 
 ``` r
+
 if (requireNamespace("hvtiRutilities", quietly = TRUE)) {
   library("hvtiRutilities")
 } else {
@@ -48,6 +49,7 @@ A typical clinical analysis has four phases where labels matter:
 extracts all variable labels into a lookup table:
 
 ``` r
+
 # Simulated SAS-style dataset with labels
 dta <- generate_survival_data(n = 200, seed = 42)
 
@@ -77,6 +79,7 @@ When data arrives from a plain CSV (no labels),
 warns you:
 
 ``` r
+
 csv_data <- data.frame(
   pat_id = 1:5,
   hgb = c(12.1, 14.3, 10.8, 13.5, 11.2),
@@ -112,6 +115,7 @@ Labels travel with the data through `dplyr` operations, so they are
 never out of sync:
 
 ``` r
+
 # Create derived variables
 dta$age_group <- cut(dta$age,
   breaks = c(0, 30, 50, 70, Inf),
@@ -137,6 +141,7 @@ When you label the data directly, any subsequent call to
 automatically picks up the new labels:
 
 ``` r
+
 lmap <- label_map(dta)
 lmap[lmap$key %in% c("age_group", "ef_low"), ]
 #>                 key                            label
@@ -151,6 +156,7 @@ that generates tables and figures. In that case, update the map
 directly:
 
 ``` r
+
 # Start from the base data
 lmap <- label_map(generate_survival_data(n = 100, seed = 7))
 
@@ -171,11 +177,11 @@ tail(lmap, 4)
 
 #### Which method should I use?
 
-| Scenario                              | Method                  | Reason                                 |
-|---------------------------------------|-------------------------|----------------------------------------|
-| Adding columns to a data frame        | `add_labels(data, ...)` | Labels travel with the data            |
+| Scenario | Method | Reason |
+|----|----|----|
+| Adding columns to a data frame | `add_labels(data, ...)` | Labels travel with the data |
 | Building a reporting table/dictionary | `add_labels(lmap, ...)` | The map is the artifact being consumed |
-| Quick lookup for a plot title         | `get_label(lmap, var)`  | Safe, readable, errors on typos        |
+| Quick lookup for a plot title | `get_label(lmap, var)` | Safe, readable, errors on typos |
 
 ### Phase 3: Study-Specific Overrides
 
@@ -189,6 +195,7 @@ reads a YAML file and applies the overrides to a label map. If the file
 doesn’t exist, nothing happens — making it safe to call unconditionally.
 
 ``` r
+
 # Create a study-specific overrides file
 tmp_overrides <- tempfile(fileext = ".yml")
 writeLines(c(
@@ -237,6 +244,7 @@ function replaces the error-prone
 typos instead of silently returning `NA`:
 
 ``` r
+
 lmap <- label_map(generate_survival_data(n = 50, seed = 42))
 
 # Use in plot titles
@@ -247,6 +255,7 @@ get_label(lmap, "lvefvs_b")
 ```
 
 ``` r
+
 # Typo --- clear error instead of silent NA
 get_label(lmap, "ages")
 #> Error:
@@ -260,6 +269,7 @@ Use
 to generate a complete, type-annotated data dictionary in one call:
 
 ``` r
+
 dta <- generate_survival_data(n = 200, seed = 42)
 dict <- data_dictionary(dta)
 head(dict, 12)
@@ -311,6 +321,7 @@ Use
 (vectorized) to look up multiple labels at once:
 
 ``` r
+
 lmap <- label_map(dta)
 
 # Numeric summary with labels
@@ -334,6 +345,7 @@ print(summary_tbl)
 #### Labels in plots
 
 ``` r
+
 var <- "lvefvs_b"
 hist(dta[[var]],
   main = get_label(lmap, var),
@@ -351,6 +363,7 @@ hist(dta[[var]],
 Putting it all together — a realistic analysis setup:
 
 ``` r
+
 # 1. Load data (simulated here; in practice: haven::read_sas())
 dta <- generate_survival_data(n = 500, seed = 2024)
 
@@ -405,6 +418,7 @@ Labels are preserved through type conversion. This is handled
 automatically — you don’t need to do anything special:
 
 ``` r
+
 dta <- sample_data(n = 50)
 
 # Before conversion
@@ -428,6 +442,7 @@ identical(lmap_before, lmap_after)
 ### 1. Hard-coded label replacements in shared code
 
 ``` r
+
 # BAD: study-specific logic in shared helper
 clean_labels <- function(labels) {
   labels$label <- gsub("Common AVV", "CAVV", labels$label)
@@ -443,6 +458,7 @@ with a per-study YAML file instead.
 ### 2. Creating derived variables without labels
 
 ``` r
+
 # BAD: new column has no label
 dta$risk_score <- dta$age * 0.1 + as.integer(dta$nyha_class) * 0.5
 
@@ -454,6 +470,7 @@ dta <- add_labels(dta, c(risk_score = "Composite Risk Score"))
 ### 3. Using `match()` without error checking
 
 ``` r
+
 # BAD: typo returns NA silently
 title <- lmap$label[match("ages", lmap$key)]  # NA, no warning
 
@@ -464,6 +481,7 @@ title <- get_label(lmap, "ages")  # Error: 'ages' not found in label map
 ### 4. Labeling the map instead of the data
 
 ``` r
+
 # FRAGILE: map goes stale when you modify the data
 dta$ratio <- dta$a / dta$b
 lmap <- add_labels(lmap, c(ratio = "A/B Ratio"))
@@ -478,20 +496,21 @@ lmap <- label_map(dta)  # always in sync
 
 ## Function Reference
 
-| Function                            | Purpose                                                                       |
-|-------------------------------------|-------------------------------------------------------------------------------|
-| `label_map(data)`                   | Extract all labels into a lookup table                                        |
-| `get_label(lmap, var)`              | Look up one label with error checking                                         |
-| `get_labels(lmap, vars)`            | Look up multiple labels at once (vectorized)                                  |
-| `add_labels(data, labels)`          | Label a data frame or update a label map                                      |
+| Function | Purpose |
+|----|----|
+| `label_map(data)` | Extract all labels into a lookup table |
+| `get_label(lmap, var)` | Look up one label with error checking |
+| `get_labels(lmap, vars)` | Look up multiple labels at once (vectorized) |
+| `add_labels(data, labels)` | Label a data frame or update a label map |
 | `apply_label_overrides(data, file)` | Apply study-specific overrides from YAML (works on label maps or data frames) |
-| `data_dictionary(data)`             | Build a type-annotated data dictionary                                        |
+| `data_dictionary(data)` | Build a type-annotated data dictionary |
 
 ## Session Information
 
 ``` r
+
 sessionInfo()
-#> R version 4.5.3 (2026-03-11)
+#> R version 4.6.1 (2026-06-24)
 #> Platform: x86_64-pc-linux-gnu
 #> Running under: Ubuntu 24.04.4 LTS
 #> 
@@ -515,11 +534,12 @@ sessionInfo()
 #> [1] labelled_2.16.0           hvtiRutilities_1.0.0.9004
 #> 
 #> loaded via a namespace (and not attached):
-#>  [1] vctrs_0.7.2      cli_3.6.5        knitr_1.51       rlang_1.1.7     
-#>  [5] xfun_0.57        forcats_1.0.1    haven_2.5.5      generics_0.1.4  
-#>  [9] jsonlite_2.0.0   glue_1.8.0       htmltools_0.5.9  hms_1.1.4       
-#> [13] rmarkdown_2.31   evaluate_1.0.5   tibble_3.3.1     fastmap_1.2.0   
-#> [17] yaml_2.3.12      lifecycle_1.0.5  compiler_4.5.3   dplyr_1.2.0     
-#> [21] pkgconfig_2.0.3  digest_0.6.39    R6_2.6.1         tidyselect_1.2.1
-#> [25] pillar_1.11.1    magrittr_2.0.4   tools_4.5.3      withr_3.0.2
+#>  [1] vctrs_0.7.3      cli_3.6.6        knitr_1.51       rlang_1.3.0     
+#>  [5] xfun_0.60        otel_0.2.0       forcats_1.0.1    haven_2.5.5     
+#>  [9] generics_0.1.4   jsonlite_2.0.0   glue_1.8.1       htmltools_0.5.9 
+#> [13] hms_1.1.4        rmarkdown_2.31   evaluate_1.0.5   tibble_3.3.1    
+#> [17] fastmap_1.2.0    yaml_2.3.12      lifecycle_1.0.5  compiler_4.6.1  
+#> [21] dplyr_1.2.1      pkgconfig_2.0.3  digest_0.6.39    R6_2.6.1        
+#> [25] tidyselect_1.2.1 pillar_1.11.1    magrittr_2.0.5   withr_3.0.3     
+#> [29] tools_4.6.1
 ```

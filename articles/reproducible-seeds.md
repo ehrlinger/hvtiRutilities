@@ -10,6 +10,7 @@ script runs.
 In practice, seeds often end up hard-coded in dozens of places:
 
 ``` r
+
 # 01-imputation.R
 set.seed(42)
 
@@ -53,6 +54,7 @@ project uses it.
 ### Read it in R
 
 ``` r
+
 cfg <- yaml::read_yaml("config.yml")
 set.seed(cfg$seed)
 ```
@@ -69,6 +71,7 @@ sensitivity analysis), derive it from the project seed so the value is
 still traceable:
 
 ``` r
+
 cfg <- yaml::read_yaml("config.yml")
 set.seed(cfg$seed + 1L)
 ```
@@ -83,6 +86,7 @@ results are not reproducible across runs.
 To use your project seed:
 
 ``` r
+
 cfg <- yaml::read_yaml("config.yml")
 
 rf <- randomForestSRC::rfsrc(
@@ -109,6 +113,7 @@ rule-based variable priority) also accepts a `seed` argument, following
 the same convention as `randomForestSRC` — **negative integers only**:
 
 ``` r
+
 cfg <- yaml::read_yaml("config.yml")
 
 vp <- varPro::varpro(
@@ -171,6 +176,7 @@ If your project uses both languages, the simplest approach is to treat
   pipeline:
 
 ``` r
+
 cfg <- yaml::read_yaml("config.yml")
 writeLines(
   sprintf("%%let SEED = %d;", cfg$seed),
@@ -230,12 +236,12 @@ regardless of what happened earlier in the R session.
 
 ### Implications for Multi-Script Projects
 
-| Concern                     | R (`set.seed`)                                                        | SAS (`seed=`)                 | randomForestSRC / varPro (`seed=`) |
-|-----------------------------|-----------------------------------------------------------------------|-------------------------------|------------------------------------|
-| Seed scope                  | Global — governs everything until the next call                       | Per-procedure                 | Per-call (internal C PRNG)         |
-| Script ordering sensitivity | High — reordering random calls changes results                        | Low — each procedure re-seeds | Low — each call re-seeds           |
-| Sign convention             | Positive integer                                                      | Positive integer              | **Negative** integer               |
-| Best practice               | [`set.seed()`](https://rdrr.io/r/base/Random.html) once at script top | `seed=&SEED` on every proc    | `seed = -cfg$seed` on every call   |
+| Concern | R (`set.seed`) | SAS (`seed=`) | randomForestSRC / varPro (`seed=`) |
+|----|----|----|----|
+| Seed scope | Global — governs everything until the next call | Per-procedure | Per-call (internal C PRNG) |
+| Script ordering sensitivity | High — reordering random calls changes results | Low — each procedure re-seeds | Low — each call re-seeds |
+| Sign convention | Positive integer | Positive integer | **Negative** integer |
+| Best practice | [`set.seed()`](https://rdrr.io/r/base/Random.html) once at script top | `seed=&SEED` on every proc | `seed = -cfg$seed` on every call |
 
 ## Checklist
 

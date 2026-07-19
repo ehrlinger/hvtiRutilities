@@ -44,6 +44,7 @@ You can install the development version of hvtiRutilities from
 [GitHub](https://github.com/) with:
 
 ``` r
+
 # install.packages("pak")
 pak::pak("ehrlinger/hvtiRutilities")
 ```
@@ -53,6 +54,7 @@ pak::pak("ehrlinger/hvtiRutilities")
 ### Automatic Type Conversion
 
 ``` r
+
 library(hvtiRutilities)
 
 # Create sample data
@@ -77,6 +79,7 @@ str(dta_converted)
 ### Skip Specific Columns
 
 ``` r
+
 # Skip conversion for specific variables
 dta_partial <- r_data_types(dta, skip_vars = c("boolean", "char"))
 # boolean and char remain unchanged, others are converted
@@ -85,6 +88,7 @@ dta_partial <- r_data_types(dta, skip_vars = c("boolean", "char"))
 ### Control Factor Creation
 
 ``` r
+
 # Convert only variables with fewer than 5 unique values to factors
 dta_strict <- r_data_types(dta, factor_size = 5)
 
@@ -95,6 +99,7 @@ dta_factors <- r_data_types(dta, binary_factor = TRUE)
 ### Working with Variable Labels
 
 ``` r
+
 # Create labeled data (common with SAS imports)
 library(labelled)
 dta <- data.frame(
@@ -122,6 +127,7 @@ summary_table$label <- labels$label[match(summary_table$variable, labels$key)]
 ### Generating Survival Data
 
 ``` r
+
 # Simulate a cardiac surgery cohort (reproducible)
 dta <- generate_survival_data(n = 500, seed = 1024)
 

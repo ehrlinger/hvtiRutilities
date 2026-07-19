@@ -1,5 +1,5 @@
-pandoc: 3.1.11
-pkgdown: 2.2.0
+pandoc: 3.8.3
+pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
   data-labels: data-labels.html
@@ -7,7 +7,7 @@ articles:
   hvtiRutilities: hvtiRutilities.html
   reproducible-seeds: reproducible-seeds.html
   survival-data: survival-data.html
-last_built: 2026-04-02T20:04Z
+last_built: 2026-07-19T16:19Z
 urls:
   reference: https://ehrlinger.github.io/hvtiRutilities/reference
   article: https://ehrlinger.github.io/hvtiRutilities/articles

@@ -11,6 +11,7 @@ built from clinical variables (LVEF, age, hemoglobin, NYHA class, eGFR),
 and administrative censoring is applied at up to 15 years.
 
 ``` r
+
 if (requireNamespace("hvtiRutilities", quietly = TRUE)) {
   library("hvtiRutilities")
 } else {
@@ -26,6 +27,7 @@ if (requireNamespace("hvtiRutilities", quietly = TRUE)) {
 ## Generating the Dataset
 
 ``` r
+
 set.seed(42)
 dta <- generate_survival_data(n = 500, seed = 1024)
 
@@ -46,6 +48,7 @@ labs, cardiac function, and surgical variables.
 ## Data Structure
 
 ``` r
+
 str(dta)
 #> 'data.frame':    500 obs. of  24 variables:
 #>  $ ccfid       : chr  "PT00001" "PT00002" "PT00003" "PT00004" ...
@@ -100,19 +103,20 @@ str(dta)
 
 Key columns:
 
-| Column        | Description                                                   |
-|---------------|---------------------------------------------------------------|
-| `ccfid`       | Patient identifier                                            |
-| `origin_year` | Calendar year corresponding to `iv_opyrs = 0`                 |
-| `iv_opyrs`    | Observation interval length (years) anchored at `origin_year` |
-| `iv_dead`     | Observed follow-up time (years)                               |
-| `dead`        | Event indicator (1 = death, 0 = censored)                     |
-| `reop`        | Reoperation indicator                                         |
-| `iv_reop`     | Time to reoperation (years; `NA` if no reoperation)           |
+| Column | Description |
+|----|----|
+| `ccfid` | Patient identifier |
+| `origin_year` | Calendar year corresponding to `iv_opyrs = 0` |
+| `iv_opyrs` | Observation interval length (years) anchored at `origin_year` |
+| `iv_dead` | Observed follow-up time (years) |
+| `dead` | Event indicator (1 = death, 0 = censored) |
+| `reop` | Reoperation indicator |
+| `iv_reop` | Time to reoperation (years; `NA` if no reoperation) |
 
 ## Outcome Summary
 
 ``` r
+
 # Event rates
 cat("Death rate:       ", round(mean(dta$dead), 3), "\n")
 #> Death rate:        0.54
@@ -126,6 +130,7 @@ summary(dta$iv_dead)
 ```
 
 ``` r
+
 hist(
   dta$iv_dead,
   breaks = 30,
@@ -146,6 +151,7 @@ that benefit from type conversion. The
 function handles these automatically.
 
 ``` r
+
 # Convert types: keep IDs and continuous outcomes as-is
 model_data <- r_data_types(
   dta,
@@ -178,6 +184,7 @@ After conversion:
 ### Extracting Variable Labels
 
 ``` r
+
 lmap <- label_map(model_data)
 print(lmap)
 #>                       key                                          label
@@ -213,6 +220,7 @@ names.
 ## Preparing Data for Survival Analysis
 
 ``` r
+
 # Drop admin columns to match a typical model_data setup
 model_data <- model_data[, !names(model_data) %in% c("ccfid", "reop", "iv_reop",
   "origin_year", "iv_opyrs")]
@@ -225,6 +233,7 @@ table(model_data$dead)
 ```
 
 ``` r
+
 # Kaplan-Meier style summary by NYHA class (base R)
 nyha_levels <- levels(model_data$nyha_class)
 
@@ -258,6 +267,7 @@ print(nyha_summary)
 The `seed` argument ensures reproducible datasets for testing:
 
 ``` r
+
 dta_a <- generate_survival_data(n = 100, seed = 99)
 dta_b <- generate_survival_data(n = 100, seed = 99)
 
@@ -268,6 +278,7 @@ identical(dta_a, dta_b)  # TRUE
 Different seeds produce different datasets:
 
 ``` r
+
 dta_c <- generate_survival_data(n = 100, seed = 7)
 identical(dta_a, dta_c)  # FALSE
 #> [1] FALSE
@@ -276,8 +287,9 @@ identical(dta_a, dta_c)  # FALSE
 ## Session Information
 
 ``` r
+
 sessionInfo()
-#> R version 4.5.3 (2026-03-11)
+#> R version 4.6.1 (2026-06-24)
 #> Platform: x86_64-pc-linux-gnu
 #> Running under: Ubuntu 24.04.4 LTS
 #> 
@@ -301,12 +313,12 @@ sessionInfo()
 #> [1] hvtiRutilities_1.0.0.9004
 #> 
 #> loaded via a namespace (and not attached):
-#>  [1] vctrs_0.7.2      cli_3.6.5        knitr_1.51       rlang_1.1.7     
-#>  [5] xfun_0.57        forcats_1.0.1    haven_2.5.5      generics_0.1.4  
-#>  [9] jsonlite_2.0.0   glue_1.8.0       htmltools_0.5.9  hms_1.1.4       
-#> [13] rmarkdown_2.31   evaluate_1.0.5   tibble_3.3.1     fastmap_1.2.0   
-#> [17] yaml_2.3.12      lifecycle_1.0.5  compiler_4.5.3   dplyr_1.2.0     
-#> [21] pkgconfig_2.0.3  labelled_2.16.0  digest_0.6.39    R6_2.6.1        
-#> [25] tidyselect_1.2.1 pillar_1.11.1    magrittr_2.0.4   tools_4.5.3     
-#> [29] withr_3.0.2
+#>  [1] vctrs_0.7.3      cli_3.6.6        knitr_1.51       rlang_1.3.0     
+#>  [5] xfun_0.60        otel_0.2.0       forcats_1.0.1    haven_2.5.5     
+#>  [9] generics_0.1.4   jsonlite_2.0.0   glue_1.8.1       htmltools_0.5.9 
+#> [13] hms_1.1.4        rmarkdown_2.31   evaluate_1.0.5   tibble_3.3.1    
+#> [17] fastmap_1.2.0    yaml_2.3.12      lifecycle_1.0.5  compiler_4.6.1  
+#> [21] dplyr_1.2.1      pkgconfig_2.0.3  labelled_2.16.0  digest_0.6.39   
+#> [25] R6_2.6.1         tidyselect_1.2.1 pillar_1.11.1    magrittr_2.0.5  
+#> [29] withr_3.0.3      tools_4.6.1
 ```

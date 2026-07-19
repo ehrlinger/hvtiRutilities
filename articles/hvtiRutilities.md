@@ -34,12 +34,14 @@ from SAS.
 ### Installation
 
 ``` r
+
 # Install from GitHub
 # install.packages("pak")
 pak::pak("ehrlinger/hvtiRutilities")
 ```
 
 ``` r
+
 if (requireNamespace("hvtiRutilities", quietly = TRUE)) {
   library("hvtiRutilities") # Use installed package when available
 } else {
@@ -61,6 +63,7 @@ The
 function intelligently converts column types based on their content:
 
 ``` r
+
 # Generate sample data with various types
 dta <- sample_data(n = 100)
 
@@ -69,17 +72,17 @@ str(dta)
 #> 'data.frame':    100 obs. of  7 variables:
 #>  $ id     : int  1 2 3 4 5 6 7 8 9 10 ...
 #>   ..- attr(*, "label")= chr "Patient Identifier"
-#>  $ boolean: int  1 1 2 2 2 2 2 1 2 1 ...
+#>  $ boolean: int  1 1 2 1 2 2 2 1 2 2 ...
 #>   ..- attr(*, "label")= chr "Binary Indicator"
-#>  $ logical: chr  "F" "F" "T" "T" ...
+#>  $ logical: chr  "F" "F" "T" "F" ...
 #>   ..- attr(*, "label")= chr "Logical Status"
-#>  $ f_real : num  0.5425 0.1269 0.1089 0.0076 0.1089 ...
+#>  $ f_real : num  0.4634 0.4338 0.0947 0.7052 0.9386 ...
 #>   ..- attr(*, "label")= chr "Random Uniform Value"
-#>  $ float  : num  -0.613 -1.394 -0.28 -0.897 -0.838 ...
+#>  $ float  : num  -0.856 -0.267 1.865 2.436 0.567 ...
 #>   ..- attr(*, "label")= chr "Random Normal Value"
-#>  $ char   : chr  "male" "female" "female" "female" ...
+#>  $ char   : chr  "female" "male" "female" "female" ...
 #>   ..- attr(*, "label")= chr "Gender"
-#>  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 3 2 5 3 2 3 2 4 2 2 ...
+#>  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 3 4 2 4 3 4 1 2 2 5 ...
 #>   ..- attr(*, "label")= chr "Category Group"
 ```
 
@@ -90,6 +93,7 @@ Notice that the sample data has: - `boolean`: integer values (1, 2) -
 Now let’s apply automatic type conversion:
 
 ``` r
+
 # Convert types automatically
 dta_converted <- r_data_types(dta)
 
@@ -100,15 +104,15 @@ str(dta_converted)
 #>   ..- attr(*, "label")= chr "Patient Identifier"
 #>  $ boolean: logi  TRUE TRUE TRUE TRUE TRUE TRUE ...
 #>   ..- attr(*, "label")= chr "Binary Indicator"
-#>  $ logical: Factor w/ 2 levels "F","T": 1 1 2 2 2 2 2 1 2 1 ...
+#>  $ logical: Factor w/ 2 levels "F","T": 1 1 2 1 2 2 2 1 2 2 ...
 #>   ..- attr(*, "label")= chr "Logical Status"
-#>  $ f_real : Factor w/ 9 levels "0.00760305020958185",..: 7 4 3 1 3 1 3 4 2 2 ...
+#>  $ f_real : Factor w/ 9 levels "0.0946591675747186",..: 4 3 1 7 9 1 9 5 8 4 ...
 #>   ..- attr(*, "label")= chr "Random Uniform Value"
-#>  $ float  : num  -0.613 -1.394 -0.28 -0.897 -0.838 ...
+#>  $ float  : num  -0.856 -0.267 1.865 2.436 0.567 ...
 #>   ..- attr(*, "label")= chr "Random Normal Value"
-#>  $ char   : Factor w/ 2 levels "female","male": 2 1 1 1 2 2 1 2 1 1 ...
+#>  $ char   : Factor w/ 2 levels "female","male": 1 2 1 1 2 1 2 1 1 2 ...
 #>   ..- attr(*, "label")= chr "Gender"
-#>  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 3 2 5 3 2 3 2 4 2 2 ...
+#>  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 3 4 2 4 3 4 1 2 2 5 ...
 #>   ..- attr(*, "label")= chr "Category Group"
 ```
 
@@ -134,6 +138,7 @@ The function applies transformations in this order:
 Let’s apply this to the built-in `mtcars` dataset:
 
 ``` r
+
 # Original mtcars
 str(mtcars[, 1:5])
 #> 'data.frame':    32 obs. of  5 variables:
@@ -145,6 +150,7 @@ str(mtcars[, 1:5])
 ```
 
 ``` r
+
 # Apply type conversion
 mtcars_clean <- r_data_types(mtcars)
 str(mtcars_clean[, 1:5])
@@ -170,6 +176,7 @@ values: 0, 1) → logical - `am` (2 unique values: 0, 1) → logical -
 Use `factor_size` to control when numeric variables become factors:
 
 ``` r
+
 # More strict: only convert if < 5 unique values
 mtcars_strict <- r_data_types(mtcars, factor_size = 5)
 
@@ -191,6 +198,7 @@ class(mtcars_strict$carb) # integer (6 unique NOT < 5)
 Sometimes you want to preserve certain variables in their original form:
 
 ``` r
+
 # Keep vs and am as numeric instead of converting to logical
 mtcars_partial <- r_data_types(mtcars, skip_vars = c("vs", "am"))
 
@@ -207,6 +215,7 @@ By default, binary variables become logical. Use `binary_factor = TRUE`
 to make them factors instead:
 
 ``` r
+
 mtcars_factor <- r_data_types(mtcars, binary_factor = TRUE)
 
 # Compare
@@ -230,6 +239,7 @@ anti-patterns, see
 ### Extracting and Looking Up Labels
 
 ``` r
+
 library(labelled)
 
 # Generate labeled data (as would come from SAS import)
@@ -255,6 +265,7 @@ for safe single-variable lookup — it errors on typos instead of silently
 returning `NA`:
 
 ``` r
+
 get_label(lmap, "age")
 #> [1] "Age at surgery (years)"
 get_label(lmap, "lvefvs_b")
@@ -267,6 +278,7 @@ When you create new variables, label them immediately using
 [`add_labels()`](https://ehrlinger.github.io/hvtiRutilities/reference/add_labels.md):
 
 ``` r
+
 dta$age_group <- cut(dta$age,
   breaks = c(0, 40, 60, Inf),
   labels = c("<40", "40-60", ">60")
@@ -284,6 +296,7 @@ Labels are preserved when using
 [`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md):
 
 ``` r
+
 dta <- sample_data(n = 50)
 lmap_before <- label_map(dta)
 
@@ -299,6 +312,7 @@ identical(lmap_before, lmap_after)  # TRUE
 Here’s a complete real-world workflow for preparing clinical data:
 
 ``` r
+
 # Step 1: Generate sample clinical data
 set.seed(123)
 clinical <- data.frame(
@@ -380,6 +394,7 @@ print(outcome_summary)
 The function automatically handles character NA variants:
 
 ``` r
+
 # Data with various NA representations
 messy <- data.frame(
   var1 = c("NA", "value1", "na", "value2", "nA"),
@@ -409,6 +424,7 @@ levels(clean$var2)       # "A", "B", "C"
 For datasets with specific requirements:
 
 ``` r
+
 # Lab results with reference ranges
 labs <- data.frame(
   patient = 1:20,
@@ -447,6 +463,7 @@ Use
 to read and convert in one step:
 
 ``` r
+
 # Read SAS, CSV, or Excel — auto-detects format and converts types
 dta <- read_clinical_data("path/to/data.sas7bdat", factor_size = 15)
 
@@ -477,18 +494,21 @@ specialized data structures (time series, spatial data, etc.)
 **Exploratory Analysis:**
 
 ``` r
+
 data_clean <- r_data_types(data, factor_size = 10)
 ```
 
 **Modeling/Regression:**
 
 ``` r
+
 data_clean <- r_data_types(data, factor_size = 5, binary_factor = FALSE)
 ```
 
 **Descriptive Statistics/Tables:**
 
 ``` r
+
 data_clean <- r_data_types(data, factor_size = 15, binary_factor = TRUE)
 ```
 
@@ -497,6 +517,7 @@ data_clean <- r_data_types(data, factor_size = 15, binary_factor = TRUE)
 Always verify the conversions make sense:
 
 ``` r
+
 # Before
 str(original_data)
 summary(original_data)
@@ -556,8 +577,9 @@ in R
 ## Session Information
 
 ``` r
+
 sessionInfo()
-#> R version 4.5.3 (2026-03-11)
+#> R version 4.6.1 (2026-06-24)
 #> Platform: x86_64-pc-linux-gnu
 #> Running under: Ubuntu 24.04.4 LTS
 #> 
@@ -581,11 +603,12 @@ sessionInfo()
 #> [1] labelled_2.16.0           hvtiRutilities_1.0.0.9004
 #> 
 #> loaded via a namespace (and not attached):
-#>  [1] vctrs_0.7.2      cli_3.6.5        knitr_1.51       rlang_1.1.7     
-#>  [5] xfun_0.57        forcats_1.0.1    haven_2.5.5      generics_0.1.4  
-#>  [9] jsonlite_2.0.0   glue_1.8.0       htmltools_0.5.9  hms_1.1.4       
-#> [13] rmarkdown_2.31   evaluate_1.0.5   tibble_3.3.1     fastmap_1.2.0   
-#> [17] yaml_2.3.12      lifecycle_1.0.5  compiler_4.5.3   dplyr_1.2.0     
-#> [21] pkgconfig_2.0.3  digest_0.6.39    R6_2.6.1         tidyselect_1.2.1
-#> [25] pillar_1.11.1    magrittr_2.0.4   tools_4.5.3      withr_3.0.2
+#>  [1] vctrs_0.7.3      cli_3.6.6        knitr_1.51       rlang_1.3.0     
+#>  [5] xfun_0.60        otel_0.2.0       forcats_1.0.1    haven_2.5.5     
+#>  [9] generics_0.1.4   jsonlite_2.0.0   glue_1.8.1       htmltools_0.5.9 
+#> [13] hms_1.1.4        rmarkdown_2.31   evaluate_1.0.5   tibble_3.3.1    
+#> [17] fastmap_1.2.0    yaml_2.3.12      lifecycle_1.0.5  compiler_4.6.1  
+#> [21] dplyr_1.2.1      pkgconfig_2.0.3  digest_0.6.39    R6_2.6.1        
+#> [25] tidyselect_1.2.1 pillar_1.11.1    magrittr_2.0.5   withr_3.0.3     
+#> [29] tools_4.6.1
 ```
