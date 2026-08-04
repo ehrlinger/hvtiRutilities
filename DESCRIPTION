@@ -1,7 +1,7 @@
 Package: hvtiRutilities
 Type: Package
 Title: A Collection of Utilities for Use by HVTI CORR Group at the Cleveland Clinic
-Version: 1.0.0.9004
+Version: 1.0.1
 Date: 2026-04-01
 Authors@R: c(
     person(
@@ -40,5 +40,5 @@ Suggests:
     withr,
     writexl
 VignetteBuilder: quarto
-RoxygenNote: 7.3.3
 Config/testthat/edition: 3
+Config/roxygen2/version: 8.0.0

@@ -1,4 +1,27 @@
-# hvtiRutilities 1.0.0.9004
+# hvtiRutilities 1.0.1
+
+## Breaking changes
+
+- `update_manifest()` and `verify_manifest()` are now **silent by default**.
+  Both gained a `verbose` argument (default `FALSE`) that gates all
+  informational `message()` output: "Manifest entry added / updated" in
+  `update_manifest()`, and the per-entry "— SHA-256 match (n = N)" and
+  "Manifest contains no dataset entries." lines in `verify_manifest()`.
+  Pass `verbose = TRUE` to restore the previous console output.
+
+  This removes unconditional chatter from packages that call these functions
+  in a loop (for example `hvtiRdatasets::snapshot_oracle()`, which called
+  `update_manifest()` once per study), and brings the package in line with
+  the CRAN policy against chatty `message()`/`cat()` in function bodies.
+
+  Failures are unaffected: a SHA-256 mismatch, a missing file, or a row-count
+  mismatch still raises `stop()` (or `warning()` when
+  `stop_on_error = FALSE`) regardless of `verbose`. The per-entry status text
+  is also still returned in the `message` column of `verify_manifest()`'s
+  data frame, so silencing the console loses no information.
+
+  `verbose` is appended last in both signatures, so existing positional calls
+  are unaffected.
 
 ## Bug fixes
 
