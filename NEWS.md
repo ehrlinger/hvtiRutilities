@@ -23,6 +23,16 @@
   `verbose` is appended last in both signatures, so existing positional calls
   are unaffected.
 
+## Maintenance
+
+- Maintainer contact is now `john.ehrlinger@gmail.com`. The redundant
+  `Maintainer:` field was removed from DESCRIPTION — with `Authors@R` present
+  the maintainer is derived from the `cre` role, and having both declared
+  different addresses.
+- README: the repostatus badge now uses `https://` (the `http://` form
+  301-redirected, failing `urlchecker::url_check()`).
+- DESCRIPTION `Date:` refreshed to the 1.0.1 release date.
+
 ## Bug fixes
 
 - `read_clinical_data()`: files with no extension now produce a clear error
