@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0.9004</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -53,19 +53,34 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="1.0.0.9004" id="hvtirutilities-1009004">hvtiRutilities 1.0.0.9004<a class="anchor" aria-label="anchor" href="#hvtirutilities-1009004"></a></h2>
+<h2 class="pkg-version" data-toc-text="1.0.1" id="hvtirutilities-101">hvtiRutilities 1.0.1<a class="anchor" aria-label="anchor" href="#hvtirutilities-101"></a></h2>
 <div class="section level3">
-<h3 id="bug-fixes-1-0-0-9004">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-0-0-9004"></a></h3>
+<h3 id="breaking-changes-1-0-1">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-1-0-1"></a></h3>
+<ul><li>
+<p><code><a href="../reference/update_manifest.html">update_manifest()</a></code> and <code><a href="../reference/verify_manifest.html">verify_manifest()</a></code> are now <strong>silent by default</strong>. Both gained a <code>verbose</code> argument (default <code>FALSE</code>) that gates all informational <code><a href="https://rdrr.io/r/base/message.html" class="external-link">message()</a></code> output: “Manifest entry added / updated” in <code><a href="../reference/update_manifest.html">update_manifest()</a></code>, and the per-entry “— SHA-256 match (n = N)” and “Manifest contains no dataset entries.” lines in <code><a href="../reference/verify_manifest.html">verify_manifest()</a></code>. Pass <code>verbose = TRUE</code> to restore the previous console output.</p>
+<p>This removes unconditional chatter from packages that call these functions in a loop (for example <code>hvtiRdatasets::snapshot_oracle()</code>, which called <code><a href="../reference/update_manifest.html">update_manifest()</a></code> once per study), and brings the package in line with the CRAN policy against chatty <code><a href="https://rdrr.io/r/base/message.html" class="external-link">message()</a></code>/<code><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat()</a></code> in function bodies.</p>
+<p>Failures are unaffected: a SHA-256 mismatch, a missing file, or a row-count mismatch still raises <code><a href="https://rdrr.io/r/base/stop.html" class="external-link">stop()</a></code> (or <code><a href="https://rdrr.io/r/base/warning.html" class="external-link">warning()</a></code> when <code>stop_on_error = FALSE</code>) regardless of <code>verbose</code>. The per-entry status text is also still returned in the <code>message</code> column of <code><a href="../reference/verify_manifest.html">verify_manifest()</a></code>’s data frame, so silencing the console loses no information.</p>
+<p><code>verbose</code> is appended last in both signatures, so existing positional calls are unaffected.</p>
+</li>
+</ul></div>
+<div class="section level3">
+<h3 id="maintenance-1-0-1">Maintenance<a class="anchor" aria-label="anchor" href="#maintenance-1-0-1"></a></h3>
+<ul><li>Maintainer contact is now <code>john.ehrlinger@gmail.com</code>. The redundant <code>Maintainer:</code> field was removed from DESCRIPTION — with <code>Authors@R</code> present the maintainer is derived from the <code>cre</code> role, and having both declared different addresses.</li>
+<li>README: the repostatus badge now uses <code>https://</code> (the <code>http://</code> form 301-redirected, failing <code>urlchecker::url_check()</code>).</li>
+<li>DESCRIPTION <code>Date:</code> refreshed to the 1.0.1 release date.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-1-0-1">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-0-1"></a></h3>
 <ul><li>
 <code><a href="../reference/read_clinical_data.html">read_clinical_data()</a></code>: files with no extension now produce a clear error (“Cannot determine file type: … has no extension”) instead of the misleading <code>Unsupported file type: '..'</code> message. The unsupported-extension error also now includes the full file path for easier diagnosis.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="tests-1-0-0-9004">Tests<a class="anchor" aria-label="anchor" href="#tests-1-0-0-9004"></a></h3>
+<h3 id="tests-1-0-1">Tests<a class="anchor" aria-label="anchor" href="#tests-1-0-1"></a></h3>
 <ul><li>
 <code>test-read_clinical_data.R</code>: strengthened the tibble-coercion assertion from <code>expect_true(is.data.frame(result))</code> (TRUE for tibbles) to <code>expect_equal(class(result), "data.frame")</code> so the test actually protects against <code><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame()</a></code> being removed or bypassed.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="documentation-1-0-0-9004">Documentation<a class="anchor" aria-label="anchor" href="#documentation-1-0-0-9004"></a></h3>
+<h3 id="documentation-1-0-1">Documentation<a class="anchor" aria-label="anchor" href="#documentation-1-0-1"></a></h3>
 <ul><li>
 <code>vignettes/reproducible-seeds.qmd</code>: section heading “Using the Seed with varpro” and narrative references to the package now use the correct CRAN casing <code>varPro</code>; function-name references (<code>varpro()</code>, <code>unsupv.varpro()</code>) remain lowercase as those are the exported function names.</li>
 </ul></div>

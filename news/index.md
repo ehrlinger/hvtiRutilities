@@ -1,6 +1,52 @@
 # Changelog
 
-## hvtiRutilities 1.0.0.9004
+## hvtiRutilities 1.0.1
+
+### Breaking changes
+
+- [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
+  and
+  [`verify_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md)
+  are now **silent by default**. Both gained a `verbose` argument
+  (default `FALSE`) that gates all informational
+  [`message()`](https://rdrr.io/r/base/message.html) output: “Manifest
+  entry added / updated” in
+  [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md),
+  and the per-entry “— SHA-256 match (n = N)” and “Manifest contains no
+  dataset entries.” lines in
+  [`verify_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md).
+  Pass `verbose = TRUE` to restore the previous console output.
+
+  This removes unconditional chatter from packages that call these
+  functions in a loop (for example `hvtiRdatasets::snapshot_oracle()`,
+  which called
+  [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
+  once per study), and brings the package in line with the CRAN policy
+  against chatty
+  [`message()`](https://rdrr.io/r/base/message.html)/[`cat()`](https://rdrr.io/r/base/cat.html)
+  in function bodies.
+
+  Failures are unaffected: a SHA-256 mismatch, a missing file, or a
+  row-count mismatch still raises
+  [`stop()`](https://rdrr.io/r/base/stop.html) (or
+  [`warning()`](https://rdrr.io/r/base/warning.html) when
+  `stop_on_error = FALSE`) regardless of `verbose`. The per-entry status
+  text is also still returned in the `message` column of
+  [`verify_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md)’s
+  data frame, so silencing the console loses no information.
+
+  `verbose` is appended last in both signatures, so existing positional
+  calls are unaffected.
+
+### Maintenance
+
+- Maintainer contact is now `john.ehrlinger@gmail.com`. The redundant
+  `Maintainer:` field was removed from DESCRIPTION — with `Authors@R`
+  present the maintainer is derived from the `cre` role, and having both
+  declared different addresses.
+- README: the repostatus badge now uses `https://` (the `http://` form
+  301-redirected, failing `urlchecker::url_check()`).
+- DESCRIPTION `Date:` refreshed to the 1.0.1 release date.
 
 ### Bug fixes
 

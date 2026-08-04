@@ -31,7 +31,7 @@ explicitly.'></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0.9004</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -101,7 +101,8 @@ explicitly.</p>
 <span>  extract_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.Date</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  n_rows <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  source <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  sort_key <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  sort_key <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -141,6 +142,12 @@ all other file types supply this value explicitly.</p></dd>
 <dt id="arg-sort-key">sort_key<a class="anchor" aria-label="anchor" href="#arg-sort-key"></a></dt>
 <dd><p>Character. Column name(s) that define the canonical sort
 order of the dataset.</p></dd>
+
+
+<dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
+<dd><p>Logical. If <code>TRUE</code>, report which manifest entry was
+added or updated via <code><a href="https://rdrr.io/r/base/message.html" class="external-link">message</a></code>.  Defaults to
+<code>FALSE</code> so that scripted or looped calls stay silent.</p></dd>
 
 </dl></div>
     <div class="section level2">

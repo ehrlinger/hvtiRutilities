@@ -24,7 +24,8 @@ update_manifest(
   extract_date = Sys.Date(),
   n_rows = NULL,
   source = NULL,
-  sort_key = NULL
+  sort_key = NULL,
+  verbose = FALSE
 )
 ```
 
@@ -60,6 +61,12 @@ update_manifest(
 
   Character. Column name(s) that define the canonical sort order of the
   dataset.
+
+- verbose:
+
+  Logical. If `TRUE`, report which manifest entry was added or updated
+  via [`message`](https://rdrr.io/r/base/message.html). Defaults to
+  `FALSE` so that scripted or looped calls stay silent.
 
 ## Value
 

@@ -17,7 +17,8 @@ document to ensure data integrity before any results are generated.
 verify_manifest(
   manifest_path = "manifest.yaml",
   data_dir = NULL,
-  stop_on_error = TRUE
+  stop_on_error = TRUE,
+  verbose = FALSE
 )
 ```
 
@@ -40,6 +41,16 @@ verify_manifest(
   check, preventing the analysis from proceeding. Set to `FALSE` to
   collect all errors and report them together as a warning.
 
+- verbose:
+
+  Logical. If `TRUE`, report each passing entry via
+  [`message`](https://rdrr.io/r/base/message.html). Defaults to `FALSE`
+  so that scripted or looped calls stay silent; the same information is
+  always available in the returned data frame. Failures are reported
+  through [`stop()`](https://rdrr.io/r/base/stop.html) or
+  [`warning()`](https://rdrr.io/r/base/warning.html) regardless of this
+  setting.
+
 ## Value
 
 Invisibly returns a data frame with columns `file`, `status` (`"OK"` or
@@ -54,7 +65,11 @@ Invisibly returns a data frame with columns `file`, `status` (`"OK"` or
 ``` r
 if (FALSE) { # \dontrun{
 # --- Typical usage: top of every analysis script or .qmd -----------
+# Silent unless a check fails.
 hvtiRutilities::verify_manifest(here::here("manifest.yaml"))
+
+# --- Interactive use: report each passing entry ---------------------
+hvtiRutilities::verify_manifest(here::here("manifest.yaml"), verbose = TRUE)
 # cohort_20240115.csv    — SHA-256 match (n = 831)
 # labs_20240115.sas7bdat — SHA-256 match (n = 1204)
 # adjudication_20240115.xlsx — SHA-256 match (n = 47)

@@ -35,7 +35,7 @@ if (requireNamespace("hvtiRutilities", quietly = TRUE)) {
   pkgload::load_all(export_all = FALSE, helpers = FALSE, quiet = TRUE)
 }
 #> 
-#>  hvtiRutilities 1.0.0.9004 
+#>  hvtiRutilities 1.0.1 
 #>  
 #>  Type hvtiRutilities.news() to see new features, changes, and bug fixes. 
 #> 
@@ -80,7 +80,6 @@ update_manifest(
   source       = "Epic EMR, query v4.2, ICD mapping v3.2",
   sort_key     = "ccfid"
 )
-#> Manifest entry added: cohort_20240115.csv
 ```
 
 Add a second file — a simulated labs extract pulled on the same date.
@@ -105,7 +104,6 @@ update_manifest(
   source        = "Epic EMR, labs module — Hgb, eGFR, BNP",
   sort_key      = "ccfid"
 )
-#> Manifest entry added: labs_20240115.csv
 ```
 
 ### Inspecting the manifest
@@ -203,8 +201,6 @@ verify_manifest(
   manifest_path = manifest_path,
   data_dir      = datasets_dir
 )
-#> cohort_20240115.csv — SHA-256 match (n = 200)
-#> labs_20240115.csv — SHA-256 match (n = 200)
 ```
 
 The function prints one confirmation line per file and returns
@@ -244,7 +240,6 @@ verify_manifest(
   manifest_path = manifest_path,
   data_dir      = datasets_dir
 )
-#> labs_20240115.csv — SHA-256 match (n = 200)
 #> Error:
 #> ! STOP: manifest verification failed for:
 #>    cohort_20240115.csv: SHA-256 mismatch
@@ -268,7 +263,6 @@ report <- verify_manifest(
   data_dir      = datasets_dir,
   stop_on_error = FALSE
 )
-#> labs_20240115.csv — SHA-256 match (n = 200)
 #> Warning: STOP: manifest verification failed for:
 #>    cohort_20240115.csv: SHA-256 mismatch
 #>   expected: f3db9dd8a47765003a2509c54068f8736b0fd8c2f0b0425808422cc11f0bdfcd
@@ -298,15 +292,12 @@ update_manifest(
   extract_date  = "2024-01-15",
   source        = "Epic EMR, query v4.2, ICD mapping v3.2 — corrected age for pt 1"
 )
-#> Manifest updated: cohort_20240115.csv
 
 # Verification now passes again
 verify_manifest(
   manifest_path = manifest_path,
   data_dir      = datasets_dir
 )
-#> cohort_20240115.csv — SHA-256 match (n = 200)
-#> labs_20240115.csv — SHA-256 match (n = 200)
 ```
 
 ## A New Pull for a Different Project
@@ -329,7 +320,6 @@ update_manifest(
   source        = "Epic EMR, query v4.2, ICD mapping v3.3 — LVAD sub-study cohort",
   sort_key      = "ccfid"
 )
-#> Manifest entry added: cohort_20240801.csv
 ```
 
 The manifest now tracks all three files independently.
@@ -355,9 +345,6 @@ verify_manifest(
   manifest_path = manifest_path,
   data_dir      = datasets_dir
 )
-#> cohort_20240115.csv — SHA-256 match (n = 200)
-#> labs_20240115.csv — SHA-256 match (n = 200)
-#> cohort_20240801.csv — SHA-256 match (n = 315)
 ```
 
 ## Policy Recommendations
@@ -407,7 +394,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] hvtiRutilities_1.0.0.9004
+#> [1] hvtiRutilities_1.0.1
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] vctrs_0.7.3      cli_3.6.6        knitr_1.51       rlang_1.3.0     
