@@ -82,11 +82,37 @@ proc_means <- function(data, vars = NULL, class = NULL,
     return(.empty_means(class, stats))
   }
 
+  groups <- NULL
+  if (!is.null(class) && length(class) > 0L) {
+    keep <- stats::complete.cases(data[, class, drop = FALSE])
+    data <- data[keep, , drop = FALSE]
+    groups <- unique(data[, class, drop = FALSE])
+    groups <- groups[do.call(base::order, unname(as.list(groups))), ,
+                     drop = FALSE]
+    rownames(groups) <- NULL
+  }
+
   labels <- labelled::var_label(data, unlist = TRUE, null_action = "fill")
 
-  rows <- lapply(vars, function(v) {
-    .means_row(data[[v]], v, unname(labels[v]), stats)
-  })
+  rows <- list()
+  for (v in vars) {
+    if (is.null(groups)) {
+      rows[[length(rows) + 1L]] <-
+        .means_row(data[[v]], v, unname(labels[v]), stats)
+    } else {
+      for (i in seq_len(nrow(groups))) {
+        idx <- rep(TRUE, nrow(data))
+        for (k in class) {
+          idx <- idx & (as.character(data[[k]]) == as.character(groups[[k]][i]))
+        }
+        rows[[length(rows) + 1L]] <- cbind(
+          groups[i, , drop = FALSE],
+          .means_row(data[[v]][idx], v, unname(labels[v]), stats),
+          stringsAsFactors = FALSE
+        )
+      }
+    }
+  }
 
   out <- do.call(rbind, rows)
   rownames(out) <- NULL

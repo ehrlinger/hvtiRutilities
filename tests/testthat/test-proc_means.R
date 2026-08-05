@@ -158,3 +158,77 @@ test_that("proc_means warns and returns zero rows when nothing is numeric", {
   expect_type(res$n, "integer")
   expect_type(res$mean, "double")
 })
+
+# CLASS stratification ----
+
+test_that("proc_means prepends class columns and groups rows", {
+  dta <- data.frame(
+    trt = c("A", "A", "B", "B"),
+    val = c(1, 3, 10, 30),
+    stringsAsFactors = FALSE
+  )
+  res <- proc_means(dta, class = "trt", stats = c("n", "mean"))
+
+  expect_named(res, c("trt", "variable", "label", "n", "mean"))
+  expect_equal(res$trt, c("A", "B"))
+  expect_equal(res$mean, c(2, 20))
+})
+
+test_that("proc_means excludes class variables from the default var set", {
+  dta <- data.frame(grp = c(1, 1, 2, 2), val = c(1, 2, 3, 4))
+  res <- proc_means(dta, class = "grp")
+
+  expect_equal(unique(res$variable), "val")
+})
+
+test_that("proc_means drops rows with a missing class value", {
+  dta <- data.frame(
+    trt = c("A", "A", NA, "B"),
+    val = c(1, 3, 100, 5),
+    stringsAsFactors = FALSE
+  )
+  res <- proc_means(dta, class = "trt", stats = c("n", "mean"))
+
+  expect_equal(res$trt, c("A", "B"))
+  expect_equal(res$n, c(2L, 1L))
+  expect_false(any(is.na(res$trt)))
+})
+
+test_that("proc_means orders rows by variable then class level", {
+  dta <- data.frame(
+    trt = c("B", "A", "B", "A"),
+    x = c(1, 2, 3, 4),
+    y = c(5, 6, 7, 8),
+    stringsAsFactors = FALSE
+  )
+  res <- proc_means(dta, class = "trt", stats = "n")
+
+  expect_equal(res$variable, c("x", "x", "y", "y"))
+  expect_equal(res$trt, c("A", "B", "A", "B"))
+})
+
+test_that("proc_means supports two class variables", {
+  dta <- data.frame(
+    a = c("x", "x", "y", "y"),
+    b = c(1, 2, 1, 2),
+    val = c(10, 20, 30, 40),
+    stringsAsFactors = FALSE
+  )
+  res <- proc_means(dta, class = c("a", "b"), stats = "mean")
+
+  expect_named(res, c("a", "b", "variable", "label", "mean"))
+  expect_equal(nrow(res), 4L)
+  expect_equal(res$mean, c(10, 20, 30, 40))
+})
+
+test_that("proc_means handles a factor class variable", {
+  dta <- data.frame(
+    grp = factor(c("lo", "hi", "lo", "hi"), levels = c("lo", "hi")),
+    val = c(1, 10, 3, 30)
+  )
+  res <- proc_means(dta, class = "grp", stats = "mean")
+
+  expect_equal(nrow(res), 2L)
+  expect_equal(res$mean[res$grp == "lo"], 2)
+  expect_equal(res$mean[res$grp == "hi"], 20)
+})
