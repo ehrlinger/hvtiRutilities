@@ -90,13 +90,24 @@ proc_means <- function(data, vars = NULL, class = NULL,
   labels <- labelled::var_label(data, unlist = TRUE, null_action = "fill")
 
   groups <- NULL
+  grp_idx <- NULL
   if (!is.null(class) && length(class) > 0L) {
     keep <- stats::complete.cases(data[, class, drop = FALSE])
     data <- data[keep, , drop = FALSE]
     groups <- unique(data[, class, drop = FALSE])
-    groups <- groups[do.call(base::order, unname(as.list(groups))), ,
+    groups <- groups[do.call(base::order,
+                             c(unname(as.list(groups)),
+                               list(method = "radix"))), ,
                      drop = FALSE]
     rownames(groups) <- NULL
+
+    grp_idx <- lapply(seq_len(nrow(groups)), function(i) {
+      ok <- rep(TRUE, nrow(data))
+      for (k in class) {
+        ok <- ok & (data[[k]] == groups[[k]][i])
+      }
+      which(ok)
+    })
   }
 
   rows <- list()
@@ -106,13 +117,9 @@ proc_means <- function(data, vars = NULL, class = NULL,
         .means_row(data[[v]], v, unname(labels[v]), stats)
     } else {
       for (i in seq_len(nrow(groups))) {
-        idx <- rep(TRUE, nrow(data))
-        for (k in class) {
-          idx <- idx & (as.character(data[[k]]) == as.character(groups[[k]][i]))
-        }
         rows[[length(rows) + 1L]] <- cbind(
           groups[i, , drop = FALSE],
-          .means_row(data[[v]][idx], v, unname(labels[v]), stats),
+          .means_row(data[[v]][grp_idx[[i]]], v, unname(labels[v]), stats),
           stringsAsFactors = FALSE
         )
       }
@@ -120,6 +127,8 @@ proc_means <- function(data, vars = NULL, class = NULL,
   }
 
   if (length(rows) == 0L) {
+    warning("All rows dropped: every value of the class variable(s) is missing; ",
+            "returning a zero-row result.", call. = FALSE)
     return(.empty_means(class, stats))
   }
 

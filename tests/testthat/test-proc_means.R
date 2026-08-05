@@ -245,12 +245,20 @@ test_that("proc_means keeps variable labels under class stratification", {
 
 test_that("proc_means returns a zero-row frame when every class value is NA", {
   dta <- data.frame(grp = c(NA_character_, NA_character_), val = c(1, 2))
-  res <- proc_means(dta, class = "grp", stats = c("n", "mean"))
+  expect_warning(res <- proc_means(dta, class = "grp", stats = c("n", "mean")),
+                 "All rows dropped")
 
   expect_s3_class(res, "data.frame")
   expect_equal(nrow(res), 0L)
   expect_named(res, c("grp", "variable", "label", "n", "mean"))
   expect_type(res$n, "integer")
+})
+
+test_that("proc_means groups by value, not string rendering", {
+  d <- data.frame(g = c(0.1 + 0.2, 0.3, 0.1 + 0.2), v = c(1, 2, 3))
+  res <- proc_means(d, class = "g", stats = c("n", "mean"))
+
+  expect_equal(res$n, c(1L, 2L))
 })
 
 test_that("proc_means orders factor class levels by level order, not alphabetically", {

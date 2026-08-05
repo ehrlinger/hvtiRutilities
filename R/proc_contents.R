@@ -87,7 +87,8 @@ proc_contents <- function(data, order = c("alpha", "varnum")) {
   )
 
   if (ord == "alpha") {
-    variables <- variables[base::order(tolower(variables$variable)), ,
+    variables <- variables[base::order(tolower(variables$variable),
+                                       method = "radix"), ,
                            drop = FALSE]
   }
   rownames(variables) <- NULL

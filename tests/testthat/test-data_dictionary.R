@@ -171,6 +171,20 @@ test_that("data_dictionary summary strings are stable per column type", {
   expect_equal(dict$summary[dict$variable == "empty"], "all NA")
 })
 
+test_that("data_dictionary summarises Date and labelled columns", {
+  dta <- data.frame(
+    d = as.Date(c("2020-01-01", "2020-12-31")),
+    lab = c(1, 2)
+  )
+  labelled::val_labels(dta$lab) <- c(no = 1, yes = 2)
+  labelled::var_label(dta$lab) <- "Coded outcome"
+  dict <- data_dictionary(dta)
+
+  expect_equal(dict$summary[dict$variable == "d"], "2020-01-01 / 2020-12-31")
+  expect_equal(dict$label[dict$variable == "lab"], "Coded outcome")
+  expect_equal(dict$summary[dict$variable == "lab"], "1 / 1.5 / 2")
+})
+
 test_that("data_dictionary handles zero-column input", {
   dict <- data_dictionary(data.frame())
 
