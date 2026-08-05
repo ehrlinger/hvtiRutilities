@@ -1,3 +1,28 @@
+# hvtiRutilities 1.0.2
+
+## New features
+
+- `proc_contents()`: a port of SAS `PROC CONTENTS`. Returns a dataset header
+  (observations, variables, label) and a variables table carrying creation
+  position, name, SAS type, format, label, R class, distinct-value count, and
+  percent missing. `Len`, `Pos`, and `Informat` are deliberately omitted —
+  `haven` cannot recover them from a `.sas7bdat`, and inferred values would
+  disagree with the source dataset whenever its `LENGTH` statement differed
+  from the default.
+
+- `proc_means()`: a port of SAS `PROC MEANS`. Takes SAS statistic keywords
+  (`n`, `nmiss`, `mean`, `std`, `min`, `max`, `sum`, `range`, `stderr`, `cv`,
+  `median`, `q1`, `q3`, and any `pNN`), defaulting to SAS's own five, and
+  supports `CLASS` stratification with SAS's default handling of missing class
+  levels. Quantiles use `type = 2`, the R equivalent of SAS `QNTLDEF=5`;
+  R's default `type = 7` disagrees with SAS on small and even-numbered samples.
+
+## Internal changes
+
+- `data_dictionary()` is now a thin wrapper over `proc_contents()` and the
+  shared statistic engine. Its signature and output are unchanged, pinned by
+  characterization tests added before the refactor.
+
 # hvtiRutilities 1.0.1
 
 ## Breaking changes
