@@ -19,6 +19,11 @@
 #' one in \code{vars} coerces it to 0/1, making \code{mean} a proportion as
 #' \code{PROC MEANS} would give.
 #'
+#' Rows are ordered by analysis variable first, then by class level. A factor
+#' class variable orders by its declared level order rather than
+#' alphabetically, matching SAS's default \code{ORDER=INTERNAL}; this keeps
+#' ordered clinical scales such as NYHA class in their clinical sequence.
+#'
 #' @param data A data frame, tibble, or similar tabular object.
 #' @param vars Character vector of columns to analyse. \code{NULL} (default)
 #'   selects every numeric column not named in \code{class}.
@@ -82,6 +87,8 @@ proc_means <- function(data, vars = NULL, class = NULL,
     return(.empty_means(class, stats))
   }
 
+  labels <- labelled::var_label(data, unlist = TRUE, null_action = "fill")
+
   groups <- NULL
   if (!is.null(class) && length(class) > 0L) {
     keep <- stats::complete.cases(data[, class, drop = FALSE])
@@ -91,8 +98,6 @@ proc_means <- function(data, vars = NULL, class = NULL,
                      drop = FALSE]
     rownames(groups) <- NULL
   }
-
-  labels <- labelled::var_label(data, unlist = TRUE, null_action = "fill")
 
   rows <- list()
   for (v in vars) {
@@ -112,6 +117,10 @@ proc_means <- function(data, vars = NULL, class = NULL,
         )
       }
     }
+  }
+
+  if (length(rows) == 0L) {
+    return(.empty_means(class, stats))
   }
 
   out <- do.call(rbind, rows)

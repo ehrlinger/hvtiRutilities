@@ -232,3 +232,34 @@ test_that("proc_means handles a factor class variable", {
   expect_equal(res$mean[res$grp == "lo"], 2)
   expect_equal(res$mean[res$grp == "hi"], 20)
 })
+
+# CLASS stratification — regression guards ----
+
+test_that("proc_means keeps variable labels under class stratification", {
+  dta <- data.frame(grp = c("A", "A", "B", "B"), age = c(50, 60, 70, 80))
+  labelled::var_label(dta$age) <- "Age at surgery (years)"
+  res <- proc_means(dta, class = "grp", stats = "n")
+
+  expect_equal(unique(res$label), "Age at surgery (years)")
+})
+
+test_that("proc_means returns a zero-row frame when every class value is NA", {
+  dta <- data.frame(grp = c(NA_character_, NA_character_), val = c(1, 2))
+  res <- proc_means(dta, class = "grp", stats = c("n", "mean"))
+
+  expect_s3_class(res, "data.frame")
+  expect_equal(nrow(res), 0L)
+  expect_named(res, c("grp", "variable", "label", "n", "mean"))
+  expect_type(res$n, "integer")
+})
+
+test_that("proc_means orders factor class levels by level order, not alphabetically", {
+  dta <- data.frame(
+    grp = factor(c("zebra", "apple", "zebra", "apple"),
+                 levels = c("zebra", "apple")),
+    val = c(1, 2, 3, 4)
+  )
+  res <- proc_means(dta, class = "grp", stats = "n")
+
+  expect_equal(as.character(res$grp), c("zebra", "apple"))
+})

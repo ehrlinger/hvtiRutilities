@@ -52,6 +52,11 @@ behaviour when the \code{VAR} statement is omitted. Logical columns are not
 \code{is.numeric()} in R and so are excluded from that default set; naming
 one in \code{vars} coerces it to 0/1, making \code{mean} a proportion as
 \code{PROC MEANS} would give.
+
+Rows are ordered by analysis variable first, then by class level. A factor
+class variable orders by its declared level order rather than
+alphabetically, matching SAS's default \code{ORDER=INTERNAL}; this keeps
+ordered clinical scales such as NYHA class in their clinical sequence.
 }
 \examples{
 dta <- generate_survival_data(n = 200, seed = 42)
