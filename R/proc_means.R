@@ -167,7 +167,7 @@ proc_means <- function(data, vars = NULL, class = NULL,
   out <- data.frame(variable = character(), label = character(),
                     stringsAsFactors = FALSE)
   for (s in stats) {
-    out[[s]] <- numeric()
+    out[[s]] <- if (s %in% c("n", "nmiss")) integer() else numeric()
   }
   if (!is.null(class) && length(class) > 0L) {
     pre <- as.data.frame(

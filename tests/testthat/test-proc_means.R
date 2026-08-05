@@ -155,4 +155,6 @@ test_that("proc_means warns and returns zero rows when nothing is numeric", {
 
   expect_equal(nrow(res), 0L)
   expect_named(res, c("variable", "label", "n", "mean", "std", "min", "max"))
+  expect_type(res$n, "integer")
+  expect_type(res$mean, "double")
 })
