@@ -17,6 +17,21 @@ working with SAS datasets in R.
   - Converts numeric variables with few unique values to factors
   - Handles various NA representations (“NA”, “na”, etc.)
   - Preserves variable labels from SAS/labelled data
+- **[`proc_contents()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_contents.md)**:
+  SAS `PROC CONTENTS` in R
+  - One row per variable: creation position, name, SAS type (Num/Char),
+    format, label
+  - Plus R class, distinct-value count, and percent missing
+  - Alphabetical by default, matching SAS; `order = "varnum"` gives
+    creation order
+  - Omits `Len`, `Pos`, and `Informat`, which `haven` cannot recover
+    from a `.sas7bdat`
+- **[`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)**:
+  SAS `PROC MEANS` in R
+  - SAS statistic keywords (`n`, `nmiss`, `mean`, `std`, `min`, `max`,
+    `median`, `q1`, `q3`, `pNN`, …), defaulting to SAS’s own five
+  - `class =` stratification, dropping missing class levels as SAS does
+  - Quantiles use SAS’s `QNTLDEF=5` definition, not R’s default
 - **[`label_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)**:
   Extract variable labels from labeled datasets
   - Creates a lookup table mapping variable names to their labels
@@ -211,10 +226,15 @@ Extract, look up, register, and override variable labels
 
 ## Data Documentation
 
-Build data dictionaries and compare dataset versions
+Build data dictionaries, summarise variables, and compare dataset
+versions
 
 - [`data_dictionary()`](https://ehrlinger.github.io/hvtiRutilities/reference/data_dictionary.md)
   : Build a data dictionary from a labeled dataset
+- [`proc_contents()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_contents.md)
+  : Describe a dataset's variables, in the style of SAS PROC CONTENTS
+- [`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
+  : Summarise numeric variables, in the style of SAS PROC MEANS
 - [`compare_datasets()`](https://ehrlinger.github.io/hvtiRutilities/reference/compare_datasets.md)
   : Compare two versions of a dataset
 

@@ -24,7 +24,7 @@
 
     <a class="navbar-brand me-2" href="index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -97,6 +97,25 @@
 <li>Converts numeric variables with few unique values to factors</li>
 <li>Handles various NA representations (“NA”, “na”, etc.)</li>
 <li>Preserves variable labels from SAS/labelled data</li>
+</ul>
+</li>
+<li>
+<strong><code><a href="reference/proc_contents.html">proc_contents()</a></code></strong>: SAS <code>PROC CONTENTS</code> in R
+<ul>
+<li>One row per variable: creation position, name, SAS type (Num/Char), format, label</li>
+<li>Plus R class, distinct-value count, and percent missing</li>
+<li>Alphabetical by default, matching SAS; <code>order = "varnum"</code> gives creation order</li>
+<li>Omits <code>Len</code>, <code>Pos</code>, and <code>Informat</code>, which <code>haven</code> cannot recover from a <code>.sas7bdat</code>
+</li>
+</ul>
+</li>
+<li>
+<strong><code><a href="reference/proc_means.html">proc_means()</a></code></strong>: SAS <code>PROC MEANS</code> in R
+<ul>
+<li>SAS statistic keywords (<code>n</code>, <code>nmiss</code>, <code>mean</code>, <code>std</code>, <code>min</code>, <code>max</code>, <code>median</code>, <code>q1</code>, <code>q3</code>, <code>pNN</code>, …), defaulting to SAS’s own five</li>
+<li>
+<code>class =</code> stratification, dropping missing class levels as SAS does</li>
+<li>Quantiles use SAS’s <code>QNTLDEF=5</code> definition, not R’s default</li>
 </ul>
 </li>
 <li>

@@ -7,16 +7,16 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/ehrlinger/hvtiRutilities/blob/v1.0.1/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/ehrlinger/hvtiRutilities/blob/main/DESCRIPTION)
 
 Ehrlinger J (2026). *hvtiRutilities: A Collection of Utilities for Use
-by HVTI CORR Group at the Cleveland Clinic*. R package version 1.0.1,
+by HVTI CORR Group at the Cleveland Clinic*. R package version 1.0.2,
 <https://github.com/ehrlinger/hvtiRutilities>.
 
     @Manual{,
       title = {hvtiRutilities: A Collection of Utilities for Use by HVTI CORR Group at the Cleveland Clinic},
       author = {John Ehrlinger},
       year = {2026},
-      note = {R package version 1.0.1},
+      note = {R package version 1.0.2},
       url = {https://github.com/ehrlinger/hvtiRutilities},
     }

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -49,9 +49,27 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/v1.0.1/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.0.2" id="hvtirutilities-102">hvtiRutilities 1.0.2<a class="anchor" aria-label="anchor" href="#hvtirutilities-102"></a></h2>
+<div class="section level3">
+<h3 id="new-features-1-0-2">New features<a class="anchor" aria-label="anchor" href="#new-features-1-0-2"></a></h3>
+<ul><li><p><code><a href="../reference/proc_contents.html">proc_contents()</a></code>: a port of SAS <code>PROC CONTENTS</code>. Returns a dataset header (observations, variables, label) and a variables table carrying creation position, name, SAS type, format, label, R class, distinct-value count, and percent missing. <code>Len</code>, <code>Pos</code>, and <code>Informat</code> are deliberately omitted — <code>haven</code> cannot recover them from a <code>.sas7bdat</code>, and inferred values would disagree with the source dataset whenever its <code>LENGTH</code> statement differed from the default.</p></li>
+<li><p><code><a href="../reference/proc_means.html">proc_means()</a></code>: a port of SAS <code>PROC MEANS</code>. Takes SAS statistic keywords (<code>n</code>, <code>nmiss</code>, <code>mean</code>, <code>std</code>, <code>min</code>, <code>max</code>, <code>sum</code>, <code>range</code>, <code>stderr</code>, <code>cv</code>, <code>median</code>, <code>q1</code>, <code>q3</code>, and any <code>pNN</code>), defaulting to SAS’s own five, and supports <code>CLASS</code> stratification with SAS’s default handling of missing class levels. Quantiles use <code>type = 2</code>, the R equivalent of SAS <code>QNTLDEF=5</code>; R’s default <code>type = 7</code> disagrees with SAS on small and even-numbered samples.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="documentation-1-0-2">Documentation<a class="anchor" aria-label="anchor" href="#documentation-1-0-2"></a></h3>
+<ul><li>
+<code><a href="../reference/proc_contents.html">proc_contents()</a></code> now documents that <code>pct_missing</code> is <code>NaN</code>, not a value in 0-100, when the input has columns but zero rows: the proportion of missing values among no values is undefined, and reporting <code>0</code> would assert that nothing is missing. Behaviour is unchanged and is inherited from <code><a href="../reference/data_dictionary.html">data_dictionary()</a></code>; only the documented contract is now accurate, and a test pins it.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="internal-changes-1-0-2">Internal changes<a class="anchor" aria-label="anchor" href="#internal-changes-1-0-2"></a></h3>
+<ul><li>
+<code><a href="../reference/data_dictionary.html">data_dictionary()</a></code> is now a thin wrapper over <code><a href="../reference/proc_contents.html">proc_contents()</a></code> and the shared statistic engine. Its signature and output are unchanged, pinned by characterization tests added before the refactor.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.0.1" id="hvtirutilities-101">hvtiRutilities 1.0.1<a class="anchor" aria-label="anchor" href="#hvtirutilities-101"></a></h2>
 <div class="section level3">
@@ -66,7 +84,7 @@
 <div class="section level3">
 <h3 id="maintenance-1-0-1">Maintenance<a class="anchor" aria-label="anchor" href="#maintenance-1-0-1"></a></h3>
 <ul><li>Maintainer contact is now <code>john.ehrlinger@gmail.com</code>. The redundant <code>Maintainer:</code> field was removed from DESCRIPTION — with <code>Authors@R</code> present the maintainer is derived from the <code>cre</code> role, and having both declared different addresses.</li>
-<li>README: the repostatus badge now uses <code>https://</code> (the <code>http://</code> form 301-redirected, failing <code>urlchecker::url_check()</code>).</li>
+<li>README: the repostatus badge now uses <code>https://</code> (the <code>http://</code> form 301-redirected, failing <code><a href="https://urlchecker.r-lib.org/reference/url_check.html" class="external-link">urlchecker::url_check()</a></code>).</li>
 <li>DESCRIPTION <code>Date:</code> refreshed to the 1.0.1 release date.</li>
 </ul></div>
 <div class="section level3">

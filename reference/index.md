@@ -33,10 +33,15 @@ Extract, look up, register, and override variable labels
 
 ## Data Documentation
 
-Build data dictionaries and compare dataset versions
+Build data dictionaries, summarise variables, and compare dataset
+versions
 
 - [`data_dictionary()`](https://ehrlinger.github.io/hvtiRutilities/reference/data_dictionary.md)
   : Build a data dictionary from a labeled dataset
+- [`proc_contents()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_contents.md)
+  : Describe a dataset's variables, in the style of SAS PROC CONTENTS
+- [`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
+  : Summarise numeric variables, in the style of SAS PROC MEANS
 - [`compare_datasets()`](https://ehrlinger.github.io/hvtiRutilities/reference/compare_datasets.md)
   : Compare two versions of a dataset
 
