@@ -133,3 +133,48 @@ test_that("factor summary truncates at 5 levels", {
   expect_match(dict$summary[1], "\\.\\.\\.")
   expect_match(dict$summary[1], "10 levels:")
 })
+
+# Characterization — pins behaviour across the proc_contents refactor ----
+
+test_that("data_dictionary output is stable for labelled survival data", {
+  dict <- data_dictionary(generate_survival_data(n = 100, seed = 42))
+
+  expect_named(dict, c("variable", "label", "class", "n_unique",
+                       "pct_missing", "summary"))
+  expect_equal(dict$variable, names(generate_survival_data(n = 100, seed = 42)))
+  expect_equal(dict$label[dict$variable == "age"], "Age at surgery (years)")
+  expect_equal(dict$class[dict$variable == "age"], "numeric")
+})
+
+test_that("data_dictionary preserves original column order", {
+  dta <- data.frame(zeta = 1:3, alpha = 4:6, Mid = 7:9)
+  dict <- data_dictionary(dta)
+
+  expect_equal(dict$variable, c("zeta", "alpha", "Mid"))
+})
+
+test_that("data_dictionary summary strings are stable per column type", {
+  dta <- data.frame(
+    num = c(1, 2, 3, 4),
+    lgl = c(TRUE, FALSE, TRUE, TRUE),
+    fct = factor(c("a", "b", "a", "c")),
+    chr = c("p", "q", "p", "r"),
+    empty = as.numeric(c(NA, NA, NA, NA)),
+    stringsAsFactors = FALSE
+  )
+  dict <- data_dictionary(dta)
+
+  expect_equal(dict$summary[dict$variable == "num"], "1 / 2.5 / 4")
+  expect_equal(dict$summary[dict$variable == "lgl"], "TRUE: 75%")
+  expect_equal(dict$summary[dict$variable == "fct"], "3 levels: a, b, c")
+  expect_equal(dict$summary[dict$variable == "chr"], "3 levels: p, q, r")
+  expect_equal(dict$summary[dict$variable == "empty"], "all NA")
+})
+
+test_that("data_dictionary handles zero-column input", {
+  dict <- data_dictionary(data.frame())
+
+  expect_equal(nrow(dict), 0L)
+  expect_named(dict, c("variable", "label", "class", "n_unique",
+                       "pct_missing", "summary"))
+})
