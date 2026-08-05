@@ -114,6 +114,18 @@ test_that("proc_contents handles zero-column input", {
                                "label", "class", "n_unique", "pct_missing"))
 })
 
+test_that("proc_contents reports NaN pct_missing for zero-row input", {
+  # Documented behaviour: mean(is.na(x)) on an empty vector is 0/0, and the
+  # proportion missing among no values is undefined. Reporting 0 would assert
+  # that nothing is missing. Pinned so the documented contract is enforced.
+  pc <- proc_contents(data.frame(a = numeric(), b = character()))
+
+  expect_equal(pc$header$observations, 0L)
+  expect_equal(pc$header$variables, 2L)
+  expect_true(all(is.nan(pc$variables$pct_missing)))
+  expect_equal(pc$variables$n_unique, c(0L, 0L))
+})
+
 test_that("print.proc_contents returns its input invisibly", {
   pc <- proc_contents(sample_data(n = 5))
   expect_output(out <- print(pc), "Observations")

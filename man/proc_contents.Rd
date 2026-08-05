@@ -24,7 +24,8 @@ An object of class \code{proc_contents}: a list with two elements.
     \code{num} (creation position), \code{variable}, \code{type}
     (\code{"Num"}/\code{"Char"}), \code{format} (SAS format, or \code{NA}),
     \code{label}, \code{class} (R class), \code{n_unique} (distinct
-    non-\code{NA} values), and \code{pct_missing} (0-100, 1 decimal place)}
+    non-\code{NA} values), and \code{pct_missing} (0-100, 1 decimal place,
+    or \code{NaN} when \code{data} has zero rows)}
 }
 }
 \description{
@@ -47,6 +48,13 @@ everything else, including \code{logical}, \code{Date}, and \code{POSIXct},
 becomes \code{"Num"}. A SAS date is a number carrying a date format, so
 \code{type} reports \code{"Num"} while \code{class} reports \code{"Date"} —
 keeping the disagreement visible rather than hiding it.
+
+For a data frame with columns but zero rows — a fully filtered cohort, say —
+\code{pct_missing} is \code{NaN} rather than a number in 0-100, because
+\code{mean(is.na(x))} on an empty vector is \code{0/0}. The proportion of
+missing values among no values is genuinely undefined, and reporting
+\code{0} would assert that nothing is missing. Callers formatting this
+column for display should handle \code{NaN} explicitly.
 }
 \examples{
 dta <- sample_data(n = 50)

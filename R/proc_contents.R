@@ -21,6 +21,13 @@
 #' \code{type} reports \code{"Num"} while \code{class} reports \code{"Date"} —
 #' keeping the disagreement visible rather than hiding it.
 #'
+#' For a data frame with columns but zero rows — a fully filtered cohort, say —
+#' \code{pct_missing} is \code{NaN} rather than a number in 0-100, because
+#' \code{mean(is.na(x))} on an empty vector is \code{0/0}. The proportion of
+#' missing values among no values is genuinely undefined, and reporting
+#' \code{0} would assert that nothing is missing. Callers formatting this
+#' column for display should handle \code{NaN} explicitly.
+#'
 #' @param data A data frame, tibble, or similar tabular object.
 #' @param order Variable ordering. \code{"alpha"} (default) sorts
 #'   case-insensitively by name, matching SAS's default \emph{Alphabetic List
@@ -36,7 +43,8 @@
 #'     \code{num} (creation position), \code{variable}, \code{type}
 #'     (\code{"Num"}/\code{"Char"}), \code{format} (SAS format, or \code{NA}),
 #'     \code{label}, \code{class} (R class), \code{n_unique} (distinct
-#'     non-\code{NA} values), and \code{pct_missing} (0-100, 1 decimal place)}
+#'     non-\code{NA} values), and \code{pct_missing} (0-100, 1 decimal place,
+#'     or \code{NaN} when \code{data} has zero rows)}
 #' }
 #'
 #' @seealso \code{\link{proc_means}} for numeric summaries,
