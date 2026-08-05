@@ -74,9 +74,11 @@ reference:
   - clean_labels
 
 - title: Data Documentation
-  desc: Build data dictionaries and compare dataset versions
+  desc: Build data dictionaries, summarise variables, and compare dataset versions
   contents:
   - data_dictionary
+  - proc_contents
+  - proc_means
   - compare_datasets
 
 - title: Dataset Versioning

@@ -25,6 +25,17 @@ hvtiRutilities provides utility functions for working with clinical research dat
   - Handles various NA representations ("NA", "na", etc.)
   - Preserves variable labels from SAS/labelled data
 
+- **`proc_contents()`**: SAS `PROC CONTENTS` in R
+  - One row per variable: creation position, name, SAS type (Num/Char), format, label
+  - Plus R class, distinct-value count, and percent missing
+  - Alphabetical by default, matching SAS; `order = "varnum"` gives creation order
+  - Omits `Len`, `Pos`, and `Informat`, which `haven` cannot recover from a `.sas7bdat`
+
+- **`proc_means()`**: SAS `PROC MEANS` in R
+  - SAS statistic keywords (`n`, `nmiss`, `mean`, `std`, `min`, `max`, `median`, `q1`, `q3`, `pNN`, ...), defaulting to SAS's own five
+  - `class =` stratification, dropping missing class levels as SAS does
+  - Quantiles use SAS's `QNTLDEF=5` definition, not R's default
+
 - **`label_map()`**: Extract variable labels from labeled datasets
   - Creates a lookup table mapping variable names to their labels
   - Useful for working with SAS datasets that have variable labels

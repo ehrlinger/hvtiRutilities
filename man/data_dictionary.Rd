@@ -50,7 +50,9 @@ write.csv(data_dictionary(dta), "data_dictionary.csv", row.names = FALSE)
 }
 }
 \seealso{
-\code{\link{label_map}} for extracting labels only,
+\code{\link{proc_contents}} for the full SAS-style variable table,
+  \code{\link{proc_means}} for numeric summaries,
+  \code{\link{label_map}} for extracting labels only,
   \code{\link{r_data_types}} for automatic type conversion before building
   the dictionary.
 }
