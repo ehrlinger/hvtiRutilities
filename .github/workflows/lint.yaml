@@ -22,7 +22,10 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: lintr
+          # local::. installs the package itself, not just its dependencies.
+          # Without it object_usage_linter cannot resolve the package's own
+          # internals and reports every call to one as an undefined global.
+          extra-packages: any::lintr, local::.
 
       - name: Lint
         run: lintr::lint_package()
