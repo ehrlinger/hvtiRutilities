@@ -45,11 +45,7 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          # roxygen2 is pinned: it stamps its own version into DESCRIPTION,
-          # so an unpinned upgrade makes the roxygen-currency check fail on a
-          # version bump rather than a doc change. devtools pulls it in
-          # transitively, which is how it went unpinned.
-          extra-packages: any::rcmdcheck, any::devtools, any::roxygen2@8.1.0
+          extra-packages: any::rcmdcheck
           needs: check
 
       # Install the package into the user library so that Quarto's subprocess

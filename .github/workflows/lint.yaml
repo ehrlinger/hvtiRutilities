@@ -53,7 +53,8 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          # roxygen2 is pinned: it stamps its own version into DESCRIPTION, so
+          # roxygen2 is pinned because it stamps its own version into
+          # DESCRIPTION (Config/roxygen2/version), so
           # an unpinned upgrade fails this check on a version bump rather than
           # a doc change.
           extra-packages: any::roxygen2@8.1.0, local::.
