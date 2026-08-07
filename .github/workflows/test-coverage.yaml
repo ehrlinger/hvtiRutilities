@@ -38,15 +38,6 @@ jobs:
           covr::to_cobertura(cov)
         shell: Rscript {0}
 
-      - uses: codecov/codecov-action@v4
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          # Fail if error if not on PR, or if on PR and token is given
-          fail_ci_if_error: ${{ github.event_name != 'pull_request' || secrets.CODECOV_TOKEN }}
-          file: ./cobertura.xml
-          plugin: noop
-          disable_search: true
-
       - name: Show testthat output
         if: always()
         run: |
@@ -65,3 +56,13 @@ jobs:
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./cobertura.xml
+          disable_search: true
+          # Fail the build only when a token is configured and the upload
+          # still errors -- a missing token should never fail CI, on a PR
+          # or otherwise. (The prior `event_name != 'pull_request' || ...`
+          # form was unconditionally true on every push regardless of token
+          # state, defeating that intent, and risked evaluating to the raw
+          # token string rather than a boolean.) A single `!=` comparison
+          # can only ever evaluate to `true`/`false`.
+          fail_ci_if_error: ${{ secrets.CODECOV_TOKEN != '' }}
