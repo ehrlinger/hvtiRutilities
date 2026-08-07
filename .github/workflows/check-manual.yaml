@@ -43,9 +43,6 @@ jobs:
 
       - uses: r-lib/actions/setup-tinytex@v2
 
-      - name: Generate documentation
-        run: Rscript -e 'devtools::document()'
-
       # Install the package into the user library so that Quarto's subprocess
       # can resolve library(hvtiRutilities) during vignette rendering.
       - name: Install package for vignette rendering

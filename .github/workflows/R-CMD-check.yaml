@@ -52,9 +52,6 @@ jobs:
           extra-packages: any::rcmdcheck, any::devtools, any::roxygen2@8.1.0
           needs: check
 
-      - name: Generate documentation
-        run: Rscript -e 'devtools::document()'
-
       # Install the package into the user library so that Quarto's subprocess
       # can resolve library(hvtiRutilities) during vignette rendering on Windows.
       - name: Install package for vignette rendering
