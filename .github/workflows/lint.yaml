@@ -58,6 +58,14 @@ jobs:
           # an unpinned upgrade fails this check on a version bump rather than
           # a doc change.
           extra-packages: any::roxygen2@8.1.0, local::.
+          # roxygenise() only needs this package's Imports loadable. The
+          # action defaults to dependencies: "all", which additionally pulls
+          # every Suggests -- tidyverse, randomForestSRC, varPro, writexl --
+          # and their system requirements, so a job whose real work is a
+          # one-second git diff waits on a long apt queue. hvtiRdatasets was
+          # stranded there for 32 minutes on 2026-08-07 when a mirror
+          # degraded; nothing in R/ references a Suggests package.
+          dependencies: '"hard"'
 
       - name: Documentation is current
         run: |
