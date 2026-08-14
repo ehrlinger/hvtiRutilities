@@ -58,11 +58,19 @@
 #' proc_means(dta, vars = c("age", "bmi"),
 #'            stats = c("n", "mean", "median", "p15"))
 proc_means <- function(data, vars = NULL, class = NULL,
-                       stats = c("n", "mean", "std", "min", "max")) {
+                       stats = c("n", "mean", "std", "min", "max"),
+                       weights = NULL) {
   if (!is.data.frame(data)) {
     stop("'data' must be a data frame.", call. = FALSE)
   }
   .validate_stats(stats)
+
+  wvec <- .validate_weights(weights, data)
+  if (!is.null(wvec)) {
+    keep_w <- !is.na(wvec)
+    data <- data[keep_w, , drop = FALSE]
+    wvec <- wvec[keep_w]
+  }
 
   if (!is.null(class)) {
     .check_columns(class, data)
@@ -70,7 +78,7 @@ proc_means <- function(data, vars = NULL, class = NULL,
 
   if (is.null(vars)) {
     numeric_cols <- names(data)[vapply(data, is.numeric, logical(1))]
-    vars <- setdiff(numeric_cols, class)
+    vars <- setdiff(numeric_cols, c(class, weights))
   } else {
     .check_columns(vars, data)
     usable <- vapply(data[vars], function(x) is.numeric(x) || is.logical(x),
@@ -79,6 +87,12 @@ proc_means <- function(data, vars = NULL, class = NULL,
       stop("Non-numeric column(s) named in 'vars': ",
            paste(vars[!usable], collapse = ", "), call. = FALSE)
     }
+  }
+
+  if (!is.null(weights) && weights %in% c(vars, class)) {
+    stop("Weight column '", weights,
+         "' is also named in 'vars' or 'class'. A column cannot be both a ",
+         "weight and an analysis or class variable.", call. = FALSE)
   }
 
   if (length(vars) == 0L) {
@@ -94,6 +108,9 @@ proc_means <- function(data, vars = NULL, class = NULL,
   if (!is.null(class) && length(class) > 0L) {
     keep <- stats::complete.cases(data[, class, drop = FALSE])
     data <- data[keep, , drop = FALSE]
+    if (!is.null(wvec)) {
+      wvec <- wvec[keep]
+    }
     groups <- unique(data[, class, drop = FALSE])
     groups <- groups[do.call(base::order,
                              c(unname(as.list(groups)),
@@ -114,12 +131,13 @@ proc_means <- function(data, vars = NULL, class = NULL,
   for (v in vars) {
     if (is.null(groups)) {
       rows[[length(rows) + 1L]] <-
-        .means_row(data[[v]], v, unname(labels[v]), stats)
+        .means_row(data[[v]], v, unname(labels[v]), stats, wvec)
     } else {
       for (i in seq_len(nrow(groups))) {
         rows[[length(rows) + 1L]] <- cbind(
           groups[i, , drop = FALSE],
-          .means_row(data[[v]][grp_idx[[i]]], v, unname(labels[v]), stats),
+          .means_row(data[[v]][grp_idx[[i]]], v, unname(labels[v]), stats,
+                     if (is.null(wvec)) NULL else wvec[grp_idx[[i]]]),
           stringsAsFactors = FALSE
         )
       }
@@ -145,6 +163,36 @@ proc_means <- function(data, vars = NULL, class = NULL,
          paste(absent, collapse = ", "), call. = FALSE)
   }
   invisible(TRUE)
+}
+
+## Internal: validate the weights argument and return the weight vector.
+##
+## Non-positive weights are an error rather than a silent coercion. SAS's own
+## handling varies across procedures and versions -- "negative treated as zero",
+## "non-positive excluded", "excluded from N but not NOBS" -- so failing loudly
+## is preferred to encoding a guess and calling it parity. This can be relaxed
+## once the Phase 1 SAS oracle can settle it; because the current behaviour is an
+## error, no existing result changes silently when it is.
+.validate_weights <- function(weights, data) {
+  if (is.null(weights)) {
+    return(NULL)
+  }
+  if (!is.character(weights) || length(weights) != 1L) {
+    stop("'weights' must be a single column name.", call. = FALSE)
+  }
+  .check_columns(weights, data)
+
+  w <- data[[weights]]
+  if (!is.numeric(w)) {
+    stop("Weight column '", weights, "' must be numeric.", call. = FALSE)
+  }
+  bad <- which(!is.na(w) & w <= 0)
+  if (length(bad) > 0L) {
+    stop("Weight column '", weights, "' has non-positive value(s) at row(s): ",
+         paste(bad, collapse = ", "),
+         ". Weights must be positive.", call. = FALSE)
+  }
+  w
 }
 
 ## Internal: weighted mean, or the plain mean when w is NULL
@@ -220,6 +268,12 @@ proc_means <- function(data, vars = NULL, class = NULL,
   nobs = list(
     fun = function(x, v, w) length(x),
     weighted = FALSE, integer = TRUE
+  ),
+  sumwgt = list(
+    fun = function(x, v, w) {
+      if (length(v) == 0L) NA_real_ else if (is.null(w)) length(v) else sum(w)
+    },
+    weighted = TRUE, integer = FALSE
   ),
   mean = list(
     fun = function(x, v, w) if (length(v) == 0L) NA_real_ else .wmean(v, w),
@@ -371,8 +425,8 @@ proc_means <- function(data, vars = NULL, class = NULL,
 }
 
 ## Internal: one output row for one variable
-.means_row <- function(x, variable, label, stats) {
-  vals <- lapply(stats, function(s) .compute_stat(x, s))
+.means_row <- function(x, variable, label, stats, w = NULL) {
+  vals <- lapply(stats, function(s) .compute_stat(x, s, w))
   names(vals) <- stats
   cbind(
     data.frame(variable = variable, label = label, stringsAsFactors = FALSE),

@@ -4,8 +4,8 @@ library(hvtiRutilities)
 test_that(".STATS declares every non-quantile keyword", {
   expect_setequal(
     names(hvtiRutilities:::.STATS),
-    c("n", "nmiss", "nobs", "mean", "std", "min", "max", "sum", "range",
-      "stderr", "cv", "var", "uss", "css", "skewness", "kurtosis",
+    c("n", "nmiss", "nobs", "sumwgt", "mean", "std", "min", "max", "sum",
+      "range", "stderr", "cv", "var", "uss", "css", "skewness", "kurtosis",
       "qrange", "mode", "median", "q1", "q3")
   )
 })
@@ -22,8 +22,8 @@ test_that(".STATS marks exactly the integer-typed statistics", {
 test_that(".STATS marks exactly the weight-responsive statistics", {
   wtd <- Filter(function(s) s$weighted, hvtiRutilities:::.STATS)
   expect_setequal(names(wtd),
-                  c("mean", "std", "sum", "stderr", "cv", "var", "uss", "css",
-                    "skewness", "kurtosis"))
+                  c("sumwgt", "mean", "std", "sum", "stderr", "cv", "var",
+                    "uss", "css", "skewness", "kurtosis"))
 })
 
 test_that(".compute_stat accepts a weights argument positionally after stat", {
