@@ -1,0 +1,3 @@
+%macro dotted(b=2);
+  data y; run;
+%mend dotted;

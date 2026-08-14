@@ -74,6 +74,15 @@ reference:
   - generate_survival_data
   - sample_data
 
+- title: SAS Macro Canonicalization
+  desc: Inventory a legacy SAS macro library and resolve name collisions
+  contents:
+  - sas_triage
+  - sas_macro_defs
+  - sas_macro_signature
+  - write_macro_manifest
+  - write_collision_report
+
 - title: Package Utilities
   contents:
   - hvtiRutilities-package

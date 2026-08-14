@@ -54,7 +54,36 @@
 }
 
 ## =============================================================================
-## Internal: enumerate immediate subdirectories and count the .sas files they
+## Internal: suffixes that never hold SAS source -- logs, listings, documents,
+## binary data sets, and numbered RCS backups (`kaplan.~1.1.1.1.~`).
+## A trailing `~` is allowed on each suffix: `run.log~` is an editor backup of a
+## log, and excluding it here records it as non-source rather than letting rule 2
+## drop it as an "editor backup", which would be true but misleading evidence.
+.NON_SOURCE_RE <- paste0(
+  "\\.(log|lst|txt|doc|docx|pdf|ps|cgm|emf|wmf|png|jpg|gif|",
+  "sas7bdat|sas7bcat|bak|save|asv|xls|xlsx|csv|rtf|zip)~?$",
+  "|\\.~[0-9.]+~$"
+)
+
+## Internal: enumerate candidate SAS source files at the top level of `dir`.
+##
+## Discovery is a denylist, not a `\\.sas$` allowlist. The macro library uses
+## dots as word separators in filenames -- `deciles.hazard`, `lm.cprobs` and
+## `kaplan.int` are names, not stems with extensions -- and 58 macro-bearing
+## files carry no extension at all. An allowlist silently drops both
+## populations, including `unistats`, the closest analogue to proc_means().
+##
+## Anything that survives the denylist goes through the rule ladder, so a file
+## that turns out not to be SAS is dropped by .sas_lint() with recorded
+## evidence rather than skipped in silence.
+.sas_source_files <- function(dir, recursive = FALSE) {
+  found <- list.files(dir, full.names = TRUE, recursive = recursive)
+  found <- found[!dir.exists(found)]
+  found[!grepl(.NON_SOURCE_RE, basename(found), ignore.case = TRUE)]
+}
+
+## =============================================================================
+## Internal: enumerate immediate subdirectories and count the source files they
 ## hold. sas_triage() scans only the top level; these counts are recorded so
 ## that excluded files are visible in the artifacts rather than silently absent.
 .scan_excluded_dirs <- function(dir) {
@@ -67,8 +96,7 @@
   }
 
   counts <- vapply(subs, function(s) {
-    length(list.files(s, pattern = "\\.sas$", ignore.case = TRUE,
-                      recursive = TRUE))
+    length(.sas_source_files(s, recursive = TRUE))
   }, integer(1))
 
   out <- data.frame(
@@ -109,12 +137,19 @@
 #' Triage a directory of legacy SAS macro files
 #'
 #' @description
-#' Applies an ordered rule ladder to every `.sas` file in \code{dir} and returns
-#' one row per macro definition, each carrying a \code{decision} and the
+#' Applies an ordered rule ladder to every SAS source file in \code{dir} and
+#' returns one row per macro definition, each carrying a \code{decision} and the
 #' \code{evidence} that justifies it.
 #'
 #' @details
 #' Only the top level of \code{dir} is scanned; subdirectories are ignored.
+#'
+#' Candidate files are selected by excluding known non-source suffixes (logs,
+#' listings, documents, binary data sets, numbered RCS backups) rather than by
+#' matching \code{.sas}. The library names files with dots as word separators
+#' -- \code{deciles.hazard} and \code{lm.cprobs} are names, not stems with
+#' extensions -- and many macro files carry no extension at all, so a
+#' \code{.sas}-only pattern silently omits them.
 #'
 #' File-level rules, applied first, in order:
 #' \enumerate{
@@ -141,7 +176,7 @@
 #' Ambiguity is resolved by a human writing an entry into \code{overrides} and
 #' re-running. This makes the result reproducible and auditable.
 #'
-#' @param dir Character. Path to a directory of `.sas` files. Use a local clone;
+#' @param dir Character. Path to a directory of SAS source files. Use a local clone;
 #'   the canonical library lives on a network volume where file operations are
 #'   slow.
 #' @param overrides Character or \code{NULL}. Path to a `macro_overrides.yaml`
@@ -165,10 +200,9 @@
 #'
 #' @importFrom stats setNames
 sas_triage <- function(dir, overrides = NULL) {
-  files <- list.files(dir, pattern = "\\.sas~?$", ignore.case = TRUE,
-                      full.names = TRUE)
+  files <- .sas_source_files(dir)
   if (length(files) == 0L) {
-    stop("no .sas files found in: ", dir, call. = FALSE)
+    stop("no SAS source files found in: ", dir, call. = FALSE)
   }
   ov <- .read_overrides(overrides)
 
