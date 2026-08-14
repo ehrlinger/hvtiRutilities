@@ -96,3 +96,25 @@ test_that("a missing weight and a missing class value filter independently", {
   # weighted mean of y: (3*4 + 4*5) / 7 = 32/7
   expect_equal(res$mean[res$g == "y"], 32 / 7)
 })
+
+test_that("variable labels survive a weighted call", {
+  d <- data.frame(age = c(51, 63, 47, 72), wt = c(1, 2, 1, 4))
+  labelled::var_label(d$age) <- "Age at baseline"
+  res <- proc_means(d, vars = "age", stats = c("n", "mean"), weights = "wt")
+  expect_equal(res$label, "Age at baseline")
+})
+
+test_that("variable labels survive a weighted call with a missing weight", {
+  d <- data.frame(age = c(51, 63, 47, 72), wt = c(1, NA, 1, 4))
+  labelled::var_label(d$age) <- "Age at baseline"
+  res <- proc_means(d, vars = "age", stats = c("n", "mean"), weights = "wt")
+  expect_equal(res$label, "Age at baseline")
+  expect_equal(res$n, 3L)
+})
+
+test_that("sumwgt is numeric whether or not weights are supplied", {
+  d <- data.frame(a = c(1, 2, 3, 4), wt = c(1, 1, 2, 4))
+  expect_type(proc_means(d, vars = "a", stats = "sumwgt")$sumwgt, "double")
+  expect_type(proc_means(d, vars = "a", stats = "sumwgt", weights = "wt")$sumwgt,
+              "double")
+})

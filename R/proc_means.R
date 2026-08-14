@@ -103,6 +103,8 @@ proc_means <- function(data, vars = NULL, class = NULL,
   }
   .validate_stats(stats)
 
+  labels <- labelled::var_label(data, unlist = TRUE, null_action = "fill")
+
   wvec <- .validate_weights(weights, data)
   if (!is.null(wvec)) {
     keep_w <- !is.na(wvec)
@@ -138,8 +140,6 @@ proc_means <- function(data, vars = NULL, class = NULL,
             call. = FALSE)
     return(.empty_means(class, stats))
   }
-
-  labels <- labelled::var_label(data, unlist = TRUE, null_action = "fill")
 
   groups <- NULL
   grp_idx <- NULL
@@ -309,7 +309,7 @@ proc_means <- function(data, vars = NULL, class = NULL,
   ),
   sumwgt = list(
     fun = function(x, v, w) {
-      if (length(v) == 0L) NA_real_ else if (is.null(w)) length(v) else sum(w)
+      if (length(v) == 0L) NA_real_ else if (is.null(w)) as.numeric(length(v)) else sum(w)
     },
     weighted = TRUE, integer = FALSE
   ),

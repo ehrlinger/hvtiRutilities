@@ -25,6 +25,12 @@
   The `PROC UNIVARIATE` inference statistics remain out of scope. See
   `specs/2026-08-14-proc-means-unistats-design.md`.
 
+## Bug fixes
+
+- `proc_means()`: `cv` now returns `NA` when the mean is zero, matching SAS.
+  R's arithmetic gives `Inf`, which asserts an infinite coefficient of
+  variation where SAS reports the value as undefined.
+
 ## Internal changes
 
 - `proc_means()` statistics are dispatched through a `.STATS` registry that
