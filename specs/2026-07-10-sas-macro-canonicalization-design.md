@@ -22,6 +22,11 @@ project:
 | SAS templates (`development/template`) | 229 |
 | R / Quarto / Sweave templates | 48 `.R`, 7 `.qmd`, 2 `.Rnw`, 2 `.Rmd` |
 
+The first two rows are **superseded** — the shipped implementation triages 336
+files carrying 816 definitions across 307 names. See *Amendments* for why the
+original glob undercounted. The rows are left as written so the correction is
+legible rather than silently applied.
+
 The program decomposes along the `tp.<prefix>` naming convention the template
 repo already encodes:
 
@@ -52,6 +57,18 @@ repo already encodes:
   (`dw_pull()`, `read_study_config()`, `snapshot_oracle()`, `compare_built()`) —
   and **`dc` is `hvtiRtables`**, not a descriptive corner of `hvtiRutilities`.
 
+`TemporalHazard` (v1.1.0.9000, 27 R files) is a CRAN-target package. Anything
+ported into it inherits the full release gate: `R CMD check --as-cran` with the
+manual build, and an overall check-time budget under 10 minutes. This
+constrains Phase 2 design and is recorded here so it is not discovered late.
+
+Phase 0 must complete before Phase 1, because a golden output computed from a
+non-canonical macro is confidently wrong and poisons every phase downstream.
+
+Phase 0 itself has **no SAS dependency** (see *Heuristic lint*), so it runs
+entirely on the R development workstation and is unaffected by SAS living
+elsewhere.
+
 ### Shared assets are not sorted by prefix
 
 Prefix sorting applies to *jobs*. It does not apply to assets that every job
@@ -78,18 +95,6 @@ the `vars` prefix, and goes to **`hvtiRutilities`**, where it lands beside
 
 The rule to carry into Phase 2: **a file with no `%macro` definition is an asset,
 not a port target.** Route it by who loads it, not by which analyses use it.
-
-`TemporalHazard` (v1.1.0.9000, 27 R files) is a CRAN-target package. Anything
-ported into it inherits the full release gate: `R CMD check --as-cran` with the
-manual build, and an overall check-time budget under 10 minutes. This
-constrains Phase 2 design and is recorded here so it is not discovered late.
-
-Phase 0 must complete before Phase 1, because a golden output computed from a
-non-canonical macro is confidently wrong and poisons every phase downstream.
-
-Phase 0 itself has **no SAS dependency** (see *Heuristic lint*), so it runs
-entirely on the R development workstation and is unaffected by SAS living
-elsewhere.
 
 ## Problem
 
