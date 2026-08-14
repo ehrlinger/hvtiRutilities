@@ -74,3 +74,25 @@ test_that("naming the weight column in class is an error", {
                           weights = "wt"),
                "also named in 'vars' or 'class'")
 })
+
+test_that("a missing weight and a missing class value filter independently", {
+  # Row 2 has a missing weight; row 3 has a missing class value. Both filters
+  # must fire, and the weight vector must stay aligned with the data through
+  # both. Surviving rows: 1 (x, wt 1), 4 (y, wt 3), 5 (y, wt 4).
+  dcw <- data.frame(
+    a  = c(1, 2, 3, 4, 5),
+    g  = c("x", "x", NA, "y", "y"),
+    wt = c(1, NA, 2, 3, 4)
+  )
+  res <- proc_means(dcw, vars = "a", class = "g",
+                    stats = c("n", "sumwgt", "mean"), weights = "wt")
+
+  expect_equal(res$n[res$g == "x"], 1L)
+  expect_equal(res$sumwgt[res$g == "x"], 1)
+  expect_equal(res$mean[res$g == "x"], 1)
+
+  expect_equal(res$n[res$g == "y"], 2L)
+  expect_equal(res$sumwgt[res$g == "y"], 7)
+  # weighted mean of y: (3*4 + 4*5) / 7 = 32/7
+  expect_equal(res$mean[res$g == "y"], 32 / 7)
+})
