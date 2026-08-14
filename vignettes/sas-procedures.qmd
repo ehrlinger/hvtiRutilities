@@ -1,0 +1,356 @@
+---
+title: "PROC CONTENTS and PROC MEANS in R"
+author: "John Ehrlinger"
+date: today
+format: html
+vignette: >
+  %\VignetteIndexEntry{PROC CONTENTS and PROC MEANS in R}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r load}
+if (requireNamespace("hvtiRutilities", quietly = TRUE)) {
+  library("hvtiRutilities")
+} else {
+  pkgload::load_all(export_all = FALSE, helpers = FALSE, quiet = TRUE)
+}
+```
+
+## Two Procedures You Already Run
+
+Open a new extract in SAS and you almost certainly run two things before
+anything else. `PROC CONTENTS` to see what arrived: how many observations, how
+many variables, what each one is called and how it is stored. Then `PROC MEANS`
+to see whether the numbers are plausible: means, ranges, how much is missing.
+
+Neither is a modelling step. They are the sanity check you do before you trust
+the file enough to analyse it. `proc_contents()` and `proc_means()` are those
+two habits, kept intact in R.
+
+The point is not that R lacks a way to describe a data frame. It has several.
+The point is that you already know what these two tables should look like, and
+when the R version prints the same numbers in the same shape, you can tell at a
+glance whether the extract is right. A different summary in a different layout
+makes you re-learn what "normal" looks like.
+
+We will use the simulated cardiac surgery cohort that ships with the package,
+so every example here runs as written:
+
+```{r data}
+dta <- generate_survival_data(n = 200, seed = 42)
+```
+
+## What Arrived? `proc_contents()`
+
+In SAS you would write:
+
+```sas
+proc contents data=cohort;
+run;
+```
+
+In R:
+
+```{r contents-basic}
+pc <- proc_contents(dta)
+pc$header
+```
+
+The header is the block SAS prints at the top: observation count, variable
+count, and the dataset label if the file carries one. Our simulated cohort has
+no dataset label, so it reports `NA`.
+
+The variables table is the *Alphabetic List of Variables and Attributes*.
+Like SAS, it sorts by name by default:
+
+```{r contents-vars}
+head(proc_contents(dta)$variables, 6)
+```
+
+Pass `order = "varnum"` for creation order, the equivalent of the SAS
+`VARNUM` option:
+
+```{r contents-varnum}
+head(proc_contents(dta, order = "varnum")$variables, 8)
+```
+
+Note that `num` always reports creation position, whichever sort you asked
+for. Sorting alphabetically does not renumber the variables, so you can read a
+name off the alphabetical list and still know where it sits in the record.
+
+### Reading the Extra Columns
+
+Three columns are not in the SAS output, and they are the reason to run this
+in R rather than reading a `PROC CONTENTS` listing:
+
+- **`class`** is the R class, sitting next to the SAS `type`. You want both,
+  for reasons covered in the next section.
+- **`n_unique`** counts distinct non-missing values. A numeric column with two
+  distinct values is a flag someone forgot to declare; a character column with
+  199 distinct values out of 200 rows is an identifier, not a category.
+- **`pct_missing`** is completeness, and it is often the most useful number on
+  the page. In our cohort:
+
+```{r contents-missing}
+pcv <- proc_contents(dta)$variables
+pcv[pcv$pct_missing > 0, c("variable", "label", "pct_missing")]
+```
+
+`iv_reop` is 83.5% missing, and that is correct rather than broken: it is
+time-to-reoperation, which only exists for the patients who had one. But you
+want to *see* that before you put the variable in a model, not discover it when
+the model silently drops 167 rows.
+
+### Where the SAS Original Has More
+
+`proc_contents()` does not report `Len`, `Pos`, or `Informat`, and it omits the
+created and modified timestamps. This is a deliberate omission, not an
+oversight.
+
+Reading a `.sas7bdat` through `haven` is lossy. Variable name, label,
+`format.sas`, and creation order survive the trip. Storage `LENGTH`, position
+within the observation, and informat do not. We could infer a length from the
+data, but an inferred value would look authoritative and would disagree with
+the source dataset every time its `LENGTH` statement differed from the default.
+A missing column is easier to work around than a wrong one that looks right.
+
+So if you need the storage layout of the original file, read it from SAS. For
+everything you actually use `PROC CONTENTS` for day to day, it is here.
+
+### `Type` Is Two-Valued, and That Hides Things
+
+SAS has two variable types, `Num` and `Char`. R has many. The mapping is
+therefore lossy in the honest direction: `character` and `factor` report
+`Char`, and everything else, including `logical`, `Date`, and `POSIXct`,
+reports `Num`.
+
+A SAS date *is* a number carrying a date format, so this is faithful. But it
+means `type` alone cannot tell you a date from a lab value. That is exactly why
+`class` sits beside it:
+
+```{r contents-types}
+dates <- data.frame(
+  visit = as.Date(c("2024-01-15", "2024-02-20")),
+  flag  = c(TRUE, FALSE),
+  score = c(2.5, 3.1)
+)
+proc_contents(dates)$variables[, c("variable", "type", "class")]
+```
+
+Read the two columns together. `type` tells you what SAS would call it;
+`class` tells you what R will actually do with it.
+
+One edge case worth knowing before you hit it: for a data frame with columns
+but zero rows, a fully filtered cohort say, `pct_missing` is `NaN` rather than
+`0`. The proportion of missing values among no values is undefined, and
+reporting `0` would claim that nothing is missing. If you are formatting this
+column for a report, handle `NaN` explicitly.
+
+## Do the Numbers Look Right? `proc_means()`
+
+The SAS default:
+
+```sas
+proc means data=cohort;
+run;
+```
+
+gives you N, mean, standard deviation, minimum, and maximum over every numeric
+variable. So does the R default:
+
+```{r means-default}
+proc_means(dta, vars = c("age", "bmi", "gfr_bs"))
+```
+
+Omit `vars` and every numeric column is analysed, matching SAS's behaviour when
+you leave out the `VAR` statement. Ask for specific statistics and you get them
+in the order you asked, the same way a `PROC MEANS` statistic list works:
+
+```{r means-stats}
+proc_means(dta, vars = c("age", "bmi"),
+           stats = c("n", "nmiss", "mean", "median", "q1", "q3"))
+```
+
+The keywords are SAS keywords: `n`, `nmiss`, `mean`, `std`, `min`, `max`,
+`sum`, `range`, `stderr`, `cv`, `median`, `q1`, `q3`, and any `pNN` for a
+percentile between 1 and 99.
+
+```{r means-pctl}
+proc_means(dta, vars = "bypass_time", stats = c("p5", "p50", "p95"))
+```
+
+### Stratifying with `class`
+
+The `CLASS` statement becomes the `class` argument:
+
+```sas
+proc means data=cohort;
+  class nyha_class;
+  var age;
+run;
+```
+
+```{r means-class}
+proc_means(dta, vars = "age", class = "nyha_class",
+           stats = c("n", "mean", "std", "median", "q1", "q3"))
+```
+
+Two behaviours here are inherited from SAS on purpose.
+
+Rows with a missing value in any class variable are dropped, which is what
+`PROC MEANS` does unless you add `MISSING`. And the class levels come out in
+declared order rather than alphabetically, matching SAS's default
+`ORDER=INTERNAL`. That is why NYHA class reads I, II, III, IV above instead of
+sorting to I, II, III, IV by luck. Give the function an ordered factor and your
+clinical scales stay in clinical sequence.
+
+Rows are ordered by analysis variable first, then by class level, so a
+multi-variable request stays readable:
+
+```{r means-class-multi}
+proc_means(dta, vars = c("age", "bmi"), class = "sex",
+           stats = c("n", "mean", "std"))
+```
+
+### The Quartile Trap
+
+This is the one thing in this vignette that will silently change your numbers,
+so it gets its own section.
+
+SAS and R do not compute quantiles the same way. There are nine defensible
+estimators for a sample quantile; SAS defaults to `QNTLDEF=5`, and R's
+`quantile()` defaults to `type = 7`. They are different estimators, and they
+disagree.
+
+Watch what happens on four observations:
+
+```{r quantile-trap}
+x <- c(1, 2, 3, 4)
+
+# SAS QNTLDEF=5, which is what proc_means() uses
+quantile(x, c(0.25, 0.5, 0.75), type = 2, names = FALSE)
+
+# R's default
+quantile(x, c(0.25, 0.5, 0.75), type = 7, names = FALSE)
+```
+
+The first quartile is 1.5 in SAS and 1.75 under R's default. The median agrees.
+That is precisely why the discrepancy hides: you check the median, it matches,
+you conclude the port is fine, and the quartiles in your Table 1 are quietly
+off.
+
+`proc_means()` uses `type = 2` throughout, so its `q1`, `q3`, `median`, and any
+`pNN` reproduce SAS. On our cohort the gap is small but real:
+
+```{r quantile-real}
+proc_means(dta, vars = "age", stats = c("q1", "median", "q3"))
+
+quantile(dta$age, c(0.25, 0.5, 0.75), type = 7, names = FALSE)
+```
+
+35.85 against 35.875. Small enough to survive rounding in a manuscript table,
+large enough to fail a `PROC COMPARE` against the SAS baseline. The divergence
+grows on small and even-numbered samples, which is to say on subgroups.
+
+If you compute a quantile yourself anywhere else in the analysis, pass
+`type = 2` and you will stay consistent with both `proc_means()` and the SAS
+original.
+
+### Logical Columns
+
+R logicals are not `is.numeric()`, so they are left out of the default variable
+set. Name one in `vars` and it is coerced to 0/1, which makes `mean` a
+proportion, as `PROC MEANS` would report for a 0/1 numeric flag:
+
+```{r means-logical}
+flags <- data.frame(complication = c(TRUE, FALSE, TRUE, TRUE, FALSE))
+proc_means(flags, vars = "complication", stats = c("n", "mean", "sum"))
+```
+
+## Did the Extract Change? `compare_datasets()`
+
+`PROC CONTENTS` on the old file, `PROC CONTENTS` on the new one, then read the
+two listings side by side looking for what moved. `compare_datasets()` does the
+reading for you:
+
+```{r compare}
+v1 <- generate_survival_data(n = 100, seed = 1)
+v2 <- generate_survival_data(n = 120, seed = 2)
+
+# Pretend the new extract gained a variable and lost one
+v2$creatinine <- rnorm(120, 1.1, 0.3)
+v2$reop <- NULL
+
+compare_datasets(v1, v2)
+```
+
+It reports four kinds of drift: row count, columns added or dropped, class
+changes on shared columns, and label changes on shared columns. The last one
+matters more than it sounds. A label that changes from "Baseline eGFR" to
+"eGFR at discharge" is the same column name measuring a different thing, and
+nothing but the label will tell you.
+
+The full result is a list, so you can act on any piece programmatically:
+
+```{r compare-parts}
+diff <- compare_datasets(v1, v2)
+diff$cols_added
+diff$cols_dropped
+diff$type_changes
+```
+
+This pairs directly with the manifest system described in the
+[Dataset Version Tracking](dataset-versioning.html) vignette. The manifest tells
+you *that* a file changed, by checksum. `compare_datasets()` tells you *what*
+changed inside it.
+
+## Where the R Version Differs
+
+A summary of every place these functions depart from the SAS original, so you
+can check the list rather than discover an entry mid-analysis.
+
+| Behaviour | SAS | `hvtiRutilities` |
+|---|---|---|
+| Quantile estimator | `QNTLDEF=5` | `type = 2`, the same estimator |
+| Default `PROC MEANS` statistics | N, Mean, Std Dev, Min, Max | Same five |
+| Variables with no `VAR` statement | All numeric | All numeric (logicals excluded unless named) |
+| Missing class levels | Dropped unless `MISSING` | Dropped |
+| Class level order | `ORDER=INTERNAL` | Factor level order |
+| `PROC CONTENTS` sort | Alphabetic by default | `order = "alpha"` by default |
+| `Len`, `Pos`, `Informat` | Reported | Omitted, not recoverable through `haven` |
+| Created / modified timestamps | Reported | Omitted, not recoverable through `haven` |
+| `Type` for dates | `Num` | `Num`, with the R class in `class` |
+| `pct_missing` on a zero-row table | n/a | `NaN`, not `0` |
+
+## Checklist
+
+- [ ] Run `proc_contents()` on every new extract before analysing it, the same
+      way you would run `PROC CONTENTS`.
+- [ ] Read `pct_missing` before choosing model variables, and confirm that any
+      high-missing column is missing *by design*.
+- [ ] Read `type` and `class` together; `type` alone cannot distinguish a date
+      from a number.
+- [ ] Use `proc_means()` quartiles rather than a bare `quantile()` call, and
+      pass `type = 2` anywhere else you compute one.
+- [ ] Declare ordered clinical scales as ordered factors so `class` output
+      keeps its clinical sequence.
+- [ ] Run `compare_datasets()` on every re-pull, and check `label_changes`,
+      not just the column counts.
+
+## See Also
+
+- `?proc_contents`, `?proc_means`, `?compare_datasets`
+- [Dataset Version Tracking](dataset-versioning.html) for the manifest system
+  that pairs with `compare_datasets()`
+- [Data Label Handling Best Practices](data-labels.html) for the labels these
+  functions report
+- [Reproducible Seeds in R and SAS](reproducible-seeds.html) for the other half
+  of keeping an R analysis reconcilable against SAS

@@ -161,8 +161,8 @@ lmap <- label_map(model_data)
 
 ## Getting Help
 
-- Package documentation: `?r_data_types`, `?label_map`, `?generate_survival_data`
-- Vignettes: `vignette("hvtiRutilities")`, `vignette("survival-data")`
+- Package documentation: `?r_data_types`, `?label_map`, `?proc_contents`, `?proc_means`
+- Vignettes: `vignette("hvtiRutilities")`, `vignette("sas-procedures")`, `vignette("dataset-versioning")`
 - For bug reports and feature requests: [GitHub Issues](https://github.com/ehrlinger/hvtiRutilities/issues)
 - For package news and changes: Run `hvtiRutilities.news()` in R
 

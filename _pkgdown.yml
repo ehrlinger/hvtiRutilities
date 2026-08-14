@@ -46,6 +46,10 @@ navbar:
         - text: "Dataset Version Tracking"
           href: articles/dataset-versioning.html
         - text: "---"
+        - text: "SAS Migration"
+        - text: "PROC CONTENTS and PROC MEANS in R"
+          href: articles/sas-procedures.html
+        - text: "---"
         - text: "Specialized Topics"
         - text: "Simulating Cardiac Surgery Survival Data"
           href: articles/survival-data.html
@@ -107,6 +111,10 @@ articles:
   contents:
   - data-labels
   - dataset-versioning
+
+- title: SAS Migration
+  contents:
+  - sas-procedures
 
 - title: Specialized Topics
   contents:
