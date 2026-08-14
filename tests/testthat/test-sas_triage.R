@@ -225,3 +225,97 @@ test_that("sas_triage attaches excluded directories as an attribute", {
   expect_s3_class(ex, "data.frame")
   expect_true(all(c("directory", "n_sas") %in% names(ex)))
 })
+
+# ---------------------------------------------------------------------------
+# Review of #42: a macro redefined inside a single file.
+#
+# SAS compiles definitions in order and the later replaces the earlier, so this
+# is deterministic and needs no human override. Before rule 3 existed, every
+# such row was marked canonical with the evidence "defined once", and the
+# collision report listed the name with `Files = 1` -- which is not an
+# %include ordering hazard and contradicted the report's own heading.
+# ---------------------------------------------------------------------------
+
+redef_dir <- function() {
+  d <- withr::local_tempdir(.local_envir = parent.frame())
+  writeLines(c("%macro edt(a=1);", "  data v1; run;", "%mend edt;",
+               "%macro edt(a=2);", "  data v2; run;", "%mend edt;",
+               "%macro edt(a=3);", "  data v3; run;", "%mend edt;"),
+             file.path(d, "one.sas"))
+  d
+}
+
+test_that("the last definition in a file wins, earlier ones are dropped", {
+  tri <- sas_triage(redef_dir())
+  rows <- tri[tri$macro == "edt", ]
+  rows <- rows[order(rows$line_start), ]
+
+  expect_equal(nrow(rows), 3L)
+  expect_equal(rows$decision, c("drop", "drop", "canonical"))
+  expect_true(all(rows$rule[1:2] == 3L))
+})
+
+test_that("a shadowed definition names the line that supersedes it", {
+  tri <- sas_triage(redef_dir())
+  rows <- tri[tri$macro == "edt", ]
+  rows <- rows[order(rows$line_start), ]
+
+  expect_match(rows$evidence[1], "redefined at line 7 of the same file")
+})
+
+test_that("the surviving definition does not claim it was defined once", {
+  # It is canonical, but "defined once" would contradict the two dropped rows
+  # sitting beside it in the manifest.
+  tri <- sas_triage(redef_dir())
+  rows <- tri[tri$macro == "edt", ]
+  win <- rows[rows$decision == "canonical", ]
+
+  expect_equal(nrow(win), 1L)
+  expect_match(win$evidence, "last of 3 definitions in the file")
+  expect_false(grepl("defined once", win$evidence))
+})
+
+test_that("a within-file redefinition is not a name collision", {
+  tri <- sas_triage(redef_dir())
+  p <- withr::local_tempfile(fileext = ".md")
+  write_collision_report(tri, p)
+
+  rep <- readLines(p)
+  expect_false(any(grepl("`edt`", rep, fixed = TRUE)))
+  expect_true(any(grepl("Total colliding names: 0", rep, fixed = TRUE)))
+})
+
+test_that("a genuine cross-file collision is still reported", {
+  d <- withr::local_tempdir()
+  writeLines(c("%macro dup;", "  data a; run;", "%mend dup;"),
+             file.path(d, "two.sas"))
+  writeLines(c("%macro dup;", "  data b; run;", "%mend dup;"),
+             file.path(d, "three.sas"))
+
+  tri <- sas_triage(d)
+  expect_true(all(tri$decision[tri$macro == "dup"] == "ambiguous"))
+
+  p <- withr::local_tempfile(fileext = ".md")
+  write_collision_report(tri, p)
+  rep <- readLines(p)
+  expect_true(any(grepl("| `dup` | 2 | 2 |", rep, fixed = TRUE)))
+})
+
+test_that("the collision report never lists a name found in one file", {
+  d <- withr::local_tempdir()
+  writeLines(c("%macro solo;", "  data a; run;", "%mend solo;",
+               "%macro solo;", "  data b; run;", "%mend solo;"),
+             file.path(d, "only.sas"))
+  writeLines(c("%macro pair;", "  data c; run;", "%mend pair;"),
+             file.path(d, "x.sas"))
+  writeLines(c("%macro pair;", "  data d; run;", "%mend pair;"),
+             file.path(d, "y.sas"))
+
+  p <- withr::local_tempfile(fileext = ".md")
+  write_collision_report(sas_triage(d), p)
+
+  rows <- grep("^\\| `", readLines(p), value = TRUE)
+  files_col <- vapply(strsplit(rows, "|", fixed = TRUE),
+                      function(x) trimws(x[[3]]), character(1))
+  expect_false(any(files_col == "1"))
+})

@@ -33,6 +33,15 @@
   balance is not a validity property of macro source, since `%do`-guarded blocks
   emit DO and END from separate branches.
 
+  **A macro redefined inside one file is resolved, not escalated.** SAS
+  compiles definitions in order and the later one replaces the earlier, so the
+  last definition in a file is what any `%include` of it actually gets. Rule 3
+  keeps that one and drops the rest, each carrying the line that supersedes it.
+  This is deliberately not a name collision: `write_collision_report()` lists
+  names found in more than one *file*, because those are the ones whose
+  behaviour depends on `%include` order. On the reference corpus 158 of the 816
+  definitions are shadowed this way, leaving 658 live.
+
   On the reference corpus of 336 files this inventories 816 macro definitions
   across 307 distinct names, rejecting 5 as genuinely defective:
   `bl_ord.norm.ci.sas`, `CR_compare_CP_test_AT.sas`, `rem.original`, `rem.uab`

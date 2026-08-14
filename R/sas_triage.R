@@ -255,9 +255,42 @@ sas_triage <- function(dir, overrides = NULL) {
   defs$rule <- NA_integer_
   defs$evidence <- NA_character_
 
+  ## --- rule 3b: a macro redefined within one file ---------------------------
+  ##
+  ## SAS compiles definitions in order and the later one replaces the earlier,
+  ## so this needs no human decision: the last definition in the file is what
+  ## any %include of it would actually get. Resolving it here also lets rules
+  ## 4-6 below assume one surviving definition per file, which is what their
+  ## file counts already implied.
+  ##
+  ## Earlier definitions are kept as rows rather than removed, so the manifest
+  ## still shows that the shadowing happened.
+  shadowed <- integer(0)
+  survivors <- integer(0)   # winner row -> how many definitions it beat
+  survivor_n <- integer(0)
+  key <- paste(defs$macro, defs$file, sep = "\r")
+  for (k in unique(key[duplicated(key)])) {
+    idx <- which(key == k)
+    idx <- idx[order(defs$line_start[idx])]
+    lose <- idx[-length(idx)]
+    win <- idx[length(idx)]
+    defs$decision[lose] <- "drop"
+    defs$rule[lose] <- 3L
+    defs$evidence[lose] <- sprintf(
+      "redefined at line %d of the same file; the later definition wins",
+      defs$line_start[win]
+    )
+    shadowed <- c(shadowed, lose)
+    survivors <- c(survivors, win)
+    survivor_n <- c(survivor_n, length(idx))
+  }
+  live <- if (length(shadowed) > 0L) -shadowed else seq_len(nrow(defs))
+
   ## --- definition-level rules 4-6 -------------------------------------------
-  for (m in unique(defs$macro)) {
-    idx <- which(defs$macro == m)
+  ## Operate on the surviving definitions only: a shadowed one is already
+  ## decided, and counting it would report collisions that SAS never sees.
+  for (m in unique(defs$macro[live])) {
+    idx <- intersect(which(defs$macro == m), seq_len(nrow(defs))[live])
     n_files <- length(unique(defs$file[idx]))
     n_bodies <- length(unique(defs$body_hash[idx]))
 
@@ -277,6 +310,17 @@ sas_triage <- function(dir, overrides = NULL) {
         n_bodies, n_files
       )
     }
+  }
+
+  ## A survivor of rule 3 is the only live definition, so rules 4-6 correctly
+  ## call it canonical -- but "defined once" would contradict the dropped rows
+  ## sitting beside it in the manifest. Say which it is instead.
+  for (j in seq_along(survivors)) {
+    i <- survivors[[j]]
+    defs$evidence[i] <- sprintf(
+      "last of %d definitions in the file; earlier ones are shadowed",
+      survivor_n[[j]]
+    )
   }
 
   ## --- apply human overrides ------------------------------------------------

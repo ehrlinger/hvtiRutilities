@@ -93,8 +93,14 @@ write_collision_report <- function(x, path) {
   # nzchar() excludes file-level drop rows (macro = ""); see write_macro_manifest.
   defs <- x[!is.na(x$macro) & nzchar(x$macro), , drop = FALSE]
 
-  counts <- table(defs$macro)
-  multi <- sort(names(counts[counts > 1L]))
+  ## Select on the number of *files*, which is what the report says it lists and
+  ## what makes a name %include order-dependent. Counting definitions instead
+  ## admitted macros redefined twice inside one file: they printed with
+  ## `Files = 1`, contradicting the heading, and they are not an ordering
+  ## hazard -- SAS just takes the later definition. sas_triage() decides those
+  ## under rule 3, and the manifest carries the evidence.
+  per_file <- tapply(defs$file, defs$macro, function(f) length(unique(f)))
+  multi <- sort(names(per_file[per_file > 1L]))
 
   lines <- c(
     "# SAS macro name-collision report",
