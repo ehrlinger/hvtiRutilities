@@ -1,8 +1,11 @@
 # SAS Macro Canonicalization (Phase 0)
 
 **Date:** 2026-07-10
-**Status:** Approved design, pending implementation plan
+**Status:** Implemented and shipped in `hvtiRutilities` 1.0.4
 **Package:** `hvtiRutilities`
+**Amended:** 2026-08-14 — Phase 2..N ownership map re-derived from
+`hvtiRtemplates::hvti_taxonomy()`, and a rule added for shared assets that carry
+no `%macro` definition. See *Amendments* below.
 
 ## Context
 
@@ -27,12 +30,54 @@ repo already encodes:
   golden-output corpus. **SAS runs on a separate system**, not on the
   workstation where the R packages are developed. Phase 1 must therefore treat
   harness execution as a cross-system transfer, not a local subprocess call.
-- **Phases 2..N** — port by prefix to package: `bd`/`vars`/`dt` →
-  `hvtiRutilities`; `hp`/`np`/`lp`/`dp`/`fp`/`cp`/`gp` → `hvtiPlotR`;
-  `lm`/`cm`/`pm`/`rm` → `hvtiPropensityScores`; `ac`/`hz`/`hs`/`nd`/`ce` →
-  `TemporalHazard`; `mm`/`gm`/`bh`/`bl`/`bc`/`nm` → modeling, owner to be
-  decided in a later spec (`multimix`, in `mixhazard/`, is a candidate for the
-  mixed-effects subset).
+- **Phases 2..N** — port by prefix to package. The authoritative prefix table is
+  `hvtiRtemplates::hvti_taxonomy()`, which also gives each prefix's template
+  folder; the map below is derived from it and should be re-derived from it
+  rather than maintained here by hand.
+
+  | Prefix | Folder | Package |
+  |---|---|---|
+  | `bd` | `datasets` | `hvtiRdatasets` |
+  | `vars`, `dt` | `datasets` | `hvtiRutilities` |
+  | `dc`, `lg`, `rg` | `descriptive` | `hvtiRtables` |
+  | `hp`/`mp`/`lp`/`np`/`dp`/`fp`/`gp`/`cp`/`ce`/`rp` | `graphs` | `hvtiPlotR` |
+  | `lm`/`cm`/`pm`/`rm` | `analyses` | `hvtiPropensityScores` |
+  | `ac`/`hz`/`hs`/`cd`/`nd` | `distributions` | `TemporalHazard` |
+  | `mm`/`gm`/`bh`/`bl`/`bc`/`nm` | `analyses` | modeling, owner undecided (`multimix`, in `mixhazard/`, is a candidate for the mixed-effects subset) |
+  | `ar` | `documents` | reporting, owner undecided |
+
+  Two corrections against the 2026-07-10 draft of this line, both from reading
+  the templates repo rather than inferring: **`bd` is no longer
+  `hvtiRutilities`** — `hvtiRdatasets` now owns dataset build and verification
+  (`dw_pull()`, `read_study_config()`, `snapshot_oracle()`, `compare_built()`) —
+  and **`dc` is `hvtiRtables`**, not a descriptive corner of `hvtiRutilities`.
+
+### Shared assets are not sorted by prefix
+
+Prefix sorting applies to *jobs*. It does not apply to assets that every job
+reads, and mapping those by prefix is a category error.
+
+The format catalogs are the worked example. `hvti_taxonomy()` has **no format or
+label prefix**, and none of the 229 templates carries `format`, `fmt` or `label`
+in its filename — formats were never a job type. Yet **201 templates reference a
+format library** (`proc format`, `libname library`, `fmtsearch`), spread across
+every folder: 65 in `graphs`, 46 in `analyses`, 35 in `distributions`, 29 in
+`datasets`, 26 in `descriptive`.
+
+`cvirfmts.sas` is the catalog they read. It contains **zero `%macro`
+definitions and 65 `value` statements** — it is data, not code, so triage's rule
+ladder does not apply to it and it will never appear in the manifest. It is
+loaded at build time and inherited by everything downstream, which puts it with
+the build: **`hvtiRdatasets`**.
+
+`format_TF.sas` is the contrasting case and shows the distinction is real rather
+than a technicality. It *is* a macro — recode TRUE/FALSE to yes/no, frequency
+tables before and after, merged back by id — so it is variable transformation,
+the `vars` prefix, and goes to **`hvtiRutilities`**, where it lands beside
+`r_data_types(binary_factor=)` and `clean_labels()`.
+
+The rule to carry into Phase 2: **a file with no `%macro` definition is an asset,
+not a port target.** Route it by who loads it, not by which analyses use it.
 
 `TemporalHazard` (v1.1.0.9000, 27 R files) is a CRAN-target package. Anything
 ported into it inherits the full release gate: `R CMD check --as-cran` with the
@@ -386,3 +431,51 @@ Critical assertions:
   `logis_reclassi/`, `repeat_test/`.
 - Disposition of `hazard/`, which contains no `DESCRIPTION` and is not an R
   package.
+
+## Amendments
+
+### 2026-08-14 — ownership map and shared assets
+
+Phase 0 shipped in 1.0.4. Two things in the *Context* section were written from
+inference in July and have since been checked against `hvtiRtemplates`, which
+did not exist in usable form at the time.
+
+**The Phase 2..N prefix map was wrong in two places.** `bd` was assigned to
+`hvtiRutilities`; `hvtiRdatasets` now owns dataset build and verification, so
+`bd` belongs there. `dc` was not mentioned at all; it is `hvtiRtables`. The map
+in *Context* is now a table derived from `hvtiRtemplates::hvti_taxonomy()`,
+which is the authority — re-derive from it rather than editing the table by
+hand.
+
+**Shared assets were not addressed at all.** The original design assumed every
+corpus file is either a macro to port or a file to drop. The format catalogs are
+neither: `cvirfmts.sas` has no `%macro` definition, so the rule ladder never
+classifies it, and it would have fallen through Phase 0 unremarked. It is data
+consumed by 201 of the 229 templates across every folder. The new subsection
+records the rule — a file with no `%macro` definition is an asset, routed by who
+loads it — and its two worked cases.
+
+### Figures superseded since the original draft
+
+The measurements in *Problem* (179 files, 451 definitions, 240 names, 85
+multiply-defined) were taken with a `.sas`-anchored file glob and a per-line
+lint, both of which were later found defective. Corrected figures, from the
+shipped implementation:
+
+| | Original draft | Shipped |
+|---|---|---|
+| Files triaged | 179 | 336 |
+| Macro definitions | 451 | 816 |
+| Distinct names | 240 | 307 |
+
+The gap is not a change of policy. File discovery missed every macro file
+carrying no extension, and every file whose dots are word separators rather than
+an extension — `deciles.hazard`, `lm.cprobs`, `kaplan.int`. Among the omitted
+was `unistats`, whose statistic vocabulary turned out to specify the
+`proc_means()` extension shipped in 1.0.5. The *Heuristic lint* section's
+`do`/`end` balance check was also removed: textual balance is not a validity
+property of macro source, since `%do`-guarded blocks emit `DO` and `END` from
+separate branches.
+
+Five files are rejected as genuinely defective: `bl_ord.norm.ci.sas`,
+`CR_compare_CP_test_AT.sas`, `rem.original`, `rem.uab` and `repeated.sas`.
