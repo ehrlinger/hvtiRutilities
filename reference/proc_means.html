@@ -9,7 +9,7 @@ variable, one column per requested statistic, in the order requested."></head><b
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.5</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,7 +69,8 @@ variable, one column per requested statistic, in the order requested.</p>
 <span>  <span class="va">data</span>,</span>
 <span>  vars <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  class <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  stats <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"n"</span>, <span class="st">"mean"</span>, <span class="st">"std"</span>, <span class="st">"min"</span>, <span class="st">"max"</span><span class="op">)</span></span>
+<span>  stats <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"n"</span>, <span class="st">"mean"</span>, <span class="st">"std"</span>, <span class="st">"min"</span>, <span class="st">"max"</span><span class="op">)</span>,</span>
+<span>  weights <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -93,11 +94,22 @@ dropped, matching SAS's default.</p></dd>
 
 
 <dt id="arg-stats">stats<a class="anchor" aria-label="anchor" href="#arg-stats"></a></dt>
-<dd><p>Character vector of SAS statistic keywords: <code>"n"</code>,
-<code>"nmiss"</code>, <code>"mean"</code>, <code>"std"</code>, <code>"min"</code>, <code>"max"</code>,
-<code>"sum"</code>, <code>"range"</code>, <code>"stderr"</code>, <code>"cv"</code>,
-<code>"median"</code>, <code>"q1"</code>, <code>"q3"</code>, or any <code>"pNN"</code> for
-<code>NN</code> between 1 and 99. Defaults to SAS's own default five.</p></dd>
+<dd><p>Character vector of SAS statistic keywords. Counts:
+<code>"n"</code>, <code>"nmiss"</code>, <code>"nobs"</code>, <code>"sumwgt"</code>. Location:
+<code>"mean"</code>, <code>"median"</code>, <code>"mode"</code>. Spread: <code>"std"</code>,
+<code>"var"</code>, <code>"stderr"</code>, <code>"cv"</code>, <code>"min"</code>, <code>"max"</code>,
+<code>"range"</code>, <code>"qrange"</code>, <code>"q1"</code>, <code>"q3"</code>, or any
+<code>"pNN"</code> for NN from 1 to 99. Sums: <code>"sum"</code>, <code>"uss"</code>,
+<code>"css"</code>. Shape: <code>"skewness"</code>, <code>"kurtosis"</code>.</p></dd>
+
+
+<dt id="arg-weights">weights<a class="anchor" aria-label="anchor" href="#arg-weights"></a></dt>
+<dd><p>Character or <code>NULL</code>. Name of a single numeric column of
+<code>data</code> to use as an observation weight, mirroring the SAS
+<code>WEIGHT</code> statement. Observations whose weight is missing are excluded.
+A zero or negative weight is an error naming the offending rows: SAS's own
+handling of non-positive weights varies across procedures and versions, so
+this fails loudly rather than encode a guess.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -126,6 +138,27 @@ one in <code>vars</code> coerces it to 0/1, making <code>mean</code> a proportio
 class variable orders by its declared level order rather than
 alphabetically, matching SAS's default <code>ORDER=INTERNAL</code>; this keeps
 ordered clinical scales such as NYHA class in their clinical sequence.</p>
+<p>Weights do not apply uniformly, and this follows <code>PROC MEANS</code> rather
+than being a simplification. Weighted: <code>mean</code>, <code>std</code>, <code>var</code>,
+<code>cv</code>, <code>stderr</code>, <code>sum</code>, <code>uss</code>, <code>css</code>,
+<code>skewness</code>, <code>kurtosis</code>, <code>sumwgt</code>. Unweighted: <code>n</code>,
+<code>nmiss</code>, <code>nobs</code>, <code>min</code>, <code>max</code>, <code>range</code>,
+<code>mode</code>, and every quantile – <code>median</code>, <code>q1</code>, <code>q3</code>,
+<code>pNN</code> and <code>qrange</code>. <code>PROC MEANS</code> does not compute weighted
+quantiles at all; that is <code>PROC UNIVARIATE</code>. So
+<code>proc_means(d, stats = "median", weights = "wt")</code> returns the
+<em>unweighted</em> median.</p>
+<p><code>mode</code> returns the smallest value among tied modes, and <code>NA</code> when
+no value repeats, both matching SAS. <code>skewness</code> and <code>kurtosis</code> are
+the adjusted Fisher-Pearson forms SAS uses, not R's naive moment ratios, and
+are <code>NA</code> for a constant column rather than <code>NaN</code>.</p>
+<p>The <code>PROC UNIVARIATE</code> inference statistics (<code>NORMAL</code>, <code>PROBN</code>,
+<code>T</code>, <code>PROBT</code>, <code>MSIGN</code>, <code>PROBM</code>, <code>SIGNRANK</code>,
+<code>PROBS</code>) are deliberately absent: they would make this a
+hypothesis-testing function rather than a summary one. <code>CLM</code>, the
+confidence limits of the mean, is absent for the same reason.</p>
+<p><code>cv</code> is <code>NA</code> when the mean is zero, matching SAS; R's arithmetic
+would give <code>Inf</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -159,6 +192,13 @@ ordered clinical scales such as NYHA class in their clinical sequence.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   variable                   label   n    mean median  p15</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1      age  Age at surgery (years) 200 44.5890  44.75 29.3</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2      bmi Body mass index (kg/m2) 200 26.7885  26.65 21.9</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Weighted statistics</span></span></span>
+<span class="r-in"><span><span class="va">dta</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>age <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">51</span>, <span class="fl">63</span>, <span class="fl">47</span>, <span class="fl">72</span><span class="op">)</span>, wt <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">1</span>, <span class="fl">4</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">proc_means</span><span class="op">(</span><span class="va">dta</span>, vars <span class="op">=</span> <span class="st">"age"</span>, stats <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"n"</span>, <span class="st">"sumwgt"</span>, <span class="st">"mean"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>           weights <span class="op">=</span> <span class="st">"wt"</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   variable label n sumwgt mean</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1      age   age 4      8   64</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

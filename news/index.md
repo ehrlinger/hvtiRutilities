@@ -1,5 +1,49 @@
 # Changelog
 
+## hvtiRutilities 1.0.5
+
+### New features
+
+- [`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
+  gains nine statistics from the SAS `unistats` vocabulary: `nobs`,
+  `var`, `uss`, `css`, `skewness`, `kurtosis`, `sumwgt`, `qrange` and
+  `mode`. `skewness` and `kurtosis` are the adjusted Fisher-Pearson
+  forms SAS uses, cross-validated in the test suite against `e1071` with
+  `type = 2`. `mode` returns the smallest of tied modes and `NA` when no
+  value repeats, matching SAS.
+
+- [`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
+  gains a `weights` argument naming a numeric column, mirroring the SAS
+  `WEIGHT` statement. Weights apply within each `class` level.
+
+  Weighting is not uniform, following `PROC MEANS`: `mean`, `std`,
+  `var`, `cv`, `stderr`, `sum`, `uss`, `css`, `skewness`, `kurtosis` and
+  `sumwgt` respond to weights; `n`, `nmiss`, `nobs`, `min`, `max`,
+  `range`, `mode` and every quantile do not. `PROC MEANS` computes no
+  weighted quantiles; that is `PROC UNIVARIATE`.
+
+  A zero or negative weight raises an error naming the offending rows.
+  SAS’s own handling of non-positive weights differs across procedures
+  and versions, so this fails loudly rather than encode a guess.
+
+  The `PROC UNIVARIATE` inference statistics remain out of scope. See
+  `specs/2026-08-14-proc-means-unistats-design.md`.
+
+### Bug fixes
+
+- [`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md):
+  `cv` now returns `NA` when the mean is zero, matching SAS. R’s
+  arithmetic gives `Inf`, which asserts an infinite coefficient of
+  variation where SAS reports the value as undefined.
+
+### Internal changes
+
+- [`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
+  statistics are dispatched through a `.STATS` registry that declares,
+  per statistic, whether it responds to weights and whether it is
+  integer-typed. The weighted set is asserted directly in the test
+  suite.
+
 ## hvtiRutilities 1.0.4
 
 ### New features

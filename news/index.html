@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.5</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,6 +55,29 @@
       <small>Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.0.5" id="hvtirutilities-105">hvtiRutilities 1.0.5<a class="anchor" aria-label="anchor" href="#hvtirutilities-105"></a></h2>
+<div class="section level3">
+<h3 id="new-features-1-0-5">New features<a class="anchor" aria-label="anchor" href="#new-features-1-0-5"></a></h3>
+<ul><li><p><code><a href="../reference/proc_means.html">proc_means()</a></code> gains nine statistics from the SAS <code>unistats</code> vocabulary: <code>nobs</code>, <code>var</code>, <code>uss</code>, <code>css</code>, <code>skewness</code>, <code>kurtosis</code>, <code>sumwgt</code>, <code>qrange</code> and <code>mode</code>. <code>skewness</code> and <code>kurtosis</code> are the adjusted Fisher-Pearson forms SAS uses, cross-validated in the test suite against <code>e1071</code> with <code>type = 2</code>. <code>mode</code> returns the smallest of tied modes and <code>NA</code> when no value repeats, matching SAS.</p></li>
+<li>
+<p><code><a href="../reference/proc_means.html">proc_means()</a></code> gains a <code>weights</code> argument naming a numeric column, mirroring the SAS <code>WEIGHT</code> statement. Weights apply within each <code>class</code> level.</p>
+<p>Weighting is not uniform, following <code>PROC MEANS</code>: <code>mean</code>, <code>std</code>, <code>var</code>, <code>cv</code>, <code>stderr</code>, <code>sum</code>, <code>uss</code>, <code>css</code>, <code>skewness</code>, <code>kurtosis</code> and <code>sumwgt</code> respond to weights; <code>n</code>, <code>nmiss</code>, <code>nobs</code>, <code>min</code>, <code>max</code>, <code>range</code>, <code>mode</code> and every quantile do not. <code>PROC MEANS</code> computes no weighted quantiles; that is <code>PROC UNIVARIATE</code>.</p>
+<p>A zero or negative weight raises an error naming the offending rows. SAS’s own handling of non-positive weights differs across procedures and versions, so this fails loudly rather than encode a guess.</p>
+<p>The <code>PROC UNIVARIATE</code> inference statistics remain out of scope. See <code>specs/2026-08-14-proc-means-unistats-design.md</code>.</p>
+</li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-1-0-5">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-0-5"></a></h3>
+<ul><li>
+<code><a href="../reference/proc_means.html">proc_means()</a></code>: <code>cv</code> now returns <code>NA</code> when the mean is zero, matching SAS. R’s arithmetic gives <code>Inf</code>, which asserts an infinite coefficient of variation where SAS reports the value as undefined.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="internal-changes-1-0-5">Internal changes<a class="anchor" aria-label="anchor" href="#internal-changes-1-0-5"></a></h3>
+<ul><li>
+<code><a href="../reference/proc_means.html">proc_means()</a></code> statistics are dispatched through a <code>.STATS</code> registry that declares, per statistic, whether it responds to weights and whether it is integer-typed. The weighted set is asserted directly in the test suite.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.0.4" id="hvtirutilities-104">hvtiRutilities 1.0.4<a class="anchor" aria-label="anchor" href="#hvtirutilities-104"></a></h2>
 <div class="section level3">
