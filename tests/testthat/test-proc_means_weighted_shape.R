@@ -53,4 +53,6 @@ test_that("weighted skewness and kurtosis are NA for a constant column", {
   kw <- c(1, 2, 1, 2, 1, 2, 1, 2)
   expect_true(is.na(cs(k, "skewness", kw)))
   expect_true(is.na(cs(k, "kurtosis", kw)))
+  expect_false(is.nan(cs(k, "skewness", kw)))
+  expect_false(is.nan(cs(k, "kurtosis", kw)))
 })
