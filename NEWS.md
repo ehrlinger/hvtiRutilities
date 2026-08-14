@@ -2,6 +2,24 @@
 
 ## Bug fixes
 
+- `.sas_lint()`: block comments spanning several lines are now stripped with a
+  state flag rather than matched per line. The library's boxed `| Purpose : |`
+  headers run for dozens of lines, so prose inside them ("Pearson's Chi-square")
+  was counted as an unbalanced quote and the file dropped. Blanking is done in
+  place, so the line numbers reported for genuine unbalanced quotes are
+  unchanged.
+
+- `.sas_lint()`: removed the do/end balance check. Textual balance is not a
+  validity property of SAS macro source -- `end` appears in the `end=` data set
+  option, in PROC SQL `CASE ... END` and DATA step `SELECT ... END`, and
+  `%do`-guarded blocks emit DO and END from separate branches. The check flagged
+  55 of the 72 macro-bearing files it examined. `%macro`/`%mend` balance already
+  catches the truncation it was meant to detect.
+
+  Together these raise the corpus inventory from 485 macro definitions across
+  145 names to 735 across 220, and cut lint drops of macro-bearing files from
+  72 to 27.
+
 - `sas_triage()`: file discovery no longer matches on a `.sas` extension.
   The macro library uses dots as word separators in filenames
   (`deciles.hazard`, `lm.cprobs`, `kaplan.int`), and many macro files carry no
