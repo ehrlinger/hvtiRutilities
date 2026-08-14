@@ -260,13 +260,14 @@ proc_means <- function(data, vars = NULL, class = NULL,
       if (length(v) == 0L) {
         return(NA_real_)
       }
-      tab <- table(v)
-      top <- max(tab)
+      u <- unique(v)
+      counts <- tabulate(match(v, u))
+      top <- max(counts)
       if (top == 1L) {
         return(NA_real_)          # SAS: no mode when nothing repeats
       }
       # SAS reports the smallest value among tied modes.
-      min(as.numeric(names(tab)[tab == top]))
+      min(u[counts == top])
     },
     weighted = FALSE, integer = FALSE
   ),

@@ -41,6 +41,26 @@ test_that("mode is NA when no value repeats", {
   expect_true(is.na(cs(c(1, 2, 3), "mode")))
 })
 
+test_that("mode does not merge distinct doubles beyond character precision", {
+  # a and b are distinct doubles whose character rendering both round to
+  # "1e+14"; table()-based bucketing would wrongly merge them.
+  a <- 100000000000000.2
+  b <- 100000000000000.3
+  v <- c(a, a, b, b, 7)
+  result <- cs(v, "mode")
+  expect_true(result %in% v)
+  expect_equal(result, min(a, b))
+})
+
+test_that("mode always returns a value present in the input", {
+  a <- 100000000000000.2
+  b <- 100000000000000.3
+  v <- c(a, b, b, 3, 3, 3)
+  result <- cs(v, "mode")
+  expect_true(result %in% v)
+  expect_equal(result, 3)
+})
+
 test_that("var is NA below two observations", {
   expect_true(is.na(cs(c(5), "var")))
 })
