@@ -33,6 +33,19 @@ test_that(".sas_source_files excludes logs, listings and text copies", {
   expect_false("plainmacro.txt" %in% found)
 })
 
+test_that(".sas_source_files excludes backups of non-source files", {
+  # `run.log~` must be excluded here, not left to rule 2, which would record it
+  # as an "editor backup" -- true, but misleading for a log file.
+  d <- withr::local_tempdir()
+  writeLines("NOTE: SAS stopped.", file.path(d, "run.log~"))
+  writeLines("Obs x", file.path(d, "out.lst~"))
+  writeLines(c("%macro a(x=1);", "%mend a;"), file.path(d, "real.sas"))
+  found <- basename(hvtiRutilities:::.sas_source_files(d))
+  expect_false("run.log~" %in% found)
+  expect_false("out.lst~" %in% found)
+  expect_true("real.sas" %in% found)
+})
+
 test_that(".sas_source_files excludes numbered RCS backups", {
   found <- basename(hvtiRutilities:::.sas_source_files(disc_dir()))
   expect_false("plainmacro.~1.1.~" %in% found)

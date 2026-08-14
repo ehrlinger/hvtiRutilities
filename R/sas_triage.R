@@ -56,9 +56,12 @@
 ## =============================================================================
 ## Internal: suffixes that never hold SAS source -- logs, listings, documents,
 ## binary data sets, and numbered RCS backups (`kaplan.~1.1.1.1.~`).
+## A trailing `~` is allowed on each suffix: `run.log~` is an editor backup of a
+## log, and excluding it here records it as non-source rather than letting rule 2
+## drop it as an "editor backup", which would be true but misleading evidence.
 .NON_SOURCE_RE <- paste0(
   "\\.(log|lst|txt|doc|docx|pdf|ps|cgm|emf|wmf|png|jpg|gif|",
-  "sas7bdat|sas7bcat|bak|save|asv|xls|xlsx|csv|rtf|zip)$",
+  "sas7bdat|sas7bcat|bak|save|asv|xls|xlsx|csv|rtf|zip)~?$",
   "|\\.~[0-9.]+~$"
 )
 
