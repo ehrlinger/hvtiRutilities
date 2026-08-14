@@ -53,9 +53,11 @@
         i <- i + 2L                      # macro-quoted char, never a delimiter
       } else if (c1 == "/" && c2 == "*") {
         state <- "block"
+        open_line <- line
         i <- i + 2L
       } else if (c1 == "*" && stmt_start) {
         state <- "star"
+        open_line <- line
         i <- i + 1L
       } else if (c1 == "'") {
         state <- "squote"
@@ -75,6 +77,7 @@
     } else if (state == "block") {
       if (c1 == "*" && c2 == "/") {
         state <- "code"
+        open_line <- NA_integer_
         i <- i + 2L
       } else {
         i <- i + 1L
@@ -82,6 +85,7 @@
     } else if (state == "star") {
       if (c1 == ";") {
         state <- "code"
+        open_line <- NA_integer_
         keep[i] <- TRUE                  # keep the terminator as a separator
         stmt_start <- TRUE
       }
@@ -125,8 +129,15 @@
 ## Never throws: a broken file is data, and the caller records it as evidence.
 .sas_lint <- function(file) {
   lines <- .read_sas_lines(file)
-  lower <- tolower(lines)
   failures <- character(0)
+
+  ## Scan once, up front. Every rule below reads the scanned code rather than
+  ## the raw source: a %macro sitting in a /* */ block or inside a string
+  ## literal is not a definition, and counting it produced exactly the false
+  ## positive this scanner exists to remove. Line numbering survives the scan,
+  ## so the failure reports still cite source lines.
+  scan <- .sas_scan(lines)
+  lower <- tolower(scan$code)
 
   ## 1. At least one macro definition.
   n_macro <- sum(grepl("^[[:space:]]*%macro[[:space:]]+[a-z_]", lower))
@@ -143,17 +154,26 @@
     )
   }
 
-  ## 3. Every string literal is terminated.
+  ## 3. The file does not end inside a literal or a comment.
   ##
   ## Per-line quote counting is not a validity test: literals legally span lines,
   ## and quotes appear inside comments, inside the other quote character, and
   ## macro-quoted as %'. The scanner tracks that context, so the only thing left
-  ## to check is whether the file ends inside a literal.
-  scan <- .sas_scan(lines)
-  if (scan$open_state %in% c("squote", "dquote")) {
+  ## to check is which state the file ends in.
+  ##
+  ## An unterminated comment is reported as well as an unterminated literal. It
+  ## is the more destructive of the two: an unclosed /* swallows every statement
+  ## after it, so the file triages as usable source while most of it is inert.
+  if (scan$open_state != "code") {
+    what <- switch(scan$open_state,
+      squote = "string literal",
+      dquote = "string literal",
+      block  = "/* */ comment",
+      star   = "* ... ; comment"
+    )
     failures <- c(
       failures,
-      sprintf("unterminated string literal opened at line %d", scan$open_line)
+      sprintf("unterminated %s opened at line %d", what, scan$open_line)
     )
   }
 

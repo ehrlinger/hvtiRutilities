@@ -318,3 +318,86 @@ test_that("verify_manifest returns empty data frame for empty manifest", {
   report <- verify_manifest(manifest_path = mpath, data_dir = tmp)
   expect_equal(nrow(report), 0L)
 })
+
+# ---------------------------------------------------------------------------
+# verbose — console output is opt-in, silent by default
+# ---------------------------------------------------------------------------
+
+test_that("update_manifest is silent by default", {
+  tmp <- tempdir()
+  csv <- write_temp_csv(n = 4, name = "cohort_quiet.csv", dir = tmp)
+  mpath <- file.path(tmp, "manifest_quiet.yaml")
+
+  # First call appends a new entry, second updates it in place; both silent.
+  expect_silent(update_manifest(file = csv, manifest_path = mpath))
+  expect_silent(update_manifest(file = csv, manifest_path = mpath))
+})
+
+test_that("update_manifest reports add and update when verbose = TRUE", {
+  tmp <- tempdir()
+  csv <- write_temp_csv(n = 4, name = "cohort_loud.csv", dir = tmp)
+  mpath <- file.path(tmp, "manifest_loud.yaml")
+
+  expect_message(
+    update_manifest(file = csv, manifest_path = mpath, verbose = TRUE),
+    "Manifest entry added: cohort_loud\\.csv"
+  )
+  expect_message(
+    update_manifest(file = csv, manifest_path = mpath, verbose = TRUE),
+    "Manifest updated: cohort_loud\\.csv"
+  )
+})
+
+test_that("verify_manifest is silent by default on success", {
+  tmp <- tempdir()
+  csv <- write_temp_csv(n = 6, name = "cohort_vquiet.csv", dir = tmp)
+  mpath <- file.path(tmp, "manifest_vquiet.yaml")
+  update_manifest(file = csv, manifest_path = mpath)
+
+  expect_silent(verify_manifest(manifest_path = mpath, data_dir = tmp))
+})
+
+test_that("verify_manifest reports each passing entry when verbose = TRUE", {
+  tmp <- tempdir()
+  csv <- write_temp_csv(n = 6, name = "cohort_vloud.csv", dir = tmp)
+  mpath <- file.path(tmp, "manifest_vloud.yaml")
+  update_manifest(file = csv, manifest_path = mpath)
+
+  expect_message(
+    verify_manifest(manifest_path = mpath, data_dir = tmp, verbose = TRUE),
+    "cohort_vloud\\.csv .* SHA-256 match \\(n = 6\\)"
+  )
+})
+
+test_that("verify_manifest empty-manifest notice respects verbose", {
+  tmp <- tempdir()
+  mpath <- file.path(tmp, "manifest_empty_verbose.yaml")
+  yaml::write_yaml(list(datasets = list()), mpath)
+
+  expect_silent(verify_manifest(manifest_path = mpath, data_dir = tmp))
+  expect_message(
+    verify_manifest(manifest_path = mpath, data_dir = tmp, verbose = TRUE),
+    "no dataset entries"
+  )
+})
+
+test_that("verbose = FALSE does not suppress failures", {
+  tmp <- tempdir()
+  csv <- file.path(tmp, "cohort_quiet_fail.csv")
+  write.csv(make_df(5), csv, row.names = FALSE)
+  mpath <- file.path(tmp, "manifest_quiet_fail.yaml")
+  update_manifest(file = csv, manifest_path = mpath)
+
+  write.csv(make_df(5)[c(2, 1, 3, 4, 5), ], csv, row.names = FALSE)
+
+  # Default (silent) call must still raise on a real mismatch.
+  expect_error(
+    verify_manifest(manifest_path = mpath, data_dir = tmp),
+    "SHA-256 mismatch"
+  )
+  expect_warning(
+    verify_manifest(manifest_path = mpath, data_dir = tmp,
+                    stop_on_error = FALSE),
+    "SHA-256 mismatch"
+  )
+})

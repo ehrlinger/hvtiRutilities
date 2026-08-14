@@ -77,6 +77,9 @@
 #'   \code{"Epic EMR, query v4.2, ICD mapping v3.2"}).
 #' @param sort_key Character. Column name(s) that define the canonical sort
 #'   order of the dataset.
+#' @param verbose Logical. If \code{TRUE}, report which manifest entry was
+#'   added or updated via \code{\link[base]{message}}.  Defaults to
+#'   \code{FALSE} so that scripted or looped calls stay silent.
 #'
 #' @return Invisibly returns the updated manifest as a named list.
 #'
@@ -117,7 +120,8 @@ update_manifest <- function(file,
                             extract_date  = Sys.Date(),
                             n_rows        = NULL,
                             source        = NULL,
-                            sort_key      = NULL) {
+                            sort_key      = NULL,
+                            verbose       = FALSE) {
   if (!file.exists(file)) {
     stop("Dataset file not found: ", file)
   }
@@ -162,10 +166,10 @@ update_manifest <- function(file,
 
   if (any(existing)) {
     manifest$datasets[[which(existing)]] <- entry
-    message("Manifest updated: ", entry$file)
+    if (verbose) message("Manifest updated: ", entry$file)
   } else {
     manifest$datasets <- c(manifest$datasets, list(entry))
-    message("Manifest entry added: ", entry$file)
+    if (verbose) message("Manifest entry added: ", entry$file)
   }
 
   yaml::write_yaml(manifest, manifest_path)
@@ -196,6 +200,11 @@ update_manifest <- function(file,
 #'   \code{stop()} on the first failed check, preventing the analysis from
 #'   proceeding.  Set to \code{FALSE} to collect all errors and report them
 #'   together as a warning.
+#' @param verbose Logical. If \code{TRUE}, report each passing entry via
+#'   \code{\link[base]{message}}.  Defaults to \code{FALSE} so that scripted or
+#'   looped calls stay silent; the same information is always available in the
+#'   returned data frame.  Failures are reported through \code{stop()} or
+#'   \code{warning()} regardless of this setting.
 #'
 #' @return Invisibly returns a data frame with columns \code{file},
 #'   \code{status} (\code{"OK"} or \code{"FAIL"}), and \code{message}.
@@ -203,7 +212,11 @@ update_manifest <- function(file,
 #' @examples
 #' \dontrun{
 #' # --- Typical usage: top of every analysis script or .qmd -----------
+#' # Silent unless a check fails.
 #' hvtiRutilities::verify_manifest(here::here("manifest.yaml"))
+#'
+#' # --- Interactive use: report each passing entry ---------------------
+#' hvtiRutilities::verify_manifest(here::here("manifest.yaml"), verbose = TRUE)
 #' # cohort_20240115.csv    — SHA-256 match (n = 831)
 #' # labs_20240115.sas7bdat — SHA-256 match (n = 1204)
 #' # adjudication_20240115.xlsx — SHA-256 match (n = 47)
@@ -220,7 +233,8 @@ update_manifest <- function(file,
 #' @export
 verify_manifest <- function(manifest_path = "manifest.yaml",
                             data_dir      = NULL,
-                            stop_on_error = TRUE) {
+                            stop_on_error = TRUE,
+                            verbose       = FALSE) {
   if (!file.exists(manifest_path)) {
     stop("Manifest file not found: ", manifest_path)
   }
@@ -228,7 +242,7 @@ verify_manifest <- function(manifest_path = "manifest.yaml",
   manifest <- yaml::read_yaml(manifest_path)
 
   if (is.null(manifest$datasets) || length(manifest$datasets) == 0L) {
-    message("Manifest contains no dataset entries.")
+    if (verbose) message("Manifest contains no dataset entries.")
     return(invisible(data.frame(file = character(), status = character(),
                                 message = character(), stringsAsFactors = FALSE)))
   }
@@ -291,7 +305,9 @@ verify_manifest <- function(manifest_path = "manifest.yaml",
       }
     }
 
-    message(entry$file, " \u2014 SHA-256 match (n = ", entry$n_rows, ")")
+    if (verbose) {
+      message(entry$file, " \u2014 SHA-256 match (n = ", entry$n_rows, ")")
+    }
     data.frame(
       file    = entry$file,
       status  = "OK",

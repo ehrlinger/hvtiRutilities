@@ -85,8 +85,15 @@ sas_macro_defs <- function(file) {
   mend_re <- "^[[:space:]]*%mend"
 
   lower <- tolower(lines)
-  is_start <- grepl(start_re, lower)
-  is_mend <- grepl(mend_re, lower)
+
+  ## Detect on the scanned source, so a %macro sitting in a /* */ block or
+  ## inside a string literal is not inventoried as a definition. Detection only:
+  ## the name and parameter list are still read from the raw statement below,
+  ## because the scanner strips quoted default values and `%macro foo(a='x');`
+  ## would otherwise lose the 'x'.
+  scanned <- tolower(.sas_scan(lines)$code)
+  is_start <- grepl(start_re, scanned)
+  is_mend <- grepl(mend_re, scanned)
 
   if (!any(is_start)) {
     stop("no %macro definition found in: ", basename(file), call. = FALSE)

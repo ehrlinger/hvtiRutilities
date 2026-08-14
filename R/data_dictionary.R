@@ -22,7 +22,9 @@
 #'     level counts for factor/character, TRUE percentage for logical}
 #' }
 #'
-#' @seealso \code{\link{label_map}} for extracting labels only,
+#' @seealso \code{\link{proc_contents}} for the full SAS-style variable table,
+#'   \code{\link{proc_means}} for numeric summaries,
+#'   \code{\link{label_map}} for extracting labels only,
 #'   \code{\link{r_data_types}} for automatic type conversion before building
 #'   the dictionary.
 #'
@@ -50,7 +52,10 @@ data_dictionary <- function(data) {
   if (!is.data.frame(data)) {
     stop("'data' must be a data frame.", call. = FALSE)
   }
-  if (ncol(data) == 0L) {
+
+  contents <- proc_contents(data, order = "varnum")$variables
+
+  if (nrow(contents) == 0L) {
     return(data.frame(
       variable    = character(),
       label       = character(),
@@ -62,14 +67,12 @@ data_dictionary <- function(data) {
     ))
   }
 
-  labels <- labelled::var_label(data, unlist = TRUE, null_action = "fill")
-
   data.frame(
-    variable    = names(data),
-    label       = unname(labels),
-    class       = vapply(data, function(x) class(x)[1L], character(1)),
-    n_unique    = vapply(data, function(x) length(unique(x[!is.na(x)])), integer(1)),
-    pct_missing = vapply(data, function(x) round(mean(is.na(x)) * 100, 1), numeric(1)),
+    variable    = contents$variable,
+    label       = contents$label,
+    class       = contents$class,
+    n_unique    = contents$n_unique,
+    pct_missing = contents$pct_missing,
     summary     = vapply(data, .summarise_column, character(1)),
     stringsAsFactors = FALSE
   )
@@ -82,7 +85,9 @@ data_dictionary <- function(data) {
 
   if (is.numeric(vals)) {
     sprintf("%.4g / %.4g / %.4g",
-            min(vals), stats::median(vals), max(vals))
+            .compute_stat(vals, "min"),
+            .compute_stat(vals, "median"),
+            .compute_stat(vals, "max"))
   } else if (is.logical(vals)) {
     sprintf("TRUE: %.0f%%", mean(vals) * 100)
   } else if (is.factor(vals) || is.character(vals)) {
