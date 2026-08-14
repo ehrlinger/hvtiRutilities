@@ -46,6 +46,9 @@ navbar:
         - text: "Dataset Version Tracking"
           href: articles/dataset-versioning.html
         - text: "---"
+        - text: "PROC CONTENTS and PROC MEANS in R"
+          href: articles/sas-procedures.html
+        - text: "---"
         - text: "Specialized Topics"
         - text: "Simulating Cardiac Surgery Survival Data"
           href: articles/survival-data.html

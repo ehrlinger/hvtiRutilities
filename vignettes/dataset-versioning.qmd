@@ -297,6 +297,55 @@ verify_manifest(
 )
 ```
 
+## What Changed Inside the File?
+
+The manifest answers one question, and it answers it absolutely: did this file
+change? A single altered byte flips the checksum. But a failed `verify_manifest()`
+tells you nothing about *what* moved, and that is the question you actually have
+to answer before you decide whether the change is benign.
+
+`compare_datasets()` answers it. Give it the two versions and it reports the
+four kinds of drift that matter:
+
+```{r}
+cohort_v1 <- generate_survival_data(n = 200, seed = 42)
+cohort_v2 <- generate_survival_data(n = 315, seed = 99)
+
+# Changes a real re-pull might bring
+cohort_v2$creatinine <- 1.1
+cohort_v2$reop <- NULL
+cohort_v2$dead <- as.integer(cohort_v2$dead) > 0
+labelled::var_label(cohort_v2$gfr_bs) <- "eGFR at discharge (mL/min/1.73m2)"
+
+compare_datasets(cohort_v1, cohort_v2)
+```
+
+Read that output in order of how much trouble each line will cause you.
+
+Added and dropped columns are the easy ones; a model referencing `reop` will
+fail loudly on the next run. The type change on `dead` is worse, because
+`integer` to `logical` is a change most code will accept silently. Notice it
+also cost the column its label, which is how a type change usually announces
+itself in the audit.
+
+The label change on `gfr_bs` is the one to watch. Baseline eGFR and eGFR at
+discharge are different measurements under the same column name, and nothing
+but the label will tell you they were swapped. Checksums catch it as "changed";
+only the label comparison tells you the variable now means something else.
+
+The result is a list, so a script can act on it rather than print it:
+
+```{r}
+drift <- compare_datasets(cohort_v1, cohort_v2)
+drift$cols_dropped
+drift$label_changes
+```
+
+Use the two tools together: `verify_manifest()` at the top of the script to
+stop the run, then `compare_datasets()` to work out why. See
+[PROC CONTENTS and PROC MEANS in R](sas-procedures.html) for more on inspecting
+an extract once you know it moved.
+
 ## Policy Recommendations
 
 | Stage | Action |
@@ -313,6 +362,8 @@ verify_manifest(
   and optional provenance fields for CSV, SAS, Excel, or any file type.
 - `verify_manifest()` checks every registered dataset before results are
   produced; one changed byte triggers an immediate, informative error.
+- `compare_datasets()` reports what moved between two pulls: row counts,
+  added and dropped columns, type changes, and label changes.
 - The combination makes dataset drift **detectable** and the audit trail
   **reproducible** from first pull to manuscript submission.
 

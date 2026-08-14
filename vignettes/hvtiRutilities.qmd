@@ -31,8 +31,13 @@ The `hvtiRutilities` package provides utility functions for working with clinica
 - **`add_labels()`**: Register labels for derived variables on data frames or label maps
 - **`apply_label_overrides()`**: Apply study-specific label overrides from a YAML file
 - **`data_dictionary()`**: Build a type-annotated data dictionary from any labeled dataset
+- **`proc_contents()`**: SAS `PROC CONTENTS` in R — variable metadata and completeness
+- **`proc_means()`**: SAS `PROC MEANS` in R — numeric summaries, with SAS quantile definitions
 - **`compare_datasets()`**: Summarise differences between two data pulls
 - **`sample_data()`**: Generate labeled sample datasets for testing and examples
+
+If you are coming from SAS, the [PROC CONTENTS and PROC MEANS in R](sas-procedures.html)
+vignette walks the two ports side by side with the procedures they replace.
 
 ### Installation
 
@@ -402,6 +407,7 @@ The `hvtiRutilities` package streamlines data preparation for clinical research:
 - **`add_labels()`**: Register labels for derived variables
 - **`apply_label_overrides()`**: Apply study-specific overrides from YAML (label maps or data)
 - **`data_dictionary()`**: Build a type-annotated data dictionary
+- **`proc_contents()`** / **`proc_means()`**: SAS `PROC CONTENTS` and `PROC MEANS` in R
 - **`compare_datasets()`**: Audit differences between two data pulls
 - **`sample_data()`** / **`generate_survival_data()`**: Generate labeled test data
 
