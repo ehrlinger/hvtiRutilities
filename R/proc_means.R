@@ -346,9 +346,14 @@ proc_means <- function(data, vars = NULL, class = NULL,
   cv = list(
     fun = function(x, v, w) {
       s <- sqrt(.wvar(v, w))
+      # Return before computing the mean: .wvar() is NA below two observations,
+      # and .wmean() of an empty vector is a NaN nothing would use.
+      if (is.na(s)) {
+        return(NA_real_)
+      }
       m <- .wmean(v, w)
       # SAS emits missing when the mean is zero; R would give Inf.
-      if (is.na(s) || m == 0) NA_real_ else 100 * s / m
+      if (m == 0) NA_real_ else 100 * s / m
     },
     weighted = TRUE, integer = FALSE
   ),

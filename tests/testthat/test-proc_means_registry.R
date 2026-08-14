@@ -34,3 +34,15 @@ test_that("cv is NA when the mean is zero, matching SAS", {
   # R would return Inf here; SAS emits missing.
   expect_true(is.na(hvtiRutilities:::.compute_stat(c(-2, 0, 2), "cv")))
 })
+
+test_that("cv is NA without warning when there is nothing to average", {
+  # Guards against .wmean() being called on an empty vector. The result was
+  # always NA, but computing an unused NaN invited repeated review findings.
+  withr::local_options(warn = 2)  # any warning becomes an error
+  expect_true(is.na(hvtiRutilities:::.compute_stat(c(NA_real_, NA_real_), "cv")))
+  expect_true(is.na(hvtiRutilities:::.compute_stat(numeric(0), "cv")))
+  expect_true(is.na(hvtiRutilities:::.compute_stat(5, "cv")))
+  expect_true(is.na(
+    hvtiRutilities:::.compute_stat(c(NA_real_, NA_real_), "cv", c(1, 2))
+  ))
+})
