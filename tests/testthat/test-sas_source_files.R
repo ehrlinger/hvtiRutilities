@@ -65,3 +65,34 @@ test_that("sas_triage() triages an extensionless macro file", {
   expect_true("plainmacro" %in% res$file)
   expect_true("dotted" %in% res$macro)
 })
+
+# ---------------------------------------------------------------------------
+# Version-control internals are not corpus
+# ---------------------------------------------------------------------------
+
+test_that(".scan_excluded_dirs skips dot-directories", {
+  # A local clone carries .git, whose loose-object files match no non-source
+  # suffix and so were counted as excluded SAS source. The count exists to tell
+  # a human what triage did not look at; .git is never that decision.
+  d <- withr::local_tempdir()
+  dir.create(file.path(d, ".git", "objects", "ab"), recursive = TRUE)
+  writeLines("x", file.path(d, ".git", "objects", "ab", "0123456789abcdef"))
+  dir.create(file.path(d, "archive"))
+  writeLines(c("%macro a(x=1);", "%mend a;"),
+             file.path(d, "archive", "old.sas"))
+
+  res <- hvtiRutilities:::.scan_excluded_dirs(d)
+  expect_false(".git" %in% res$directory)
+  expect_true("archive" %in% res$directory)
+  expect_equal(res$n_sas[res$directory == "archive"], 1L)
+})
+
+test_that(".scan_excluded_dirs still reports CVS", {
+  # CVS is a legacy artifact checked into the corpus itself, not infrastructure
+  # of this clone, so a human reviewing exclusions should still see it.
+  d <- withr::local_tempdir()
+  dir.create(file.path(d, "CVS"))
+  writeLines("Entries", file.path(d, "CVS", "Entries"))
+  res <- hvtiRutilities:::.scan_excluded_dirs(d)
+  expect_true("CVS" %in% res$directory)
+})
