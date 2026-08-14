@@ -164,6 +164,40 @@ proc_means <- function(data, vars = NULL, class = NULL,
   css / (n - 1)
 }
 
+## Internal: SAS skewness -- the adjusted Fisher-Pearson standardised third
+## moment, not R's naive moment ratio. Equals e1071::skewness(type = 2).
+## The weighted form raises each weight to 3/2, per the SAS documentation.
+.wskew <- function(v, w) {
+  n <- length(v)
+  if (n < 3L) {
+    return(NA_real_)
+  }
+  s <- sqrt(.wvar(v, w))
+  if (is.na(s) || s == 0) {
+    return(NA_real_)
+  }
+  z <- (v - .wmean(v, w)) / s
+  acc <- if (is.null(w)) sum(z^3) else sum(w^(3 / 2) * z^3)
+  (n / ((n - 1) * (n - 2))) * acc
+}
+
+## Internal: SAS kurtosis -- excess kurtosis, adjusted Fisher-Pearson.
+## Equals e1071::kurtosis(type = 2). The weighted form squares each weight.
+.wkurt <- function(v, w) {
+  n <- length(v)
+  if (n < 4L) {
+    return(NA_real_)
+  }
+  s <- sqrt(.wvar(v, w))
+  if (is.na(s) || s == 0) {
+    return(NA_real_)
+  }
+  z <- (v - .wmean(v, w)) / s
+  acc <- if (is.null(w)) sum(z^4) else sum(w^2 * z^4)
+  (n * (n + 1) / ((n - 1) * (n - 2) * (n - 3))) * acc -
+    3 * (n - 1)^2 / ((n - 2) * (n - 3))
+}
+
 ## =============================================================================
 ## Internal: the statistic registry.
 ##
@@ -244,6 +278,14 @@ proc_means <- function(data, vars = NULL, class = NULL,
       m <- .wmean(v, w)
       if (is.null(w)) sum((v - m)^2) else sum(w * (v - m)^2)
     },
+    weighted = TRUE, integer = FALSE
+  ),
+  skewness = list(
+    fun = function(x, v, w) .wskew(v, w),
+    weighted = TRUE, integer = FALSE
+  ),
+  kurtosis = list(
+    fun = function(x, v, w) .wkurt(v, w),
     weighted = TRUE, integer = FALSE
   ),
   qrange = list(
