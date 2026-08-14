@@ -76,12 +76,12 @@ elsewhere.
 Prefix sorting applies to *jobs*. It does not apply to assets that every job
 reads, and mapping those by prefix is a category error.
 
-The format catalogs are the worked example. `hvti_taxonomy()` has **no format or
-label prefix**, and none of the 229 templates carries `format`, `fmt` or `label`
-in its filename — formats were never a job type. Yet **201 templates reference a
-format library** (`proc format`, `libname library`, `fmtsearch`), spread across
-every folder: 65 in `graphs`, 46 in `analyses`, 35 in `distributions`, 29 in
-`datasets`, 26 in `descriptive`.
+The format catalogs are the worked example. `hvtiRtemplates::hvti_taxonomy()`
+has **no format or label prefix**, and none of the 229 templates carries
+`format`, `fmt` or `label` in its filename — formats were never a job type.
+Yet **201 templates reference a format library** (`proc format`,
+`libname library`, `fmtsearch`), spread across every folder: 65 in `graphs`,
+46 in `analyses`, 35 in `distributions`, 29 in `datasets`, 26 in `descriptive`.
 
 `cvirfmts.sas` is the catalog they read. It contains **zero `%macro`
 definitions and 65 `value` statements** — it is data, not code, so triage's rule
@@ -120,8 +120,8 @@ Worse, redefinitions diverge. Measured by hashing each normalized macro body:
 In SAS, `%include`-ing two files that both define `%macro dist` means the
 second **silently shadows** the first. With `skip` carrying 10 different
 implementations across 13 files, any harness that includes multiple macro files
-is exposed to order-dependent behaviour. Detecting this is a Phase 0 deliverable, because
-Phase 1's harness will do exactly that.
+is exposed to order-dependent behaviour. Detecting this is a Phase 0
+deliverable, because Phase 1's harness will do exactly that.
 
 ### Public entry points versus private helpers
 
