@@ -17,7 +17,11 @@ knitr::opts_chunk$set(
 ```
 
 ```{r load}
-library(hvtiRutilities)
+if (requireNamespace("hvtiRutilities", quietly = TRUE)) {
+  library("hvtiRutilities")
+} else {
+  pkgload::load_all(export_all = FALSE, helpers = FALSE, quiet = TRUE)
+}
 ```
 
 ## Two Procedures You Already Run

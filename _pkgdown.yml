@@ -46,6 +46,7 @@ navbar:
         - text: "Dataset Version Tracking"
           href: articles/dataset-versioning.html
         - text: "---"
+        - text: "SAS Migration"
         - text: "PROC CONTENTS and PROC MEANS in R"
           href: articles/sas-procedures.html
         - text: "---"
@@ -110,6 +111,10 @@ articles:
   contents:
   - data-labels
   - dataset-versioning
+
+- title: SAS Migration
+  contents:
+  - sas-procedures
 
 - title: Specialized Topics
   contents:
