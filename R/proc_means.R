@@ -147,10 +147,98 @@ proc_means <- function(data, vars = NULL, class = NULL,
   invisible(TRUE)
 }
 
+## Internal: weighted mean, or the plain mean when w is NULL
+.wmean <- function(v, w) {
+  if (is.null(w)) mean(v) else sum(w * v) / sum(w)
+}
+
+## Internal: weighted variance at SAS VARDEF=DF -- the divisor is the count of
+## non-missing observations minus one, not the sum of the weights.
+.wvar <- function(v, w) {
+  n <- length(v)
+  if (n < 2L) {
+    return(NA_real_)
+  }
+  m <- .wmean(v, w)
+  css <- if (is.null(w)) sum((v - m)^2) else sum(w * (v - m)^2)
+  css / (n - 1)
+}
+
+## =============================================================================
+## Internal: the statistic registry.
+##
+## Each entry carries its compute function plus two flags. `weighted` is the
+## contract from the design: .compute_stat() passes weights to a statistic only
+## when its flag is TRUE, so a statistic cannot become weighted by someone
+## editing its body. `integer` types the zero-row result.
+##
+## fun(x, v, w): x is the raw vector including NA, v is x with NA removed, and w
+## is a numeric vector aligned to v, or NULL.
+.STATS <- list(
+  n = list(
+    fun = function(x, v, w) length(v),
+    weighted = FALSE, integer = TRUE
+  ),
+  nmiss = list(
+    fun = function(x, v, w) sum(is.na(x)),
+    weighted = FALSE, integer = TRUE
+  ),
+  mean = list(
+    fun = function(x, v, w) if (length(v) == 0L) NA_real_ else .wmean(v, w),
+    weighted = TRUE, integer = FALSE
+  ),
+  std = list(
+    fun = function(x, v, w) sqrt(.wvar(v, w)),
+    weighted = TRUE, integer = FALSE
+  ),
+  min = list(
+    fun = function(x, v, w) if (length(v) == 0L) NA_real_ else min(v),
+    weighted = FALSE, integer = FALSE
+  ),
+  max = list(
+    fun = function(x, v, w) if (length(v) == 0L) NA_real_ else max(v),
+    weighted = FALSE, integer = FALSE
+  ),
+  sum = list(
+    fun = function(x, v, w) {
+      if (length(v) == 0L) NA_real_ else if (is.null(w)) sum(v) else sum(w * v)
+    },
+    weighted = TRUE, integer = FALSE
+  ),
+  range = list(
+    fun = function(x, v, w) if (length(v) == 0L) NA_real_ else max(v) - min(v),
+    weighted = FALSE, integer = FALSE
+  ),
+  stderr = list(
+    fun = function(x, v, w) sqrt(.wvar(v, w) / length(v)),
+    weighted = TRUE, integer = FALSE
+  ),
+  cv = list(
+    fun = function(x, v, w) {
+      s <- sqrt(.wvar(v, w))
+      m <- .wmean(v, w)
+      # SAS emits missing when the mean is zero; R would give Inf.
+      if (is.na(s) || m == 0) NA_real_ else 100 * s / m
+    },
+    weighted = TRUE, integer = FALSE
+  ),
+  median = list(
+    fun = function(x, v, w) .quantile_stat(v, "median"),
+    weighted = FALSE, integer = FALSE
+  ),
+  q1 = list(
+    fun = function(x, v, w) .quantile_stat(v, "q1"),
+    weighted = FALSE, integer = FALSE
+  ),
+  q3 = list(
+    fun = function(x, v, w) .quantile_stat(v, "q3"),
+    weighted = FALSE, integer = FALSE
+  )
+)
+
 ## Internal: reject unknown statistic keywords
 .validate_stats <- function(stats) {
-  known <- c("n", "nmiss", "mean", "std", "min", "max", "sum", "range",
-             "stderr", "cv", "median", "q1", "q3")
+  known <- names(.STATS)
   ok <- stats %in% known | grepl("^p([1-9]|[1-9][0-9])$", stats)
   if (!all(ok)) {
     stop("Unrecognised statistic keyword(s): ",
@@ -161,25 +249,20 @@ proc_means <- function(data, vars = NULL, class = NULL,
   invisible(TRUE)
 }
 
-## Internal: one statistic from one vector, SAS semantics
-.compute_stat <- function(x, stat) {
+## Internal: one statistic from one vector, SAS semantics.
+## `w` is a weight vector aligned to `x`, or NULL. Statistics whose registry
+## entry is not marked `weighted` never see it.
+.compute_stat <- function(x, stat, w = NULL) {
   x <- as.numeric(x)
-  v <- x[!is.na(x)]
-  n <- length(v)
+  keep <- !is.na(x)
+  v <- x[keep]
 
-  switch(stat,
-    n      = n,
-    nmiss  = sum(is.na(x)),
-    mean   = if (n == 0L) NA_real_ else mean(v),
-    std    = if (n < 2L) NA_real_ else stats::sd(v),
-    min    = if (n == 0L) NA_real_ else min(v),
-    max    = if (n == 0L) NA_real_ else max(v),
-    sum    = if (n == 0L) NA_real_ else sum(v),
-    range  = if (n == 0L) NA_real_ else max(v) - min(v),
-    stderr = if (n < 2L) NA_real_ else stats::sd(v) / sqrt(n),
-    cv     = if (n < 2L) NA_real_ else 100 * stats::sd(v) / mean(v),
-    .quantile_stat(v, stat)
-  )
+  entry <- .STATS[[stat]]
+  if (is.null(entry)) {
+    return(.quantile_stat(v, stat))
+  }
+  wv <- if (isTRUE(entry$weighted) && !is.null(w)) w[keep] else NULL
+  entry$fun(x, v, wv)
 }
 
 ## Internal: quantile statistics at SAS QNTLDEF=5 (R type 2)
@@ -211,7 +294,8 @@ proc_means <- function(data, vars = NULL, class = NULL,
   out <- data.frame(variable = character(), label = character(),
                     stringsAsFactors = FALSE)
   for (s in stats) {
-    out[[s]] <- if (s %in% c("n", "nmiss")) integer() else numeric()
+    entry <- .STATS[[s]]
+    out[[s]] <- if (isTRUE(entry$integer)) integer() else numeric()
   }
   if (!is.null(class) && length(class) > 0L) {
     pre <- as.data.frame(
