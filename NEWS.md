@@ -24,13 +24,28 @@
   comment state (`/* */`, `* ... ;`), string state (`'...'`, `"..."`) and macro
   quoting (`%'`), so comments and literals spanning lines, apostrophes inside
   double-quoted strings, and the `%STR(%')` transpose idiom are not mistaken for
-  syntax errors. The check reports a file that ends inside a string literal,
-  naming the line where it opened. There is deliberately no do/end balance
-  check: textual balance is not a validity property of macro source, since
-  `%do`-guarded blocks emit DO and END from separate branches.
+  syntax errors. Every rule reads the scanned source, so a `%macro` written
+  inside a comment or a string literal is not counted as a definition. The check
+  reports a file that ends inside a string literal *or* inside a comment,
+  naming the line where it opened -- an unclosed `/*` is the more destructive of
+  the two, because every statement after it is inert while the file still looks
+  like usable source. There is deliberately no do/end balance check: textual
+  balance is not a validity property of macro source, since `%do`-guarded blocks
+  emit DO and END from separate branches.
 
-  On the reference corpus of 336 files this inventories 866 macro definitions
-  across 250 distinct names, rejecting 5 files as genuinely defective.
+  On the reference corpus of 336 files this inventories 816 macro definitions
+  across 307 distinct names, rejecting 5 as genuinely defective:
+  `bl_ord.norm.ci.sas`, `CR_compare_CP_test_AT.sas`, `rem.original`, `rem.uab`
+  and `repeated.sas`.
+
+  Those figures replace an earlier measurement of 866 definitions across 250
+  names. The difference is not a change of policy but a correction: the earlier
+  run counted `%macro` statements that the scanner had already established were
+  comment or string content. The rejected set is the same size and different in
+  membership -- `xmacro.sas` leaves it, having been failed for an imbalance
+  whose second definition is commented out, and `bl_ord.norm.ci.sas` enters it,
+  whose `* NOT COMPLETE` header carries no semicolon and therefore swallows the
+  `%MACRO BLORD` statement on the line below. The file says as much itself.
 
 # hvtiRutilities 1.0.3
 

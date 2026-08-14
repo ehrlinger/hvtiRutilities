@@ -152,3 +152,88 @@ test_that(".sas_scan reports the line where an unclosed string opened", {
   expect_equal(s$open_state, "squote")
   expect_equal(s$open_line, 2L)
 })
+
+# ===========================================================================
+# Review of #41: the scanner was applied to the literal check only, so the
+# %macro/%mend rules still counted definitions that the scan had already
+# established were comments or string content.
+# ===========================================================================
+
+test_that("a %macro inside a block comment is not counted as a definition", {
+  # Reported "imbalance: 2 open, 1 close" while the file is valid: the second
+  # definition is commented out. This is the false-positive class the scanner
+  # was written to remove, surviving in the rule the scanner had not reached.
+  res <- lint_txt(c("%macro foo;", "  data x; run;", "%mend;",
+                    "/*", "%macro dead;", "  data y; run;", "*/"))
+  expect_true(res$valid)
+})
+
+test_that("a %mend inside a block comment is not counted", {
+  res <- lint_txt(c("%macro foo;", "/*", "%mend;", "*/", "%mend;"))
+  expect_true(res$valid)
+})
+
+test_that("a %macro inside a string literal is not counted", {
+  res <- lint_txt(c("%macro foo;", "call execute('", "%macro inner;", "');",
+                    "%mend;"))
+  expect_true(res$valid)
+})
+
+test_that("a real %macro/%mend imbalance is still reported", {
+  res <- lint_txt(c("%macro truncated(a=1);", "  data x; run;"))
+  expect_false(res$valid)
+  expect_true(any(grepl("%macro/%mend", res$failures)))
+})
+
+test_that("sas_macro_defs() does not inventory a commented-out macro", {
+  f <- withr::local_tempfile(fileext = ".sas")
+  writeLines(c("%macro live(a=1);", "  data x; run;", "%mend live;",
+               "/*", "%macro dead(b=2);", "  data y; run;", "%mend dead;",
+               "*/"), f)
+  defs <- sas_macro_defs(f)
+  expect_equal(nrow(defs), 1L)
+  expect_equal(defs$macro, "live")
+})
+
+test_that("sas_macro_defs() keeps parameter names from the raw statement", {
+  # Detection moved to the scanned source; extraction deliberately did not,
+  # because the scanner strips the quoted default in `a='x'`.
+  f <- withr::local_tempfile(fileext = ".sas")
+  writeLines(c("%macro foo(a='x', b=2);", "  data d; run;", "%mend foo;"), f)
+  expect_equal(sas_macro_defs(f)$params, "a,b")
+})
+
+# ===========================================================================
+# An unterminated comment is a defect too, and the scanner already knew.
+# ===========================================================================
+
+test_that("a file ending inside a block comment is reported", {
+  # More destructive than an unterminated literal: everything after the /* is
+  # inert, so the file triages as usable source while most of it never runs.
+  res <- lint_txt(c("%macro f;", "%mend;", "/* dangling"))
+  expect_false(res$valid)
+  expect_true(any(grepl("unterminated /\\* \\*/ comment opened at line 3",
+                        res$failures)))
+})
+
+test_that("a file ending inside a star comment is reported", {
+  res <- lint_txt(c("%macro f;", "%mend;", "* dangling"))
+  expect_false(res$valid)
+  expect_true(any(grepl("unterminated \\* \\.\\.\\. ; comment opened at line 3",
+                        res$failures)))
+})
+
+test_that("a closed comment does not leave an open_line behind", {
+  s <- hvtiRutilities:::.sas_scan(c("/* a */", "* b ;", "data x; run;"))
+  expect_equal(s$open_state, "code")
+  expect_true(is.na(s$open_line))
+})
+
+test_that("an unterminated star comment swallows the %macro that follows", {
+  # bl_ord.norm.ci.sas in the macro library: a `* NOT COMPLETE` header with no
+  # semicolon, then %MACRO BLORD on the next line. Counting raw lines saw
+  # 4 open / 4 close and passed it; the definition is really inside the comment.
+  res <- lint_txt(c("* NOT COMPLETE", "%macro blord(a=1);", "  data x; run;",
+                    "%mend blord;"))
+  expect_false(res$valid)
+})

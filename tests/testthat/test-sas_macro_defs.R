@@ -11,10 +11,17 @@ fx <- function(name) testthat::test_path("fixtures", name)
 # (0xB5, a lone continuation byte = "micro sign"). Committing such a file would
 # be non-portable, so it is built at runtime. Mirrors the 7 Latin-1 files found
 # in the real macro library.
+#
+# The header comment is terminated with `;`. It was not, originally, which made
+# the fixture invalid SAS in a way nothing noticed: a `*` comment runs to the
+# next semicolon, so the unterminated header swallowed the %macro statement on
+# the following line and the file defined no macro at all. The per-line rules
+# could not see that and counted the definition anyway; the scanner can, so the
+# fixture now says what it always meant to say.
 write_latin1_sas <- function() {
   path <- tempfile(fileext = ".sas")
   writeBin(
-    c(charToRaw("* threshold "), as.raw(0xB5), charToRaw("g comment\n"),
+    c(charToRaw("* threshold "), as.raw(0xB5), charToRaw("g comment;\n"),
       charToRaw("%macro latin1(dsn);\n  data &dsn.; run;\n%mend latin1;\n")),
     path
   )
