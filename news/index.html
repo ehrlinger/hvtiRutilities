@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,6 +55,21 @@
       <small>Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.0.4" id="hvtirutilities-104">hvtiRutilities 1.0.4<a class="anchor" aria-label="anchor" href="#hvtirutilities-104"></a></h2>
+<div class="section level3">
+<h3 id="new-features-1-0-4">New features<a class="anchor" aria-label="anchor" href="#new-features-1-0-4"></a></h3>
+<ul><li>
+<p>Phase 0 of the SAS macro canonicalization program: <code><a href="../reference/sas_triage.html">sas_triage()</a></code>, <code><a href="../reference/sas_macro_defs.html">sas_macro_defs()</a></code>, <code><a href="../reference/sas_macro_signature.html">sas_macro_signature()</a></code>, <code><a href="../reference/write_macro_manifest.html">write_macro_manifest()</a></code> and <code><a href="../reference/write_collision_report.html">write_collision_report()</a></code>. Together they inventory a legacy SAS macro library, classify each definition public or private, and report the name collisions that make <code>%include</code> order-dependent. Pure R – no SAS dependency, so the inventory runs on the development workstation.</p>
+<p>Two design points are worth recording, because the obvious implementations of both are wrong for this corpus.</p>
+<p><strong>File discovery excludes known non-source suffixes rather than matching <code>.sas</code>.</strong> The library uses dots as word separators in filenames – <code>deciles.hazard</code>, <code>lm.cprobs</code> and <code>kaplan.int</code> are names, not stems with extensions – and many macro files carry no extension at all. An extension-anchored pattern omits both populations silently, including <code>unistats</code>, whose statistic vocabulary is the closest analogue in the corpus to <code><a href="../reference/proc_means.html">proc_means()</a></code>.</p>
+<p><strong>Validity checking uses a stateful scanner, not pattern matching.</strong> It tracks comment state (<code>/* */</code>, <code>* ... ;</code>), string state (<code>'...'</code>, <code>"..."</code>) and macro quoting (<code>%'</code>), so comments and literals spanning lines, apostrophes inside double-quoted strings, and the <code>%STR(%')</code> transpose idiom are not mistaken for syntax errors. Every rule reads the scanned source, so a <code>%macro</code> written inside a comment or a string literal is not counted as a definition. The check reports a file that ends inside a string literal <em>or</em> inside a comment, naming the line where it opened – an unclosed <code>/*</code> is the more destructive of the two, because every statement after it is inert while the file still looks like usable source. There is deliberately no do/end balance check: textual balance is not a validity property of macro source, since <code>%do</code>-guarded blocks emit DO and END from separate branches.</p>
+<p><strong>A macro redefined inside one file is resolved, not escalated.</strong> SAS compiles definitions in order and the later one replaces the earlier, so the last definition in a file is what any <code>%include</code> of it actually gets. Rule 3 keeps that one and drops the rest, each carrying the line that supersedes it. This is deliberately not a name collision: <code><a href="../reference/write_collision_report.html">write_collision_report()</a></code> lists names found in more than one <em>file</em>, because those are the ones whose behaviour depends on <code>%include</code> order. On the reference corpus 158 of the 816 definitions are shadowed this way, leaving 658 live.</p>
+<p>On the reference corpus of 336 files this inventories 816 macro definitions across 307 distinct names, rejecting 5 as genuinely defective: <code>bl_ord.norm.ci.sas</code>, <code>CR_compare_CP_test_AT.sas</code>, <code>rem.original</code>, <code>rem.uab</code> and <code>repeated.sas</code>.</p>
+<p>Those figures replace an earlier measurement of 866 definitions across 250 names. The difference is not a change of policy but a correction: the earlier run counted <code>%macro</code> statements that the scanner had already established were comment or string content. The rejected set is the same size and different in membership – <code>xmacro.sas</code> leaves it, having been failed for an imbalance whose second definition is commented out, and <code>bl_ord.norm.ci.sas</code> enters it, whose <code>* NOT COMPLETE</code> header carries no semicolon and therefore swallows the <code>%MACRO BLORD</code> statement on the line below. The file says as much itself.</p>
+</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.0.3" id="hvtirutilities-103">hvtiRutilities 1.0.3<a class="anchor" aria-label="anchor" href="#hvtirutilities-103"></a></h2>
 <div class="section level3">

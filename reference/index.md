@@ -63,6 +63,21 @@ Generate labeled sample and synthetic datasets
 - [`sample_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/sample_data.md)
   : Generate a sample dataset for testing
 
+## SAS Macro Canonicalization
+
+Inventory a legacy SAS macro library and resolve name collisions
+
+- [`sas_triage()`](https://ehrlinger.github.io/hvtiRutilities/reference/sas_triage.md)
+  : Triage a directory of legacy SAS macro files
+- [`sas_macro_defs()`](https://ehrlinger.github.io/hvtiRutilities/reference/sas_macro_defs.md)
+  : Extract every macro definition from a SAS file
+- [`sas_macro_signature()`](https://ehrlinger.github.io/hvtiRutilities/reference/sas_macro_signature.md)
+  : Parse the documentation header of a legacy SAS macro file
+- [`write_macro_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/write_macro_manifest.md)
+  : Write the canonical macro manifest
+- [`write_collision_report()`](https://ehrlinger.github.io/hvtiRutilities/reference/write_collision_report.md)
+  : Write the macro name-collision report
+
 ## Package Utilities
 
 - [`hvtiRutilities-package`](https://ehrlinger.github.io/hvtiRutilities/reference/hvtiRutilities-package.md)
