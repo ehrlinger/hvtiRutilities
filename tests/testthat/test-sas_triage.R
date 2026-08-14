@@ -87,7 +87,7 @@ test_that("rule 3 drops files failing lint, citing the failure", {
 
   expect_equal(row$decision, "drop")
   expect_equal(row$rule, 3L)
-  expect_match(row$evidence, "unbalanced quote")
+  expect_match(row$evidence, "unterminated string literal")
 })
 
 test_that("rule 3 drops nomend.sas without erroring the whole run", {

@@ -10,11 +10,11 @@ test_that(".sas_lint passes a well-formed file", {
   expect_length(res$failures, 0L)
 })
 
-test_that(".sas_lint catches an unbalanced single quote", {
+test_that(".sas_lint catches an unterminated string literal", {
   res <- hvtiRutilities:::.sas_lint(fx("gamma_broken.sas"))
 
   expect_false(res$valid)
-  expect_match(paste(res$failures, collapse = " "), "unbalanced quote")
+  expect_match(paste(res$failures, collapse = " "), "unterminated string literal")
 })
 
 test_that(".sas_lint catches an unmatched %macro", {

@@ -2,6 +2,24 @@
 
 ## Bug fixes
 
+- `.sas_lint()`: quote checking is now done by a stateful scanner
+  (`.sas_scan()`) rather than a per-line pattern. The scanner tracks comment
+  state (`/* */`, `* ... ;`), string state (`'...'`, `"..."`) and macro quoting
+  (`%'`), so it is correct by construction on six constructs that defeated
+  pattern matching: comments and literals spanning lines, mid-line `* ... ;`
+  comments, apostrophes inside double-quoted strings, and the `%STR(%')`
+  transpose idiom.
+
+  The check itself changed meaning: rather than counting quotes per line, which
+  is not a validity property, it reports a file that ends inside a string
+  literal, naming the line where it opened. Evidence strings change from
+  `unbalanced quote at line(s): ...` to
+  `unterminated string literal opened at line N`.
+
+  On the corpus this takes lint drops of macro-bearing files from 27 to 5, and
+  those 5 are genuine defects. The inventory grows from 735 macro definitions
+  across 220 names to 866 across 250.
+
 - `.sas_lint()`: block comments spanning several lines are now stripped with a
   state flag rather than matched per line. The library's boxed `| Purpose : |`
   headers run for dozens of lines, so prose inside them ("Pearson's Chi-square")

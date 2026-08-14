@@ -1,43 +1,121 @@
 ## =============================================================================
-## Internal: strip SAS comments before quote balancing.
-## SAS comments take two forms: a statement starting with `*` and ending `;`,
-## and /* ... */ blocks. Apostrophes inside comments are prose, not syntax.
+## Internal: scan SAS source, returning the code with comments, string literals
+## and macro-quoted characters removed.
 ##
-## Block comments routinely span lines in this library -- the boxed `| Purpose :
-## ... |` headers run for dozens of lines -- so they are tracked with a state
-## flag rather than matched per line. Blanking in place preserves line numbering
-## for the quote check's line report.
-.strip_comments <- function(lines) {
-  out <- character(length(lines))
-  in_block <- FALSE
-
-  for (i in seq_along(lines)) {
-    s <- lines[i]
-    kept <- ""
-    repeat {
-      if (in_block) {
-        p <- regexpr("*/", s, fixed = TRUE)
-        if (p == -1L) {
-          break
-        }
-        s <- substring(s, p + 2L)
-        in_block <- FALSE
-      } else {
-        p <- regexpr("/*", s, fixed = TRUE)
-        if (p == -1L) {
-          kept <- paste0(kept, s)
-          break
-        }
-        kept <- paste0(kept, substring(s, 1L, p - 1L))
-        s <- substring(s, p + 2L)
-        in_block <- TRUE
-      }
-    }
-    out[i] <- kept
+## Counting quotes with a per-line pattern cannot work on this library. Six
+## distinct constructs defeat it, each of which is ordinary SAS:
+##
+##   /* ... */ spanning lines        boxed `| Purpose : |` headers
+##   * ... ;   spanning lines        gmatch.sas's eight-line header
+##   * ... ;   mid-line              `data y; run; * transform X's here;`
+##   '...' spanning lines            `title '... by` / `&&group' ;`
+##   '  inside "..."                 `put "WARN''ING: ... didn't ...";`
+##   %STR(%')                        SAS/IML transpose, deliberately unbalanced
+##
+## Patching one construct at a time kept trading one class of false positive for
+## another, so the state is tracked explicitly instead. Newlines are always
+## retained, so line numbering survives for the failure report.
+##
+## Returns list(code, open_state, open_line): `code` has one element per input
+## line; `open_state` is the state at end of input, and `open_line` the line
+## where an unterminated literal began.
+.sas_scan <- function(lines) {
+  if (length(lines) == 0L) {
+    return(list(code = character(0), open_state = "code",
+                open_line = NA_integer_))
   }
 
-  out[grepl("^[[:space:]]*\\*", out)] <- ""
-  out
+  ch <- strsplit(paste(lines, collapse = "\n"), "", fixed = TRUE)[[1]]
+  m <- length(ch)
+  keep <- logical(m)
+
+  state <- "code"
+  open_line <- NA_integer_
+  line <- 1L
+  ## TRUE when the next significant character would begin a statement, which is
+  ## the only position where `*` opens a comment rather than multiplying.
+  stmt_start <- TRUE
+  i <- 1L
+
+  while (i <= m) {
+    c1 <- ch[i]
+    c2 <- if (i < m) ch[i + 1L] else ""
+
+    if (c1 == "\n") {
+      keep[i] <- TRUE
+      line <- line + 1L
+      i <- i + 1L
+      next
+    }
+
+    if (state == "code") {
+      if (c1 == "%" && (c2 == "'" || c2 == "\"")) {
+        i <- i + 2L                      # macro-quoted char, never a delimiter
+      } else if (c1 == "/" && c2 == "*") {
+        state <- "block"
+        i <- i + 2L
+      } else if (c1 == "*" && stmt_start) {
+        state <- "star"
+        i <- i + 1L
+      } else if (c1 == "'") {
+        state <- "squote"
+        open_line <- line
+        i <- i + 1L
+      } else if (c1 == "\"") {
+        state <- "dquote"
+        open_line <- line
+        i <- i + 1L
+      } else {
+        keep[i] <- TRUE
+        if (!grepl("[[:space:]]", c1)) {
+          stmt_start <- (c1 == ";")
+        }
+        i <- i + 1L
+      }
+    } else if (state == "block") {
+      if (c1 == "*" && c2 == "/") {
+        state <- "code"
+        i <- i + 2L
+      } else {
+        i <- i + 1L
+      }
+    } else if (state == "star") {
+      if (c1 == ";") {
+        state <- "code"
+        keep[i] <- TRUE                  # keep the terminator as a separator
+        stmt_start <- TRUE
+      }
+      i <- i + 1L
+    } else {                             # squote or dquote
+      q <- if (state == "squote") "'" else "\""
+      if (c1 == q && c2 == q) {
+        i <- i + 2L                      # doubled quote escapes itself
+      } else if (c1 == q) {
+        state <- "code"
+        open_line <- NA_integer_
+        stmt_start <- FALSE
+        i <- i + 1L
+      } else {
+        i <- i + 1L
+      }
+    }
+  }
+
+  code <- strsplit(paste(ch[keep], collapse = ""), "\n", fixed = TRUE)[[1]]
+  length(code) <- length(lines)          # pad if trailing lines were all noise
+  code[is.na(code)] <- ""
+
+  list(code = code, open_state = state, open_line = open_line)
+}
+
+## =============================================================================
+## Internal: strip SAS comments and literals, keeping one element per line.
+## Retained as the scanner's code output for callers that only need the text.
+## SAS comments take two forms: a statement starting with `*` and ending `;`,
+## and /* ... */ blocks, and literals in '...' or "...". All are removed by
+## .sas_scan(); this is the text-only view of its result.
+.strip_comments <- function(lines) {
+  .sas_scan(lines)$code
 }
 
 ## =============================================================================
@@ -65,18 +143,17 @@
     )
   }
 
-  ## 3. Single-quote balance, per line, comments removed.
-  code <- .strip_comments(lines)
-  odd <- which(vapply(
-    gregexpr("'", code, fixed = TRUE),
-    function(m) if (m[1L] == -1L) FALSE else (length(m) %% 2L == 1L),
-    logical(1)
-  ))
-  if (length(odd) > 0L) {
+  ## 3. Every string literal is terminated.
+  ##
+  ## Per-line quote counting is not a validity test: literals legally span lines,
+  ## and quotes appear inside comments, inside the other quote character, and
+  ## macro-quoted as %'. The scanner tracks that context, so the only thing left
+  ## to check is whether the file ends inside a literal.
+  scan <- .sas_scan(lines)
+  if (scan$open_state %in% c("squote", "dquote")) {
     failures <- c(
       failures,
-      sprintf("unbalanced quote at line(s): %s",
-              paste(odd, collapse = ", "))
+      sprintf("unterminated string literal opened at line %d", scan$open_line)
     )
   }
 
