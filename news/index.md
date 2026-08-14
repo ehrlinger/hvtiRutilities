@@ -1,5 +1,18 @@
 # Changelog
 
+## hvtiRutilities 1.0.6
+
+### Bug fixes
+
+- [`sas_triage()`](https://ehrlinger.github.io/hvtiRutilities/reference/sas_triage.md):
+  the excluded-subdirectory counts no longer include dot-directories. A
+  local clone carries `.git`, whose loose-object files carry no
+  extension and so matched none of the non-source suffixes, reporting 31
+  files of “excluded SAS source” that were git internals. These counts
+  exist to tell a human what triage did not look at, and `.git` is never
+  that decision. `CVS/` is still reported: it is a legacy artifact
+  committed into the corpus itself, not infrastructure of the clone.
+
 ## hvtiRutilities 1.0.5
 
 ### New features
