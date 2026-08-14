@@ -309,7 +309,17 @@ proc_means <- function(data, vars = NULL, class = NULL,
   ),
   sumwgt = list(
     fun = function(x, v, w) {
-      if (length(v) == 0L) NA_real_ else if (is.null(w)) as.numeric(length(v)) else sum(w)
+      # Both branches coerce to double. `length()` is integer, and `sum()` of an
+      # integer weight column stays integer -- either would make the column type
+      # depend on the weights supplied, contradicting `integer = FALSE` and the
+      # zero-row path. Coercing before the sum also avoids integer overflow.
+      if (length(v) == 0L) {
+        NA_real_
+      } else if (is.null(w)) {
+        as.numeric(length(v))
+      } else {
+        sum(as.numeric(w))
+      }
     },
     weighted = TRUE, integer = FALSE
   ),

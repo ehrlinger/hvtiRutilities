@@ -118,3 +118,20 @@ test_that("sumwgt is numeric whether or not weights are supplied", {
   expect_type(proc_means(d, vars = "a", stats = "sumwgt", weights = "wt")$sumwgt,
               "double")
 })
+
+test_that("sumwgt is numeric for an integer weight column", {
+  # is.numeric() accepts integers, and sum() of an integer vector stays integer,
+  # so an integer weight column would otherwise flip the column type.
+  di <- data.frame(a = c(1, 2, 3, 4), wt = c(1L, 1L, 2L, 4L))
+  res <- proc_means(di, vars = "a", stats = "sumwgt", weights = "wt")
+  expect_type(res$sumwgt, "double")
+  expect_equal(res$sumwgt, 8)
+})
+
+test_that("sumwgt does not overflow on large integer weights", {
+  # sum() on integers overflows to NA with a warning; coercing first avoids it.
+  dbig <- data.frame(a = c(1, 2), wt = c(2000000000L, 2000000000L))
+  withr::local_options(warn = 2)
+  expect_equal(proc_means(dbig, vars = "a", stats = "sumwgt",
+                          weights = "wt")$sumwgt, 4e9)
+})
