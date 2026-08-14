@@ -1002,23 +1002,28 @@ cs <- function(x, stat, w = NULL) hvtiRutilities:::.compute_stat(x, stat, w)
 v <- c(1, 2, 3, 4, 8)
 w <- c(1, 1, 2, 4, 2)
 
-test_that("weighted skewness is stable at its documented formula", {
-  n <- length(v)
-  m <- sum(w * v) / sum(w)
-  s <- sqrt(sum(w * (v - m)^2) / (n - 1))
-  z <- (v - m) / s
-  expected <- (n / ((n - 1) * (n - 2))) * sum(w^(3 / 2) * z^3)
-  expect_equal(cs(v, "skewness", w), expected)
+# The expected values below are FROZEN LITERALS, not expressions recomputed
+# from the same formula the implementation uses. A test that recomputes the
+# formula silently follows any edit to it and so cannot detect drift; a frozen
+# number breaks loudly. These were computed once from the SAS documented
+# formulas for v and w above:
+#   sum(w) = 10, xbar_w = 4.1, s_w = sqrt(sum(w*(v-xbar_w)^2)/(n-1)) = 3.4241787337
+# They pin the current arithmetic against accidental change. They do NOT
+# establish SAS agreement -- see the gap notice at the top of this file.
+
+test_that("weighted skewness is stable at its documented value", {
+  expect_equal(cs(v, "skewness", w), 1.2967986106, tolerance = 1e-8)
 })
 
-test_that("weighted kurtosis is stable at its documented formula", {
-  n <- length(v)
-  m <- sum(w * v) / sum(w)
-  s <- sqrt(sum(w * (v - m)^2) / (n - 1))
-  z <- (v - m) / s
-  expected <- (n * (n + 1) / ((n - 1) * (n - 2) * (n - 3))) *
-    sum(w^2 * z^4) - 3 * (n - 1)^2 / ((n - 2) * (n - 3))
-  expect_equal(cs(v, "kurtosis", w), expected)
+test_that("weighted kurtosis is stable at its documented value", {
+  expect_equal(cs(v, "kurtosis", w), 1.4838139488, tolerance = 1e-8)
+})
+
+test_that("weighted skewness and kurtosis actually respond to the weights", {
+  # Guards the w^(3/2) and w^2 exponents. At w = 1 both collapse to 1, so an
+  # equal-weights test cannot distinguish a correct weighting from none at all.
+  expect_false(isTRUE(all.equal(cs(v, "skewness", w), cs(v, "skewness"))))
+  expect_false(isTRUE(all.equal(cs(v, "kurtosis", w), cs(v, "kurtosis"))))
 })
 
 test_that("weighted skewness and kurtosis honour the minimum-n rules", {
