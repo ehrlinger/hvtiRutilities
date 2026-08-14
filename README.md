@@ -6,7 +6,7 @@
 
 [![Codecov test coverage](https://codecov.io/gh/ehrlinger/hvtiRutilities/graph/badge.svg)](https://app.codecov.io/gh/ehrlinger/hvtiRutilities)
 
-[![active](http://www.repostatus.org/badges/latest/active.svg)](http://www.repostatus.org/badges/latest/active.svg)
+[![active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/badges/latest/active.svg)
 
 [![R-CMD-check](https://github.com/ehrlinger/hvtiRutilities/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ehrlinger/hvtiRutilities/actions/workflows/R-CMD-check.yaml)
 
@@ -24,6 +24,17 @@ hvtiRutilities provides utility functions for working with clinical research dat
   - Converts numeric variables with few unique values to factors
   - Handles various NA representations ("NA", "na", etc.)
   - Preserves variable labels from SAS/labelled data
+
+- **`proc_contents()`**: SAS `PROC CONTENTS` in R
+  - One row per variable: creation position, name, SAS type (Num/Char), format, label
+  - Plus R class, distinct-value count, and percent missing
+  - Alphabetical by default, matching SAS; `order = "varnum"` gives creation order
+  - Omits `Len`, `Pos`, and `Informat`, which `haven` cannot recover from a `.sas7bdat`
+
+- **`proc_means()`**: SAS `PROC MEANS` in R
+  - SAS statistic keywords (`n`, `nmiss`, `mean`, `std`, `min`, `max`, `median`, `q1`, `q3`, `pNN`, ...), defaulting to SAS's own five
+  - `class =` stratification, dropping missing class levels as SAS does
+  - Quantiles use SAS's `QNTLDEF=5` definition, not R's default
 
 - **`label_map()`**: Extract variable labels from labeled datasets
   - Creates a lookup table mapping variable names to their labels
@@ -150,8 +161,8 @@ lmap <- label_map(model_data)
 
 ## Getting Help
 
-- Package documentation: `?r_data_types`, `?label_map`, `?generate_survival_data`
-- Vignettes: `vignette("hvtiRutilities")`, `vignette("survival-data")`
+- Package documentation: `?r_data_types`, `?label_map`, `?proc_contents`, `?proc_means`
+- Vignettes: `vignette("hvtiRutilities")`, `vignette("sas-procedures")`, `vignette("dataset-versioning")`
 - For bug reports and feature requests: [GitHub Issues](https://github.com/ehrlinger/hvtiRutilities/issues)
 - For package news and changes: Run `hvtiRutilities.news()` in R
 

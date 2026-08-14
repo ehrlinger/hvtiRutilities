@@ -10,7 +10,8 @@ update_manifest(
   extract_date = Sys.Date(),
   n_rows = NULL,
   source = NULL,
-  sort_key = NULL
+  sort_key = NULL,
+  verbose = FALSE
 )
 }
 \arguments{
@@ -35,6 +36,10 @@ all other file types supply this value explicitly.}
 
 \item{sort_key}{Character. Column name(s) that define the canonical sort
 order of the dataset.}
+
+\item{verbose}{Logical. If \code{TRUE}, report which manifest entry was
+added or updated via \code{\link[base]{message}}.  Defaults to
+\code{FALSE} so that scripted or looped calls stay silent.}
 }
 \value{
 Invisibly returns the updated manifest as a named list.

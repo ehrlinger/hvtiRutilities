@@ -34,6 +34,27 @@ navbar:
       icon: fa-linkedin
       href: https://www.linkedin.com/in/ehrlinger/
       aria-label: LinkedIn
+    articles:
+      text: Articles
+      menu:
+        - text: "Getting Started"
+          href: articles/hvtiRutilities.html
+        - text: "---"
+        - text: "Core Workflows"
+        - text: "Data Label Handling Best Practices"
+          href: articles/data-labels.html
+        - text: "Dataset Version Tracking"
+          href: articles/dataset-versioning.html
+        - text: "---"
+        - text: "SAS Migration"
+        - text: "PROC CONTENTS and PROC MEANS in R"
+          href: articles/sas-procedures.html
+        - text: "---"
+        - text: "Specialized Topics"
+        - text: "Simulating Cardiac Surgery Survival Data"
+          href: articles/survival-data.html
+        - text: "Reproducible Seeds in R and SAS"
+          href: articles/reproducible-seeds.html
 
 reference:
 - title: Data Import
@@ -57,9 +78,11 @@ reference:
   - clean_labels
 
 - title: Data Documentation
-  desc: Build data dictionaries and compare dataset versions
+  desc: Build data dictionaries, summarise variables, and compare dataset versions
   contents:
   - data_dictionary
+  - proc_contents
+  - proc_means
   - compare_datasets
 
 - title: Dataset Versioning
@@ -97,6 +120,10 @@ articles:
   contents:
   - data-labels
   - dataset-versioning
+
+- title: SAS Migration
+  contents:
+  - sas-procedures
 
 - title: Specialized Topics
   contents:

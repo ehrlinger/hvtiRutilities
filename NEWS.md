@@ -1,50 +1,121 @@
-# hvtiRutilities 1.0.0.9004
+# hvtiRutilities 1.0.4
+
+## New features
+
+- Phase 0 of the SAS macro canonicalization program: `sas_triage()`,
+  `sas_macro_defs()`, `sas_macro_signature()`, `write_macro_manifest()` and
+  `write_collision_report()`. Together they inventory a legacy SAS macro
+  library, classify each definition public or private, and report the name
+  collisions that make `%include` order-dependent. Pure R -- no SAS dependency,
+  so the inventory runs on the development workstation.
+
+  Two design points are worth recording, because the obvious implementations of
+  both are wrong for this corpus.
+
+  **File discovery excludes known non-source suffixes rather than matching
+  `.sas`.** The library uses dots as word separators in filenames --
+  `deciles.hazard`, `lm.cprobs` and `kaplan.int` are names, not stems with
+  extensions -- and many macro files carry no extension at all. An
+  extension-anchored pattern omits both populations silently, including
+  `unistats`, whose statistic vocabulary is the closest analogue in the corpus
+  to `proc_means()`.
+
+  **Validity checking uses a stateful scanner, not pattern matching.** It tracks
+  comment state (`/* */`, `* ... ;`), string state (`'...'`, `"..."`) and macro
+  quoting (`%'`), so comments and literals spanning lines, apostrophes inside
+  double-quoted strings, and the `%STR(%')` transpose idiom are not mistaken for
+  syntax errors. The check reports a file that ends inside a string literal,
+  naming the line where it opened. There is deliberately no do/end balance
+  check: textual balance is not a validity property of macro source, since
+  `%do`-guarded blocks emit DO and END from separate branches.
+
+  On the reference corpus of 336 files this inventories 866 macro definitions
+  across 250 distinct names, rejecting 5 files as genuinely defective.
+
+# hvtiRutilities 1.0.3
+
+## Documentation
+
+- New vignette, *PROC CONTENTS and PROC MEANS in R*, written for readers who
+  run both languages. It walks `proc_contents()` and `proc_means()` beside the
+  procedures they replace, covers the `QNTLDEF=5` quantile difference that
+  changes quartiles without changing the median, and lists every behaviour
+  where the R version departs from the SAS original.
+
+- `compare_datasets()` is now demonstrated in *Dataset Version Tracking*
+  rather than only named in its index table. The example covers the four kinds
+  of drift it reports and why a label change is the one to watch.
+
+# hvtiRutilities 1.0.2
+
+## New features
+
+- `proc_contents()`: a port of SAS `PROC CONTENTS`. Returns a dataset header
+  (observations, variables, label) and a variables table carrying creation
+  position, name, SAS type, format, label, R class, distinct-value count, and
+  percent missing. `Len`, `Pos`, and `Informat` are deliberately omitted —
+  `haven` cannot recover them from a `.sas7bdat`, and inferred values would
+  disagree with the source dataset whenever its `LENGTH` statement differed
+  from the default.
+
+- `proc_means()`: a port of SAS `PROC MEANS`. Takes SAS statistic keywords
+  (`n`, `nmiss`, `mean`, `std`, `min`, `max`, `sum`, `range`, `stderr`, `cv`,
+  `median`, `q1`, `q3`, and any `pNN`), defaulting to SAS's own five, and
+  supports `CLASS` stratification with SAS's default handling of missing class
+  levels. Quantiles use `type = 2`, the R equivalent of SAS `QNTLDEF=5`;
+  R's default `type = 7` disagrees with SAS on small and even-numbered samples.
+
+## Documentation
+
+- `proc_contents()` now documents that `pct_missing` is `NaN`, not a value in
+  0-100, when the input has columns but zero rows: the proportion of missing
+  values among no values is undefined, and reporting `0` would assert that
+  nothing is missing. Behaviour is unchanged and is inherited from
+  `data_dictionary()`; only the documented contract is now accurate, and a test
+  pins it.
+
+## Internal changes
+
+- `data_dictionary()` is now a thin wrapper over `proc_contents()` and the
+  shared statistic engine. Its signature and output are unchanged, pinned by
+  characterization tests added before the refactor.
+
+# hvtiRutilities 1.0.1
+
+## Breaking changes
+
+- `update_manifest()` and `verify_manifest()` are now **silent by default**.
+  Both gained a `verbose` argument (default `FALSE`) that gates all
+  informational `message()` output: "Manifest entry added / updated" in
+  `update_manifest()`, and the per-entry "— SHA-256 match (n = N)" and
+  "Manifest contains no dataset entries." lines in `verify_manifest()`.
+  Pass `verbose = TRUE` to restore the previous console output.
+
+  This removes unconditional chatter from packages that call these functions
+  in a loop (for example `hvtiRdatasets::snapshot_oracle()`, which called
+  `update_manifest()` once per study), and brings the package in line with
+  the CRAN policy against chatty `message()`/`cat()` in function bodies.
+
+  Failures are unaffected: a SHA-256 mismatch, a missing file, or a row-count
+  mismatch still raises `stop()` (or `warning()` when
+  `stop_on_error = FALSE`) regardless of `verbose`. The per-entry status text
+  is also still returned in the `message` column of `verify_manifest()`'s
+  data frame, so silencing the console loses no information.
+
+  `verbose` is appended last in both signatures, so existing positional calls
+  are unaffected.
+
+## Maintenance
+
+- Maintainer contact is now `john.ehrlinger@gmail.com`. The redundant
+  `Maintainer:` field was removed from DESCRIPTION — with `Authors@R` present
+  the maintainer is derived from the `cre` role, and having both declared
+  different addresses.
+- README: the repostatus badge now uses `https://` (the `http://` form
+  301-redirected, failing `urlchecker::url_check()`).
+- DESCRIPTION `Date:` refreshed to the 1.0.1 release date.
 
 ## Bug fixes
-
-- `.sas_lint()`: quote checking is now done by a stateful scanner
-  (`.sas_scan()`) rather than a per-line pattern. The scanner tracks comment
-  state (`/* */`, `* ... ;`), string state (`'...'`, `"..."`) and macro quoting
-  (`%'`), so it is correct by construction on six constructs that defeated
-  pattern matching: comments and literals spanning lines, mid-line `* ... ;`
-  comments, apostrophes inside double-quoted strings, and the `%STR(%')`
-  transpose idiom.
-
-  The check itself changed meaning: rather than counting quotes per line, which
-  is not a validity property, it reports a file that ends inside a string
-  literal, naming the line where it opened. Evidence strings change from
-  `unbalanced quote at line(s): ...` to
-  `unterminated string literal opened at line N`.
-
-  On the corpus this takes lint drops of macro-bearing files from 27 to 5, and
-  those 5 are genuine defects. The inventory grows from 735 macro definitions
-  across 220 names to 866 across 250.
-
-- `.sas_lint()`: block comments spanning several lines are now stripped with a
-  state flag rather than matched per line. The library's boxed `| Purpose : |`
-  headers run for dozens of lines, so prose inside them ("Pearson's Chi-square")
-  was counted as an unbalanced quote and the file dropped. Blanking is done in
-  place, so the line numbers reported for genuine unbalanced quotes are
-  unchanged.
-
-- `.sas_lint()`: removed the do/end balance check. Textual balance is not a
-  validity property of SAS macro source -- `end` appears in the `end=` data set
-  option, in PROC SQL `CASE ... END` and DATA step `SELECT ... END`, and
-  `%do`-guarded blocks emit DO and END from separate branches. The check flagged
-  55 of the 72 macro-bearing files it examined. `%macro`/`%mend` balance already
-  catches the truncation it was meant to detect.
-
-  Together these raise the corpus inventory from 485 macro definitions across
-  145 names to 735 across 220, and cut lint drops of macro-bearing files from
-  72 to 27.
-
-- `sas_triage()`: file discovery no longer matches on a `.sas` extension.
-  The macro library uses dots as word separators in filenames
-  (`deciles.hazard`, `lm.cprobs`, `kaplan.int`), and many macro files carry no
-  extension at all, so the old pattern silently omitted them. Discovery is now
-  a denylist of non-source suffixes. On the real corpus this raises discovery
-  from 202 to 336 files, recovering 79 macro-bearing files that were invisible
-  to Phase 0 -- including `unistats`, the closest analogue to `proc_means()`.
 
 - `read_clinical_data()`: files with no extension now produce a clear error
   ("Cannot determine file type: … has no extension") instead of the

@@ -10,4 +10,7 @@
 ^doc$
 ^Meta$
 ^\.claude$
+^CLAUDE\.md$
+^badges$
 ^specs$
+^\.superpowers$
