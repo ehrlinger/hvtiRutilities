@@ -74,6 +74,11 @@ test_that(".STATS marks exactly the weight-responsive statistics", {
 test_that(".compute_stat accepts a weights argument positionally after stat", {
   expect_equal(hvtiRutilities:::.compute_stat(c(1, 2, 3), "mean", NULL), 2)
 })
+
+test_that("cv is NA when the mean is zero, matching SAS", {
+  # R would return Inf here; SAS emits missing.
+  expect_true(is.na(hvtiRutilities:::.compute_stat(c(-2, 0, 2), "cv")))
+})
 ```
 
 - [ ] **Step 2: Run the test to verify it fails**
@@ -156,7 +161,9 @@ In `R/proc_means.R`, replace the whole block from `## Internal: reject unknown s
   cv = list(
     fun = function(x, v, w) {
       s <- sqrt(.wvar(v, w))
-      if (is.na(s)) NA_real_ else 100 * s / .wmean(v, w)
+      m <- .wmean(v, w)
+      # SAS emits missing when the mean is zero; R would give Inf.
+      if (is.na(s) || m == 0) NA_real_ else 100 * s / m
     },
     weighted = TRUE, integer = FALSE
   ),
@@ -664,6 +671,17 @@ test_that("the weight column is not itself analysed by default", {
   res <- proc_means(d, stats = "n", weights = "wt")
   expect_equal(res$variable, "a")
 })
+
+test_that("naming the weight column in vars is an error", {
+  expect_error(proc_means(d, vars = "wt", stats = "n", weights = "wt"),
+               "also named in 'vars' or 'class'")
+})
+
+test_that("naming the weight column in class is an error", {
+  expect_error(proc_means(d, vars = "a", class = "wt", stats = "n",
+                          weights = "wt"),
+               "also named in 'vars' or 'class'")
+})
 ```
 
 - [ ] **Step 2: Run the test to verify it fails**
@@ -724,6 +742,16 @@ Immediately after `.validate_stats(stats)` (line 65), add:
     keep_w <- !is.na(wvec)
     data <- data[keep_w, , drop = FALSE]
     wvec <- wvec[keep_w]
+  }
+```
+
+Immediately after the whole `if (is.null(vars)) { ... } else { ... }` block and before the `if (length(vars) == 0L)` check, add the overlap guard:
+
+```r
+  if (!is.null(weights) && weights %in% c(vars, class)) {
+    stop("Weight column '", weights,
+         "' is also named in 'vars' or 'class'. A column cannot be both a ",
+         "weight and an analysis or class variable.", call. = FALSE)
   }
 ```
 
@@ -1080,7 +1108,11 @@ Add to `@details`:
 #' The \code{PROC UNIVARIATE} inference statistics (\code{NORMAL}, \code{PROBN},
 #' \code{T}, \code{PROBT}, \code{MSIGN}, \code{PROBM}, \code{SIGNRANK},
 #' \code{PROBS}) are deliberately absent: they would make this a
-#' hypothesis-testing function rather than a summary one.
+#' hypothesis-testing function rather than a summary one. \code{CLM}, the
+#' confidence limits of the mean, is absent for the same reason.
+#'
+#' \code{cv} is \code{NA} when the mean is zero, matching SAS; R's arithmetic
+#' would give \code{Inf}.
 ```
 
 Add a `@examples` entry showing weighting:
