@@ -1,0 +1,2 @@
+%macro plainmacro(a=1);
+%mend;

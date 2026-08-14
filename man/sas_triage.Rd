@@ -7,7 +7,7 @@
 sas_triage(dir, overrides = NULL)
 }
 \arguments{
-\item{dir}{Character. Path to a directory of `.sas` files. Use a local clone;
+\item{dir}{Character. Path to a directory of SAS source files. Use a local clone;
 the canonical library lives on a network volume where file operations are
 slow.}
 
@@ -24,12 +24,19 @@ A \code{data.frame} with one row per macro definition and columns
   \code{file}, so the result is deterministic.
 }
 \description{
-Applies an ordered rule ladder to every `.sas` file in \code{dir} and returns
-one row per macro definition, each carrying a \code{decision} and the
+Applies an ordered rule ladder to every SAS source file in \code{dir} and
+returns one row per macro definition, each carrying a \code{decision} and the
 \code{evidence} that justifies it.
 }
 \details{
 Only the top level of \code{dir} is scanned; subdirectories are ignored.
+
+Candidate files are selected by excluding known non-source suffixes (logs,
+listings, documents, binary data sets, numbered RCS backups) rather than by
+matching \code{.sas}. The library names files with dots as word separators
+-- \code{deciles.hazard} and \code{lm.cprobs} are names, not stems with
+extensions -- and many macro files carry no extension at all, so a
+\code{.sas}-only pattern silently omits them.
 
 File-level rules, applied first, in order:
 \enumerate{

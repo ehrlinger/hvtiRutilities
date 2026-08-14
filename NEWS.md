@@ -2,6 +2,14 @@
 
 ## Bug fixes
 
+- `sas_triage()`: file discovery no longer matches on a `.sas` extension.
+  The macro library uses dots as word separators in filenames
+  (`deciles.hazard`, `lm.cprobs`, `kaplan.int`), and many macro files carry no
+  extension at all, so the old pattern silently omitted them. Discovery is now
+  a denylist of non-source suffixes. On the real corpus this raises discovery
+  from 202 to 336 files, recovering 79 macro-bearing files that were invisible
+  to Phase 0 -- including `unistats`, the closest analogue to `proc_means()`.
+
 - `read_clinical_data()`: files with no extension now produce a clear error
   ("Cannot determine file type: … has no extension") instead of the
   misleading `Unsupported file type: '..'` message. The unsupported-extension

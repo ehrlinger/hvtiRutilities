@@ -146,9 +146,9 @@ test_that("uppercase %MACRO is triaged, not skipped", {
   expect_true("upper" %in% res$macro)
 })
 
-test_that("sas_triage errors on a directory with no .sas files", {
+test_that("sas_triage errors on a directory with no SAS source files", {
   d <- withr::local_tempdir()
-  expect_error(sas_triage(d), "no \\.sas files")
+  expect_error(sas_triage(d), "no SAS source files")
 })
 
 test_that("sas_triage errors if any definition is unclassified", {
