@@ -8,7 +8,8 @@ proc_means(
   data,
   vars = NULL,
   class = NULL,
-  stats = c("n", "mean", "std", "min", "max")
+  stats = c("n", "mean", "std", "min", "max"),
+  weights = NULL
 )
 }
 \arguments{
@@ -21,11 +22,20 @@ selects every numeric column not named in \code{class}.}
 as leading columns. Rows with a missing value in any class variable are
 dropped, matching SAS's default.}
 
-\item{stats}{Character vector of SAS statistic keywords: \code{"n"},
-\code{"nmiss"}, \code{"mean"}, \code{"std"}, \code{"min"}, \code{"max"},
-\code{"sum"}, \code{"range"}, \code{"stderr"}, \code{"cv"},
-\code{"median"}, \code{"q1"}, \code{"q3"}, or any \code{"pNN"} for
-\code{NN} between 1 and 99. Defaults to SAS's own default five.}
+\item{stats}{Character vector of SAS statistic keywords. Counts:
+\code{"n"}, \code{"nmiss"}, \code{"nobs"}, \code{"sumwgt"}. Location:
+\code{"mean"}, \code{"median"}, \code{"mode"}. Spread: \code{"std"},
+\code{"var"}, \code{"stderr"}, \code{"cv"}, \code{"min"}, \code{"max"},
+\code{"range"}, \code{"qrange"}, \code{"q1"}, \code{"q3"}, or any
+\code{"pNN"} for NN from 1 to 99. Sums: \code{"sum"}, \code{"uss"},
+\code{"css"}. Shape: \code{"skewness"}, \code{"kurtosis"}.}
+
+\item{weights}{Character or \code{NULL}. Name of a single numeric column of
+\code{data} to use as an observation weight, mirroring the SAS
+\code{WEIGHT} statement. Observations whose weight is missing are excluded.
+A zero or negative weight is an error naming the offending rows: SAS's own
+handling of non-positive weights varies across procedures and versions, so
+this fails loudly rather than encode a guess.}
 }
 \value{
 A data frame with one row per analysis variable per class
@@ -57,6 +67,31 @@ Rows are ordered by analysis variable first, then by class level. A factor
 class variable orders by its declared level order rather than
 alphabetically, matching SAS's default \code{ORDER=INTERNAL}; this keeps
 ordered clinical scales such as NYHA class in their clinical sequence.
+
+Weights do not apply uniformly, and this follows \code{PROC MEANS} rather
+than being a simplification. Weighted: \code{mean}, \code{std}, \code{var},
+\code{cv}, \code{stderr}, \code{sum}, \code{uss}, \code{css},
+\code{skewness}, \code{kurtosis}, \code{sumwgt}. Unweighted: \code{n},
+\code{nmiss}, \code{nobs}, \code{min}, \code{max}, \code{range},
+\code{mode}, and every quantile -- \code{median}, \code{q1}, \code{q3},
+\code{pNN} and \code{qrange}. \code{PROC MEANS} does not compute weighted
+quantiles at all; that is \code{PROC UNIVARIATE}. So
+\code{proc_means(d, stats = "median", weights = "wt")} returns the
+\emph{unweighted} median.
+
+\code{mode} returns the smallest value among tied modes, and \code{NA} when
+no value repeats, both matching SAS. \code{skewness} and \code{kurtosis} are
+the adjusted Fisher-Pearson forms SAS uses, not R's naive moment ratios, and
+are \code{NA} for a constant column rather than \code{NaN}.
+
+The \code{PROC UNIVARIATE} inference statistics (\code{NORMAL}, \code{PROBN},
+\code{T}, \code{PROBT}, \code{MSIGN}, \code{PROBM}, \code{SIGNRANK},
+\code{PROBS}) are deliberately absent: they would make this a
+hypothesis-testing function rather than a summary one. \code{CLM}, the
+confidence limits of the mean, is absent for the same reason.
+
+\code{cv} is \code{NA} when the mean is zero, matching SAS; R's arithmetic
+would give \code{Inf}.
 }
 \examples{
 dta <- generate_survival_data(n = 200, seed = 42)
@@ -67,6 +102,11 @@ head(proc_means(dta))
 # Named variables and an explicit statistic list
 proc_means(dta, vars = c("age", "bmi"),
            stats = c("n", "mean", "median", "p15"))
+
+# Weighted statistics
+dta <- data.frame(age = c(51, 63, 47, 72), wt = c(1, 2, 1, 4))
+proc_means(dta, vars = "age", stats = c("n", "sumwgt", "mean"),
+           weights = "wt")
 }
 \seealso{
 \code{\link{proc_contents}} for variable metadata.
