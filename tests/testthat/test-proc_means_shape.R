@@ -35,6 +35,7 @@ test_that("skewness and kurtosis are NA for a constant column", {
   expect_true(is.na(cs(k, "skewness")))
   expect_true(is.na(cs(k, "kurtosis")))
   expect_false(is.nan(cs(k, "skewness")))
+  expect_false(is.nan(cs(k, "kurtosis")))
 })
 
 test_that("proc_means accepts the shape keywords", {
