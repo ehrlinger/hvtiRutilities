@@ -183,6 +183,10 @@ proc_means <- function(data, vars = NULL, class = NULL,
     fun = function(x, v, w) sum(is.na(x)),
     weighted = FALSE, integer = TRUE
   ),
+  nobs = list(
+    fun = function(x, v, w) length(x),
+    weighted = FALSE, integer = TRUE
+  ),
   mean = list(
     fun = function(x, v, w) if (length(v) == 0L) NA_real_ else .wmean(v, w),
     weighted = TRUE, integer = FALSE
@@ -221,6 +225,50 @@ proc_means <- function(data, vars = NULL, class = NULL,
       if (is.na(s) || m == 0) NA_real_ else 100 * s / m
     },
     weighted = TRUE, integer = FALSE
+  ),
+  var = list(
+    fun = function(x, v, w) .wvar(v, w),
+    weighted = TRUE, integer = FALSE
+  ),
+  uss = list(
+    fun = function(x, v, w) {
+      if (length(v) == 0L) NA_real_ else if (is.null(w)) sum(v^2) else sum(w * v^2)
+    },
+    weighted = TRUE, integer = FALSE
+  ),
+  css = list(
+    fun = function(x, v, w) {
+      if (length(v) == 0L) {
+        return(NA_real_)
+      }
+      m <- .wmean(v, w)
+      if (is.null(w)) sum((v - m)^2) else sum(w * (v - m)^2)
+    },
+    weighted = TRUE, integer = FALSE
+  ),
+  qrange = list(
+    fun = function(x, v, w) {
+      if (length(v) == 0L) {
+        return(NA_real_)
+      }
+      .quantile_stat(v, "q3") - .quantile_stat(v, "q1")
+    },
+    weighted = FALSE, integer = FALSE
+  ),
+  mode = list(
+    fun = function(x, v, w) {
+      if (length(v) == 0L) {
+        return(NA_real_)
+      }
+      tab <- table(v)
+      top <- max(tab)
+      if (top == 1L) {
+        return(NA_real_)          # SAS: no mode when nothing repeats
+      }
+      # SAS reports the smallest value among tied modes.
+      min(as.numeric(names(tab)[tab == top]))
+    },
+    weighted = FALSE, integer = FALSE
   ),
   median = list(
     fun = function(x, v, w) .quantile_stat(v, "median"),
