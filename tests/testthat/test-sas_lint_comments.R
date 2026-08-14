@@ -103,7 +103,7 @@ test_that(".sas_lint still catches a genuinely unbalanced quote in code", {
   ), f)
   res <- hvtiRutilities:::.sas_lint(f)
   expect_false(res$valid)
-  expect_true(any(grepl("unbalanced quote", res$failures)))
+  expect_true(any(grepl("unterminated string literal", res$failures)))
 })
 
 test_that(".sas_lint still catches %macro/%mend imbalance", {
