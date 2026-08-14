@@ -88,6 +88,15 @@
 ## that excluded files are visible in the artifacts rather than silently absent.
 .scan_excluded_dirs <- function(dir) {
   subs <- list.dirs(dir, recursive = FALSE, full.names = TRUE)
+
+  ## Dot-directories are infrastructure of this clone, not corpus. `.git`'s
+  ## loose-object files carry no extension and so match no non-source suffix,
+  ## which reported them as excluded SAS source. These counts exist to tell a
+  ## human what triage did not look at, and `.git` is never that decision.
+  ## `CVS/` is deliberately still reported: it is a legacy artifact committed
+  ## into the corpus itself, which a human reviewing exclusions should see.
+  subs <- subs[!grepl("^\\.", basename(subs))]
+
   if (length(subs) == 0L) {
     return(data.frame(
       directory = character(0), n_sas = integer(0),
