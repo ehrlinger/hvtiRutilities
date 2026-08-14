@@ -1,8 +1,11 @@
 # SAS Macro Canonicalization (Phase 0)
 
 **Date:** 2026-07-10
-**Status:** Approved design, pending implementation plan
+**Status:** Implemented and shipped in `hvtiRutilities` 1.0.4
 **Package:** `hvtiRutilities`
+**Amended:** 2026-08-14 — Phase 2..N ownership map re-derived from
+`hvtiRtemplates::hvti_taxonomy()`, and a rule added for shared assets that carry
+no `%macro` definition. See *Amendments* below.
 
 ## Context
 
@@ -12,12 +15,19 @@ project:
 
 | Corpus | Count |
 |---|---|
-| SAS macro library, top-level `.sas` | 179 files, ~78,000 lines |
-| `%macro` definitions within them | 451, across 240 distinct names |
-| Editor backups / `Copy of` duplicates | 25 `*~`, 4 `Copy of *` |
-| SAS files in subdirectories | 79 (`archive` 20, `tests` 17, `table_mac` 17, `readin_samples` 17, `logis_reclassi` 4, `repeat_test` 2, `macros_to_test` 2) |
+| SAS macro library, top level | 336 source files, ~126,000 lines |
+| — of which carry a `.sas` extension | 180 |
+| `%macro` definitions in surviving files | 816, across 307 distinct names |
+| — live after in-file shadowing is resolved | 658 |
+| Editor backups / `Copy of` duplicates | 34 `*~`, 4 `Copy of *` |
+| SAS files in subdirectories | `archive` 51, `tests` 31, `jobs` 31, `table_mac` 19, `readin_samples` 18, `plot_` 5, `CVS` 5, `logis_reclassi` 4, `macros_to_test` 2, `repeat_test` 2 |
 | SAS templates (`development/template`) | 229 |
 | R / Quarto / Sweave templates | 48 `.R`, 7 `.qmd`, 2 `.Rnw`, 2 `.Rmd` |
+
+These are the shipped implementation's figures. An earlier draft of this table
+read 179 files / 451 definitions / 240 names, measured with a `.sas`-anchored
+glob; *Amendments* records why that undercounted, because the reason matters
+more than the delta.
 
 The program decomposes along the `tp.<prefix>` naming convention the template
 repo already encodes:
@@ -27,12 +37,27 @@ repo already encodes:
   golden-output corpus. **SAS runs on a separate system**, not on the
   workstation where the R packages are developed. Phase 1 must therefore treat
   harness execution as a cross-system transfer, not a local subprocess call.
-- **Phases 2..N** — port by prefix to package: `bd`/`vars`/`dt` →
-  `hvtiRutilities`; `hp`/`np`/`lp`/`dp`/`fp`/`cp`/`gp` → `hvtiPlotR`;
-  `lm`/`cm`/`pm`/`rm` → `hvtiPropensityScores`; `ac`/`hz`/`hs`/`nd`/`ce` →
-  `TemporalHazard`; `mm`/`gm`/`bh`/`bl`/`bc`/`nm` → modeling, owner to be
-  decided in a later spec (`multimix`, in `mixhazard/`, is a candidate for the
-  mixed-effects subset).
+- **Phases 2..N** — port by prefix to package. The authoritative prefix table is
+  `hvtiRtemplates::hvti_taxonomy()`, which also gives each prefix's template
+  folder; the map below is derived from it and should be re-derived from it
+  rather than maintained here by hand.
+
+  | Prefix | Folder | Package |
+  |---|---|---|
+  | `bd` | `datasets` | `hvtiRdatasets` |
+  | `vars`, `dt` | `datasets` | `hvtiRutilities` |
+  | `dc`, `lg`, `rg` | `descriptive` | `hvtiRtables` |
+  | `hp`/`mp`/`lp`/`np`/`dp`/`fp`/`gp`/`cp`/`ce`/`rp` | `graphs` | `hvtiPlotR` |
+  | `lm`/`cm`/`pm`/`rm` | `analyses` | `hvtiPropensityScores` |
+  | `ac`/`hz`/`hs`/`cd`/`nd` | `distributions` | `TemporalHazard` |
+  | `mm`/`gm`/`bh`/`bl`/`bc`/`nm` | `analyses` | modeling, owner undecided (`multimix`, in `mixhazard/`, is a candidate for the mixed-effects subset) |
+  | `ar` | `documents` | reporting, owner undecided |
+
+  Two corrections against the 2026-07-10 draft of this line, both from reading
+  the templates repo rather than inferring: **`bd` is no longer
+  `hvtiRutilities`** — `hvtiRdatasets` now owns dataset build and verification
+  (`dw_pull()`, `read_study_config()`, `snapshot_oracle()`, `compare_built()`) —
+  and **`dc` is `hvtiRtables`**, not a descriptive corner of `hvtiRutilities`.
 
 `TemporalHazard` (v1.1.0.9000, 27 R files) is a CRAN-target package. Anything
 ported into it inherits the full release gate: `R CMD check --as-cran` with the
@@ -46,36 +71,65 @@ Phase 0 itself has **no SAS dependency** (see *Heuristic lint*), so it runs
 entirely on the R development workstation and is unaffected by SAS living
 elsewhere.
 
+### Shared assets are not sorted by prefix
+
+Prefix sorting applies to *jobs*. It does not apply to assets that every job
+reads, and mapping those by prefix is a category error.
+
+The format catalogs are the worked example. `hvtiRtemplates::hvti_taxonomy()`
+has **no format or label prefix**, and none of the 229 templates carries
+`format`, `fmt` or `label` in its filename — formats were never a job type.
+Yet **201 templates reference a format library** (`proc format`,
+`libname library`, `fmtsearch`), spread across every folder: 65 in `graphs`,
+46 in `analyses`, 35 in `distributions`, 29 in `datasets`, 26 in `descriptive`.
+
+`cvirfmts.sas` is the catalog they read. It contains **zero `%macro`
+definitions and 65 `value` statements** — it is data, not code, so triage's rule
+ladder does not apply to it and it will never appear in the manifest. It is
+loaded at build time and inherited by everything downstream, which puts it with
+the build: **`hvtiRdatasets`**.
+
+`format_TF.sas` is the contrasting case and shows the distinction is real rather
+than a technicality. It *is* a macro — recode TRUE/FALSE to yes/no, frequency
+tables before and after, merged back by id — so it is variable transformation,
+the `vars` prefix, and goes to **`hvtiRutilities`**, where it lands beside
+`r_data_types(binary_factor=)` and `clean_labels()`.
+
+The rule to carry into Phase 2: **a file with no `%macro` definition is an asset,
+not a port target.** Route it by who loads it, not by which analyses use it.
+
 ## Problem
 
 ### The unit of canonicalization is the macro, not the file
 
-Files are macro *collections*, averaging ~2.5 definitions each. 240 distinct
-macro names are defined 451 times, and **85 names are defined in more than one
+Files are macro *collections*, averaging ~2.4 definitions each. 307 distinct
+macro names are defined 816 times, and **126 names are defined in more than one
 file**. A file-keyed manifest cannot express this.
 
 Worse, redefinitions diverge. Measured by hashing each normalized macro body:
 
 | Macro | Files defining it | Distinct bodies |
 |---|---|---|
-| `skip` | 14 | **11** |
-| `mrg` | 13 | 2 |
-| `numobs` | 7 | 2 |
-| `std_dif` | 5 | **5** |
-| `dist` | 3 | 2 |
+| `skip` | 13 | **10** |
+| `mrg` | 12 | 3 |
+| `numobs` | 8 | 3 |
+| `cumdist` | 7 | **7** |
+| `hazboot` | 7 | **7** |
+| `kaplan` | 6 | **6** |
 
 In SAS, `%include`-ing two files that both define `%macro dist` means the
-second **silently shadows** the first. With `skip` carrying 11 different
-implementations, any harness that includes multiple macro files is exposed to
-order-dependent behaviour. Detecting this is a Phase 0 deliverable, because
-Phase 1's harness will do exactly that.
+second **silently shadows** the first. With `skip` carrying 10 different
+implementations across 13 files, any harness that includes multiple macro files
+is exposed to order-dependent behaviour. Detecting this is a Phase 0
+deliverable, because Phase 1's harness will do exactly that.
 
 ### Public entry points versus private helpers
 
-The divergence is not uniform, and the structure is informative. `mrg`'s 13
-copies collapse to exactly 2 bodies, split cleanly: the eight `bl_ord.*` /
-`bn.*` files share one, the five `bootstrap.hazard_*` files share another. That
-is two lineages of a copy-pasted helper, not chaos.
+The divergence is not uniform, and the structure is informative. `mrg`'s 12
+copies collapse to just 3 bodies, and they split along file family: seven
+`bl_ord.*` / `bn.*` files share one, four `bootstrap.hazard_CP_2evnt*` files
+share another, and `bootstrap.hazard_CP_3evnt_ph.sas` holds a third alone. That
+is a copy-pasted helper with two lineages and one straggler, not chaos.
 
 By contrast `std_dif` — a macro that is *called by name* from analysis code —
 has diverged five ways across five files.
@@ -83,13 +137,14 @@ has diverged five ways across five files.
 So the corpus contains two populations:
 
 - **Public entry points.** The macro a template actually calls. These are the
-  real port targets. 42 have a name exactly matching their file basename
-  (`ExpdObsdPlot` in `ExpdObsdPlot.sas`).
+  real port targets. 87 have a name exactly matching their file basename
+  (`ExpdObsdPlot` in `ExpdObsdPlot.sas`), and a further 6 match after a variant
+  suffix is stripped.
 - **Private inline helpers.** `skip`, `mrg`, `numobs`, `token`, `break`,
   `hazboot`, `skkip`. Vendored by copy-paste into whichever file needed them,
   then drifted independently.
 
-The 42 figure is a **floor, not a count**. The heuristic undercounts, because
+The 87 figure is a **floor, not a count**. The heuristic undercounts, because
 variant-named files define the base macro: `std_dif_wt.sas` and `std_difma.sas`
 both define `%macro std_dif`. Resolving public status therefore cannot be fully
 automated (see Rule 6).
@@ -139,17 +194,20 @@ signature database, and a name-collision hazard report.
 
 ### Corpus scope
 
-Triage operates on the **179 top-level `.sas` files plus their 25 `*~` backups
-and 4 `Copy of *` duplicates**. Subdirectories are excluded by an explicit path
+Triage operates on the **336 top-level source files**, which include the 34
+`*~` backups and 4 `Copy of *` duplicates that rules 1 and 2 then drop.
+Candidates are selected by excluding known non-source suffixes, not by matching
+`.sas` — see *Amendments*. Subdirectories are excluded by an explicit path
 filter, with a stated reason each:
 
 | Directory | Files | Disposition |
 |---|---|---|
-| `archive/` | 20 | Excluded — self-declared archive |
-| `CVS/` | — | Excluded — legacy version-control metadata |
-| `tests/` | 17 | Excluded from triage; retained as Phase 1 input (contains `naftel.sas`/`.log`/`.lst`) |
+| `archive/` | 51 | Excluded — self-declared archive |
+| `CVS/` | 5 | Excluded — legacy version-control metadata |
+| `tests/` | 31 | Excluded from triage; retained as Phase 1 input (contains `naftel.sas`/`.log`/`.lst`) |
+| `jobs/` | 31 | Excluded — deferred to a later spec; flagged in the report |
 | `macros_to_test/` | 2 | Excluded from triage; retained as Phase 1 input |
-| `table_mac/`, `readin_samples/`, `logis_reclassi/`, `repeat_test/` | 40 | Excluded — deferred to a later spec; flagged in the report |
+| `table_mac/`, `readin_samples/`, `plot_/`, `logis_reclassi/`, `repeat_test/` | 48 | Excluded — deferred to a later spec; flagged in the report |
 
 Exclusions are recorded in the manifest, not silently dropped.
 
@@ -236,9 +294,10 @@ stop("Cannot auto-detect n_rows for file type '.", ext, "'. ...
       Please supply n_rows explicitly.")
 ```
 
-Rule 6 will fire for `skip` (11 bodies), `std_dif` (5), `mrg` (2), `numobs` (2),
-`dist` (2), and the rest of the 85 multiply-defined names. That is the expected
-and correct outcome, not a failure.
+Rule 6 fires for `skip` (10 bodies), `cumdist` (7), `hazboot` (7), `kaplan` (6),
+`mrg` (3), `numobs` (3), and much of the rest of the 126 multiply-defined names
+— 337 definitions in all. That is the expected and correct outcome, not a
+failure.
 
 ### Public/private classification
 
@@ -295,7 +354,7 @@ decision, keyed on **macro name**:
   decided_on: 2026-07-10
 ```
 
-This is what manual review of 179 files could not provide: the decisions are
+This is what manual review of 336 files could not provide: the decisions are
 auditable and re-derivable months later, rather than reconstructed from memory.
 
 ### Error handling
@@ -358,14 +417,14 @@ Critical assertions:
 
 ## Success criteria
 
-- Every one of the 451 macro definitions carries a `decision` with attached
-  `evidence`.
+- Every one of the 816 macro definitions in surviving files carries a
+  `decision` with attached `evidence`.
 - Zero definitions are `unclassified`.
 - Every `ambiguous` macro name has a corresponding entry in
   `macro_overrides.yaml`.
 - Re-running `sas_triage()` reproduces `macro_manifest.yaml` byte-for-byte.
 - No macro is declared canonical by a heuristic tiebreaker.
-- `collision_report.md` accounts for all 85 multiply-defined names.
+- `collision_report.md` accounts for all 126 multiply-defined names.
 
 ## Open questions deferred to Phase 1
 
@@ -386,3 +445,60 @@ Critical assertions:
   `logis_reclassi/`, `repeat_test/`.
 - Disposition of `hazard/`, which contains no `DESCRIPTION` and is not an R
   package.
+
+## Amendments
+
+### 2026-08-14 — ownership map and shared assets
+
+Phase 0 shipped in 1.0.4. Two things in the *Context* section were written from
+inference in July and have since been checked against `hvtiRtemplates`, which
+did not exist in usable form at the time.
+
+**The Phase 2..N prefix map was wrong in two places.** `bd` was assigned to
+`hvtiRutilities`; `hvtiRdatasets` now owns dataset build and verification, so
+`bd` belongs there. `dc` was not mentioned at all; it is `hvtiRtables`. The map
+in *Context* is now a table derived from `hvtiRtemplates::hvti_taxonomy()`,
+which is the authority — re-derive from it rather than editing the table by
+hand.
+
+**Shared assets were not addressed at all.** The original design assumed every
+corpus file is either a macro to port or a file to drop. The format catalogs are
+neither: `cvirfmts.sas` has no `%macro` definition, so the rule ladder never
+classifies it, and it would have fallen through Phase 0 unremarked. It is data
+consumed by 201 of the 229 templates across every folder. The new subsection
+records the rule — a file with no `%macro` definition is an asset, routed by who
+loads it — and its two worked cases.
+
+### Figures superseded since the original draft
+
+Every figure in this document has been re-measured against the shipped
+implementation and corrected in place. The original draft's numbers were taken
+with a `.sas`-anchored file glob and a per-line lint, both later found
+defective. They are recorded here only so the size of the gap is legible:
+
+| | Original draft | Shipped |
+|---|---|---|
+| Files triaged | 179 | 336 |
+| Definitions in surviving files | 451 | 816 |
+| Distinct names | 240 | 307 |
+| Names defined in >1 file | 85 | 126 |
+| Public entry points | 42 | 87 (+6 `public?`) |
+
+Two figures in the corrected set are new rather than restated, because the
+shipped ladder resolves something the draft did not model. Of the 918 rows the
+triage produces, 102 are dropped with their files (4 `Copy of *`, 22 `*~`, 76
+failing lint), leaving the 816 above. A further 158 are macros redefined later
+in the same file — SAS compiles in order, so the later definition is what an
+`%include` actually gets — leaving **658 live definitions**.
+
+The gap is not a change of policy. File discovery missed every macro file
+carrying no extension, and every file whose dots are word separators rather than
+an extension — `deciles.hazard`, `lm.cprobs`, `kaplan.int`. Among the omitted
+was `unistats`, whose statistic vocabulary turned out to specify the
+`proc_means()` extension shipped in 1.0.5. The *Heuristic lint* section's
+`do`/`end` balance check was also removed: textual balance is not a validity
+property of macro source, since `%do`-guarded blocks emit `DO` and `END` from
+separate branches.
+
+Five files are rejected as genuinely defective: `bl_ord.norm.ci.sas`,
+`CR_compare_CP_test_AT.sas`, `rem.original`, `rem.uab` and `repeated.sas`.
