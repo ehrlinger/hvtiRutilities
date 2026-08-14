@@ -17,8 +17,14 @@ export(proc_means)
 export(r_data_types)
 export(read_clinical_data)
 export(sample_data)
+export(sas_macro_defs)
+export(sas_macro_signature)
+export(sas_triage)
 export(update_manifest)
 export(verify_manifest)
+export(write_collision_report)
+export(write_macro_manifest)
+importFrom(digest,digest)
 importFrom(labelled,var_label)
 importFrom(stats,
   complete.cases,
@@ -28,6 +34,7 @@ importFrom(stats,
   rnorm,
   runif,
   rweibull,
-  sd
+  sd,
+  setNames
 )
 importFrom(utils,count.fields)

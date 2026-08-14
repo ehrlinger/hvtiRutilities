@@ -1,3 +1,61 @@
+# hvtiRutilities 1.0.4
+
+## New features
+
+- Phase 0 of the SAS macro canonicalization program: `sas_triage()`,
+  `sas_macro_defs()`, `sas_macro_signature()`, `write_macro_manifest()` and
+  `write_collision_report()`. Together they inventory a legacy SAS macro
+  library, classify each definition public or private, and report the name
+  collisions that make `%include` order-dependent. Pure R -- no SAS dependency,
+  so the inventory runs on the development workstation.
+
+  Two design points are worth recording, because the obvious implementations of
+  both are wrong for this corpus.
+
+  **File discovery excludes known non-source suffixes rather than matching
+  `.sas`.** The library uses dots as word separators in filenames --
+  `deciles.hazard`, `lm.cprobs` and `kaplan.int` are names, not stems with
+  extensions -- and many macro files carry no extension at all. An
+  extension-anchored pattern omits both populations silently, including
+  `unistats`, whose statistic vocabulary is the closest analogue in the corpus
+  to `proc_means()`.
+
+  **Validity checking uses a stateful scanner, not pattern matching.** It tracks
+  comment state (`/* */`, `* ... ;`), string state (`'...'`, `"..."`) and macro
+  quoting (`%'`), so comments and literals spanning lines, apostrophes inside
+  double-quoted strings, and the `%STR(%')` transpose idiom are not mistaken for
+  syntax errors. Every rule reads the scanned source, so a `%macro` written
+  inside a comment or a string literal is not counted as a definition. The check
+  reports a file that ends inside a string literal *or* inside a comment,
+  naming the line where it opened -- an unclosed `/*` is the more destructive of
+  the two, because every statement after it is inert while the file still looks
+  like usable source. There is deliberately no do/end balance check: textual
+  balance is not a validity property of macro source, since `%do`-guarded blocks
+  emit DO and END from separate branches.
+
+  **A macro redefined inside one file is resolved, not escalated.** SAS
+  compiles definitions in order and the later one replaces the earlier, so the
+  last definition in a file is what any `%include` of it actually gets. Rule 3
+  keeps that one and drops the rest, each carrying the line that supersedes it.
+  This is deliberately not a name collision: `write_collision_report()` lists
+  names found in more than one *file*, because those are the ones whose
+  behaviour depends on `%include` order. On the reference corpus 158 of the 816
+  definitions are shadowed this way, leaving 658 live.
+
+  On the reference corpus of 336 files this inventories 816 macro definitions
+  across 307 distinct names, rejecting 5 as genuinely defective:
+  `bl_ord.norm.ci.sas`, `CR_compare_CP_test_AT.sas`, `rem.original`, `rem.uab`
+  and `repeated.sas`.
+
+  Those figures replace an earlier measurement of 866 definitions across 250
+  names. The difference is not a change of policy but a correction: the earlier
+  run counted `%macro` statements that the scanner had already established were
+  comment or string content. The rejected set is the same size and different in
+  membership -- `xmacro.sas` leaves it, having been failed for an imbalance
+  whose second definition is commented out, and `bl_ord.norm.ci.sas` enters it,
+  whose `* NOT COMPLETE` header carries no semicolon and therefore swallows the
+  `%MACRO BLORD` statement on the line below. The file says as much itself.
+
 # hvtiRutilities 1.0.3
 
 ## Documentation
