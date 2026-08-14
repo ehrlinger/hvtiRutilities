@@ -177,10 +177,12 @@ lmap <- label_map(model_data)
 - Package documentation:
   [`?r_data_types`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md),
   [`?label_map`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md),
-  [`?generate_survival_data`](https://ehrlinger.github.io/hvtiRutilities/reference/generate_survival_data.md)
+  [`?proc_contents`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_contents.md),
+  [`?proc_means`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
 - Vignettes:
   [`vignette("hvtiRutilities")`](https://ehrlinger.github.io/hvtiRutilities/articles/hvtiRutilities.md),
-  [`vignette("survival-data")`](https://ehrlinger.github.io/hvtiRutilities/articles/survival-data.md)
+  [`vignette("sas-procedures")`](https://ehrlinger.github.io/hvtiRutilities/articles/sas-procedures.md),
+  [`vignette("dataset-versioning")`](https://ehrlinger.github.io/hvtiRutilities/articles/dataset-versioning.md)
 - For bug reports and feature requests: [GitHub
   Issues](https://github.com/ehrlinger/hvtiRutilities/issues)
 - For package news and changes: Run

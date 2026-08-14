@@ -26,10 +26,20 @@ from SAS.
   Apply study-specific label overrides from a YAML file
 - **[`data_dictionary()`](https://ehrlinger.github.io/hvtiRutilities/reference/data_dictionary.md)**:
   Build a type-annotated data dictionary from any labeled dataset
+- **[`proc_contents()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_contents.md)**:
+  SAS `PROC CONTENTS` in R — variable metadata and completeness
+- **[`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)**:
+  SAS `PROC MEANS` in R — numeric summaries, with SAS quantile
+  definitions
 - **[`compare_datasets()`](https://ehrlinger.github.io/hvtiRutilities/reference/compare_datasets.md)**:
   Summarise differences between two data pulls
 - **[`sample_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/sample_data.md)**:
   Generate labeled sample datasets for testing and examples
+
+If you are coming from SAS, the [PROC CONTENTS and PROC MEANS in
+R](https://ehrlinger.github.io/hvtiRutilities/articles/sas-procedures.md)
+vignette walks the two ports side by side with the procedures they
+replace.
 
 ### Installation
 
@@ -48,7 +58,7 @@ if (requireNamespace("hvtiRutilities", quietly = TRUE)) {
   pkgload::load_all(export_all = FALSE, helpers = FALSE, quiet = TRUE)
 }
 #> 
-#>  hvtiRutilities 1.0.2 
+#>  hvtiRutilities 1.0.3 
 #>  
 #>  Type hvtiRutilities.news() to see new features, changes, and bug fixes. 
 #> 
@@ -72,17 +82,17 @@ str(dta)
 #> 'data.frame':    100 obs. of  7 variables:
 #>  $ id     : int  1 2 3 4 5 6 7 8 9 10 ...
 #>   ..- attr(*, "label")= chr "Patient Identifier"
-#>  $ boolean: int  2 1 1 1 1 2 2 1 2 2 ...
+#>  $ boolean: int  2 2 1 2 2 1 1 2 2 1 ...
 #>   ..- attr(*, "label")= chr "Binary Indicator"
-#>  $ logical: chr  "T" "F" "F" "F" ...
+#>  $ logical: chr  "T" "T" "F" "T" ...
 #>   ..- attr(*, "label")= chr "Logical Status"
-#>  $ f_real : num  0.924 0.53 0.109 0.486 0.486 ...
+#>  $ f_real : num  0.269 0.269 0.0476 0.8559 0.0785 ...
 #>   ..- attr(*, "label")= chr "Random Uniform Value"
-#>  $ float  : num  -0.861 0.822 -0.321 -0.238 -1.268 ...
+#>  $ float  : num  -0.6781 -0.2382 -0.5859 0.0544 -0.4228 ...
 #>   ..- attr(*, "label")= chr "Random Normal Value"
-#>  $ char   : chr  "female" "female" "female" "male" ...
+#>  $ char   : chr  "female" "female" "male" "female" ...
 #>   ..- attr(*, "label")= chr "Gender"
-#>  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 3 1 2 4 1 5 4 1 5 5 ...
+#>  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 3 3 1 1 1 5 2 1 5 2 ...
 #>   ..- attr(*, "label")= chr "Category Group"
 ```
 
@@ -104,15 +114,15 @@ str(dta_converted)
 #>   ..- attr(*, "label")= chr "Patient Identifier"
 #>  $ boolean: logi  TRUE TRUE TRUE TRUE TRUE TRUE ...
 #>   ..- attr(*, "label")= chr "Binary Indicator"
-#>  $ logical: Factor w/ 2 levels "F","T": 2 1 1 1 1 2 2 1 2 2 ...
+#>  $ logical: Factor w/ 2 levels "F","T": 2 2 1 2 2 1 1 2 2 1 ...
 #>   ..- attr(*, "label")= chr "Logical Status"
-#>  $ f_real : Factor w/ 9 levels "0.109460261650383",..: 9 5 1 4 4 9 3 9 7 4 ...
+#>  $ f_real : Factor w/ 9 levels "0.0475937775336206",..: 5 5 1 9 3 8 3 7 4 2 ...
 #>   ..- attr(*, "label")= chr "Random Uniform Value"
-#>  $ float  : num  -0.861 0.822 -0.321 -0.238 -1.268 ...
+#>  $ float  : num  -0.6781 -0.2382 -0.5859 0.0544 -0.4228 ...
 #>   ..- attr(*, "label")= chr "Random Normal Value"
-#>  $ char   : Factor w/ 2 levels "female","male": 1 1 1 2 2 2 1 2 2 1 ...
+#>  $ char   : Factor w/ 2 levels "female","male": 1 1 2 1 1 2 2 2 2 1 ...
 #>   ..- attr(*, "label")= chr "Gender"
-#>  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 3 1 2 4 1 5 4 1 5 5 ...
+#>  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 3 3 1 1 1 5 2 1 5 2 ...
 #>   ..- attr(*, "label")= chr "Category Group"
 ```
 
@@ -551,6 +561,10 @@ research:
   Apply study-specific overrides from YAML (label maps or data)
 - **[`data_dictionary()`](https://ehrlinger.github.io/hvtiRutilities/reference/data_dictionary.md)**:
   Build a type-annotated data dictionary
+- **[`proc_contents()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_contents.md)**
+  /
+  **[`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)**:
+  SAS `PROC CONTENTS` and `PROC MEANS` in R
 - **[`compare_datasets()`](https://ehrlinger.github.io/hvtiRutilities/reference/compare_datasets.md)**:
   Audit differences between two data pulls
 - **[`sample_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/sample_data.md)**
@@ -600,7 +614,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] labelled_2.16.0      hvtiRutilities_1.0.2
+#> [1] labelled_2.16.0      hvtiRutilities_1.0.3
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] vctrs_0.7.3      cli_3.6.6        knitr_1.51       rlang_1.3.0     

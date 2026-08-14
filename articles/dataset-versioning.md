@@ -35,7 +35,7 @@ if (requireNamespace("hvtiRutilities", quietly = TRUE)) {
   pkgload::load_all(export_all = FALSE, helpers = FALSE, quiet = TRUE)
 }
 #> 
-#>  hvtiRutilities 1.0.2 
+#>  hvtiRutilities 1.0.3 
 #>  
 #>  Type hvtiRutilities.news() to see new features, changes, and bug fixes. 
 #> 
@@ -347,6 +347,79 @@ verify_manifest(
 )
 ```
 
+## What Changed Inside the File?
+
+The manifest answers one question, and it answers it absolutely: did
+this file change? A single altered byte flips the checksum. But a failed
+[`verify_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md)
+tells you nothing about *what* moved, and that is the question you
+actually have to answer before you decide whether the change is benign.
+
+[`compare_datasets()`](https://ehrlinger.github.io/hvtiRutilities/reference/compare_datasets.md)
+answers it. Give it the two versions and it reports the four kinds of
+drift that matter:
+
+``` r
+
+cohort_v1 <- generate_survival_data(n = 200, seed = 42)
+cohort_v2 <- generate_survival_data(n = 315, seed = 99)
+
+# Changes a real re-pull might bring
+cohort_v2$creatinine <- 1.1
+cohort_v2$reop <- NULL
+cohort_v2$dead <- as.integer(cohort_v2$dead) > 0
+labelled::var_label(cohort_v2$gfr_bs) <- "eGFR at discharge (mL/min/1.73m2)"
+
+compare_datasets(cohort_v1, cohort_v2)
+#> Dataset Comparison
+#>   Rows: 200 -> 315
+#>   Columns added:    creatinine 
+#>   Columns dropped:  reop 
+#>   Type changes:
+#>     dead: integer -> logical
+#>   Label changes:
+#>     dead: 'Death indicator (1=dead, 0=censored)' -> 'dead'
+#>     gfr_bs: 'Baseline eGFR (mL/min/1.73m2)' -> 'eGFR at discharge (mL/min/1.73m2)'
+```
+
+Read that output in order of how much trouble each line will cause you.
+
+Added and dropped columns are the easy ones; a model referencing `reop`
+will fail loudly on the next run. The type change on `dead` is worse,
+because `integer` to `logical` is a change most code will accept
+silently. Notice it also cost the column its label, which is how a type
+change usually announces itself in the audit.
+
+The label change on `gfr_bs` is the one to watch. Baseline eGFR and eGFR
+at discharge are different measurements under the same column name, and
+nothing but the label will tell you they were swapped. Checksums catch
+it as “changed”; only the label comparison tells you the variable now
+means something else.
+
+The result is a list, so a script can act on it rather than print it:
+
+``` r
+
+drift <- compare_datasets(cohort_v1, cohort_v2)
+drift$cols_dropped
+#> [1] "reop"
+drift$label_changes
+#>   variable                            old_label
+#> 1     dead Death indicator (1=dead, 0=censored)
+#> 2   gfr_bs        Baseline eGFR (mL/min/1.73m2)
+#>                           new_label
+#> 1                              dead
+#> 2 eGFR at discharge (mL/min/1.73m2)
+```
+
+Use the two tools together:
+[`verify_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md)
+at the top of the script to stop the run, then
+[`compare_datasets()`](https://ehrlinger.github.io/hvtiRutilities/reference/compare_datasets.md)
+to work out why. See [PROC CONTENTS and PROC MEANS in
+R](https://ehrlinger.github.io/hvtiRutilities/articles/sas-procedures.md)
+for more on inspecting an extract once you know it moved.
+
 ## Policy Recommendations
 
 | Stage | Action |
@@ -365,6 +438,9 @@ verify_manifest(
 - [`verify_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md)
   checks every registered dataset before results are produced; one
   changed byte triggers an immediate, informative error.
+- [`compare_datasets()`](https://ehrlinger.github.io/hvtiRutilities/reference/compare_datasets.md)
+  reports what moved between two pulls: row counts, added and dropped
+  columns, type changes, and label changes.
 - The combination makes dataset drift **detectable** and the audit trail
   **reproducible** from first pull to manuscript submission.
 
@@ -394,7 +470,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] hvtiRutilities_1.0.2
+#> [1] hvtiRutilities_1.0.3
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] vctrs_0.7.3      cli_3.6.6        knitr_1.51       rlang_1.3.0     

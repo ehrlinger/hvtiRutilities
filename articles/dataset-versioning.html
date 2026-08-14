@@ -24,7 +24,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -43,6 +43,9 @@
     <li><h6 class="dropdown-header" data-toc-skip>Core Workflows</h6></li>
     <li><a class="dropdown-item" href="../articles/data-labels.html">Data Label Handling Best Practices</a></li>
     <li><a class="dropdown-item" href="../articles/dataset-versioning.html">Dataset Version Tracking</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>SAS Migration</h6></li>
+    <li><a class="dropdown-item" href="../articles/sas-procedures.html">PROC CONTENTS and PROC MEANS in R</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Specialized Topics</h6></li>
     <li><a class="dropdown-item" href="../articles/survival-data.html">Simulating Cardiac Surgery Survival Data</a></li>
@@ -131,7 +134,7 @@
 <span>  <span class="fu">pkgload</span><span class="fu">::</span><span class="fu"><a href="https://pkgload.r-lib.org/reference/load_all.html" class="external-link">load_all</a></span><span class="op">(</span>export_all <span class="op">=</span> <span class="cn">FALSE</span>, helpers <span class="op">=</span> <span class="cn">FALSE</span>, quiet <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;  hvtiRutilities 1.0.2 </span></span>
+<span><span class="co">#&gt;  hvtiRutilities 1.0.3 </span></span>
 <span><span class="co">#&gt;  </span></span>
 <span><span class="co">#&gt;  Type hvtiRutilities.news() to see new features, changes, and bug fixes. </span></span>
 <span><span class="co">#&gt; </span></span></code></pre></div>
@@ -375,6 +378,50 @@
 <span>  data_dir      <span class="op">=</span> <span class="va">datasets_dir</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
+</section><section class="level2"><h2 id="what-changed-inside-the-file">What Changed Inside the File?<a class="anchor" aria-label="anchor" href="#what-changed-inside-the-file"></a>
+</h2>
+<p>The manifest answers one question, and it answers it absolutely: did this file change? A single altered byte flips the checksum. But a failed <code><a href="../reference/verify_manifest.html">verify_manifest()</a></code> tells you nothing about <em>what</em> moved, and that is the question you actually have to answer before you decide whether the change is benign.</p>
+<p><code><a href="../reference/compare_datasets.html">compare_datasets()</a></code> answers it. Give it the two versions and it reports the four kinds of drift that matter:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">cohort_v1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/generate_survival_data.html">generate_survival_data</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">200</span>, seed <span class="op">=</span> <span class="fl">42</span><span class="op">)</span></span>
+<span><span class="va">cohort_v2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/generate_survival_data.html">generate_survival_data</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">315</span>, seed <span class="op">=</span> <span class="fl">99</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Changes a real re-pull might bring</span></span>
+<span><span class="va">cohort_v2</span><span class="op">$</span><span class="va">creatinine</span> <span class="op">&lt;-</span> <span class="fl">1.1</span></span>
+<span><span class="va">cohort_v2</span><span class="op">$</span><span class="va">reop</span> <span class="op">&lt;-</span> <span class="cn">NULL</span></span>
+<span><span class="va">cohort_v2</span><span class="op">$</span><span class="va">dead</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">as.integer</a></span><span class="op">(</span><span class="va">cohort_v2</span><span class="op">$</span><span class="va">dead</span><span class="op">)</span> <span class="op">&gt;</span> <span class="fl">0</span></span>
+<span><span class="fu">labelled</span><span class="fu">::</span><span class="fu"><a href="https://larmarange.github.io/labelled/reference/var_label.html" class="external-link">var_label</a></span><span class="op">(</span><span class="va">cohort_v2</span><span class="op">$</span><span class="va">gfr_bs</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="st">"eGFR at discharge (mL/min/1.73m2)"</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/compare_datasets.html">compare_datasets</a></span><span class="op">(</span><span class="va">cohort_v1</span>, <span class="va">cohort_v2</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Dataset Comparison</span></span>
+<span><span class="co">#&gt;   Rows: 200 -&gt; 315</span></span>
+<span><span class="co">#&gt;   Columns added:    creatinine </span></span>
+<span><span class="co">#&gt;   Columns dropped:  reop </span></span>
+<span><span class="co">#&gt;   Type changes:</span></span>
+<span><span class="co">#&gt;     dead: integer -&gt; logical</span></span>
+<span><span class="co">#&gt;   Label changes:</span></span>
+<span><span class="co">#&gt;     dead: 'Death indicator (1=dead, 0=censored)' -&gt; 'dead'</span></span>
+<span><span class="co">#&gt;     gfr_bs: 'Baseline eGFR (mL/min/1.73m2)' -&gt; 'eGFR at discharge (mL/min/1.73m2)'</span></span></code></pre></div>
+</div>
+<p>Read that output in order of how much trouble each line will cause you.</p>
+<p>Added and dropped columns are the easy ones; a model referencing <code>reop</code> will fail loudly on the next run. The type change on <code>dead</code> is worse, because <code>integer</code> to <code>logical</code> is a change most code will accept silently. Notice it also cost the column its label, which is how a type change usually announces itself in the audit.</p>
+<p>The label change on <code>gfr_bs</code> is the one to watch. Baseline eGFR and eGFR at discharge are different measurements under the same column name, and nothing but the label will tell you they were swapped. Checksums catch it as “changed”; only the label comparison tells you the variable now means something else.</p>
+<p>The result is a list, so a script can act on it rather than print it:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">drift</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/compare_datasets.html">compare_datasets</a></span><span class="op">(</span><span class="va">cohort_v1</span>, <span class="va">cohort_v2</span><span class="op">)</span></span>
+<span><span class="va">drift</span><span class="op">$</span><span class="va">cols_dropped</span></span>
+<span><span class="co">#&gt; [1] "reop"</span></span>
+<span><span class="va">drift</span><span class="op">$</span><span class="va">label_changes</span></span>
+<span><span class="co">#&gt;   variable                            old_label</span></span>
+<span><span class="co">#&gt; 1     dead Death indicator (1=dead, 0=censored)</span></span>
+<span><span class="co">#&gt; 2   gfr_bs        Baseline eGFR (mL/min/1.73m2)</span></span>
+<span><span class="co">#&gt;                           new_label</span></span>
+<span><span class="co">#&gt; 1                              dead</span></span>
+<span><span class="co">#&gt; 2 eGFR at discharge (mL/min/1.73m2)</span></span></code></pre></div>
+</div>
+<p>Use the two tools together: <code><a href="../reference/verify_manifest.html">verify_manifest()</a></code> at the top of the script to stop the run, then <code><a href="../reference/compare_datasets.html">compare_datasets()</a></code> to work out why. See <a href="sas-procedures.html">PROC CONTENTS and PROC MEANS in R</a> for more on inspecting an extract once you know it moved.</p>
 </section><section class="level2"><h2 id="policy-recommendations">Policy Recommendations<a class="anchor" aria-label="anchor" href="#policy-recommendations"></a>
 </h2>
 <table class="table caption-top">
@@ -415,11 +462,13 @@
 <code><a href="../reference/update_manifest.html">update_manifest()</a></code> records the SHA-256 checksum, row count, extract date, and optional provenance fields for CSV, SAS, Excel, or any file type.</li>
 <li>
 <code><a href="../reference/verify_manifest.html">verify_manifest()</a></code> checks every registered dataset before results are produced; one changed byte triggers an immediate, informative error.</li>
+<li>
+<code><a href="../reference/compare_datasets.html">compare_datasets()</a></code> reports what moved between two pulls: row counts, added and dropped columns, type changes, and label changes.</li>
 <li>The combination makes dataset drift <strong>detectable</strong> and the audit trail <strong>reproducible</strong> from first pull to manuscript submission.</li>
 </ul></section><section class="level2"><h2 id="session-information">Session Information<a class="anchor" aria-label="anchor" href="#session-information"></a>
 </h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; R version 4.6.1 (2026-06-24)</span></span>
 <span><span class="co">#&gt; Platform: x86_64-pc-linux-gnu</span></span>
@@ -442,7 +491,7 @@
 <span><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; other attached packages:</span></span>
-<span><span class="co">#&gt; [1] hvtiRutilities_1.0.2</span></span>
+<span><span class="co">#&gt; [1] hvtiRutilities_1.0.3</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
 <span><span class="co">#&gt;  [1] vctrs_0.7.3      cli_3.6.6        knitr_1.51       rlang_1.3.0     </span></span>

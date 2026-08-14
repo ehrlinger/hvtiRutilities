@@ -1,5 +1,24 @@
 # Changelog
 
+## hvtiRutilities 1.0.3
+
+### Documentation
+
+- New vignette, *PROC CONTENTS and PROC MEANS in R*, written for readers
+  who run both languages. It walks
+  [`proc_contents()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_contents.md)
+  and
+  [`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
+  beside the procedures they replace, covers the `QNTLDEF=5` quantile
+  difference that changes quartiles without changing the median, and
+  lists every behaviour where the R version departs from the SAS
+  original.
+
+- [`compare_datasets()`](https://ehrlinger.github.io/hvtiRutilities/reference/compare_datasets.md)
+  is now demonstrated in *Dataset Version Tracking* rather than only
+  named in its index table. The example covers the four kinds of drift
+  it reports and why a label change is the one to watch.
+
 ## hvtiRutilities 1.0.2
 
 ### New features

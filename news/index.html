@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -24,6 +24,9 @@
     <li><h6 class="dropdown-header" data-toc-skip>Core Workflows</h6></li>
     <li><a class="dropdown-item" href="../articles/data-labels.html">Data Label Handling Best Practices</a></li>
     <li><a class="dropdown-item" href="../articles/dataset-versioning.html">Dataset Version Tracking</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>SAS Migration</h6></li>
+    <li><a class="dropdown-item" href="../articles/sas-procedures.html">PROC CONTENTS and PROC MEANS in R</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Specialized Topics</h6></li>
     <li><a class="dropdown-item" href="../articles/survival-data.html">Simulating Cardiac Surgery Survival Data</a></li>
@@ -52,6 +55,14 @@
       <small>Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.0.3" id="hvtirutilities-103">hvtiRutilities 1.0.3<a class="anchor" aria-label="anchor" href="#hvtirutilities-103"></a></h2>
+<div class="section level3">
+<h3 id="documentation-1-0-3">Documentation<a class="anchor" aria-label="anchor" href="#documentation-1-0-3"></a></h3>
+<ul><li><p>New vignette, <em>PROC CONTENTS and PROC MEANS in R</em>, written for readers who run both languages. It walks <code><a href="../reference/proc_contents.html">proc_contents()</a></code> and <code><a href="../reference/proc_means.html">proc_means()</a></code> beside the procedures they replace, covers the <code>QNTLDEF=5</code> quantile difference that changes quartiles without changing the median, and lists every behaviour where the R version departs from the SAS original.</p></li>
+<li><p><code><a href="../reference/compare_datasets.html">compare_datasets()</a></code> is now demonstrated in <em>Dataset Version Tracking</em> rather than only named in its index table. The example covers the four kinds of drift it reports and why a label change is the one to watch.</p></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.0.2" id="hvtirutilities-102">hvtiRutilities 1.0.2<a class="anchor" aria-label="anchor" href="#hvtirutilities-102"></a></h2>
 <div class="section level3">
