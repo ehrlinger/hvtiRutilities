@@ -20,6 +20,20 @@
 - `study_checklist()` renders a `study_status()` result as a markdown
   checklist, ticked where the study already complies.
 
+## Bug fixes
+
+- `verify_manifest()` no longer reports `FAIL` for a `.sas7bdat` or Excel
+  entry whose SHA-256 matches. Re-deriving the row count of those formats
+  needs `options(manifest.allow_heavy_rowcount = TRUE)`, and without it the
+  attempt errored and the error was reported as a failed entry. At the default
+  `stop_on_error = TRUE` that halted analyses whose data was intact. The count
+  is now skipped when it cannot be re-derived and the entry passes on its
+  checksum; a file that cannot be read at all is still `FAIL`.
+
+- `verify_manifest()` gains a `row_count_checked` column, `TRUE` when the row
+  count was re-derived from the file and compared with the manifest. The
+  entry's message notes a count that was not re-derived.
+
 ## Notes
 
 - No new dependencies.
@@ -28,11 +42,8 @@
   rewrites `.Rprofile`, which a function that writes two YAML files has no
   business doing.
 - `study_status()` reports a `manifest.yaml` entry as verified when its
-  SHA-256 matches but its row count could not be re-derived. `verify_manifest()`
-  returns `FAIL` in that case, which for a `.sas7bdat` is unavoidable without
-  `options(manifest.allow_heavy_rowcount = TRUE)`; since the checksum
-  comparison runs first and returns early on a mismatch, a row-count complaint
-  means the stronger check passed.
+  SHA-256 matches but its row count could not be re-derived, and says how many
+  counts were skipped. For a `.sas7bdat` that is the normal case.
 
 # hvtiRutilities 1.0.7
 

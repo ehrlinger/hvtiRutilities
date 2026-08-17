@@ -61,28 +61,24 @@
                        "manifest.yaml lists no datasets"))
   }
 
-  bad <- rep[rep$status == "FAIL", , drop = FALSE]
-
-  # verify_manifest() compares the SHA-256 first and returns early on a
-  # mismatch, so a row-count complaint means the checksum matched. For a
-  # .sas7bdat it always complains: re-deriving the row count needs
-  # options(manifest.allow_heavy_rowcount = TRUE), which loads the entire
-  # dataset into memory. Reporting that as drift would put every real study
-  # permanently in FAIL, on the strength of the weaker of the two checks.
-  rowcount_only <- grepl("^Row count auto-detection failed", bad$message)
-  drift         <- bad[!rowcount_only, , drop = FALSE]
+  drift <- rep[rep$status == "FAIL", , drop = FALSE]
 
   if (nrow(drift)) {
     .status_row("manifest.yaml", "FAIL",
                 paste0(nrow(drift), " of ", nrow(rep), " entries failed: ",
                        paste(drift$file, collapse = ", ")))
   } else {
-    detail <- paste0(nrow(rep), " dataset entr",
-                     if (nrow(rep) == 1L) "y" else "ies",
-                     " verified by checksum")
-    if (any(rowcount_only)) {
+    # Re-deriving a .sas7bdat row count needs
+    # options(manifest.allow_heavy_rowcount = TRUE), so on a real study those
+    # entries pass on their checksum alone. That is a check which did not run,
+    # not a check which passed, and the audit says which.
+    detail  <- paste0(nrow(rep), " dataset entr",
+                      if (nrow(rep) == 1L) "y" else "ies",
+                      " verified by checksum")
+    skipped <- sum(!rep$row_count_checked)
+    if (skipped) {
       detail <- paste0(detail, " (row count not re-derived for ",
-                       sum(rowcount_only), ")")
+                       skipped, ")")
     }
     .status_row("manifest.yaml", "OK", detail)
   }
