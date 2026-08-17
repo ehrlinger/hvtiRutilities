@@ -22,7 +22,7 @@ writable, and must not already contain a \code{_study.yml}.}
 \item{study}{Character(1). The study title, recorded verbatim.}
 
 \item{built}{Character(1). Filename of the built dataset within
-\code{<root>/datasets}, \strong{with} its extension — the reader
+\code{<root>/datasets}, \strong{with} its extension -- the reader
 dispatches on it.}
 
 \item{event}{Character(1). Name of the event-indicator column.}
@@ -50,8 +50,8 @@ Writes a study's \code{_study.yml} identity manifest and seeds a
 filed years later can name what produced it.
 
 The cohort counts are \strong{derived} from the dataset rather than accepted
-as arguments. Only the study's identity — its title, its dataset filename,
-and the columns that define the event and the follow-up time — has to be
+as arguments. Only the study's identity -- its title, its dataset filename,
+and the columns that define the event and the follow-up time -- has to be
 supplied, because none of that can be inferred.
 
 \code{renv} is not touched. A missing \code{renv.lock} is reported as an

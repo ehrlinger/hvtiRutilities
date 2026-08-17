@@ -119,6 +119,26 @@ test_that("provenance is OK when every .qmd source has a matching sidecar", {
   expect_equal(check_for(study_status(root), "provenance")$status, "OK")
 })
 
+test_that("provenance counts distinct source names and names duplicates", {
+  # Two index.qmd in different directories: matching is by name, so they
+  # cannot be told apart. The counts must be over distinct names, or the
+  # detail reads "1 of 2" for three files and looks like a miscount.
+  root <- withr::local_tempdir()
+  dir.create(file.path(root, "a"))
+  dir.create(file.path(root, "b"))
+  writeLines("x", file.path(root, "a", "index.qmd"))
+  writeLines("x", file.path(root, "b", "index.qmd"))
+  writeLines("x", file.path(root, "solo.qmd"))
+
+  row <- check_for(study_status(root), "provenance")
+  expect_equal(row$status, "FAIL")
+  # Two distinct names (index, solo), both unrecorded.
+  expect_match(row$detail, "2 of 2")
+  expect_match(row$detail, "indistinguishable")
+  expect_match(row$detail, "index")
+  expect_equal(study_status(root)$counts$qmd, 3L)
+})
+
 test_that("provenance is MISSING when there are no .qmd sources at all", {
   root <- withr::local_tempdir()
   writeLines("proc means data=x;", file.path(root, "bh.dead_s1.sas"))

@@ -91,8 +91,14 @@
 # The denominator is .qmd/.Rmd sources, not rendered outputs. A legacy study
 # holds decades of .pdf and Word-exported documents that are not analysis
 # outputs; counting them would report unrecorded results on every such study
-# and teach the reader to ignore this check. provenance_path() strips the
-# extension, so a sidecar's stem is its source's stem.
+# and teach the reader to ignore this check.
+#
+# Matching is by file name, not by path. record_provenance() writes the sidecar
+# beside the *output*, and Quarto's output-dir means that is often not the
+# source's directory, so a path comparison would report every rendered job as
+# unrecorded. The cost is that two sources sharing a name cannot be told apart,
+# which is a real gap rather than a cosmetic one -- a sidecar for one would
+# otherwise vouch for the other -- so duplicated names are named in the detail.
 .status_provenance <- function(root) {
   src   <- .status_files(root, "[.](qmd|Rmd)$")
   cars  <- .status_files(root, "[.]provenance[.]json$")
@@ -106,18 +112,33 @@
                               if (length(cars) == 1L) "" else "s")))
   }
 
-  want    <- tools::file_path_sans_ext(basename(src))
-  missing <- setdiff(want, stems)
+  # Names, deduplicated: the comparison is set-based, so the counts reported
+  # must be over distinct names too, or a study with a repeated name yields an
+  # arithmetically impossible "11 of 12".
+  names_all <- tools::file_path_sans_ext(basename(src))
+  want      <- unique(names_all)
+  missing   <- setdiff(want, stems)
+
+  dup     <- unique(names_all[duplicated(names_all)])
+  dup_note <- if (length(dup)) {
+    paste0(" (", length(dup), " name",
+           if (length(dup) == 1L) "" else "s",
+           " used by more than one source and so indistinguishable here: ",
+           paste(dup, collapse = ", "), ")")
+  } else {
+    ""
+  }
 
   if (!length(missing)) {
     .status_row("provenance", "OK",
-                paste0(length(want), " of ", length(want),
-                       " .qmd sources have a provenance sidecar"))
+                paste0("all ", length(want),
+                       " .qmd source names have a provenance sidecar",
+                       dup_note))
   } else {
     .status_row("provenance", "FAIL",
                 paste0(length(missing), " of ", length(want),
-                       " .qmd sources have no provenance sidecar: ",
-                       paste(missing, collapse = ", ")))
+                       " .qmd source names have no provenance sidecar: ",
+                       paste(missing, collapse = ", "), dup_note))
   }
 }
 
@@ -132,7 +153,7 @@
 #' Every finding is reported rather than raised. A study with no
 #' \code{_study.yml} is the thing this function exists to describe, so it must
 #' not error on one. Checks that cannot run because an earlier one failed are
-#' reported \code{"MISSING"}, never \code{"FAIL"} — a check that could not run
+#' reported \code{"MISSING"}, never \code{"FAIL"} -- a check that could not run
 #' is not a check that failed, and conflating the two makes the audit
 #' unreadable on exactly the legacy studies it is most needed for.
 #'
@@ -140,11 +161,18 @@
 #' the directory tree. It asks whether \code{root} itself is a study root, so
 #' that a subdirectory of a study is never mistaken for one.
 #'
+#' The provenance check matches sidecars to sources \strong{by file name},
+#' because \code{\link{record_provenance}} writes the sidecar beside the
+#' rendered output and Quarto's output directory is usually not the source's
+#' directory. Two sources sharing a name therefore cannot be distinguished; the
+#' repeated names are reported in the check's detail so the gap is visible
+#' rather than silent.
+#'
 #' @param root Character. The study root to audit. Defaults to \code{getwd()}.
 #'
 #' @return An object of class \code{"study_status"}: a list with \code{root},
-#'   \code{checks} (a data frame of \code{item}, \code{status} —
-#'   \code{"OK"}, \code{"MISSING"} or \code{"FAIL"} — and \code{detail}, six
+#'   \code{checks} (a data frame of \code{item}, \code{status} --
+#'   \code{"OK"}, \code{"MISSING"} or \code{"FAIL"} -- and \code{detail}, six
 #'   rows), and \code{counts} (a list of \code{r_files}, \code{qmd},
 #'   \code{sas_jobs} and \code{sidecars}).
 #'
@@ -239,7 +267,7 @@ print.study_status <- function(x, ...) {
   cat("Study: ", x$root, "\n\n", sep = "")
   for (i in seq_len(nrow(x$checks))) {
     cat(mark[[x$checks$status[i]]], " ", x$checks$item[i],
-        " — ", x$checks$detail[i], "\n", sep = "")
+        " \u2014 ", x$checks$detail[i], "\n", sep = "")
   }
   cat("\n", x$counts$r_files, " .R  |  ", x$counts$qmd, " .qmd  |  ",
       x$counts$sas_jobs, " .sas  |  ", x$counts$sidecars,

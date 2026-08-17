@@ -11,8 +11,8 @@ study_status(root = getwd())
 }
 \value{
 An object of class \code{"study_status"}: a list with \code{root},
-  \code{checks} (a data frame of \code{item}, \code{status} —
-  \code{"OK"}, \code{"MISSING"} or \code{"FAIL"} — and \code{detail}, six
+  \code{checks} (a data frame of \code{item}, \code{status} --
+  \code{"OK"}, \code{"MISSING"} or \code{"FAIL"} -- and \code{detail}, six
   rows), and \code{counts} (a list of \code{r_files}, \code{qmd},
   \code{sas_jobs} and \code{sidecars}).
 }
@@ -25,13 +25,20 @@ data, and a provenance sidecar for every \code{.qmd} source.
 Every finding is reported rather than raised. A study with no
 \code{_study.yml} is the thing this function exists to describe, so it must
 not error on one. Checks that cannot run because an earlier one failed are
-reported \code{"MISSING"}, never \code{"FAIL"} — a check that could not run
+reported \code{"MISSING"}, never \code{"FAIL"} -- a check that could not run
 is not a check that failed, and conflating the two makes the audit
 unreadable on exactly the legacy studies it is most needed for.
 
 Unlike \code{\link{study_config}}, this function does \strong{not} walk up
 the directory tree. It asks whether \code{root} itself is a study root, so
 that a subdirectory of a study is never mistaken for one.
+
+The provenance check matches sidecars to sources \strong{by file name},
+because \code{\link{record_provenance}} writes the sidecar beside the
+rendered output and Quarto's output directory is usually not the source's
+directory. Two sources sharing a name therefore cannot be distinguished; the
+repeated names are reported in the check's detail so the gap is visible
+rather than silent.
 }
 \examples{
 root <- file.path(tempdir(), "study-status-example")

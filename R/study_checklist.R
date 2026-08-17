@@ -40,7 +40,7 @@ study_checklist <- function(status, path = NULL) {
              } else {
                "- [ ] "
              },
-             "**", status$checks$item[i], "** — ",
+             "**", status$checks$item[i], "** \u2014 ",
              status$checks$detail[i])
     },
     character(1)
