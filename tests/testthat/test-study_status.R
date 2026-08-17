@@ -95,6 +95,22 @@ test_that("study_status verifies manifest.yaml and reports drift as FAIL", {
   expect_match(row$detail, "built_test.sas7bdat")
 })
 
+test_that("study_status reports a .sas7bdat manifest entry as OK, noting the skipped row count", {
+  skip_if_not_installed("haven")
+  withr::local_options(manifest.allow_heavy_rowcount = NULL)
+  root  <- make_study_fixture(withr::local_tempdir())
+  built <- file.path(root, "datasets", "built_test.sas7bdat")
+
+  update_manifest(file          = built,
+                  manifest_path = file.path(root, "manifest.yaml"),
+                  n_rows        = 20L)
+
+  row <- check_for(study_status(root), "manifest.yaml")
+  expect_equal(row$status, "OK")
+  expect_match(row$detail, "1 dataset entry verified by checksum")
+  expect_match(row$detail, "row count not re-derived for 1")
+})
+
 test_that("study_status reports renv.lock when present", {
   root <- withr::local_tempdir()
   writeLines('{"R": {"Version": "4.5.1"}}', file.path(root, "renv.lock"))

@@ -284,6 +284,132 @@ test_that("verify_manifest handles CSV + SAS + Excel in one manifest", {
 })
 
 # ---------------------------------------------------------------------------
+# verify_manifest — heavy row counting disabled
+#
+# The default state for every real study: options(manifest.allow_heavy_rowcount)
+# is unset, so the row count cannot be re-derived from a .sas7bdat or .xlsx
+# without loading the whole file. A check that cannot run is skipped, not
+# failed — but nothing else about the entry may be let through.
+# ---------------------------------------------------------------------------
+
+test_that("verify_manifest [SAS] passes with heavy row counting disabled", {
+  withr::local_options(manifest.allow_heavy_rowcount = NULL)
+  tmp <- withr::local_tempdir()
+  sas <- write_temp_sas(n = 6, name = "labs_noheavy.sas7bdat", dir = tmp)
+  mpath <- file.path(tmp, "manifest.yaml")
+  update_manifest(file = sas, manifest_path = mpath, n_rows = 6L)
+
+  report <- verify_manifest(manifest_path = mpath, data_dir = tmp)
+  expect_equal(report$status, "OK")
+  expect_match(report$message, "row count not re-derived")
+})
+
+test_that("verify_manifest [Excel] passes with heavy row counting disabled", {
+  withr::local_options(manifest.allow_heavy_rowcount = NULL)
+  tmp <- withr::local_tempdir()
+  xlsx <- write_temp_excel(n = 4, name = "adj_noheavy.xlsx", dir = tmp)
+  mpath <- file.path(tmp, "manifest.yaml")
+  update_manifest(file = xlsx, manifest_path = mpath, n_rows = 4L)
+
+  report <- verify_manifest(manifest_path = mpath, data_dir = tmp)
+  expect_equal(report$status, "OK")
+  expect_match(report$message, "row count not re-derived")
+})
+
+test_that("verify_manifest [SAS] still detects SHA-256 mismatch when heavy row counting is disabled", {
+  withr::local_options(manifest.allow_heavy_rowcount = NULL)
+  tmp <- withr::local_tempdir()
+  sas <- write_temp_sas(n = 6, name = "labs_tamper.sas7bdat", dir = tmp)
+  mpath <- file.path(tmp, "manifest.yaml")
+  update_manifest(file = sas, manifest_path = mpath, n_rows = 6L)
+
+  # Same row count, different bytes: only the checksum can catch this.
+  suppressWarnings(haven::write_sas(make_df(6)[6:1, ], sas))
+
+  report <- suppressWarnings(
+    verify_manifest(manifest_path = mpath, data_dir = tmp,
+                    stop_on_error = FALSE)
+  )
+  expect_equal(report$status, "FAIL")
+  expect_match(report$message, "SHA-256 mismatch")
+})
+
+test_that("verify_manifest [SAS] still detects a row-count mismatch when heavy row counting is enabled", {
+  withr::local_options(manifest.allow_heavy_rowcount = TRUE)
+  tmp <- withr::local_tempdir()
+  sas <- write_temp_sas(n = 6, name = "labs_rowdrift.sas7bdat", dir = tmp)
+  mpath <- file.path(tmp, "manifest.yaml")
+  # Record a row count the file does not have, then re-checksum so that only
+  # the row-count check can fail.
+  update_manifest(file = sas, manifest_path = mpath, n_rows = 99L)
+
+  report <- suppressWarnings(
+    verify_manifest(manifest_path = mpath, data_dir = tmp,
+                    stop_on_error = FALSE)
+  )
+  expect_equal(report$status, "FAIL")
+  expect_match(report$message, "Row count mismatch")
+})
+
+test_that("verify_manifest reports row_count_checked per entry", {
+  withr::local_options(manifest.allow_heavy_rowcount = NULL)
+  tmp <- withr::local_tempdir()
+  csv <- write_temp_csv(n = 5, name = "rcc_cohort.csv", dir = tmp)
+  sas <- write_temp_sas(n = 6, name = "rcc_labs.sas7bdat", dir = tmp)
+  mpath <- file.path(tmp, "manifest.yaml")
+  update_manifest(file = csv, manifest_path = mpath)
+  update_manifest(file = sas, manifest_path = mpath, n_rows = 6L)
+
+  report <- verify_manifest(manifest_path = mpath, data_dir = tmp)
+  expect_true(all(report$status == "OK"))
+  # The CSV count is cheap and was re-derived; the SAS count was not.
+  expect_equal(report$row_count_checked,
+               c(TRUE, FALSE))
+})
+
+test_that("verify_manifest marks a re-derived row-count mismatch as checked", {
+  withr::local_options(manifest.allow_heavy_rowcount = TRUE)
+  tmp <- withr::local_tempdir()
+  sas <- write_temp_sas(n = 6, name = "rcc_drift.sas7bdat", dir = tmp)
+  mpath <- file.path(tmp, "manifest.yaml")
+  update_manifest(file = sas, manifest_path = mpath, n_rows = 99L)
+
+  report <- suppressWarnings(
+    verify_manifest(manifest_path = mpath, data_dir = tmp,
+                    stop_on_error = FALSE)
+  )
+  expect_equal(report$status, "FAIL")
+  expect_true(report$row_count_checked)
+})
+
+test_that("verify_manifest empty report carries the row_count_checked column", {
+  tmp <- withr::local_tempdir()
+  mpath <- file.path(tmp, "manifest.yaml")
+  yaml::write_yaml(list(datasets = list()), mpath)
+
+  report <- verify_manifest(manifest_path = mpath, data_dir = tmp)
+  expect_equal(names(report),
+               c("file", "status", "message", "row_count_checked"))
+  expect_equal(nrow(report), 0L)
+})
+
+test_that("verify_manifest reports an unreadable file as FAIL, not a skipped check", {
+  withr::local_options(manifest.allow_heavy_rowcount = TRUE)
+  tmp <- withr::local_tempdir()
+  sas <- file.path(tmp, "labs_corrupt.sas7bdat")
+  writeBin(as.raw(rep(0L, 512)), sas)
+  mpath <- file.path(tmp, "manifest.yaml")
+  update_manifest(file = sas, manifest_path = mpath, n_rows = 6L)
+
+  report <- suppressWarnings(
+    verify_manifest(manifest_path = mpath, data_dir = tmp,
+                    stop_on_error = FALSE)
+  )
+  expect_equal(report$status, "FAIL")
+  expect_match(report$message, "Row count auto-detection failed")
+})
+
+# ---------------------------------------------------------------------------
 # verify_manifest — control flow
 # ---------------------------------------------------------------------------
 
