@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.7</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.8</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,6 +55,28 @@
       <small>Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.0.8" id="hvtirutilities-108">hvtiRutilities 1.0.8<a class="anchor" aria-label="anchor" href="#hvtirutilities-108"></a></h2>
+<div class="section level3">
+<h3 id="new-features-1-0-8">New features<a class="anchor" aria-label="anchor" href="#new-features-1-0-8"></a></h3>
+<ul><li><p><code><a href="../reference/study_init.html">study_init()</a></code> initializes a study for reproducible analysis: it writes the <code>_study.yml</code> identity manifest that <code><a href="../reference/study_config.html">study_config()</a></code> reads, and seeds a <code>manifest.yaml</code> pinning the built dataset’s SHA-256. The cohort counts are derived from the dataset rather than supplied, because a hand-typed count is a count that can disagree with the data. <code>citation</code> is written as an explicit null, so a study that is later published has an obvious place to record its reference.</p></li>
+<li><p><code><a href="../reference/study_status.html">study_status()</a></code> audits a study without writing anything, reporting whether it has a valid <code>_study.yml</code>, an <code>renv.lock</code>, a <code>manifest.yaml</code> whose checksums still match, and a provenance sidecar for every <code>.qmd</code> or <code>.Rmd</code> source. It never errors on an absent or malformed manifest — that is the finding, not a failure — and it distinguishes a check that could not run (<code>MISSING</code>) from one that ran and failed (<code>FAIL</code>).</p></li>
+<li><p><code><a href="../reference/study_checklist.html">study_checklist()</a></code> renders a <code><a href="../reference/study_status.html">study_status()</a></code> result as a markdown checklist, ticked where the study already complies.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-1-0-8">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-0-8"></a></h3>
+<ul><li><p><code><a href="../reference/verify_manifest.html">verify_manifest()</a></code> no longer reports <code>FAIL</code> for a <code>.sas7bdat</code> or Excel entry whose SHA-256 matches. Re-deriving the row count of those formats needs <code>options(manifest.allow_heavy_rowcount = TRUE)</code>, and without it the attempt errored and the error was reported as a failed entry. At the default <code>stop_on_error = TRUE</code> that halted analyses whose data was intact. The count is now skipped when it cannot be re-derived and the entry passes on its checksum; a file that cannot be read at all is still <code>FAIL</code>.</p></li>
+<li><p><code><a href="../reference/verify_manifest.html">verify_manifest()</a></code> gains a <code>row_count_checked</code> column, <code>TRUE</code> when the row count was re-derived from the file and compared with the manifest. The entry’s message notes a count that was not re-derived.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="notes-1-0-8">Notes<a class="anchor" aria-label="anchor" href="#notes-1-0-8"></a></h3>
+<ul><li>No new dependencies.</li>
+<li>
+<code><a href="../reference/study_init.html">study_init()</a></code> does not run <code>renv::init()</code>. A missing <code>renv.lock</code> is reported as an open item instead: creating one restarts the R session and rewrites <code>.Rprofile</code>, which a function that writes two YAML files has no business doing.</li>
+<li>
+<code><a href="../reference/study_status.html">study_status()</a></code> reports a <code>manifest.yaml</code> entry as verified when its SHA-256 matches but its row count could not be re-derived, and says how many counts were skipped. For a <code>.sas7bdat</code> that is the normal case.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.0.7" id="hvtirutilities-107">hvtiRutilities 1.0.7<a class="anchor" aria-label="anchor" href="#hvtirutilities-107"></a></h2>
 <div class="section level3">

@@ -273,6 +273,18 @@ Inventory a legacy SAS macro library and resolve name collisions
 - [`write_collision_report()`](https://ehrlinger.github.io/hvtiRutilities/reference/write_collision_report.md)
   : Write the macro name-collision report
 
+## Study Setup
+
+Initialize a study for reproducible analysis, and audit whether it is
+ready
+
+- [`study_init()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_init.md)
+  : Initialize a study for reproducible analysis
+- [`study_status()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md)
+  : Audit a study's reproducibility readiness
+- [`study_checklist()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checklist.md)
+  : Render a study audit as a markdown checklist
+
 ## Study Manifest and Data Contract
 
 Locate a study from its `_study.yml`, resolve its paths, and read and

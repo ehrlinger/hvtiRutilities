@@ -6,6 +6,14 @@ Supported formats for automatic row-count verification: CSV
 (.csv), SAS (.sas7bdat), and Excel (.xlsx,
 .xls).  For other file types the row-count check is skipped and
 only the SHA-256 is verified.
+Re-deriving the row count of a SAS or Excel file means reading the whole
+file, so it only happens under
+options(manifest.allow_heavy_rowcount = TRUE).  Without that option
+the row count is skipped rather than failed, and the entry passes on its
+checksum, which is the stronger of the two checks.  A check that could not
+run is not a check that failed.  The row_count_checked column says
+which entries were counted, so you can tell the two apart.  A file that
+cannot be read at all is a different matter and still fails.
 Call this function at the top of every analysis script or Quarto document
 to ensure data integrity before any results are generated."><meta property="og:description" content="Reads a manifest.yaml produced by update_manifest and,
 for every entry, confirms that (a) the file exists, (b) its SHA-256
@@ -14,6 +22,14 @@ Supported formats for automatic row-count verification: CSV
 (.csv), SAS (.sas7bdat), and Excel (.xlsx,
 .xls).  For other file types the row-count check is skipped and
 only the SHA-256 is verified.
+Re-deriving the row count of a SAS or Excel file means reading the whole
+file, so it only happens under
+options(manifest.allow_heavy_rowcount = TRUE).  Without that option
+the row count is skipped rather than failed, and the entry passes on its
+checksum, which is the stronger of the two checks.  A check that could not
+run is not a check that failed.  The row_count_checked column says
+which entries were counted, so you can tell the two apart.  A file that
+cannot be read at all is a different matter and still fails.
 Call this function at the top of every analysis script or Quarto document
 to ensure data integrity before any results are generated."></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -23,7 +39,7 @@ to ensure data integrity before any results are generated."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.7</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.8</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -80,6 +96,14 @@ Supported formats for automatic row-count verification: CSV
 (<code>.csv</code>), SAS (<code>.sas7bdat</code>), and Excel (<code>.xlsx</code>,
 <code>.xls</code>).  For other file types the row-count check is skipped and
 only the SHA-256 is verified.</p>
+<p>Re-deriving the row count of a SAS or Excel file means reading the whole
+file, so it only happens under
+<code>options(manifest.allow_heavy_rowcount = TRUE)</code>.  Without that option
+the row count is skipped rather than failed, and the entry passes on its
+checksum, which is the stronger of the two checks.  A check that could not
+run is not a check that failed.  The <code>row_count_checked</code> column says
+which entries were counted, so you can tell the two apart.  A file that
+cannot be read at all is a different matter and still fails.</p>
 <p>Call this function at the top of every analysis script or Quarto document
 to ensure data integrity before any results are generated.</p>
     </div>
@@ -127,7 +151,9 @@ returned data frame.  Failures are reported through <code><a href="https://rdrr.
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>Invisibly returns a data frame with columns <code>file</code>,
-  <code>status</code> (<code>"OK"</code> or <code>"FAIL"</code>), and <code>message</code>.</p>
+  <code>status</code> (<code>"OK"</code> or <code>"FAIL"</code>), <code>message</code>, and
+  <code>row_count_checked</code> (logical; <code>TRUE</code> when the row count was
+  re-derived from the file and compared with the manifest).</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -144,8 +170,8 @@ returned data frame.  Failures are reported through <code><a href="https://rdrr.
 <span class="r-in"><span><span class="co"># --- Interactive use: report each passing entry ---------------------</span></span></span>
 <span class="r-in"><span><span class="fu">hvtiRutilities</span><span class="fu">::</span><span class="fu">verify_manifest</span><span class="op">(</span><span class="fu">here</span><span class="fu">::</span><span class="fu">here</span><span class="op">(</span><span class="st">"manifest.yaml"</span><span class="op">)</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="co"># cohort_20240115.csv    — SHA-256 match (n = 831)</span></span></span>
-<span class="r-in"><span><span class="co"># labs_20240115.sas7bdat — SHA-256 match (n = 1204)</span></span></span>
-<span class="r-in"><span><span class="co"># adjudication_20240115.xlsx — SHA-256 match (n = 47)</span></span></span>
+<span class="r-in"><span><span class="co"># labs_20240115.sas7bdat — SHA-256 match (n = 1204); row count not re-derived</span></span></span>
+<span class="r-in"><span><span class="co"># adjudication_20240115.xlsx — SHA-256 match (n = 47); row count not re-derived</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># --- Collect all failures instead of stopping on the first ---------</span></span></span>
 <span class="r-in"><span><span class="va">report</span> <span class="op">&lt;-</span> <span class="fu">verify_manifest</span><span class="op">(</span></span></span>
