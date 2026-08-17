@@ -1,21 +1,3 @@
-# hvtiRutilities 1.0.9
-
-## New features
-
-- `verify_manifest()` gains `strict = FALSE`. Under `strict = TRUE` an entry
-  whose row count could not be re-derived is reported as `"FAIL"` rather than
-  passing on its checksum alone, and the message names which of the three
-  causes applies: the count is not recorded in the manifest, the file type
-  cannot be counted at all, or heavy row counting is left disabled. Use it
-  where the question is "did every check actually run" rather than "is the
-  data intact": a release gate, an archival gate, or a hand-off where a
-  downstream reader will read `"OK"` as fully verified.
-
-  The default is unchanged and stays permissive, because a check that cannot
-  run is not a check that failed. Under it `"OK"` can still mean "checksum
-  verified, row count not examined", and `row_count_checked` remains the
-  column that distinguishes the two.
-
 # hvtiRutilities 1.0.8
 
 ## New features
@@ -37,6 +19,20 @@
 
 - `study_checklist()` renders a `study_status()` result as a markdown
   checklist, ticked where the study already complies.
+
+- `verify_manifest()` gains `strict = FALSE`. Under `strict = TRUE` an entry
+  whose row count could not be re-derived is reported as `"FAIL"` rather than
+  passing on its checksum alone, and the message names which of the three
+  causes applies: the count is not recorded in the manifest, the file type
+  cannot be counted at all, or heavy row counting is left disabled. Use it
+  where the question is "did every check actually run" rather than "is the
+  data intact": a release gate, an archival gate, or a hand-off where a
+  downstream reader will read `"OK"` as fully verified.
+
+  The default is unchanged and stays permissive, because a check that cannot
+  run is not a check that failed. Under it `"OK"` can still mean "checksum
+  verified, row count not examined", and `row_count_checked` remains the
+  column that distinguishes the two.
 
 ## Bug fixes
 
