@@ -1,3 +1,36 @@
+# hvtiRutilities 1.0.7
+
+## New features
+
+- `study_config()` reads a study's `_study.yml` manifest, found by walking up
+  from a starting directory. It validates that every required key is present
+  and errors otherwise, naming the key: a study without a complete manifest
+  must not render, and a partial default would be a silent wrong answer.
+
+- `record_provenance()` writes a JSON sidecar beside a rendered output,
+  recording the study manifest checksum, the R version and platform, every
+  loaded package and its version, the `renv.lock` checksum, the input
+  dataset's SHA-256, and the cohort. `renv.lock` alone cannot say what
+  produced a particular result — it is project-scoped and re-snapshotted
+  through a study's life — so the record is job-scoped and lives with the
+  result. Failure to write it is an error, not a warning.
+
+- The study data contract moves in from the per-study `R/` directories:
+  `study_root()`, `sas_path()`, `built_path()`, `built_manifest()`,
+  `read_built()`, `cohort_counts()` and `assert_cohort()`. All of them read
+  study-specific values from `_study.yml` rather than from constants, so no
+  study path, title, dataset name or cohort count appears in package code.
+
+- `r_dir_impurities()` reports top-level executable code in a directory that
+  is sourced wholesale, where a stray call would run on every render.
+
+## Notes
+
+- New dependency: `jsonlite`, for the provenance sidecar.
+- `built_manifest()` records `sha256` rather than the `md5` used by the
+  earlier per-study version, matching the provenance record. One hash
+  algorithm across the design, not two.
+
 # hvtiRutilities 1.0.6
 
 ## Bug fixes

@@ -106,10 +106,29 @@ reference:
   - write_macro_manifest
   - write_collision_report
 
+- title: Study Manifest and Data Contract
+  desc: Locate a study from its `_study.yml`, resolve its paths, and read and reconcile its built dataset
+  contents:
+  - study_config
+  - study_root
+  - sas_path
+  - built_path
+  - built_manifest
+  - read_built
+  - cohort_counts
+  - assert_cohort
+
+- title: Provenance
+  desc: Record what produced a filed result, in a JSON sidecar beside it
+  contents:
+  - record_provenance
+  - provenance_path
+
 - title: Package Utilities
   contents:
   - hvtiRutilities-package
   - hvtiRutilities.news
+  - r_dir_impurities
 
 articles:
 - title: Getting Started
