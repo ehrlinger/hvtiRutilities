@@ -234,6 +234,19 @@ update_manifest <- function(file,
 #'   looped calls stay silent; the same information is always available in the
 #'   returned data frame.  Failures are reported through \code{stop()} or
 #'   \code{warning()} regardless of this setting.
+#' @param strict Logical. If \code{TRUE}, an entry whose row count could not be
+#'   re-derived is reported as \code{"FAIL"} rather than passing on its
+#'   checksum alone, and the message names which of the three causes applies:
+#'   no count recorded in the manifest, a file type whose rows cannot be
+#'   counted, or heavy row counting left disabled.  Defaults to \code{FALSE},
+#'   which preserves the permissive behaviour described above.
+#'
+#'   Use it where the question is "did every check actually run", not "is the
+#'   data intact": a release gate, an archival gate, or a hand-off where a
+#'   downstream reader will treat \code{"OK"} as meaning fully verified. Under
+#'   the default, \code{"OK"} can mean "checksum verified, row count not
+#'   examined", and the \code{row_count_checked} column is the only thing that
+#'   distinguishes the two.
 #'
 #' @return Invisibly returns a data frame with columns \code{file},
 #'   \code{status} (\code{"OK"} or \code{"FAIL"}), \code{message}, and
@@ -265,7 +278,8 @@ update_manifest <- function(file,
 verify_manifest <- function(manifest_path = "manifest.yaml",
                             data_dir      = NULL,
                             stop_on_error = TRUE,
-                            verbose       = FALSE) {
+                            verbose       = FALSE,
+                            strict        = FALSE) {
   if (!file.exists(manifest_path)) {
     stop("Manifest file not found: ", manifest_path)
   }
@@ -345,8 +359,22 @@ verify_manifest <- function(manifest_path = "manifest.yaml",
     # entry passes on its checksum, which is the stronger of the two checks.
     # A genuine counting failure, an unreadable or truncated file, is a
     # different condition class and still fails.
+    #
+    # WHY THE SKIP CARRIES A REASON. `strict = TRUE` turns a skipped check into
+    # a failure, and "the row count was not verified" is useless to act on
+    # without knowing which of the three causes applies: the manifest never
+    # recorded a count, the count is recorded but this file type cannot be
+    # counted at all, or it could be counted if the caller opted in to the
+    # expensive path. Each has a different fix, so each is named.
     ext <- tolower(tools::file_ext(fpath))
     rowcount_checked <- FALSE
+    skip_reason      <- NULL
+    if (!(ext %in% c("csv", "sas7bdat", "xlsx", "xls"))) {
+      skip_reason <- paste0("the row count cannot be re-derived for a '.", ext,
+                            "' file")
+    } else if (is.null(entry$n_rows)) {
+      skip_reason <- "the row count is not recorded in the manifest"
+    }
     if (ext %in% c("csv", "sas7bdat", "xlsx", "xls") && !is.null(entry$n_rows)) {
       actual_rows_result <- tryCatch(
         .auto_count_rows(fpath),
@@ -354,6 +382,11 @@ verify_manifest <- function(manifest_path = "manifest.yaml",
       )
       if (inherits(actual_rows_result, "manifest_heavy_rowcount_disabled")) {
         rowcount_checked <- FALSE
+        skip_reason <- paste0(
+          "counting rows in a '.", ext, "' file loads it entirely and is off ",
+          "by default; set options(manifest.allow_heavy_rowcount = TRUE) to ",
+          "verify it"
+        )
       } else if (inherits(actual_rows_result, "error")) {
         return(data.frame(
           file    = entry$file,
@@ -380,6 +413,18 @@ verify_manifest <- function(manifest_path = "manifest.yaml",
           ))
         }
       }
+    }
+
+    if (strict && !rowcount_checked) {
+      return(data.frame(
+        file    = entry$file,
+        status  = "FAIL",
+        message = paste0("Row count not verified: ", skip_reason,
+                         ". The checksum matched; strict = TRUE requires ",
+                         "every applicable check to have run."),
+        row_count_checked = FALSE,
+        stringsAsFactors = FALSE
+      ))
     }
 
     # Three states the caller has to be able to tell apart: the count was

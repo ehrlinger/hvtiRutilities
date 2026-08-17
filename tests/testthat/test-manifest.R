@@ -650,3 +650,113 @@ test_that("verbose = FALSE does not suppress failures", {
     "SHA-256 mismatch"
   )
 })
+
+# ---------------------------------------------------------------------------
+# verify_manifest(strict = TRUE)
+# ---------------------------------------------------------------------------
+# The default is deliberately permissive: a check that cannot run is skipped
+# and the entry passes on its checksum, which is the stronger of the two.
+# `strict` is for the caller who needs the opposite guarantee, that every
+# applicable check actually ran. Under it, "not checked" is a distinct failure
+# from "checked and wrong", and the message must say which.
+#
+# The default path must not move. Every test below that asserts a FAIL has a
+# sibling asserting the same manifest still passes at strict = FALSE.
+
+test_that("strict = TRUE fails an entry whose row count was never recorded", {
+  tmp <- withr::local_tempdir()
+  csv <- write_temp_csv(n = 10, name = "nrows_absent.csv", dir = tmp)
+  mpath <- file.path(tmp, "manifest.yaml")
+  update_manifest(file = csv, manifest_path = mpath, n_rows = 10L)
+
+  # Remove the recorded count, leaving an otherwise intact entry.
+  m <- yaml::read_yaml(mpath)
+  m$datasets[[1]]$n_rows <- NULL
+  yaml::write_yaml(m, mpath)
+
+  lax <- verify_manifest(manifest_path = mpath, data_dir = tmp)
+  expect_equal(lax$status, "OK")
+
+  strict <- suppressWarnings(
+    verify_manifest(manifest_path = mpath, data_dir = tmp,
+                    strict = TRUE, stop_on_error = FALSE))
+  expect_equal(strict$status, "FAIL")
+  expect_false(strict$row_count_checked)
+  expect_match(strict$message, "not recorded")
+})
+
+test_that("strict = TRUE fails a SAS entry whose count could not be re-derived", {
+  # The default state for every real study, and the reason strict exists: the
+  # entry is intact but one of its two checks did not run.
+  withr::local_options(manifest.allow_heavy_rowcount = NULL)
+  tmp <- withr::local_tempdir()
+  sas <- write_temp_sas(n = 6, name = "strict_heavy.sas7bdat", dir = tmp)
+  mpath <- file.path(tmp, "manifest.yaml")
+  update_manifest(file = sas, manifest_path = mpath, n_rows = 6L)
+
+  expect_equal(verify_manifest(manifest_path = mpath, data_dir = tmp)$status,
+               "OK")
+
+  strict <- suppressWarnings(
+    verify_manifest(manifest_path = mpath, data_dir = tmp,
+                    strict = TRUE, stop_on_error = FALSE))
+  expect_equal(strict$status, "FAIL")
+  expect_match(strict$message, "manifest.allow_heavy_rowcount")
+})
+
+test_that("strict = TRUE fails a file type whose rows cannot be counted", {
+  tmp <- withr::local_tempdir()
+  rds <- file.path(tmp, "obj.rds")
+  saveRDS(make_df(5), rds)
+  mpath <- file.path(tmp, "manifest.yaml")
+  update_manifest(file = rds, manifest_path = mpath, n_rows = 5L)
+
+  expect_equal(verify_manifest(manifest_path = mpath, data_dir = tmp)$status,
+               "OK")
+
+  strict <- suppressWarnings(
+    verify_manifest(manifest_path = mpath, data_dir = tmp,
+                    strict = TRUE, stop_on_error = FALSE))
+  expect_equal(strict$status, "FAIL")
+  expect_match(strict$message, "rds")
+})
+
+test_that("strict = TRUE passes when every check actually ran", {
+  # Strict must be satisfiable, not merely strict.
+  tmp <- withr::local_tempdir()
+  csv <- write_temp_csv(n = 10, name = "strict_ok.csv", dir = tmp)
+  mpath <- file.path(tmp, "manifest.yaml")
+  update_manifest(file = csv, manifest_path = mpath, n_rows = 10L)
+
+  report <- verify_manifest(manifest_path = mpath, data_dir = tmp,
+                            strict = TRUE)
+  expect_equal(report$status, "OK")
+  expect_true(report$row_count_checked)
+})
+
+test_that("strict = TRUE passes a SAS entry once heavy counting is enabled", {
+  withr::local_options(manifest.allow_heavy_rowcount = TRUE)
+  tmp <- withr::local_tempdir()
+  sas <- write_temp_sas(n = 6, name = "strict_heavy_on.sas7bdat", dir = tmp)
+  mpath <- file.path(tmp, "manifest.yaml")
+  update_manifest(file = sas, manifest_path = mpath, n_rows = 6L)
+
+  report <- verify_manifest(manifest_path = mpath, data_dir = tmp,
+                            strict = TRUE)
+  expect_equal(report$status, "OK")
+  expect_true(report$row_count_checked)
+})
+
+test_that("strict = TRUE still stops by default when an entry fails", {
+  tmp <- withr::local_tempdir()
+  csv <- write_temp_csv(n = 10, name = "strict_stops.csv", dir = tmp)
+  mpath <- file.path(tmp, "manifest.yaml")
+  update_manifest(file = csv, manifest_path = mpath, n_rows = 10L)
+  m <- yaml::read_yaml(mpath)
+  m$datasets[[1]]$n_rows <- NULL
+  yaml::write_yaml(m, mpath)
+
+  expect_error(verify_manifest(manifest_path = mpath, data_dir = tmp,
+                               strict = TRUE),
+               "not recorded")
+})
