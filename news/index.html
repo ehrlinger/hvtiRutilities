@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.6</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.7</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,6 +55,22 @@
       <small>Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.0.7" id="hvtirutilities-107">hvtiRutilities 1.0.7<a class="anchor" aria-label="anchor" href="#hvtirutilities-107"></a></h2>
+<div class="section level3">
+<h3 id="new-features-1-0-7">New features<a class="anchor" aria-label="anchor" href="#new-features-1-0-7"></a></h3>
+<ul><li><p><code><a href="../reference/study_config.html">study_config()</a></code> reads a study’s <code>_study.yml</code> manifest, found by walking up from a starting directory. It validates that every required key is present and errors otherwise, naming the key: a study without a complete manifest must not render, and a partial default would be a silent wrong answer.</p></li>
+<li><p><code><a href="../reference/record_provenance.html">record_provenance()</a></code> writes a JSON sidecar beside a rendered output, recording the study manifest checksum, the R version and platform, every loaded package and its version, the <code>renv.lock</code> checksum, the input dataset’s SHA-256, and the cohort. <code>renv.lock</code> alone cannot say what produced a particular result — it is project-scoped and re-snapshotted through a study’s life — so the record is job-scoped and lives with the result. Failure to write it is an error, not a warning.</p></li>
+<li><p>The study data contract moves in from the per-study <code>R/</code> directories: <code><a href="../reference/study_root.html">study_root()</a></code>, <code><a href="../reference/sas_path.html">sas_path()</a></code>, <code><a href="../reference/built_path.html">built_path()</a></code>, <code><a href="../reference/built_manifest.html">built_manifest()</a></code>, <code><a href="../reference/read_built.html">read_built()</a></code>, <code><a href="../reference/cohort_counts.html">cohort_counts()</a></code> and <code><a href="../reference/assert_cohort.html">assert_cohort()</a></code>. All of them read study-specific values from <code>_study.yml</code> rather than from constants, so no study path, title, dataset name or cohort count appears in package code.</p></li>
+<li><p><code><a href="../reference/r_dir_impurities.html">r_dir_impurities()</a></code> reports top-level executable code in a directory that is sourced wholesale, where a stray call would run on every render.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="notes-1-0-7">Notes<a class="anchor" aria-label="anchor" href="#notes-1-0-7"></a></h3>
+<ul><li>New dependency: <code>jsonlite</code>, for the provenance sidecar.</li>
+<li>
+<code><a href="../reference/built_manifest.html">built_manifest()</a></code> records <code>sha256</code> rather than the <code>md5</code> used by the earlier per-study version, matching the provenance record. One hash algorithm across the design, not two.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.0.6" id="hvtirutilities-106">hvtiRutilities 1.0.6<a class="anchor" aria-label="anchor" href="#hvtirutilities-106"></a></h2>
 <div class="section level3">

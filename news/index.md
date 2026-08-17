@@ -1,5 +1,50 @@
 # Changelog
 
+## hvtiRutilities 1.0.7
+
+### New features
+
+- [`study_config()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md)
+  reads a study’s `_study.yml` manifest, found by walking up from a
+  starting directory. It validates that every required key is present
+  and errors otherwise, naming the key: a study without a complete
+  manifest must not render, and a partial default would be a silent
+  wrong answer.
+
+- [`record_provenance()`](https://ehrlinger.github.io/hvtiRutilities/reference/record_provenance.md)
+  writes a JSON sidecar beside a rendered output, recording the study
+  manifest checksum, the R version and platform, every loaded package
+  and its version, the `renv.lock` checksum, the input dataset’s
+  SHA-256, and the cohort. `renv.lock` alone cannot say what produced a
+  particular result — it is project-scoped and re-snapshotted through a
+  study’s life — so the record is job-scoped and lives with the result.
+  Failure to write it is an error, not a warning.
+
+- The study data contract moves in from the per-study `R/` directories:
+  [`study_root()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_root.md),
+  [`sas_path()`](https://ehrlinger.github.io/hvtiRutilities/reference/sas_path.md),
+  [`built_path()`](https://ehrlinger.github.io/hvtiRutilities/reference/built_path.md),
+  [`built_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/built_manifest.md),
+  [`read_built()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_built.md),
+  [`cohort_counts()`](https://ehrlinger.github.io/hvtiRutilities/reference/cohort_counts.md)
+  and
+  [`assert_cohort()`](https://ehrlinger.github.io/hvtiRutilities/reference/assert_cohort.md).
+  All of them read study-specific values from `_study.yml` rather than
+  from constants, so no study path, title, dataset name or cohort count
+  appears in package code.
+
+- [`r_dir_impurities()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_dir_impurities.md)
+  reports top-level executable code in a directory that is sourced
+  wholesale, where a stray call would run on every render.
+
+### Notes
+
+- New dependency: `jsonlite`, for the provenance sidecar.
+- [`built_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/built_manifest.md)
+  records `sha256` rather than the `md5` used by the earlier per-study
+  version, matching the provenance record. One hash algorithm across the
+  design, not two.
+
 ## hvtiRutilities 1.0.6
 
 ### Bug fixes

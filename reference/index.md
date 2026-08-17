@@ -78,9 +78,42 @@ Inventory a legacy SAS macro library and resolve name collisions
 - [`write_collision_report()`](https://ehrlinger.github.io/hvtiRutilities/reference/write_collision_report.md)
   : Write the macro name-collision report
 
+## Study Manifest and Data Contract
+
+Locate a study from its `_study.yml`, resolve its paths, and read and
+reconcile its built dataset
+
+- [`study_config()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md)
+  : Read the study manifest
+- [`study_root()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_root.md)
+  : Locate the study root
+- [`sas_path()`](https://ehrlinger.github.io/hvtiRutilities/reference/sas_path.md)
+  : Build a path under the study root
+- [`built_path()`](https://ehrlinger.github.io/hvtiRutilities/reference/built_path.md)
+  : Path to the study's built dataset
+- [`built_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/built_manifest.md)
+  : Record the state of the built dataset
+- [`read_built()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_built.md)
+  : Read the study's built dataset
+- [`cohort_counts()`](https://ehrlinger.github.io/hvtiRutilities/reference/cohort_counts.md)
+  : Count the analysable cohort
+- [`assert_cohort()`](https://ehrlinger.github.io/hvtiRutilities/reference/assert_cohort.md)
+  : Assert the cohort matches the study manifest
+
+## Provenance
+
+Record what produced a filed result, in a JSON sidecar beside it
+
+- [`record_provenance()`](https://ehrlinger.github.io/hvtiRutilities/reference/record_provenance.md)
+  : Write the provenance record for a rendered output
+- [`provenance_path()`](https://ehrlinger.github.io/hvtiRutilities/reference/provenance_path.md)
+  : Name the provenance sidecar for an output
+
 ## Package Utilities
 
 - [`hvtiRutilities-package`](https://ehrlinger.github.io/hvtiRutilities/reference/hvtiRutilities-package.md)
   : hvtiRutilities: Utilities to work with SAS data in R.
 - [`hvtiRutilities.news()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvtiRutilities.news.md)
   : Display the NEWS file
+- [`r_dir_impurities()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_dir_impurities.md)
+  : Report top-level executable code in an R directory

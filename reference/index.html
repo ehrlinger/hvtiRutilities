@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.6</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.7</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -265,6 +265,94 @@
         </dt>
         <dd>Write the macro name-collision report</dd>
       </dl></div><div class="section level2">
+      <h2 id="study-manifest-and-data-contract">Study Manifest and Data Contract<a class="anchor" aria-label="anchor" href="#study-manifest-and-data-contract"></a></h2>
+
+      <div class="section-desc"><p>Locate a study from its <code>_study.yml</code>, resolve its paths, and read and reconcile its built dataset</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="study_config.html">study_config()</a></code>
+
+        </dt>
+        <dd>Read the study manifest</dd>
+
+        <dt>
+
+          <code><a href="study_root.html">study_root()</a></code>
+
+        </dt>
+        <dd>Locate the study root</dd>
+
+        <dt>
+
+          <code><a href="sas_path.html">sas_path()</a></code>
+
+        </dt>
+        <dd>Build a path under the study root</dd>
+
+        <dt>
+
+          <code><a href="built_path.html">built_path()</a></code>
+
+        </dt>
+        <dd>Path to the study's built dataset</dd>
+
+        <dt>
+
+          <code><a href="built_manifest.html">built_manifest()</a></code>
+
+        </dt>
+        <dd>Record the state of the built dataset</dd>
+
+        <dt>
+
+          <code><a href="read_built.html">read_built()</a></code>
+
+        </dt>
+        <dd>Read the study's built dataset</dd>
+
+        <dt>
+
+          <code><a href="cohort_counts.html">cohort_counts()</a></code>
+
+        </dt>
+        <dd>Count the analysable cohort</dd>
+
+        <dt>
+
+          <code><a href="assert_cohort.html">assert_cohort()</a></code>
+
+        </dt>
+        <dd>Assert the cohort matches the study manifest</dd>
+      </dl></div><div class="section level2">
+      <h2 id="provenance">Provenance<a class="anchor" aria-label="anchor" href="#provenance"></a></h2>
+
+      <div class="section-desc"><p>Record what produced a filed result, in a JSON sidecar beside it</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="record_provenance.html">record_provenance()</a></code>
+
+        </dt>
+        <dd>Write the provenance record for a rendered output</dd>
+
+        <dt>
+
+          <code><a href="provenance_path.html">provenance_path()</a></code>
+
+        </dt>
+        <dd>Name the provenance sidecar for an output</dd>
+      </dl></div><div class="section level2">
       <h2 id="package-utilities">Package Utilities<a class="anchor" aria-label="anchor" href="#package-utilities"></a></h2>
 
 
@@ -287,6 +375,13 @@
 
         </dt>
         <dd>Display the NEWS file</dd>
+
+        <dt>
+
+          <code><a href="r_dir_impurities.html">r_dir_impurities()</a></code>
+
+        </dt>
+        <dd>Report top-level executable code in an R directory</dd>
       </dl></div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
