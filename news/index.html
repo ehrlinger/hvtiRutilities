@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.9</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.8</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -56,22 +56,16 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="1.0.9" id="hvtirutilities-109">hvtiRutilities 1.0.9<a class="anchor" aria-label="anchor" href="#hvtirutilities-109"></a></h2>
-<div class="section level3">
-<h3 id="new-features-1-0-9">New features<a class="anchor" aria-label="anchor" href="#new-features-1-0-9"></a></h3>
-<ul><li>
-<p><code><a href="../reference/verify_manifest.html">verify_manifest()</a></code> gains <code>strict = FALSE</code>. Under <code>strict = TRUE</code> an entry whose row count could not be re-derived is reported as <code>"FAIL"</code> rather than passing on its checksum alone, and the message names which of the three causes applies: the count is not recorded in the manifest, the file type cannot be counted at all, or heavy row counting is left disabled. Use it where the question is “did every check actually run” rather than “is the data intact”: a release gate, an archival gate, or a hand-off where a downstream reader will read <code>"OK"</code> as fully verified.</p>
-<p>The default is unchanged and stays permissive, because a check that cannot run is not a check that failed. Under it <code>"OK"</code> can still mean “checksum verified, row count not examined”, and <code>row_count_checked</code> remains the column that distinguishes the two.</p>
-</li>
-</ul></div>
-</div>
-    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.0.8" id="hvtirutilities-108">hvtiRutilities 1.0.8<a class="anchor" aria-label="anchor" href="#hvtirutilities-108"></a></h2>
 <div class="section level3">
 <h3 id="new-features-1-0-8">New features<a class="anchor" aria-label="anchor" href="#new-features-1-0-8"></a></h3>
 <ul><li><p><code><a href="../reference/study_init.html">study_init()</a></code> initializes a study for reproducible analysis: it writes the <code>_study.yml</code> identity manifest that <code><a href="../reference/study_config.html">study_config()</a></code> reads, and seeds a <code>manifest.yaml</code> pinning the built dataset’s SHA-256. The cohort counts are derived from the dataset rather than supplied, because a hand-typed count is a count that can disagree with the data. <code>citation</code> is written as an explicit null, so a study that is later published has an obvious place to record its reference.</p></li>
 <li><p><code><a href="../reference/study_status.html">study_status()</a></code> audits a study without writing anything, reporting whether it has a valid <code>_study.yml</code>, an <code>renv.lock</code>, a <code>manifest.yaml</code> whose checksums still match, and a provenance sidecar for every <code>.qmd</code> or <code>.Rmd</code> source. It never errors on an absent or malformed manifest — that is the finding, not a failure — and it distinguishes a check that could not run (<code>MISSING</code>) from one that ran and failed (<code>FAIL</code>).</p></li>
 <li><p><code><a href="../reference/study_checklist.html">study_checklist()</a></code> renders a <code><a href="../reference/study_status.html">study_status()</a></code> result as a markdown checklist, ticked where the study already complies.</p></li>
+<li>
+<p><code><a href="../reference/verify_manifest.html">verify_manifest()</a></code> gains <code>strict = FALSE</code>. Under <code>strict = TRUE</code> an entry whose row count could not be re-derived is reported as <code>"FAIL"</code> rather than passing on its checksum alone, and the message names which of the three causes applies: the count is not recorded in the manifest, the file type cannot be counted at all, or heavy row counting is left disabled. Use it where the question is “did every check actually run” rather than “is the data intact”: a release gate, an archival gate, or a hand-off where a downstream reader will read <code>"OK"</code> as fully verified.</p>
+<p>The default is unchanged and stays permissive, because a check that cannot run is not a check that failed. Under it <code>"OK"</code> can still mean “checksum verified, row count not examined”, and <code>row_count_checked</code> remains the column that distinguishes the two.</p>
+</li>
 </ul></div>
 <div class="section level3">
 <h3 id="bug-fixes-1-0-8">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-0-8"></a></h3>
