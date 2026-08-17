@@ -34,6 +34,12 @@
   count was re-derived from the file and compared with the manifest. The
   entry's message notes a count that was not re-derived.
 
+- `verify_manifest()` no longer reports `SHA-256 match (n = )` for an entry
+  whose manifest records no row count. An empty count field reads as a
+  verified count of nothing; the message now says `no row count recorded`.
+  Entries written by hand, or by a version that could not count rows, are the
+  ones affected.
+
 ## Notes
 
 - No new dependencies.
