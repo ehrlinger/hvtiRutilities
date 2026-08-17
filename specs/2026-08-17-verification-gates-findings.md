@@ -117,7 +117,8 @@ Stated generally, and worth adopting as a review question for this package:
 > recorded before it compares them. Otherwise "nobody wrote this down" and
 > "everybody wrote the same thing" are the same observation.
 
-This is [[fail-loud-engineering]] applied to verification code specifically. The
+This is the fail-loud-engineering principle applied to verification code
+specifically. The
 failure is not that the check is wrong; it is that the check is absent while
 reporting itself as present, which is strictly worse than having no check at
 all, because the surrounding documentation asserts that the protection exists.
@@ -133,12 +134,21 @@ Concrete review questions for this package:
 
 ---
 
-## 3. Migration consequence: `built_manifest()` moving from `md5` to `sha256`
+## 3. Migration consequence for the study tree, when Stage 1 ports `built_manifest()`
 
-The Stage 1 plan for this package (`analyses/R_hazard/docs/plans/2026-08-17-hvtirutilities-provenance.md`
-in the study tree) has the packaged `built_manifest()` emit `sha256`, where the
-per-study version emits `md5`, so that one hash algorithm serves both the
-manifest and the provenance sidecar. That is the right call.
+**Nothing in this package is affected.** As of `main`, `hvtiRutilities` has no
+`built_manifest()`; the manifest writer is `update_manifest()`, which already
+records `sha256` (`R/manifest.R:129`), and there is no `md5` anywhere in `R/`.
+The md5 lives only in the study tree, in
+`analyses/R_hazard/R/read_built.R`. This section is here so the consequence is
+known before the port lands, not because the package is on md5 today.
+
+`built_manifest()` is a **study-tree** function that the Stage 1 plan
+(`analyses/R_hazard/docs/plans/2026-08-17-hvtirutilities-provenance.md`) moves
+into this package. The study version records `md5`; the ported version records
+`sha256`, matching both `update_manifest()` and the provenance sidecar, so one
+hash algorithm serves all three. That is the right call, and it aligns the
+ported function with what this package already does.
 
 It has a downstream consequence that is invisible at the call site.
 
@@ -159,10 +169,12 @@ disagree and are refused rather than compared as though comparable.
 to prefer is "read whichever algorithm is recorded, and carry the algorithm name
 with the digest", not "read the column we currently write".
 
-Note also that `verify_manifest()` compares `entry$sha256` and is therefore
-already sha256-only. Manifests written by the current `built_manifest()`, which
-records md5, are not verifiable by it. That mismatch predates this note and is
-worth resolving as part of the same change.
+`verify_manifest()` compares `entry$sha256` and is therefore sha256-only, which
+already matches what `update_manifest()` writes. **There is no package-level
+mismatch to fix.** The mismatch is study-side and temporary: manifests recorded
+by the study's md5 `built_manifest()` are not verifiable by `verify_manifest()`,
+and the port removes that by construction. Worth stating only so nobody reads
+section 2 and goes looking for a hash bug in this package that is not there.
 
 ---
 
