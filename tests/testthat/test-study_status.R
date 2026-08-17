@@ -143,7 +143,39 @@ test_that("provenance is MISSING when there are no .qmd sources at all", {
   root <- withr::local_tempdir()
   writeLines("proc means data=x;", file.path(root, "bh.dead_s1.sas"))
 
-  expect_equal(check_for(study_status(root), "provenance")$status, "MISSING")
+  row <- check_for(study_status(root), "provenance")
+  expect_equal(row$status, "MISSING")
+  # The scan covers .Rmd too, so the report must not claim it looked only for
+  # .qmd. A study with only .Rmd sources would read as having none at all.
+  expect_match(row$detail, ".qmd/.Rmd", fixed = TRUE)
+})
+
+test_that("provenance covers .Rmd sources and says so", {
+  root <- withr::local_tempdir()
+  writeLines("---\ntitle: x\n---", file.path(root, "01.legacy_JR.Rmd"))
+
+  row <- check_for(study_status(root), "provenance")
+  expect_equal(row$status, "FAIL")
+  expect_match(row$detail, "01.legacy_JR", fixed = TRUE)
+  expect_match(row$detail, ".qmd/.Rmd", fixed = TRUE)
+  expect_equal(study_status(root)$counts$qmd, 1L)
+})
+
+test_that("provenance OK detail names both source types", {
+  root <- withr::local_tempdir()
+  writeLines("---\ntitle: x\n---", file.path(root, "01.legacy_JR.Rmd"))
+  writeLines("{}", file.path(root, "01.legacy_JR.provenance.json"))
+
+  row <- check_for(study_status(root), "provenance")
+  expect_equal(row$status, "OK")
+  expect_match(row$detail, ".qmd/.Rmd", fixed = TRUE)
+})
+
+test_that("print.study_status labels the source count as .qmd/.Rmd", {
+  root <- withr::local_tempdir()
+  writeLines("---\ntitle: x\n---", file.path(root, "01.legacy_JR.Rmd"))
+
+  expect_output(print(study_status(root)), ".qmd/.Rmd", fixed = TRUE)
 })
 
 test_that("counts exclude renv/ and count SAS jobs", {

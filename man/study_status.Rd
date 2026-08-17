@@ -20,7 +20,7 @@ An object of class \code{"study_status"}: a list with \code{root},
 Reports, without writing anything, whether a study has the four things a
 later result needs in order to be re-derivable: a valid \code{_study.yml},
 an \code{renv.lock}, a \code{manifest.yaml} whose checksums still match the
-data, and a provenance sidecar for every \code{.qmd} source.
+data, and a provenance sidecar for every \code{.qmd} or \code{.Rmd} source.
 
 Every finding is reported rather than raised. A study with no
 \code{_study.yml} is the thing this function exists to describe, so it must

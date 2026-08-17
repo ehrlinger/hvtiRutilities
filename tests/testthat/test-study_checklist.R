@@ -20,6 +20,16 @@ test_that("study_checklist reports counts", {
   expect_true(any(grepl("`\\.sas` jobs: 1", md)))
 })
 
+test_that("study_checklist labels the source count as .qmd/.Rmd", {
+  root <- withr::local_tempdir()
+  writeLines("---\ntitle: x\n---", file.path(root, "01.legacy_JR.Rmd"))
+
+  md <- study_checklist(study_status(root))
+  # study_status() counts .qmd and .Rmd together, so the checklist must not
+  # label the total as .qmd alone.
+  expect_true(any(grepl("`.qmd`/`.Rmd` sources: 1", md, fixed = TRUE)))
+})
+
 test_that("study_checklist names the study root", {
   root <- withr::local_tempdir()
   md   <- study_checklist(study_status(root))

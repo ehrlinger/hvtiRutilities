@@ -58,7 +58,7 @@ study_checklist <- function(status, path = NULL) {
     "## Counts",
     "",
     paste0("- `.R` files: ", status$counts$r_files),
-    paste0("- `.qmd` sources: ", status$counts$qmd),
+    paste0("- `.qmd`/`.Rmd` sources: ", status$counts$qmd),
     paste0("- `.sas` jobs: ", status$counts$sas_jobs),
     paste0("- provenance sidecars: ", status$counts$sidecars)
   )

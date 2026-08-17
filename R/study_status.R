@@ -107,7 +107,7 @@
 
   if (!length(src)) {
     return(.status_row("provenance", "MISSING",
-                       paste0("no .qmd sources found; ", length(cars),
+                       paste0("no .qmd/.Rmd sources found; ", length(cars),
                               " sidecar",
                               if (length(cars) == 1L) "" else "s")))
   }
@@ -132,12 +132,12 @@
   if (!length(missing)) {
     .status_row("provenance", "OK",
                 paste0("all ", length(want),
-                       " .qmd source names have a provenance sidecar",
+                       " .qmd/.Rmd source names have a provenance sidecar",
                        dup_note))
   } else {
     .status_row("provenance", "FAIL",
                 paste0(length(missing), " of ", length(want),
-                       " .qmd source names have no provenance sidecar: ",
+                       " .qmd/.Rmd source names have no provenance sidecar: ",
                        paste(missing, collapse = ", "), dup_note))
   }
 }
@@ -148,7 +148,7 @@
 #' Reports, without writing anything, whether a study has the four things a
 #' later result needs in order to be re-derivable: a valid \code{_study.yml},
 #' an \code{renv.lock}, a \code{manifest.yaml} whose checksums still match the
-#' data, and a provenance sidecar for every \code{.qmd} source.
+#' data, and a provenance sidecar for every \code{.qmd} or \code{.Rmd} source.
 #'
 #' Every finding is reported rather than raised. A study with no
 #' \code{_study.yml} is the thing this function exists to describe, so it must
@@ -269,7 +269,7 @@ print.study_status <- function(x, ...) {
     cat(mark[[x$checks$status[i]]], " ", x$checks$item[i],
         " \u2014 ", x$checks$detail[i], "\n", sep = "")
   }
-  cat("\n", x$counts$r_files, " .R  |  ", x$counts$qmd, " .qmd  |  ",
+  cat("\n", x$counts$r_files, " .R  |  ", x$counts$qmd, " .qmd/.Rmd  |  ",
       x$counts$sas_jobs, " .sas  |  ", x$counts$sidecars,
       " provenance sidecars\n", sep = "")
   invisible(x)

@@ -12,10 +12,10 @@
 
 - `study_status()` audits a study without writing anything, reporting whether
   it has a valid `_study.yml`, an `renv.lock`, a `manifest.yaml` whose
-  checksums still match, and a provenance sidecar for every `.qmd` source. It
-  never errors on an absent or malformed manifest — that is the finding, not a
-  failure — and it distinguishes a check that could not run (`MISSING`) from
-  one that ran and failed (`FAIL`).
+  checksums still match, and a provenance sidecar for every `.qmd` or `.Rmd`
+  source. It never errors on an absent or malformed manifest — that is the
+  finding, not a failure — and it distinguishes a check that could not run
+  (`MISSING`) from one that ran and failed (`FAIL`).
 
 - `study_checklist()` renders a `study_status()` result as a markdown
   checklist, ticked where the study already complies.
