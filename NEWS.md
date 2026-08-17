@@ -40,6 +40,13 @@
   Entries written by hand, or by a version that could not count rows, are the
   ones affected.
 
+- `verify_manifest()` no longer reports an entry that records no SHA-256 as a
+  `SHA-256 mismatch` against a blank expected value. Such an entry still
+  fails, because the checksum is the whole of what the function verifies, but
+  the message now says none was recorded and names the algorithm the manifest
+  used instead. A manifest written by an md5-based writer is the case this
+  turns up on.
+
 ## Notes
 
 - No new dependencies.

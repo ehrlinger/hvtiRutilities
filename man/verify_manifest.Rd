@@ -53,6 +53,11 @@ checksum, which is the stronger of the two checks.  A check that could not
 run is not a check that failed.  A file that cannot be read at all is a
 different matter and still fails.
 
+An entry recording no SHA-256 fails, because the checksum is the whole of
+what this function verifies and there is nothing to compare it against.
+Manifests written by an md5-based writer are the case that turns up in
+practice; the failure names the algorithm that was recorded instead.
+
 Three outcomes are therefore possible for an entry that passes, and the
 report distinguishes them rather than reporting all three as simply
 verified.  The count was compared; the count is recorded but was not

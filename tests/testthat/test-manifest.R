@@ -345,6 +345,68 @@ test_that("verify_manifest still reports a recorded row count", {
 })
 
 # ---------------------------------------------------------------------------
+# verify_manifest — entries with no SHA-256 to compare
+#
+# The checksum is the whole of what this function verifies, so an entry
+# carrying none cannot be passed: that is the "gate that passes without
+# verifying" shape. It must fail, but it must say why. Reporting a mismatch
+# blames a comparison that never happened.
+# ---------------------------------------------------------------------------
+
+test_that("verify_manifest fails an entry with no recorded checksum, and says so", {
+  tmp <- withr::local_tempdir()
+  csv <- write_temp_csv(n = 10, name = "nosha.csv", dir = tmp)
+  mpath <- file.path(tmp, "manifest.yaml")
+  yaml::write_yaml(
+    list(datasets = list(list(file = "nosha.csv", n_rows = 10L))), mpath
+  )
+
+  report <- suppressWarnings(
+    verify_manifest(manifest_path = mpath, data_dir = tmp,
+                    stop_on_error = FALSE)
+  )
+  expect_equal(report$status, "FAIL")
+  expect_match(report$message, "No SHA-256 recorded", fixed = TRUE)
+  expect_false(grepl("mismatch", report$message, fixed = TRUE))
+})
+
+test_that("verify_manifest names the algorithm a manifest recorded instead", {
+  tmp <- withr::local_tempdir()
+  csv <- write_temp_csv(n = 10, name = "md5only.csv", dir = tmp)
+  mpath <- file.path(tmp, "manifest.yaml")
+  # As a manifest written by an md5-based writer would look.
+  yaml::write_yaml(
+    list(datasets = list(list(
+      file = "md5only.csv", n_rows = 10L,
+      md5  = digest::digest(csv, algo = "md5", file = TRUE)
+    ))), mpath
+  )
+
+  report <- suppressWarnings(
+    verify_manifest(manifest_path = mpath, data_dir = tmp,
+                    stop_on_error = FALSE)
+  )
+  expect_equal(report$status, "FAIL")
+  expect_match(report$message, "md5", fixed = TRUE)
+  expect_false(grepl("mismatch", report$message, fixed = TRUE))
+})
+
+test_that("verify_manifest still reports a genuine SHA-256 mismatch as a mismatch", {
+  tmp <- withr::local_tempdir()
+  csv <- write_temp_csv(n = 10, name = "realmismatch.csv", dir = tmp)
+  mpath <- file.path(tmp, "manifest.yaml")
+  update_manifest(file = csv, manifest_path = mpath)
+  write.csv(make_df(11), csv, row.names = FALSE)
+
+  report <- suppressWarnings(
+    verify_manifest(manifest_path = mpath, data_dir = tmp,
+                    stop_on_error = FALSE)
+  )
+  expect_equal(report$status, "FAIL")
+  expect_match(report$message, "SHA-256 mismatch", fixed = TRUE)
+})
+
+# ---------------------------------------------------------------------------
 # verify_manifest — heavy row counting disabled
 #
 # The default state for every real study: options(manifest.allow_heavy_rowcount)

@@ -205,6 +205,11 @@ update_manifest <- function(file,
 #' run is not a check that failed.  A file that cannot be read at all is a
 #' different matter and still fails.
 #'
+#' An entry recording no SHA-256 fails, because the checksum is the whole of
+#' what this function verifies and there is nothing to compare it against.
+#' Manifests written by an md5-based writer are the case that turns up in
+#' practice; the failure names the algorithm that was recorded instead.
+#'
 #' Three outcomes are therefore possible for an entry that passes, and the
 #' report distinguishes them rather than reporting all three as simply
 #' verified.  The count was compared; the count is recorded but was not
@@ -287,6 +292,31 @@ verify_manifest <- function(manifest_path = "manifest.yaml",
         file    = entry$file,
         status  = "FAIL",
         message = paste("File not found:", fpath),
+        row_count_checked = FALSE,
+        stringsAsFactors = FALSE
+      ))
+    }
+
+    # An entry with no sha256 cannot be compared at all. That has to fail,
+    # because the checksum is the whole of what this function verifies, but
+    # reporting it as a mismatch blames a comparison that never ran and prints
+    # a blank "expected:". A manifest written by an md5-based writer is the
+    # case that turns up in practice, so name the algorithm it did record.
+    if (is.null(entry$sha256)) {
+      alt <- intersect(c("md5", "sha1", "sha512", "crc32"), names(entry))
+      return(data.frame(
+        file    = entry$file,
+        status  = "FAIL",
+        message = paste0(
+          "No SHA-256 recorded for this entry",
+          if (length(alt)) {
+            paste0("; the manifest records ", alt[1],
+                   ", which this function does not verify")
+          } else {
+            ""
+          },
+          "."
+        ),
         row_count_checked = FALSE,
         stringsAsFactors = FALSE
       ))
