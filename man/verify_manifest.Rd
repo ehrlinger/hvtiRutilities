@@ -32,7 +32,9 @@ returned data frame.  Failures are reported through \code{stop()} or
 }
 \value{
 Invisibly returns a data frame with columns \code{file},
-  \code{status} (\code{"OK"} or \code{"FAIL"}), and \code{message}.
+  \code{status} (\code{"OK"} or \code{"FAIL"}), \code{message}, and
+  \code{row_count_checked} (logical; \code{TRUE} when the row count was
+  re-derived from the file and compared with the manifest).
 }
 \description{
 Reads a \code{manifest.yaml} produced by \code{\link{update_manifest}} and,
@@ -42,6 +44,15 @@ Supported formats for automatic row-count verification: CSV
 (\code{.csv}), SAS (\code{.sas7bdat}), and Excel (\code{.xlsx},
 \code{.xls}).  For other file types the row-count check is skipped and
 only the SHA-256 is verified.
+
+Re-deriving the row count of a SAS or Excel file means reading the whole
+file, so it only happens under
+\code{options(manifest.allow_heavy_rowcount = TRUE)}.  Without that option
+the row count is skipped rather than failed, and the entry passes on its
+checksum, which is the stronger of the two checks.  A check that could not
+run is not a check that failed.  The \code{row_count_checked} column says
+which entries were counted, so you can tell the two apart.  A file that
+cannot be read at all is a different matter and still fails.
 
 Call this function at the top of every analysis script or Quarto document
 to ensure data integrity before any results are generated.
@@ -55,8 +66,8 @@ hvtiRutilities::verify_manifest(here::here("manifest.yaml"))
 # --- Interactive use: report each passing entry ---------------------
 hvtiRutilities::verify_manifest(here::here("manifest.yaml"), verbose = TRUE)
 # cohort_20240115.csv    — SHA-256 match (n = 831)
-# labs_20240115.sas7bdat — SHA-256 match (n = 1204)
-# adjudication_20240115.xlsx — SHA-256 match (n = 47)
+# labs_20240115.sas7bdat — SHA-256 match (n = 1204); row count not re-derived
+# adjudication_20240115.xlsx — SHA-256 match (n = 47); row count not re-derived
 
 # --- Collect all failures instead of stopping on the first ---------
 report <- verify_manifest(

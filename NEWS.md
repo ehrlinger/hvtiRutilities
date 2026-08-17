@@ -1,3 +1,50 @@
+# hvtiRutilities 1.0.8
+
+## New features
+
+- `study_init()` initializes a study for reproducible analysis: it writes the
+  `_study.yml` identity manifest that `study_config()` reads, and seeds a
+  `manifest.yaml` pinning the built dataset's SHA-256. The cohort counts are
+  derived from the dataset rather than supplied, because a hand-typed count is
+  a count that can disagree with the data. `citation` is written as an explicit
+  null, so a study that is later published has an obvious place to record its
+  reference.
+
+- `study_status()` audits a study without writing anything, reporting whether
+  it has a valid `_study.yml`, an `renv.lock`, a `manifest.yaml` whose
+  checksums still match, and a provenance sidecar for every `.qmd` or `.Rmd`
+  source. It never errors on an absent or malformed manifest — that is the
+  finding, not a failure — and it distinguishes a check that could not run
+  (`MISSING`) from one that ran and failed (`FAIL`).
+
+- `study_checklist()` renders a `study_status()` result as a markdown
+  checklist, ticked where the study already complies.
+
+## Bug fixes
+
+- `verify_manifest()` no longer reports `FAIL` for a `.sas7bdat` or Excel
+  entry whose SHA-256 matches. Re-deriving the row count of those formats
+  needs `options(manifest.allow_heavy_rowcount = TRUE)`, and without it the
+  attempt errored and the error was reported as a failed entry. At the default
+  `stop_on_error = TRUE` that halted analyses whose data was intact. The count
+  is now skipped when it cannot be re-derived and the entry passes on its
+  checksum; a file that cannot be read at all is still `FAIL`.
+
+- `verify_manifest()` gains a `row_count_checked` column, `TRUE` when the row
+  count was re-derived from the file and compared with the manifest. The
+  entry's message notes a count that was not re-derived.
+
+## Notes
+
+- No new dependencies.
+- `study_init()` does not run `renv::init()`. A missing `renv.lock` is
+  reported as an open item instead: creating one restarts the R session and
+  rewrites `.Rprofile`, which a function that writes two YAML files has no
+  business doing.
+- `study_status()` reports a `manifest.yaml` entry as verified when its
+  SHA-256 matches but its row count could not be re-derived, and says how many
+  counts were skipped. For a `.sas7bdat` that is the normal case.
+
 # hvtiRutilities 1.0.7
 
 ## New features

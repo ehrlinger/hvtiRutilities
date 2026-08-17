@@ -4,6 +4,25 @@
 ## Supported (heavy, opt-in via options(manifest.allow_heavy_rowcount = TRUE)):
 ##   .sas7bdat  .xlsx  .xls
 ## All other types require the caller to supply n_rows explicitly.
+##
+## "Counting is not permitted here" and "counting was attempted and failed"
+## are different events, and a caller has to be able to tell them apart: the
+## first is a policy the caller may reasonably skip past, the second means the
+## file is unreadable. The policy refusal therefore carries the condition class
+## "manifest_heavy_rowcount_disabled" so it can be caught by class rather than
+## by matching the text of its message.
+.heavy_rowcount_disabled <- function(what, loads) {
+  errorCondition(
+    paste0(
+      "Automatic row counting for ", what, " loads the entire ", loads,
+      " into memory and is disabled by default. ",
+      "Either supply n_rows explicitly or enable this behavior with ",
+      "options(manifest.allow_heavy_rowcount = TRUE)."
+    ),
+    class = "manifest_heavy_rowcount_disabled"
+  )
+}
+
 #' @importFrom utils count.fields
 .auto_count_rows <- function(file) {
   ext <- tolower(tools::file_ext(file))
@@ -13,24 +32,14 @@
     csv = length(count.fields(file, sep = ",")) - 1L,
     sas7bdat = {
       if (!allow_heavy) {
-        stop(
-          "Automatic row counting for SAS files (.sas7bdat) loads the entire ",
-          "dataset into memory and is disabled by default. ",
-          "Either supply n_rows explicitly or enable this behavior with ",
-          "options(manifest.allow_heavy_rowcount = TRUE)."
-        )
+        stop(.heavy_rowcount_disabled("SAS files (.sas7bdat)", "dataset"))
       }
       nrow(haven::read_sas(file))
     },
     xlsx = ,
     xls = {
       if (!allow_heavy) {
-        stop(
-          "Automatic row counting for Excel files (.xls/.xlsx) loads the ",
-          "entire workbook into memory and is disabled by default. ",
-          "Either supply n_rows explicitly or enable this behavior with ",
-          "options(manifest.allow_heavy_rowcount = TRUE)."
-        )
+        stop(.heavy_rowcount_disabled("Excel files (.xls/.xlsx)", "workbook"))
       }
       nrow(readxl::read_excel(file))
     },
@@ -188,6 +197,15 @@ update_manifest <- function(file,
 #' \code{.xls}).  For other file types the row-count check is skipped and
 #' only the SHA-256 is verified.
 #'
+#' Re-deriving the row count of a SAS or Excel file means reading the whole
+#' file, so it only happens under
+#' \code{options(manifest.allow_heavy_rowcount = TRUE)}.  Without that option
+#' the row count is skipped rather than failed, and the entry passes on its
+#' checksum, which is the stronger of the two checks.  A check that could not
+#' run is not a check that failed.  The \code{row_count_checked} column says
+#' which entries were counted, so you can tell the two apart.  A file that
+#' cannot be read at all is a different matter and still fails.
+#'
 #' Call this function at the top of every analysis script or Quarto document
 #' to ensure data integrity before any results are generated.
 #'
@@ -207,7 +225,9 @@ update_manifest <- function(file,
 #'   \code{warning()} regardless of this setting.
 #'
 #' @return Invisibly returns a data frame with columns \code{file},
-#'   \code{status} (\code{"OK"} or \code{"FAIL"}), and \code{message}.
+#'   \code{status} (\code{"OK"} or \code{"FAIL"}), \code{message}, and
+#'   \code{row_count_checked} (logical; \code{TRUE} when the row count was
+#'   re-derived from the file and compared with the manifest).
 #'
 #' @examples
 #' \dontrun{
@@ -218,8 +238,8 @@ update_manifest <- function(file,
 #' # --- Interactive use: report each passing entry ---------------------
 #' hvtiRutilities::verify_manifest(here::here("manifest.yaml"), verbose = TRUE)
 #' # cohort_20240115.csv    — SHA-256 match (n = 831)
-#' # labs_20240115.sas7bdat — SHA-256 match (n = 1204)
-#' # adjudication_20240115.xlsx — SHA-256 match (n = 47)
+#' # labs_20240115.sas7bdat — SHA-256 match (n = 1204); row count not re-derived
+#' # adjudication_20240115.xlsx — SHA-256 match (n = 47); row count not re-derived
 #'
 #' # --- Collect all failures instead of stopping on the first ---------
 #' report <- verify_manifest(
@@ -244,7 +264,9 @@ verify_manifest <- function(manifest_path = "manifest.yaml",
   if (is.null(manifest$datasets) || length(manifest$datasets) == 0L) {
     if (verbose) message("Manifest contains no dataset entries.")
     return(invisible(data.frame(file = character(), status = character(),
-                                message = character(), stringsAsFactors = FALSE)))
+                                message = character(),
+                                row_count_checked = logical(),
+                                stringsAsFactors = FALSE)))
   }
 
   if (is.null(data_dir)) {
@@ -259,6 +281,7 @@ verify_manifest <- function(manifest_path = "manifest.yaml",
         file    = entry$file,
         status  = "FAIL",
         message = paste("File not found:", fpath),
+        row_count_checked = FALSE,
         stringsAsFactors = FALSE
       ))
     }
@@ -270,18 +293,32 @@ verify_manifest <- function(manifest_path = "manifest.yaml",
         status  = "FAIL",
         message = paste0("SHA-256 mismatch\n  expected: ", entry$sha256,
                          "\n  actual:   ", sha256),
+        row_count_checked = FALSE,
         stringsAsFactors = FALSE
       ))
     }
 
-    # Row-count cross-check for supported formats
+    # Row-count cross-check for supported formats.
+    #
+    # A check that cannot be performed is not a check that failed. For
+    # .sas7bdat and Excel the count can only be re-derived by loading the whole
+    # file, which is off by default, so on every real study this branch is
+    # reached with counting disabled. Failing there would put an intact dataset
+    # permanently in FAIL and, at the default stop_on_error = TRUE, halt an
+    # analysis whose data is provably unchanged. The count is skipped and the
+    # entry passes on its checksum, which is the stronger of the two checks.
+    # A genuine counting failure, an unreadable or truncated file, is a
+    # different condition class and still fails.
     ext <- tolower(tools::file_ext(fpath))
+    rowcount_checked <- FALSE
     if (ext %in% c("csv", "sas7bdat", "xlsx", "xls") && !is.null(entry$n_rows)) {
       actual_rows_result <- tryCatch(
         .auto_count_rows(fpath),
         error = function(e) e
       )
-      if (inherits(actual_rows_result, "error")) {
+      if (inherits(actual_rows_result, "manifest_heavy_rowcount_disabled")) {
+        rowcount_checked <- FALSE
+      } else if (inherits(actual_rows_result, "error")) {
         return(data.frame(
           file    = entry$file,
           status  = "FAIL",
@@ -289,29 +326,36 @@ verify_manifest <- function(manifest_path = "manifest.yaml",
             "Row count auto-detection failed: ",
             conditionMessage(actual_rows_result)
           ),
+          row_count_checked = FALSE,
           stringsAsFactors = FALSE
         ))
-      }
-      actual_rows <- actual_rows_result
-      if (!is.na(actual_rows) &&
-          !identical(actual_rows, as.integer(entry$n_rows))) {
-        return(data.frame(
-          file    = entry$file,
-          status  = "FAIL",
-          message = paste0("Row count mismatch\n  expected: ", entry$n_rows,
-                           "\n  actual:   ", actual_rows),
-          stringsAsFactors = FALSE
-        ))
+      } else {
+        rowcount_checked <- TRUE
+        actual_rows      <- actual_rows_result
+        if (!is.na(actual_rows) &&
+            !identical(actual_rows, as.integer(entry$n_rows))) {
+          return(data.frame(
+            file    = entry$file,
+            status  = "FAIL",
+            message = paste0("Row count mismatch\n  expected: ", entry$n_rows,
+                             "\n  actual:   ", actual_rows),
+            row_count_checked = TRUE,
+            stringsAsFactors = FALSE
+          ))
+        }
       }
     }
 
+    msg <- paste0("SHA-256 match (n = ", entry$n_rows, ")",
+                  if (rowcount_checked) "" else "; row count not re-derived")
     if (verbose) {
-      message(entry$file, " \u2014 SHA-256 match (n = ", entry$n_rows, ")")
+      message(entry$file, " \u2014 ", msg)
     }
     data.frame(
       file    = entry$file,
       status  = "OK",
-      message = paste0("SHA-256 match (n = ", entry$n_rows, ")"),
+      message = msg,
+      row_count_checked = rowcount_checked,
       stringsAsFactors = FALSE
     )
   })
