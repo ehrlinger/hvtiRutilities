@@ -106,6 +106,13 @@ reference:
   - write_macro_manifest
   - write_collision_report
 
+- title: Study Setup
+  desc: Initialize a study for reproducible analysis, and audit whether it is ready
+  contents:
+  - study_init
+  - study_status
+  - study_checklist
+
 - title: Study Manifest and Data Contract
   desc: Locate a study from its `_study.yml`, resolve its paths, and read and reconcile its built dataset
   contents:

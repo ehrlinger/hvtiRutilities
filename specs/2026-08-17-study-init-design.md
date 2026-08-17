@@ -26,7 +26,8 @@ Measured, not assumed:
 | `manifest.yaml` | absent |
 | `renv.lock` | present at the study root, git-tracked |
 | `.provenance.json` files | zero, anywhere in the tree |
-| SAS jobs in `analyses/` | 59 `.sas` files, most with `.log` and `.lst` siblings |
+| SAS jobs | **187** `.sas` files study-wide, 59 of them at the top level of `analyses/`, most with `.log` and `.lst` siblings |
+| R sources | 28 `.R`, 12 `.qmd` — the latter across `analyses/R_hazard/` and `analyses/R_parity/`, with `index.qmd` appearing in both |
 | `documents/` | 57 entries, flat, one empty `templates/` subdirectory |
 | git | 61 commits, **no remote**, 525 of 1322 files tracked, 50 uncommitted changes, no tags |
 | `.gitignore` excludes | `*.sas7bdat`, `*.doc`, `*.rtf`, `*.pdf`, `bh.*.log` |

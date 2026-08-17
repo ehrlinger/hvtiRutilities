@@ -1255,7 +1255,26 @@ hvtiRutilities::study_status(
 )
 ```
 
-Expected: `renv.lock` `OK`; `_study.yml`, `manifest.yaml`, `dataset`, `cohort`
-all `MISSING`; `provenance` `MISSING` or `FAIL` depending on whether the
-`R_hazard`/`R_parity` subprojects hold `.qmd` sources. Flagged here rather than
-silently dropped.
+**Verified by hand on 2026-08-17**, against the implementation:
+
+```
+[ ] _study.yml    — no _study.yml at this root; run study_init()
+[x] renv.lock     — renv.lock present
+[ ] manifest.yaml — no manifest.yaml; study_init() seeds one
+[ ] dataset       — requires a valid _study.yml
+[ ] cohort        — requires a valid _study.yml
+[!] provenance    — 11 of 11 .qmd source names have no provenance sidecar: ...
+                    (1 name used by more than one source and so
+                    indistinguishable here: index)
+
+28 .R  |  12 .qmd  |  187 .sas  |  0 provenance sidecars
+```
+
+`renv.lock` is the single `OK`, as predicted.
+
+This run earned its place in the plan: it surfaced two defects the
+fixture-based tests could not. `R CMD check --as-cran` reported a WARNING for
+non-ASCII em dashes in R string literals, and the provenance check reported an
+impossible "11 of 12" because two `index.qmd` (in `R_hazard/` and `R_parity/`)
+collapse to one name under a set comparison. Both fixed in `dfb057f`, with a
+regression test for the second.
