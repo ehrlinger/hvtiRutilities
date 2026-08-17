@@ -39,7 +39,8 @@ verify_manifest(
   manifest_path = "manifest.yaml",
   data_dir = NULL,
   stop_on_error = TRUE,
-  verbose = FALSE
+  verbose = FALSE,
+  strict = FALSE
 )
 ```
 
@@ -71,6 +72,22 @@ verify_manifest(
   through [`stop()`](https://rdrr.io/r/base/stop.html) or
   [`warning()`](https://rdrr.io/r/base/warning.html) regardless of this
   setting.
+
+- strict:
+
+  Logical. If `TRUE`, an entry whose row count could not be re-derived
+  is reported as `"FAIL"` rather than passing on its checksum alone, and
+  the message names which of the three causes applies: no count recorded
+  in the manifest, a file type whose rows cannot be counted, or heavy
+  row counting left disabled. Defaults to `FALSE`, which preserves the
+  permissive behaviour described above.
+
+  Use it where the question is "did every check actually run", not "is
+  the data intact": a release gate, an archival gate, or a hand-off
+  where a downstream reader will treat `"OK"` as meaning fully verified.
+  Under the default, `"OK"` can mean "checksum verified, row count not
+  examined", and the `row_count_checked` column is the only thing that
+  distinguishes the two.
 
 ## Value
 
