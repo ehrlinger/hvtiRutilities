@@ -8,7 +8,8 @@ verify_manifest(
   manifest_path = "manifest.yaml",
   data_dir = NULL,
   stop_on_error = TRUE,
-  verbose = FALSE
+  verbose = FALSE,
+  strict = FALSE
 )
 }
 \arguments{
@@ -29,6 +30,20 @@ together as a warning.}
 looped calls stay silent; the same information is always available in the
 returned data frame.  Failures are reported through \code{stop()} or
 \code{warning()} regardless of this setting.}
+
+\item{strict}{Logical. If \code{TRUE}, an entry whose row count could not be
+  re-derived is reported as \code{"FAIL"} rather than passing on its
+  checksum alone, and the message names which of the three causes applies:
+  no count recorded in the manifest, a file type whose rows cannot be
+  counted, or heavy row counting left disabled.  Defaults to \code{FALSE},
+  which preserves the permissive behaviour described above.
+
+  Use it where the question is "did every check actually run", not "is the
+  data intact": a release gate, an archival gate, or a hand-off where a
+  downstream reader will treat \code{"OK"} as meaning fully verified. Under
+  the default, \code{"OK"} can mean "checksum verified, row count not
+  examined", and the \code{row_count_checked} column is the only thing that
+  distinguishes the two.}
 }
 \value{
 Invisibly returns a data frame with columns \code{file},
