@@ -45,6 +45,21 @@
   re-derived from the file and compared with the manifest. The entry’s
   message notes a count that was not re-derived.
 
+- [`verify_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md)
+  no longer reports `SHA-256 match (n = )` for an entry whose manifest
+  records no row count. An empty count field reads as a verified count
+  of nothing; the message now says `no row count recorded`. Entries
+  written by hand, or by a version that could not count rows, are the
+  ones affected.
+
+- [`verify_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md)
+  no longer reports an entry that records no SHA-256 as a
+  `SHA-256 mismatch` against a blank expected value. Such an entry still
+  fails, because the checksum is the whole of what the function
+  verifies, but the message now says none was recorded and names the
+  algorithm the manifest used instead. A manifest written by an
+  md5-based writer is the case this turns up on.
+
 ### Notes
 
 - No new dependencies.
