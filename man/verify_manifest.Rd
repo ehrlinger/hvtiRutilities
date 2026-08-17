@@ -50,9 +50,20 @@ file, so it only happens under
 \code{options(manifest.allow_heavy_rowcount = TRUE)}.  Without that option
 the row count is skipped rather than failed, and the entry passes on its
 checksum, which is the stronger of the two checks.  A check that could not
-run is not a check that failed.  The \code{row_count_checked} column says
-which entries were counted, so you can tell the two apart.  A file that
-cannot be read at all is a different matter and still fails.
+run is not a check that failed.  A file that cannot be read at all is a
+different matter and still fails.
+
+An entry recording no SHA-256 fails, because the checksum is the whole of
+what this function verifies and there is nothing to compare it against.
+Manifests written by an md5-based writer are the case that turns up in
+practice; the failure names the algorithm that was recorded instead.
+
+Three outcomes are therefore possible for an entry that passes, and the
+report distinguishes them rather than reporting all three as simply
+verified.  The count was compared; the count is recorded but was not
+re-derived; or the manifest records no count at all.  The
+\code{row_count_checked} column is \code{TRUE} only in the first case, and
+the message names which of the three it was.
 
 Call this function at the top of every analysis script or Quarto document
 to ensure data integrity before any results are generated.

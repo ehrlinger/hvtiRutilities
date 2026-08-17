@@ -202,9 +202,20 @@ update_manifest <- function(file,
 #' \code{options(manifest.allow_heavy_rowcount = TRUE)}.  Without that option
 #' the row count is skipped rather than failed, and the entry passes on its
 #' checksum, which is the stronger of the two checks.  A check that could not
-#' run is not a check that failed.  The \code{row_count_checked} column says
-#' which entries were counted, so you can tell the two apart.  A file that
-#' cannot be read at all is a different matter and still fails.
+#' run is not a check that failed.  A file that cannot be read at all is a
+#' different matter and still fails.
+#'
+#' An entry recording no SHA-256 fails, because the checksum is the whole of
+#' what this function verifies and there is nothing to compare it against.
+#' Manifests written by an md5-based writer are the case that turns up in
+#' practice; the failure names the algorithm that was recorded instead.
+#'
+#' Three outcomes are therefore possible for an entry that passes, and the
+#' report distinguishes them rather than reporting all three as simply
+#' verified.  The count was compared; the count is recorded but was not
+#' re-derived; or the manifest records no count at all.  The
+#' \code{row_count_checked} column is \code{TRUE} only in the first case, and
+#' the message names which of the three it was.
 #'
 #' Call this function at the top of every analysis script or Quarto document
 #' to ensure data integrity before any results are generated.
@@ -286,6 +297,31 @@ verify_manifest <- function(manifest_path = "manifest.yaml",
       ))
     }
 
+    # An entry with no sha256 cannot be compared at all. That has to fail,
+    # because the checksum is the whole of what this function verifies, but
+    # reporting it as a mismatch blames a comparison that never ran and prints
+    # a blank "expected:". A manifest written by an md5-based writer is the
+    # case that turns up in practice, so name the algorithm it did record.
+    if (is.null(entry$sha256)) {
+      alt <- intersect(c("md5", "sha1", "sha512", "crc32"), names(entry))
+      return(data.frame(
+        file    = entry$file,
+        status  = "FAIL",
+        message = paste0(
+          "No SHA-256 recorded for this entry",
+          if (length(alt)) {
+            paste0("; the manifest records ", alt[1],
+                   ", which this function does not verify")
+          } else {
+            ""
+          },
+          "."
+        ),
+        row_count_checked = FALSE,
+        stringsAsFactors = FALSE
+      ))
+    }
+
     sha256 <- digest::digest(fpath, algo = "sha256", file = TRUE)
     if (!identical(sha256, entry$sha256)) {
       return(data.frame(
@@ -346,8 +382,17 @@ verify_manifest <- function(manifest_path = "manifest.yaml",
       }
     }
 
-    msg <- paste0("SHA-256 match (n = ", entry$n_rows, ")",
-                  if (rowcount_checked) "" else "; row count not re-derived")
+    # Three states the caller has to be able to tell apart: the count was
+    # compared, the count is recorded but could not be re-derived, or no count
+    # was ever recorded. Interpolating a missing n_rows yields "(n = )", which
+    # reads as a verified count of nothing rather than as an absent one.
+    msg <- if (is.null(entry$n_rows)) {
+      "SHA-256 match; no row count recorded"
+    } else if (rowcount_checked) {
+      paste0("SHA-256 match (n = ", entry$n_rows, ")")
+    } else {
+      paste0("SHA-256 match (n = ", entry$n_rows, "); row count not re-derived")
+    }
     if (verbose) {
       message(entry$file, " \u2014 ", msg)
     }

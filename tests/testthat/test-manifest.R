@@ -284,6 +284,129 @@ test_that("verify_manifest handles CSV + SAS + Excel in one manifest", {
 })
 
 # ---------------------------------------------------------------------------
+# verify_manifest — entries with no recorded row count
+#
+# A manifest written by hand, or by a version that could not count rows, has
+# entries with no n_rows at all. There is nothing to compare against, so the
+# entry passes on its checksum; the message must say that rather than printing
+# an empty count field, which reads as though a count of nothing was verified.
+# ---------------------------------------------------------------------------
+
+# Writes a manifest entry directly, bypassing update_manifest(), which always
+# records an n_rows. `...` adds fields to the entry.
+write_bare_manifest <- function(path, file, sha256, ...) {
+  yaml::write_yaml(
+    list(datasets = list(c(list(file = file, sha256 = sha256), list(...)))),
+    path
+  )
+  path
+}
+
+test_that("verify_manifest says so when no row count was recorded", {
+  tmp <- withr::local_tempdir()
+  csv <- write_temp_csv(n = 10, name = "norows.csv", dir = tmp)
+  mpath <- write_bare_manifest(
+    file.path(tmp, "manifest.yaml"), "norows.csv",
+    digest::digest(csv, algo = "sha256", file = TRUE)
+  )
+
+  report <- verify_manifest(manifest_path = mpath, data_dir = tmp)
+  expect_equal(report$status, "OK")
+  expect_match(report$message, "no row count recorded", fixed = TRUE)
+  expect_false(report$row_count_checked)
+  # The empty count field is the defect: it reads as a verified count of
+  # nothing rather than as an absent count.
+  expect_false(grepl("(n = )", report$message, fixed = TRUE))
+})
+
+test_that("verify_manifest verbose output omits the empty count field", {
+  tmp <- withr::local_tempdir()
+  csv <- write_temp_csv(n = 10, name = "norows_v.csv", dir = tmp)
+  mpath <- write_bare_manifest(
+    file.path(tmp, "manifest.yaml"), "norows_v.csv",
+    digest::digest(csv, algo = "sha256", file = TRUE)
+  )
+
+  expect_message(
+    verify_manifest(manifest_path = mpath, data_dir = tmp, verbose = TRUE),
+    "no row count recorded", fixed = TRUE
+  )
+})
+
+test_that("verify_manifest still reports a recorded row count", {
+  tmp <- withr::local_tempdir()
+  csv <- write_temp_csv(n = 7, name = "withrows.csv", dir = tmp)
+  mpath <- file.path(tmp, "manifest.yaml")
+  update_manifest(file = csv, manifest_path = mpath)
+
+  report <- verify_manifest(manifest_path = mpath, data_dir = tmp)
+  expect_equal(report$message, "SHA-256 match (n = 7)")
+  expect_true(report$row_count_checked)
+})
+
+# ---------------------------------------------------------------------------
+# verify_manifest — entries with no SHA-256 to compare
+#
+# The checksum is the whole of what this function verifies, so an entry
+# carrying none cannot be passed: that is the "gate that passes without
+# verifying" shape. It must fail, but it must say why. Reporting a mismatch
+# blames a comparison that never happened.
+# ---------------------------------------------------------------------------
+
+test_that("verify_manifest fails an entry with no recorded checksum, and says so", {
+  tmp <- withr::local_tempdir()
+  csv <- write_temp_csv(n = 10, name = "nosha.csv", dir = tmp)
+  mpath <- file.path(tmp, "manifest.yaml")
+  yaml::write_yaml(
+    list(datasets = list(list(file = "nosha.csv", n_rows = 10L))), mpath
+  )
+
+  report <- suppressWarnings(
+    verify_manifest(manifest_path = mpath, data_dir = tmp,
+                    stop_on_error = FALSE)
+  )
+  expect_equal(report$status, "FAIL")
+  expect_match(report$message, "No SHA-256 recorded", fixed = TRUE)
+  expect_false(grepl("mismatch", report$message, fixed = TRUE))
+})
+
+test_that("verify_manifest names the algorithm a manifest recorded instead", {
+  tmp <- withr::local_tempdir()
+  csv <- write_temp_csv(n = 10, name = "md5only.csv", dir = tmp)
+  mpath <- file.path(tmp, "manifest.yaml")
+  # As a manifest written by an md5-based writer would look.
+  yaml::write_yaml(
+    list(datasets = list(list(
+      file = "md5only.csv", n_rows = 10L,
+      md5  = digest::digest(csv, algo = "md5", file = TRUE)
+    ))), mpath
+  )
+
+  report <- suppressWarnings(
+    verify_manifest(manifest_path = mpath, data_dir = tmp,
+                    stop_on_error = FALSE)
+  )
+  expect_equal(report$status, "FAIL")
+  expect_match(report$message, "md5", fixed = TRUE)
+  expect_false(grepl("mismatch", report$message, fixed = TRUE))
+})
+
+test_that("verify_manifest still reports a genuine SHA-256 mismatch as a mismatch", {
+  tmp <- withr::local_tempdir()
+  csv <- write_temp_csv(n = 10, name = "realmismatch.csv", dir = tmp)
+  mpath <- file.path(tmp, "manifest.yaml")
+  update_manifest(file = csv, manifest_path = mpath)
+  write.csv(make_df(11), csv, row.names = FALSE)
+
+  report <- suppressWarnings(
+    verify_manifest(manifest_path = mpath, data_dir = tmp,
+                    stop_on_error = FALSE)
+  )
+  expect_equal(report$status, "FAIL")
+  expect_match(report$message, "SHA-256 mismatch", fixed = TRUE)
+})
+
+# ---------------------------------------------------------------------------
 # verify_manifest — heavy row counting disabled
 #
 # The default state for every real study: options(manifest.allow_heavy_rowcount)
