@@ -39,10 +39,16 @@ test_that("a bare constant is clean -- the roxygen package-doc idiom", {
 })
 
 test_that("the package's own R/ directory is pure", {
-  # test_path() resolves from tests/testthat/, so this is <pkg>/R. Do not use
-  # system.file("..", "R", ...): it returns "" and the test skips forever.
+  # Purity is a property of the source tree, so it can only be checked where
+  # the sources are present -- devtools::test() and any run from a checkout.
+  # An installed package has no .R files, only the lazy-load database, so
+  # under R CMD check this skips and says so.
+  #
+  # Do not use system.file("..", "R", ...): it returns "", so the test skips
+  # in every context including development, which is no coverage at all.
   r_dir <- testthat::test_path("..", "..", "R")
-  expect_true(dir.exists(r_dir))
+  skip_if_not(dir.exists(r_dir),
+              "source R/ not present (installed-package check)")
 
   expect_equal(r_dir_impurities(r_dir), character(0))
 })
