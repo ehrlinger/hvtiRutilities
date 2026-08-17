@@ -1,3 +1,39 @@
+# hvtiRutilities 1.0.8
+
+## New features
+
+- `study_init()` initializes a study for reproducible analysis: it writes the
+  `_study.yml` identity manifest that `study_config()` reads, and seeds a
+  `manifest.yaml` pinning the built dataset's SHA-256. The cohort counts are
+  derived from the dataset rather than supplied, because a hand-typed count is
+  a count that can disagree with the data. `citation` is written as an explicit
+  null, so a study that is later published has an obvious place to record its
+  reference.
+
+- `study_status()` audits a study without writing anything, reporting whether
+  it has a valid `_study.yml`, an `renv.lock`, a `manifest.yaml` whose
+  checksums still match, and a provenance sidecar for every `.qmd` source. It
+  never errors on an absent or malformed manifest — that is the finding, not a
+  failure — and it distinguishes a check that could not run (`MISSING`) from
+  one that ran and failed (`FAIL`).
+
+- `study_checklist()` renders a `study_status()` result as a markdown
+  checklist, ticked where the study already complies.
+
+## Notes
+
+- No new dependencies.
+- `study_init()` does not run `renv::init()`. A missing `renv.lock` is
+  reported as an open item instead: creating one restarts the R session and
+  rewrites `.Rprofile`, which a function that writes two YAML files has no
+  business doing.
+- `study_status()` reports a `manifest.yaml` entry as verified when its
+  SHA-256 matches but its row count could not be re-derived. `verify_manifest()`
+  returns `FAIL` in that case, which for a `.sas7bdat` is unavoidable without
+  `options(manifest.allow_heavy_rowcount = TRUE)`; since the checksum
+  comparison runs first and returns early on a mismatch, a row-count complaint
+  means the stronger check passed.
+
 # hvtiRutilities 1.0.7
 
 ## New features
