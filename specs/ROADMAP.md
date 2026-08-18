@@ -55,16 +55,16 @@ Would answer "is this study's set of filed results complete", which is a
 different question from "is each filed result sound". `study_status()` already
 answers the second one.
 
-**The constraint that shapes it** is settled, in Finding 4 of
-[`2026-08-17-verification-gates-findings.md`](2026-08-17-verification-gates-findings.md):
-completeness cannot be inferred from the artifacts. A sidecar records what a
-run used, but no single result knows how many results the study was supposed to
-produce. The study's bootstrap screen makes the point concretely. It lands as 25
-independent chunks, each recording its own seed, entry and stay criteria, step
-cap and dataset checksum, and none of them recording how many siblings it was
-launched with. A pool of 12 of 25 is therefore not detectably different from a
-complete run of 12. Every health check passes, every frequency is honestly
-computed, and only the denominator is not the intended one.
+**The constraint that shapes it** is settled in
+[Finding 4](2026-08-17-verification-gates-findings.md) of the verification-gates
+findings: completeness cannot be inferred from the artifacts. A sidecar records
+what a run used, but no single result knows how many results the study was
+supposed to produce. The study's bootstrap screen makes the point concretely. It
+lands as 25 independent chunks, each recording its own seed, entry and stay
+criteria, step cap and dataset checksum, and none of them recording how many
+siblings it was launched with. A pool of 12 of 25 is therefore not detectably
+different from a complete run of 12. Every health check passes, every frequency
+is honestly computed, and only the denominator is not the intended one.
 
 **What follows for this package.** The expected total has to be declared
 somewhere that is not the artifacts, which for a study means `_study.yml`.
