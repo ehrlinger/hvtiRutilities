@@ -48,3 +48,38 @@ one, because two near-identical scanners drift.
 is assumed rather than adopted, and nothing enforces it. Write the spec once
 studies start reaching acceptance with a `_study.yml` already in place. Before
 that there is nothing to close out.
+
+## A study-completeness check
+
+Would answer "is this study's set of filed results complete", which is a
+different question from "is each filed result sound". `study_status()` already
+answers the second one.
+
+**The constraint that shapes it** is settled in
+[Finding 4](2026-08-17-verification-gates-findings.md) of the verification-gates
+findings: completeness cannot be inferred from the artifacts. A sidecar records
+what a run used, but no single result knows how many results the study was
+supposed to produce. The study's bootstrap screen makes the point concretely. It
+lands as 25 independent chunks, each recording its own seed, entry and stay
+criteria, step cap and dataset checksum, and none of them recording how many
+siblings it was launched with. A pool of 12 of 25 is therefore not detectably
+different from a complete run of 12. Every health check passes, every frequency
+is honestly computed, and only the denominator is not the intended one.
+
+**What follows for this package.** The expected total has to be declared
+somewhere that is not the artifacts, which for a study means `_study.yml`.
+`study_status()` counts sidecars and `.qmd`/`.Rmd` sources and compares the two,
+but that is a ratio between two things the tree happens to contain. It cannot
+become a completeness check by counting more carefully. It needs a number the
+study author wrote down.
+
+**Still open.** No spec. Two questions to settle first: what the expectation is
+keyed on (a count, a named list of expected results, something per analysis),
+and what a study with no expectation recorded should report. By
+`study_status()`'s own rule a check that could not run is not a check that
+failed, so an absent expectation is `MISSING` rather than `FAIL`, and only a
+declared expectation that is not met is drift.
+
+**Why it is written down before it is built.** This failure mode is silent by
+construction, so nothing in the tree will ever prompt someone to go looking for
+it. Recording the argument is the only thing that keeps it findable.
