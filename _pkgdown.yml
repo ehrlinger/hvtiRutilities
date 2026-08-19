@@ -106,6 +106,13 @@ reference:
   - write_macro_manifest
   - write_collision_report
 
+- title: SAS Parity
+  desc: Compare an R result against its SAS reference under derived tolerances
+  contents:
+  - parity_tolerance
+  - compare_parity
+  - parity_headline
+
 - title: Study Setup
   desc: Initialize a study for reproducible analysis, and audit whether it is ready
   contents:
