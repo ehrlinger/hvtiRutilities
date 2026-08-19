@@ -1,3 +1,12 @@
+# hvtiRutilities 1.0.10
+
+## New features
+
+- `parity_tolerance()`, `compare_parity()` and `parity_headline()` — the
+  comparison half of the SAS parity harness. `compare_parity()` errors when a
+  quantity is absent on either side, and reports `PASS` / `DIFFERS` /
+  `R_BETTER`.
+
 # hvtiRutilities 1.0.9
 
 ## New features
