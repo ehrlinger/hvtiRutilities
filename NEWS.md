@@ -1,3 +1,10 @@
+# hvtiRutilities 1.0.9
+
+## New features
+
+- `preflight_report()` — environment audit naming every package a hazard-family
+  analysis depends on, including `numDeriv`.
+
 # hvtiRutilities 1.0.8
 
 ## New features
