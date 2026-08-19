@@ -112,6 +112,7 @@ reference:
   - study_init
   - study_status
   - study_checklist
+  - preflight_report
 
 - title: Study Manifest and Data Contract
   desc: Locate a study from its `_study.yml`, resolve its paths, and read and reconcile its built dataset
