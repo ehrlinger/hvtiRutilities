@@ -15,8 +15,13 @@
 #' @param source Where the SAS value came from -- \code{"lst"} or
 #'   \code{"outhaz"}.
 #' @param digits For \code{class = "printed"}, the number of decimal places
-#'   the reference was printed to. The tolerance becomes half of the last
-#'   place.
+#'   the reference was printed to, as a single non-negative whole number. The
+#'   tolerance becomes half of the last place.
+#' @section Relative discrepancy at a zero reference:
+#' When the SAS value is zero there is no relative scale. The reported
+#' \code{rel_diff} is \code{0} if the two agree exactly and \code{Inf}
+#' otherwise -- never \code{NA}, which \code{\link{parity_headline}} would
+#' drop, reporting a real failure as no discrepancy at all.
 #' @return A one-row data frame.
 #' @export
 #' @examples
@@ -35,15 +40,25 @@ compare_parity <- function(quantity, r, sas, class, source = "lst",
 
   tol <- parity_tolerance(class)
   if (class == "printed") {
-    if (is.na(digits)) {
-      stop("compare_parity(): class 'printed' needs `digits`, the number of ",
-           "decimal places '", quantity, "' was printed to.", call. = FALSE)
+    if (length(digits) != 1L || !is.numeric(digits) || is.na(digits) ||
+        digits < 0 || digits != trunc(digits)) {
+      stop("compare_parity(): class 'printed' needs `digits`, a single ",
+           "non-negative whole number -- the decimal places '", quantity,
+           "' was printed to.", call. = FALSE)
     }
     tol$atol <- 0.5 * 10^(-digits)
   }
 
   abs_diff <- abs(r - sas)
-  rel_diff <- if (sas == 0) NA_real_ else abs_diff / abs(sas)
+  # A zero reference has no relative scale, but NA would be worse than
+  # useless: parity_headline() takes a max with na.rm = TRUE, so a real
+  # discrepancy at a zero reference would be dropped and reported as no
+  # discrepancy at all.
+  rel_diff <- if (sas == 0) {
+    if (abs_diff == 0) 0 else Inf
+  } else {
+    abs_diff / abs(sas)
+  }
   within <- abs_diff <= tol$atol + tol$rtol * abs(sas)
 
   outcome <- if (within) {
@@ -76,7 +91,9 @@ compare_parity <- function(quantity, r, sas, class, source = "lst",
 parity_headline <- function(df) {
   n <- nrow(df)
   worst <- suppressWarnings(max(df$rel_diff, na.rm = TRUE))
-  if (!is.finite(worst)) worst <- 0
+  # -Inf is max() of nothing comparable; +Inf is a real discrepancy against a
+  # zero reference and must survive to the headline.
+  if (is.infinite(worst) && worst < 0) worst <- 0
   fmt <- paste("Across %d compared quantities, the largest relative",
                "discrepancy was %.2e.")
   base <- sprintf(fmt, n, worst)

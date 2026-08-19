@@ -64,3 +64,27 @@ test_that("parity_headline flags an all-zero discrepancy as suspicious", {
   )
   expect_match(parity_headline(df), "exactly zero", fixed = TRUE)
 })
+
+test_that("a discrepancy against a zero reference reaches the headline", {
+  out <- compare_parity("q", r = 5, sas = 0, class = "mle_printed")
+  expect_equal(out$rel_diff, Inf)
+  expect_equal(out$outcome, "DIFFERS")
+  expect_match(parity_headline(out), "Inf")
+})
+
+test_that("exact agreement at a zero reference is a zero discrepancy", {
+  out <- compare_parity("q", r = 0, sas = 0, class = "mle_printed")
+  expect_equal(out$rel_diff, 0)
+  expect_equal(out$outcome, "PASS")
+})
+
+test_that("printed class rejects a digits that is not a single whole number", {
+  expect_error(
+    compare_parity("x", 1, 1, class = "printed", digits = c(2, 3)),
+    "single"
+  )
+  expect_error(
+    compare_parity("x", 1, 1, class = "printed", digits = 2.5),
+    "single"
+  )
+})

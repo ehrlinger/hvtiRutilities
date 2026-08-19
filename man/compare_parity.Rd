@@ -19,8 +19,8 @@ compare_parity(quantity, r, sas, class, source = "lst", digits = NA_integer_)
 \code{"outhaz"}.}
 
 \item{digits}{For \code{class = "printed"}, the number of decimal places
-the reference was printed to. The tolerance becomes half of the last
-place.}
+the reference was printed to, as a single non-negative whole number. The
+tolerance becomes half of the last place.}
 }
 \value{
 A one-row data frame.
@@ -35,6 +35,14 @@ that exceeds SAS's beyond tolerance: a multi-start optimizer regularly beats
 a single-start one, and recording that as a failure would train the reader
 to distrust a real improvement.
 }
+\section{Relative discrepancy at a zero reference}{
+
+When the SAS value is zero there is no relative scale. The reported
+\code{rel_diff} is \code{0} if the two agree exactly and \code{Inf}
+otherwise -- never \code{NA}, which \code{\link{parity_headline}} would
+drop, reporting a real failure as no discrepancy at all.
+}
+
 \examples{
 compare_parity("log_likelihood", r = -239.1941, sas = -239.194,
                class = "loglik")
