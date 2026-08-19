@@ -10,20 +10,26 @@ preflight_report(extra = character(0))
 \item{extra}{Character vector of additional package names to report.}
 }
 \value{
-A data frame with columns `component`, `found`, `version`, `notes`.
+A data frame with columns \code{component}, \code{found},
+  \code{version} and \code{notes}.
 }
 \description{
 Reports the version of every package a hazard-family analysis depends on.
 Run it on the machine that will do the work, before anything else.
 }
 \details{
-`numDeriv` is only a *Suggests* of `TemporalHazard`, so `install_github()`
-does not pull it. Its absence silently costs standard errors on any
-interval- or left-censored multiphase fit: the analytic multiphase Hessian
-declines for those statuses by design and the optimizer falls back to
-`numDeriv`; with it missing there is no third option, and `vcov()` returns a
-bare logical while `rcond` and `pd` come back `NA` with nothing naming the
-cause.
+\code{numDeriv} is only a \emph{Suggests} of \code{TemporalHazard}, so
+\code{install_github()} does not pull it. Its absence silently costs
+standard errors on any interval- or left-censored multiphase fit: the
+analytic multiphase Hessian declines for those statuses by design and the
+optimizer falls back to \code{numDeriv}; with it missing there is no third
+option, and \code{vcov()} returns a bare logical while \code{rcond} and
+\code{pd} come back \code{NA} with nothing naming the cause.
+
+\code{R} itself is reported from \code{R.version}, not from
+\code{packageVersion()}, so it is dropped from the package list: a caller
+who names it in \code{extra} would otherwise get a second \code{R} row
+reporting it as not found.
 }
 \examples{
 preflight_report()

@@ -21,3 +21,18 @@ test_that("extra packages are appended", {
   out <- preflight_report(extra = "utils")
   expect_true("utils" %in% out$component)
 })
+
+test_that("naming R in extra still yields exactly one R row, the real one", {
+  out <- preflight_report(extra = "R")
+  expect_equal(sum(out$component == "R"), 1L)
+  expect_true(out$found[out$component == "R"])
+})
+
+test_that("a non-character extra errors rather than inventing a component", {
+  expect_error(preflight_report(extra = 42), "character vector")
+})
+
+test_that("row names are cleared, not the ones rbind synthesizes", {
+  out <- preflight_report(extra = "R")
+  expect_identical(rownames(out), as.character(seq_len(nrow(out))))
+})
