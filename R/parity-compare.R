@@ -3,18 +3,20 @@
 #' Errors -- never warns, never skips -- when the quantity is absent on either
 #' side. A comparison that cannot fail is worse than no comparison.
 #'
-#' The outcome is three-state. `R_BETTER` fires only for a log-likelihood that
-#' exceeds SAS's beyond tolerance: a multi-start optimizer regularly beats a
-#' single-start one, and recording that as a failure would train the reader to
-#' distrust a real improvement.
+#' The outcome is three-state. \code{R_BETTER} fires only for a log-likelihood
+#' that exceeds SAS's beyond tolerance: a multi-start optimizer regularly beats
+#' a single-start one, and recording that as a failure would train the reader
+#' to distrust a real improvement.
 #'
 #' @param quantity Name of the quantity, used in the report.
 #' @param r Value computed in R.
 #' @param sas Value from the SAS reference.
-#' @param class Tolerance class; see [parity_tolerance()].
-#' @param source Where the SAS value came from -- `"lst"` or `"outhaz"`.
-#' @param digits For `class = "printed"`, the number of decimal places the
-#'   reference was printed to. The tolerance becomes half of the last place.
+#' @param class Tolerance class; see \code{\link{parity_tolerance}}.
+#' @param source Where the SAS value came from -- \code{"lst"} or
+#'   \code{"outhaz"}.
+#' @param digits For \code{class = "printed"}, the number of decimal places
+#'   the reference was printed to. The tolerance becomes half of the last
+#'   place.
 #' @return A one-row data frame.
 #' @export
 #' @examples
@@ -63,9 +65,10 @@ compare_parity <- function(quantity, r, sas, class, source = "lst",
 #' The headline, not the badge, is the claim to report. It is falsifiable and
 #' independent of whatever thresholds were chosen. A maximum relative
 #' discrepancy of exactly zero across many quantities is not a triumph -- it
-#' means nothing was really compared -- so it is flagged rather than celebrated.
+#' means nothing was really compared -- so it is flagged rather than
+#' celebrated.
 #'
-#' @param df A data frame of [compare_parity()] rows.
+#' @param df A data frame of \code{\link{compare_parity}} rows.
 #' @return A single string.
 #' @export
 #' @examples

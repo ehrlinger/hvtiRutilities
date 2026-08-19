@@ -13,12 +13,14 @@ compare_parity(quantity, r, sas, class, source = "lst", digits = NA_integer_)
 
 \item{sas}{Value from the SAS reference.}
 
-\item{class}{Tolerance class; see [parity_tolerance()].}
+\item{class}{Tolerance class; see \code{\link{parity_tolerance}}.}
 
-\item{source}{Where the SAS value came from -- `"lst"` or `"outhaz"`.}
+\item{source}{Where the SAS value came from -- \code{"lst"} or
+\code{"outhaz"}.}
 
-\item{digits}{For `class = "printed"`, the number of decimal places the
-reference was printed to. The tolerance becomes half of the last place.}
+\item{digits}{For \code{class = "printed"}, the number of decimal places
+the reference was printed to. The tolerance becomes half of the last
+place.}
 }
 \value{
 A one-row data frame.
@@ -28,10 +30,10 @@ Errors -- never warns, never skips -- when the quantity is absent on either
 side. A comparison that cannot fail is worse than no comparison.
 }
 \details{
-The outcome is three-state. `R_BETTER` fires only for a log-likelihood that
-exceeds SAS's beyond tolerance: a multi-start optimizer regularly beats a
-single-start one, and recording that as a failure would train the reader to
-distrust a real improvement.
+The outcome is three-state. \code{R_BETTER} fires only for a log-likelihood
+that exceeds SAS's beyond tolerance: a multi-start optimizer regularly beats
+a single-start one, and recording that as a failure would train the reader
+to distrust a real improvement.
 }
 \examples{
 compare_parity("log_likelihood", r = -239.1941, sas = -239.194,

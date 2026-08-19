@@ -7,7 +7,7 @@
 parity_headline(df)
 }
 \arguments{
-\item{df}{A data frame of [compare_parity()] rows.}
+\item{df}{A data frame of \code{\link{compare_parity}} rows.}
 }
 \value{
 A single string.
@@ -16,7 +16,8 @@ A single string.
 The headline, not the badge, is the claim to report. It is falsifiable and
 independent of whatever thresholds were chosen. A maximum relative
 discrepancy of exactly zero across many quantities is not a triumph -- it
-means nothing was really compared -- so it is flagged rather than celebrated.
+means nothing was really compared -- so it is flagged rather than
+celebrated.
 }
 \examples{
 parity_headline(compare_parity("a", 1.0001, 1, class = "mle_printed"))
