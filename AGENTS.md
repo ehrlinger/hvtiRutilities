@@ -105,6 +105,14 @@ forgotten `document()` fails the PR rather than landing quietly.
 - **Never push to `main`.** Branch, then open a PR and let the maintainer merge. A push
   rejected with "Changes must be made through a pull request" means branch — never
   force-push around it.
+- **`main` is protected by a GitHub ruleset, and nothing in this repo records that.**
+  A clone shows no trace of it, so it is stated here. The ruleset is named `protect main`,
+  is identical across all twelve hvtiverse repositories, and enforces four rules on the
+  default branch: no deletion, no force-push, pull-request-only, and an **automatic Copilot
+  code review** on every PR. The rejection above comes from the server, not a local hook.
+  ⚠️ It currently requires **zero approvals**. `require_code_owner_review` is set but inert
+  because no repository in the family has a `CODEOWNERS` file, so a PR can merge unreviewed.
+  Adding `CODEOWNERS` makes that flag live and changes who can merge what.
 - Versions are **straight three digits** (`1.0.11`). Never a `.9000` suffix or a fourth
   digit.
 - **Patch-digit bumps only**, as fixes land. The minor and major digits are the maintainer's
