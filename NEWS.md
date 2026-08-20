@@ -1,3 +1,11 @@
+# hvtiRutilities 1.0.11
+
+## Bug fixes
+
+- `.Rbuildignore` now excludes `.remember`, the session-tooling directory. It
+  was landing in the build and raising a "hidden files and directories" NOTE on
+  every branch, which masks real NOTEs during release gating.
+
 # hvtiRutilities 1.0.10
 
 ## New features
