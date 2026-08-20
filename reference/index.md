@@ -78,6 +78,17 @@ Inventory a legacy SAS macro library and resolve name collisions
 - [`write_collision_report()`](https://ehrlinger.github.io/hvtiRutilities/reference/write_collision_report.md)
   : Write the macro name-collision report
 
+## SAS Parity
+
+Compare an R result against its SAS reference under derived tolerances
+
+- [`parity_tolerance()`](https://ehrlinger.github.io/hvtiRutilities/reference/parity_tolerance.md)
+  : Tolerance classes for SAS parity comparison
+- [`compare_parity()`](https://ehrlinger.github.io/hvtiRutilities/reference/compare_parity.md)
+  : Compare one R quantity against its SAS reference
+- [`parity_headline()`](https://ehrlinger.github.io/hvtiRutilities/reference/parity_headline.md)
+  : Summarise a parity table as one reviewer-facing claim
+
 ## Study Setup
 
 Initialize a study for reproducible analysis, and audit whether it is
@@ -89,6 +100,8 @@ ready
   : Audit a study's reproducibility readiness
 - [`study_checklist()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checklist.md)
   : Render a study audit as a markdown checklist
+- [`preflight_report()`](https://ehrlinger.github.io/hvtiRutilities/reference/preflight_report.md)
+  : Audit the analysis environment before running an analysis
 
 ## Study Manifest and Data Contract
 

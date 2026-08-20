@@ -1,5 +1,35 @@
 # Changelog
 
+## hvtiRutilities 1.0.11
+
+### Bug fixes
+
+- `.Rbuildignore` now excludes `.remember`, the session-tooling
+  directory. It was landing in the build and raising a “hidden files and
+  directories” NOTE on every branch, which masks real NOTEs during
+  release gating.
+
+## hvtiRutilities 1.0.10
+
+### New features
+
+- [`parity_tolerance()`](https://ehrlinger.github.io/hvtiRutilities/reference/parity_tolerance.md),
+  [`compare_parity()`](https://ehrlinger.github.io/hvtiRutilities/reference/compare_parity.md)
+  and
+  [`parity_headline()`](https://ehrlinger.github.io/hvtiRutilities/reference/parity_headline.md)
+  — the comparison half of the SAS parity harness.
+  [`compare_parity()`](https://ehrlinger.github.io/hvtiRutilities/reference/compare_parity.md)
+  errors when a quantity is absent on either side, and reports `PASS` /
+  `DIFFERS` / `R_BETTER`.
+
+## hvtiRutilities 1.0.9
+
+### New features
+
+- [`preflight_report()`](https://ehrlinger.github.io/hvtiRutilities/reference/preflight_report.md)
+  — environment audit naming every package a hazard-family analysis
+  depends on, including `numDeriv`.
+
 ## hvtiRutilities 1.0.8
 
 ### New features
