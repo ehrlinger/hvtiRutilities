@@ -80,7 +80,7 @@
       <h1>Getting Started with hvtiRutilities</h1>
 
       <p class="author">John Ehrlinger</p>
-      <p class="date">2026-08-20</p>
+      <p class="date">2026-08-21</p>
 
       <small class="dont-index">Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/vignettes/hvtiRutilities.qmd" class="external-link"><code>vignettes/hvtiRutilities.qmd</code></a></small>
       <div class="d-none name"><code></code></div>
@@ -158,17 +158,17 @@
 <span><span class="co">#&gt; 'data.frame':    100 obs. of  7 variables:</span></span>
 <span><span class="co">#&gt;  $ id     : int  1 2 3 4 5 6 7 8 9 10 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Patient Identifier"</span></span>
-<span><span class="co">#&gt;  $ boolean: int  1 2 2 2 1 1 2 2 1 2 ...</span></span>
+<span><span class="co">#&gt;  $ boolean: int  1 1 2 1 1 2 1 2 2 1 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Binary Indicator"</span></span>
-<span><span class="co">#&gt;  $ logical: chr  "F" "T" "T" "T" ...</span></span>
+<span><span class="co">#&gt;  $ logical: chr  "F" "F" "T" "F" ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Logical Status"</span></span>
-<span><span class="co">#&gt;  $ f_real : num  0.632 0.972 0.934 0.972 0.31 ...</span></span>
+<span><span class="co">#&gt;  $ f_real : num  0.339 0.339 0.258 0.822 0.472 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Random Uniform Value"</span></span>
-<span><span class="co">#&gt;  $ float  : num  0.32 -0.862 0.566 2.028 -0.183 ...</span></span>
+<span><span class="co">#&gt;  $ float  : num  1.626 0.212 -0.825 -1.085 -1.032 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Random Normal Value"</span></span>
-<span><span class="co">#&gt;  $ char   : chr  "female" "female" "male" "male" ...</span></span>
+<span><span class="co">#&gt;  $ char   : chr  "female" "female" "female" "male" ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Gender"</span></span>
-<span><span class="co">#&gt;  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 4 1 1 3 3 3 1 1 3 1 ...</span></span>
+<span><span class="co">#&gt;  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 4 5 2 1 3 1 5 1 2 2 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Category Group"</span></span></code></pre></div>
 </div>
 <p>Notice that the sample data has: - <code>boolean</code>: integer values (1, 2) - <code>logical</code>: character values (“F”, “T”) - <code>char</code>: character values (“male”, “female”)</p>
@@ -185,15 +185,15 @@
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Patient Identifier"</span></span>
 <span><span class="co">#&gt;  $ boolean: logi  TRUE TRUE TRUE TRUE TRUE TRUE ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Binary Indicator"</span></span>
-<span><span class="co">#&gt;  $ logical: Factor w/ 2 levels "F","T": 1 2 2 2 1 1 2 2 1 2 ...</span></span>
+<span><span class="co">#&gt;  $ logical: Factor w/ 2 levels "F","T": 1 1 2 1 1 2 1 2 2 1 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Logical Status"</span></span>
-<span><span class="co">#&gt;  $ f_real : Factor w/ 9 levels "0.266899013426155",..: 5 8 7 8 2 8 2 1 1 2 ...</span></span>
+<span><span class="co">#&gt;  $ f_real : Factor w/ 9 levels "0.00331353512592614",..: 3 3 2 8 5 1 2 5 9 4 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Random Uniform Value"</span></span>
-<span><span class="co">#&gt;  $ float  : num  0.32 -0.862 0.566 2.028 -0.183 ...</span></span>
+<span><span class="co">#&gt;  $ float  : num  1.626 0.212 -0.825 -1.085 -1.032 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Random Normal Value"</span></span>
-<span><span class="co">#&gt;  $ char   : Factor w/ 2 levels "female","male": 1 1 2 2 1 1 1 1 1 1 ...</span></span>
+<span><span class="co">#&gt;  $ char   : Factor w/ 2 levels "female","male": 1 1 1 2 2 2 1 1 1 1 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Gender"</span></span>
-<span><span class="co">#&gt;  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 4 1 1 3 3 3 1 1 3 1 ...</span></span>
+<span><span class="co">#&gt;  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 4 5 2 1 3 1 5 1 2 2 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Category Group"</span></span></code></pre></div>
 </div>
 <p>After conversion: - <code>boolean</code>: converted to logical (TRUE/FALSE) because it has exactly 2 unique values - <code>logical</code>: converted to factor (categorical variable) - <code>char</code>: converted to factor (categorical variable) - Continuous variables (<code>float</code>, <code>f_real</code>) remain numeric</p>
@@ -602,7 +602,7 @@
 <span><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; other attached packages:</span></span>
-<span><span class="co">#&gt; [1] labelled_2.16.0       hvtiRutilities_1.0.11</span></span>
+<span><span class="co">#&gt; [1] labelled_2.16.1       hvtiRutilities_1.0.11</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
 <span><span class="co">#&gt;  [1] vctrs_0.7.3      cli_3.6.6        knitr_1.51       rlang_1.3.0     </span></span>
