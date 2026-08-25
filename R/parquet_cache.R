@@ -3,10 +3,13 @@
 # Conversion happens on first read, never in a bulk sweep, so a dataset nobody
 # reads is never converted and superseded copies cost nothing.
 #
-# Validity is decided by the source's size and mtime -- a stat, not a read.
-# Re-hashing the source on every call would read the whole file and defeat the
-# cache entirely; the sha256 is computed once at conversion, recorded in the
-# manifest, and verified on demand by verify_manifest().
+# Validity follows the manifest entry's role, a fact about whether SAS still
+# builds the dataset, not a caching policy. role: "primary" means the parquet
+# IS the data and the source is never consulted. role: "source" is decided by
+# a stat of the source's size and mtime -- not a read -- falling back to the
+# recorded sha256 only when mtime cannot settle it (see .cache_valid()).
+# Re-hashing the source on every call would read the whole file and defeat
+# the cache entirely, so that fallback is deliberately rare.
 
 .cache_enabled <- function() {
   !isTRUE(getOption("hvtiRutilities.disable_parquet_cache", FALSE)) &&
@@ -45,20 +48,53 @@
   NULL
 }
 
+# Two thresholds guard the mtime comparison, for two different reasons:
+#
+# - ROUNDTRIP_EPSILON absorbs formatting noise, not filesystem noise. The
+#   recorded mtime is serialized to text (%OS6) and reparsed on every check;
+#   that round trip alone introduces ~1e-6s of floating error even when
+#   nothing on disk changed (measured). Below this, treat the stamp as an
+#   exact match and trust it -- this is the fast path that keeps a routine
+#   cache hit from paying for a hash.
+#
+# - AMBIGUITY_WINDOW is about the filesystem, not formatting: the study tree
+#   is an SMB mount, and SMB mtime resolution is commonly no finer than one
+#   whole second. A difference smaller than that cannot be trusted as
+#   "genuinely different" -- it may be real, or it may be rounding -- so
+#   instead of guessing, the recorded sha256 is verified. A difference at or
+#   above the window is large enough to trust directly: the file changed.
+.MTIME_ROUNDTRIP_EPSILON_SECONDS <- 0.001
+.MTIME_AMBIGUITY_WINDOW_SECONDS  <- 1
+
 .cache_valid <- function(path, derived, entry) {
   if (is.null(entry) || !file.exists(derived$parquet)) return(FALSE)
+
+  # role: primary means the parquet IS the data. The source may have been
+  # retired and need not exist; it is never consulted for this role.
+  if (identical(entry$role, "primary")) return(TRUE)
+
+  if (!file.exists(path)) return(FALSE)
+
   info <- file.info(path)
-  # Sub-second precision matters here: a .sas7bdat is page-aligned, so a
-  # rewrite that changes the row count can leave the file size identical
-  # (both round up to the same 16 KB page). Size alone therefore cannot be
-  # trusted to catch every change, and mtime has to carry the rest of the
-  # weight -- which means storing and comparing it to microsecond precision,
-  # not truncating to whole seconds. A millisecond tolerance absorbs
-  # round-trip noise from formatting/parsing without masking a genuine
-  # rewrite the way a 1-second tolerance would.
-  identical(as.numeric(entry$source_size), as.numeric(info$size)) &&
-    isTRUE(abs(as.numeric(as.POSIXct(entry$source_mtime, tz = "UTC")) -
-                 as.numeric(info$mtime)) < 0.001)
+
+  # A .sas7bdat is page-aligned, so a rewrite that changes the row count can
+  # leave the file size identical (both round up to the same 16 KB page).
+  # Size differing is still a hard signal of change; size cannot prove
+  # sameness on its own.
+  if (!identical(as.numeric(entry$source_size), as.numeric(info$size))) {
+    return(FALSE)
+  }
+
+  diff <- abs(as.numeric(as.POSIXct(entry$source_mtime, tz = "UTC")) -
+                as.numeric(info$mtime))
+
+  if (diff < .MTIME_ROUNDTRIP_EPSILON_SECONDS) return(TRUE)
+  if (diff >= .MTIME_AMBIGUITY_WINDOW_SECONDS) return(FALSE)
+
+  # Ambiguous: the mtime moved, but by less than the filesystem's reliable
+  # granularity. A full read, but only for this genuinely ambiguous case.
+  identical(entry$sha256,
+            digest::digest(path, algo = "sha256", file = TRUE))
 }
 
 # Read `path`, using or populating the parquet cache beside it.
@@ -67,17 +103,34 @@
 # writes manifest.yaml at the STUDY ROOT while datasets live in
 # <root>/datasets/, so dirname(path) is the wrong directory. Derived files
 # (.parquet, .schema.csv) do sit beside the source.
-.cache_read <- function(path, reader, manifest_path) {
+#
+# refresh = TRUE forces a re-read from the source and a reconversion
+# regardless of role or stamp. It exists because "the source changed" is not
+# always something a timestamp can express -- a rebuild that preserves
+# mtime, a restored backup, a correction applied out of band.
+.cache_read <- function(path, reader, manifest_path, refresh = FALSE) {
   if (!.cache_enabled()) return(reader(path))
 
   derived  <- .derived_paths(path)
   manifest <- manifest_path
   entry    <- .manifest_entry(manifest, path)
+  promoted <- identical(entry$role, "primary")
 
-  if (.cache_valid(path, derived, entry)) {
+  if (refresh && promoted) {
+    stop("read_built(): refresh = TRUE cannot re-read ", basename(path),
+         " -- its manifest entry has role \"primary\", meaning the source ",
+         "has been retired and the parquet is the data.", call. = FALSE)
+  }
+
+  if (!refresh && .cache_valid(path, derived, entry)) {
     return(as.data.frame(arrow::read_parquet(derived$parquet)))
   }
 
+  # Stat BEFORE reading, never after: captured afterwards, a source rewritten
+  # during the read would be stamped with its new mtime against partly-old
+  # data, and that pairing would validate forever. Stamped from before, a
+  # mid-read change looks stale on the next call and self-heals.
+  info <- file.info(path)
   d <- reader(path)
 
   # Order matters: the sidecar comes off this read, never off the parquet, so
@@ -86,12 +139,10 @@
   # A promoted entry's sidecar is the only surviving record of the SAS
   # dataset. Rewriting it from a later read would launder that away, so it is
   # written once and never again.
-  promoted <- identical(entry$role, "primary")
   if (!promoted) {
     utils::write.csv(dataset_schema(d), derived$schema, row.names = FALSE)
   }
 
-  info <- file.info(path)
   # update_manifest() replaces the whole entry rather than merging into it, so
   # a cache-driven write that omitted extract_date/source/sort_key would reset
   # them to today's date and NULL -- clobbering values a caller such as

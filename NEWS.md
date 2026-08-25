@@ -34,6 +34,27 @@
   `arrow` is a suggested package — without it, or with
   `options(hvtiRutilities.disable_parquet_cache = TRUE)`, reads behave exactly
   as before.
+- The parquet cache's validity check now follows the manifest entry's `role`
+  rather than a single size/mtime heuristic. A `role: "primary"` entry is
+  served from its parquet unconditionally — the source may have been retired
+  and need not exist. A `role: "source"` entry falls back to verifying the
+  recorded `sha256` when the source's `mtime` differs from the recorded stamp
+  by less than the filesystem's reliable granularity (a named constant, since
+  the study tree is an SMB mount where sub-second `mtime` changes can be
+  invisible) — size alone cannot be trusted either, since a `.sas7bdat` is
+  page-aligned and a changed row count can leave its size identical. The
+  source is now stat'd before the read rather than after, so a source
+  rewritten mid-read is stamped conservatively stale instead of validating
+  forever.
+- `read_built()` gains `refresh = TRUE`, which forces a re-read from the
+  source and a reconversion regardless of role or cached stamp — for changes
+  a timestamp can't express, such as a rebuild that preserves `mtime` or a
+  correction applied out of band. `refresh = TRUE` against a `role: "primary"`
+  entry errors clearly, naming the role, rather than failing inside haven.
+  `read_built()` also now serves a `role: "primary"` entry whose source file
+  is missing, instead of erroring before the manifest is even consulted —
+  without this, promotion (retiring the source once its parquet is
+  authoritative) was unreachable.
 
 ## Bug fixes
 

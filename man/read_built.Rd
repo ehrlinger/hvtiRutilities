@@ -4,10 +4,18 @@
 \alias{read_built}
 \title{Read the study's built dataset}
 \usage{
-read_built(cfg = study_config())
+read_built(cfg = study_config(), refresh = FALSE)
 }
 \arguments{
 \item{cfg}{List. A study manifest from \code{\link{study_config}}.}
+
+\item{refresh}{Logical. If \code{TRUE}, force a re-read from the source and
+a reconversion regardless of the manifest's role or cached stamp.
+"The source changed" is not always something a timestamp can express --
+a rebuild that preserves \code{mtime}, a restored backup, a correction
+applied out of band. Errors if the manifest entry has
+\code{role: "primary"}: that role means the source has been retired and
+the parquet is authoritative, so there is nothing to refresh from.}
 }
 \value{
 A data frame with lower-cased names, no logical columns and no

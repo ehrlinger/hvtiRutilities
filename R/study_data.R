@@ -98,6 +98,13 @@ built_manifest <- function(cfg = study_config()) {
 #' print labels rather than names.
 #'
 #' @param cfg List. A study manifest from \code{\link{study_config}}.
+#' @param refresh Logical. If \code{TRUE}, force a re-read from the source and
+#'   a reconversion regardless of the manifest's role or cached stamp.
+#'   "The source changed" is not always something a timestamp can express --
+#'   a rebuild that preserves \code{mtime}, a restored backup, a correction
+#'   applied out of band. Errors if the manifest entry has
+#'   \code{role: "primary"}: that role means the source has been retired and
+#'   the parquet is authoritative, so there is nothing to refresh from.
 #'
 #' @return A data frame with lower-cased names, no logical columns and no
 #'   \code{haven_labelled} columns.
@@ -120,17 +127,30 @@ built_manifest <- function(cfg = study_config()) {
 #'           file.path(root, "datasets", "example.csv"), row.names = FALSE)
 #' names(read_built(study_config(root)))
 #' unlink(root, recursive = TRUE)
-read_built <- function(cfg = study_config()) {
+read_built <- function(cfg = study_config(), refresh = FALSE) {
   p <- built_path(cfg)
+  manifest_path <- file.path(cfg$root, "manifest.yaml")
+
   if (!file.exists(p)) {
-    stop("read_built(): missing ", p, call. = FALSE)
+    # role: "primary" means the source was retired on purpose -- promotion
+    # exists precisely so this dataset can still be served with no source on
+    # disk. Only bypass the missing-file error when the manifest and the
+    # parquet actually back that up; otherwise this is a genuinely missing
+    # dataset and the original error stands.
+    entry <- .manifest_entry(manifest_path, p)
+    served_from_parquet <- identical(entry$role, "primary") &&
+      file.exists(.derived_paths(p)$parquet)
+    if (!served_from_parquet) {
+      stop("read_built(): missing ", p, call. = FALSE)
+    }
   }
 
   # Carries SAS variable labels through; listings print labels, not names.
   d <- as.data.frame(
     .cache_read(p,
                 function(f) read_clinical_data(f, convert_types = FALSE),
-                manifest_path = file.path(cfg$root, "manifest.yaml"))
+                manifest_path = manifest_path,
+                refresh = refresh)
   )
 
   # Lowercasing is unconditional, so a source carrying both FOO and foo would
