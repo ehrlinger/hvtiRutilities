@@ -33,6 +33,16 @@
   naming the colliding pair, instead of returning two identically named
   columns where every downstream selection silently takes the first. SAS names
   cannot collide this way; `.csv`, `.xlsx` and `.rds` sources can.
+- `verify_manifest()`'s default `data_dir` now resolves each entry
+  individually instead of choosing `datasets/` vs. the manifest's own
+  directory once for the whole manifest based on whether `datasets/` exists.
+  Previously, a flat-layout study whose manifest referenced files beside
+  `manifest.yaml` would have every entry misdirected into `datasets/` (and
+  fail with "File not found") merely because that directory happened to also
+  exist, empty or not. Each entry now prefers `datasets/<file>` only when that
+  file is actually there, and otherwise resolves beside the manifest. Callers
+  who pass `data_dir` explicitly are unaffected — an explicit `data_dir` is
+  still used exactly as given, with no nested search.
 
 ## Documentation
 

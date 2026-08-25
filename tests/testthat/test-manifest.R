@@ -769,13 +769,14 @@ test_that("update_manifest records n_cols, schema_sha256 and role", {
   write.csv(dataset_schema(data.frame(a = 1:3, b = 4:6)), side, row.names = FALSE)
   mp <- file.path(dir, "manifest.yaml")
 
+  expected_schema_sha <- digest::digest(side, algo = "sha256", file = TRUE)
   update_manifest(f, manifest_path = mp, n_cols = 2L,
-                  schema_sha256 = digest::digest(side, algo = "sha256", file = TRUE))
+                  schema_sha256 = expected_schema_sha)
 
   m <- yaml::read_yaml(mp)
   expect_equal(m$datasets[[1]]$n_cols, 2L)
   expect_equal(m$datasets[[1]]$role, "source")
-  expect_type(m$datasets[[1]]$schema_sha256, "character")
+  expect_equal(m$datasets[[1]]$schema_sha256, expected_schema_sha)
 })
 
 test_that("update_manifest rejects an unknown role", {
@@ -804,7 +805,11 @@ test_that("verify_manifest fails when the sidecar has been edited", {
 
   res <- verify_manifest(mp, stop_on_error = FALSE)
   expect_true(any(res$status == "FAIL"))
-  expect_match(paste(res$message, collapse = " "), "Schema")
+  # "Schema" alone also matches the "sidecar not found" branch; an
+  # implementation that only checked file.exists() and never hashed would
+  # pass that weaker assertion. "mismatch" only appears once the sidecar's
+  # hash was actually recomputed and compared.
+  expect_match(paste(res$message, collapse = " "), "mismatch")
 })
 
 test_that("verify_manifest reports two entries claiming the same derived paths", {
@@ -815,9 +820,18 @@ test_that("verify_manifest reports two entries claiming the same derived paths",
   update_manifest(file.path(dir, "built.csv"), manifest_path = mp, n_cols = 1L)
   update_manifest(file.path(dir, "built.rds"), manifest_path = mp, n_cols = 1L,
                   n_rows = 1L)
+  # The collision only fires once one of the two entries has actually
+  # produced a derived artifact the other would overwrite; a plain
+  # "same stem" pair with nothing derived yet must not fail (see the
+  # "two entries sharing a stem with no derived artifact" test below).
+  # An empty sidecar is enough to make the contention real.
+  file.create(file.path(dir, "built.schema.csv"))
 
   res <- verify_manifest(mp, stop_on_error = FALSE)
   expect_match(paste(res$message, collapse = " "), "derived path")
+  collisions <- res[grepl("derived path", res$message), , drop = FALSE]
+  expect_equal(nrow(collisions), 1L)
+  expect_equal(collisions$status, "FAIL")
 })
 
 test_that("verify_manifest finds datasets in datasets/ without an explicit data_dir", {
@@ -843,4 +857,41 @@ test_that("verify_manifest still resolves alongside the manifest when there is n
   res <- verify_manifest(mp, stop_on_error = FALSE)
 
   expect_equal(res$status, "OK")
+})
+
+# Regression: a flat-layout study whose manifest legitimately references files
+# beside the manifest, but which also happens to have a datasets/ directory
+# (here, empty), must still verify OK. Choosing data_dir on directory
+# existence alone would send every lookup into the unrelated datasets/ and
+# fail every entry even though the data is intact.
+test_that("verify_manifest verifies OK for a flat layout that also has an empty datasets/", {
+  dir <- withr::local_tempdir()
+  dir.create(file.path(dir, "datasets"))
+  f <- file.path(dir, "flat.csv")
+  write.csv(data.frame(a = 1:3), f, row.names = FALSE)
+  mp <- file.path(dir, "manifest.yaml")
+  update_manifest(f, manifest_path = mp, n_cols = 1L)
+
+  res <- verify_manifest(mp, stop_on_error = FALSE)
+
+  expect_equal(res$status, "OK")
+})
+
+# Regression: a manifest listing both a source and an export of it sharing a
+# stem (e.g. cohort.sas7bdat and cohort.csv) has always been legal. With no
+# derived artifact (.parquet or .schema.csv) yet on disk, the two entries are
+# not contending for anything, so verification must pass rather than abort at
+# the default stop_on_error = TRUE.
+test_that("verify_manifest passes two entries sharing a stem when no derived artifact exists", {
+  dir <- withr::local_tempdir()
+  write.csv(data.frame(a = 1), file.path(dir, "cohort.csv"), row.names = FALSE)
+  saveRDS(data.frame(a = 1), file.path(dir, "cohort.rds"))
+  mp <- file.path(dir, "manifest.yaml")
+  update_manifest(file.path(dir, "cohort.csv"), manifest_path = mp, n_cols = 1L)
+  update_manifest(file.path(dir, "cohort.rds"), manifest_path = mp, n_cols = 1L,
+                  n_rows = 1L)
+
+  res <- verify_manifest(mp, stop_on_error = FALSE)
+
+  expect_true(all(res$status == "OK"))
 })

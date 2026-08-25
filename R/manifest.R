@@ -240,11 +240,15 @@ update_manifest <- function(file,
 #'
 #' @param manifest_path Character. Path to the manifest YAML file.
 #'   Defaults to \code{"manifest.yaml"} in the current working directory.
-#' @param data_dir Directory holding the dataset files. Defaults to
-#'   \code{datasets/} beneath the manifest's own directory when that exists,
-#'   and to the manifest's directory otherwise — matching the layout
-#'   \code{\link{study_init}} creates, where \code{manifest.yaml} sits at the
-#'   study root and datasets one level down.
+#' @param data_dir Character. Directory holding the dataset files. When
+#'   supplied, it is used exactly as given. When \code{NULL} (default), each
+#'   entry is resolved individually: \code{datasets/} beneath the manifest's
+#'   own directory is preferred for that entry when the file actually exists
+#'   there, matching the layout \code{\link{study_init}} creates, where
+#'   \code{manifest.yaml} sits at the study root and datasets one level down;
+#'   otherwise the entry resolves beside the manifest, so a flat layout is
+#'   equally supported even when an unrelated \code{datasets/} directory is
+#'   also present.
 #' @param stop_on_error Logical. If \code{TRUE} (default) the function calls
 #'   \code{stop()} on the first failed check, preventing the analysis from
 #'   proceeding.  Set to \code{FALSE} to collect all errors and report them
@@ -314,18 +318,26 @@ verify_manifest <- function(manifest_path = "manifest.yaml",
                                 stringsAsFactors = FALSE)))
   }
 
+  # An explicit data_dir is used exactly as given. Only the default searches,
+  # because study_init() writes manifest.yaml at the study root while datasets
+  # live one level down -- but a flat layout is equally legal, and choosing on
+  # directory existence alone would send a flat study's lookups into an
+  # unrelated datasets/ directory and fail every entry.
+  search_nested <- is.null(data_dir)
   if (is.null(data_dir)) {
-    # study_init() writes manifest.yaml at the study root and the datasets one
-    # level down, so the manifest's own directory is the wrong place to look.
-    # Prefer <manifest dir>/datasets when it exists; fall back to the manifest's
-    # directory for a flat layout.
-    base <- dirname(normalizePath(manifest_path))
-    nested <- file.path(base, "datasets")
-    data_dir <- if (dir.exists(nested)) nested else base
+    data_dir <- dirname(normalizePath(manifest_path))
+  }
+
+  resolve_entry <- function(file) {
+    if (search_nested) {
+      nested <- file.path(data_dir, "datasets", file)
+      if (file.exists(nested)) return(nested)
+    }
+    file.path(data_dir, file)
   }
 
   results <- lapply(manifest$datasets, function(entry) {
-    fpath <- file.path(data_dir, entry$file)
+    fpath <- resolve_entry(entry$file)
 
     if (!file.exists(fpath)) {
       return(data.frame(
@@ -375,9 +387,8 @@ verify_manifest <- function(manifest_path = "manifest.yaml",
     }
 
     if (!is.null(entry$schema_sha256)) {
-      side <- file.path(data_dir,
-                        paste0(tools::file_path_sans_ext(entry$file),
-                               ".schema.csv"))
+      side <- resolve_entry(paste0(tools::file_path_sans_ext(entry$file),
+                                   ".schema.csv"))
       if (!file.exists(side)) {
         return(data.frame(
           file = entry$file, status = "FAIL",
@@ -497,18 +508,27 @@ verify_manifest <- function(manifest_path = "manifest.yaml",
   })
 
   # Derived paths are stem-based, so two sources differing only by extension
-  # would claim the same .parquet and .schema.csv. Nothing overwrites silently
-  # today because the writer is keyed on the source, but the collision is
-  # reachable and produces a sidecar describing the wrong dataset.
+  # would claim the same .parquet and .schema.csv. A manifest listing both
+  # cohort.sas7bdat and cohort.csv -- a source and an export of it -- has
+  # always been legal on its own; the collision is only real once one of them
+  # has actually produced a derived artifact that the other would overwrite.
+  # Reporting it pre-emptively would abort verification for an intact study,
+  # so the row fires only when a `<stem>.parquet` or `<stem>.schema.csv`
+  # already exists on disk, resolved the same way entries are.
   stems <- vapply(manifest$datasets,
                   function(e) tools::file_path_sans_ext(e$file), character(1))
   clash <- unique(stems[duplicated(stems)])
   if (length(clash)) {
     files <- vapply(manifest$datasets, function(e) e$file, character(1))
-    collisions <- lapply(clash, function(s) data.frame(
-      file    = paste(files[stems == s], collapse = ", "),
+    real_clash <- Filter(function(s) {
+      file.exists(resolve_entry(paste0(s, ".parquet"))) ||
+        file.exists(resolve_entry(paste0(s, ".schema.csv")))
+    }, clash)
+    collisions <- lapply(real_clash, function(s) data.frame(
+      file    = s,
       status  = "FAIL",
-      message = paste0("Entries share the derived path stem '", s,
+      message = paste0("Entries ", paste(files[stems == s], collapse = ", "),
+                       " share the derived path stem '", s,
                        "' and would claim the same .parquet and .schema.csv."),
       row_count_checked = FALSE, stringsAsFactors = FALSE))
     results <- c(results, collisions)
