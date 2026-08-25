@@ -247,12 +247,20 @@ rebuilding these datasets the parquet is already in the canonical location and
 nothing moves.
 
 ```
-datasets/
-├── built.sas7bdat        source        (retired after promotion)
-├── built.parquet         derived       (authoritative after promotion)
-├── built.schema.csv      regenerable   (durable after promotion)
-└── manifest.yaml         one entry per dataset, carrying its role
+<study_root>/
+├── _study.yml            study declaration
+├── manifest.yaml         one entry per dataset, carrying its role
+└── datasets/
+    ├── built.sas7bdat    source        (retired after promotion)
+    ├── built.parquet     derived       (authoritative after promotion)
+    └── built.schema.csv  regenerable   (durable after promotion)
 ```
+
+`manifest.yaml` sits at the study root, not in `datasets/` — that is where
+`study_init()` writes it. Code must not derive the manifest path from a
+dataset's directory. `verify_manifest()` correspondingly needs
+`data_dir = file.path(root, "datasets")`, which is what `study_status()`
+passes.
 
 `built_path()` resolves `cfg$built` — an explicit filename from `_study.yml` —
 rather than globbing, so a flat layout is unambiguous for the built dataset.

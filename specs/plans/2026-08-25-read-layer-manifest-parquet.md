@@ -602,6 +602,71 @@ Add the roxygen params:
 #'   \emph{Promotion} section of the read-layer design spec.
 ```
 
+- [ ] **Step 3b: Fix `verify_manifest()`'s `data_dir` default**
+
+Pre-existing defect, fixed here because the sidecar check added in Step 4
+resolves paths against `data_dir` and would inherit it.
+
+`study_init()` writes `manifest.yaml` at the study root while datasets live in
+`<root>/datasets/`, so defaulting `data_dir` to the manifest's own directory
+is wrong for the layout this package itself creates. `verify_manifest()`'s
+`@examples` fail on preserve_root today with
+`File not found: …/preserve_root/built.sas7bdat`. Only `study_status()` works,
+because it passes `data_dir = file.path(root, "datasets")` explicitly.
+
+First, the test — append to `tests/testthat/test-manifest.R`:
+
+```r
+test_that("verify_manifest finds datasets in datasets/ without an explicit data_dir", {
+  dir <- withr::local_tempdir()
+  dir.create(file.path(dir, "datasets"))
+  f <- file.path(dir, "datasets", "d.csv")
+  write.csv(data.frame(a = 1:3), f, row.names = FALSE)
+  mp <- file.path(dir, "manifest.yaml")
+  update_manifest(f, manifest_path = mp, n_cols = 1L)
+
+  res <- verify_manifest(mp, stop_on_error = FALSE)
+
+  expect_equal(res$status, "PASS")
+})
+
+test_that("verify_manifest still resolves alongside the manifest when there is no datasets/", {
+  dir <- withr::local_tempdir()
+  f <- file.path(dir, "d.csv")
+  write.csv(data.frame(a = 1:3), f, row.names = FALSE)
+  mp <- file.path(dir, "manifest.yaml")
+  update_manifest(f, manifest_path = mp, n_cols = 1L)
+
+  res <- verify_manifest(mp, stop_on_error = FALSE)
+
+  expect_equal(res$status, "PASS")
+})
+```
+
+Then replace the `data_dir` default block in `verify_manifest()`:
+
+```r
+  if (is.null(data_dir)) {
+    # study_init() writes manifest.yaml at the study root and the datasets one
+    # level down, so the manifest's own directory is the wrong place to look.
+    # Prefer <manifest dir>/datasets when it exists; fall back to the manifest's
+    # directory for a flat layout.
+    base <- dirname(normalizePath(manifest_path))
+    nested <- file.path(base, "datasets")
+    data_dir <- if (dir.exists(nested)) nested else base
+  }
+```
+
+Update the `@param data_dir` roxygen to say so:
+
+```r
+#' @param data_dir Directory holding the dataset files. Defaults to
+#'   \code{datasets/} beneath the manifest's own directory when that exists,
+#'   and to the manifest's directory otherwise — matching the layout
+#'   \code{\link{study_init}} creates, where \code{manifest.yaml} sits at the
+#'   study root and datasets one level down.
+```
+
 - [ ] **Step 4: Extend `verify_manifest()`**
 
 Inside the `lapply` over `manifest$datasets`, after the existing SHA-256
@@ -727,21 +792,28 @@ test_that("first read writes a parquet and a sidecar; second read uses them", {
   expect_equal(d1, d2)
 })
 
-test_that("touching the source invalidates the cache", {
+test_that("changing the source invalidates the cache", {
   skip_if_no_arrow()
   dir <- withr::local_tempdir()
-  make_study_fixture(dir)
+  make_study_fixture(dir, n = 20L)
   cfg <- study_config(dir)
-  read_built(cfg)
 
-  pq <- file.path(dir, "datasets", "built_test.parquet")
-  before <- file.info(pq)$mtime
+  expect_equal(nrow(read_built(cfg)), 20L)
 
-  src <- file.path(dir, "datasets", "built_test.sas7bdat")
-  Sys.setFileTime(src, Sys.time() + 5)
-  read_built(cfg)
+  # Rewrite the source with a different row count. Asserting on the returned
+  # data rather than on the parquet's mtime is deliberate: an mtime comparison
+  # passes whether or not the cache was rebuilt, so it tests nothing. A stale
+  # cache returns 20 rows here.
+  replacement <- data.frame(
+    id      = 1:5,
+    x       = as.numeric(1:5),
+    dead    = c(1L, 1L, 0L, 0L, 0L),
+    iv_dead = as.numeric(1:5)
+  )
+  suppressWarnings(haven::write_sas(
+    replacement, file.path(dir, "datasets", "built_test.sas7bdat")))
 
-  expect_gt(as.numeric(file.info(pq)$mtime), as.numeric(before) - 1)
+  expect_equal(nrow(read_built(cfg)), 5L)
 })
 
 test_that("a parquet round trip preserves haven metadata", {
@@ -878,11 +950,16 @@ Create `R/parquet_cache.R`:
 }
 
 # Read `path`, using or populating the parquet cache beside it.
-.cache_read <- function(path, reader) {
+#
+# manifest_path is passed in rather than derived from `path`: study_init()
+# writes manifest.yaml at the STUDY ROOT while datasets live in
+# <root>/datasets/, so dirname(path) is the wrong directory. Derived files
+# (.parquet, .schema.csv) do sit beside the source.
+.cache_read <- function(path, reader, manifest_path) {
   if (!.cache_enabled()) return(reader(path))
 
   derived  <- .derived_paths(path)
-  manifest <- file.path(dirname(path), "manifest.yaml")
+  manifest <- manifest_path
   entry    <- .manifest_entry(manifest, path)
 
   if (.cache_valid(path, derived, entry)) {
@@ -949,9 +1026,15 @@ with
 
 ```r
   d <- as.data.frame(
-    .cache_read(p, function(f) read_clinical_data(f, convert_types = FALSE))
+    .cache_read(p,
+                function(f) read_clinical_data(f, convert_types = FALSE),
+                manifest_path = file.path(cfg$root, "manifest.yaml"))
   )
 ```
+
+`cfg$root` is the study root, which is where `study_init()` writes
+`manifest.yaml`. Do not derive the manifest path from `dirname(p)` — that is
+`<root>/datasets/`, and no manifest lives there.
 
 - [ ] **Step 6: Run the tests**
 
