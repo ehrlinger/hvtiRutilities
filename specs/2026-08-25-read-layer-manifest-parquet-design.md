@@ -75,18 +75,36 @@ added. Its output is written as CSV.
 The schema is captured from the **haven read**, never from the parquet. A
 baseline derived from the converted file cannot test the conversion.
 
-`proc_contents()` documents what haven itself loses: variable name, label,
-`format.sas` and creation order survive; SAS storage `LENGTH`, `POS`, informat
-and the dataset's created/modified timestamps do not. Those fields are absent
-from the sidecar rather than inferred.
+What haven loses is the storage layer: SAS `LENGTH`, `POS`, informat and the
+dataset's created/modified timestamps. Those describe how SAS stores a value,
+not what the value is, and parquet has no use for them. They are absent from
+the sidecar rather than inferred.
+
+What survives — name, label, `format.sas`, creation order — survives *when the
+source carries it*. Measured on preserve_root's `built.sas7bdat`: of 879
+variables, 865 carry a label (784 of them genuinely informative rather than an
+echo of the name) and 395 carry a `format.sas`.
+
+**The sidecar must not take its `label` column from `proc_contents()`.**
+`proc_contents()` calls `labelled::var_label(null_action = "fill")`, which
+substitutes the variable's own name when no label exists. That is right for a
+printed listing and wrong for a durable record: it would write 14 fabricated
+labels into built's sidecar, and after promotion (below) that fabrication
+becomes the only surviving account of the SAS dataset. The sidecar reads
+`attr(x, "label")` directly and records `NA` where there is none.
 
 ### 2. Manifest extension
 
-`update_manifest()` gains two fields:
+`update_manifest()` gains three fields:
 
 - `n_cols` — integer.
 - `schema_sha256` — sha256 of the sidecar file, so the manifest-to-sidecar
   link is tamper-evident.
+- `role` — `source` or `primary`. See *Promotion*, below. The field exists
+  from the first release even though every entry starts as `source`: adding it
+  later would mean migrating manifest files already scattered across studies,
+  which is the schema-drift problem the manifest exists to prevent,
+  reintroduced one level up.
 
 `verify_manifest()` checks both, and additionally reports a **derived-path
 collision**: two manifest entries whose source files share a stem and
@@ -144,6 +162,79 @@ maintainer's decision, not this design's.
 ending the split in defect 2. This is a file edit in the study tree, not a
 change in this repo.
 
+### 6. Collision guards
+
+Two distinct name collisions can produce a silently wrong result. Both are
+absent from preserve_root today; both are guards, not fixes.
+
+**Lowercased column names.** `read_built()` applies
+`names(d) <- tolower(names(d))` unconditionally. A source carrying both `FOO`
+and `foo` yields two columns named `foo`, and every downstream `d$foo` selects
+the first. Built's 879 variables are unique both as-is and lowercased, but
+this runs across every study. The read layer checks `anyDuplicated()` after
+lowercasing and errors, naming the colliding pair.
+
+**Derived paths.** `datasets/` holds `.xlsx` alongside `.sas7bdat`, and
+`read_clinical_data()` reads both. Two sources sharing a stem would claim the
+same `.parquet` and `.schema.csv`. All 40 current `.sas7bdat` stems are
+unique. Rather than uglify derived names to `built.sas7bdat.parquet`, the
+manifest disambiguates: each entry records its source `file`, and
+`verify_manifest()` reports two entries claiming the same derived paths.
+
+## Promotion
+
+When SAS stops rebuilding a dataset, its parquet stops being a cache and
+becomes the data. This is a per-entry field change, not a migration, and it
+happens dataset by dataset as each SAS job retires.
+
+```yaml
+# before
+- file: built.sas7bdat
+  role: source
+  sha256: f90da65b…
+  n_rows: 378
+  n_cols: 879
+  schema_sha256: …
+
+# after
+- file: built.parquet
+  role: primary
+  sha256: <parquet hash>
+  promoted_date: '2026-11-14'
+  source_file: built.sas7bdat
+  source_sha256: f90da65b…
+  n_rows: 378
+  n_cols: 879
+  schema_sha256: …          # unchanged: the same sidecar
+```
+
+`source_sha256` is retained so the chain of custody survives the source's
+retirement.
+
+Behaviour switches on `role`:
+
+| | `role: source` | `role: primary` |
+|---|---|---|
+| authoritative file | `.sas7bdat` | `.parquet` |
+| cache validity | source `size`+`mtime` | not applicable |
+| `verify_manifest()` hashes | the source | the parquet |
+| missing source file | an error | expected |
+| sidecar | regenerable | **durable — never regenerate** |
+
+That last row is the one with teeth. Before promotion the sidecar is a derived
+artifact that can be rebuilt from the source at any time. After promotion the
+source may be gone, and the sidecar becomes the only surviving record of what
+the SAS dataset contained — column order, SAS types, `format.sas`, and the
+labels distinguished from their fallbacks. Regenerating it from the parquet
+would launder the parquet's schema into the historical record and destroy the
+thing it exists to preserve. `verify_manifest()` refuses to regenerate a
+sidecar for a `primary` entry.
+
+This is also why the sidecar is captured on first read rather than at
+promotion: the ability to produce it disappears with the source, and a lazy
+cache means "first read" may be the only read that happens while the source
+still exists.
+
 ## File layout
 
 Derived files sit flat in `datasets/`, beside their source. When SAS stops
@@ -152,10 +243,10 @@ nothing moves.
 
 ```
 datasets/
-├── built.sas7bdat        source
-├── built.parquet         derived, regenerable
-├── built.schema.csv      derived, regenerable
-└── manifest.yaml         one entry per source dataset
+├── built.sas7bdat        source        (retired after promotion)
+├── built.parquet         derived       (authoritative after promotion)
+├── built.schema.csv      regenerable   (durable after promotion)
+└── manifest.yaml         one entry per dataset, carrying its role
 ```
 
 `built_path()` resolves `cfg$built` — an explicit filename from `_study.yml` —
@@ -188,8 +279,18 @@ cross-language asset.
   `verify_manifest()` fail on `schema_sha256`.
 - **derived-path collision** — two entries whose sources share a stem are
   reported by `verify_manifest()`.
+- **lowercase collision** — a source carrying `FOO` and `foo` errors in the
+  read layer rather than returning two columns named `foo`.
 - **atomic write** — a failed or interrupted conversion leaves no partial
   `.parquet` in place.
+- **label fidelity** — a variable with no label is recorded `NA` in the
+  sidecar, not as its own name. Guards against a future refactor reaching for
+  `proc_contents()$variables$label`, which fills.
+- **role switching** — `verify_manifest()` hashes the source for a `source`
+  entry and the parquet for a `primary` one; a missing source file is an error
+  for the former and expected for the latter.
+- **sidecar durability** — regenerating a sidecar for a `role: primary` entry
+  is refused.
 
 ## Consequences
 

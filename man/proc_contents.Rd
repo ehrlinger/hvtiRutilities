@@ -27,6 +27,16 @@ An object of class \code{proc_contents}: a list with two elements.
     non-\code{NA} values), and \code{pct_missing} (0-100, 1 decimal place,
     or \code{NaN} when \code{data} has zero rows)}
 }
+
+\code{label} is never \code{NA}: it falls back to the variable's own name
+when the source carries no label, via
+\code{labelled::var_label(null_action = "fill")}. An unlabelled variable is
+therefore indistinguishable here from one whose label equals its name, and
+both are common. Callers recording this output as a durable description of
+a source dataset — a schema sidecar, a data dictionary kept after the
+source is retired — should read labels from the source attributes directly
+rather than from this column, or they will record a fallback as though it
+were the dataset's own metadata.
 }
 \description{
 Reports the variable-level metadata that SAS \code{PROC CONTENTS} prints:
@@ -41,6 +51,13 @@ the dataset's created/modified timestamps do not. Those fields are omitted
 rather than inferred, because inferred values would look authoritative and
 would disagree with the source dataset whenever its \code{LENGTH} statement
 differed from the default.
+
+"Survive" means preserved \emph{when the source carries them}, not present
+on every variable. A SAS variable need not have a label or a format, and
+many do not: in one 879-variable clinical build, 865 variables carried a
+label and 395 carried a \code{format.sas}. An \code{NA} in \code{format}
+therefore reports that the source variable had no format, not that one was
+lost in reading. \code{label} does not behave this way — see \emph{Value}.
 
 The SAS \code{Type} column is two-valued, so the mapping from R is
 deliberately lossy: \code{character} and \code{factor} become \code{"Char"};

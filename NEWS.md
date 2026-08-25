@@ -1,3 +1,21 @@
+# hvtiRutilities 1.1.0
+
+## Documentation
+
+- `proc_contents()` now documents that its `label` column is never `NA`: it
+  falls back to the variable's own name via
+  `labelled::var_label(null_action = "fill")`, so an unlabelled variable is
+  indistinguishable from one labelled with its own name. Callers recording the
+  output as a durable description of a source dataset should read labels from
+  the source attributes directly. Measured on an 879-variable clinical build,
+  14 variables carry no label and would be recorded as labelled with their
+  names.
+- `proc_contents()` also clarifies that name, label, `format.sas` and creation
+  order survive a haven read *when the source carries them*, rather than being
+  present on every variable. In the same build, 865 of 879 variables carry a
+  label and 395 carry a `format.sas`, so an `NA` format reports an unformatted
+  source variable rather than a lost attribute.
+
 # hvtiRutilities 1.0.11
 
 ## Bug fixes
