@@ -1,17 +1,32 @@
 skip_if_no_arrow <- function() skip_if_not_installed("arrow")
 
-test_that("first read writes a parquet and a sidecar; second read uses them", {
+test_that("first read writes a parquet and a sidecar; second read leaves them untouched", {
+  # `expect_equal(d1, d2)` alone proves nothing about whether the parquet was
+  # actually consulted -- it holds identically whether the second call served
+  # the cache or reconverted from the source. Pinning cache use here means
+  # asserting the parquet and sidecar are NOT rewritten by the second read: a
+  # reconversion would rewrite both via .write_parquet_atomic()/.atomic_write(),
+  # changing their mtimes, so an unchanged mtime is direct evidence the cache
+  # was hit rather than regenerated. (The parquet-mtime-identity tests further
+  # down cover the size/mtime/sha256 validity RULES that decide a hit; this
+  # test only pins that the ordinary, unperturbed second call is one.)
   skip_if_no_arrow()
   dir <- withr::local_tempdir()
   make_study_fixture(dir)
   cfg <- study_config(dir)
 
   d1 <- read_built(cfg)
-  expect_true(file.exists(file.path(dir, "datasets", "built_test.parquet")))
-  expect_true(file.exists(file.path(dir, "datasets", "built_test.schema.csv")))
+  parquet <- file.path(dir, "datasets", "built_test.parquet")
+  side    <- file.path(dir, "datasets", "built_test.schema.csv")
+  expect_true(file.exists(parquet))
+  expect_true(file.exists(side))
+  parquet_mtime_before <- file.info(parquet)$mtime
+  side_mtime_before    <- file.info(side)$mtime
 
   d2 <- read_built(cfg)
   expect_equal(d1, d2)
+  expect_true(identical(file.info(parquet)$mtime, parquet_mtime_before))
+  expect_true(identical(file.info(side)$mtime, side_mtime_before))
 })
 
 test_that("changing the source invalidates the cache", {
@@ -568,4 +583,60 @@ test_that("verify_manifest() passes against a manifest the cache itself wrote", 
 
   report <- verify_manifest(file.path(dir, "manifest.yaml"))
   expect_true(all(report$status == "OK"))
+})
+
+# ---------------------------------------------------------------------------
+# Task: three untested behaviours -- the 1e-4 tolerance branch, refresh with
+# the cache disabled, and a legacy manifest (the latter lives in
+# test-manifest.R, next to the other verify_manifest() coverage).
+# ---------------------------------------------------------------------------
+
+test_that(".cache_valid()'s mtime round-trip tolerance holds just under 1e-4s and not just over", {
+  # The 1e-4s constant itself, and where it's assigned in the function body,
+  # are out of scope here (triaged as acceptable to defer) -- this only pins
+  # the behaviour at each side of it: a gap comfortably under the tolerance
+  # is noise absorbed as an exact tie (and, since the mtime is fractional,
+  # trusted directly); a gap comfortably over it is treated as a real
+  # difference and invalidates the entry, with no sha256 fallback reached in
+  # either case.
+  dir <- withr::local_tempdir()
+  src <- file.path(dir, "src.sas7bdat")
+  writeLines("x", src)
+  derived <- hvtiRutilities:::.derived_paths(src)
+  writeLines("placeholder", derived$parquet)   # .cache_valid() only checks existence
+
+  # A fractional mtime with margin either side of the tolerance for the
+  # offset itself, so the comparison isn't sensitive to filesystem rounding.
+  base_time <- as.POSIXct(as.numeric(Sys.time()), origin = "1970-01-01",
+                          tz = "UTC") + 10.500000
+  Sys.setFileTime(src, base_time)
+  size <- as.numeric(file.info(src)$size)
+
+  under <- base_time - 5e-5   # half the tolerance: within it
+  entry_under <- list(source_size = size,
+                      source_mtime = format(under, "%Y-%m-%d %H:%M:%OS6",
+                                            tz = "UTC"))
+  expect_true(hvtiRutilities:::.cache_valid(src, derived, entry_under))
+
+  over <- base_time - 5e-4    # five times the tolerance: outside it
+  entry_over <- list(source_size = size,
+                     source_mtime = format(over, "%Y-%m-%d %H:%M:%OS6",
+                                           tz = "UTC"))
+  expect_false(hvtiRutilities:::.cache_valid(src, derived, entry_over))
+})
+
+test_that("refresh = TRUE with the cache disabled on a role: source entry just reads the source", {
+  # refresh = TRUE only has cache machinery to override when the cache is
+  # enabled. With it disabled, .cache_read() returns reader(path) directly
+  # (the same path as an ordinary disabled-cache read) rather than erroring
+  # or trying to honor refresh some other way.
+  dir <- withr::local_tempdir()
+  make_study_fixture(dir, n = 20L)
+  cfg <- study_config(dir)
+  withr::local_options(hvtiRutilities.disable_parquet_cache = TRUE)
+
+  d <- read_built(cfg, refresh = TRUE)
+
+  expect_equal(nrow(d), 20L)
+  expect_false(file.exists(file.path(dir, "datasets", "built_test.parquet")))
 })

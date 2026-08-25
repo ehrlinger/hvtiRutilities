@@ -115,7 +115,7 @@
 # every entry look unambiguous forever. A validity rule may only compare
 # readings of the same clock, which is what this does: two mtimes from the
 # same `stat`.
-.cache_valid <- function(path, derived, entry, manifest_path) {
+.cache_valid <- function(path, derived, entry) {
   if (is.null(entry) || !file.exists(derived$parquet)) return(FALSE)
 
   # role: primary means the parquet IS the data. The source may have been
@@ -201,7 +201,7 @@
 
   if (!.cache_enabled()) return(reader(path))
 
-  if (!refresh && .cache_valid(path, derived, entry, manifest)) {
+  if (!refresh && .cache_valid(path, derived, entry)) {
     # An unreadable parquet -- truncated, corrupted, an interrupted write
     # from outside this package -- must not be permanently fatal for a
     # role: "source" entry: the source is still there to regenerate it from.

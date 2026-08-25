@@ -1046,3 +1046,30 @@ test_that("verify_manifest passes two entries sharing a stem when no derived art
 
   expect_true(all(res$status == "OK"))
 })
+
+test_that("a legacy manifest with no role, n_cols or schema_sha256 still reads and passes verify_manifest()", {
+  # A manifest written before role/n_cols/schema_sha256 existed carries only
+  # the fields update_manifest() has always written. verify_manifest() must
+  # not require the new fields to be present, and read_built() must still be
+  # able to serve the dataset from it.
+  skip_if_not_installed("haven")
+  dir <- withr::local_tempdir()
+  make_study_fixture(dir, n = 20L)
+  cfg <- study_config(dir)
+  src <- file.path(dir, "datasets", "built_test.sas7bdat")
+  mp  <- file.path(dir, "manifest.yaml")
+
+  legacy <- list(datasets = list(list(
+    file         = "built_test.sas7bdat",
+    extract_date = "2020-01-01",
+    n_rows       = 20L,
+    sha256       = digest::digest(src, algo = "sha256", file = TRUE)
+  )))
+  yaml::write_yaml(legacy, mp)
+
+  report <- verify_manifest(mp)
+  expect_true(all(report$status == "OK"))
+
+  d <- read_built(cfg)
+  expect_equal(nrow(d), 20L)
+})
