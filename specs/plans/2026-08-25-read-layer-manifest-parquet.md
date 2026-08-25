@@ -1277,7 +1277,48 @@ comment how you constructed the ambiguity.
 - Produces: `update_manifest(..., reader = NULL)` recording the package and
   version that produced a derived file.
 
-Seven changes:
+Eight changes.
+
+**0. An exact `mtime` tie is the ambiguous case, not the safe one.**
+`.cache_valid()` currently returns `TRUE` when the source's `mtime` differs
+from the recorded stamp by less than `.MTIME_ROUNDTRIP_EPSILON_SECONDS`
+(0.001s) — including a difference of exactly zero. But zero is what a
+same-tick rewrite looks like on a filesystem with coarse `mtime` granularity,
+which is the case Task 5a's `sha256` fallback was added to catch. As written
+the fallback cannot fire for it.
+
+Collapsing the two constants is not the fix: an unchanged file also shows a
+zero difference, so every ordinary cache hit would hash and the cache would
+lose its point. The distinguishing fact is *when the stamp was taken*. A
+rewrite can hide inside the stamp's own tick only if the stamp was recorded
+within one granularity tick of the source's `mtime`; once the stamp is
+comfortably later than the `mtime` it records, any subsequent rewrite must
+move `mtime` to a distinguishable value.
+
+So `.stamp_source_state()` gains a third field recording the wall-clock time
+the stamp was taken, and `.cache_valid()` reads:
+
+- `size` differs → invalid
+- `mtime` differs by at least the ambiguity window → invalid
+- the stamp was taken at least one ambiguity window after the source's
+  `mtime` → **valid, no hash** (the common steady state)
+- otherwise → the stamp sits inside the risky tick: verify the recorded
+  `sha256`
+
+On a successful `sha256` verification, re-stamp with a fresh stamp time. The
+entry then leaves the risky window permanently and later reads take the fast
+path — the check is self-healing rather than a permanent tax on that dataset.
+
+An entry written before this field existed has no stamp time. Treat its
+absence as "risky", so a legacy entry verifies by hash once and re-stamps
+itself into the fast path.
+
+Test it: construct an entry whose stamp time is inside the window and whose
+content changed with `mtime` and `size` unchanged (set both back with
+`Sys.setFileTime()`), and assert the stale parquet is NOT served. Then assert
+that a second read of an unchanged source takes the fast path — prove that by
+making the recorded `sha256` deliberately wrong and showing the read still
+succeeds, which is only possible if no hash was computed.
 
 **1. Verify the conversion round-trips.** After writing the parquet, read it
 back and compare against the frame haven returned — column names, order,
