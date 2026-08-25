@@ -1128,6 +1128,232 @@ git commit -m "feat: lazy parquet cache in the read layer, keyed on the manifest
 
 ---
 
+### Task 5a: Cache validity, `refresh`, and promotion
+
+**Files:**
+- Modify: `R/parquet_cache.R` (`.cache_valid()`, `.cache_read()`)
+- Modify: `R/study_data.R` (`read_built()`)
+- Modify: `tests/testthat/test-parquet_cache.R`
+- Modify: `NEWS.md`
+
+**Interfaces:**
+- Consumes: `.cache_read()`, `.cache_valid()`, `.derived_paths()`,
+  `.write_parquet_atomic()`, `.stamp_source_state()` from Task 5;
+  `update_manifest(..., role =)` from Task 4.
+- Produces: `.cache_read(path, reader, manifest_path, refresh = FALSE)`;
+  `read_built(cfg = study_config(), refresh = FALSE)`.
+
+The design changed after Task 5 shipped. Validity is now decided by the
+manifest entry's `role` — a fact about whether SAS still builds the dataset —
+rather than by a single size/mtime heuristic. Read the *Validity check*,
+*Miss path* and *Promotion* sections of
+`specs/2026-08-25-read-layer-manifest-parquet-design.md`; they are the
+authority for this task.
+
+Five changes:
+
+**1. Stat before the read, not after.** `.cache_read()` currently calls
+`info <- file.info(path)` after `d <- reader(path)`. A source rewritten during
+the read is then stamped with its new `mtime` against partly-old data, and
+that pairing validates forever. Capture `info` before invoking `reader`, so a
+mid-read change stamps conservatively stale and self-heals next call.
+
+**2. `role: primary` skips the source entirely.** When the entry's `role` is
+`"primary"` the parquet is the data. `.cache_valid()` must return `TRUE` on
+the strength of the parquet existing, without consulting the source's size or
+mtime — the source may not exist at all.
+
+**3. `sha256` fallback when `mtime` cannot settle it.** For `role: "source"`,
+size and mtime remain the fast path. But `size` discriminates almost nothing
+here — a 20-row and a 5-row `.sas7bdat` are both exactly 16384 bytes, the
+format being page-aligned — so `mtime` carries the decision, and coarse
+`mtime` granularity on a network filesystem makes a same-tick rewrite
+invisible. When the source's `mtime` differs from the recorded stamp by less
+than the granularity you can actually rely on, verify the recorded `sha256`
+instead of trusting the stamp. Define the window as a named constant with a
+comment explaining the number; do not scatter a bare literal.
+
+**4. `refresh` argument.** Add `refresh = FALSE` to `.cache_read()` and to
+`read_built()`, threaded through. `refresh = TRUE` forces a re-read from the
+source and a reconversion regardless of role or stamp. It exists because "the
+source changed" is not always something a timestamp expresses — a rebuild that
+preserves `mtime`, a restored backup, a correction applied out of band.
+`refresh = TRUE` against a `role: "primary"` entry whose source is gone must
+error clearly, naming the role, rather than failing obscurely inside haven.
+
+**5. `read_built()` must serve a promoted entry with no source.** It currently
+begins with `if (!file.exists(p)) stop("read_built(): missing ", p)`. That
+makes promotion unreachable: `role: primary` means the source was retired, so
+the guard fires on exactly the datasets promotion exists to serve. When the
+source is absent, consult the manifest — if the entry is `role: "primary"` and
+its parquet exists, serve the parquet; otherwise keep the existing error.
+
+Tests to add, all with `skip_if_not_installed("arrow")` except where noted:
+
+```r
+test_that("a promoted entry is served from parquet when the source is gone", {
+  # role: primary means the source was retired. If read_built() cannot serve
+  # this, promotion is unreachable and the role field does nothing.
+  skip_if_not_installed("arrow")
+  dir <- withr::local_tempdir()
+  make_study_fixture(dir, n = 20L)
+  cfg <- study_config(dir)
+  read_built(cfg)                                  # populate the cache
+
+  mp <- file.path(dir, "manifest.yaml")
+  m <- yaml::read_yaml(mp)
+  m$datasets[[1]]$role <- "primary"
+  yaml::write_yaml(m, mp)
+  file.remove(file.path(dir, "datasets", "built_test.sas7bdat"))
+
+  d <- read_built(cfg)
+  expect_equal(nrow(d), 20L)
+})
+
+test_that("refresh = TRUE re-reads the source even when the cache looks valid", {
+  skip_if_not_installed("arrow")
+  dir <- withr::local_tempdir()
+  make_study_fixture(dir, n = 20L)
+  cfg <- study_config(dir)
+  read_built(cfg)
+
+  # Rewrite the source and restore the ORIGINAL mtime, so size+mtime cannot
+  # detect the change. Only refresh can.
+  src <- file.path(dir, "datasets", "built_test.sas7bdat")
+  stamp <- file.info(src)$mtime
+  replacement <- data.frame(id = 1:5, x = as.numeric(1:5),
+                            dead = c(1L, 1L, 0L, 0L, 0L),
+                            iv_dead = as.numeric(1:5))
+  suppressWarnings(haven::write_sas(replacement, src))
+  Sys.setFileTime(src, stamp)
+
+  expect_equal(nrow(read_built(cfg, refresh = TRUE)), 5L)
+})
+
+test_that("refresh = TRUE on a promoted entry with no source errors clearly", {
+  skip_if_not_installed("arrow")
+  dir <- withr::local_tempdir()
+  make_study_fixture(dir, n = 20L)
+  cfg <- study_config(dir)
+  read_built(cfg)
+
+  mp <- file.path(dir, "manifest.yaml")
+  m <- yaml::read_yaml(mp)
+  m$datasets[[1]]$role <- "primary"
+  yaml::write_yaml(m, mp)
+  file.remove(file.path(dir, "datasets", "built_test.sas7bdat"))
+
+  expect_error(read_built(cfg, refresh = TRUE), "primary")
+})
+```
+
+Add one further test of your own design proving change **3**: a source whose
+`size` is unchanged and whose `mtime` is inside the ambiguity window, but
+whose contents differ, must not be served from a stale parquet. Say in a
+comment how you constructed the ambiguity.
+
+- [ ] **Step 1: Write the failing tests above**
+- [ ] **Step 2: Run them and confirm each fails for the expected reason** —
+      `Rscript -e 'devtools::test(filter = "parquet_cache")'`
+- [ ] **Step 3: Implement changes 1–5**
+- [ ] **Step 4: Run the cache tests, then `filter = "study"`, then the full suite**
+- [ ] **Step 5: Add NEWS bullets** under the existing `## New features` in the
+      `# hvtiRutilities 1.1.0` block, covering `refresh` and role-based validity
+- [ ] **Step 6: Regenerate roxygen and commit**
+
+---
+
+### Task 5b: Conversion integrity, write atomicity, and test gaps
+
+**Files:**
+- Modify: `R/parquet_cache.R`
+- Modify: `R/manifest.R` (reader version field)
+- Modify: `DESCRIPTION` (`utils` in Imports)
+- Modify: `tests/testthat/test-parquet_cache.R`, `tests/testthat/test-manifest.R`
+- Modify: `NEWS.md`
+
+**Interfaces:**
+- Consumes: everything from Tasks 4, 5 and 5a.
+- Produces: `update_manifest(..., reader = NULL)` recording the package and
+  version that produced a derived file.
+
+Seven changes:
+
+**1. Verify the conversion round-trips.** After writing the parquet, read it
+back and compare against the frame haven returned — column names, order,
+classes, and values. A promoted dataset has no second chance: while an entry
+is `role: source` a bad conversion self-heals at the next invalidation, but
+once the source is retired nothing remains to disagree with the parquet. A
+hash of bytes just written proves only that the write completed. On mismatch,
+remove the parquet and error, naming the first column that differs.
+
+**2. An unreadable parquet must not be fatal.** `.cache_valid()` checks only
+`file.exists()`. A truncated or corrupt parquet then makes
+`arrow::read_parquet()` throw, and `read_built()` is permanently dead for that
+dataset with an arrow-internal message that never mentions a cache. Wrap the
+hit-path read; on failure, warn naming the file and saying it will be
+regenerated, then fall through to the miss path. For a `role: "primary"` entry
+there is no miss path to fall through to — error there, and say plainly that
+the parquet is the only copy.
+
+**3. Guard a half-written stamp.** `.cache_valid()` compares
+`entry$source_mtime` via `as.POSIXct()`. An entry with `source_size` present
+but `source_mtime` absent — a hand edit, an interrupted write — reaches
+`as.POSIXct(NULL)` and errors. Treat any missing stamp field as "not valid"
+rather than letting it throw.
+
+**4. Make the sidecar and manifest writes atomic.** The parquet is written
+through a temp file and renamed; the sidecar (`write.csv`) and the manifest
+(`yaml::write_yaml`, twice — once in `update_manifest()`, once in
+`.stamp_source_state()`) are not. Two first-readers racing can leave one
+hashing a sidecar the other is truncating, recording a `schema_sha256` that
+matches nothing and putting the entry into permanent verification failure; the
+two read-modify-write cycles on `manifest.yaml` can also interleave and lose an
+entry. Generalise the temp-and-rename discipline in `.write_parquet_atomic()`
+into a helper both writers use.
+
+**5. Record the reader version.** `record_provenance()` captures package
+versions per rendered output; a manifest entry captures none. Under
+`role: primary` the parquet *is* the data, so the haven version that produced
+it is part of its provenance — a reader defect found later is otherwise
+unfindable, and re-reading the source is no longer an option. Add a `reader`
+field to `update_manifest()` recording package and version (e.g.
+`"haven 2.5.5"`), and have the cache pass it.
+
+**6. `utils` is used but not declared.** `R/parquet_cache.R` calls
+`utils::write.csv`, and `utils` is imported in `NAMESPACE` but absent from
+`DESCRIPTION`'s `Imports:`. `R CMD check` flags this, and this package's
+release gate requires 0/0/0. Add it.
+
+**7. Close four test gaps.**
+- The atomicity test cannot fail: `arrow::write_parquet()` with the
+  environment payload errors *before* opening the sink, so no temp file is
+  ever created and `expect_false(file.exists(target))` passes even with the
+  `on.exit` cleanup handler deleted. Exercise cleanup by injecting a failure
+  *after* the write — stub `file.rename` to return `FALSE` — and assert both
+  that the target is absent and that no `.tmp` residue remains.
+- No test proves `verify_manifest()` passes against a manifest the cache
+  wrote. That is the only end-to-end proof that writer and reader agree on the
+  sidecar naming rule. Add one.
+- The cache-hit fidelity test uses plain integer and numeric columns, so
+  `read_built()`'s documented promise to carry SAS variable labels is never
+  tested across a cache hit — which is exactly where it would break. Use a
+  fixture carrying a `haven_labelled` column with value labels, a
+  `format.sas` attribute and a `POSIXct` column, and assert they survive a
+  hit.
+- The promotion test from Task 5 wraps its second read in
+  `try(..., silent = TRUE)`, so it passes if the read errored before reaching
+  the sidecar branch. Assert the read succeeded.
+
+- [ ] **Step 1: Write the failing tests for changes 1, 2, 3 and 7**
+- [ ] **Step 2: Run them and confirm each fails for the expected reason**
+- [ ] **Step 3: Implement changes 1–6**
+- [ ] **Step 4: Run cache tests, manifest tests, then the full suite**
+- [ ] **Step 5: Run `R CMD check` far enough to confirm the `utils` NOTE is gone**
+- [ ] **Step 6: Add NEWS bullets and commit**
+
+---
+
 ### Task 6: Study-side follow-up (no commit in this repo)
 
 **Files:**

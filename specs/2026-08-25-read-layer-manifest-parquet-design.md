@@ -124,27 +124,72 @@ Conversion happens on first read of a dataset, not in a bulk sweep. Datasets
 that are never read are never converted, so stale and superseded copies cost
 nothing.
 
-**Validity check.** Re-hashing the source on every read would read the whole
-file and defeat the cache. So:
+**Validity check.** Validity is decided by the entry's `role`, which is a fact
+about whether SAS still builds the dataset, not a caching policy:
 
-- **fast key** — source `size` and `mtime`, from a `stat`. Decides hit/miss.
-- **`sha256`** — computed once at conversion, recorded in the manifest,
-  verified only on demand by `verify_manifest()`.
+| state | how the read decides |
+|---|---|
+| `role: source` | source `size` + `mtime` from a `stat`; falls back to verifying the recorded `sha256` when `mtime` is ambiguous |
+| `role: primary` | the parquet **is** the data. No source is consulted, and none need exist. |
+| `refresh = TRUE` | re-read from the source and reconvert, whatever the manifest says |
+
+Re-hashing the source on every read would read the whole file and defeat the
+cache, so `sha256` is not the fast path. But `size` alone discriminates almost
+nothing — a 20-row and a 5-row `.sas7bdat` are both exactly 16384 bytes,
+because the format is page-aligned — which leaves `mtime` carrying the entire
+decision. On a filesystem with coarse `mtime` granularity, and the study tree
+is an SMB mount, a rewrite within the same tick of the recorded stamp is
+invisible. Where `mtime` cannot settle it, the recorded `sha256` is verified:
+a full read, but only in the genuinely ambiguous case.
+
+**Stat before reading, never after.** The source's `size`/`mtime` are captured
+*before* the haven read begins. Captured afterwards, a source rewritten
+during the read would be stamped with its new `mtime` against
+partly-old data, and that pairing would validate forever. Stamped from
+before, a mid-read change looks stale on the next call and self-heals.
+
+`refresh` exists because "the source changed" is not always something a
+timestamp can express — a rebuild that preserves `mtime`, a restored backup, a
+correction applied out of band. It makes re-reading an explicit act rather
+than an inference.
 
 `built_manifest()` already returns `file / size_bytes / mtime / sha256`, which
-is exactly this triple. The cache reuses it rather than introducing a parallel
-mechanism.
+is the fast key plus the fallback. The cache reuses it rather than introducing
+a parallel mechanism.
 
 **Miss path, in order:**
 
-1. haven read with `convert_types = FALSE`
-2. write the schema sidecar and the manifest entry
-3. write the parquet to a temporary name and rename into place
-4. return the frame
+1. `stat` the source, recording `size` and `mtime`
+2. haven read with `convert_types = FALSE`
+3. write the schema sidecar and the manifest entry, recording the reader
+   version alongside the hashes
+4. write the parquet to a temporary name and rename into place
+5. read the parquet back and verify it round-trips
+6. return the frame
 
-Step 3 is atomic because two jobs can race on the first read of a shared
-dataset. Steps 1 and 2 precede step 3 so the baseline is independent of the
-conversion.
+Steps 3 and 4 precede nothing that could contaminate them: the sidecar is
+derived from the frame haven returned, never from the parquet, so it remains
+an independent description of what the source contained.
+
+Every write in steps 3 and 4 goes through a temporary name and a rename. Two
+jobs racing on the first read of a shared dataset would otherwise let one hash
+a sidecar the other is midway through truncating, recording a
+`schema_sha256` that matches nothing on disk and putting the entry into
+permanent verification failure.
+
+**Step 5 exists because a promoted dataset has no second chance.** While an
+entry is `role: source`, a bad conversion self-heals — the next invalidation
+rewrites it from the source. Once the source is retired there is nothing left
+to disagree with the parquet, so the single conversion that produced it must
+be checked at the time it happens, by reading it back and comparing against
+the frame haven returned. A hash of bytes just written proves only that the
+write completed.
+
+**The reader version is recorded.** `record_provenance()` captures R and
+package versions per *rendered output*; a manifest entry captured none. Under
+`role: primary` the parquet is the data, so the haven version that produced it
+is part of its provenance: a reader defect discovered later is unfindable
+otherwise, and re-reading the source is no longer an option.
 
 **Hit path:** read the parquet, return the frame.
 
@@ -221,10 +266,16 @@ Behaviour switches on `role`:
 | | `role: source` | `role: primary` |
 |---|---|---|
 | authoritative file | `.sas7bdat` | `.parquet` |
-| cache validity | source `size`+`mtime` | not applicable |
+| read validity | source `size`+`mtime`, `sha256` when ambiguous | parquet is the data; source never consulted |
 | `verify_manifest()` hashes | the source | the parquet |
-| missing source file | an error | expected |
+| missing source file | an error | **expected — and `read_built()` must still serve the parquet** |
 | sidecar | regenerable | **durable — never regenerate** |
+
+The "missing source file" row is a requirement on `read_built()`, not only on
+`verify_manifest()`. A `role: primary` entry means the source has been
+retired, so a read path that guards on the source existing would make
+promotion unreachable — the one thing promotion exists for would be the one
+thing it cannot do.
 
 That last row is the one with teeth. Before promotion the sidecar is a derived
 artifact that can be rebuilt from the source at any time. After promotion the
