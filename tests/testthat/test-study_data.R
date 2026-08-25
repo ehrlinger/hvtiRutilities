@@ -66,3 +66,34 @@ test_that("read_built errors when the dataset is absent", {
   root <- make_study_fixture(withr::local_tempdir(), write_data = FALSE)
   expect_error(read_built(study_config(root)), "missing")
 })
+
+test_that("read_built errors when lowercasing collides rather than duplicating a column", {
+  # SAS variable names are case-insensitive, so this collision cannot be built
+  # with haven::write_sas(). A .csv source reaches the same code path.
+  dir <- withr::local_tempdir()
+  dir.create(file.path(dir, "datasets"), recursive = TRUE)
+
+  yaml::write_yaml(
+    list(study = "Collision fixture", population = "n=2",
+         built = "built_test.csv", citation = "Fixture.",
+         cohort = list(n = 2L, n_events = 1L, n_censored = 1L,
+                       event = "dead", time = "iv_dead")),
+    file.path(dir, "_study.yml")
+  )
+
+  d <- data.frame(FOO = 1:2, foo = 3:4, dead = c(1L, 0L),
+                  iv_dead = c(1, 2), check.names = FALSE)
+  write.csv(d, file.path(dir, "datasets", "built_test.csv"), row.names = FALSE)
+
+  expect_error(read_built(study_config(dir)), "FOO")
+  expect_error(read_built(study_config(dir)), "foo")
+})
+
+test_that("read_built still lowercases names when there is no collision", {
+  dir <- withr::local_tempdir()
+  make_study_fixture(dir)
+
+  d <- read_built(study_config(dir))
+
+  expect_true(all(names(d) == tolower(names(d))))
+})

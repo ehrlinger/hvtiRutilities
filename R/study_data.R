@@ -128,7 +128,22 @@ read_built <- function(cfg = study_config()) {
 
   # Carries SAS variable labels through; listings print labels, not names.
   d <- as.data.frame(read_clinical_data(p, convert_types = FALSE))
-  names(d) <- tolower(names(d))
+
+  # Lowercasing is unconditional, so a source carrying both FOO and foo would
+  # yield two columns named foo and every downstream d$foo would silently take
+  # the first. SAS names are case-insensitive and cannot collide; .csv, .xlsx
+  # and .rds sources can.
+  lower <- tolower(names(d))
+  if (anyDuplicated(lower)) {
+    clashes <- unique(lower[duplicated(lower)])
+    detail <- vapply(clashes, function(x) {
+      paste0(x, " <- ", paste(names(d)[lower == x], collapse = ", "))
+    }, character(1))
+    stop("read_built(): lowercasing column names produces duplicates in ",
+         basename(p), ": ", paste(detail, collapse = "; "),
+         ". Rename the colliding columns at the source.", call. = FALSE)
+  }
+  names(d) <- lower
 
   logi <- vapply(d, is.logical, logical(1))
   d[logi] <- lapply(d[logi], as.integer)

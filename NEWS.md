@@ -19,6 +19,13 @@
   it describes shape only, so two reads of an unchanged file produce an
   identical schema.
 
+## Bug fixes
+
+- `read_built()` now errors when lowercasing column names produces duplicates,
+  naming the colliding pair, instead of returning two identically named
+  columns where every downstream selection silently takes the first. SAS names
+  cannot collide this way; `.csv`, `.xlsx` and `.rds` sources can.
+
 ## Documentation
 
 - `proc_contents()` now documents that its `label` column is never `NA`: it
