@@ -240,3 +240,69 @@ test_that("an unchanged source inside the ambiguity window is trusted via sha256
   # under ~25 seconds would go undetected.
   expect_true(identical(file.info(parquet)$mtime, parquet_mtime_before))
 })
+
+test_that("an exact mtime tie whose stamp sits inside the risky window does not serve a stale parquet", {
+  # This is the scenario Change 0 exists for: a same-tick rewrite is
+  # invisible to mtime, and treating an exact tie as proof of no change would
+  # serve stale data forever. The fix requires the rewrite be caught via
+  # sha256 whenever the recorded stamp itself was taken close to the source's
+  # mtime -- the "risky" tick.
+  skip_if_no_arrow()
+  dir <- withr::local_tempdir()
+  make_study_fixture(dir, n = 20L)
+  cfg <- study_config(dir)
+  read_built(cfg)                                    # populate the cache
+
+  src <- file.path(dir, "datasets", "built_test.sas7bdat")
+  mp  <- file.path(dir, "manifest.yaml")
+  m   <- yaml::read_yaml(mp)
+  original_mtime <- m$datasets[[1]]$source_mtime
+
+  # Force the entry's stamp squarely inside the risky window -- taken at the
+  # same instant as the source's own mtime -- regardless of how fast this
+  # test happens to execute.
+  m$datasets[[1]]$stamp_time <- original_mtime
+  yaml::write_yaml(m, mp)
+
+  # Same shape (20 rows, same columns) as the original fixture, so the
+  # rewritten file is exactly as many bytes as the original -- size alone
+  # cannot see this change either.
+  replacement <- data.frame(
+    id      = 1:20,
+    x       = as.numeric(1:20),
+    dead    = c(rep(1L, 8), rep(0L, 12)),
+    iv_dead = as.numeric(c(20:2, 999))                # distinguishing value
+  )
+  suppressWarnings(haven::write_sas(replacement, src))
+  Sys.setFileTime(src, as.POSIXct(original_mtime, tz = "UTC"))  # exact tie
+
+  d <- read_built(cfg)
+  expect_equal(d$iv_dead[20], 999)                    # NOT the stale value
+})
+
+test_that("a stamp comfortably after mtime is trusted without hashing", {
+  # The companion case: once the stamp is safely outside the risky window,
+  # the fast path must not pay for a hash at all -- proved by corrupting the
+  # recorded sha256 and confirming the cache is still served, untouched.
+  skip_if_no_arrow()
+  dir <- withr::local_tempdir()
+  make_study_fixture(dir, n = 20L)
+  cfg <- study_config(dir)
+  read_built(cfg)
+
+  mp <- file.path(dir, "manifest.yaml")
+  m  <- yaml::read_yaml(mp)
+  stamp <- as.numeric(as.POSIXct(m$datasets[[1]]$source_mtime, tz = "UTC"))
+  m$datasets[[1]]$stamp_time <- format(
+    as.POSIXct(stamp + 5, origin = "1970-01-01", tz = "UTC"),
+    "%Y-%m-%d %H:%M:%OS6", tz = "UTC")
+  m$datasets[[1]]$sha256 <- strrep("0", 64)           # deliberately wrong
+  yaml::write_yaml(m, mp)
+
+  parquet <- file.path(dir, "datasets", "built_test.parquet")
+  parquet_mtime_before <- file.info(parquet)$mtime
+
+  d <- read_built(cfg)
+  expect_equal(nrow(d), 20L)
+  expect_true(identical(file.info(parquet)$mtime, parquet_mtime_before))
+})

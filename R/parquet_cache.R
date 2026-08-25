@@ -48,25 +48,15 @@
   NULL
 }
 
-# Two thresholds guard the mtime comparison, for two different reasons:
-#
-# - ROUNDTRIP_EPSILON absorbs formatting noise, not filesystem noise. The
-#   recorded mtime is serialized to text (%OS6) and reparsed on every check;
-#   that round trip alone introduces ~1e-6s of floating error even when
-#   nothing on disk changed (measured). Below this, treat the stamp as an
-#   exact match and trust it -- this is the fast path that keeps a routine
-#   cache hit from paying for a hash.
-#
-# - AMBIGUITY_WINDOW is about the filesystem, not formatting: the study tree
-#   is an SMB mount, and SMB mtime resolution is commonly no finer than one
-#   whole second. A difference smaller than that cannot be trusted as
-#   "genuinely different" -- it may be real, or it may be rounding -- so
-#   instead of guessing, the recorded sha256 is verified. A difference at or
-#   above the window is large enough to trust directly: the file changed.
-.MTIME_ROUNDTRIP_EPSILON_SECONDS <- 0.001
+# AMBIGUITY_WINDOW is about the filesystem, not formatting: the study tree is
+# an SMB mount, and SMB mtime resolution is commonly no finer than one whole
+# second. A difference smaller than that cannot be trusted as "genuinely
+# different" -- it may be real, or it may be rounding -- so instead of
+# guessing, the recorded sha256 is verified there. A difference at or above
+# the window is large enough to trust directly: the file changed.
 .MTIME_AMBIGUITY_WINDOW_SECONDS  <- 1
 
-.cache_valid <- function(path, derived, entry) {
+.cache_valid <- function(path, derived, entry, manifest_path) {
   if (is.null(entry) || !file.exists(derived$parquet)) return(FALSE)
 
   # role: primary means the parquet IS the data. The source may have been
@@ -85,16 +75,37 @@
     return(FALSE)
   }
 
-  diff <- abs(as.numeric(as.POSIXct(entry$source_mtime, tz = "UTC")) -
-                as.numeric(info$mtime))
+  source_mtime <- as.numeric(as.POSIXct(entry$source_mtime, tz = "UTC"))
+  diff <- abs(source_mtime - as.numeric(info$mtime))
 
-  if (diff < .MTIME_ROUNDTRIP_EPSILON_SECONDS) return(TRUE)
   if (diff >= .MTIME_AMBIGUITY_WINDOW_SECONDS) return(FALSE)
 
-  # Ambiguous: the mtime moved, but by less than the filesystem's reliable
-  # granularity. A full read, but only for this genuinely ambiguous case.
-  identical(entry$sha256,
-            digest::digest(path, algo = "sha256", file = TRUE))
+  # An exact mtime tie is NOT proof the source is unchanged: it is also what
+  # a rewrite within the same filesystem tick looks like, which is exactly
+  # the case the sha256 fallback below exists to catch. What distinguishes
+  # the two is *when the stamp was taken*. A same-tick rewrite can only hide
+  # inside the stamp's own tick -- once the stamp was recorded comfortably
+  # (>= one ambiguity window) after the mtime it records, any later rewrite
+  # must move mtime somewhere distinguishable, and the fast path is safe.
+  # An entry with no stamp_time predates this field; treat it as risky so it
+  # verifies once and re-stamps itself into the fast path.
+  stamp_time <- entry$stamp_time
+  risky <- is.null(stamp_time) ||
+    (as.numeric(as.POSIXct(stamp_time, tz = "UTC")) - source_mtime) <
+      .MTIME_AMBIGUITY_WINDOW_SECONDS
+
+  if (!risky) return(TRUE)
+
+  # Risky: the stamp sits inside the tick that could be hiding a rewrite. A
+  # full read, but only for this genuinely ambiguous case.
+  ok <- identical(entry$sha256,
+                   digest::digest(path, algo = "sha256", file = TRUE))
+  if (ok) {
+    # Self-heal: a verified-unchanged file leaves the risky window, so later
+    # reads take the fast path above instead of paying this hash every time.
+    .stamp_source_state(manifest_path, basename(path), info)
+  }
+  ok
 }
 
 # Read `path`, using or populating the parquet cache beside it.
@@ -122,7 +133,7 @@
          "has been retired and the parquet is the data.", call. = FALSE)
   }
 
-  if (!refresh && .cache_valid(path, derived, entry)) {
+  if (!refresh && .cache_valid(path, derived, entry, manifest)) {
     return(as.data.frame(arrow::read_parquet(derived$parquet)))
   }
 
@@ -171,12 +182,17 @@
 
 # The fast key lives beside the entry rather than inside update_manifest(),
 # whose contract is about identifying a dataset rather than about caching.
+#
+# stamp_time records the wall-clock moment this stamp was written, not just
+# the source's mtime -- it is what lets .cache_valid() tell an unchanged file
+# apart from a same-tick rewrite (see the comment there).
 .stamp_source_state <- function(manifest_path, file, info) {
   m <- yaml::read_yaml(manifest_path)
   m$datasets <- lapply(m$datasets, function(e) {
     if (identical(e$file, file)) {
       e$source_size  <- as.numeric(info$size)
       e$source_mtime <- format(info$mtime, "%Y-%m-%d %H:%M:%OS6", tz = "UTC")
+      e$stamp_time   <- format(Sys.time(), "%Y-%m-%d %H:%M:%OS6", tz = "UTC")
     }
     e
   })

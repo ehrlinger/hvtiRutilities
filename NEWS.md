@@ -45,7 +45,15 @@
   page-aligned and a changed row count can leave its size identical. The
   source is now stat'd before the read rather than after, so a source
   rewritten mid-read is stamped conservatively stale instead of validating
-  forever.
+  forever. An exact `mtime` tie is no longer treated as proof the source is
+  unchanged — it is also what a rewrite within the same filesystem tick looks
+  like. The manifest entry now also records the wall-clock time the stamp
+  itself was taken, and the fast path is trusted only once that stamp is at
+  least one ambiguity window later than the `mtime` it records; otherwise the
+  `sha256` is verified, and a successful verification re-stamps the entry so
+  later reads take the fast path. An entry written before this field existed
+  has no stamp time and is treated as risky, so it verifies once and
+  re-stamps itself into the fast path.
 - `read_built()` gains `refresh = TRUE`, which forces a re-read from the
   source and a reconversion regardless of role or cached stamp — for changes
   a timestamp can't express, such as a rebuild that preserves `mtime` or a
