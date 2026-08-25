@@ -1043,6 +1043,37 @@ Create `R/parquet_cache.R`:
 }
 ```
 
+- [ ] **Step 4b: Make `.derived_paths()` the single definition of the naming rule**
+
+Task 4 taught `verify_manifest()` to find a dataset's schema sidecar, and it
+derives the name inline:
+
+```r
+      side <- file.path(data_dir,
+                        paste0(tools::file_path_sans_ext(entry$file),
+                               ".schema.csv"))
+```
+
+`.derived_paths()` above now states the same rule a second time. A reader and
+a writer that each carry their own copy of a naming convention will diverge,
+and the failure is silent: the writer puts the sidecar somewhere the reader
+does not look, and the reader reports it missing.
+
+In `R/manifest.R`, replace that inline derivation with a call to
+`.derived_paths()`, keeping the per-entry path resolution that Task 4's fix
+introduced — the sidecar must still be resolved through `resolve_entry()` so
+it is found beside its dataset:
+
+```r
+      side <- resolve_entry(basename(.derived_paths(entry$file)$schema))
+```
+
+Do not change `.derived_paths()` to accommodate this; it is already correct.
+Do not alter any other part of `verify_manifest()`.
+
+Confirm the manifest tests still pass afterwards:
+`Rscript -e 'devtools::test(filter = "manifest")'`
+
 - [ ] **Step 5: Wire it into `read_built()`**
 
 In `R/study_data.R`, replace
