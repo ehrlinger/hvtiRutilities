@@ -53,10 +53,17 @@ arrow (Suggests, optional at runtime).
 - `tests/testthat/test-read_clinical_data.R`, `test-study_data.R`,
   `test-manifest.R`.
 
-**Note on `role`.** `verify_manifest()` hashes `entry$file`, and a promoted
-entry's `file` is already the parquet. Role-switching on the hash target
-therefore needs no code. `role` earns its place through sidecar durability
-(Task 5) and cache validity (Task 5), plus provenance in the file.
+**Note on `role`.** *(Superseded by Task 5c — kept because the reasoning it
+records was wrong in an instructive way.)* This originally read: since
+`verify_manifest()` hashes `entry$file` and a promoted entry's `file` is the
+parquet, role-switching on the hash target needs no code.
+
+Both halves were false. `file` is the dataset's identity and does **not**
+change on promotion — renaming it made the entry invisible to every read-path
+lookup, which all key on the source's basename, while `verify_manifest()`
+still resolved it. And because the name therefore cannot say which file is
+authoritative, `verify_manifest()` must select its hash target from `role`
+explicitly. See Task 5c, item 5.
 
 ---
 
@@ -1585,12 +1592,23 @@ Promotion → Task 4 writes `role`; Task 5 honours it for sidecar durability.
 Metadata fidelity → Task 5 Step 2, test three. Every spec testing bullet maps
 to a test above except *atomic write*, covered in Task 5 Step 2, test five.
 
-**Deviation from the spec, recorded deliberately.** The spec's Promotion table
-says `verify_manifest()` hashes the source for a `source` entry and the
-parquet for a `primary` one. No code implements this: `verify_manifest()`
-already hashes `entry$file`, and a promoted entry's `file` *is* the parquet.
-The behaviour is correct without a role switch, so none was added. The `role`
-field still earns its place through sidecar durability and cache validity.
+**Deviation from the spec — recorded deliberately, and later reversed.** This
+originally argued that the spec's Promotion table needed no code, because
+`verify_manifest()` hashes `entry$file` and a promoted entry's `file` *is* the
+parquet.
+
+That was wrong twice over, and Task 5c reversed it. `file` names the dataset,
+not its current storage, and never changes on promotion — the read path's
+lookups all key on the source's basename, so renaming made a promoted entry
+unreadable while `verify_manifest()` still found it, leaving the two halves of
+the package assuming different manifests. Since the name cannot then indicate
+which file is authoritative, `verify_manifest()` selects its hash target from
+`role`. The role switch the spec asked for was necessary after all.
+
+The lesson worth keeping: "the existing behaviour is already correct, so no
+code is needed" deserves an end-to-end trace before it is believed. The
+argument here was locally true of `verify_manifest()` and false of the
+package.
 
 **Not built, and why.** No `promote_dataset()` helper. The spec describes
 promotion as a per-entry field change and nothing yet performs one; adding a
