@@ -15,12 +15,12 @@ test_that("read_clinical_data reads CSV files", {
   expect_equal(ncol(result), 5)
 })
 
-test_that("read_clinical_data applies type conversion by default", {
+test_that("read_clinical_data applies type conversion when convert_types = TRUE", {
   tmp <- tempfile(fileext = ".csv")
   on.exit(unlink(tmp))
   write.csv(mtcars, tmp, row.names = FALSE)
 
-  result <- read_clinical_data(tmp)
+  result <- read_clinical_data(tmp, convert_types = TRUE)
 
   # vs has 2 unique values → logical
 
@@ -32,7 +32,7 @@ test_that("read_clinical_data passes ... to r_data_types", {
   on.exit(unlink(tmp))
   write.csv(mtcars, tmp, row.names = FALSE)
 
-  result <- read_clinical_data(tmp, skip_vars = c("vs", "am"))
+  result <- read_clinical_data(tmp, convert_types = TRUE, skip_vars = c("vs", "am"))
 
   # Skipped vars stay numeric
   expect_true(is.numeric(result$vs))
@@ -108,4 +108,55 @@ test_that("read_clinical_data returns data.frame from tibble sources", {
 
   # readxl returns a tibble; verify the tibble class is fully dropped
   expect_equal(class(result), "data.frame")
+})
+
+# convert_types default ----
+
+test_that("a 0/1 column is not converted to logical by default", {
+  tmp <- withr::local_tempfile(fileext = ".csv")
+  write.csv(data.frame(dead = c(1, 0, 1, 0), x = c(2, 4, 6, 8)),
+            tmp, row.names = FALSE)
+
+  d <- suppressWarnings(read_clinical_data(tmp))
+
+  expect_false(is.logical(d$dead))
+  expect_equal(d$dead, c(1, 0, 1, 0))
+})
+
+test_that("relying on the old convert_types default warns once per session", {
+  tmp <- withr::local_tempfile(fileext = ".csv")
+  write.csv(data.frame(dead = c(1, 0)), tmp, row.names = FALSE)
+
+  # The one-shot flag is session state; reset it so this test is order-independent.
+  # `pkg:::name$field <- value` is not valid R -- the replacement-function
+  # desugaring tries to reassign the bare symbol `pkg`, which is never a
+  # bound variable. Use assign() against the (reference-semantics)
+  # environment instead.
+  assign("convert_types", NULL, envir = hvtiRutilities:::.hvti_deprecated)
+
+  expect_warning(read_clinical_data(tmp), "convert_types")
+  expect_silent(read_clinical_data(tmp))
+})
+
+test_that("passing convert_types explicitly never warns", {
+  tmp <- withr::local_tempfile(fileext = ".csv")
+  write.csv(data.frame(dead = c(1, 0)), tmp, row.names = FALSE)
+
+  # `pkg:::name$field <- value` is not valid R -- the replacement-function
+  # desugaring tries to reassign the bare symbol `pkg`, which is never a
+  # bound variable. Use assign() against the (reference-semantics)
+  # environment instead.
+  assign("convert_types", NULL, envir = hvtiRutilities:::.hvti_deprecated)
+
+  expect_silent(read_clinical_data(tmp, convert_types = FALSE))
+  expect_silent(read_clinical_data(tmp, convert_types = TRUE))
+})
+
+test_that("convert_types = TRUE still converts", {
+  tmp <- withr::local_tempfile(fileext = ".csv")
+  write.csv(data.frame(dead = c(1, 0, 1, 0)), tmp, row.names = FALSE)
+
+  d <- read_clinical_data(tmp, convert_types = TRUE)
+
+  expect_true(is.logical(d$dead))
 })

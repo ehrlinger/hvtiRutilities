@@ -1,3 +1,8 @@
+# One-shot deprecation flags, keyed by name. An environment rather than a
+# package variable so a warning fires once per session rather than once per
+# call: a study reading forty datasets should be told once.
+.hvti_deprecated <- new.env(parent = emptyenv())
+
 #' Read and prepare a clinical dataset in one step
 #'
 #' @description
@@ -19,8 +24,11 @@
 #' }
 #'
 #' @param file Character. Path to the dataset file.
-#' @param convert_types Logical. If \code{TRUE} (default), runs
-#'   \code{\link{r_data_types}} on the result.
+#' @param convert_types Logical. Apply \code{\link{r_data_types}} to the data
+#'   after reading. Defaults to \code{FALSE}: the file is returned as read.
+#'   \code{TRUE} converts any two-valued numeric column to logical, which is
+#'   wrong for 0/1 event and censoring flags, so type conversion belongs to a
+#'   declared variable-derivation step rather than to reading.
 #' @param ... Additional arguments passed to \code{\link{r_data_types}}
 #'   (e.g., \code{factor_size}, \code{skip_vars}, \code{binary_factor}).
 #'   Ignored when \code{convert_types = FALSE}.
@@ -54,7 +62,19 @@
 #' dta <- read_clinical_data(tmp, factor_size = 5)
 #' str(dta)
 #' unlink(tmp)
-read_clinical_data <- function(file, convert_types = TRUE, ...) {
+read_clinical_data <- function(file, convert_types = FALSE, ...) {
+  if (missing(convert_types) && is.null(.hvti_deprecated$convert_types)) {
+    .hvti_deprecated$convert_types <- TRUE
+    warning(
+      "read_clinical_data(): 'convert_types' now defaults to FALSE, so ",
+      "columns are returned as read. It previously defaulted to TRUE, which ",
+      "converted any two-valued numeric column to logical -- including 0/1 ",
+      "event and censoring flags. Pass convert_types = TRUE to restore the ",
+      "old behaviour, or FALSE to silence this warning.",
+      call. = FALSE
+    )
+  }
+
   if (!is.character(file) || length(file) != 1L) {
     stop("'file' must be a single file path.", call. = FALSE)
   }
