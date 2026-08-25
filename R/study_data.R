@@ -83,6 +83,33 @@ built_manifest <- function(cfg = study_config()) {
   )
 }
 
+# Errors if lowercasing `names(d)` would collide, naming the colliding
+# original names. Called from inside the reader closure passed to
+# .cache_read(), so a collision is caught before any cache artifact --
+# .parquet, .schema.csv, or the manifest entry -- has been written for a
+# dataset that can never be read. SAS names are case-insensitive and cannot
+# collide this way; .csv, .xlsx and .rds sources can.
+#
+# Defined ABOVE read_built()'s roxygen block, not between it and the function.
+# Roxygen attaches a block to the NEXT statement, so a definition placed in
+# between silently steals the documentation -- read_built.Rd disappears, this
+# internal gets documented and exported in its place, and read_built() stops
+# being exported. devtools::test() does not catch it, because load_all()
+# exposes internals regardless of NAMESPACE; only an installed package breaks.
+.assert_no_lowercase_collision <- function(d, path) {
+  lower <- tolower(names(d))
+  if (anyDuplicated(lower)) {
+    clashes <- unique(lower[duplicated(lower)])
+    detail <- vapply(clashes, function(x) {
+      paste0(x, " <- ", paste(names(d)[lower == x], collapse = ", "))
+    }, character(1))
+    stop("read_built(): lowercasing column names produces duplicates in ",
+         basename(path), ": ", paste(detail, collapse = "; "),
+         ". Rename the colliding columns at the source.", call. = FALSE)
+  }
+  invisible(TRUE)
+}
+
 #' Read the study's built dataset
 #'
 #' @description
@@ -127,26 +154,6 @@ built_manifest <- function(cfg = study_config()) {
 #'           file.path(root, "datasets", "example.csv"), row.names = FALSE)
 #' names(read_built(study_config(root)))
 #' unlink(root, recursive = TRUE)
-# Errors if lowercasing `names(d)` would collide, naming the colliding
-# original names. Called from inside the reader closure passed to
-# .cache_read(), so a collision is caught before any cache artifact --
-# .parquet, .schema.csv, or the manifest entry -- has been written for a
-# dataset that can never be read. SAS names are case-insensitive and cannot
-# collide this way; .csv, .xlsx and .rds sources can.
-.assert_no_lowercase_collision <- function(d, path) {
-  lower <- tolower(names(d))
-  if (anyDuplicated(lower)) {
-    clashes <- unique(lower[duplicated(lower)])
-    detail <- vapply(clashes, function(x) {
-      paste0(x, " <- ", paste(names(d)[lower == x], collapse = ", "))
-    }, character(1))
-    stop("read_built(): lowercasing column names produces duplicates in ",
-         basename(path), ": ", paste(detail, collapse = "; "),
-         ". Rename the colliding columns at the source.", call. = FALSE)
-  }
-  invisible(TRUE)
-}
-
 read_built <- function(cfg = study_config(), refresh = FALSE) {
   p <- built_path(cfg)
   manifest_path <- file.path(cfg$root, "manifest.yaml")

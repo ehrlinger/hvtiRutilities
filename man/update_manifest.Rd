@@ -13,7 +13,7 @@ update_manifest(
   source = NULL,
   sort_key = NULL,
   schema_sha256 = NULL,
-  role = "source",
+  role = c("source", "primary"),
   reader = NULL,
   verbose = FALSE
 )
