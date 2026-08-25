@@ -68,9 +68,15 @@ today.
 
 ### 1. Schema sidecar
 
-`proc_contents()` already returns creation position, name, SAS type, format,
-label, R class and completeness counts. That is the schema; no new function is
-added. Its output is written as CSV.
+A new exported function, `dataset_schema()`, returns one row per column:
+creation position, name, R class, SAS type, `format.sas`, and label. Its
+output is written as CSV.
+
+It deliberately does not wrap `proc_contents()`. That function fills absent
+labels with the variable's own name (see below), which is right for a printed
+listing and wrong for a durable record — and its `n_unique` and `pct_missing`
+columns describe the data rather than the schema, so they would change between
+two reads of the same unchanged file.
 
 The schema is captured from the **haven read**, never from the parquet. A
 baseline derived from the converted file cannot test the conversion.
@@ -153,8 +159,7 @@ gets a one-time deprecation warning naming the change. The warning is removed
 in a later release.
 
 This is a breaking change for direct callers and requires a NEWS entry. The
-version bump is a patch (`1.0.11` to `1.0.12`); rolling the minor digit is the
-maintainer's decision, not this design's.
+whole of this design ships under `1.1.0`, at the maintainer's direction.
 
 ### 5. Study-side follow-up
 
