@@ -38,14 +38,11 @@ dataset_schema <- function(data) {
     stop("'data' must be a data frame.", call. = FALSE)
   }
 
-  cols <- c("num", "variable", "class", "type", "format", "label")
-
   if (ncol(data) == 0L) {
-    empty <- data.frame(num = integer(0), variable = character(0),
-                        class = character(0), type = character(0),
-                        format = character(0), label = character(0),
-                        stringsAsFactors = FALSE)
-    return(empty[, cols, drop = FALSE])
+    return(data.frame(num = integer(0), variable = character(0),
+                       class = character(0), type = character(0),
+                       format = character(0), label = character(0),
+                       stringsAsFactors = FALSE))
   }
 
   # Attributes are read directly rather than through labelled::var_label(),
@@ -59,9 +56,7 @@ dataset_schema <- function(data) {
     num      = seq_len(ncol(data)),
     variable = names(data),
     class    = vapply(data, function(x) class(x)[1L], character(1)),
-    type     = vapply(data,
-                      function(x) if (is.character(x) || is.factor(x)) "Char" else "Num",
-                      character(1)),
+    type     = vapply(data, .sas_type, character(1)),
     format   = vapply(data, attr_chr, character(1), which = "format.sas"),
     label    = vapply(data, attr_chr, character(1), which = "label"),
     row.names = NULL,
