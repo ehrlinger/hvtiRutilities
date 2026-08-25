@@ -134,13 +134,16 @@ read_built <- function(cfg = study_config(), refresh = FALSE) {
   if (!file.exists(p)) {
     # role: "primary" means the source was retired on purpose -- promotion
     # exists precisely so this dataset can still be served with no source on
-    # disk. Only bypass the missing-file error when the manifest and the
-    # parquet actually back that up; otherwise this is a genuinely missing
-    # dataset and the original error stands.
+    # disk. A promoted entry whose parquet is ALSO missing is still an
+    # error, but the parquet -- not the source retired on purpose -- is the
+    # copy that's actually missing.
     entry <- .manifest_entry(manifest_path, p)
-    served_from_parquet <- identical(entry$role, "primary") &&
-      file.exists(.derived_paths(p)$parquet)
-    if (!served_from_parquet) {
+    if (identical(entry$role, "primary")) {
+      parquet <- .derived_paths(p)$parquet
+      if (!file.exists(parquet)) {
+        stop("read_built(): missing ", parquet, call. = FALSE)
+      }
+    } else {
       stop("read_built(): missing ", p, call. = FALSE)
     }
   }

@@ -344,13 +344,24 @@ verify_manifest <- function(manifest_path = "manifest.yaml",
   }
 
   results <- lapply(manifest$datasets, function(entry) {
-    fpath <- resolve_entry(entry$file)
+    # sha256 describes whichever file `role` makes authoritative. `file`
+    # never changes on promotion (it names the dataset, not the file
+    # currently storing it), so which physical file to hash cannot be
+    # inferred from the name -- only from `role`. Under role: "primary" the
+    # source may have been retired on purpose; its absence is expected and
+    # is simply never checked here.
+    promoted <- identical(entry$role, "primary")
+    target <- if (promoted) {
+      resolve_entry(basename(.derived_paths(entry$file)$parquet))
+    } else {
+      resolve_entry(entry$file)
+    }
 
-    if (!file.exists(fpath)) {
+    if (!file.exists(target)) {
       return(data.frame(
         file    = entry$file,
         status  = "FAIL",
-        message = paste("File not found:", fpath),
+        message = paste("File not found:", target),
         row_count_checked = FALSE,
         stringsAsFactors = FALSE
       ))
@@ -381,7 +392,7 @@ verify_manifest <- function(manifest_path = "manifest.yaml",
       ))
     }
 
-    sha256 <- digest::digest(fpath, algo = "sha256", file = TRUE)
+    sha256 <- digest::digest(target, algo = "sha256", file = TRUE)
     if (!identical(sha256, entry$sha256)) {
       return(data.frame(
         file    = entry$file,
@@ -429,7 +440,7 @@ verify_manifest <- function(manifest_path = "manifest.yaml",
     # recorded a count, the count is recorded but this file type cannot be
     # counted at all, or it could be counted if the caller opted in to the
     # expensive path. Each has a different fix, so each is named.
-    ext <- tolower(tools::file_ext(fpath))
+    ext <- tolower(tools::file_ext(target))
     rowcount_checked <- FALSE
     skip_reason      <- NULL
     if (!(ext %in% c("csv", "sas7bdat", "xlsx", "xls"))) {
@@ -440,7 +451,7 @@ verify_manifest <- function(manifest_path = "manifest.yaml",
     }
     if (ext %in% c("csv", "sas7bdat", "xlsx", "xls") && !is.null(entry$n_rows)) {
       actual_rows_result <- tryCatch(
-        .auto_count_rows(fpath),
+        .auto_count_rows(target),
         error = function(e) e
       )
       if (inherits(actual_rows_result, "manifest_heavy_rowcount_disabled")) {

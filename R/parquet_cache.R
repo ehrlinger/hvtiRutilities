@@ -7,9 +7,10 @@
 # builds the dataset, not a caching policy. role: "primary" means the parquet
 # IS the data and the source is never consulted. role: "source" is decided by
 # a stat of the source's size and mtime -- not a read -- falling back to the
-# recorded sha256 only when mtime cannot settle it (see .cache_valid()).
-# Re-hashing the source on every call would read the whole file and defeat
-# the cache entirely, so that fallback is deliberately rare.
+# recorded sha256 only when the filesystem's own mtime resolution cannot
+# settle it (see .cache_valid()). Re-hashing the source on every call would
+# read the whole file and defeat the cache entirely, so that fallback is
+# deliberately rare.
 
 .cache_enabled <- function() {
   !isTRUE(getOption("hvtiRutilities.disable_parquet_cache", FALSE)) &&
@@ -98,14 +99,22 @@
   NULL
 }
 
-# AMBIGUITY_WINDOW is about the filesystem, not formatting: the study tree is
-# an SMB mount, and SMB mtime resolution is commonly no finer than one whole
-# second. A difference smaller than that cannot be trusted as "genuinely
-# different" -- it may be real, or it may be rounding -- so instead of
-# guessing, the recorded sha256 is verified there. A difference at or above
-# the window is large enough to trust directly: the file changed.
-.MTIME_AMBIGUITY_WINDOW_SECONDS  <- 1
-
+# How wide a same-tick rewrite window is is a property of the filesystem, and
+# it is measured here rather than assumed. A `stat` that reports a fractional
+# mtime resolves sub-second, so the window a rewrite could hide inside is
+# microseconds wide and mtime alone settles it. A `stat` that reports a
+# whole-second mtime cannot see inside that second at all -- the window is a
+# full second wide -- so the recorded sha256 is verified instead. Production
+# runs on a local filesystem with nanosecond mtime, where the fast path
+# always applies; development over SMB may see whole-second stamps and pay
+# for a hash. Neither is a special case: the same `stat` decides.
+#
+# An earlier version compared the source's mtime against a client-side
+# Sys.time() recorded at conversion -- two different clocks whenever the
+# files live on another host, so a client running even one second fast made
+# every entry look unambiguous forever. A validity rule may only compare
+# readings of the same clock, which is what this does: two mtimes from the
+# same `stat`.
 .cache_valid <- function(path, derived, entry, manifest_path) {
   if (is.null(entry) || !file.exists(derived$parquet)) return(FALSE)
 
@@ -133,37 +142,34 @@
     return(FALSE)
   }
 
-  source_mtime <- as.numeric(as.POSIXct(entry$source_mtime, tz = "UTC"))
-  diff <- abs(source_mtime - as.numeric(info$mtime))
+  current_mtime  <- as.numeric(info$mtime)
+  recorded_mtime <- as.numeric(as.POSIXct(entry$source_mtime, tz = "UTC"))
 
-  if (diff >= .MTIME_AMBIGUITY_WINDOW_SECONDS) return(FALSE)
-
-  # An exact mtime tie is NOT proof the source is unchanged: it is also what
-  # a rewrite within the same filesystem tick looks like, which is exactly
-  # the case the sha256 fallback below exists to catch. What distinguishes
-  # the two is *when the stamp was taken*. A same-tick rewrite can only hide
-  # inside the stamp's own tick -- once the stamp was recorded comfortably
-  # (>= one ambiguity window) after the mtime it records, any later rewrite
-  # must move mtime somewhere distinguishable, and the fast path is safe.
-  # An entry with no stamp_time predates this field; treat it as risky so it
-  # verifies once and re-stamps itself into the fast path.
-  stamp_time <- entry$stamp_time
-  risky <- is.null(stamp_time) ||
-    (as.numeric(as.POSIXct(stamp_time, tz = "UTC")) - source_mtime) <
-      .MTIME_AMBIGUITY_WINDOW_SECONDS
-
-  if (!risky) return(TRUE)
-
-  # Risky: the stamp sits inside the tick that could be hiding a rewrite. A
-  # full read, but only for this genuinely ambiguous case.
-  ok <- identical(entry$sha256,
-                   digest::digest(path, algo = "sha256", file = TRUE))
-  if (ok) {
-    # Self-heal: a verified-unchanged file leaves the risky window, so later
-    # reads take the fast path above instead of paying this hash every time.
-    .stamp_source_state(manifest_path, basename(path), info)
+  # .MTIME_ROUNDTRIP_TOLERANCE_SECONDS is the manifest's own string
+  # round-trip precision limit, not a filesystem assumption: source_mtime is
+  # stored as a %OS6-formatted string (microsecond precision), and
+  # re-parsing it can land a fraction of a microsecond away from the raw
+  # value a fresh `stat` reports (measured empirically at ~1e-6s -- a
+  # genuinely unchanged file can straddle a rounding boundary either way). A
+  # gap this small is that noise, not a real difference; a gap this large
+  # would require a rewrite landing within a hundred microseconds of the
+  # original write, which is a different event than what this tolerance
+  # exists to absorb.
+  .MTIME_ROUNDTRIP_TOLERANCE_SECONDS <- 1e-4
+  if (abs(current_mtime - recorded_mtime) >= .MTIME_ROUNDTRIP_TOLERANCE_SECONDS) {
+    return(FALSE)
   }
-  ok
+
+  # size and mtime both tie. Whether that alone proves the source is
+  # unchanged depends on what this filesystem's mtime can actually resolve,
+  # measured directly from the fresh `stat` rather than the (tolerance-
+  # smoothed) comparison above: a fractional mtime means sub-second
+  # resolution and it is trusted; an exact whole second means the
+  # filesystem cannot see inside that tick, and the recorded sha256 is
+  # verified instead.
+  if (current_mtime != floor(current_mtime)) return(TRUE)
+
+  identical(entry$sha256, digest::digest(path, algo = "sha256", file = TRUE))
 }
 
 # Read `path`, using or populating the parquet cache beside it.
@@ -178,18 +184,22 @@
 # always something a timestamp can express -- a rebuild that preserves
 # mtime, a restored backup, a correction applied out of band.
 .cache_read <- function(path, reader, manifest_path, refresh = FALSE) {
-  if (!.cache_enabled()) return(reader(path))
-
   derived  <- .derived_paths(path)
   manifest <- manifest_path
   entry    <- .manifest_entry(manifest, path)
   promoted <- identical(entry$role, "primary")
 
+  # This must fire before the .cache_enabled() early return below: with
+  # arrow absent (or the cache disabled), that return would otherwise call
+  # reader(path) directly on a retired, possibly-missing source and die
+  # inside haven instead of naming the actual reason.
   if (refresh && promoted) {
     stop("read_built(): refresh = TRUE cannot re-read ", basename(path),
          " -- its manifest entry has role \"primary\", meaning the source ",
          "has been retired and the parquet is the data.", call. = FALSE)
   }
+
+  if (!.cache_enabled()) return(reader(path))
 
   if (!refresh && .cache_valid(path, derived, entry, manifest)) {
     # An unreadable parquet -- truncated, corrupted, an interrupted write
@@ -219,17 +229,42 @@
   info <- file.info(path)
   d <- reader(path)
 
+  # If size or mtime moved between that stat and here, the read may have
+  # straddled a rewrite and handed back a torn frame. Discard it before
+  # anything is written -- no sidecar, no manifest entry, no parquet -- and
+  # let the caller retry rather than caching a frame that might not
+  # correspond to any single state of the file.
+  post <- file.info(path)
+  if (!identical(as.numeric(info$size), as.numeric(post$size)) ||
+      !identical(as.numeric(info$mtime), as.numeric(post$mtime))) {
+    stop("read_built(): ", basename(path), " changed while it was being ",
+         "read -- the frame may be torn. Nothing was written; try the ",
+         "read again.", call. = FALSE)
+  }
+
+  reader_prov <- .reader_provenance(path)
+
+  if (promoted) {
+    # A miss here can only mean the parquet was lost while the retired
+    # source happens to still be present. Reconvert it, but sha256 must
+    # describe the PARQUET (once it exists), and update_manifest() would
+    # otherwise replace the whole entry -- recording the source's hash and
+    # silently dropping promoted_date/source_sha256, which permanently
+    # breaks verify_manifest() on a study whose data is intact. The sidecar
+    # is never rewritten for a promoted entry (see above).
+    .write_parquet_atomic(d, derived$parquet)
+    .verify_parquet_roundtrip(d, derived$parquet)
+    .update_promoted_entry(manifest, path, derived$parquet,
+                            n_rows = nrow(d), n_cols = ncol(d),
+                            reader = reader_prov)
+    return(d)
+  }
+
   # Order matters: the sidecar comes off this read, never off the parquet, so
   # the baseline is independent of the conversion it exists to check.
-  #
-  # A promoted entry's sidecar is the only surviving record of the SAS
-  # dataset. Rewriting it from a later read would launder that away, so it is
-  # written once and never again.
-  if (!promoted) {
-    .atomic_write(derived$schema, function(tmp) {
-      utils::write.csv(dataset_schema(d), tmp, row.names = FALSE)
-    })
-  }
+  .atomic_write(derived$schema, function(tmp) {
+    utils::write.csv(dataset_schema(d), tmp, row.names = FALSE)
+  })
 
   # update_manifest() replaces the whole entry rather than merging into it, so
   # a cache-driven write that omitted extract_date/source/sort_key would reset
@@ -249,8 +284,8 @@
     } else {
       NULL
     },
-    role          = if (promoted) "primary" else "source",
-    reader        = .reader_provenance(path)
+    role          = "source",
+    reader        = reader_prov
   )
   .stamp_source_state(manifest, basename(path), info)
 
@@ -259,19 +294,38 @@
   d
 }
 
+# A cache miss on a promoted (role: "primary") entry means only that its
+# parquet was lost while the retired source happens to still be present.
+# update_manifest() replaces the whole entry keyed by a fresh hash of `file`
+# -- for a promoted entry that would record the SOURCE's hash as sha256
+# (wrong: role: "primary" means sha256 describes the parquet) and silently
+# drop promoted_date/source_sha256. This updates only what a reconversion
+# can legitimately change and leaves every promotion field exactly as it
+# was.
+.update_promoted_entry <- function(manifest_path, file, parquet, n_rows,
+                                    n_cols, reader) {
+  m <- yaml::read_yaml(manifest_path)
+  m$datasets <- lapply(m$datasets, function(e) {
+    if (identical(e$file, basename(file))) {
+      e$sha256 <- digest::digest(parquet, algo = "sha256", file = TRUE)
+      e$n_rows <- as.integer(n_rows)
+      e$n_cols <- as.integer(n_cols)
+      if (!is.null(reader)) e$reader <- reader
+    }
+    e
+  })
+  .atomic_write(manifest_path, function(tmp) yaml::write_yaml(m, tmp))
+  invisible(TRUE)
+}
+
 # The fast key lives beside the entry rather than inside update_manifest(),
 # whose contract is about identifying a dataset rather than about caching.
-#
-# stamp_time records the wall-clock moment this stamp was written, not just
-# the source's mtime -- it is what lets .cache_valid() tell an unchanged file
-# apart from a same-tick rewrite (see the comment there).
 .stamp_source_state <- function(manifest_path, file, info) {
   m <- yaml::read_yaml(manifest_path)
   m$datasets <- lapply(m$datasets, function(e) {
     if (identical(e$file, file)) {
       e$source_size  <- as.numeric(info$size)
       e$source_mtime <- format(info$mtime, "%Y-%m-%d %H:%M:%OS6", tz = "UTC")
-      e$stamp_time   <- format(Sys.time(), "%Y-%m-%d %H:%M:%OS6", tz = "UTC")
     }
     e
   })

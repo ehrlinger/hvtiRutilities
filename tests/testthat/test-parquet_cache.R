@@ -156,6 +156,92 @@ test_that("a promoted entry is served from parquet when the source is gone", {
 
   d <- read_built(cfg)
   expect_equal(nrow(d), 20L)
+
+  # Task 5c, item 4: `file` names the dataset, not the file currently
+  # storing it, and must never change on promotion -- every read-path lookup
+  # keys on the source's basename, so a renamed entry would be invisible to
+  # read_built() even though it just successfully served this one.
+  m2 <- yaml::read_yaml(mp)
+  expect_equal(m2$datasets[[1]]$file, "built_test.sas7bdat")
+})
+
+test_that("a cache miss on a promoted entry reconverts without rewriting its provenance", {
+  # Task 5c, item 6: if a promoted entry's parquet is lost while its retired
+  # source happens to still be present, the ordinary miss path would replace
+  # the whole entry via update_manifest() -- recording the SOURCE's hash as
+  # sha256 (wrong: role: "primary" means sha256 describes the parquet) and
+  # dropping promoted_date/source_sha256, permanently breaking
+  # verify_manifest() on a study whose data is intact. The parquet should be
+  # reconverted, but every promotion field must survive untouched and the
+  # recorded sha256 must describe the new parquet.
+  skip_if_no_arrow()
+  dir <- withr::local_tempdir()
+  make_study_fixture(dir, n = 20L)
+  cfg <- study_config(dir)
+  read_built(cfg)                                  # populate the cache
+
+  mp <- file.path(dir, "manifest.yaml")
+  m <- yaml::read_yaml(mp)
+  m$datasets[[1]]$role          <- "primary"
+  m$datasets[[1]]$promoted_date <- "2026-08-01"
+  m$datasets[[1]]$source_sha256 <- m$datasets[[1]]$sha256
+  yaml::write_yaml(m, mp)
+
+  parquet <- file.path(dir, "datasets", "built_test.parquet")
+  unlink(parquet)                                  # lost, source still present
+
+  d <- read_built(cfg)
+  expect_equal(nrow(d), 20L)
+  expect_true(file.exists(parquet))
+
+  m3 <- yaml::read_yaml(mp)
+  expect_equal(m3$datasets[[1]]$role, "primary")
+  expect_equal(m3$datasets[[1]]$promoted_date, "2026-08-01")
+  expect_equal(m3$datasets[[1]]$source_sha256, m$datasets[[1]]$source_sha256)
+  expect_equal(m3$datasets[[1]]$sha256,
+              digest::digest(parquet, algo = "sha256", file = TRUE))
+})
+
+test_that("refresh = TRUE on a promoted entry errors clearly even when the cache is disabled", {
+  # Task 5c, item 7: the role: "primary" guard must fire before the
+  # .cache_enabled() early return, or with arrow absent (or the cache
+  # disabled) the call falls through to reader(path) on a retired,
+  # possibly-missing source and dies inside haven instead of naming the
+  # actual reason.
+  skip_if_no_arrow()
+  dir <- withr::local_tempdir()
+  make_study_fixture(dir, n = 20L)
+  cfg <- study_config(dir)
+  read_built(cfg)                                  # populate the cache (needs arrow)
+
+  mp <- file.path(dir, "manifest.yaml")
+  m <- yaml::read_yaml(mp)
+  m$datasets[[1]]$role <- "primary"
+  yaml::write_yaml(m, mp)
+  file.remove(file.path(dir, "datasets", "built_test.sas7bdat"))
+
+  withr::local_options(hvtiRutilities.disable_parquet_cache = TRUE)
+  expect_error(read_built(cfg, refresh = TRUE), "primary")
+})
+
+test_that("a promoted entry with no parquet names the parquet as the missing copy, not the retired source", {
+  # Task 5c, item 7: the source was retired on purpose -- naming it as
+  # "missing" in the error is misleading. For a promoted entry whose parquet
+  # is also gone, the parquet is the copy that's actually missing.
+  skip_if_no_arrow()
+  dir <- withr::local_tempdir()
+  make_study_fixture(dir, n = 20L)
+  cfg <- study_config(dir)
+  read_built(cfg)                                  # populate the cache
+
+  mp <- file.path(dir, "manifest.yaml")
+  m <- yaml::read_yaml(mp)
+  m$datasets[[1]]$role <- "primary"
+  yaml::write_yaml(m, mp)
+  file.remove(file.path(dir, "datasets", "built_test.sas7bdat"))
+  file.remove(file.path(dir, "datasets", "built_test.parquet"))
+
+  expect_error(read_built(cfg), "built_test\\.parquet")
 })
 
 test_that("refresh = TRUE re-reads the source even when the cache looks valid", {
@@ -194,31 +280,34 @@ test_that("refresh = TRUE on a promoted entry with no source errors clearly", {
   expect_error(read_built(cfg, refresh = TRUE), "primary")
 })
 
-test_that("a same-size source inside the mtime ambiguity window is verified by sha256, not trusted", {
-  # Ambiguity is constructed two ways at once, both required by the design:
-  #   - same size: the replacement keeps the same shape (20 rows, same
-  #     columns/types) as the original, so haven writes an identical
-  #     page-aligned 16384-byte file -- size alone cannot see the change.
-  #   - near-but-not-exact mtime: the rewritten source's mtime is set to the
-  #     recorded stamp + 0.3s. That is above the sub-millisecond round-trip
-  #     noise the manifest's string(de)serialization of mtime introduces
-  #     (verified empirically at ~1e-6s), so it is NOT treated as an exact,
-  #     trusted match -- but it is well inside the 1-second ambiguity window
-  #     (assumed SMB mtime granularity), so it is NOT trusted as a confident
-  #     "different file" signal either. Only the recorded sha256 can settle
-  #     it, and it must not match the rewritten content.
+test_that("a whole-second source mtime is verified by sha256, not trusted directly", {
+  # Whether an unchanged mtime alone proves an unchanged file is a property
+  # of the filesystem, measured rather than assumed: a whole-second mtime
+  # means the filesystem cannot see inside that second, so an exact tie
+  # could also be a same-tick rewrite -- exactly what is constructed here.
+  # Same size (the replacement keeps the same shape, so haven writes an
+  # identical page-aligned 16384-byte file) means only the recorded sha256
+  # can catch the rewrite, and it must not match the new content.
   skip_if_no_arrow()
   dir <- withr::local_tempdir()
   make_study_fixture(dir, n = 20L)
   cfg <- study_config(dir)
-  read_built(cfg)                                   # populate the cache
+  read_built(cfg)                                    # populate the cache
 
   src <- file.path(dir, "datasets", "built_test.sas7bdat")
   size_before <- file.info(src)$size
 
+  # Force the recorded stamp to a whole second, so the fast path cannot
+  # apply and the sha256 fallback is exercised deterministically regardless
+  # of this filesystem's native mtime resolution.
+  whole_second <- as.POSIXct(floor(as.numeric(Sys.time())),
+                              origin = "1970-01-01", tz = "UTC")
+  Sys.setFileTime(src, whole_second)
   mp <- file.path(dir, "manifest.yaml")
   m  <- yaml::read_yaml(mp)
-  stamp <- as.POSIXct(m$datasets[[1]]$source_mtime, tz = "UTC")
+  m$datasets[[1]]$source_mtime <- format(whole_second, "%Y-%m-%d %H:%M:%OS6",
+                                         tz = "UTC")
+  yaml::write_yaml(m, mp)
 
   replacement <- data.frame(
     id      = 1:20,
@@ -227,37 +316,37 @@ test_that("a same-size source inside the mtime ambiguity window is verified by s
     iv_dead = as.numeric(c(20:2, 999))              # same shape, changed value
   )
   suppressWarnings(haven::write_sas(replacement, src))
-  Sys.setFileTime(src, stamp + 0.3)
+  Sys.setFileTime(src, whole_second)                  # exact, whole-second tie
 
-  expect_equal(file.info(src)$size, size_before)     # confirms size is a dead end
+  expect_equal(file.info(src)$size, size_before)      # confirms size is a dead end
 
   d <- read_built(cfg)
-  expect_equal(nrow(d), 20L)
-  expect_equal(d$iv_dead[20], 999)
+  expect_equal(d$iv_dead[20], 999)                    # NOT the stale value
 })
 
-test_that("an unchanged source inside the ambiguity window is trusted via sha256, not reconverted", {
-  # The companion case to the test above, and the one that actually pins down
-  # "verify sha256" rather than "always distrust an inexact mtime match": the
-  # source's content is untouched, only its mtime is nudged by 0.3s (inside
-  # the ambiguity window, e.g. clock skew or a benign re-stat that doesn't
-  # rewrite the file). A correct sha256 fallback recomputes the hash, finds
-  # it matches the recorded one, and serves the existing parquet unchanged.
-  # An implementation that instead treats "not an exact mtime match" as
-  # automatically invalid would reconvert here even though nothing changed,
-  # which is the "sha256 is not the fast path" regression the design warns
-  # against -- caught by checking the parquet was NOT rewritten.
+test_that("an unchanged source with a whole-second mtime is trusted via sha256, not reconverted", {
+  # The companion case: content genuinely unchanged, mtime an exact
+  # whole-second tie. The sha256 fallback must recompute, find a match, and
+  # serve the existing parquet rather than reconverting.
   skip_if_no_arrow()
   dir <- withr::local_tempdir()
   make_study_fixture(dir, n = 20L)
   cfg <- study_config(dir)
-  read_built(cfg)                                    # populate the cache
+  read_built(cfg)                                     # populate the cache
+
+  src <- file.path(dir, "datasets", "built_test.sas7bdat")
+  whole_second <- as.POSIXct(floor(as.numeric(Sys.time())),
+                              origin = "1970-01-01", tz = "UTC")
+  Sys.setFileTime(src, whole_second)
+  mp <- file.path(dir, "manifest.yaml")
+  m  <- yaml::read_yaml(mp)
+  m$datasets[[1]]$source_mtime <- format(whole_second, "%Y-%m-%d %H:%M:%OS6",
+                                         tz = "UTC")
+  m$datasets[[1]]$sha256 <- digest::digest(src, algo = "sha256", file = TRUE)
+  yaml::write_yaml(m, mp)
 
   parquet <- file.path(dir, "datasets", "built_test.parquet")
   parquet_mtime_before <- file.info(parquet)$mtime
-
-  src <- file.path(dir, "datasets", "built_test.sas7bdat")
-  Sys.setFileTime(src, file.info(src)$mtime + 0.3)    # touch only, no rewrite
 
   d <- read_built(cfg)
   expect_equal(nrow(d), 20L)
@@ -270,61 +359,25 @@ test_that("an unchanged source inside the ambiguity window is trusted via sha256
   expect_true(identical(file.info(parquet)$mtime, parquet_mtime_before))
 })
 
-test_that("an exact mtime tie whose stamp sits inside the risky window does not serve a stale parquet", {
-  # This is the scenario Change 0 exists for: a same-tick rewrite is
-  # invisible to mtime, and treating an exact tie as proof of no change would
-  # serve stale data forever. The fix requires the rewrite be caught via
-  # sha256 whenever the recorded stamp itself was taken close to the source's
-  # mtime -- the "risky" tick.
-  skip_if_no_arrow()
-  dir <- withr::local_tempdir()
-  make_study_fixture(dir, n = 20L)
-  cfg <- study_config(dir)
-  read_built(cfg)                                    # populate the cache
-
-  src <- file.path(dir, "datasets", "built_test.sas7bdat")
-  mp  <- file.path(dir, "manifest.yaml")
-  m   <- yaml::read_yaml(mp)
-  original_mtime <- m$datasets[[1]]$source_mtime
-
-  # Force the entry's stamp squarely inside the risky window -- taken at the
-  # same instant as the source's own mtime -- regardless of how fast this
-  # test happens to execute.
-  m$datasets[[1]]$stamp_time <- original_mtime
-  yaml::write_yaml(m, mp)
-
-  # Same shape (20 rows, same columns) as the original fixture, so the
-  # rewritten file is exactly as many bytes as the original -- size alone
-  # cannot see this change either.
-  replacement <- data.frame(
-    id      = 1:20,
-    x       = as.numeric(1:20),
-    dead    = c(rep(1L, 8), rep(0L, 12)),
-    iv_dead = as.numeric(c(20:2, 999))                # distinguishing value
-  )
-  suppressWarnings(haven::write_sas(replacement, src))
-  Sys.setFileTime(src, as.POSIXct(original_mtime, tz = "UTC"))  # exact tie
-
-  d <- read_built(cfg)
-  expect_equal(d$iv_dead[20], 999)                    # NOT the stale value
-})
-
-test_that("a stamp comfortably after mtime is trusted without hashing", {
-  # The companion case: once the stamp is safely outside the risky window,
-  # the fast path must not pay for a hash at all -- proved by corrupting the
-  # recorded sha256 and confirming the cache is still served, untouched.
+test_that("a fractional (sub-second) source mtime is trusted directly, without hashing", {
+  # The companion to both tests above: when the filesystem's own mtime
+  # carries a fractional part, that tick is microseconds wide and mtime
+  # alone is trusted -- proved by corrupting the recorded sha256 and
+  # confirming the cache is still served, untouched.
   skip_if_no_arrow()
   dir <- withr::local_tempdir()
   make_study_fixture(dir, n = 20L)
   cfg <- study_config(dir)
   read_built(cfg)
 
+  src <- file.path(dir, "datasets", "built_test.sas7bdat")
+  fractional <- as.POSIXct(as.numeric(Sys.time()) + 5.123456,
+                            origin = "1970-01-01", tz = "UTC")
+  Sys.setFileTime(src, fractional)
   mp <- file.path(dir, "manifest.yaml")
   m  <- yaml::read_yaml(mp)
-  stamp <- as.numeric(as.POSIXct(m$datasets[[1]]$source_mtime, tz = "UTC"))
-  m$datasets[[1]]$stamp_time <- format(
-    as.POSIXct(stamp + 5, origin = "1970-01-01", tz = "UTC"),
-    "%Y-%m-%d %H:%M:%OS6", tz = "UTC")
+  m$datasets[[1]]$source_mtime <- format(fractional, "%Y-%m-%d %H:%M:%OS6",
+                                         tz = "UTC")
   m$datasets[[1]]$sha256 <- strrep("0", 64)           # deliberately wrong
   yaml::write_yaml(m, mp)
 
@@ -334,6 +387,34 @@ test_that("a stamp comfortably after mtime is trusted without hashing", {
   d <- read_built(cfg)
   expect_equal(nrow(d), 20L)
   expect_true(identical(file.info(parquet)$mtime, parquet_mtime_before))
+})
+
+# ---------------------------------------------------------------------------
+# Task 5c, item 3: a torn read is caught and discarded, not cached.
+# ---------------------------------------------------------------------------
+
+test_that("a source that changes mid-read is discarded and errors, writing nothing", {
+  skip_if_no_arrow()
+  dir <- withr::local_tempdir()
+  make_study_fixture(dir, n = 20L)
+  src <- file.path(dir, "datasets", "built_test.sas7bdat")
+  manifest_path <- file.path(dir, "manifest.yaml")
+
+  # A reader that simulates a rewrite landing while the read is in flight:
+  # the source's mtime differs by the time this "read" returns its frame,
+  # even though the frame itself was already captured.
+  reader <- function(f) {
+    Sys.setFileTime(f, file.info(f)$mtime + 100)
+    data.frame(id = 1:20)
+  }
+
+  expect_error(
+    hvtiRutilities:::.cache_read(src, reader, manifest_path),
+    "changed"
+  )
+  expect_false(file.exists(file.path(dir, "datasets", "built_test.parquet")))
+  expect_false(file.exists(file.path(dir, "datasets", "built_test.schema.csv")))
+  expect_false(file.exists(manifest_path))
 })
 
 # ---------------------------------------------------------------------------

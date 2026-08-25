@@ -842,6 +842,87 @@ test_that("update_manifest rejects an unknown role", {
   )
 })
 
+test_that("verify_manifest hashes the parquet, not the source, for a role: primary entry", {
+  # Task 5c, item 5: `file` never changes on promotion, so which physical
+  # file sha256 describes cannot be inferred from the name -- only from
+  # `role`. A missing source is also expected once role is "primary": the
+  # source was retired on purpose, so its absence must not fail here.
+  skip_if_not_installed("arrow")
+  dir <- withr::local_tempdir()
+  f   <- file.path(dir, "d.sas7bdat")
+  suppressWarnings(haven::write_sas(data.frame(a = 1:3), f))
+  mp  <- file.path(dir, "manifest.yaml")
+  update_manifest(f, manifest_path = mp, n_cols = 1L, n_rows = 3L)
+
+  parquet <- file.path(dir, "d.parquet")
+  arrow::write_parquet(data.frame(a = 1:3), parquet)
+  parquet_sha <- digest::digest(parquet, algo = "sha256", file = TRUE)
+
+  m <- yaml::read_yaml(mp)
+  m$datasets[[1]]$role   <- "primary"
+  m$datasets[[1]]$sha256 <- parquet_sha
+  yaml::write_yaml(m, mp)
+
+  file.remove(f)                                   # the retired source
+
+  res <- verify_manifest(mp, stop_on_error = FALSE)
+  expect_equal(res$status[1], "OK")
+})
+
+test_that("verify_manifest fails a role: primary entry when the parquet's hash doesn't match", {
+  skip_if_not_installed("arrow")
+  dir <- withr::local_tempdir()
+  f   <- file.path(dir, "d.sas7bdat")
+  suppressWarnings(haven::write_sas(data.frame(a = 1:3), f))
+  mp  <- file.path(dir, "manifest.yaml")
+  update_manifest(f, manifest_path = mp, n_cols = 1L, n_rows = 3L)
+
+  parquet <- file.path(dir, "d.parquet")
+  arrow::write_parquet(data.frame(a = 1:3), parquet)
+
+  m <- yaml::read_yaml(mp)
+  m$datasets[[1]]$role   <- "primary"
+  m$datasets[[1]]$sha256 <- strrep("0", 64)         # deliberately wrong
+  yaml::write_yaml(m, mp)
+
+  res <- verify_manifest(mp, stop_on_error = FALSE)
+  expect_equal(res$status[1], "FAIL")
+  expect_match(res$message[1], "mismatch")
+})
+
+test_that("verify_manifest still fails a role: source entry with a missing file", {
+  # The companion to the two tests above: a missing source is only expected
+  # once the entry is promoted. A `role: "source"` entry (the default) with
+  # no file on disk is still a genuine failure.
+  dir <- withr::local_tempdir()
+  f   <- file.path(dir, "d.csv")
+  write.csv(data.frame(a = 1:3), f, row.names = FALSE)
+  mp  <- file.path(dir, "manifest.yaml")
+  update_manifest(f, manifest_path = mp, n_cols = 1L)
+  file.remove(f)
+
+  res <- verify_manifest(mp, stop_on_error = FALSE)
+  expect_equal(res$status[1], "FAIL")
+  expect_match(res$message[1], "not found")
+})
+
+test_that("verify_manifest fails when a role: primary entry's parquet is missing", {
+  dir <- withr::local_tempdir()
+  f   <- file.path(dir, "d.sas7bdat")
+  suppressWarnings(haven::write_sas(data.frame(a = 1:3), f))
+  mp  <- file.path(dir, "manifest.yaml")
+  update_manifest(f, manifest_path = mp, n_cols = 1L, n_rows = 3L)
+
+  m <- yaml::read_yaml(mp)
+  m$datasets[[1]]$role <- "primary"
+  yaml::write_yaml(m, mp)
+  # no d.parquet ever written
+
+  res <- verify_manifest(mp, stop_on_error = FALSE)
+  expect_equal(res$status[1], "FAIL")
+  expect_match(res$message[1], "d\\.parquet")
+})
+
 test_that("verify_manifest fails when the sidecar has been edited", {
   dir <- withr::local_tempdir()
   f <- file.path(dir, "d.csv")

@@ -37,32 +37,52 @@
 - The parquet cache's validity check now follows the manifest entry's `role`
   rather than a single size/mtime heuristic. A `role: "primary"` entry is
   served from its parquet unconditionally — the source may have been retired
-  and need not exist. A `role: "source"` entry falls back to verifying the
-  recorded `sha256` when the source's `mtime` differs from the recorded stamp
-  by less than the filesystem's reliable granularity (a named constant, since
-  the study tree is an SMB mount where sub-second `mtime` changes can be
-  invisible) — size alone cannot be trusted either, since a `.sas7bdat` is
-  page-aligned and a changed row count can leave its size identical. The
-  source is now stat'd before the read rather than after, so a source
+  and need not exist. A `role: "source"` entry is valid when the source's
+  `size` and `mtime` both match the recorded stamp; size alone cannot be
+  trusted, since a `.sas7bdat` is page-aligned and a changed row count can
+  leave its size identical. Whether a matching `mtime` alone proves the
+  source is unchanged is a property of the filesystem, and it is measured
+  from the `stat` rather than assumed: a fractional `mtime` means sub-second
+  resolution and is trusted directly; a whole-second `mtime` means the
+  filesystem cannot see inside that second, and the recorded `sha256` is
+  verified instead. Production runs on a local filesystem with nanosecond
+  `mtime`, so the fast path applies there; development over SMB may see
+  whole-second stamps and pay for a hash — neither is a special case in the
+  code. The source is stat'd before the read rather than after, so a source
   rewritten mid-read is stamped conservatively stale instead of validating
-  forever. An exact `mtime` tie is no longer treated as proof the source is
-  unchanged — it is also what a rewrite within the same filesystem tick looks
-  like. The manifest entry now also records the wall-clock time the stamp
-  itself was taken, and the fast path is trusted only once that stamp is at
-  least one ambiguity window later than the `mtime` it records; otherwise the
-  `sha256` is verified, and a successful verification re-stamps the entry so
-  later reads take the fast path. An entry written before this field existed
-  has no stamp time and is treated as risky, so it verifies once and
-  re-stamps itself into the fast path.
+  forever, and if the source's `size` or `mtime` changes again between that
+  `stat` and the end of the read, the frame is discarded and the read errors
+  rather than caching a possibly torn result. (An earlier draft of this
+  validity check compared the source's `mtime` against a client-side
+  `Sys.time()` recorded at conversion; that compared two different clocks
+  whenever the files live on another host, so a client running even one
+  second fast made every entry look unambiguous forever. It never shipped in
+  a release.)
 - `read_built()` gains `refresh = TRUE`, which forces a re-read from the
-  source and a reconversion regardless of role or cached stamp — for changes
-  a timestamp can't express, such as a rebuild that preserves `mtime` or a
-  correction applied out of band. `refresh = TRUE` against a `role: "primary"`
-  entry errors clearly, naming the role, rather than failing inside haven.
+  source and a reconversion regardless of role or the cached `size`/`mtime`
+  stamp — for changes a timestamp can't express, such as a rebuild that
+  preserves `mtime` or a correction applied out of band. `refresh = TRUE`
+  against a `role: "primary"` entry errors clearly, naming the role, rather
+  than failing inside haven, even with `arrow` absent or the cache disabled.
   `read_built()` also now serves a `role: "primary"` entry whose source file
   is missing, instead of erroring before the manifest is even consulted —
   without this, promotion (retiring the source once its parquet is
-  authoritative) was unreachable.
+  authoritative) was unreachable. If a promoted entry's parquet is also
+  missing, the error now names the parquet as the missing copy rather than
+  the source, which was retired on purpose.
+- `verify_manifest()` now hashes whichever file a manifest entry's `role`
+  makes authoritative — the source for `role: "source"`, the parquet
+  (resolved the same way the cache names it) for `role: "primary"` — rather
+  than always hashing the entry's own file. `file` never changes on
+  promotion, so this cannot be inferred from the name. A missing source is
+  therefore no longer reported as a failure once an entry is promoted; it is
+  expected, since promotion means the source was retired.
+- A cache miss on a promoted (`role: "primary"`) entry — its parquet lost
+  while the retired source happens to still be present — now reconverts the
+  parquet without rewriting the entry as an ordinary miss would: `sha256` is
+  updated to describe the new parquet, and `promoted_date` and
+  `source_sha256` are left untouched, rather than being silently dropped and
+  replaced with the source's own hash.
 - The parquet cache now verifies each conversion round-trips before
   returning: the freshly written parquet is read back and compared against
   the frame haven returned — column names, order, classes and values — and a
