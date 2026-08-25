@@ -127,7 +127,11 @@ read_built <- function(cfg = study_config()) {
   }
 
   # Carries SAS variable labels through; listings print labels, not names.
-  d <- as.data.frame(read_clinical_data(p, convert_types = FALSE))
+  d <- as.data.frame(
+    .cache_read(p,
+                function(f) read_clinical_data(f, convert_types = FALSE),
+                manifest_path = file.path(cfg$root, "manifest.yaml"))
+  )
 
   # Lowercasing is unconditional, so a source carrying both FOO and foo would
   # yield two columns named foo and every downstream d$foo would silently take

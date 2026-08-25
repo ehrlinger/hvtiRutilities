@@ -387,8 +387,7 @@ verify_manifest <- function(manifest_path = "manifest.yaml",
     }
 
     if (!is.null(entry$schema_sha256)) {
-      side <- resolve_entry(paste0(tools::file_path_sans_ext(entry$file),
-                                   ".schema.csv"))
+      side <- resolve_entry(basename(.derived_paths(entry$file)$schema))
       if (!file.exists(side)) {
         return(data.frame(
           file = entry$file, status = "FAIL",

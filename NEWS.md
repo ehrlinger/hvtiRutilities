@@ -26,6 +26,14 @@
 - `verify_manifest()` checks `schema_sha256` against the sidecar on disk, and
   reports two entries whose file stems collide and would therefore claim the
   same derived `.parquet` and `.schema.csv` paths.
+- `read_built()` now caches its source as parquet on first read and uses that
+  cache while the source's size and modification time are unchanged. The
+  schema sidecar and manifest entry are written from the haven read, before
+  the parquet exists, so the recorded baseline is independent of the
+  conversion. Conversion is lazy: a dataset nobody reads is never converted.
+  `arrow` is a suggested package — without it, or with
+  `options(hvtiRutilities.disable_parquet_cache = TRUE)`, reads behave exactly
+  as before.
 
 ## Bug fixes
 
