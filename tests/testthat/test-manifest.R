@@ -760,3 +760,87 @@ test_that("strict = TRUE still stops by default when an entry fails", {
                                strict = TRUE),
                "not recorded")
 })
+
+test_that("update_manifest records n_cols, schema_sha256 and role", {
+  dir <- withr::local_tempdir()
+  f <- file.path(dir, "d.csv")
+  write.csv(data.frame(a = 1:3, b = 4:6), f, row.names = FALSE)
+  side <- file.path(dir, "d.schema.csv")
+  write.csv(dataset_schema(data.frame(a = 1:3, b = 4:6)), side, row.names = FALSE)
+  mp <- file.path(dir, "manifest.yaml")
+
+  update_manifest(f, manifest_path = mp, n_cols = 2L,
+                  schema_sha256 = digest::digest(side, algo = "sha256", file = TRUE))
+
+  m <- yaml::read_yaml(mp)
+  expect_equal(m$datasets[[1]]$n_cols, 2L)
+  expect_equal(m$datasets[[1]]$role, "source")
+  expect_type(m$datasets[[1]]$schema_sha256, "character")
+})
+
+test_that("update_manifest rejects an unknown role", {
+  dir <- withr::local_tempdir()
+  f <- file.path(dir, "d.csv")
+  write.csv(data.frame(a = 1), f, row.names = FALSE)
+
+  expect_error(
+    update_manifest(f, manifest_path = file.path(dir, "manifest.yaml"),
+                    role = "authoritative"),
+    "should be one of"
+  )
+})
+
+test_that("verify_manifest fails when the sidecar has been edited", {
+  dir <- withr::local_tempdir()
+  f <- file.path(dir, "d.csv")
+  write.csv(data.frame(a = 1:3), f, row.names = FALSE)
+  side <- file.path(dir, "d.schema.csv")
+  write.csv(dataset_schema(data.frame(a = 1:3)), side, row.names = FALSE)
+  mp <- file.path(dir, "manifest.yaml")
+  update_manifest(f, manifest_path = mp, n_cols = 1L,
+                  schema_sha256 = digest::digest(side, algo = "sha256", file = TRUE))
+
+  cat("tampered\n", file = side, append = TRUE)
+
+  res <- verify_manifest(mp, stop_on_error = FALSE)
+  expect_true(any(res$status == "FAIL"))
+  expect_match(paste(res$message, collapse = " "), "Schema")
+})
+
+test_that("verify_manifest reports two entries claiming the same derived paths", {
+  dir <- withr::local_tempdir()
+  write.csv(data.frame(a = 1), file.path(dir, "built.csv"), row.names = FALSE)
+  saveRDS(data.frame(a = 1), file.path(dir, "built.rds"))
+  mp <- file.path(dir, "manifest.yaml")
+  update_manifest(file.path(dir, "built.csv"), manifest_path = mp, n_cols = 1L)
+  update_manifest(file.path(dir, "built.rds"), manifest_path = mp, n_cols = 1L,
+                  n_rows = 1L)
+
+  res <- verify_manifest(mp, stop_on_error = FALSE)
+  expect_match(paste(res$message, collapse = " "), "derived path")
+})
+
+test_that("verify_manifest finds datasets in datasets/ without an explicit data_dir", {
+  dir <- withr::local_tempdir()
+  dir.create(file.path(dir, "datasets"))
+  f <- file.path(dir, "datasets", "d.csv")
+  write.csv(data.frame(a = 1:3), f, row.names = FALSE)
+  mp <- file.path(dir, "manifest.yaml")
+  update_manifest(f, manifest_path = mp, n_cols = 1L)
+
+  res <- verify_manifest(mp, stop_on_error = FALSE)
+
+  expect_equal(res$status, "OK")
+})
+
+test_that("verify_manifest still resolves alongside the manifest when there is no datasets/", {
+  dir <- withr::local_tempdir()
+  f <- file.path(dir, "d.csv")
+  write.csv(data.frame(a = 1:3), f, row.names = FALSE)
+  mp <- file.path(dir, "manifest.yaml")
+  update_manifest(f, manifest_path = mp, n_cols = 1L)
+
+  res <- verify_manifest(mp, stop_on_error = FALSE)
+
+  expect_equal(res$status, "OK")
+})

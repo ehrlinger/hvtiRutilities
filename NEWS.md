@@ -18,6 +18,14 @@
   variable's own name. This is the durable description of a source dataset:
   it describes shape only, so two reads of an unchanged file produce an
   identical schema.
+- `update_manifest()` gains `n_cols`, `schema_sha256` and `role`. A row count
+  alone cannot detect a dropped column, and a hash of the schema sidecar makes
+  the manifest-to-sidecar link tamper-evident. `role` is `"source"` or
+  `"primary"` and distinguishes a dataset SAS still builds from one whose
+  parquet has become authoritative.
+- `verify_manifest()` checks `schema_sha256` against the sidecar on disk, and
+  reports two entries whose file stems collide and would therefore claim the
+  same derived `.parquet` and `.schema.csv` paths.
 
 ## Bug fixes
 

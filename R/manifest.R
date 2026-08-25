@@ -86,6 +86,14 @@
 #'   \code{"Epic EMR, query v4.2, ICD mapping v3.2"}).
 #' @param sort_key Character. Column name(s) that define the canonical sort
 #'   order of the dataset.
+#' @param n_cols Integer. Column count. Pass it from a frame already read; a
+#'   row count alone cannot detect a dropped column.
+#' @param schema_sha256 Character. SHA-256 of this dataset's schema sidecar,
+#'   making the manifest-to-sidecar link tamper-evident.
+#' @param role Either \code{"source"} (the file is authoritative and any
+#'   parquet beside it is a disposable cache) or \code{"primary"} (the parquet
+#'   is authoritative because the source has been retired). See the
+#'   \emph{Promotion} section of the read-layer design spec.
 #' @param verbose Logical. If \code{TRUE}, report which manifest entry was
 #'   added or updated via \code{\link[base]{message}}.  Defaults to
 #'   \code{FALSE} so that scripted or looped calls stay silent.
@@ -128,9 +136,13 @@ update_manifest <- function(file,
                             manifest_path = "manifest.yaml",
                             extract_date  = Sys.Date(),
                             n_rows        = NULL,
+                            n_cols        = NULL,
                             source        = NULL,
                             sort_key      = NULL,
+                            schema_sha256 = NULL,
+                            role          = c("source", "primary"),
                             verbose       = FALSE) {
+  role <- match.arg(role)
   if (!file.exists(file)) {
     stop("Dataset file not found: ", file)
   }
@@ -147,6 +159,12 @@ update_manifest <- function(file,
     n_rows       = as.integer(n_rows),
     sha256       = sha256
   )
+  # role is written even though every entry starts as "source". Adding the
+  # field once manifests exist across many studies would mean migrating them,
+  # which is the schema-drift problem this file exists to prevent.
+  entry$role <- role
+  if (!is.null(n_cols))        entry$n_cols        <- as.integer(n_cols)
+  if (!is.null(schema_sha256)) entry$schema_sha256 <- schema_sha256
   if (!is.null(source))   entry$source   <- source
   if (!is.null(sort_key)) entry$sort_key <- sort_key
 
@@ -222,9 +240,11 @@ update_manifest <- function(file,
 #'
 #' @param manifest_path Character. Path to the manifest YAML file.
 #'   Defaults to \code{"manifest.yaml"} in the current working directory.
-#' @param data_dir Character. Directory in which to look for the dataset files.
-#'   When \code{NULL} (default) the directory containing \code{manifest_path}
-#'   is used.
+#' @param data_dir Directory holding the dataset files. Defaults to
+#'   \code{datasets/} beneath the manifest's own directory when that exists,
+#'   and to the manifest's directory otherwise — matching the layout
+#'   \code{\link{study_init}} creates, where \code{manifest.yaml} sits at the
+#'   study root and datasets one level down.
 #' @param stop_on_error Logical. If \code{TRUE} (default) the function calls
 #'   \code{stop()} on the first failed check, preventing the analysis from
 #'   proceeding.  Set to \code{FALSE} to collect all errors and report them
@@ -295,7 +315,13 @@ verify_manifest <- function(manifest_path = "manifest.yaml",
   }
 
   if (is.null(data_dir)) {
-    data_dir <- dirname(normalizePath(manifest_path))
+    # study_init() writes manifest.yaml at the study root and the datasets one
+    # level down, so the manifest's own directory is the wrong place to look.
+    # Prefer <manifest dir>/datasets when it exists; fall back to the manifest's
+    # directory for a flat layout.
+    base <- dirname(normalizePath(manifest_path))
+    nested <- file.path(base, "datasets")
+    data_dir <- if (dir.exists(nested)) nested else base
   }
 
   results <- lapply(manifest$datasets, function(entry) {
@@ -346,6 +372,26 @@ verify_manifest <- function(manifest_path = "manifest.yaml",
         row_count_checked = FALSE,
         stringsAsFactors = FALSE
       ))
+    }
+
+    if (!is.null(entry$schema_sha256)) {
+      side <- file.path(data_dir,
+                        paste0(tools::file_path_sans_ext(entry$file),
+                               ".schema.csv"))
+      if (!file.exists(side)) {
+        return(data.frame(
+          file = entry$file, status = "FAIL",
+          message = paste0("Schema sidecar not found: ", side),
+          row_count_checked = FALSE, stringsAsFactors = FALSE))
+      }
+      side_sha <- digest::digest(side, algo = "sha256", file = TRUE)
+      if (!identical(side_sha, entry$schema_sha256)) {
+        return(data.frame(
+          file = entry$file, status = "FAIL",
+          message = paste0("Schema sidecar SHA-256 mismatch\n  expected: ",
+                           entry$schema_sha256, "\n  actual:   ", side_sha),
+          row_count_checked = FALSE, stringsAsFactors = FALSE))
+      }
     }
 
     # Row-count cross-check for supported formats.
@@ -449,6 +495,24 @@ verify_manifest <- function(manifest_path = "manifest.yaml",
       stringsAsFactors = FALSE
     )
   })
+
+  # Derived paths are stem-based, so two sources differing only by extension
+  # would claim the same .parquet and .schema.csv. Nothing overwrites silently
+  # today because the writer is keyed on the source, but the collision is
+  # reachable and produces a sidecar describing the wrong dataset.
+  stems <- vapply(manifest$datasets,
+                  function(e) tools::file_path_sans_ext(e$file), character(1))
+  clash <- unique(stems[duplicated(stems)])
+  if (length(clash)) {
+    files <- vapply(manifest$datasets, function(e) e$file, character(1))
+    collisions <- lapply(clash, function(s) data.frame(
+      file    = paste(files[stems == s], collapse = ", "),
+      status  = "FAIL",
+      message = paste0("Entries share the derived path stem '", s,
+                       "' and would claim the same .parquet and .schema.csv."),
+      row_count_checked = FALSE, stringsAsFactors = FALSE))
+    results <- c(results, collisions)
+  }
 
   report <- do.call(rbind, results)
   failures <- report[report$status == "FAIL", , drop = FALSE]

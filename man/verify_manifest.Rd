@@ -16,9 +16,11 @@ verify_manifest(
 \item{manifest_path}{Character. Path to the manifest YAML file.
 Defaults to \code{"manifest.yaml"} in the current working directory.}
 
-\item{data_dir}{Character. Directory in which to look for the dataset files.
-When \code{NULL} (default) the directory containing \code{manifest_path}
-is used.}
+\item{data_dir}{Directory holding the dataset files. Defaults to
+\code{datasets/} beneath the manifest's own directory when that exists,
+and to the manifest's directory otherwise — matching the layout
+\code{\link{study_init}} creates, where \code{manifest.yaml} sits at the
+study root and datasets one level down.}
 
 \item{stop_on_error}{Logical. If \code{TRUE} (default) the function calls
 \code{stop()} on the first failed check, preventing the analysis from

@@ -9,8 +9,11 @@ update_manifest(
   manifest_path = "manifest.yaml",
   extract_date = Sys.Date(),
   n_rows = NULL,
+  n_cols = NULL,
   source = NULL,
   sort_key = NULL,
+  schema_sha256 = NULL,
+  role = c("source", "primary"),
   verbose = FALSE
 )
 }
@@ -31,11 +34,22 @@ files only when \code{options(manifest.allow_heavy_rowcount = TRUE)} is
 set.
 all other file types supply this value explicitly.}
 
+\item{n_cols}{Integer. Column count. Pass it from a frame already read; a
+row count alone cannot detect a dropped column.}
+
 \item{source}{Character. Free-text description of the data source (e.g.
 \code{"Epic EMR, query v4.2, ICD mapping v3.2"}).}
 
 \item{sort_key}{Character. Column name(s) that define the canonical sort
 order of the dataset.}
+
+\item{schema_sha256}{Character. SHA-256 of this dataset's schema sidecar,
+making the manifest-to-sidecar link tamper-evident.}
+
+\item{role}{Either \code{"source"} (the file is authoritative and any
+parquet beside it is a disposable cache) or \code{"primary"} (the parquet
+is authoritative because the source has been retired). See the
+\emph{Promotion} section of the read-layer design spec.}
 
 \item{verbose}{Logical. If \code{TRUE}, report which manifest entry was
 added or updated via \code{\link[base]{message}}.  Defaults to
