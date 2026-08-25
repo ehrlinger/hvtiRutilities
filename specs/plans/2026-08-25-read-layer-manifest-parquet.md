@@ -491,6 +491,35 @@ git commit -m "fix: read_built() errors on lowercase column-name collisions"
   `schema_sha256` and `role`. `verify_manifest()` reports `FAIL` on a
   `schema_sha256` mismatch and on two entries claiming the same derived paths.
 
+- [ ] **Step 0: Fix a non-idempotent test in this file first**
+
+Pre-existing defect, fixed here because this task adds several tests to
+`tests/testthat/test-manifest.R` and you will be running that file repeatedly.
+
+`test_that("update_manifest reports add and update when verbose = TRUE", ...)`
+around line 585 uses `tmp <- tempdir()`, which is the **session-wide** temp
+directory. `manifest_loud.yaml` therefore survives between runs in one R
+session, so on a second run the first `update_manifest()` call finds an
+existing entry and emits `Manifest updated:` where the test expects
+`Manifest entry added:`. Confirmed: run 1 gives 90 passes, run 2 gives 89
+passes and 1 failure.
+
+Replace `tmp <- tempdir()` with `tmp <- withr::local_tempdir()` in that test
+only. `withr` is already in Suggests and used elsewhere in this suite. Leave
+the other tests in the file alone: they use the same `tempdir()` pattern but
+with per-test filenames, so they do not depend on starting from a clean state.
+
+Verify with two runs in one session:
+
+```bash
+Rscript -e 'suppressMessages(devtools::load_all(".")); for (i in 1:2) { r <- testthat::test_file("tests/testthat/test-manifest.R", reporter = "silent"); df <- as.data.frame(r); cat("run", i, "PASS:", sum(df$passed), "FAIL:", sum(df$failed), "\n") }'
+```
+
+Expected: both runs report the same counts with `FAIL: 0`.
+
+Commit this separately from the rest of the task, so the fix is legible as a
+test-hygiene change rather than buried in the feature diff.
+
 - [ ] **Step 1: Write the failing test**
 
 Append to `tests/testthat/test-manifest.R`:
