@@ -1,5 +1,14 @@
 # hvtiRutilities 1.1.0
 
+## New features
+
+- `dataset_schema()` — one row per column giving creation position, name, R
+  class, SAS type, `format.sas` and label. Labels and formats are read from
+  the column attributes directly, so an absent label is `NA` rather than the
+  variable's own name. This is the durable description of a source dataset:
+  it describes shape only, so two reads of an unchanged file produce an
+  identical schema.
+
 ## Documentation
 
 - `proc_contents()` now documents that its `label` column is never `NA`: it
