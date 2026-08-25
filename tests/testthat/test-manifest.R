@@ -583,7 +583,7 @@ test_that("update_manifest is silent by default", {
 })
 
 test_that("update_manifest reports add and update when verbose = TRUE", {
-  tmp <- tempdir()
+  tmp <- withr::local_tempdir()
   csv <- write_temp_csv(n = 4, name = "cohort_loud.csv", dir = tmp)
   mpath <- file.path(tmp, "manifest_loud.yaml")
 
