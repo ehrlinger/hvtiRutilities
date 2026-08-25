@@ -26,6 +26,7 @@ Imports:
     labelled,
     readxl,
     tools,
+    utils,
     yaml
 Suggests:
     arrow,

@@ -94,6 +94,11 @@
 #'   parquet beside it is a disposable cache) or \code{"primary"} (the parquet
 #'   is authoritative because the source has been retired). See the
 #'   \emph{Promotion} section of the read-layer design spec.
+#' @param reader Character. The package and version that produced this
+#'   derived file (e.g. \code{"haven 2.5.5"}). Under \code{role = "primary"}
+#'   the parquet is the data, so the reader that produced it is part of its
+#'   provenance: a reader defect found later is otherwise unfindable once the
+#'   source is retired. \code{NULL} (default) omits the field.
 #' @param verbose Logical. If \code{TRUE}, report which manifest entry was
 #'   added or updated via \code{\link[base]{message}}.  Defaults to
 #'   \code{FALSE} so that scripted or looped calls stay silent.
@@ -141,6 +146,7 @@ update_manifest <- function(file,
                             sort_key      = NULL,
                             schema_sha256 = NULL,
                             role          = c("source", "primary"),
+                            reader        = NULL,
                             verbose       = FALSE) {
   role <- match.arg(role)
   if (!file.exists(file)) {
@@ -167,6 +173,7 @@ update_manifest <- function(file,
   if (!is.null(schema_sha256)) entry$schema_sha256 <- schema_sha256
   if (!is.null(source))   entry$source   <- source
   if (!is.null(sort_key)) entry$sort_key <- sort_key
+  if (!is.null(reader))   entry$reader   <- reader
 
   manifest <- if (file.exists(manifest_path)) {
     yaml::read_yaml(manifest_path)
@@ -199,7 +206,7 @@ update_manifest <- function(file,
     if (verbose) message("Manifest entry added: ", entry$file)
   }
 
-  yaml::write_yaml(manifest, manifest_path)
+  .atomic_write(manifest_path, function(tmp) yaml::write_yaml(manifest, tmp))
   invisible(manifest)
 }
 

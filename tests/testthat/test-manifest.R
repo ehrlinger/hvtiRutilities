@@ -779,6 +779,57 @@ test_that("update_manifest records n_cols, schema_sha256 and role", {
   expect_equal(m$datasets[[1]]$schema_sha256, expected_schema_sha)
 })
 
+test_that("update_manifest records reader when supplied", {
+  dir <- withr::local_tempdir()
+  f <- file.path(dir, "d.csv")
+  write.csv(data.frame(a = 1:3), f, row.names = FALSE)
+  mp <- file.path(dir, "manifest.yaml")
+
+  update_manifest(f, manifest_path = mp, reader = "haven 2.5.5")
+
+  m <- yaml::read_yaml(mp)
+  expect_equal(m$datasets[[1]]$reader, "haven 2.5.5")
+})
+
+test_that("update_manifest omits reader when not supplied", {
+  dir <- withr::local_tempdir()
+  f <- file.path(dir, "d.csv")
+  write.csv(data.frame(a = 1:3), f, row.names = FALSE)
+  mp <- file.path(dir, "manifest.yaml")
+
+  update_manifest(f, manifest_path = mp)
+
+  m <- yaml::read_yaml(mp)
+  expect_null(m$datasets[[1]]$reader)
+})
+
+test_that(".atomic_write() cleans up after a rename failure, for any writer, not just parquet", {
+  # update_manifest()'s manifest write and the parquet cache's sidecar write
+  # both go through this same helper (Change 4 generalises
+  # .write_parquet_atomic()'s temp-and-rename discipline into it). This
+  # proves the generalization directly, with a non-parquet payload.
+  #
+  # local_mocked_bindings() cannot stub file.rename(): it is called
+  # unqualified from base, not as an explicit import, so there is no binding
+  # for the mock to find. The rename is instead made to fail the way the OS
+  # itself reports a failure: renaming a file onto an existing directory
+  # returns FALSE (with a warning) rather than erroring.
+  dir <- withr::local_tempdir()
+  target <- file.path(dir, "manifest.yaml")
+  dir.create(target)                       # occupies the rename target
+
+  suppressWarnings(
+    expect_error(
+      hvtiRutilities:::.atomic_write(target,
+                                     function(tmp) writeLines("a: 1", tmp)),
+      "move"
+    )
+  )
+  expect_true(dir.exists(target))          # untouched -- still a directory
+  tmp_residue <- list.files(dir, pattern = "\\.tmp$", full.names = TRUE)
+  expect_length(tmp_residue, 0)
+})
+
 test_that("update_manifest rejects an unknown role", {
   dir <- withr::local_tempdir()
   f <- file.path(dir, "d.csv")

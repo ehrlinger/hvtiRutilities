@@ -23,20 +23,70 @@
 }
 
 # Write to a temporary name in the destination directory and rename into
-# place. Two jobs can race on the first read of a shared dataset, and rename
-# within a filesystem is atomic where a half-written .parquet is not.
-.write_parquet_atomic <- function(data, target) {
+# place. Two jobs can race on the first read/write of a shared dataset --
+# racing on the parquet, the schema sidecar, or the manifest itself -- and
+# rename within a filesystem is atomic where a half-written file is not.
+# `write_fn(tmp)` populates the temp file; every caller shares the same
+# create/rename/cleanup discipline rather than each reimplementing it.
+.atomic_write <- function(target, write_fn) {
   tmp <- tempfile(pattern = basename(target), tmpdir = dirname(target),
                   fileext = ".tmp")
   ok <- FALSE
   on.exit(if (!ok && file.exists(tmp)) unlink(tmp), add = TRUE)
-  arrow::write_parquet(data, tmp)
+  write_fn(tmp)
   if (!file.rename(tmp, target)) {
-    stop("Could not move the converted parquet into place: ", target,
+    stop("Could not move the written file into place: ", target,
          call. = FALSE)
   }
   ok <- TRUE
   invisible(target)
+}
+
+.write_parquet_atomic <- function(data, target) {
+  .atomic_write(target, function(tmp) arrow::write_parquet(data, tmp))
+}
+
+# A promoted dataset has no second chance: while an entry is role: "source" a
+# bad conversion self-heals at the next invalidation, but once the source is
+# retired nothing remains to disagree with the parquet. A hash of the bytes
+# just written proves only that the write completed, not that the write was
+# correct, so the parquet is read back and compared against the frame haven
+# returned -- the one thing a byte hash cannot check.
+.verify_parquet_roundtrip <- function(original, target) {
+  written <- as.data.frame(original)
+  back    <- as.data.frame(arrow::read_parquet(target))
+
+  bad <- if (!identical(names(written), names(back))) {
+    "<column names/order>"
+  } else {
+    hit <- Filter(function(nm) !identical(written[[nm]], back[[nm]]),
+                   names(written))
+    if (length(hit)) hit[[1]] else NULL
+  }
+
+  if (!is.null(bad)) {
+    unlink(target)
+    stop("read_built(): the parquet conversion of ", basename(target),
+         " did not round-trip -- column '", bad, "' differs after writing ",
+         "and reading it back. The parquet was removed.", call. = FALSE)
+  }
+  invisible(TRUE)
+}
+
+# The package that actually read `path`, mirroring read_clinical_data()'s own
+# dispatch by extension. This is recorded as provenance because once an entry
+# is promoted (role: "primary") the parquet is the data, and a reader defect
+# discovered later is otherwise unfindable -- re-reading the source is no
+# longer an option. NULL for formats read by base R (.csv, .rds), whose
+# version is already the R version other provenance already records.
+.reader_provenance <- function(path) {
+  pkg <- switch(tolower(tools::file_ext(path)),
+                sas7bdat = "haven",
+                xlsx     = ,
+                xls      = "readxl",
+                NULL)
+  if (is.null(pkg)) return(NULL)
+  paste(pkg, as.character(utils::packageVersion(pkg)))
 }
 
 # The manifest entry for one source file, or NULL.
@@ -64,6 +114,14 @@
   if (identical(entry$role, "primary")) return(TRUE)
 
   if (!file.exists(path)) return(FALSE)
+
+  # A half-written stamp -- source_size present but source_mtime absent, a
+  # hand edit or an interrupted write -- must not reach as.POSIXct(NULL) and
+  # error. Any missing stamp field means there is nothing trustworthy to
+  # compare against, so it is simply not valid, the same as no entry at all.
+  if (is.null(entry$source_size) || is.null(entry$source_mtime)) {
+    return(FALSE)
+  }
 
   info <- file.info(path)
 
@@ -134,7 +192,24 @@
   }
 
   if (!refresh && .cache_valid(path, derived, entry, manifest)) {
-    return(as.data.frame(arrow::read_parquet(derived$parquet)))
+    # An unreadable parquet -- truncated, corrupted, an interrupted write
+    # from outside this package -- must not be permanently fatal for a
+    # role: "source" entry: the source is still there to regenerate it from.
+    hit <- tryCatch(as.data.frame(arrow::read_parquet(derived$parquet)),
+                     error = function(e) e)
+    if (!inherits(hit, "error")) return(hit)
+
+    if (promoted) {
+      stop("read_built(): the cached parquet for ", basename(path),
+           " could not be read, and role: \"primary\" means it is the ",
+           "only copy of this dataset -- there is no source to regenerate ",
+           "it from. Underlying error: ", conditionMessage(hit),
+           call. = FALSE)
+    }
+    warning("read_built(): the cached parquet for ", basename(path),
+            " could not be read (", conditionMessage(hit), "); it will be ",
+            "regenerated from the source.", call. = FALSE)
+    # Fall through to the miss path below.
   }
 
   # Stat BEFORE reading, never after: captured afterwards, a source rewritten
@@ -151,7 +226,9 @@
   # dataset. Rewriting it from a later read would launder that away, so it is
   # written once and never again.
   if (!promoted) {
-    utils::write.csv(dataset_schema(d), derived$schema, row.names = FALSE)
+    .atomic_write(derived$schema, function(tmp) {
+      utils::write.csv(dataset_schema(d), tmp, row.names = FALSE)
+    })
   }
 
   # update_manifest() replaces the whole entry rather than merging into it, so
@@ -172,11 +249,13 @@
     } else {
       NULL
     },
-    role          = if (promoted) "primary" else "source"
+    role          = if (promoted) "primary" else "source",
+    reader        = .reader_provenance(path)
   )
   .stamp_source_state(manifest, basename(path), info)
 
   .write_parquet_atomic(d, derived$parquet)
+  .verify_parquet_roundtrip(d, derived$parquet)
   d
 }
 
@@ -196,6 +275,6 @@
     }
     e
   })
-  yaml::write_yaml(m, manifest_path)
+  .atomic_write(manifest_path, function(tmp) yaml::write_yaml(m, tmp))
   invisible(TRUE)
 }

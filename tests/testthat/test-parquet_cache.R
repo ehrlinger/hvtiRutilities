@@ -76,8 +76,12 @@ test_that("the sidecar of a promoted entry is never regenerated", {
 
   src <- file.path(dir, "datasets", "built_test.sas7bdat")
   Sys.setFileTime(src, Sys.time() + 5)
-  suppressWarnings(try(read_built(cfg), silent = TRUE))
+  # No try()/suppressWarnings() wrapper: a version that regressed and errored
+  # here (e.g. before reaching the sidecar branch) must fail this test, not
+  # pass it vacuously.
+  d <- read_built(cfg)
 
+  expect_s3_class(d, "data.frame")
   expect_equal(readLines(side), "do not overwrite")
 })
 
@@ -88,15 +92,40 @@ test_that("a failed conversion leaves no partial parquet", {
   target <- file.path(dir, "datasets", "x.parquet")
 
   # A list column holding an environment has no Arrow type arrow can infer,
-  # so write_parquet() errors. (A plain list column of atomic values, as an
-  # earlier draft of this test used, round-trips fine under arrow and would
-  # not exercise the cleanup path at all.)
+  # so write_parquet() errors before it ever opens the sink -- no temp file
+  # is created, so this only proves the target was never written, not that
+  # any cleanup ran. The companion test below forces the failure AFTER a
+  # successful write, which is the case that actually exercises cleanup.
   expect_error(
     hvtiRutilities:::.write_parquet_atomic(
       data.frame(a = I(list(1, environment()))), target),
     NULL
   )
   expect_false(file.exists(target))
+})
+
+test_that("a rename failure after a successful write leaves no target and no tmp residue", {
+  # testthat's local_mocked_bindings() cannot stub file.rename(): it is
+  # called unqualified from base, not as an explicit package import, so
+  # there is no binding for the mock to find. The rename is instead made to
+  # fail the same way the OS itself reports a failure: renaming a file onto
+  # an existing directory returns FALSE (with a warning) rather than
+  # erroring, so the write below succeeds and the failure comes only from
+  # the rename step -- the case the old test above cannot reach.
+  skip_if_no_arrow()
+  dir <- withr::local_tempdir()
+  target <- file.path(dir, "x.parquet")
+  dir.create(target)
+
+  suppressWarnings(
+    expect_error(
+      hvtiRutilities:::.write_parquet_atomic(data.frame(a = 1:3), target),
+      "move"
+    )
+  )
+  expect_true(dir.exists(target))          # untouched -- still a directory
+  tmp_residue <- list.files(dir, pattern = "\\.tmp$", full.names = TRUE)
+  expect_length(tmp_residue, 0)
 })
 
 test_that("reads still work when arrow is unavailable", {
@@ -305,4 +334,157 @@ test_that("a stamp comfortably after mtime is trusted without hashing", {
   d <- read_built(cfg)
   expect_equal(nrow(d), 20L)
   expect_true(identical(file.info(parquet)$mtime, parquet_mtime_before))
+})
+
+# ---------------------------------------------------------------------------
+# Change 1: the conversion round trip is verified, not just written.
+# ---------------------------------------------------------------------------
+
+test_that(".verify_parquet_roundtrip is silent when the parquet matches the frame it came from", {
+  skip_if_no_arrow()
+  target <- withr::local_tempfile(fileext = ".parquet")
+  original <- data.frame(id = 1:3, x = c(1.5, 2.5, 3.5))
+  arrow::write_parquet(original, target)
+
+  expect_true(hvtiRutilities:::.verify_parquet_roundtrip(original, target))
+  expect_true(file.exists(target))
+})
+
+test_that(".verify_parquet_roundtrip errors naming the first differing column and removes the parquet", {
+  skip_if_no_arrow()
+  target <- withr::local_tempfile(fileext = ".parquet")
+  original <- data.frame(id = 1:3, x = c(1.5, 2.5, 3.5), y = c("a", "b", "c"))
+
+  # Simulate a bad conversion: what's on disk disagrees with what haven
+  # returned, in the second column ('x'), even though the first ('id')
+  # matches -- proving the error names 'x', not just "something differs".
+  corrupted <- original
+  corrupted$x[2] <- 999
+  arrow::write_parquet(corrupted, target)
+
+  expect_error(
+    hvtiRutilities:::.verify_parquet_roundtrip(original, target),
+    "x"
+  )
+  expect_false(file.exists(target))
+})
+
+# ---------------------------------------------------------------------------
+# Change 2: an unreadable parquet must not be fatal (except for role: primary).
+# ---------------------------------------------------------------------------
+
+test_that("an unreadable parquet warns and falls back to regenerating a role: source entry", {
+  skip_if_no_arrow()
+  dir <- withr::local_tempdir()
+  make_study_fixture(dir, n = 20L)
+  cfg <- study_config(dir)
+  read_built(cfg)                                    # populate the cache
+
+  parquet <- file.path(dir, "datasets", "built_test.parquet")
+  writeLines("not a parquet file", parquet)           # truncate/corrupt
+
+  expect_warning(d <- read_built(cfg), "regenerat")
+  expect_equal(nrow(d), 20L)
+  # The fallback actually rewrote a valid parquet, not just returned data.
+  expect_equal(nrow(as.data.frame(arrow::read_parquet(parquet))), 20L)
+})
+
+test_that("an unreadable parquet errors plainly for a role: primary entry, naming it the only copy", {
+  skip_if_no_arrow()
+  dir <- withr::local_tempdir()
+  make_study_fixture(dir, n = 20L)
+  cfg <- study_config(dir)
+  read_built(cfg)
+
+  mp <- file.path(dir, "manifest.yaml")
+  m  <- yaml::read_yaml(mp)
+  m$datasets[[1]]$role <- "primary"
+  yaml::write_yaml(m, mp)
+
+  parquet <- file.path(dir, "datasets", "built_test.parquet")
+  writeLines("not a parquet file", parquet)
+
+  expect_error(read_built(cfg), "only copy")
+})
+
+# ---------------------------------------------------------------------------
+# Change 3: a half-written stamp must not crash the validity check.
+# ---------------------------------------------------------------------------
+
+test_that("a half-written stamp (source_size present, source_mtime absent) is treated as invalid, not an error", {
+  skip_if_no_arrow()
+  dir <- withr::local_tempdir()
+  make_study_fixture(dir, n = 20L)
+  cfg <- study_config(dir)
+  read_built(cfg)
+
+  mp <- file.path(dir, "manifest.yaml")
+  m  <- yaml::read_yaml(mp)
+  m$datasets[[1]]$source_mtime <- NULL     # simulate a hand edit / interrupted write
+  yaml::write_yaml(m, mp)
+
+  expect_no_error(d <- read_built(cfg))
+  expect_equal(nrow(d), 20L)
+})
+
+# ---------------------------------------------------------------------------
+# Change 7: cache-hit fidelity, and the writer/reader agreeing end to end.
+# ---------------------------------------------------------------------------
+
+test_that("a cache hit still carries haven_labelled value labels, format.sas, and POSIXct", {
+  # The existing round-trip test (above) writes and reads a synthetic frame
+  # directly with arrow, never through the cache. This exercises the actual
+  # cache-hit path -- .cache_read()'s second call, served from
+  # arrow::read_parquet() -- which is exactly where a conversion defect
+  # would show up and previously went untested. A stub reader is used
+  # because haven::write_sas() cannot itself write value-labelled columns
+  # into a real .sas7bdat (verified separately); the cache mechanism is
+  # what's under test here, not haven's SAS writer.
+  skip_if_no_arrow()
+  dir <- withr::local_tempdir()
+  make_study_fixture(dir)
+  src <- file.path(dir, "datasets", "built_test.sas7bdat")
+  manifest_path <- file.path(dir, "manifest.yaml")
+
+  rich <- data.frame(id = 1:5, x = as.numeric(1:5))
+  rich$grp <- haven::labelled(c(1, 2, 1, 2, 1), labels = c(No = 1, Yes = 2),
+                              label = "Group")
+  attr(rich$x, "format.sas") <- "BEST12"
+  rich$dt <- as.POSIXct("2020-01-01", tz = "UTC") + (0:4) * 3600
+
+  reader <- function(f) rich
+
+  hvtiRutilities:::.cache_read(src, reader, manifest_path)          # miss
+  d2 <- hvtiRutilities:::.cache_read(src, reader, manifest_path)    # hit
+
+  expect_s3_class(d2$grp, "haven_labelled")
+  expect_equal(attr(d2$grp, "labels"), c(No = 1, Yes = 2))
+  expect_equal(attr(d2$grp, "label"), "Group")
+  expect_equal(attr(d2$x, "format.sas"), "BEST12")
+  expect_equal(format(d2$dt[1], tz = "UTC", usetz = TRUE), "2020-01-01 UTC")
+})
+
+test_that("read_built() records haven's version as the manifest entry's reader", {
+  skip_if_no_arrow()
+  dir <- withr::local_tempdir()
+  make_study_fixture(dir)
+  cfg <- study_config(dir)
+  read_built(cfg)
+
+  m <- yaml::read_yaml(file.path(dir, "manifest.yaml"))
+  expect_equal(m$datasets[[1]]$reader,
+               paste("haven", as.character(utils::packageVersion("haven"))))
+})
+
+test_that("verify_manifest() passes against a manifest the cache itself wrote", {
+  # The only end-to-end proof that the cache's writer (.derived_paths()) and
+  # verify_manifest()'s reader agree on the sidecar naming rule.
+  skip_if_no_arrow()
+  dir <- withr::local_tempdir()
+  make_study_fixture(dir)
+  cfg <- study_config(dir)
+  read_built(cfg)
+
+  report <- verify_manifest(file.path(dir, "manifest.yaml"))
+  expect_true(all(report$status == "OK"))
 })

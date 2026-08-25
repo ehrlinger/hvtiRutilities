@@ -14,6 +14,7 @@ update_manifest(
   sort_key = NULL,
   schema_sha256 = NULL,
   role = c("source", "primary"),
+  reader = NULL,
   verbose = FALSE
 )
 }
@@ -50,6 +51,12 @@ making the manifest-to-sidecar link tamper-evident.}
 parquet beside it is a disposable cache) or \code{"primary"} (the parquet
 is authoritative because the source has been retired). See the
 \emph{Promotion} section of the read-layer design spec.}
+
+\item{reader}{Character. The package and version that produced this
+derived file (e.g. \code{"haven 2.5.5"}). Under \code{role = "primary"}
+the parquet is the data, so the reader that produced it is part of its
+provenance: a reader defect found later is otherwise unfindable once the
+source is retired. \code{NULL} (default) omits the field.}
 
 \item{verbose}{Logical. If \code{TRUE}, report which manifest entry was
 added or updated via \code{\link[base]{message}}.  Defaults to

@@ -63,6 +63,18 @@
   is missing, instead of erroring before the manifest is even consulted —
   without this, promotion (retiring the source once its parquet is
   authoritative) was unreachable.
+- The parquet cache now verifies each conversion round-trips before
+  returning: the freshly written parquet is read back and compared against
+  the frame haven returned — column names, order, classes and values — and a
+  mismatch removes the parquet and errors naming the first column that
+  differs, rather than leaving mismatched data behind a "successful" write.
+  This matters most for a `role: "primary"` entry, which has no second
+  chance to self-heal once the source is retired.
+- `update_manifest()` gains `reader`, recording the package and version that
+  produced a derived file (e.g. `"haven 2.5.5"`). The parquet cache supplies
+  it automatically. Under `role: "primary"` this is part of the parquet's
+  provenance: a reader defect found later is otherwise unfindable once the
+  source is gone.
 
 ## Bug fixes
 
@@ -80,6 +92,31 @@
   file is actually there, and otherwise resolves beside the manifest. Callers
   who pass `data_dir` explicitly are unaffected — an explicit `data_dir` is
   still used exactly as given, with no nested search.
+- An unreadable cached parquet (truncated, corrupted, an interrupted write
+  from outside this package) no longer permanently breaks `read_built()` for
+  that dataset. A `role: "source"` entry warns, naming the file, and falls
+  back to regenerating it from the source; a `role: "primary"` entry still
+  errors, naming it the only copy, since there is no source to regenerate
+  from.
+- The parquet cache's validity check no longer errors on a half-written
+  stamp — `source_size` recorded without `source_mtime`, from a hand edit or
+  an interrupted write. Any missing stamp field now reads as "not valid"
+  rather than reaching `as.POSIXct(NULL)` and throwing.
+- The parquet cache's schema sidecar write, and both of the manifest writes
+  it triggers (`update_manifest()` and the internal stamp update), are now
+  atomic — a temporary file, then a rename — matching
+  `.write_parquet_atomic()`'s existing discipline, which is now shared by all
+  three through one helper. Two first reads racing on the same dataset could
+  previously leave one process hashing a sidecar the other was midway
+  through truncating, recording a `schema_sha256` that matched nothing on
+  disk and putting the entry into permanent verification failure.
+
+## Notes
+
+- `utils` is added to `DESCRIPTION`'s `Imports:`. `R/parquet_cache.R` calls
+  `utils::write.csv()` and `utils::packageVersion()`, and `utils` was already
+  imported in `NAMESPACE`, but it was missing from `DESCRIPTION` — which
+  `R CMD check` flags.
 
 ## Documentation
 
