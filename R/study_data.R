@@ -127,6 +127,26 @@ built_manifest <- function(cfg = study_config()) {
 #'           file.path(root, "datasets", "example.csv"), row.names = FALSE)
 #' names(read_built(study_config(root)))
 #' unlink(root, recursive = TRUE)
+# Errors if lowercasing `names(d)` would collide, naming the colliding
+# original names. Called from inside the reader closure passed to
+# .cache_read(), so a collision is caught before any cache artifact --
+# .parquet, .schema.csv, or the manifest entry -- has been written for a
+# dataset that can never be read. SAS names are case-insensitive and cannot
+# collide this way; .csv, .xlsx and .rds sources can.
+.assert_no_lowercase_collision <- function(d, path) {
+  lower <- tolower(names(d))
+  if (anyDuplicated(lower)) {
+    clashes <- unique(lower[duplicated(lower)])
+    detail <- vapply(clashes, function(x) {
+      paste0(x, " <- ", paste(names(d)[lower == x], collapse = ", "))
+    }, character(1))
+    stop("read_built(): lowercasing column names produces duplicates in ",
+         basename(path), ": ", paste(detail, collapse = "; "),
+         ". Rename the colliding columns at the source.", call. = FALSE)
+  }
+  invisible(TRUE)
+}
+
 read_built <- function(cfg = study_config(), refresh = FALSE) {
   p <- built_path(cfg)
   manifest_path <- file.path(cfg$root, "manifest.yaml")
@@ -149,28 +169,26 @@ read_built <- function(cfg = study_config(), refresh = FALSE) {
   }
 
   # Carries SAS variable labels through; listings print labels, not names.
+  # The collision check runs INSIDE the reader closure, before .cache_read()
+  # writes anything: a check placed after .cache_read() returns would already
+  # be too late on a cache miss, which writes the .parquet, .schema.csv and
+  # manifest entry for a dataset it is about to discover can never be read.
   d <- as.data.frame(
     .cache_read(p,
-                function(f) read_clinical_data(f, convert_types = FALSE),
+                function(f) {
+                  raw <- read_clinical_data(f, convert_types = FALSE)
+                  .assert_no_lowercase_collision(raw, f)
+                  raw
+                },
                 manifest_path = manifest_path,
                 refresh = refresh)
   )
 
   # Lowercasing is unconditional, so a source carrying both FOO and foo would
   # yield two columns named foo and every downstream d$foo would silently take
-  # the first. SAS names are case-insensitive and cannot collide; .csv, .xlsx
-  # and .rds sources can.
-  lower <- tolower(names(d))
-  if (anyDuplicated(lower)) {
-    clashes <- unique(lower[duplicated(lower)])
-    detail <- vapply(clashes, function(x) {
-      paste0(x, " <- ", paste(names(d)[lower == x], collapse = ", "))
-    }, character(1))
-    stop("read_built(): lowercasing column names produces duplicates in ",
-         basename(p), ": ", paste(detail, collapse = "; "),
-         ". Rename the colliding columns at the source.", call. = FALSE)
-  }
-  names(d) <- lower
+  # the first. The check above already ruled this out for `d`; this just
+  # applies it.
+  names(d) <- tolower(names(d))
 
   logi <- vapply(d, is.logical, logical(1))
   d[logi] <- lapply(d[logi], as.integer)

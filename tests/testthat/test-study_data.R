@@ -87,6 +87,20 @@ test_that("read_built errors when lowercasing collides rather than duplicating a
 
   expect_error(read_built(study_config(dir)), "FOO")
   expect_error(read_built(study_config(dir)), "foo")
+
+  # The collision must abort before .cache_read() writes anything for a
+  # dataset that can never be read: no parquet, no schema sidecar, and no
+  # manifest entry recorded for it.
+  skip_if_not_installed("arrow")
+  expect_false(file.exists(file.path(dir, "datasets", "built_test.parquet")))
+  expect_false(file.exists(file.path(dir, "datasets", "built_test.schema.csv")))
+  mp <- file.path(dir, "manifest.yaml")
+  if (file.exists(mp)) {
+    m <- yaml::read_yaml(mp)
+    expect_false(any(vapply(m$datasets %||% list(),
+                            function(e) identical(e$file, "built_test.csv"),
+                            logical(1))))
+  }
 })
 
 test_that("read_built still lowercases names when there is no collision", {
