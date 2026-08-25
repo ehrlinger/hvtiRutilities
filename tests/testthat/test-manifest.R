@@ -779,6 +779,25 @@ test_that("update_manifest records n_cols, schema_sha256 and role", {
   expect_equal(m$datasets[[1]]$schema_sha256, expected_schema_sha)
 })
 
+test_that("update_manifest rejects role = \"primary\"", {
+  # A promoted entry's sha256 must describe its parquet, not the source this
+  # function hashes -- writing role = "primary" here would produce a
+  # manifest entry that can never verify (verify_manifest() hashes the
+  # parquet for a primary entry). No exported function performs promotion;
+  # .update_promoted_entry() is what maintains a promoted entry once one
+  # exists.
+  dir <- withr::local_tempdir()
+  f <- file.path(dir, "d.csv")
+  write.csv(data.frame(a = 1:3), f, row.names = FALSE)
+  mp <- file.path(dir, "manifest.yaml")
+
+  expect_error(
+    update_manifest(f, manifest_path = mp, role = "primary"),
+    "primary"
+  )
+  expect_false(file.exists(mp))
+})
+
 test_that("update_manifest records reader when supplied", {
   dir <- withr::local_tempdir()
   f <- file.path(dir, "d.csv")

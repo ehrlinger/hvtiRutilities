@@ -13,7 +13,7 @@ update_manifest(
   source = NULL,
   sort_key = NULL,
   schema_sha256 = NULL,
-  role = c("source", "primary"),
+  role = "source",
   reader = NULL,
   verbose = FALSE
 )
@@ -47,10 +47,14 @@ order of the dataset.}
 \item{schema_sha256}{Character. SHA-256 of this dataset's schema sidecar,
 making the manifest-to-sidecar link tamper-evident.}
 
-\item{role}{Either \code{"source"} (the file is authoritative and any
-parquet beside it is a disposable cache) or \code{"primary"} (the parquet
-is authoritative because the source has been retired). See the
-\emph{Promotion} section of the read-layer design spec.}
+\item{role}{Character, always \code{"source"}. This function only ever
+writes \code{role = "source"} entries; a \code{role = "primary"}
+(promoted) entry's \code{sha256} must describe its \strong{parquet}, not
+the source this function hashes, so calling it on a promoted entry would
+write a manifest that can never verify. No exported function performs
+promotion yet — the internal \code{.update_promoted_entry()} is what
+maintains a promoted entry once one exists. See the \emph{Promotion}
+section of the read-layer design spec.}
 
 \item{reader}{Character. The package and version that produced this
 derived file (e.g. \code{"haven 2.5.5"}). Under \code{role = "primary"}

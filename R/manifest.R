@@ -90,10 +90,14 @@
 #'   row count alone cannot detect a dropped column.
 #' @param schema_sha256 Character. SHA-256 of this dataset's schema sidecar,
 #'   making the manifest-to-sidecar link tamper-evident.
-#' @param role Either \code{"source"} (the file is authoritative and any
-#'   parquet beside it is a disposable cache) or \code{"primary"} (the parquet
-#'   is authoritative because the source has been retired). See the
-#'   \emph{Promotion} section of the read-layer design spec.
+#' @param role Character, always \code{"source"}. This function only ever
+#'   writes \code{role = "source"} entries; a \code{role = "primary"}
+#'   (promoted) entry's \code{sha256} must describe its \strong{parquet}, not
+#'   the source this function hashes, so calling it on a promoted entry would
+#'   write a manifest that can never verify. No exported function performs
+#'   promotion yet — the internal \code{.update_promoted_entry()} is what
+#'   maintains a promoted entry once one exists. See the \emph{Promotion}
+#'   section of the read-layer design spec.
 #' @param reader Character. The package and version that produced this
 #'   derived file (e.g. \code{"haven 2.5.5"}). Under \code{role = "primary"}
 #'   the parquet is the data, so the reader that produced it is part of its
@@ -149,6 +153,18 @@ update_manifest <- function(file,
                             reader        = NULL,
                             verbose       = FALSE) {
   role <- match.arg(role)
+  if (identical(role, "primary")) {
+    stop(
+      "update_manifest(): role = \"primary\" is not supported here. ",
+      "A promoted entry's sha256 must describe its parquet, not the ",
+      "source this function hashes -- writing one here would produce a ",
+      "manifest entry that can never verify. No exported function performs ",
+      "promotion yet; the internal .update_promoted_entry() maintains a ",
+      "promoted entry once one exists. See the Promotion section of the ",
+      "read-layer design spec.",
+      call. = FALSE
+    )
+  }
   if (!file.exists(file)) {
     stop("Dataset file not found: ", file)
   }
