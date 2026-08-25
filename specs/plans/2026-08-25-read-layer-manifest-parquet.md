@@ -1395,6 +1395,115 @@ release gate requires 0/0/0. Add it.
 
 ---
 
+### Task 5c: Simplify validity; make promotion actually reachable
+
+**Files:**
+- Modify: `R/parquet_cache.R`, `R/study_data.R`, `R/manifest.R`
+- Modify: `tests/testthat/test-parquet_cache.R`, `tests/testthat/test-manifest.R`
+- Modify: `NEWS.md`
+- Modify: `specs/2026-08-25-read-layer-manifest-parquet-design.md` is already
+  amended — **read it first; it is the authority for every item here.**
+
+**Interfaces:**
+- Consumes: everything from Tasks 4, 5, 5a and 5b.
+- Produces: no new public API. `read_built()` and `update_manifest()` keep
+  their current signatures.
+
+A review of Tasks 5a and 5b found three blocking defects and three important
+ones. Every one of them lives in the `role: "source"` validity heuristic or in
+the promotion path. This task deletes most of the heuristic rather than
+patching it, and makes promotion work in the shape the spec describes.
+
+**1. Delete the stamp-time apparatus.** Remove `stamp_time` from
+`.stamp_source_state()`, the `risky`/re-stamp logic in `.cache_valid()`, the
+`.MTIME_AMBIGUITY_WINDOW_SECONDS` constant, and the legacy-entry special case
+that exists only to handle entries predating the field.
+
+It compared a client-side `Sys.time()` against a server-supplied `mtime` —
+two different clocks whenever the files live on another host. A client running
+one second fast makes every entry look unambiguous forever, which is the exact
+failure the apparatus was added to prevent. It also stamped *after* the read
+rather than at the `stat`, and its re-stamp path could promote a stale entry
+into the fast path.
+
+**2. Measure the filesystem instead of assuming it.** For `role: "source"`,
+validity is: `size` unchanged AND `mtime` unchanged. The only hole is a
+rewrite inside the source's own `mtime` tick, and how wide that hole is, is a
+property of the filesystem — so read it rather than assume it. If the source's
+`mtime` carries a fractional part, the tick is microseconds wide and `mtime`
+is trusted. If `mtime` is a whole second, the tick is a full second wide and
+the recorded `sha256` is verified instead.
+
+Production runs on a local filesystem with nanosecond `mtime`, so the fast
+path applies there; development over SMB may see whole-second stamps and pay
+for a hash. One `stat` decides, and neither is a special case.
+
+**3. Re-`stat` the source after the read.** If `size` or `mtime` changed
+between the pre-read `stat` and the end of the read, the frame may be torn.
+Discard it and error, naming the file and saying it changed mid-read; do not
+write a sidecar, manifest entry or parquet from it.
+
+**4. `file` never changes on promotion.** The spec's promotion example
+previously renamed `file` to `built.parquet`. Every lookup in the read path
+(`.manifest_entry()`, and `read_built()`'s promoted-entry branch) keys on the
+source's basename, so a renamed entry is invisible to the reader while
+`verify_manifest()` still finds it — the two halves assume different
+manifests. The spec is now fixed: `file` names the dataset, `role` says which
+physical file is authoritative.
+
+Both existing promotion tests flip `role` in place and therefore already match
+the corrected shape — but they were passing for the wrong reason. Add a test
+asserting that a promoted entry's `file` is still the `.sas7bdat` name and
+that `read_built()` serves it.
+
+**5. `verify_manifest()` must hash by role.** It hashes `entry$file`
+unconditionally. For `role: "primary"` the authoritative file is the parquet,
+so it must resolve and hash that instead, via `.derived_paths()`. Because
+`file` never changes, this cannot be inferred from the name — only from
+`role`.
+
+**6. A cache miss on a promoted entry must not rewrite the entry from the
+source.** Today, if a promoted entry's parquet is deleted while the retired
+source happens to still exist, `.cache_valid()` returns `FALSE`, the ordinary
+miss path runs, and `update_manifest(role = "primary", ...)` replaces the
+entry wholesale — recording the *source's* hash as the parquet's and dropping
+`promoted_date` and `source_sha256`. `verify_manifest()` then fails
+permanently on a study whose data is intact. Reconvert the parquet if you can,
+but preserve the promoted entry's provenance fields and hash the parquet.
+
+**7. Two smaller items from the same review.**
+- The `role: "primary"` guard on `refresh = TRUE` sits below the
+  `.cache_enabled()` early return, so with `arrow` absent it never fires and
+  the call dies inside haven instead. Hoist it above.
+- `read_built()`'s error for a promoted entry whose parquet is also missing
+  says `missing <name>.sas7bdat`, pointing at a file retired on purpose. For a
+  promoted entry it should name the parquet as the missing copy.
+
+**8. Do not weaken what already works.** The following were reviewed and found
+correct — leave them alone: `.atomic_write()` and its three call sites; the
+round-trip verification and its `unlink`-then-error behaviour; the
+degradation path when `arrow` is absent; the atomicity test's cleanup
+assertion; `refresh`'s bypass of the hit path.
+
+Known and accepted, not to be "fixed" here: two processes can still lose an
+update to `manifest.yaml` by each reading it whole and writing back. Atomic
+rename prevents a torn read, not a lost update. Make sure no comment or NEWS
+text claims otherwise.
+
+- [ ] **Step 1: Read the amended spec sections** — *Validity check*, *Miss
+      path*, *Promotion*
+- [ ] **Step 2: Write the failing tests** for items 2, 3, 4, 5 and 6
+- [ ] **Step 3: Run them; confirm each fails for the expected reason**
+- [ ] **Step 4: Implement items 1–7**
+- [ ] **Step 5: Run cache tests, manifest tests, `filter = "study"`, then the
+      full suite**
+- [ ] **Step 6: Update NEWS** — the 1.1.0 bullets describing the old
+      size/mtime heuristic and the stamp apparatus are now wrong; correct them
+      rather than appending a contradiction
+- [ ] **Step 7: Regenerate roxygen and commit**
+
+---
+
 ### Task 6: Study-side follow-up (no commit in this repo)
 
 **Files:**

@@ -137,10 +137,27 @@ Re-hashing the source on every read would read the whole file and defeat the
 cache, so `sha256` is not the fast path. But `size` alone discriminates almost
 nothing — a 20-row and a 5-row `.sas7bdat` are both exactly 16384 bytes,
 because the format is page-aligned — which leaves `mtime` carrying the entire
-decision. On a filesystem with coarse `mtime` granularity, and the study tree
-is an SMB mount, a rewrite within the same tick of the recorded stamp is
-invisible. Where `mtime` cannot settle it, the recorded `sha256` is verified:
-a full read, but only in the genuinely ambiguous case.
+decision.
+
+Whether `mtime` can carry it is a property of the filesystem, and it is
+**measured rather than assumed**. A filesystem that reports sub-second `mtime`
+leaves a same-tick rewrite window of microseconds; one that reports whole
+seconds leaves a window a full second wide, inside which a rewrite is
+genuinely invisible. So: if the source's `mtime` carries a fractional part,
+`mtime` is trusted; if it is a whole second, the recorded `sha256` is verified
+instead.
+
+Production runs server-side on a local filesystem, where `mtime` is
+nanosecond-resolution and the fast path always applies. Development over an
+SMB mount may land on whole-second stamps and pay for a hash. Neither is a
+special case in the code — the same `stat` decides.
+
+An earlier draft compared the source's `mtime` against a client-side
+`Sys.time()` recorded at conversion. That was wrong for a reason worth keeping
+written down: those are two different clocks whenever the files live on
+another host, and a client running even one second fast makes every entry look
+unambiguous forever. A validity rule may only compare readings of the same
+clock — here, two `mtime`s from the same filesystem.
 
 **Stat before reading, never after.** The source's `size`/`mtime` are captured
 *before* the haven read begins. Captured afterwards, a source rewritten
@@ -241,22 +258,31 @@ happens dataset by dataset as each SAS job retires.
 # before
 - file: built.sas7bdat
   role: source
-  sha256: f90da65b…
+  sha256: f90da65b…         # hash of built.sas7bdat
   n_rows: 378
   n_cols: 879
   schema_sha256: …
 
 # after
-- file: built.parquet
+- file: built.sas7bdat      # UNCHANGED: the dataset's identity, not its storage
   role: primary
-  sha256: <parquet hash>
+  sha256: <parquet hash>    # role decides which file this hashes
   promoted_date: '2026-11-14'
-  source_file: built.sas7bdat
-  source_sha256: f90da65b…
+  source_sha256: f90da65b…  # the retired source's hash, kept for custody
   n_rows: 378
   n_cols: 879
   schema_sha256: …          # unchanged: the same sidecar
 ```
+
+**`file` does not change on promotion.** It names the dataset, not the file
+that currently stores it; `role` says which physical file is authoritative and
+therefore which one `sha256` describes. An earlier draft renamed `file` to
+`built.parquet`, which broke promotion in a way worth recording: every lookup
+in the read path keys on the source's basename, so a renamed entry became
+invisible to `read_built()` while `verify_manifest()` — which resolves
+`entry$file` directly — still found it. The two halves of the package assumed
+different manifests. Renaming also contradicts the property the `role` field
+exists for: promotion is a field change, not a migration.
 
 `source_sha256` is retained so the chain of custody survives the source's
 retirement.
@@ -265,11 +291,28 @@ Behaviour switches on `role`:
 
 | | `role: source` | `role: primary` |
 |---|---|---|
+| `file` field | the dataset's identity | **the same value — never renamed** |
 | authoritative file | `.sas7bdat` | `.parquet` |
-| read validity | source `size`+`mtime`, `sha256` when ambiguous | parquet is the data; source never consulted |
-| `verify_manifest()` hashes | the source | the parquet |
+| read validity | source `size`+`mtime`; `sha256` when `mtime` is whole-second | parquet is the data; source never consulted |
+| `sha256` describes | the source | **the parquet** |
+| `verify_manifest()` hashes | the source | the parquet, resolved via `.derived_paths()` |
 | missing source file | an error | **expected — and `read_built()` must still serve the parquet** |
+| a cache miss | reconvert from the source | **must not rewrite the entry from the source** |
 | sidecar | regenerable | **durable — never regenerate** |
+
+Two rows carry consequences that are easy to miss.
+
+`sha256` describes whichever file the role makes authoritative, so
+`verify_manifest()` must select its target by role rather than always hashing
+`entry$file`. Because `file` never changes, that selection cannot be inferred
+from the name.
+
+A cache miss on a promoted entry — its parquet deleted while the retired
+source happens to still be present — must not fall through to the ordinary
+miss path. That path rewrites the entry from the source, replacing the
+parquet's hash with the source's and dropping `promoted_date` and
+`source_sha256`, after which verification fails permanently on a study whose
+data was intact.
 
 The "missing source file" row is a requirement on `read_built()`, not only on
 `verify_manifest()`. A `role: primary` entry means the source has been
