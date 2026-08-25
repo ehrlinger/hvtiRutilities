@@ -45,7 +45,7 @@
 #' # Read a CSV
 #' tmp <- tempfile(fileext = ".csv")
 #' write.csv(mtcars, tmp, row.names = FALSE)
-#' dta <- read_clinical_data(tmp)
+#' dta <- read_clinical_data(tmp, convert_types = FALSE)
 #' str(dta[, 1:5])
 #' unlink(tmp)
 #'
@@ -59,7 +59,7 @@
 #' # Read an RDS file
 #' tmp <- tempfile(fileext = ".rds")
 #' saveRDS(iris, tmp)
-#' dta <- read_clinical_data(tmp, factor_size = 5)
+#' dta <- read_clinical_data(tmp, convert_types = TRUE, factor_size = 5)
 #' str(dta)
 #' unlink(tmp)
 read_clinical_data <- function(file, convert_types = FALSE, ...) {

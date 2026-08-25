@@ -131,8 +131,16 @@ test_that("relying on the old convert_types default warns once per session", {
   # `pkg:::name$field <- value` is not valid R -- the replacement-function
   # desugaring tries to reassign the bare symbol `pkg`, which is never a
   # bound variable. Use assign() against the (reference-semantics)
-  # environment instead.
-  assign("convert_types", NULL, envir = hvtiRutilities:::.hvti_deprecated)
+  # environment instead. Capture and restore the prior value so this reset
+  # doesn't leak into tests in other files that run later in the session.
+  env <- hvtiRutilities:::.hvti_deprecated
+  prior <- if (exists("convert_types", envir = env, inherits = FALSE)) {
+    get("convert_types", envir = env, inherits = FALSE)
+  } else {
+    NULL
+  }
+  withr::defer(assign("convert_types", prior, envir = env))
+  assign("convert_types", NULL, envir = env)
 
   expect_warning(read_clinical_data(tmp), "convert_types")
   expect_silent(read_clinical_data(tmp))
@@ -145,8 +153,16 @@ test_that("passing convert_types explicitly never warns", {
   # `pkg:::name$field <- value` is not valid R -- the replacement-function
   # desugaring tries to reassign the bare symbol `pkg`, which is never a
   # bound variable. Use assign() against the (reference-semantics)
-  # environment instead.
-  assign("convert_types", NULL, envir = hvtiRutilities:::.hvti_deprecated)
+  # environment instead. Capture and restore the prior value so this reset
+  # doesn't leak into tests in other files that run later in the session.
+  env <- hvtiRutilities:::.hvti_deprecated
+  prior <- if (exists("convert_types", envir = env, inherits = FALSE)) {
+    get("convert_types", envir = env, inherits = FALSE)
+  } else {
+    NULL
+  }
+  withr::defer(assign("convert_types", prior, envir = env))
+  assign("convert_types", NULL, envir = env)
 
   expect_silent(read_clinical_data(tmp, convert_types = FALSE))
   expect_silent(read_clinical_data(tmp, convert_types = TRUE))
