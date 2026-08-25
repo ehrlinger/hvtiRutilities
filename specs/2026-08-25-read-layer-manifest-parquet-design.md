@@ -361,7 +361,8 @@ rather than globbing, so a flat layout is unambiguous for the built dataset.
 
 ## Metadata fidelity
 
-Verified against arrow 24.0.0 and haven 2.5.5. A parquet round trip preserves:
+Verified against arrow 24.0.0 / haven 2.5.5, and again against **arrow
+23.0.1.2** on the production host. A parquet round trip preserves:
 
 - `label` and `format.sas` attributes
 - `haven_labelled` class and its value labels
@@ -372,6 +373,31 @@ Arrow stores these as R-specific schema metadata. A non-R reader (pandas,
 duckdb) sees the values but not the labels. This is acceptable while the
 datasets are R-side; it is the constraint to revisit if they become a
 cross-language asset.
+
+The stronger evidence is not the fixture. `.verify_parquet_roundtrip()`
+compares each column with `identical()`, which compares attributes as well as
+values, and it runs on every conversion. preserve_root's `built.sas7bdat` —
+378 rows, 879 variables, 865 labels, 395 SAS formats — converted cleanly on
+the production host, which is a per-column attribute check across the whole
+real dataset rather than a hand-built frame.
+
+**Measured on that conversion**, server-side on a local filesystem:
+
+| | |
+|---|---|
+| `built.sas7bdat` | 67.2 MB |
+| `built.parquet` | 0.7 MB |
+| `built.schema.csv` | 0.1 MB |
+| first read (haven parse + convert) | 2.1 s |
+| second read (parquet) | 0.2 s |
+
+**Do not generalise the 96× size ratio.** A `.sas7bdat` is page-aligned and
+pads heavily — the same property that makes file size useless as a change
+signal, where a 20-row and a 5-row file are both 16384 bytes. At 378 rows,
+most of those 67.2 MB are padding, so the ratio mostly measures padding
+removal rather than compression, and it will fall sharply on a dataset with
+enough rows to fill its pages. The ~10× read speedup is the figure that should
+carry over, since it is parse cost rather than storage.
 
 ## Testing
 
