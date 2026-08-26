@@ -1,5 +1,202 @@
 # Changelog
 
+## hvtiRutilities 1.1.0
+
+### Breaking changes
+
+- [`read_clinical_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_clinical_data.md)’s
+  `convert_types` argument now defaults to `FALSE`. It defaulted to
+  `TRUE`, applying
+  [`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
+  to every column, which converts any two-valued numeric column to
+  logical — including 0/1 event and censoring flags, which
+  `hzr_kaplan()` and similar then reject. Reading and type derivation
+  are now separate steps. Callers who omit the argument get a
+  once-per-session warning; pass `convert_types = TRUE` to restore the
+  old behaviour.
+
+### New features
+
+- [`dataset_schema()`](https://ehrlinger.github.io/hvtiRutilities/reference/dataset_schema.md)
+  — one row per column giving creation position, name, R class, SAS
+  type, `format.sas` and label. Labels and formats are read from the
+  column attributes directly, so an absent label is `NA` rather than the
+  variable’s own name. This is the durable description of a source
+  dataset: it describes shape only, so two reads of an unchanged file
+  produce an identical schema.
+- [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
+  gains `n_cols`, `schema_sha256` and `role`. `n_cols` is recorded as
+  part of the schema baseline, since a row count alone cannot detect a
+  dropped column; it is
+  [`verify_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md)’s
+  comparison of `schema_sha256` against the sidecar on disk – a hash of
+  the schema sidecar, making the manifest-to-sidecar link tamper-evident
+  – that actually detects one. `role` is `"source"` or `"primary"` and
+  distinguishes a dataset SAS still builds from one whose parquet has
+  become authoritative.
+- [`verify_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md)
+  checks `schema_sha256` against the sidecar on disk, and reports two
+  entries whose file stems collide and would therefore claim the same
+  derived `.parquet` and `.schema.csv` paths.
+- [`read_built()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_built.md)
+  now caches its source as parquet on first read and uses that cache
+  while the source’s size and modification time are unchanged. The
+  schema sidecar and manifest entry are written from the haven read,
+  before the parquet exists, so the recorded baseline is independent of
+  the conversion. Conversion is lazy: a dataset nobody reads is never
+  converted. `arrow` is a suggested package — without it, or with
+  `options(hvtiRutilities.disable_parquet_cache = TRUE)`, reads behave
+  exactly as before.
+- The parquet cache’s validity check now follows the manifest entry’s
+  `role` rather than a single size/mtime heuristic. A `role: "primary"`
+  entry is served from its parquet unconditionally — the source may have
+  been retired and need not exist. A `role: "source"` entry is valid
+  when the source’s `size` and `mtime` both match the recorded stamp;
+  size alone cannot be trusted, since a `.sas7bdat` is page-aligned and
+  a changed row count can leave its size identical. Whether a matching
+  `mtime` alone proves the source is unchanged is a property of the
+  filesystem, and it is measured from the `stat` rather than assumed: a
+  fractional `mtime` means sub-second resolution and is trusted
+  directly; a whole-second `mtime` means the filesystem cannot see
+  inside that second, and the recorded `sha256` is verified instead.
+  Production runs on a local filesystem with nanosecond `mtime`, so the
+  fast path applies there; development over SMB may see whole-second
+  stamps and pay for a hash — neither is a special case in the code. The
+  source is stat’d before the read rather than after, so a source
+  rewritten mid-read is stamped conservatively stale instead of
+  validating forever, and if the source’s `size` or `mtime` changes
+  again between that `stat` and the end of the read, the frame is
+  discarded and the read errors rather than caching a possibly torn
+  result. (An earlier draft of this validity check compared the source’s
+  `mtime` against a client-side
+  [`Sys.time()`](https://rdrr.io/r/base/Sys.time.html) recorded at
+  conversion; that compared two different clocks whenever the files live
+  on another host, so a client running even one second fast made every
+  entry look unambiguous forever. It never shipped in a release.)
+- [`read_built()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_built.md)
+  gains `refresh = TRUE`, which forces a re-read from the source and a
+  reconversion regardless of role or the cached `size`/`mtime` stamp —
+  for changes a timestamp can’t express, such as a rebuild that
+  preserves `mtime` or a correction applied out of band.
+  `refresh = TRUE` against a `role: "primary"` entry errors clearly,
+  naming the role, rather than failing inside haven, even with `arrow`
+  absent or the cache disabled.
+  [`read_built()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_built.md)
+  also now serves a `role: "primary"` entry whose source file is
+  missing, instead of erroring before the manifest is even consulted —
+  without this, promotion (retiring the source once its parquet is
+  authoritative) was unreachable. If a promoted entry’s parquet is also
+  missing, the error now names the parquet as the missing copy rather
+  than the source, which was retired on purpose.
+- [`verify_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md)
+  now hashes whichever file a manifest entry’s `role` makes
+  authoritative — the source for `role: "source"`, the parquet (resolved
+  the same way the cache names it) for `role: "primary"` — rather than
+  always hashing the entry’s own file. `file` never changes on
+  promotion, so this cannot be inferred from the name. A missing source
+  is therefore no longer reported as a failure once an entry is
+  promoted; it is expected, since promotion means the source was
+  retired.
+- A cache miss on a promoted (`role: "primary"`) entry — its parquet
+  lost while the retired source happens to still be present — now
+  reconverts the parquet without rewriting the entry as an ordinary miss
+  would: `sha256` is updated to describe the new parquet, and
+  `promoted_date` and `source_sha256` are left untouched, rather than
+  being silently dropped and replaced with the source’s own hash.
+- The parquet cache now verifies each conversion round-trips before
+  returning: the freshly written parquet is read back and compared
+  against the frame haven returned — column names, order, classes and
+  values — and a mismatch removes the parquet and errors naming the
+  first column that differs, rather than leaving mismatched data behind
+  a “successful” write. This matters most for a `role: "primary"` entry,
+  which has no second chance to self-heal once the source is retired.
+- [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
+  gains `reader`, recording the package and version that produced a
+  derived file (e.g. `"haven 2.5.5"`). The parquet cache supplies it
+  automatically. Under `role: "primary"` this is part of the parquet’s
+  provenance: a reader defect found later is otherwise unfindable once
+  the source is gone.
+
+### Bug fixes
+
+- [`read_built()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_built.md)
+  now errors when lowercasing column names produces duplicates, naming
+  the colliding pair, instead of returning two identically named columns
+  where every downstream selection silently takes the first. SAS names
+  cannot collide this way; `.csv`, `.xlsx` and `.rds` sources can.
+- [`verify_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md)’s
+  default `data_dir` now resolves each entry individually instead of
+  choosing `datasets/` vs. the manifest’s own directory once for the
+  whole manifest based on whether `datasets/` exists. Previously, a
+  flat-layout study whose manifest referenced files beside
+  `manifest.yaml` would have every entry misdirected into `datasets/`
+  (and fail with “File not found”) merely because that directory
+  happened to also exist, empty or not. Each entry now prefers
+  `datasets/<file>` only when that file is actually there, and otherwise
+  resolves beside the manifest. Callers who pass `data_dir` explicitly
+  are unaffected — an explicit `data_dir` is still used exactly as
+  given, with no nested search.
+- An unreadable cached parquet (truncated, corrupted, an interrupted
+  write from outside this package) no longer permanently breaks
+  [`read_built()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_built.md)
+  for that dataset. A `role: "source"` entry warns, naming the file, and
+  falls back to regenerating it from the source; a `role: "primary"`
+  entry still errors, naming it the only copy, since there is no source
+  to regenerate from.
+- The parquet cache’s validity check no longer errors on a half-written
+  stamp — `source_size` recorded without `source_mtime`, from a hand
+  edit or an interrupted write. Any missing stamp field now reads as
+  “not valid” rather than reaching `as.POSIXct(NULL)` and throwing.
+- The parquet cache’s schema sidecar write, and both of the manifest
+  writes it triggers
+  ([`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
+  and the internal stamp update), are now atomic — a temporary file,
+  then a rename — matching `.write_parquet_atomic()`’s existing
+  discipline, which is now shared by all three through one helper. Two
+  first reads racing on the same dataset could previously leave one
+  process hashing a sidecar the other was midway through truncating,
+  recording a `schema_sha256` that matched nothing on disk and putting
+  the entry into permanent verification failure.
+
+### Notes
+
+- `utils` is added to `DESCRIPTION`’s `Imports:`. `R/parquet_cache.R`
+  calls [`utils::write.csv()`](https://rdrr.io/r/utils/write.table.html)
+  and
+  [`utils::packageVersion()`](https://rdrr.io/r/utils/packageDescription.html),
+  and `utils` was already imported in `NAMESPACE`, but it was missing
+  from `DESCRIPTION` — which `R CMD check` flags.
+- [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
+  rebuilds a manifest entry from its own known fields rather than
+  merging into whatever is already there, so any field a study’s own
+  tooling added to an entry is silently dropped the first time a cache
+  miss (or any other call to
+  [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md))
+  rewrites it. The parquet cache preserves `extract_date`, `source` and
+  `sort_key` specifically, because losing those would clobber values
+  [`study_init()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_init.md)
+  sets explicitly; no other field is preserved. This is unchanged in
+  this release — recorded here so it’s a known limitation rather than a
+  surprise.
+
+### Documentation
+
+- [`proc_contents()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_contents.md)
+  now documents that its `label` column is never `NA`: it falls back to
+  the variable’s own name via
+  `labelled::var_label(null_action = "fill")`, so an unlabelled variable
+  is indistinguishable from one labelled with its own name. Callers
+  recording the output as a durable description of a source dataset
+  should read labels from the source attributes directly. Measured on an
+  879-variable clinical build, 14 variables carry no label and would be
+  recorded as labelled with their names.
+- [`proc_contents()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_contents.md)
+  also clarifies that name, label, `format.sas` and creation order
+  survive a haven read *when the source carries them*, rather than being
+  present on every variable. In the same build, 865 of 879 variables
+  carry a label and 395 carry a `format.sas`, so an `NA` format reports
+  an unformatted source variable rather than a lost attribute.
+
 ## hvtiRutilities 1.0.11
 
 ### Bug fixes

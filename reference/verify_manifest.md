@@ -53,8 +53,16 @@ verify_manifest(
 
 - data_dir:
 
-  Character. Directory in which to look for the dataset files. When
-  `NULL` (default) the directory containing `manifest_path` is used.
+  Character. Directory holding the dataset files. When supplied, it is
+  used exactly as given. When `NULL` (default), each entry is resolved
+  individually: `datasets/` beneath the manifest's own directory is
+  preferred for that entry when the file actually exists there, matching
+  the layout
+  [`study_init`](https://ehrlinger.github.io/hvtiRutilities/reference/study_init.md)
+  creates, where `manifest.yaml` sits at the study root and datasets one
+  level down; otherwise the entry resolves beside the manifest, so a
+  flat layout is equally supported even when an unrelated `datasets/`
+  directory is also present.
 
 - stop_on_error:
 

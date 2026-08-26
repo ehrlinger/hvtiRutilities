@@ -16,7 +16,7 @@ attribute because listings print labels rather than names.
 ## Usage
 
 ``` r
-read_built(cfg = study_config())
+read_built(cfg = study_config(), refresh = FALSE)
 ```
 
 ## Arguments
@@ -25,6 +25,16 @@ read_built(cfg = study_config())
 
   List. A study manifest from
   [`study_config`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md).
+
+- refresh:
+
+  Logical. If `TRUE`, force a re-read from the source and a reconversion
+  regardless of the manifest's role or cached stamp. "The source
+  changed" is not always something a timestamp can express – a rebuild
+  that preserves `mtime`, a restored backup, a correction applied out of
+  band. Errors if the manifest entry has `role: "primary"`: that role
+  means the source has been retired and the parquet is authoritative, so
+  there is nothing to refresh from.
 
 ## Value
 

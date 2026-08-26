@@ -34,7 +34,7 @@ Supported formats:
 ## Usage
 
 ``` r
-read_clinical_data(file, convert_types = TRUE, ...)
+read_clinical_data(file, convert_types = FALSE, ...)
 ```
 
 ## Arguments
@@ -45,9 +45,12 @@ read_clinical_data(file, convert_types = TRUE, ...)
 
 - convert_types:
 
-  Logical. If `TRUE` (default), runs
+  Logical. Apply
   [`r_data_types`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
-  on the result.
+  to the data after reading. Defaults to `FALSE`: the file is returned
+  as read. `TRUE` converts any two-valued numeric column to logical,
+  which is wrong for 0/1 event and censoring flags, so type conversion
+  belongs to a declared variable-derivation step rather than to reading.
 
 - ...:
 
@@ -73,19 +76,14 @@ to extract labels after reading.
 # Read a CSV
 tmp <- tempfile(fileext = ".csv")
 write.csv(mtcars, tmp, row.names = FALSE)
-dta <- read_clinical_data(tmp)
+dta <- read_clinical_data(tmp, convert_types = FALSE)
 str(dta[, 1:5])
 #> 'data.frame':    32 obs. of  5 variables:
 #>  $ mpg : num  21 21 22.8 21.4 18.7 18.1 14.3 24.4 22.8 19.2 ...
-#>   ..- attr(*, "label")= chr "mpg"
-#>  $ cyl : Factor w/ 3 levels "4","6","8": 2 2 1 2 3 2 3 1 1 2 ...
-#>   ..- attr(*, "label")= chr "cyl"
+#>  $ cyl : int  6 6 4 6 8 6 8 4 4 6 ...
 #>  $ disp: num  160 160 108 258 360 ...
-#>   ..- attr(*, "label")= chr "disp"
 #>  $ hp  : int  110 110 93 110 175 105 245 62 95 123 ...
-#>   ..- attr(*, "label")= chr "hp"
 #>  $ drat: num  3.9 3.9 3.85 3.08 3.15 2.76 3.21 3.69 3.92 3.92 ...
-#>   ..- attr(*, "label")= chr "drat"
 unlink(tmp)
 
 # Read without type conversion
@@ -104,7 +102,7 @@ unlink(tmp)
 # Read an RDS file
 tmp <- tempfile(fileext = ".rds")
 saveRDS(iris, tmp)
-dta <- read_clinical_data(tmp, factor_size = 5)
+dta <- read_clinical_data(tmp, convert_types = TRUE, factor_size = 5)
 str(dta)
 #> 'data.frame':    150 obs. of  5 variables:
 #>  $ Sepal.Length: num  5.1 4.9 4.7 4.6 5 5.4 4.6 5 4.4 4.9 ...

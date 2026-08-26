@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.11</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -57,7 +57,7 @@
     <div class="section level2">
       <h2 id="data-import">Data Import<a class="anchor" aria-label="anchor" href="#data-import"></a></h2>
 
-      <div class="section-desc"><p>Read clinical data files with automatic type conversion</p></div>
+      <div class="section-desc"><p>Read clinical data files as stored. Type conversion is opt-in via convert_types, because coercing a two-valued numeric to logical breaks 0/1 event and censoring flags.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -153,6 +153,13 @@
 
         </dt>
         <dd>Build a data dictionary from a labeled dataset</dd>
+
+        <dt>
+
+          <code><a href="dataset_schema.html">dataset_schema()</a></code>
+
+        </dt>
+        <dd>Column-level schema of a dataset</dd>
 
         <dt>
 

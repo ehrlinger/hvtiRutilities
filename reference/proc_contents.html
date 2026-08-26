@@ -11,7 +11,7 @@ and simple completeness counts."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.11</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -102,7 +102,16 @@ of Variables and Attributes</em>; <code>"varnum"</code> keeps creation order. Th
     or <code>NaN</code> when <code>data</code> has zero rows)</p></dd>
 
 
-</dl></div>
+</dl><p><code>label</code> is never <code>NA</code>: it falls back to the variable's own name
+when the source carries no label, via
+<code>labelled::var_label(null_action = "fill")</code>. An unlabelled variable is
+therefore indistinguishable here from one whose label equals its name, and
+both are common. Callers recording this output as a durable description of
+a source dataset — a schema sidecar, a data dictionary kept after the
+source is retired — should read labels from the source attributes directly
+rather than from this column, or they will record a fallback as though it
+were the dataset's own metadata.</p>
+    </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>Reading a <code>.sas7bdat</code> through <span class="pkg">haven</span> is lossy. Variable name,
@@ -112,6 +121,12 @@ the dataset's created/modified timestamps do not. Those fields are omitted
 rather than inferred, because inferred values would look authoritative and
 would disagree with the source dataset whenever its <code>LENGTH</code> statement
 differed from the default.</p>
+<p>"Survive" means preserved <em>when the source carries them</em>, not present
+on every variable. A SAS variable need not have a label or a format, and
+many do not: in one 879-variable clinical build, 865 variables carried a
+label and 395 carried a <code>format.sas</code>. An <code>NA</code> in <code>format</code>
+therefore reports that the source variable had no format, not that one was
+lost in reading. <code>label</code> does not behave this way — see <em>Value</em>.</p>
 <p>The SAS <code>Type</code> column is two-valued, so the mapping from R is
 deliberately lossy: <code>character</code> and <code>factor</code> become <code>"Char"</code>;
 everything else, including <code>logical</code>, <code>Date</code>, and <code>POSIXct</code>,

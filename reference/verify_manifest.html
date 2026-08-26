@@ -57,7 +57,7 @@ to ensure data integrity before any results are generated."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.11</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -156,9 +156,15 @@ Defaults to <code>"manifest.yaml"</code> in the current working directory.</p></
 
 
 <dt id="arg-data-dir">data_dir<a class="anchor" aria-label="anchor" href="#arg-data-dir"></a></dt>
-<dd><p>Character. Directory in which to look for the dataset files.
-When <code>NULL</code> (default) the directory containing <code>manifest_path</code>
-is used.</p></dd>
+<dd><p>Character. Directory holding the dataset files. When
+supplied, it is used exactly as given. When <code>NULL</code> (default), each
+entry is resolved individually: <code>datasets/</code> beneath the manifest's
+own directory is preferred for that entry when the file actually exists
+there, matching the layout <code><a href="study_init.html">study_init</a></code> creates, where
+<code>manifest.yaml</code> sits at the study root and datasets one level down;
+otherwise the entry resolves beside the manifest, so a flat layout is
+equally supported even when an unrelated <code>datasets/</code> directory is
+also present.</p></dd>
 
 
 <dt id="arg-stop-on-error">stop_on_error<a class="anchor" aria-label="anchor" href="#arg-stop-on-error"></a></dt>

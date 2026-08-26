@@ -35,7 +35,7 @@ if (requireNamespace("hvtiRutilities", quietly = TRUE)) {
   pkgload::load_all(export_all = FALSE, helpers = FALSE, quiet = TRUE)
 }
 #> 
-#>  hvtiRutilities 1.0.11 
+#>  hvtiRutilities 1.1.0 
 #>  
 #>  Type hvtiRutilities.news() to see new features, changes, and bug fixes. 
 #> 
@@ -120,12 +120,14 @@ cat(paste(readLines(manifest_path), collapse = "\n"))
 #>   extract_date: '2024-01-15'
 #>   n_rows: 200
 #>   sha256: f3db9dd8a47765003a2509c54068f8736b0fd8c2f0b0425808422cc11f0bdfcd
+#>   role: source
 #>   source: Epic EMR, query v4.2, ICD mapping v3.2
 #>   sort_key: ccfid
 #> - file: labs_20240115.csv
 #>   extract_date: '2024-01-15'
 #>   n_rows: 200
 #>   sha256: 035acf2e981692554ba8e2c07f8b61f9d6ceb834343612d50d5487aed062b380
+#>   role: source
 #>   source: Epic EMR, labs module — Hgb, eGFR, BNP
 #>   sort_key: ccfid
 ```
@@ -470,7 +472,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] hvtiRutilities_1.0.11
+#> [1] hvtiRutilities_1.1.0
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] vctrs_0.7.3      cli_3.6.6        knitr_1.51       rlang_1.3.0     

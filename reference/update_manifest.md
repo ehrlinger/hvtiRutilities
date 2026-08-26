@@ -23,8 +23,12 @@ update_manifest(
   manifest_path = "manifest.yaml",
   extract_date = Sys.Date(),
   n_rows = NULL,
+  n_cols = NULL,
   source = NULL,
   sort_key = NULL,
+  schema_sha256 = NULL,
+  role = c("source", "primary"),
+  reader = NULL,
   verbose = FALSE
 )
 ```
@@ -52,6 +56,11 @@ update_manifest(
   when `options(manifest.allow_heavy_rowcount = TRUE)` is set. all other
   file types supply this value explicitly.
 
+- n_cols:
+
+  Integer. Column count. Pass it from a frame already read; a row count
+  alone cannot detect a dropped column.
+
 - source:
 
   Character. Free-text description of the data source (e.g.
@@ -61,6 +70,30 @@ update_manifest(
 
   Character. Column name(s) that define the canonical sort order of the
   dataset.
+
+- schema_sha256:
+
+  Character. SHA-256 of this dataset's schema sidecar, making the
+  manifest-to-sidecar link tamper-evident.
+
+- role:
+
+  Character, always `"source"`. This function only ever writes
+  `role = "source"` entries; a `role = "primary"` (promoted) entry's
+  `sha256` must describe its **parquet**, not the source this function
+  hashes, so calling it on a promoted entry would write a manifest that
+  can never verify. No exported function performs promotion yet — the
+  internal `.update_promoted_entry()` is what maintains a promoted entry
+  once one exists. See the *Promotion* section of the read-layer design
+  spec.
+
+- reader:
+
+  Character. The package and version that produced this derived file
+  (e.g. `"haven 2.5.5"`). Under `role = "primary"` the parquet is the
+  data, so the reader that produced it is part of its provenance: a
+  reader defect found later is otherwise unfindable once the source is
+  retired. `NULL` (default) omits the field.
 
 - verbose:
 

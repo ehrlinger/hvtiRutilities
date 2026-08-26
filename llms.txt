@@ -197,7 +197,9 @@ GPL (\>= 3)
 
 ## Data Import
 
-Read clinical data files with automatic type conversion
+Read clinical data files as stored. Type conversion is opt-in via
+convert_types, because coercing a two-valued numeric to logical breaks
+0/1 event and censoring flags.
 
 - [`read_clinical_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_clinical_data.md)
   : Read and prepare a clinical dataset in one step
@@ -233,6 +235,8 @@ versions
 
 - [`data_dictionary()`](https://ehrlinger.github.io/hvtiRutilities/reference/data_dictionary.md)
   : Build a data dictionary from a labeled dataset
+- [`dataset_schema()`](https://ehrlinger.github.io/hvtiRutilities/reference/dataset_schema.md)
+  : Column-level schema of a dataset
 - [`proc_contents()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_contents.md)
   : Describe a dataset's variables, in the style of SAS PROC CONTENTS
 - [`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)

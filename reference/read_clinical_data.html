@@ -53,7 +53,7 @@ R serialized objects via readRDS()
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.11</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -128,7 +128,7 @@ which package reads which format and ensures labels are preserved.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">read_clinical_data</span><span class="op">(</span><span class="va">file</span>, convert_types <span class="op">=</span> <span class="cn">TRUE</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">read_clinical_data</span><span class="op">(</span><span class="va">file</span>, convert_types <span class="op">=</span> <span class="cn">FALSE</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -140,8 +140,11 @@ which package reads which format and ensures labels are preserved.</p>
 
 
 <dt id="arg-convert-types">convert_types<a class="anchor" aria-label="anchor" href="#arg-convert-types"></a></dt>
-<dd><p>Logical. If <code>TRUE</code> (default), runs
-<code><a href="r_data_types.html">r_data_types</a></code> on the result.</p></dd>
+<dd><p>Logical. Apply <code><a href="r_data_types.html">r_data_types</a></code> to the data
+after reading. Defaults to <code>FALSE</code>: the file is returned as read.
+<code>TRUE</code> converts any two-valued numeric column to logical, which is
+wrong for 0/1 event and censoring flags, so type conversion belongs to a
+declared variable-derivation step rather than to reading.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
@@ -166,19 +169,14 @@ Ignored when <code>convert_types = FALSE</code>.</p></dd>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Read a CSV</span></span></span>
 <span class="r-in"><span><span class="va">tmp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span>fileext <span class="op">=</span> <span class="st">".csv"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/write.table.html" class="external-link">write.csv</a></span><span class="op">(</span><span class="va">mtcars</span>, <span class="va">tmp</span>, row.names <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">dta</span> <span class="op">&lt;-</span> <span class="fu">read_clinical_data</span><span class="op">(</span><span class="va">tmp</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">dta</span> <span class="op">&lt;-</span> <span class="fu">read_clinical_data</span><span class="op">(</span><span class="va">tmp</span>, convert_types <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">dta</span><span class="op">[</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">]</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 'data.frame':	32 obs. of  5 variables:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  $ mpg : num  21 21 22.8 21.4 18.7 18.1 14.3 24.4 22.8 19.2 ...</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   ..- attr(*, "label")= chr "mpg"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  $ cyl : Factor w/ 3 levels "4","6","8": 2 2 1 2 3 2 3 1 1 2 ...</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   ..- attr(*, "label")= chr "cyl"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  $ cyl : int  6 6 4 6 8 6 8 4 4 6 ...</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  $ disp: num  160 160 108 258 360 ...</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   ..- attr(*, "label")= chr "disp"</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  $ hp  : int  110 110 93 110 175 105 245 62 95 123 ...</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   ..- attr(*, "label")= chr "hp"</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  $ drat: num  3.9 3.9 3.85 3.08 3.15 2.76 3.21 3.69 3.92 3.92 ...</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   ..- attr(*, "label")= chr "drat"</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/unlink.html" class="external-link">unlink</a></span><span class="op">(</span><span class="va">tmp</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Read without type conversion</span></span></span>
@@ -197,7 +195,7 @@ Ignored when <code>convert_types = FALSE</code>.</p></dd>
 <span class="r-in"><span><span class="co"># Read an RDS file</span></span></span>
 <span class="r-in"><span><span class="va">tmp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span>fileext <span class="op">=</span> <span class="st">".rds"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">saveRDS</a></span><span class="op">(</span><span class="va">iris</span>, <span class="va">tmp</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">dta</span> <span class="op">&lt;-</span> <span class="fu">read_clinical_data</span><span class="op">(</span><span class="va">tmp</span>, factor_size <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">dta</span> <span class="op">&lt;-</span> <span class="fu">read_clinical_data</span><span class="op">(</span><span class="va">tmp</span>, convert_types <span class="op">=</span> <span class="cn">TRUE</span>, factor_size <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">dta</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 'data.frame':	150 obs. of  5 variables:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  $ Sepal.Length: num  5.1 4.9 4.7 4.6 5 5.4 4.6 5 4.4 4.9 ...</span>

@@ -23,7 +23,7 @@ print labels rather than names."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.11</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -86,7 +86,7 @@ print labels rather than names.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">read_built</span><span class="op">(</span>cfg <span class="op">=</span> <span class="fu"><a href="study_config.html">study_config</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">read_built</span><span class="op">(</span>cfg <span class="op">=</span> <span class="fu"><a href="study_config.html">study_config</a></span><span class="op">(</span><span class="op">)</span>, refresh <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -95,6 +95,16 @@ print labels rather than names.</p>
 
 <dl><dt id="arg-cfg">cfg<a class="anchor" aria-label="anchor" href="#arg-cfg"></a></dt>
 <dd><p>List. A study manifest from <code><a href="study_config.html">study_config</a></code>.</p></dd>
+
+
+<dt id="arg-refresh">refresh<a class="anchor" aria-label="anchor" href="#arg-refresh"></a></dt>
+<dd><p>Logical. If <code>TRUE</code>, force a re-read from the source and
+a reconversion regardless of the manifest's role or cached stamp.
+"The source changed" is not always something a timestamp can express –
+a rebuild that preserves <code>mtime</code>, a restored backup, a correction
+applied out of band. Errors if the manifest entry has
+<code>role: "primary"</code>: that role means the source has been retired and
+the parquet is authoritative, so there is nothing to refresh from.</p></dd>
 
 </dl></div>
     <div class="section level2">

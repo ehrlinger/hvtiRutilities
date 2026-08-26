@@ -11,7 +11,9 @@ from SAS.
 ### Main Functions
 
 - **[`read_clinical_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_clinical_data.md)**:
-  Read SAS, CSV, Excel, or RDS files with automatic type conversion
+  Read SAS, CSV, Excel, or RDS files as they are; pass
+  `convert_types = TRUE` to also apply
+  [`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
 - **[`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)**:
   Automatically infer and convert data types based on content
 - **[`label_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)**:
@@ -58,7 +60,7 @@ if (requireNamespace("hvtiRutilities", quietly = TRUE)) {
   pkgload::load_all(export_all = FALSE, helpers = FALSE, quiet = TRUE)
 }
 #> 
-#>  hvtiRutilities 1.0.11 
+#>  hvtiRutilities 1.1.0 
 #>  
 #>  Type hvtiRutilities.news() to see new features, changes, and bug fixes. 
 #> 
@@ -82,17 +84,17 @@ str(dta)
 #> 'data.frame':    100 obs. of  7 variables:
 #>  $ id     : int  1 2 3 4 5 6 7 8 9 10 ...
 #>   ..- attr(*, "label")= chr "Patient Identifier"
-#>  $ boolean: int  1 1 2 1 1 2 1 2 2 1 ...
+#>  $ boolean: int  2 2 1 1 2 1 2 2 1 1 ...
 #>   ..- attr(*, "label")= chr "Binary Indicator"
-#>  $ logical: chr  "F" "F" "T" "F" ...
+#>  $ logical: chr  "T" "T" "F" "F" ...
 #>   ..- attr(*, "label")= chr "Logical Status"
-#>  $ f_real : num  0.339 0.339 0.258 0.822 0.472 ...
+#>  $ f_real : num  0.121 0.437 0.121 0.739 0.184 ...
 #>   ..- attr(*, "label")= chr "Random Uniform Value"
-#>  $ float  : num  1.626 0.212 -0.825 -1.085 -1.032 ...
+#>  $ float  : num  0.476 1.209 -1.802 -1.322 0.174 ...
 #>   ..- attr(*, "label")= chr "Random Normal Value"
-#>  $ char   : chr  "female" "female" "female" "male" ...
+#>  $ char   : chr  "male" "male" "male" "male" ...
 #>   ..- attr(*, "label")= chr "Gender"
-#>  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 4 5 2 1 3 1 5 1 2 2 ...
+#>  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 4 3 1 1 3 5 4 2 4 5 ...
 #>   ..- attr(*, "label")= chr "Category Group"
 ```
 
@@ -114,15 +116,15 @@ str(dta_converted)
 #>   ..- attr(*, "label")= chr "Patient Identifier"
 #>  $ boolean: logi  TRUE TRUE TRUE TRUE TRUE TRUE ...
 #>   ..- attr(*, "label")= chr "Binary Indicator"
-#>  $ logical: Factor w/ 2 levels "F","T": 1 1 2 1 1 2 1 2 2 1 ...
+#>  $ logical: Factor w/ 2 levels "F","T": 2 2 1 1 2 1 2 2 1 1 ...
 #>   ..- attr(*, "label")= chr "Logical Status"
-#>  $ f_real : Factor w/ 9 levels "0.00331353512592614",..: 3 3 2 8 5 1 2 5 9 4 ...
+#>  $ f_real : Factor w/ 9 levels "0.0658464124426246",..: 2 5 2 9 3 4 8 2 2 4 ...
 #>   ..- attr(*, "label")= chr "Random Uniform Value"
-#>  $ float  : num  1.626 0.212 -0.825 -1.085 -1.032 ...
+#>  $ float  : num  0.476 1.209 -1.802 -1.322 0.174 ...
 #>   ..- attr(*, "label")= chr "Random Normal Value"
-#>  $ char   : Factor w/ 2 levels "female","male": 1 1 1 2 2 2 1 1 1 1 ...
+#>  $ char   : Factor w/ 2 levels "female","male": 2 2 2 2 2 1 1 2 1 2 ...
 #>   ..- attr(*, "label")= chr "Gender"
-#>  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 4 5 2 1 3 1 5 1 2 2 ...
+#>  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 4 3 1 1 3 5 4 2 4 5 ...
 #>   ..- attr(*, "label")= chr "Category Group"
 ```
 
@@ -468,14 +470,27 @@ str(labs_clean)
 
 ### Integration with Data Import
 
-Use
 [`read_clinical_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_clinical_data.md)
-to read and convert in one step:
+reads a file as-is: types come back exactly as the source stored them,
+and nothing is coerced by default. That default matters for clinical
+data specifically —
+[`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
+converts any two-valued numeric column to `logical`, and a SAS 0/1 event
+or censoring flag is exactly that shape. A survival model that expects
+`0`/`1` breaks silently if the flag arrives as `TRUE`/`FALSE`. Opt into
+conversion explicitly with `convert_types = TRUE`, and pass any
+[`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
+argument (such as `factor_size`) alongside it:
 
 ``` r
 
-# Read SAS, CSV, or Excel — auto-detects format and converts types
-dta <- read_clinical_data("path/to/data.sas7bdat", factor_size = 15)
+# Read SAS, CSV, or Excel — auto-detects format, no coercion
+dta_raw <- read_clinical_data("path/to/data.sas7bdat")
+
+# Opt in to type conversion, tuning it the same way you would call
+# r_data_types() directly
+dta <- read_clinical_data("path/to/data.sas7bdat",
+                          convert_types = TRUE, factor_size = 15)
 
 # Build a data dictionary for documentation
 dict <- data_dictionary(dta)
@@ -483,8 +498,11 @@ write.csv(dict, "data_dictionary.csv", row.names = FALSE)
 ```
 
 [`read_clinical_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_clinical_data.md)
-supports `.sas7bdat`, `.csv`, `.xlsx`, `.xls`, and `.rds` files. Set
-`convert_types = FALSE` to skip automatic type conversion.
+supports `.sas7bdat`, `.csv`, `.xlsx`, `.xls`, and `.rds` files.
+`convert_types = FALSE` is the default; `factor_size` and the other
+[`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
+arguments are silently ignored unless `convert_types = TRUE` is also
+passed.
 
 ## Best Practices
 
@@ -546,7 +564,8 @@ The `hvtiRutilities` package streamlines data preparation for clinical
 research:
 
 - **[`read_clinical_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_clinical_data.md)**:
-  One-step import from SAS, CSV, Excel, or RDS
+  Import from SAS, CSV, Excel, or RDS as-is, with type conversion
+  available via `convert_types = TRUE`
 - **[`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)**:
   Automatic, intelligent type conversion
 - **[`label_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)**:
@@ -614,7 +633,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] labelled_2.16.1       hvtiRutilities_1.0.11
+#> [1] labelled_2.16.1      hvtiRutilities_1.1.0
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] vctrs_0.7.3      cli_3.6.6        knitr_1.51       rlang_1.3.0     

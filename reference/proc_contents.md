@@ -40,6 +40,16 @@ An object of class `proc_contents`: a list with two elements.
   non-`NA` values), and `pct_missing` (0-100, 1 decimal place, or `NaN`
   when `data` has zero rows)
 
+`label` is never `NA`: it falls back to the variable's own name when the
+source carries no label, via
+`labelled::var_label(null_action = "fill")`. An unlabelled variable is
+therefore indistinguishable here from one whose label equals its name,
+and both are common. Callers recording this output as a durable
+description of a source dataset — a schema sidecar, a data dictionary
+kept after the source is retired — should read labels from the source
+attributes directly rather than from this column, or they will record a
+fallback as though it were the dataset's own metadata.
+
 ## Details
 
 Reading a `.sas7bdat` through haven is lossy. Variable name, label,
@@ -49,6 +59,13 @@ created/modified timestamps do not. Those fields are omitted rather than
 inferred, because inferred values would look authoritative and would
 disagree with the source dataset whenever its `LENGTH` statement
 differed from the default.
+
+"Survive" means preserved *when the source carries them*, not present on
+every variable. A SAS variable need not have a label or a format, and
+many do not: in one 879-variable clinical build, 865 variables carried a
+label and 395 carried a `format.sas`. An `NA` in `format` therefore
+reports that the source variable had no format, not that one was lost in
+reading. `label` does not behave this way — see *Value*.
 
 The SAS `Type` column is two-valued, so the mapping from R is
 deliberately lossy: `character` and `factor` become `"Char"`; everything
