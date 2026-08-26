@@ -179,3 +179,49 @@ test_that("multiple roots are swept and the rows concatenate", {
 
   expect_equal(nrow(job_files(c(d1, d2))), 24L)
 })
+
+test_that("an unparsed prefix does not fall into the taxonomy's NA-prefix row", {
+  # hvti_taxonomy()$prefix has one genuine NA (the "estimates" row, an
+  # artifact kind rather than an analysis type). match() pairs NA with NA by
+  # default, so a file whose prefix does not parse -- also NA -- would match
+  # that row unless match() is called with incomparables = NA_character_.
+  # Every basename in the shared fixture contains a dot and parses to a real
+  # prefix, so none of them exercise this path; a name with no dot at all is
+  # needed to produce an unparsed (NA) prefix.
+  d <- withr::local_tempdir()
+  dir.create(file.path(d, "distributions"), recursive = TRUE)
+  file.create(file.path(d, "distributions", "Makefile"))
+
+  out <- job_files(d)
+  expect_true(is.na(out$prefix))
+  expect_true(is.na(out$folder_expected))
+  expect_false(identical(out$folder_expected, "estimates"))
+})
+
+test_that("a leading-dot filename keeps its whole name as the stem", {
+  # .DS_Store has one dot, at position 1. Splitting on the final dot the same
+  # way an extensioned name is split leaves stem = "" and ext = "DS_Store" --
+  # wrong on its face, and macOS writes these throughout any mounted share
+  # this corpus is swept from. A name whose only dot is leading should be
+  # treated like a name with no dot at all: whole name as stem, ext NA.
+  d <- withr::local_tempdir()
+  dir.create(file.path(d, "distributions"), recursive = TRUE)
+  file.create(file.path(d, "distributions", ".DS_Store"))
+
+  out <- job_files(d)
+  expect_equal(out$stem, ".DS_Store")
+  expect_true(is.na(out$ext))
+})
+
+test_that("a root with no files returns a 0-row frame with the full column set", {
+  d <- withr::local_tempdir()
+
+  out <- job_files(d)
+  expect_equal(nrow(out), 0L)
+  expect_equal(
+    names(out),
+    c("path", "study", "folder", "status", "depth", "naming", "prefix",
+      "is_template", "stem", "ext", "prefix_class", "folder_expected",
+      "folder_ok")
+  )
+})

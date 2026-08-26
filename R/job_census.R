@@ -113,6 +113,16 @@ job_files <- function(roots) {
     stem <- ifelse(has_ext, sub("[.][^.]*$", "", base), base)
     ext <- ifelse(has_ext, sub("^.*[.]", "", base), NA_character_)
 
+    # A name whose only dot is a leading one (.DS_Store, .gitignore) drops
+    # its entire name under the split above, leaving stem = "" and the whole
+    # name misread as the extension. macOS writes .DS_Store throughout any
+    # share this corpus is swept from, so this is common, not hypothetical.
+    # Treat it the same as a name with no dot at all: whole name as stem, no
+    # extension.
+    no_real_ext <- has_ext & !nzchar(stem)
+    stem <- ifelse(no_real_ext, base, stem)
+    ext <- ifelse(no_real_ext, NA_character_, ext)
+
     tx <- hvti_taxonomy()
     # incomparables = NA keeps an unmatched (NA) prefix from matching the
     # taxonomy's own NA prefix row ("estimates") -- match() otherwise pairs
