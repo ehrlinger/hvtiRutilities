@@ -321,6 +321,16 @@ test_that("job_files() errors when a root is a file, not a directory", {
   expect_error(job_files(f), "not a directory")
 })
 
+test_that("job_files() errors on a non-character roots argument, naming what was passed", {
+  expect_error(job_files(1L), "`roots` must be a character vector")
+  expect_error(job_files(1L), "integer")
+})
+
+test_that("job_files() errors on a zero-length roots argument, naming what was expected", {
+  expect_error(job_files(character(0)), "at least one")
+  expect_error(job_files(character(0)), "zero-length")
+})
+
 test_that("folder_ok is NA when either side is unknown, never FALSE", {
   # folder_ok is defined as folder == folder_expected, which is NA when
   # either side is NA. Shipping it as FALSE makes !folder_ok select unplaced

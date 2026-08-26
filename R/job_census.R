@@ -176,7 +176,15 @@
 #' job_files(d)[, c("study", "folder", "prefix", "status")]
 #' unlink(d, recursive = TRUE)
 job_files <- function(roots) {
-  stopifnot(is.character(roots), length(roots) >= 1L)
+  if (!is.character(roots)) {
+    stop("job_files(): `roots` must be a character vector of directory ",
+         "paths, not ", class(roots)[1], ".", call. = FALSE)
+  }
+  if (length(roots) < 1L) {
+    stop("job_files(): `roots` must have length at least one; got a ",
+         "zero-length character vector. Provide at least one directory ",
+         "to sweep.", call. = FALSE)
+  }
   roots <- .job_roots(roots)
 
   per_root <- lapply(roots, function(r) {

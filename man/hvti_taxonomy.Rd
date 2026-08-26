@@ -12,9 +12,8 @@ A data frame with columns \code{prefix}, \code{name}, \code{folder},
   an artifact kind rather than an analysis type.
 }
 \description{
-The two-letter prefix system inherited from the original CORR analysis
-binder. The prefix encodes both the type of analysis and the folder the job
-belongs in.
+The prefix system inherited from the original CORR analysis binder. The
+prefix encodes both the type of analysis and the folder the job belongs in.
 }
 \details{
 This is data rather than documentation on purpose. The same table lived in a

@@ -11,7 +11,7 @@ A character vector.
 }
 \description{
 Some file names lead with a utility name rather than an analysis prefix —
-`plots`, `PPTs`. They are listed here so the test suite can tell "not a
+\code{plots}, \code{PPTs}. They are listed here so the test suite can tell "not a
 prefix" apart from "a prefix nobody documented". Without this distinction
 the taxonomy either fills with non-prefixes or stops catching real
 omissions.

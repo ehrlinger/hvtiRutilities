@@ -1,7 +1,7 @@
 # Job-type inventory — the level-one corpus sweep
 
 **Date:** 2026-08-26
-**Status:** designed, approved, not implemented
+**Status:** implemented in `hvtiRutilities` (PR 1); `hvtiRtemplates` re-export pending its companion PR
 **Package:** `hvtiRutilities` (PR 1), `hvtiRtemplates` (PR 2)
 **Implements:** §2 of `hvtiRtemplates/specs/2026-08-26-job-type-census-sweep.md`
 **Supersedes that spec's §5** ("Where this work should live"), which left the

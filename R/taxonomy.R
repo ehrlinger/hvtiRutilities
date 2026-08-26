@@ -1,8 +1,7 @@
 #' Analysis prefix taxonomy
 #'
-#' The two-letter prefix system inherited from the original CORR analysis
-#' binder. The prefix encodes both the type of analysis and the folder the job
-#' belongs in.
+#' The prefix system inherited from the original CORR analysis binder. The
+#' prefix encodes both the type of analysis and the folder the job belongs in.
 #'
 #' This is data rather than documentation on purpose. The same table lived in a
 #' README and drifted from the files it described; as a function it is checked
@@ -75,7 +74,7 @@ hvti_taxonomy <- function() {
 #' Second fields that are not analysis prefixes
 #'
 #' Some file names lead with a utility name rather than an analysis prefix —
-#' `plots`, `PPTs`. They are listed here so the test suite can tell "not a
+#' \code{plots}, \code{PPTs}. They are listed here so the test suite can tell "not a
 #' prefix" apart from "a prefix nobody documented". Without this distinction
 #' the taxonomy either fills with non-prefixes or stops catching real
 #' omissions.
