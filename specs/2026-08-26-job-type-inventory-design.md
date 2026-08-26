@@ -157,11 +157,27 @@ conventions are live:
 |---|---|---|---|
 | `legacy` | `<prefix>.<endpoint>[...].<ext>` | `hz.dead.lst` | 527 studies in `/studies` |
 | `template` | `<NN>.<MM>-<prefix>.qmd` | `03.01-ac.qmd` | `hvtiRtemplates/inst/templates/` |
-| `new_job` | `<endpoint>-<type>-<ordinal>-<prefix>.qmd` | `dead_pa-parity-03.01-hz.qmd` | `hvtiRtemplates/R/new-job.R:55` |
-| `ordinal_first` | `<NN>-<prefix>-<endpoint>.qmd` | `02-hz-dead_pa.qmd` | preserve_root `analyses/R_hazard/qmd/` |
+| `set` | `<endpoint>-<type>-<NN>.<MM>-<prefix>[-parity].qmd` | `dead_pa-hz-03.01-ac.qmd` | `new_job()` output — the forward convention |
+| `r_transitional` | `<NN>-<prefix>-<endpoint>[-parity].qmd` | `02-hz-dead_pa.qmd` | preserve_root `analyses/R_hazard/qmd/` and `parity/` |
 
-`prefix` is resolved by trying each parser **in a fixed order — `template`,
-`new_job`, `ordinal_first`, `legacy` — and taking the first match.** The order
+`set` is the authoritative convention for R jobs, designed in
+`hvtiRtemplates/specs/2026-08-21-template-set-layout-design.md`. Its
+set-key-first field order is deliberate and must not be "tidied" into
+ordinal-first: the layout rule is *"authored files sit flat, generated
+artifacts sit under `<endpoint>-<type>/`"*, so the job file is named to sort
+adjacent to its own artifact directory. Ordinals are global rather than
+per-set (`ac`, `hz`, `hp` scaffold to `03.01`, `03.02`, `06.01`), so
+ordinal-first would not yield run order — it would interleave every set in the
+folder and break set cohesion, which is the property the repeated life table
+is being paid for.
+
+`r_transitional` is **preserve_root's hand-made R jobs, which predate that
+design**. It is a legacy shape that shrinks to zero when those files are
+renamed to `set`; the parser exists to see them until then, not to bless them.
+Renaming them is study-tree work and out of scope here.
+
+`prefix` is resolved by trying each parser **in a fixed order — `set`,
+`template`, `r_transitional`, `legacy` — and taking the first match.** The order
 is most-specific-first and must not be rearranged casually: the three R-side
 patterns are tightly anchored (two required digits, a required `.qmd`), while
 `legacy` is permissive enough to "succeed" on almost any dotted name and would
@@ -171,14 +187,11 @@ shadow the others if tried first. A file matching none gets `naming = NA`,
 A test asserts the order by feeding one file that more than one parser could
 claim and pinning which wins.
 
-**Two things this table makes visible.**
-
-First, under a legacy-only parser every R job in preserve_root classifies as
-prefix `01-ac-dead_pa` and lands in the unknown bucket — *the entire R
-migration output would be invisible to the inventory built to track it.*
-
-Second, `new_job`'s convention and the R jobs already on disk **do not match
-each other**; the latter predate `new_job()`. See §6 for the recommended fix.
+**What this table makes visible.** Under a legacy-only parser every R job in
+preserve_root classifies as prefix `01-ac-dead_pa` and lands in the unknown
+bucket — *the entire R migration output would be invisible to the inventory
+built to track it.* That, not the count of conventions, is the reason the
+parser set is plural.
 
 **Legacy prefix extraction, specifically.** Strip a leading `tp.` **first**,
 record the file as a template, and take the prefix from what remains.
@@ -265,30 +278,43 @@ zero misfiled jobs, every one under `distributions/` — but that was verified,
 not assumed. `folder_ok` encodes the check as data so every prefix gets it for
 free; `hvti_taxonomy()` already carries the expected folder per row.
 
-## 6. Recommended: unify `new_job()`'s output naming
+## 6. `new_job()` is not renamed — the mismatch resolves the other way
 
-**Not required for Level 1. Recorded here because it removes a permanent
-parser rather than accommodating it, and because it was pre-authorised on
-2026-08-26 ("we can change that if necessary").**
+**Recorded because it was proposed and rejected during this design, and the
+rejection is not obvious from the code alone.**
 
-`new_job()` writes `<endpoint>-<type>-<ordinal>-<prefix>.qmd`
-(`new-job.R:55`). The jobs already in preserve_root are
-`<NN>-<prefix>-<endpoint>.qmd`. Two R-side conventions where one would do.
+An earlier draft recommended changing `new_job()` to emit
+`<ordinal>-<prefix>-<endpoint>.qmd`, on the reasoning that
+`.template_fields()`'s comment calls zero-padded ordinal-first *"what makes a
+flat folder sort into run order past nine entries"* — so putting the endpoint
+first looked like an oversight discarding that sort order. **That reasoning was
+wrong**, and reading `inst/templates/README.md` and
+`specs/2026-08-21-template-set-layout-design.md` is what shows why:
 
-`.template_fields()`'s own comment states the principle the templates follow:
-zero-padded ordinal-first *"is what makes a flat folder sort into run order
-past nine entries."* `new_job()` then puts the endpoint first and throws that
-sort order away. That reads as an oversight, not a decision — a jobs folder
-sorts by endpoint instead of by run order.
+1. **The layout rule depends on the set key leading.** *"Authored files sit
+   flat. Generated artifacts sit under `<endpoint>-<type>/`."* A job named
+   `dead_pa-hz-03.01-ac.qmd` sorts adjacent to the `dead_pa-hz/` directory
+   holding its own outputs. Ordinal-first separates them.
+2. **Ordinal-first would not produce run order.** Ordinals are global, not
+   per-set: `ac`, `hz`, `hp` scaffold to `03.01`, `03.02`, `06.01`, and the
+   gaps are deliberate — *"a gap positively says 'no descriptive job here'"*.
+   Sorting a folder ordinal-first therefore interleaves every set in it.
+3. **Parity jobs carry the same key** — `dead_pa-hz-03.01-ac-parity.qmd`. The
+   reorder would scatter a set's parity jobs as well.
 
-**Recommendation:** `new_job()` emits `<ordinal>-<prefix>-<endpoint>[-<type>].qmd`.
-It matches the template convention's ordinal-first principle and the jobs
-already on disk, and collapses `naming` from four values to two — `legacy` for
-the SAS corpus, `ordinal_first` for everything R.
+The set is the unit of work — *"the pair is the unit a study author works
+through to completion"* — and the duplicated upstream (`ac` running once per
+set rather than once per endpoint) is a cost that design accepts explicitly to
+buy set cohesion. Reordering the fields spends the cost and discards the
+benefit.
 
-**This changes `new_job()`'s contract and needs its own confirmation before
-implementation.** Existing job files would either be renamed or left as-is; the
-`ordinal_first` parser handles both either way.
+**So `new_job()` stands, and preserve_root's `02-hz-dead_pa.qmd` files are the
+ones out of step** — hand-made, and predating the 2026-08-21 design. The
+`r_transitional` parser in §4.2 exists to see them; renaming them to the `set`
+convention is study-tree work, out of scope here, and would retire that parser.
+
+**Do not re-propose the reorder without reading
+`2026-08-21-template-set-layout-design.md` §2–§3 first.**
 
 ## 7. Sequencing, versions, testing
 
@@ -353,6 +379,7 @@ declaration that disagrees with the filename is an error or a finding.
 - Do not report a sweep's coverage without reporting what it could not place.
 - Do not reintroduce an extension allowlist (§4.4).
 - Do not collapse `prefix_class` to two values (§4.3).
+- Do not reorder `new_job()`'s filename fields to put the ordinal first (§6).
 - Do not pool repeated-events and single-event fits in any parity number until
   the parent spec's §3 lands.
 - Do not write per-family content parsers before a question needs them.
