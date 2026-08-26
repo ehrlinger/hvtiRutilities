@@ -17,7 +17,6 @@
   n <- length(basenames)
   naming <- rep(NA_character_, n)
   prefix <- rep(NA_character_, n)
-  is_template <- rep(FALSE, n)
 
   # A leading `tp.` marks a template that is not meant to be run. Strip it
   # before any parser sees the name, so the real prefix is what gets matched.

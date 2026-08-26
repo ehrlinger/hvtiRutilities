@@ -15,7 +15,8 @@
 - `job_files()` and `job_census()` — a filename-only inventory of the job
   corpus. `job_files()` returns one row per file with its study, taxonomy
   folder, prefix and naming convention; `job_census()` rolls that up to
-  `(study, prefix, folder)` with `n_jobs` (distinct stems) and `n_files`.
+  `(study, prefix, folder, is_template)` with `n_jobs` (distinct stems) and
+  `n_files`.
   The print method leads with distinct-studies-per-prefix, which is the
   lookup that says whether a job type can be templated yet.
 

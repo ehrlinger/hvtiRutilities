@@ -91,7 +91,7 @@ test_that("job_files() returns one row per file and drops nothing", {
 
   out <- job_files(d)
   expect_s3_class(out, "data.frame")
-  expect_equal(nrow(out), 12L)   # every file in the fixture
+  expect_equal(nrow(out), 16L)   # every file in the fixture
   expect_equal(
     names(out),
     c("path", "study", "folder", "status", "depth", "naming", "prefix",
@@ -106,7 +106,10 @@ test_that("the stem drops only the final extension", {
   out <- job_files(d)
 
   hz <- out[out$prefix %in% "hz" & !out$is_template, ]
-  expect_true(all(hz$stem %in% c("hz.dead", "hz.misfiled")))
+  expect_setequal(unique(hz$stem),
+                  c("hz.dead", "hz.misfiled", "02-hz-dead_pa"))
+  # hz.dead.sas~ keeps hz.dead: the backup shares the stem it backs up.
+  expect_equal(sum(hz$stem == "hz.dead"), 4L)
 })
 
 test_that("an editor backup shares its stem, so it inflates files not jobs", {
@@ -162,12 +165,15 @@ test_that("a tp. file is a template and keeps its real prefix", {
 
 test_that("there is no extension allowlist", {
   # A draft default of sas/lst/log/pdf/rtf, tuned on hz/ac/hp/bh, would have
-  # dropped every R-side job in the corpus. .md is not a job extension and is
-  # still present, because the filter does not exist.
+  # dropped every R-side job in the corpus. The canary must therefore be the
+  # R-side extensions themselves -- .md would survive a filter that removed
+  # exactly qmd/R/rda, which is the regression this test exists to catch.
   d <- withr::local_tempdir()
   make_corpus_fixture(d)
   out <- job_files(d)
 
+  expect_true("qmd" %in% out$ext)
+  expect_true("rda" %in% out$ext)
   expect_true("md" %in% out$ext)
 })
 
@@ -177,7 +183,7 @@ test_that("multiple roots are swept and the rows concatenate", {
   make_corpus_fixture(d1)
   make_corpus_fixture(d2)
 
-  expect_equal(nrow(job_files(c(d1, d2))), 24L)
+  expect_equal(nrow(job_files(c(d1, d2))), 32L)
 })
 
 test_that("an unparsed prefix does not fall into the taxonomy's NA-prefix row", {
@@ -189,8 +195,8 @@ test_that("an unparsed prefix does not fall into the taxonomy's NA-prefix row", 
   # prefix, so none of them exercise this path; a name with no dot at all is
   # needed to produce an unparsed (NA) prefix.
   d <- withr::local_tempdir()
-  dir.create(file.path(d, "distributions"), recursive = TRUE)
-  file.create(file.path(d, "distributions", "Makefile"))
+  dir.create(file.path(d, "alpha", "distributions"), recursive = TRUE)
+  file.create(file.path(d, "alpha", "distributions", "Makefile"))
 
   out <- job_files(d)
   expect_true(is.na(out$prefix))
@@ -205,8 +211,8 @@ test_that("a leading-dot filename keeps its whole name as the stem", {
   # this corpus is swept from. A name whose only dot is leading should be
   # treated like a name with no dot at all: whole name as stem, ext NA.
   d <- withr::local_tempdir()
-  dir.create(file.path(d, "distributions"), recursive = TRUE)
-  file.create(file.path(d, "distributions", ".DS_Store"))
+  dir.create(file.path(d, "alpha", "distributions"), recursive = TRUE)
+  file.create(file.path(d, "alpha", "distributions", ".DS_Store"))
 
   out <- job_files(d)
   expect_equal(out$stem, ".DS_Store")
@@ -224,4 +230,137 @@ test_that("a root with no files returns a 0-row frame with the full column set",
       "is_template", "stem", "ext", "prefix_class", "folder_expected",
       "folder_ok")
   )
+})
+
+test_that("a backslash-separated path splits into components, not one blob", {
+  # On Windows normalizePath() defaults to winslash = "\\", so the
+  # root-relative path arrives as alpha\\distributions\\hz.dead.lst. Splitting
+  # that on "/" alone yields ONE component, head(p, -1L) is character(0), and
+  # every file in the corpus classifies "unplaced" -- a zero-row census on a
+  # platform R-CMD-check.yaml actually runs.
+  #
+  # This asserts on the separator-handling directly rather than through
+  # normalizePath(), so it is a real assertion on macOS and Linux too.
+  out <- hvtiRutilities:::.job_placement_rel(
+    "C:\\corpus\\alpha\\distributions\\hz.dead.lst", "C:\\corpus"
+  )
+  expect_equal(out$status, "placed")
+  expect_equal(out$study, "alpha")
+  expect_equal(out$folder, "distributions")
+  expect_equal(out$depth, 0L)
+})
+
+test_that("forward-slash paths still split the same way", {
+  out <- hvtiRutilities:::.job_placement_rel(
+    "/corpus/alpha/graphs/Training/hp.curve.pdf", "/corpus"
+  )
+  expect_equal(out$status, "nested")
+  expect_equal(out$study, "alpha")
+  expect_equal(out$depth, 1L)
+})
+
+test_that("the same root passed twice is swept once", {
+  # Otherwise every file is emitted twice and n_files doubles silently.
+  d <- withr::local_tempdir()
+  make_corpus_fixture(d)
+
+  expect_equal(nrow(job_files(c(d, d))), nrow(job_files(d)))
+})
+
+test_that("a root nested inside another root warns and is dropped", {
+  # job_files(c("/studies", "/studies/cardiac/aorta")) emits the same physical
+  # file twice under two different study labels, so a prefix present in ONE
+  # study reads as two distinct studies and the template gate falsely
+  # unblocks. That is the exact decision this sweep exists to make.
+  d <- withr::local_tempdir()
+  make_corpus_fixture(d)
+  inner <- file.path(d, "alpha")
+
+  expect_warning(out <- job_files(c(d, inner)), "counted twice")
+  expect_equal(nrow(out), nrow(job_files(d)))
+})
+
+test_that("overlapping roots do not inflate a prefix's distinct-study count", {
+  d <- withr::local_tempdir()
+  make_corpus_fixture(d)
+
+  expect_warning(cen <- job_census(c(d, file.path(d, "alpha"))),
+                 "counted twice")
+  hz <- cen[!cen$is_template & cen$prefix %in% "hz", , drop = FALSE]
+  expect_equal(length(unique(hz$study)), 1L)
+})
+
+test_that("a root that IS a study warns -- a root must sit above studies", {
+  # Passing two study directories is the natural way to compare two studies,
+  # and it is exactly wrong: the taxonomy folder is then the first path
+  # component, both studies label as ".", they merge, and every prefix reports
+  # 1 distinct study -- the template gate falsely BLOCKED.
+  d <- withr::local_tempdir()
+  make_corpus_fixture(d)
+
+  expect_warning(job_files(file.path(d, "alpha")), "must sit ABOVE")
+})
+
+test_that("job_files() errors when a root does not exist", {
+  # A share that failed to mount is an empty directory that looks exactly
+  # like a corpus with no jobs in it. A confident zero-row answer there is
+  # the failure this sweep exists to make impossible.
+  missing <- file.path(tempdir(), "no-such-corpus-4b1f")
+  expect_error(job_files(missing), "no-such-corpus-4b1f")
+})
+
+test_that("job_files() errors on an NA root rather than sweeping nothing", {
+  expect_error(job_files(NA_character_), "NA")
+})
+
+test_that("job_files() errors when a root is a file, not a directory", {
+  d <- withr::local_tempdir()
+  f <- file.path(d, "notes.txt")
+  file.create(f)
+
+  expect_error(job_files(f), "not a directory")
+})
+
+test_that("folder_ok is NA when either side is unknown, never FALSE", {
+  # folder_ok is defined as folder == folder_expected, which is NA when
+  # either side is NA. Shipping it as FALSE makes !folder_ok select unplaced
+  # files and unparsed names alongside genuinely misfiled jobs -- README.md
+  # and Makefile come back as "misfiled", which they are not.
+  d <- withr::local_tempdir()
+  make_corpus_fixture(d)
+  out <- job_files(d)
+
+  unplaced <- out[out$status %in% "unplaced", , drop = FALSE]
+  expect_true(nrow(unplaced) >= 1L)
+  expect_true(all(is.na(unplaced$folder_ok)))
+
+  d2 <- withr::local_tempdir()
+  dir.create(file.path(d2, "alpha", "distributions"), recursive = TRUE)
+  file.create(file.path(d2, "alpha", "distributions", "Makefile"))
+  out2 <- job_files(d2)
+  expect_true(is.na(out2$prefix))
+  expect_true(is.na(out2$folder_ok))
+})
+
+test_that("the fixture exercises every naming convention and prefix class", {
+  # The fixture is the thing that decides what the rest of this suite can
+  # catch. It shipped holding twelve SAS-shaped files and not one R-side
+  # file, so an extension filter dropping exactly R/qmd/rda -- the regression
+  # the design spec section 4.4 exists to prevent -- passed the whole suite.
+  # Assert the coverage here, so the fixture cannot quietly narrow the way
+  # the hazard census's printed summary once did.
+  d <- withr::local_tempdir()
+  make_corpus_fixture(d)
+  out <- job_files(d)
+
+  expect_setequal(
+    unique(stats::na.omit(out$naming)),
+    c("legacy", "template", "set", "r_transitional")
+  )
+  expect_setequal(
+    unique(stats::na.omit(out$prefix_class)),
+    c("known", "non_prefix", "unknown")
+  )
+  expect_setequal(unique(out$status), c("placed", "nested", "unplaced"))
+  expect_true(any(out$is_template))
 })

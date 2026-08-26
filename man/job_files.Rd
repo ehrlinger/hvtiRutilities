@@ -7,7 +7,14 @@
 job_files(roots)
 }
 \arguments{
-\item{roots}{Character. One or more directories to sweep.}
+\item{roots}{Character. One or more directories to sweep. A root is a
+directory that \emph{contains} studies, not a study itself: the study is
+read as the path from the root down to the taxonomy folder's parent, so a
+root that is itself a study leaves nothing to name it and every prefix
+collapses to one study called \code{"."} (warned about). Each root must
+exist and be a directory, or this errors. A duplicate root is dropped; a
+root nested inside another warns and the inner one is dropped, since its
+files would otherwise be counted twice under two study labels.}
 }
 \value{
 A data frame with one row per file and the columns \code{path},
@@ -32,6 +39,11 @@ There is deliberately no extension allowlist. See
 \code{specs/2026-08-26-job-type-inventory-design.md}, section 4.4: a
 plausible default tuned on the hazard prefixes would have dropped every
 R-side job in the corpus.
+
+\code{folder_ok} is \code{folder == folder_expected}, and is therefore
+\code{NA} -- not \code{FALSE} -- whenever either side is unknown. An
+unplaced file has no folder and an unparsed name has no expected folder;
+neither is a misfiled job, and \code{!folder_ok} must not select them.
 
 \strong{Run this server-side.} It stats every file beneath \code{roots},
 which is metadata-latency-bound over an SMB mount -- a 40-file scan has

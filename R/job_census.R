@@ -12,19 +12,36 @@
 # that is exactly how shape-census.R under-reported twice.
 
 .job_placement <- function(paths, root) {
+  # winslash = "/" on BOTH calls. normalizePath() defaults to winslash = "\\"
+  # on Windows, which would hand .job_placement_rel() a path separated by
+  # backslashes; R-CMD-check.yaml runs windows-latest, so the default would
+  # redden CI with a census of zero rows rather than fail loudly.
+  # normalizePath() at all so a symlinked root (/var -> /private/var on
+  # macOS) does not make the prefix fail to line up.
+  .job_placement_rel(
+    normalizePath(paths, winslash = "/", mustWork = FALSE),
+    normalizePath(root, winslash = "/", mustWork = FALSE)
+  )
+}
+
+# The classification itself, on already-normalised paths. Split out from
+# .job_placement() so the separator handling can be asserted on directly:
+# through normalizePath() the Windows bug is untestable on a Mac, and an
+# untestable guarantee is one that regresses.
+.job_placement_rel <- function(npaths, nroot) {
   folders <- unique(hvti_taxonomy()$folder)
 
   # Strip the root prefix BY POSITION, not with a regex anchor. A root path is
   # arbitrary input -- a directory named "study (copy)" or "v1.2+" carries
   # regex metacharacters -- and an unescaped anchor matches the wrong thing
   # while still looking like it worked, because `.` and `-` match themselves.
-  # normalizePath() on both sides so a symlinked root (/var -> /private/var on
-  # macOS) does not make the prefix fail to line up.
-  nroot <- normalizePath(root, mustWork = FALSE)
-  npaths <- normalizePath(paths, mustWork = FALSE)
   rel <- substring(npaths, nchar(nroot) + 2L)
 
-  parts <- strsplit(rel, "/", fixed = TRUE)
+  # Accept either separator. "/" is what winslash = "/" produces, and the
+  # backslash arm is the belt to that braces: a component split that silently
+  # returns the whole path as one element classifies every file "unplaced",
+  # which reads as a clean empty answer rather than as a bug.
+  parts <- strsplit(rel, "[/\\\\]")
 
   out <- lapply(parts, function(p) {
     # Drop the basename: only directory components can be a taxonomy folder.
@@ -53,6 +70,55 @@
   )
 }
 
+# Validate, normalise and de-overlap the sweep roots.
+#
+# A root that does not exist is an ERROR, not an empty result. The corpus
+# lives on a share, and a share that failed to mount is an empty directory
+# indistinguishable from a corpus with no jobs in it -- a confident zero-row
+# answer there is the failure this sweep exists to make impossible.
+.job_roots <- function(roots) {
+  if (anyNA(roots)) {
+    stop("job_files(): `roots` contains NA. Every root must name an existing ",
+         "directory that CONTAINS studies.", call. = FALSE)
+  }
+  for (r in roots) {
+    if (dir.exists(r)) next
+    if (file.exists(r)) {
+      stop("job_files(): root is a file, not a directory: ", r,
+           ". A root must be a directory containing studies.", call. = FALSE)
+    }
+    stop("job_files(): root does not exist: ", r,
+         ". If it is a network share, check that it is mounted -- an ",
+         "unmounted share and an empty corpus produce the same table.",
+         call. = FALSE)
+  }
+
+  norm <- normalizePath(roots, winslash = "/", mustWork = FALSE)
+  # The same path twice would emit every file twice under the same study
+  # label, doubling n_files for no reason a reader could see.
+  norm <- norm[!duplicated(norm)]
+  if (length(norm) < 2L) return(norm)
+
+  # An inner root emits every file beneath it a SECOND time, under a second
+  # study label, so a prefix present in one study reads as two distinct
+  # studies -- and distinct studies is the number that decides whether a
+  # template is unblocked.
+  #
+  # Guarded on length above: paste0(character(0), "/") is "/", not
+  # character(0), so a single root would otherwise test as sitting inside a
+  # phantom root named "" and drop itself.
+  encloses <- function(i) startsWith(norm[i], paste0(norm[-i], "/"))
+  inner <- vapply(seq_along(norm), function(i) any(encloses(i)), logical(1))
+  for (i in which(inner)) {
+    outer <- norm[-i][encloses(i)][[1]]
+    warning("job_files(): root '", norm[i], "' sits inside root '", outer,
+            "', so every file under it would be counted twice, once under ",
+            "each root's study labels. Dropping the inner root.",
+            call. = FALSE)
+  }
+  norm[!inner]
+}
+
 #' Inventory the job files under one or more corpus roots
 #'
 #' @description
@@ -72,11 +138,23 @@
 #' plausible default tuned on the hazard prefixes would have dropped every
 #' R-side job in the corpus.
 #'
+#' \code{folder_ok} is \code{folder == folder_expected}, and is therefore
+#' \code{NA} -- not \code{FALSE} -- whenever either side is unknown. An
+#' unplaced file has no folder and an unparsed name has no expected folder;
+#' neither is a misfiled job, and \code{!folder_ok} must not select them.
+#'
 #' \strong{Run this server-side.} It stats every file beneath \code{roots},
 #' which is metadata-latency-bound over an SMB mount -- a 40-file scan has
 #' timed out at two minutes over the share.
 #'
-#' @param roots Character. One or more directories to sweep.
+#' @param roots Character. One or more directories to sweep. A root is a
+#'   directory that \emph{contains} studies, not a study itself: the study is
+#'   read as the path from the root down to the taxonomy folder's parent, so a
+#'   root that is itself a study leaves nothing to name it and every prefix
+#'   collapses to one study called \code{"."} (warned about). Each root must
+#'   exist and be a directory, or this errors. A duplicate root is dropped; a
+#'   root nested inside another warns and the inner one is dropped, since its
+#'   files would otherwise be counted twice under two study labels.
 #'
 #' @return A data frame with one row per file and the columns \code{path},
 #'   \code{study}, \code{folder}, \code{status}, \code{depth}, \code{naming},
@@ -96,6 +174,7 @@
 #' unlink(d, recursive = TRUE)
 job_files <- function(roots) {
   stopifnot(is.character(roots), length(roots) >= 1L)
+  roots <- .job_roots(roots)
 
   per_root <- lapply(roots, function(r) {
     paths <- list.files(r, recursive = TRUE, full.names = TRUE,
@@ -106,6 +185,18 @@ job_files <- function(roots) {
     base <- basename(paths)
     fields <- .job_name_fields(base)
     place <- .job_placement(paths, r)
+
+    # study "." means the taxonomy folder was the first component under the
+    # root -- the root IS a study. Two study roots passed together both label
+    # ".", merge into one row, and every prefix reports 1 distinct study: the
+    # template gate falsely BLOCKED, which is as wrong as falsely unblocked.
+    if (any(place$study %in% ".")) {
+      warning("job_files(): root '", r, "' holds a taxonomy folder at its ",
+              "top level, so files there cannot be attributed to a study ",
+              "and are labelled study = \".\". A root must sit ABOVE the ",
+              "studies it sweeps, not be one -- pass the directory that ",
+              "CONTAINS the studies.", call. = FALSE)
+    }
 
     # The stem drops the FINAL extension only: hz.dead.lst -> hz.dead, so the
     # .lst, .sas, .log and .sas~ of one job share a stem and count as one job.
@@ -150,8 +241,10 @@ job_files <- function(roots) {
       ext = ext,
       prefix_class = prefix_class,
       folder_expected = folder_expected,
-      folder_ok = !is.na(folder_expected) & !is.na(place$folder) &
-        folder_expected == place$folder,
+      # NA in, NA out. "The folder is wrong" and "there is no folder to
+      # judge" are different claims, and collapsing them to FALSE made
+      # README.md, notes.txt and Makefile all report as misfiled jobs.
+      folder_ok = folder_expected == place$folder,
       stringsAsFactors = FALSE
     )
   })
@@ -169,6 +262,17 @@ job_files <- function(roots) {
   }
   rownames(out) <- NULL
   out
+}
+
+# The 13 columns job_files() promises. job_census() validates against this
+# rather than trusting any data frame it is handed: a frame that is not
+# job_files() output otherwise produced a valid-LOOKING census whose print
+# emitted three confident zeros and then aborted with "invalid argument
+# type", naming nothing.
+.job_files_columns <- function() {
+  c("path", "study", "folder", "status", "depth", "naming", "prefix",
+    "is_template", "stem", "ext", "prefix_class", "folder_expected",
+    "folder_ok")
 }
 
 #' Roll a job-file inventory up to studies and prefixes
@@ -190,13 +294,30 @@ job_files <- function(roots) {
 #' jobs -- stays reachable from the summary rather than being computed and
 #' thrown away.
 #'
-#' @param x Character roots to sweep, or a data frame returned by
-#'   \code{\link{job_files}}.
+#' \strong{The roll-up cannot key every row}, and says so rather than
+#' shrinking quietly: a file with no study or no prefix has nothing to group
+#' by. Those rows are attached as the \code{"not_rolled_up"} attribute and
+#' counted on the first line of the print, because what was dropped is the
+#' \emph{union} of the unplaced and the unparsed and a reader cannot compute a
+#' union from two separate totals.
+#'
+#' \strong{Subsetting.} A row subset (\code{x[i, ]}) keeps both attributes. A
+#' \emph{column} subset (\code{x[, j]}) drops them while leaving the class in
+#' place, so the result still dispatches to this print method with nothing to
+#' print from; \code{print()} detects that and errors rather than reporting
+#' zeros.
+#'
+#' @param x Character roots to sweep -- see \code{\link{job_files}} for what a
+#'   root must be -- or a data frame returned by \code{\link{job_files}}. A
+#'   data frame missing any of that function's 13 columns is an error, not a
+#'   silently empty census.
 #'
 #' @return A data frame of class \code{hvti_job_census} with one row per
 #'   \code{(study, prefix, folder, is_template)} and columns \code{n_jobs} and
 #'   \code{n_files}. The originating \code{job_files()} rows are attached as
-#'   the \code{"files"} attribute.
+#'   the \code{"files"} attribute, and the rows that could not be rolled up --
+#'   those with no study or no prefix -- as the \code{"not_rolled_up"}
+#'   attribute.
 #'
 #' @seealso \code{\link{job_files}}
 #'
@@ -210,10 +331,23 @@ job_files <- function(roots) {
 #' job_census(d)
 #' unlink(d, recursive = TRUE)
 job_census <- function(x) {
-  files <- if (is.data.frame(x)) x else job_files(x)
+  if (is.data.frame(x)) {
+    absent <- setdiff(.job_files_columns(), names(x))
+    if (length(absent)) {
+      stop("job_census(): `x` is a data frame but is not job_files() output ",
+           "-- missing column(s): ", paste(absent, collapse = ", "),
+           ". Pass job_files() output, or the character roots to sweep.",
+           call. = FALSE)
+    }
+    files <- x
+  } else {
+    files <- job_files(x)
+  }
 
   keep <- !is.na(files$prefix) & !is.na(files$study)
   src <- files[keep, , drop = FALSE]
+  dropped <- files[!keep, , drop = FALSE]
+  rownames(dropped) <- NULL
 
   if (!nrow(src)) {
     out <- data.frame(
@@ -241,6 +375,7 @@ job_census <- function(x) {
 
   rownames(out) <- NULL
   attr(out, "files") <- files
+  attr(out, "not_rolled_up") <- dropped
   class(out) <- c("hvti_job_census", "data.frame")
   out
 }
@@ -257,6 +392,25 @@ print.hvti_job_census <- function(x, ...) {
          "x[, c(...)]) before printing it -- that drops the attribute while ",
          "keeping the class.", call. = FALSE)
   }
+  not_rolled <- attr(x, "not_rolled_up")
+  if (is.null(not_rolled)) {
+    # Recomputable from `files` by the same rule job_census() applies, so a
+    # hand-built object still gets an honest coverage line.
+    not_rolled <- files[is.na(files$prefix) | is.na(files$study), ,
+                        drop = FALSE]
+  }
+
+  # One cap for every example list below. Uncapped, the unknown-prefix list
+  # ran to hundreds of lines on a real corpus while placement examples were
+  # capped at three; and a list that truncates without saying so is the same
+  # defect class as a filter that drops without saying so.
+  cap <- 5L
+  say_more <- function(shown, total) {
+    if (total > shown) {
+      cat("    ... and ", total - shown, " more not shown\n", sep = "")
+    }
+  }
+
   jobs <- x[!x$is_template, , drop = FALSE]
 
   # The lookup that replaces the hand-count. A prefix present in one study
@@ -284,16 +438,24 @@ print.hvti_job_census <- function(x, ...) {
   cat("\nTemplates (tp.), counted separately from jobs: ", tpl_files,
       if (tpl_files == 1L) " file\n" else " files\n", sep = "")
 
+  # Coverage first, because it is the number the two tallies below cannot be
+  # combined into: what the roll-up dropped is the UNION of the files with no
+  # study and the files with no prefix, and those two sets overlap.
+  n_all <- nrow(files)
+  cat("\nRolled up ", sum(x$n_files), " of ", n_all, " file",
+      if (n_all == 1L) "" else "s", "; ", nrow(not_rolled),
+      " not attributable to a study or a prefix.\n", sep = "")
+
   # Every bucket below prints whether or not it has contents. A bucket that
   # prints nothing cannot be told apart from one nobody computed.
   cat("\nPlacement:\n")
   for (s in c("placed", "nested", "unplaced")) {
-    n <- sum(files$status == s)
-    cat("  ", s, ": ", n, "\n", sep = "")
-    if (s != "placed" && n) {
-      eg <- paste(utils::head(files$path[files$status == s], 3L),
-                  collapse = "\n    ")
-      cat("    e.g. ", eg, "\n", sep = "")
+    hit <- files$path[files$status == s]
+    cat("  ", s, ": ", length(hit), "\n", sep = "")
+    if (s != "placed" && length(hit)) {
+      shown <- utils::head(hit, cap)
+      cat("    e.g. ", paste(shown, collapse = "\n    "), "\n", sep = "")
+      say_more(length(shown), length(hit))
     }
   }
 
@@ -302,28 +464,43 @@ print.hvti_job_census <- function(x, ...) {
       "hvti_non_prefixes()): ", nrow(unknown), "\n", sep = "")
   if (nrow(unknown)) {
     tab <- sort(table(unknown$prefix), decreasing = TRUE)
-    for (p in names(tab)) {
+    for (p in utils::head(names(tab), cap)) {
       cat("  ", p, ": ", tab[[p]], "  e.g. ",
           unknown$path[unknown$prefix == p][1], "\n", sep = "")
     }
+    say_more(min(length(tab), cap), length(tab))
   }
 
-  mis <- files[!is.na(files$folder_expected) & !files$folder_ok &
-                 files$status != "unplaced", , drop = FALSE]
+  # folder_ok is NA when there is no folder or no expected folder, so
+  # which() -- which drops NA -- selects exactly the genuinely misfiled.
+  mis <- files[which(!files$folder_ok), , drop = FALSE]
   cat("\nMisfiled (prefix outside its taxonomy folder): ", nrow(mis), "\n",
       sep = "")
   if (nrow(mis)) {
-    for (i in seq_len(min(nrow(mis), 5L))) {
+    for (i in seq_len(min(nrow(mis), cap))) {
       cat("  ", basename(mis$path[i]), " in ", mis$folder[i],
           ", expected ", mis$folder_expected[i], "\n", sep = "")
     }
+    say_more(min(nrow(mis), cap), nrow(mis))
   }
 
   unparsed <- sum(is.na(files$naming))
   cat("\nUnparsed names (no convention matched): ", unparsed, "\n", sep = "")
 
+  # A complete tally, not a sample, so the cap does not apply: `ext` is the
+  # column an allowlist would have silently narrowed, and a truncated
+  # extension list is how that narrowing would hide.
   cat("\nExtensions:\n")
-  print(sort(table(files$ext, useNA = "ifany"), decreasing = TRUE))
+  ext_tab <- sort(table(files$ext, useNA = "ifany"), decreasing = TRUE)
+  if (!length(ext_tab)) {
+    cat("  (none)\n")
+  } else {
+    labels <- names(ext_tab)
+    labels[is.na(labels)] <- "(none)"
+    for (i in seq_along(ext_tab)) {
+      cat("  ", labels[i], ": ", ext_tab[[i]], "\n", sep = "")
+    }
+  }
 
   invisible(x)
 }

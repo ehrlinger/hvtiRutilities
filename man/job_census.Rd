@@ -10,8 +10,10 @@ job_census(x)
 \method{print}{hvti_job_census}(x, ...)
 }
 \arguments{
-\item{x}{Character roots to sweep, or a data frame returned by
-\code{\link{job_files}}.}
+\item{x}{Character roots to sweep -- see \code{\link{job_files}} for what a
+root must be -- or a data frame returned by \code{\link{job_files}}. A
+data frame missing any of that function's 13 columns is an error, not a
+silently empty census.}
 
 \item{...}{Ignored; present for S3 consistency with \code{print}.}
 }
@@ -19,7 +21,9 @@ job_census(x)
 A data frame of class \code{hvti_job_census} with one row per
   \code{(study, prefix, folder, is_template)} and columns \code{n_jobs} and
   \code{n_files}. The originating \code{job_files()} rows are attached as
-  the \code{"files"} attribute.
+  the \code{"files"} attribute, and the rows that could not be rolled up --
+  those with no study or no prefix -- as the \code{"not_rolled_up"}
+  attribute.
 }
 \description{
 Answers the question the template roadmap keeps needing: for each job
@@ -37,6 +41,19 @@ The \code{job_files()} rows are kept on the result as the \code{"files"}
 attribute, so the accounting -- unplaced files, unknown prefixes, misfiled
 jobs -- stays reachable from the summary rather than being computed and
 thrown away.
+
+\strong{The roll-up cannot key every row}, and says so rather than
+shrinking quietly: a file with no study or no prefix has nothing to group
+by. Those rows are attached as the \code{"not_rolled_up"} attribute and
+counted on the first line of the print, because what was dropped is the
+\emph{union} of the unplaced and the unparsed and a reader cannot compute a
+union from two separate totals.
+
+\strong{Subsetting.} A row subset (\code{x[i, ]}) keeps both attributes. A
+\emph{column} subset (\code{x[, j]}) drops them while leaving the class in
+place, so the result still dispatches to this print method with nothing to
+print from; \code{print()} detects that and errors rather than reporting
+zeros.
 }
 \examples{
 d <- file.path(tempdir(), "job-census-example")
