@@ -114,19 +114,44 @@ test_that("job_census() rejects a data frame that is not job_files() output", {
 })
 
 test_that("a second study is what makes a prefix templatable", {
-  # The gate the roadmap needs: distinct studies per prefix, jobs only. This
-  # is the shape of the 2026-08-26 hand-count -- hm/hs/bh sat at one study
-  # each and therefore could not be templated.
+  # The gate the roadmap needs: distinct studies per prefix, JOBS ONLY -- a
+  # template file (whether marked by the legacy tp. prefix or written in the
+  # `template` naming convention, section 4.2) is not a job and must not
+  # attest a study. This is the shape of the 2026-08-26 hand-count -- hm/hs/bh
+  # sat at one study each and therefore could not be templated.
   d <- withr::local_tempdir()
   make_corpus_fixture(d)
   out <- job_census(d)
 
   distinct_studies <- function(p) {
-    length(unique(out$study[!out$is_template & out$prefix %in% p]))
+    jobs <- !out$is_template & !out$is_template_naming
+    length(unique(out$study[jobs & out$prefix %in% p]))
   }
 
   expect_equal(distinct_studies("hz"), 1L)   # alpha only -- blocked
   expect_equal(distinct_studies("ac"), 3L)   # alpha, beta, gamma/sub
+})
+
+test_that("a template file cannot, by itself, satisfy the distinct-studies gate", {
+  # Proof by mutation: delete the genuine `set`-convention ac job from alpha
+  # (alpha/analyses/R_hazard/qmd/dead_pa-hz-03.01-ac.qmd), leaving alpha's
+  # only "ac" file the `template`-naming one
+  # (alpha/analyses/R_hazard/qmd/03.01-ac.qmd, is_template = FALSE per spec
+  # section 4). A reviewer showed the OLD gate logic (`!is_template` alone)
+  # still counted alpha here, holding distinct_studies("ac") at 3 with no
+  # second study actually attested. The fixed gate must drop alpha and read
+  # 2 -- beta and gamma/sub only.
+  d <- withr::local_tempdir()
+  make_corpus_fixture(d)
+  unlink(file.path(d, "alpha", "analyses", "R_hazard", "qmd",
+                    "dead_pa-hz-03.01-ac.qmd"))
+
+  out <- job_census(d)
+  jobs <- !out$is_template & !out$is_template_naming
+  distinct_studies_ac <- length(unique(out$study[jobs & out$prefix %in% "ac"]))
+
+  expect_equal(distinct_studies_ac, 2L)   # beta, gamma/sub -- alpha's only
+                                           # attestation left is a template
 })
 
 test_that("print leads with prefixes ranked by distinct studies", {
@@ -254,5 +279,44 @@ test_that("a truncated example list says how many it did not show", {
 
   txt <- paste(capture.output(print(job_census(d))), collapse = "\n")
   expect_match(txt, "Unknown prefixes[^:]*: 9\\b")
-  expect_match(txt, "and 4 more not shown")
+  expect_match(txt, "and 4 more prefixes not shown")
+})
+
+test_that("the unknown-prefix header and truncation line name their own units", {
+  # The header counts FILES (nrow(unknown)) and the truncation line counts
+  # PREFIXES (the remainder of a table keyed by prefix). One fixture where
+  # they differ -- 9 files spread over 3 prefixes -- would print "...: 9" and
+  # "N more not shown" with neither number saying what it is; a reader can't
+  # tell "9" is files and the truncation remainder is prefixes.
+  d <- withr::local_tempdir()
+  dir.create(file.path(d, "alpha", "distributions"), recursive = TRUE)
+  for (p in c("zq1", "zq2", "zq3")) {
+    for (i in 1:3) {
+      file.create(file.path(d, "alpha", "distributions",
+                            sprintf("%s.mystery%d.sas", p, i)))
+    }
+  }
+
+  txt <- paste(capture.output(print(job_census(d))), collapse = "\n")
+  expect_match(txt, "Unknown prefixes[^:]*: 9 files\\b")
+  expect_no_match(txt, "and 3 more not shown\\b")
+})
+
+test_that("the coverage line stays coherent after a row subset", {
+  # @details already blesses row subsetting (x[i, ]) as attribute-preserving,
+  # so print(x[1:2, ]) is reachable. sum(x$n_files) on the subset no longer
+  # matches nrow(attr(x, "files")), the full sweep -- "Rolled up 3 of 16
+  # files; 1 not attributable" where 3 + 1 != 16. The coverage totals must
+  # describe the full original sweep regardless of how many rows are printed.
+  d <- withr::local_tempdir()
+  make_corpus_fixture(d)
+  out <- job_census(d)
+
+  full_txt <- paste(capture.output(print(out)), collapse = "\n")
+  subset_txt <- paste(capture.output(print(out[1:2, ])), collapse = "\n")
+
+  full_line <- regmatches(full_txt, regexpr("Rolled up.*not attributable[^\\n]*", full_txt))
+  subset_line <- regmatches(subset_txt, regexpr("Rolled up.*not attributable[^\\n]*", subset_txt))
+
+  expect_equal(subset_line, full_line)
 })

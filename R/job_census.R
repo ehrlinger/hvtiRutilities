@@ -16,8 +16,11 @@
   # on Windows, which would hand .job_placement_rel() a path separated by
   # backslashes; R-CMD-check.yaml runs windows-latest, so the default would
   # redden CI with a census of zero rows rather than fail loudly.
-  # normalizePath() at all so a symlinked root (/var -> /private/var on
-  # macOS) does not make the prefix fail to line up.
+  # And it is still worth calling normalizePath() at all, rather than
+  # skipping it to dodge the winslash issue entirely: without it, a symlinked
+  # root (/var -> /private/var on macOS) leaves the root's raw path and the
+  # file's resolved path disagreeing, so the prefix strip in
+  # .job_placement_rel() fails to line up.
   .job_placement_rel(
     normalizePath(paths, winslash = "/", mustWork = FALSE),
     normalizePath(root, winslash = "/", mustWork = FALSE)
@@ -289,6 +292,17 @@ job_files <- function(roots) {
 #' keeping both means the new output can be reconciled against the table that
 #' already drove a decision.
 #'
+#' \strong{A template is not a job, by either marker.} \code{is_template} is
+#' strictly the legacy \code{tp.} prefix (spec section 4); a file written in
+#' the \code{template} naming convention (section 4.2, e.g.
+#' \code{03.01-ac.qmd}) is \emph{also} not a job, but with \code{is_template
+#' = FALSE}. \code{is_template_naming} carries that second signal, and the
+#' roll-up keys on both, so a template-convention file never shares a row
+#' with a genuine job at the same \code{(study, prefix, folder)} -- if it
+#' did, that row could outlive the genuine job and still read as an
+#' attestation the distinct-studies gate (a prefix needs a second study
+#' running the real job before it is templatable) would wrongly count.
+#'
 #' The \code{job_files()} rows are kept on the result as the \code{"files"}
 #' attribute, so the accounting -- unplaced files, unknown prefixes, misfiled
 #' jobs -- stays reachable from the summary rather than being computed and
@@ -305,7 +319,10 @@ job_files <- function(roots) {
 #' \emph{column} subset (\code{x[, j]}) drops them while leaving the class in
 #' place, so the result still dispatches to this print method with nothing to
 #' print from; \code{print()} detects that and errors rather than reporting
-#' zeros.
+#' zeros. The printed coverage line (\code{"Rolled up N of M files"}) always
+#' describes the full original sweep, even from a row-subset \code{x}: its
+#' totals are fixed as an attribute when \code{job_census()} builds \code{x},
+#' not recomputed from \code{x$n_files} at print time.
 #'
 #' @param x Character roots to sweep -- see \code{\link{job_files}} for what a
 #'   root must be -- or a data frame returned by \code{\link{job_files}}. A
@@ -313,11 +330,14 @@ job_files <- function(roots) {
 #'   silently empty census.
 #'
 #' @return A data frame of class \code{hvti_job_census} with one row per
-#'   \code{(study, prefix, folder, is_template)} and columns \code{n_jobs} and
-#'   \code{n_files}. The originating \code{job_files()} rows are attached as
-#'   the \code{"files"} attribute, and the rows that could not be rolled up --
-#'   those with no study or no prefix -- as the \code{"not_rolled_up"}
-#'   attribute.
+#'   \code{(study, prefix, folder, is_template, is_template_naming)} and
+#'   columns \code{n_jobs} and \code{n_files}. \code{is_template_naming} is
+#'   \code{TRUE} when the row's files use the \code{template} naming
+#'   convention (section 4.2) -- distinct from \code{is_template}, which is
+#'   strictly the legacy \code{tp.} marker. The originating \code{job_files()}
+#'   rows are attached as the \code{"files"} attribute, and the rows that
+#'   could not be rolled up -- those with no study or no prefix -- as the
+#'   \code{"not_rolled_up"} attribute.
 #'
 #' @seealso \code{\link{job_files}}
 #'
@@ -352,12 +372,21 @@ job_census <- function(x) {
   if (!nrow(src)) {
     out <- data.frame(
       study = character(0), prefix = character(0), folder = character(0),
-      is_template = logical(0), n_jobs = integer(0), n_files = integer(0),
+      is_template = logical(0), is_template_naming = logical(0),
+      n_jobs = integer(0), n_files = integer(0),
       stringsAsFactors = FALSE
     )
   } else {
+    # naming == "template" is a SEPARATE key dimension from is_template (the
+    # legacy tp. marker, spec section 4). Without this split, a
+    # template-convention file (e.g. 03.01-ac.qmd) rolls up into the SAME row
+    # as a genuine job at the same (study, prefix, folder) -- and once the
+    # genuine job is gone, the row survives on the template alone, is_template
+    # still FALSE, and it satisfies the distinct-studies gate as if a real job
+    # had run there.
+    template_naming <- src$naming %in% "template"
     key <- paste(src$study, src$prefix, src$folder, src$is_template,
-                 sep = "\r")
+                 template_naming, sep = "\r")
     split_src <- split(src, key)
     out <- do.call(rbind, lapply(split_src, function(g) {
       data.frame(
@@ -365,17 +394,25 @@ job_census <- function(x) {
         prefix = g$prefix[[1]],
         folder = g$folder[[1]],
         is_template = g$is_template[[1]],
+        is_template_naming = g$naming[[1]] %in% "template",
         n_jobs = length(unique(g$stem)),
         n_files = nrow(g),
         stringsAsFactors = FALSE
       )
     }))
-    out <- out[order(out$prefix, out$study, out$is_template), , drop = FALSE]
+    out <- out[order(out$prefix, out$study, out$is_template,
+                      out$is_template_naming), , drop = FALSE]
   }
 
   rownames(out) <- NULL
   attr(out, "files") <- files
   attr(out, "not_rolled_up") <- dropped
+  # Fixed at creation, so the coverage line print() prints stays correct even
+  # after a row subset (x[i, ], which base R keeps these attributes across --
+  # see @details). sum(x$n_files) recomputed from a subset x would only total
+  # the rows still present, going incoherent against nrow(attr(x, "files")),
+  # which is always the full sweep.
+  attr(out, "n_files_total") <- sum(out$n_files)
   class(out) <- c("hvti_job_census", "data.frame")
   out
 }
@@ -405,13 +442,34 @@ print.hvti_job_census <- function(x, ...) {
   # capped at three; and a list that truncates without saying so is the same
   # defect class as a filter that drops without saying so.
   cap <- 5L
-  say_more <- function(shown, total) {
+  say_more <- function(shown, total, noun = NULL) {
     if (total > shown) {
-      cat("    ... and ", total - shown, " more not shown\n", sep = "")
+      extra <- total - shown
+      label <- if (is.null(noun)) "" else {
+        plural <- if (extra == 1L) {
+          noun
+        } else if (grepl("x$", noun)) {
+          paste0(noun, "es")
+        } else {
+          paste0(noun, "s")
+        }
+        paste0(" ", plural)
+      }
+      cat("    ... and ", extra, " more", label, " not shown\n", sep = "")
     }
   }
 
-  jobs <- x[!x$is_template, , drop = FALSE]
+  # Neither is_template (the legacy tp. marker) nor is_template_naming (the
+  # `template` naming convention, section 4.2) is a job -- a template counted
+  # here would satisfy the distinct-studies gate below on its own. Defaults
+  # to FALSE if is_template_naming is absent (a hand-built object predating
+  # this column), which recycles safely rather than silently emptying `jobs`.
+  tpl_naming <- if ("is_template_naming" %in% names(x)) {
+    x$is_template_naming
+  } else {
+    FALSE
+  }
+  jobs <- x[!x$is_template & !tpl_naming, , drop = FALSE]
 
   # The lookup that replaces the hand-count. A prefix present in one study
   # cannot be templated: a template extracted from a single example encodes
@@ -441,8 +499,15 @@ print.hvti_job_census <- function(x, ...) {
   # Coverage first, because it is the number the two tallies below cannot be
   # combined into: what the roll-up dropped is the UNION of the files with no
   # study and the files with no prefix, and those two sets overlap.
+  # n_files_total is fixed by job_census() at creation (see @details), so
+  # this reads correctly even from a row-subset x -- sum(x$n_files) on a
+  # subset would total only the rows still present, going incoherent against
+  # n_all, which is always the full sweep. Falls back to sum(x$n_files) for a
+  # hand-built object predating the attribute.
   n_all <- nrow(files)
-  cat("\nRolled up ", sum(x$n_files), " of ", n_all, " file",
+  n_files_total <- attr(x, "n_files_total")
+  if (is.null(n_files_total)) n_files_total <- sum(x$n_files)
+  cat("\nRolled up ", n_files_total, " of ", n_all, " file",
       if (n_all == 1L) "" else "s", "; ", nrow(not_rolled),
       " not attributable to a study or a prefix.\n", sep = "")
 
@@ -459,16 +524,21 @@ print.hvti_job_census <- function(x, ...) {
     }
   }
 
+  # The header counts FILES (nrow(unknown)); the list below and its
+  # truncation remainder count PREFIXES (length(tab), a table keyed by
+  # prefix). Both units are named explicitly so the two counts are never
+  # mistaken for the same thing.
   unknown <- files[files$prefix_class %in% "unknown", , drop = FALSE]
   cat("\nUnknown prefixes (not in hvti_taxonomy(), not in ",
-      "hvti_non_prefixes()): ", nrow(unknown), "\n", sep = "")
+      "hvti_non_prefixes()): ", nrow(unknown), " file",
+      if (nrow(unknown) == 1L) "" else "s", "\n", sep = "")
   if (nrow(unknown)) {
     tab <- sort(table(unknown$prefix), decreasing = TRUE)
     for (p in utils::head(names(tab), cap)) {
       cat("  ", p, ": ", tab[[p]], "  e.g. ",
           unknown$path[unknown$prefix == p][1], "\n", sep = "")
     }
-    say_more(min(length(tab), cap), length(tab))
+    say_more(min(length(tab), cap), length(tab), "prefix")
   }
 
   # folder_ok is NA when there is no folder or no expected folder, so

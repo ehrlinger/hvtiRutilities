@@ -19,11 +19,14 @@ silently empty census.}
 }
 \value{
 A data frame of class \code{hvti_job_census} with one row per
-  \code{(study, prefix, folder, is_template)} and columns \code{n_jobs} and
-  \code{n_files}. The originating \code{job_files()} rows are attached as
-  the \code{"files"} attribute, and the rows that could not be rolled up --
-  those with no study or no prefix -- as the \code{"not_rolled_up"}
-  attribute.
+  \code{(study, prefix, folder, is_template, is_template_naming)} and
+  columns \code{n_jobs} and \code{n_files}. \code{is_template_naming} is
+  \code{TRUE} when the row's files use the \code{template} naming
+  convention (section 4.2) -- distinct from \code{is_template}, which is
+  strictly the legacy \code{tp.} marker. The originating \code{job_files()}
+  rows are attached as the \code{"files"} attribute, and the rows that
+  could not be rolled up -- those with no study or no prefix -- as the
+  \code{"not_rolled_up"} attribute.
 }
 \description{
 Answers the question the template roadmap keeps needing: for each job
@@ -36,6 +39,17 @@ are one job, and an editor backup does not create a second. \code{n_files}
 counts rows, and exists because the hand-count this replaces counted files;
 keeping both means the new output can be reconciled against the table that
 already drove a decision.
+
+\strong{A template is not a job, by either marker.} \code{is_template} is
+strictly the legacy \code{tp.} prefix (spec section 4); a file written in
+the \code{template} naming convention (section 4.2, e.g.
+\code{03.01-ac.qmd}) is \emph{also} not a job, but with \code{is_template
+= FALSE}. \code{is_template_naming} carries that second signal, and the
+roll-up keys on both, so a template-convention file never shares a row
+with a genuine job at the same \code{(study, prefix, folder)} -- if it
+did, that row could outlive the genuine job and still read as an
+attestation the distinct-studies gate (a prefix needs a second study
+running the real job before it is templatable) would wrongly count.
 
 The \code{job_files()} rows are kept on the result as the \code{"files"}
 attribute, so the accounting -- unplaced files, unknown prefixes, misfiled
@@ -53,7 +67,10 @@ union from two separate totals.
 \emph{column} subset (\code{x[, j]}) drops them while leaving the class in
 place, so the result still dispatches to this print method with nothing to
 print from; \code{print()} detects that and errors rather than reporting
-zeros.
+zeros. The printed coverage line (\code{"Rolled up N of M files"}) always
+describes the full original sweep, even from a row-subset \code{x}: its
+totals are fixed as an attribute when \code{job_census()} builds \code{x},
+not recomputed from \code{x$n_files} at print time.
 }
 \examples{
 d <- file.path(tempdir(), "job-census-example")
