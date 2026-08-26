@@ -610,6 +610,18 @@ test_that(".cache_valid()'s mtime round-trip tolerance holds just under 1e-4s an
   base_time <- as.POSIXct(as.numeric(Sys.time()), origin = "1970-01-01",
                           tz = "UTC") + 10.500000
   Sys.setFileTime(src, base_time)
+
+  # Read back what the filesystem actually recorded rather than assuming it
+  # kept what we asked for. Sys.setFileTime() truncates to whole seconds on
+  # Windows; .cache_valid() then takes the WHOLE-SECOND branch and verifies
+  # sha256 instead of applying the tolerance -- a different code path, and not
+  # the one this test pins. Establish the precondition or skip, rather than
+  # asserting against a branch that was never reached.
+  base_time <- file.info(src)$mtime
+  if (as.numeric(base_time) %% 1 == 0) {
+    skip(paste("filesystem does not preserve sub-second mtime;",
+               "the tolerance branch is unreachable here"))
+  }
   size <- as.numeric(file.info(src)$size)
 
   under <- base_time - 5e-5   # half the tolerance: within it
