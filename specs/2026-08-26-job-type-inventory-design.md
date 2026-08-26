@@ -386,6 +386,41 @@ per folder, how it stays current when a job is renamed or deleted, what
 `new_job()` does when the README is absent or hand-edited, and whether a
 declaration that disagrees with the filename is an error or a finding.
 
+## 8.5 Known false positives in the misfiled bucket — recorded, not fixed
+
+**Decision, 2026-08-26: ship as-is and record it here.**
+
+`folder_ok` compares a file's actual taxonomy folder against the one
+`hvti_taxonomy()` files its prefix under. On the real corpus that produces a
+class of false positive worth stating plainly before anyone reads the bucket:
+
+**Every R migration job reports as misfiled.** `hvti_taxonomy()` files `ac` and
+`hz` under `distributions/`, while `hvtiRtemplates` places R jobs under
+`analyses/` — preserve_root's live ones sit in `analyses/R_hazard/qmd/`. Both
+are correct by their own rules, and the sweep is faithfully reporting that the
+two sources of truth disagree.
+
+Suppressing it would be the silent narrowing this whole design exists to
+prevent, so the bucket keeps them. Two consequences for anyone using it:
+
+- The misfiled list mixes these with genuine misfilings. On the acute
+  dissection subtree the sweep reports **953** genuinely misfiled files
+  (`folder_ok == FALSE`); some fraction are this false positive.
+- The print caps the misfiled list and says how many it did not show, so a
+  real misfiling can sit behind the cap. Read the column, not the print, when
+  the count is large: `subset(job_files(x), !is.na(folder_ok) & !folder_ok)`.
+
+Settling it is a taxonomy question, not a sweep question, and it is deferred:
+either the taxonomy learns that R jobs live under `analyses/`, or the print
+splits `set`/`r_transitional` naming into its own bucket. Neither belongs in
+this spec's scope.
+
+⚠️ **`folder_ok` is `NA`, not `FALSE`, when either side is unknown.** An
+unplaced file and an unparsed name are not misfilings. An earlier
+implementation returned `FALSE` for all three, which would have reported
+**27,256** misfiled files on the same tree instead of 953. Always guard on
+`!is.na(folder_ok)`.
+
 ## 9. What not to do
 
 - Do not widen any prefix pattern without re-checking `tp.` exclusion.
