@@ -66,3 +66,42 @@ test_that("a second study is what makes a prefix templatable", {
   expect_equal(distinct_studies("hz"), 1L)   # alpha only -- blocked
   expect_equal(distinct_studies("ac"), 2L)   # beta and gamma/sub -- unblocked
 })
+
+test_that("print leads with prefixes ranked by distinct studies", {
+  d <- withr::local_tempdir()
+  make_corpus_fixture(d)
+
+  out <- capture.output(print(job_census(d)))
+  expect_true(any(grepl("distinct studies", out, ignore.case = TRUE)))
+})
+
+test_that("print reports every accounting bucket, including empty ones", {
+  # An empty bucket that prints "0" is a claim. A bucket that prints nothing
+  # is indistinguishable from a bucket nobody computed -- which is how the
+  # hazard census under-reported twice.
+  d <- withr::local_tempdir()
+  make_corpus_fixture(d)
+
+  out <- paste(capture.output(print(job_census(d))), collapse = "\n")
+  expect_match(out, "unplaced")
+  expect_match(out, "nested")
+  expect_match(out, "[Uu]nknown prefix")
+  expect_match(out, "[Mm]isfiled")
+})
+
+test_that("print names the unknown prefix and the misfiled job", {
+  d <- withr::local_tempdir()
+  make_corpus_fixture(d)
+
+  out <- paste(capture.output(print(job_census(d))), collapse = "\n")
+  expect_match(out, "zz")            # the unknown prefix
+  expect_match(out, "hz.misfiled")   # the prefix outside its folder
+})
+
+test_that("print returns its argument invisibly", {
+  d <- withr::local_tempdir()
+  make_corpus_fixture(d)
+  x <- job_census(d)
+
+  expect_invisible(print(x))
+})

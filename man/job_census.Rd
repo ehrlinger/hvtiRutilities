@@ -2,13 +2,18 @@
 % Please edit documentation in R/job_census.R
 \name{job_census}
 \alias{job_census}
+\alias{print.hvti_job_census}
 \title{Roll a job-file inventory up to studies and prefixes}
 \usage{
 job_census(x)
+
+\method{print}{hvti_job_census}(x, ...)
 }
 \arguments{
 \item{x}{Character roots to sweep, or a data frame returned by
 \code{\link{job_files}}.}
+
+\item{...}{Ignored; present for S3 consistency with \code{print}.}
 }
 \value{
 A data frame of class \code{hvti_job_census} with one row per

@@ -244,3 +244,78 @@ job_census <- function(x) {
   class(out) <- c("hvti_job_census", "data.frame")
   out
 }
+
+#' @param ... Ignored; present for S3 consistency with \code{print}.
+#' @rdname job_census
+#' @export
+print.hvti_job_census <- function(x, ...) {
+  files <- attr(x, "files")
+  jobs <- x[!x$is_template, , drop = FALSE]
+
+  # The lookup that replaces the hand-count. A prefix present in one study
+  # cannot be templated: a template extracted from a single example encodes
+  # that study's choices as though they were general.
+  cat("Jobs by prefix -- distinct studies is the column that says whether a\n")
+  cat("template is unblocked (a prefix at 1 study is blocked).\n\n")
+  if (nrow(jobs)) {
+    by_prefix <- do.call(rbind, lapply(split(jobs, jobs$prefix), function(g) {
+      data.frame(prefix = g$prefix[[1]],
+                 distinct_studies = length(unique(g$study)),
+                 n_jobs = sum(g$n_jobs),
+                 n_files = sum(g$n_files),
+                 stringsAsFactors = FALSE)
+    }))
+    by_prefix <- by_prefix[order(-by_prefix$distinct_studies,
+                                 by_prefix$prefix), , drop = FALSE]
+    rownames(by_prefix) <- NULL
+    print.data.frame(by_prefix)
+  } else {
+    cat("  (none)\n")
+  }
+
+  cat("\nTemplates (tp.), counted separately from jobs: ",
+      sum(x$n_files[x$is_template]), " files\n", sep = "")
+
+  # Every bucket below prints whether or not it has contents. A bucket that
+  # prints nothing cannot be told apart from one nobody computed.
+  cat("\nPlacement:\n")
+  for (s in c("placed", "nested", "unplaced")) {
+    n <- sum(files$status == s)
+    cat("  ", s, ": ", n, "\n", sep = "")
+    if (s != "placed" && n) {
+      cat("    e.g. ", utils::head(files$path[files$status == s], 3L),
+          sep = "\n    ")
+      cat("\n")
+    }
+  }
+
+  unknown <- files[files$prefix_class %in% "unknown", , drop = FALSE]
+  cat("\nUnknown prefixes (not in hvti_taxonomy(), not in",
+      "hvti_non_prefixes()): ", nrow(unknown), "\n", sep = " ")
+  if (nrow(unknown)) {
+    tab <- sort(table(unknown$prefix), decreasing = TRUE)
+    for (p in names(tab)) {
+      cat("  ", p, ": ", tab[[p]], "  e.g. ",
+          unknown$path[unknown$prefix == p][1], "\n", sep = "")
+    }
+  }
+
+  mis <- files[!is.na(files$folder_expected) & !files$folder_ok &
+                 files$status != "unplaced", , drop = FALSE]
+  cat("\nMisfiled (prefix outside its taxonomy folder): ", nrow(mis), "\n",
+      sep = "")
+  if (nrow(mis)) {
+    for (i in seq_len(min(nrow(mis), 5L))) {
+      cat("  ", basename(mis$path[i]), " in ", mis$folder[i],
+          ", expected ", mis$folder_expected[i], "\n", sep = "")
+    }
+  }
+
+  unparsed <- sum(is.na(files$naming))
+  cat("\nUnparsed names (no convention matched): ", unparsed, "\n", sep = "")
+
+  cat("\nExtensions:\n")
+  print(sort(table(files$ext, useNA = "ifany"), decreasing = TRUE))
+
+  invisible(x)
+}
