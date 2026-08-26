@@ -149,6 +149,12 @@ reference:
   - hvti_taxonomy
   - hvti_non_prefixes
 
+- title: Corpus Inventory
+  desc: Sweep the job corpus by filename -- which studies ran which job types
+  contents:
+  - job_files
+  - job_census
+
 - title: Package Utilities
   contents:
   - hvtiRutilities-package
