@@ -333,6 +333,25 @@ Record what produced a filed result, in a JSON sidecar beside it
 - [`provenance_path()`](https://ehrlinger.github.io/hvtiRutilities/reference/provenance_path.md)
   : Name the provenance sidecar for an output
 
+## Analysis Taxonomy
+
+The two-letter prefix system inherited from the CORR analysis binder
+
+- [`hvti_taxonomy()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_taxonomy.md)
+  : Analysis prefix taxonomy
+- [`hvti_non_prefixes()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_non_prefixes.md)
+  : Second fields that are not analysis prefixes
+
+## Corpus Inventory
+
+Sweep the job corpus by filename – which studies ran which job types
+
+- [`job_files()`](https://ehrlinger.github.io/hvtiRutilities/reference/job_files.md)
+  : Inventory the job files under one or more corpus roots
+- [`job_census()`](https://ehrlinger.github.io/hvtiRutilities/reference/job_census.md)
+  [`print(`*`<hvti_job_census>`*`)`](https://ehrlinger.github.io/hvtiRutilities/reference/job_census.md)
+  : Roll a job-file inventory up to studies and prefixes
+
 ## Package Utilities
 
 - [`hvtiRutilities-package`](https://ehrlinger.github.io/hvtiRutilities/reference/hvtiRutilities-package.md)

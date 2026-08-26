@@ -1,6 +1,6 @@
 # Changelog
 
-## hvtiRutilities 1.1.0
+## hvtiRutilities 1.1.1
 
 ### Breaking changes
 
@@ -17,6 +17,31 @@
 
 ### New features
 
+- [`job_files()`](https://ehrlinger.github.io/hvtiRutilities/reference/job_files.md)
+  and
+  [`job_census()`](https://ehrlinger.github.io/hvtiRutilities/reference/job_census.md)
+  — a filename-only inventory of the job corpus.
+  [`job_files()`](https://ehrlinger.github.io/hvtiRutilities/reference/job_files.md)
+  returns one row per file with its study, taxonomy folder, prefix and
+  naming convention;
+  [`job_census()`](https://ehrlinger.github.io/hvtiRutilities/reference/job_census.md)
+  rolls that up to `(study, prefix, folder, is_template)` with `n_jobs`
+  (distinct stems) and `n_files`. The print method leads with
+  distinct-studies-per-prefix, which is the lookup that says whether a
+  job type can be templated yet.
+
+  Nothing is filtered: placement and classification are columns, so a
+  file the sweep cannot classify stays in the output rather than
+  vanishing. There is no extension allowlist, deliberately — see
+  `specs/2026-08-26-job-type-inventory-design.md` §4.4.
+
+- [`hvti_taxonomy()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_taxonomy.md)
+  and
+  [`hvti_non_prefixes()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_non_prefixes.md)
+  — the analysis-prefix table, moved here from `hvtiRtemplates`, which
+  now imports them back. The table is shared vocabulary rather than
+  template machinery, and this package is the lower layer.
+
 - [`dataset_schema()`](https://ehrlinger.github.io/hvtiRutilities/reference/dataset_schema.md)
   — one row per column giving creation position, name, R class, SAS
   type, `format.sas` and label. Labels and formats are read from the
@@ -24,6 +49,7 @@
   variable’s own name. This is the durable description of a source
   dataset: it describes shape only, so two reads of an unchanged file
   produce an identical schema.
+
 - [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
   gains `n_cols`, `schema_sha256` and `role`. `n_cols` is recorded as
   part of the schema baseline, since a row count alone cannot detect a
@@ -34,10 +60,12 @@
   – that actually detects one. `role` is `"source"` or `"primary"` and
   distinguishes a dataset SAS still builds from one whose parquet has
   become authoritative.
+
 - [`verify_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md)
   checks `schema_sha256` against the sidecar on disk, and reports two
   entries whose file stems collide and would therefore claim the same
   derived `.parquet` and `.schema.csv` paths.
+
 - [`read_built()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_built.md)
   now caches its source as parquet on first read and uses that cache
   while the source’s size and modification time are unchanged. The
@@ -47,6 +75,7 @@
   converted. `arrow` is a suggested package — without it, or with
   `options(hvtiRutilities.disable_parquet_cache = TRUE)`, reads behave
   exactly as before.
+
 - The parquet cache’s validity check now follows the manifest entry’s
   `role` rather than a single size/mtime heuristic. A `role: "primary"`
   entry is served from its parquet unconditionally — the source may have
@@ -73,6 +102,7 @@
   conversion; that compared two different clocks whenever the files live
   on another host, so a client running even one second fast made every
   entry look unambiguous forever. It never shipped in a release.)
+
 - [`read_built()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_built.md)
   gains `refresh = TRUE`, which forces a re-read from the source and a
   reconversion regardless of role or the cached `size`/`mtime` stamp —
@@ -88,6 +118,7 @@
   authoritative) was unreachable. If a promoted entry’s parquet is also
   missing, the error now names the parquet as the missing copy rather
   than the source, which was retired on purpose.
+
 - [`verify_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md)
   now hashes whichever file a manifest entry’s `role` makes
   authoritative — the source for `role: "source"`, the parquet (resolved
@@ -97,12 +128,14 @@
   is therefore no longer reported as a failure once an entry is
   promoted; it is expected, since promotion means the source was
   retired.
+
 - A cache miss on a promoted (`role: "primary"`) entry — its parquet
   lost while the retired source happens to still be present — now
   reconverts the parquet without rewriting the entry as an ordinary miss
   would: `sha256` is updated to describe the new parquet, and
   `promoted_date` and `source_sha256` are left untouched, rather than
   being silently dropped and replaced with the source’s own hash.
+
 - The parquet cache now verifies each conversion round-trips before
   returning: the freshly written parquet is read back and compared
   against the frame haven returned — column names, order, classes and
@@ -110,6 +143,7 @@
   first column that differs, rather than leaving mismatched data behind
   a “successful” write. This matters most for a `role: "primary"` entry,
   which has no second chance to self-heal once the source is retired.
+
 - [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
   gains `reader`, recording the package and version that produced a
   derived file (e.g. `"haven 2.5.5"`). The parquet cache supplies it
