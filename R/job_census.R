@@ -170,3 +170,77 @@ job_files <- function(roots) {
   rownames(out) <- NULL
   out
 }
+
+#' Roll a job-file inventory up to studies and prefixes
+#'
+#' @description
+#' Answers the question the template roadmap keeps needing: for each job
+#' prefix, which studies have run it and how many jobs each.
+#'
+#' @details
+#' Two count columns, deliberately. \code{n_jobs} counts distinct stems and is
+#' the honest unit -- the \code{.lst}, \code{.sas} and \code{.log} of one job
+#' are one job, and an editor backup does not create a second. \code{n_files}
+#' counts rows, and exists because the hand-count this replaces counted files;
+#' keeping both means the new output can be reconciled against the table that
+#' already drove a decision.
+#'
+#' The \code{job_files()} rows are kept on the result as the \code{"files"}
+#' attribute, so the accounting -- unplaced files, unknown prefixes, misfiled
+#' jobs -- stays reachable from the summary rather than being computed and
+#' thrown away.
+#'
+#' @param x Character roots to sweep, or a data frame returned by
+#'   \code{\link{job_files}}.
+#'
+#' @return A data frame of class \code{hvti_job_census} with one row per
+#'   \code{(study, prefix, folder, is_template)} and columns \code{n_jobs} and
+#'   \code{n_files}. The originating \code{job_files()} rows are attached as
+#'   the \code{"files"} attribute.
+#'
+#' @seealso \code{\link{job_files}}
+#'
+#' @export
+#'
+#' @examples
+#' d <- file.path(tempdir(), "job-census-example")
+#' dir.create(file.path(d, "alpha", "distributions"), recursive = TRUE)
+#' file.create(file.path(d, "alpha", "distributions", "hz.dead.lst"))
+#' file.create(file.path(d, "alpha", "distributions", "hz.dead.sas"))
+#' job_census(d)
+#' unlink(d, recursive = TRUE)
+job_census <- function(x) {
+  files <- if (is.data.frame(x)) x else job_files(x)
+
+  keep <- !is.na(files$prefix) & !is.na(files$study)
+  src <- files[keep, , drop = FALSE]
+
+  if (!nrow(src)) {
+    out <- data.frame(
+      study = character(0), prefix = character(0), folder = character(0),
+      is_template = logical(0), n_jobs = integer(0), n_files = integer(0),
+      stringsAsFactors = FALSE
+    )
+  } else {
+    key <- paste(src$study, src$prefix, src$folder, src$is_template,
+                 sep = "\r")
+    split_src <- split(src, key)
+    out <- do.call(rbind, lapply(split_src, function(g) {
+      data.frame(
+        study = g$study[[1]],
+        prefix = g$prefix[[1]],
+        folder = g$folder[[1]],
+        is_template = g$is_template[[1]],
+        n_jobs = length(unique(g$stem)),
+        n_files = nrow(g),
+        stringsAsFactors = FALSE
+      )
+    }))
+    out <- out[order(out$prefix, out$study, out$is_template), , drop = FALSE]
+  }
+
+  rownames(out) <- NULL
+  attr(out, "files") <- files
+  class(out) <- c("hvti_job_census", "data.frame")
+  out
+}
