@@ -386,9 +386,12 @@ test_that("a fractional (sub-second) source mtime is trusted directly, without h
   read_built(cfg)
 
   src <- file.path(dir, "datasets", "built_test.sas7bdat")
-  fractional <- as.POSIXct(as.numeric(Sys.time()) + 5.123456,
-                            origin = "1970-01-01", tz = "UTC")
-  Sys.setFileTime(src, fractional)
+  Sys.setFileTime(src, as.POSIXct(as.numeric(Sys.time()) + 5.123456,
+                                  origin = "1970-01-01", tz = "UTC"))
+  # The fractional branch is the point of this test, and the filesystem has to
+  # be able to express it. Take what was actually recorded, not what we asked
+  # for. See helper-mtime.R.
+  fractional <- require_subsecond_mtime(src)
   mp <- file.path(dir, "manifest.yaml")
   m  <- yaml::read_yaml(mp)
   m$datasets[[1]]$source_mtime <- format(fractional, "%Y-%m-%d %H:%M:%OS6",
@@ -611,17 +614,9 @@ test_that(".cache_valid()'s mtime round-trip tolerance holds just under 1e-4s an
                           tz = "UTC") + 10.500000
   Sys.setFileTime(src, base_time)
 
-  # Read back what the filesystem actually recorded rather than assuming it
-  # kept what we asked for. Sys.setFileTime() truncates to whole seconds on
-  # Windows; .cache_valid() then takes the WHOLE-SECOND branch and verifies
-  # sha256 instead of applying the tolerance -- a different code path, and not
-  # the one this test pins. Establish the precondition or skip, rather than
-  # asserting against a branch that was never reached.
-  base_time <- file.info(src)$mtime
-  if (as.numeric(base_time) %% 1 == 0) {
-    skip(paste("filesystem does not preserve sub-second mtime;",
-               "the tolerance branch is unreachable here"))
-  }
+  # The tolerance branch is only reached when the live mtime is fractional,
+  # so that is a precondition the filesystem must supply. See helper-mtime.R.
+  base_time <- require_subsecond_mtime(src)
   size <- as.numeric(file.info(src)$size)
 
   under <- base_time - 5e-5   # half the tolerance: within it
