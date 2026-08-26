@@ -143,6 +143,12 @@ reference:
   - record_provenance
   - provenance_path
 
+- title: Analysis Taxonomy
+  desc: The two-letter prefix system inherited from the CORR analysis binder
+  contents:
+  - hvti_taxonomy
+  - hvti_non_prefixes
+
 - title: Package Utilities
   contents:
   - hvtiRutilities-package
