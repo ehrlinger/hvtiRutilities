@@ -204,6 +204,10 @@ test_that("a cache miss on a promoted entry reconverts without rewriting its pro
 
   parquet <- file.path(dir, "datasets", "built_test.parquet")
   unlink(parquet)                                  # lost, source still present
+  # unlink() reports failure by return value, never by erroring. If a platform
+  # refuses to delete a file arrow still holds open, the removal is a no-op and
+  # every assertion below would then be testing a cache that is still intact.
+  expect_false(file.exists(parquet))
 
   d <- read_built(cfg)
   expect_equal(nrow(d), 20L)
@@ -255,6 +259,10 @@ test_that("a promoted entry with no parquet names the parquet as the missing cop
   yaml::write_yaml(m, mp)
   file.remove(file.path(dir, "datasets", "built_test.sas7bdat"))
   file.remove(file.path(dir, "datasets", "built_test.parquet"))
+  # file.remove() returns FALSE rather than erroring, so confirm the
+  # precondition holds before asserting on what happens without those files.
+  expect_false(file.exists(file.path(dir, "datasets", "built_test.sas7bdat")))
+  expect_false(file.exists(file.path(dir, "datasets", "built_test.parquet")))
 
   expect_error(read_built(cfg), "built_test\\.parquet")
 })
@@ -472,15 +480,45 @@ test_that(".verify_parquet_roundtrip errors naming the first differing column an
 # Change 2: an unreadable parquet must not be fatal (except for role: primary).
 # ---------------------------------------------------------------------------
 
+# Put a corrupt parquet in place and stamp the manifest so .cache_valid()
+# accepts it, WITHOUT ever letting arrow open that path.
+#
+# The obvious construction -- read_built() to populate a real cache, then
+# overwrite the parquet -- fails on Windows: arrow still holds the file open
+# from the round-trip verification, and Windows refuses to open an already-open
+# file for writing where POSIX allows it. The test then dies in writeLines()
+# rather than exercising anything.
+#
+# Building the corrupt state directly is also the better test: it states the
+# precondition ("a manifest says this cache is valid, and it is not") instead
+# of arriving at it through a side effect.
+plant_corrupt_cache <- function(dir, role = "source") {
+  src <- file.path(dir, "datasets", "built_test.sas7bdat")
+  mp  <- file.path(dir, "manifest.yaml")
+
+  # n_rows/n_cols passed explicitly: .auto_count_rows() refuses .sas7bdat.
+  update_manifest(src, manifest_path = mp, n_rows = 20L, n_cols = 4L,
+                  role = "source")
+
+  info <- file.info(src)
+  m <- yaml::read_yaml(mp)
+  m$datasets[[1]]$source_size  <- as.numeric(info$size)
+  m$datasets[[1]]$source_mtime <- format(info$mtime, "%Y-%m-%d %H:%M:%OS6",
+                                         tz = "UTC")
+  m$datasets[[1]]$role <- role
+  yaml::write_yaml(m, mp)
+
+  parquet <- file.path(dir, "datasets", "built_test.parquet")
+  writeLines("not a parquet file", parquet)
+  parquet
+}
+
 test_that("an unreadable parquet warns and falls back to regenerating a role: source entry", {
   skip_if_no_arrow()
   dir <- withr::local_tempdir()
   make_study_fixture(dir, n = 20L)
   cfg <- study_config(dir)
-  read_built(cfg)                                    # populate the cache
-
-  parquet <- file.path(dir, "datasets", "built_test.parquet")
-  writeLines("not a parquet file", parquet)           # truncate/corrupt
+  parquet <- plant_corrupt_cache(dir, role = "source")
 
   expect_warning(d <- read_built(cfg), "regenerat")
   expect_equal(nrow(d), 20L)
@@ -493,15 +531,7 @@ test_that("an unreadable parquet errors plainly for a role: primary entry, namin
   dir <- withr::local_tempdir()
   make_study_fixture(dir, n = 20L)
   cfg <- study_config(dir)
-  read_built(cfg)
-
-  mp <- file.path(dir, "manifest.yaml")
-  m  <- yaml::read_yaml(mp)
-  m$datasets[[1]]$role <- "primary"
-  yaml::write_yaml(m, mp)
-
-  parquet <- file.path(dir, "datasets", "built_test.parquet")
-  writeLines("not a parquet file", parquet)
+  plant_corrupt_cache(dir, role = "primary")
 
   expect_error(read_built(cfg), "only copy")
 })
