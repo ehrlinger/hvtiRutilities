@@ -1,4 +1,4 @@
-# hvtiRutilities 1.1.0
+# hvtiRutilities 1.1.1
 
 ## Breaking changes
 
@@ -12,6 +12,22 @@
 
 ## New features
 
+- `job_files()` and `job_census()` — a filename-only inventory of the job
+  corpus. `job_files()` returns one row per file with its study, taxonomy
+  folder, prefix and naming convention; `job_census()` rolls that up to
+  `(study, prefix, folder, is_template)` with `n_jobs` (distinct stems) and
+  `n_files`.
+  The print method leads with distinct-studies-per-prefix, which is the
+  lookup that says whether a job type can be templated yet.
+
+  Nothing is filtered: placement and classification are columns, so a file
+  the sweep cannot classify stays in the output rather than vanishing. There
+  is no extension allowlist, deliberately — see
+  `specs/2026-08-26-job-type-inventory-design.md` §4.4.
+- `hvti_taxonomy()` and `hvti_non_prefixes()` — the analysis-prefix table,
+  moved here from `hvtiRtemplates`, which now imports them back. The table is
+  shared vocabulary rather than template machinery, and this package is the
+  lower layer.
 - `dataset_schema()` — one row per column giving creation position, name, R
   class, SAS type, `format.sas` and label. Labels and formats are read from
   the column attributes directly, so an absent label is `NA` rather than the
