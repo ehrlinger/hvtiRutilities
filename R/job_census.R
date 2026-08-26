@@ -250,6 +250,13 @@ job_census <- function(x) {
 #' @export
 print.hvti_job_census <- function(x, ...) {
   files <- attr(x, "files")
+  if (is.null(files)) {
+    stop("`x` has no \"files\" attribute -- print.hvti_job_census() needs ",
+         "the job_files() rows job_census() attaches to do its accounting. ",
+         "Build `x` with job_census(), and don't subset its columns (e.g. ",
+         "x[, c(...)]) before printing it -- that drops the attribute while ",
+         "keeping the class.", call. = FALSE)
+  }
   jobs <- x[!x$is_template, , drop = FALSE]
 
   # The lookup that replaces the hand-count. A prefix present in one study
@@ -273,8 +280,9 @@ print.hvti_job_census <- function(x, ...) {
     cat("  (none)\n")
   }
 
-  cat("\nTemplates (tp.), counted separately from jobs: ",
-      sum(x$n_files[x$is_template]), " files\n", sep = "")
+  tpl_files <- sum(x$n_files[x$is_template])
+  cat("\nTemplates (tp.), counted separately from jobs: ", tpl_files,
+      if (tpl_files == 1L) " file\n" else " files\n", sep = "")
 
   # Every bucket below prints whether or not it has contents. A bucket that
   # prints nothing cannot be told apart from one nobody computed.
@@ -283,15 +291,15 @@ print.hvti_job_census <- function(x, ...) {
     n <- sum(files$status == s)
     cat("  ", s, ": ", n, "\n", sep = "")
     if (s != "placed" && n) {
-      cat("    e.g. ", utils::head(files$path[files$status == s], 3L),
-          sep = "\n    ")
-      cat("\n")
+      eg <- paste(utils::head(files$path[files$status == s], 3L),
+                  collapse = "\n    ")
+      cat("    e.g. ", eg, "\n", sep = "")
     }
   }
 
   unknown <- files[files$prefix_class %in% "unknown", , drop = FALSE]
-  cat("\nUnknown prefixes (not in hvti_taxonomy(), not in",
-      "hvti_non_prefixes()): ", nrow(unknown), "\n", sep = " ")
+  cat("\nUnknown prefixes (not in hvti_taxonomy(), not in ",
+      "hvti_non_prefixes()): ", nrow(unknown), "\n", sep = "")
   if (nrow(unknown)) {
     tab <- sort(table(unknown$prefix), decreasing = TRUE)
     for (p in names(tab)) {

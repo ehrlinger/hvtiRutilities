@@ -68,11 +68,23 @@ test_that("a second study is what makes a prefix templatable", {
 })
 
 test_that("print leads with prefixes ranked by distinct studies", {
+  # Against the 12-file fixture: ac sits at 2 distinct studies (beta,
+  # gamma/sub); hz, hp, pp and zz each sit at 1. A regression that deleted
+  # the ranked-table block entirely, or stopped ordering it by distinct
+  # studies, must fail this test -- asserting only the explanatory sentence
+  # above the table (as the previous version of this test did) would not
+  # catch that.
   d <- withr::local_tempdir()
   make_corpus_fixture(d)
 
   out <- capture.output(print(job_census(d)))
-  expect_true(any(grepl("distinct studies", out, ignore.case = TRUE)))
+
+  ac_row <- grep("^\\s*[0-9]+\\s+ac\\s+2\\b", out)
+  expect_length(ac_row, 1L)
+
+  single_study_rows <- grep("^\\s*[0-9]+\\s+(hz|hp|pp|zz)\\s+1\\b", out)
+  expect_true(length(single_study_rows) >= 4L)
+  expect_true(all(ac_row < single_study_rows))
 })
 
 test_that("print reports every accounting bucket, including empty ones", {
@@ -104,4 +116,35 @@ test_that("print returns its argument invisibly", {
   x <- job_census(d)
 
   expect_invisible(print(x))
+})
+
+test_that("print errors clearly when the \"files\" attribute is missing", {
+  # A column subset (x[, c(...)]) or a hand-built object keeps the class but
+  # drops the attribute. Without a guard, files$status == s on NULL gives
+  # logical(0), sum() reports a confident 0 for every Placement bucket, and
+  # the function only later aborts at nrow(unknown) with an opaque
+  # "argument is of length zero" -- exactly the silent-narrowing failure
+  # this print method exists to prevent.
+  x <- data.frame(
+    study = "alpha", prefix = "hz", folder = "distributions",
+    is_template = FALSE, n_jobs = 1L, n_files = 1L,
+    stringsAsFactors = FALSE
+  )
+  class(x) <- c("hvti_job_census", "data.frame")
+
+  expect_error(print(x), regexp = "\"?files\"?.*job_census\\(\\)|job_census\\(\\).*\"?files\"?")
+})
+
+test_that("print prints 0 for a bucket that is genuinely empty", {
+  # The standard fixture has at least one member in every bucket, so a
+  # regression that wrapped a count line in `if (n) ...` would pass that
+  # suite untouched. Build a corpus with no misfiled job and no unplaced
+  # file, and assert the count lines still print "0".
+  d <- withr::local_tempdir()
+  dir.create(file.path(d, "alpha", "distributions"), recursive = TRUE)
+  file.create(file.path(d, "alpha", "distributions", "hz.dead.lst"))
+
+  out <- paste(capture.output(print(job_census(d))), collapse = "\n")
+  expect_match(out, "unplaced: 0\\b")
+  expect_match(out, "Misfiled[^:]*: 0\\b")
 })
