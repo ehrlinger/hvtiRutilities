@@ -24,7 +24,7 @@ The `hvtiRutilities` package provides utility functions for working with clinica
 
 ### Main Functions
 
-- **`read_clinical_data()`**: Read SAS, CSV, Excel, or RDS files with automatic type conversion
+- **`read_clinical_data()`**: Read SAS, CSV, Excel, or RDS files as they are; pass `convert_types = TRUE` to also apply `r_data_types()`
 - **`r_data_types()`**: Automatically infer and convert data types based on content
 - **`label_map()`**: Extract variable labels from labeled datasets into a lookup table
 - **`get_label()`** / **`get_labels()`**: Safely look up one or many variable labels
@@ -333,11 +333,23 @@ str(labs_clean)
 
 ### Integration with Data Import
 
-Use `read_clinical_data()` to read and convert in one step:
+`read_clinical_data()` reads a file as-is: types come back exactly as the
+source stored them, and nothing is coerced by default. That default matters
+for clinical data specifically — `r_data_types()` converts any two-valued
+numeric column to `logical`, and a SAS 0/1 event or censoring flag is exactly
+that shape. A survival model that expects `0`/`1` breaks silently if the flag
+arrives as `TRUE`/`FALSE`. Opt into conversion explicitly with
+`convert_types = TRUE`, and pass any `r_data_types()` argument (such as
+`factor_size`) alongside it:
 
 ```{r eval=FALSE}
-# Read SAS, CSV, or Excel — auto-detects format and converts types
-dta <- read_clinical_data("path/to/data.sas7bdat", factor_size = 15)
+# Read SAS, CSV, or Excel — auto-detects format, no coercion
+dta_raw <- read_clinical_data("path/to/data.sas7bdat")
+
+# Opt in to type conversion, tuning it the same way you would call
+# r_data_types() directly
+dta <- read_clinical_data("path/to/data.sas7bdat",
+                          convert_types = TRUE, factor_size = 15)
 
 # Build a data dictionary for documentation
 dict <- data_dictionary(dta)
@@ -345,7 +357,9 @@ write.csv(dict, "data_dictionary.csv", row.names = FALSE)
 ```
 
 `read_clinical_data()` supports `.sas7bdat`, `.csv`, `.xlsx`, `.xls`, and
-`.rds` files. Set `convert_types = FALSE` to skip automatic type conversion.
+`.rds` files. `convert_types = FALSE` is the default; `factor_size` and the
+other `r_data_types()` arguments are silently ignored unless
+`convert_types = TRUE` is also passed.
 
 ## Best Practices
 
@@ -400,7 +414,7 @@ table(clean_data$categorical_var)
 
 The `hvtiRutilities` package streamlines data preparation for clinical research:
 
-- **`read_clinical_data()`**: One-step import from SAS, CSV, Excel, or RDS
+- **`read_clinical_data()`**: Import from SAS, CSV, Excel, or RDS as-is, with type conversion available via `convert_types = TRUE`
 - **`r_data_types()`**: Automatic, intelligent type conversion
 - **`label_map()`**: Extract variable labels into a lookup table
 - **`get_label()`** / **`get_labels()`**: Safe label lookup (single or vectorized)

@@ -58,7 +58,10 @@ navbar:
 
 reference:
 - title: Data Import
-  desc: Read clinical data files with automatic type conversion
+  desc: >
+    Read clinical data files as stored. Type conversion is opt-in via
+    convert_types, because coercing a two-valued numeric to logical breaks
+    0/1 event and censoring flags.
   contents:
   - read_clinical_data
 
@@ -81,6 +84,7 @@ reference:
   desc: Build data dictionaries, summarise variables, and compare dataset versions
   contents:
   - data_dictionary
+  - dataset_schema
   - proc_contents
   - proc_means
   - compare_datasets

@@ -583,7 +583,7 @@ test_that("update_manifest is silent by default", {
 })
 
 test_that("update_manifest reports add and update when verbose = TRUE", {
-  tmp <- tempdir()
+  tmp <- withr::local_tempdir()
   csv <- write_temp_csv(n = 4, name = "cohort_loud.csv", dir = tmp)
   mpath <- file.path(tmp, "manifest_loud.yaml")
 
@@ -759,4 +759,317 @@ test_that("strict = TRUE still stops by default when an entry fails", {
   expect_error(verify_manifest(manifest_path = mpath, data_dir = tmp,
                                strict = TRUE),
                "not recorded")
+})
+
+test_that("update_manifest records n_cols, schema_sha256 and role", {
+  dir <- withr::local_tempdir()
+  f <- file.path(dir, "d.csv")
+  write.csv(data.frame(a = 1:3, b = 4:6), f, row.names = FALSE)
+  side <- file.path(dir, "d.schema.csv")
+  write.csv(dataset_schema(data.frame(a = 1:3, b = 4:6)), side, row.names = FALSE)
+  mp <- file.path(dir, "manifest.yaml")
+
+  expected_schema_sha <- digest::digest(side, algo = "sha256", file = TRUE)
+  update_manifest(f, manifest_path = mp, n_cols = 2L,
+                  schema_sha256 = expected_schema_sha)
+
+  m <- yaml::read_yaml(mp)
+  expect_equal(m$datasets[[1]]$n_cols, 2L)
+  expect_equal(m$datasets[[1]]$role, "source")
+  expect_equal(m$datasets[[1]]$schema_sha256, expected_schema_sha)
+})
+
+test_that("update_manifest rejects role = \"primary\"", {
+  # A promoted entry's sha256 must describe its parquet, not the source this
+  # function hashes -- writing role = "primary" here would produce a
+  # manifest entry that can never verify (verify_manifest() hashes the
+  # parquet for a primary entry). No exported function performs promotion;
+  # .update_promoted_entry() is what maintains a promoted entry once one
+  # exists.
+  dir <- withr::local_tempdir()
+  f <- file.path(dir, "d.csv")
+  write.csv(data.frame(a = 1:3), f, row.names = FALSE)
+  mp <- file.path(dir, "manifest.yaml")
+
+  expect_error(
+    update_manifest(f, manifest_path = mp, role = "primary"),
+    "primary"
+  )
+  expect_false(file.exists(mp))
+})
+
+test_that("update_manifest records reader when supplied", {
+  dir <- withr::local_tempdir()
+  f <- file.path(dir, "d.csv")
+  write.csv(data.frame(a = 1:3), f, row.names = FALSE)
+  mp <- file.path(dir, "manifest.yaml")
+
+  update_manifest(f, manifest_path = mp, reader = "haven 2.5.5")
+
+  m <- yaml::read_yaml(mp)
+  expect_equal(m$datasets[[1]]$reader, "haven 2.5.5")
+})
+
+test_that("update_manifest omits reader when not supplied", {
+  dir <- withr::local_tempdir()
+  f <- file.path(dir, "d.csv")
+  write.csv(data.frame(a = 1:3), f, row.names = FALSE)
+  mp <- file.path(dir, "manifest.yaml")
+
+  update_manifest(f, manifest_path = mp)
+
+  m <- yaml::read_yaml(mp)
+  expect_null(m$datasets[[1]]$reader)
+})
+
+test_that(".atomic_write() cleans up after a rename failure, for any writer, not just parquet", {
+  # update_manifest()'s manifest write and the parquet cache's sidecar write
+  # both go through this same helper (Change 4 generalises
+  # .write_parquet_atomic()'s temp-and-rename discipline into it). This
+  # proves the generalization directly, with a non-parquet payload.
+  #
+  # local_mocked_bindings() cannot stub file.rename(): it is called
+  # unqualified from base, not as an explicit import, so there is no binding
+  # for the mock to find. The rename is instead made to fail the way the OS
+  # itself reports a failure: renaming a file onto an existing directory
+  # returns FALSE (with a warning) rather than erroring.
+  dir <- withr::local_tempdir()
+  target <- file.path(dir, "manifest.yaml")
+  dir.create(target)                       # occupies the rename target
+
+  suppressWarnings(
+    expect_error(
+      hvtiRutilities:::.atomic_write(target,
+                                     function(tmp) writeLines("a: 1", tmp)),
+      "move"
+    )
+  )
+  expect_true(dir.exists(target))          # untouched -- still a directory
+  tmp_residue <- list.files(dir, pattern = "\\.tmp$", full.names = TRUE)
+  expect_length(tmp_residue, 0)
+})
+
+test_that("update_manifest rejects an unknown role", {
+  dir <- withr::local_tempdir()
+  f <- file.path(dir, "d.csv")
+  write.csv(data.frame(a = 1), f, row.names = FALSE)
+
+  expect_error(
+    update_manifest(f, manifest_path = file.path(dir, "manifest.yaml"),
+                    role = "authoritative"),
+    "should be one of"
+  )
+})
+
+test_that("verify_manifest hashes the parquet, not the source, for a role: primary entry", {
+  # Task 5c, item 5: `file` never changes on promotion, so which physical
+  # file sha256 describes cannot be inferred from the name -- only from
+  # `role`. A missing source is also expected once role is "primary": the
+  # source was retired on purpose, so its absence must not fail here.
+  skip_if_not_installed("arrow")
+  dir <- withr::local_tempdir()
+  f   <- file.path(dir, "d.sas7bdat")
+  suppressWarnings(haven::write_sas(data.frame(a = 1:3), f))
+  mp  <- file.path(dir, "manifest.yaml")
+  update_manifest(f, manifest_path = mp, n_cols = 1L, n_rows = 3L)
+
+  parquet <- file.path(dir, "d.parquet")
+  arrow::write_parquet(data.frame(a = 1:3), parquet)
+  parquet_sha <- digest::digest(parquet, algo = "sha256", file = TRUE)
+
+  m <- yaml::read_yaml(mp)
+  m$datasets[[1]]$role   <- "primary"
+  m$datasets[[1]]$sha256 <- parquet_sha
+  yaml::write_yaml(m, mp)
+
+  file.remove(f)                                   # the retired source
+
+  res <- verify_manifest(mp, stop_on_error = FALSE)
+  expect_equal(res$status[1], "OK")
+})
+
+test_that("verify_manifest fails a role: primary entry when the parquet's hash doesn't match", {
+  skip_if_not_installed("arrow")
+  dir <- withr::local_tempdir()
+  f   <- file.path(dir, "d.sas7bdat")
+  suppressWarnings(haven::write_sas(data.frame(a = 1:3), f))
+  mp  <- file.path(dir, "manifest.yaml")
+  update_manifest(f, manifest_path = mp, n_cols = 1L, n_rows = 3L)
+
+  parquet <- file.path(dir, "d.parquet")
+  arrow::write_parquet(data.frame(a = 1:3), parquet)
+
+  m <- yaml::read_yaml(mp)
+  m$datasets[[1]]$role   <- "primary"
+  m$datasets[[1]]$sha256 <- strrep("0", 64)         # deliberately wrong
+  yaml::write_yaml(m, mp)
+
+  res <- verify_manifest(mp, stop_on_error = FALSE)
+  expect_equal(res$status[1], "FAIL")
+  expect_match(res$message[1], "mismatch")
+})
+
+test_that("verify_manifest still fails a role: source entry with a missing file", {
+  # The companion to the two tests above: a missing source is only expected
+  # once the entry is promoted. A `role: "source"` entry (the default) with
+  # no file on disk is still a genuine failure.
+  dir <- withr::local_tempdir()
+  f   <- file.path(dir, "d.csv")
+  write.csv(data.frame(a = 1:3), f, row.names = FALSE)
+  mp  <- file.path(dir, "manifest.yaml")
+  update_manifest(f, manifest_path = mp, n_cols = 1L)
+  file.remove(f)
+
+  res <- verify_manifest(mp, stop_on_error = FALSE)
+  expect_equal(res$status[1], "FAIL")
+  expect_match(res$message[1], "not found")
+})
+
+test_that("verify_manifest fails when a role: primary entry's parquet is missing", {
+  dir <- withr::local_tempdir()
+  f   <- file.path(dir, "d.sas7bdat")
+  suppressWarnings(haven::write_sas(data.frame(a = 1:3), f))
+  mp  <- file.path(dir, "manifest.yaml")
+  update_manifest(f, manifest_path = mp, n_cols = 1L, n_rows = 3L)
+
+  m <- yaml::read_yaml(mp)
+  m$datasets[[1]]$role <- "primary"
+  yaml::write_yaml(m, mp)
+  # no d.parquet ever written
+
+  res <- verify_manifest(mp, stop_on_error = FALSE)
+  expect_equal(res$status[1], "FAIL")
+  expect_match(res$message[1], "d\\.parquet")
+})
+
+test_that("verify_manifest fails when the sidecar has been edited", {
+  dir <- withr::local_tempdir()
+  f <- file.path(dir, "d.csv")
+  write.csv(data.frame(a = 1:3), f, row.names = FALSE)
+  side <- file.path(dir, "d.schema.csv")
+  write.csv(dataset_schema(data.frame(a = 1:3)), side, row.names = FALSE)
+  mp <- file.path(dir, "manifest.yaml")
+  update_manifest(f, manifest_path = mp, n_cols = 1L,
+                  schema_sha256 = digest::digest(side, algo = "sha256", file = TRUE))
+
+  cat("tampered\n", file = side, append = TRUE)
+
+  res <- verify_manifest(mp, stop_on_error = FALSE)
+  expect_true(any(res$status == "FAIL"))
+  # "Schema" alone also matches the "sidecar not found" branch; an
+  # implementation that only checked file.exists() and never hashed would
+  # pass that weaker assertion. "mismatch" only appears once the sidecar's
+  # hash was actually recomputed and compared.
+  expect_match(paste(res$message, collapse = " "), "mismatch")
+})
+
+test_that("verify_manifest reports two entries claiming the same derived paths", {
+  dir <- withr::local_tempdir()
+  write.csv(data.frame(a = 1), file.path(dir, "built.csv"), row.names = FALSE)
+  saveRDS(data.frame(a = 1), file.path(dir, "built.rds"))
+  mp <- file.path(dir, "manifest.yaml")
+  update_manifest(file.path(dir, "built.csv"), manifest_path = mp, n_cols = 1L)
+  update_manifest(file.path(dir, "built.rds"), manifest_path = mp, n_cols = 1L,
+                  n_rows = 1L)
+  # The collision only fires once one of the two entries has actually
+  # produced a derived artifact the other would overwrite; a plain
+  # "same stem" pair with nothing derived yet must not fail (see the
+  # "two entries sharing a stem with no derived artifact" test below).
+  # An empty sidecar is enough to make the contention real.
+  file.create(file.path(dir, "built.schema.csv"))
+
+  res <- verify_manifest(mp, stop_on_error = FALSE)
+  expect_match(paste(res$message, collapse = " "), "derived path")
+  collisions <- res[grepl("derived path", res$message), , drop = FALSE]
+  expect_equal(nrow(collisions), 1L)
+  expect_equal(collisions$status, "FAIL")
+})
+
+test_that("verify_manifest finds datasets in datasets/ without an explicit data_dir", {
+  dir <- withr::local_tempdir()
+  dir.create(file.path(dir, "datasets"))
+  f <- file.path(dir, "datasets", "d.csv")
+  write.csv(data.frame(a = 1:3), f, row.names = FALSE)
+  mp <- file.path(dir, "manifest.yaml")
+  update_manifest(f, manifest_path = mp, n_cols = 1L)
+
+  res <- verify_manifest(mp, stop_on_error = FALSE)
+
+  expect_equal(res$status, "OK")
+})
+
+test_that("verify_manifest still resolves alongside the manifest when there is no datasets/", {
+  dir <- withr::local_tempdir()
+  f <- file.path(dir, "d.csv")
+  write.csv(data.frame(a = 1:3), f, row.names = FALSE)
+  mp <- file.path(dir, "manifest.yaml")
+  update_manifest(f, manifest_path = mp, n_cols = 1L)
+
+  res <- verify_manifest(mp, stop_on_error = FALSE)
+
+  expect_equal(res$status, "OK")
+})
+
+# Regression: a flat-layout study whose manifest legitimately references files
+# beside the manifest, but which also happens to have a datasets/ directory
+# (here, empty), must still verify OK. Choosing data_dir on directory
+# existence alone would send every lookup into the unrelated datasets/ and
+# fail every entry even though the data is intact.
+test_that("verify_manifest verifies OK for a flat layout that also has an empty datasets/", {
+  dir <- withr::local_tempdir()
+  dir.create(file.path(dir, "datasets"))
+  f <- file.path(dir, "flat.csv")
+  write.csv(data.frame(a = 1:3), f, row.names = FALSE)
+  mp <- file.path(dir, "manifest.yaml")
+  update_manifest(f, manifest_path = mp, n_cols = 1L)
+
+  res <- verify_manifest(mp, stop_on_error = FALSE)
+
+  expect_equal(res$status, "OK")
+})
+
+# Regression: a manifest listing both a source and an export of it sharing a
+# stem (e.g. cohort.sas7bdat and cohort.csv) has always been legal. With no
+# derived artifact (.parquet or .schema.csv) yet on disk, the two entries are
+# not contending for anything, so verification must pass rather than abort at
+# the default stop_on_error = TRUE.
+test_that("verify_manifest passes two entries sharing a stem when no derived artifact exists", {
+  dir <- withr::local_tempdir()
+  write.csv(data.frame(a = 1), file.path(dir, "cohort.csv"), row.names = FALSE)
+  saveRDS(data.frame(a = 1), file.path(dir, "cohort.rds"))
+  mp <- file.path(dir, "manifest.yaml")
+  update_manifest(file.path(dir, "cohort.csv"), manifest_path = mp, n_cols = 1L)
+  update_manifest(file.path(dir, "cohort.rds"), manifest_path = mp, n_cols = 1L,
+                  n_rows = 1L)
+
+  res <- verify_manifest(mp, stop_on_error = FALSE)
+
+  expect_true(all(res$status == "OK"))
+})
+
+test_that("a legacy manifest with no role, n_cols or schema_sha256 still reads and passes verify_manifest()", {
+  # A manifest written before role/n_cols/schema_sha256 existed carries only
+  # the fields update_manifest() has always written. verify_manifest() must
+  # not require the new fields to be present, and read_built() must still be
+  # able to serve the dataset from it.
+  skip_if_not_installed("haven")
+  dir <- withr::local_tempdir()
+  make_study_fixture(dir, n = 20L)
+  cfg <- study_config(dir)
+  src <- file.path(dir, "datasets", "built_test.sas7bdat")
+  mp  <- file.path(dir, "manifest.yaml")
+
+  legacy <- list(datasets = list(list(
+    file         = "built_test.sas7bdat",
+    extract_date = "2020-01-01",
+    n_rows       = 20L,
+    sha256       = digest::digest(src, algo = "sha256", file = TRUE)
+  )))
+  yaml::write_yaml(legacy, mp)
+
+  report <- verify_manifest(mp)
+  expect_true(all(report$status == "OK"))
+
+  d <- read_built(cfg)
+  expect_equal(nrow(d), 20L)
 })

@@ -83,6 +83,33 @@ built_manifest <- function(cfg = study_config()) {
   )
 }
 
+# Errors if lowercasing `names(d)` would collide, naming the colliding
+# original names. Called from inside the reader closure passed to
+# .cache_read(), so a collision is caught before any cache artifact --
+# .parquet, .schema.csv, or the manifest entry -- has been written for a
+# dataset that can never be read. SAS names are case-insensitive and cannot
+# collide this way; .csv, .xlsx and .rds sources can.
+#
+# Defined ABOVE read_built()'s roxygen block, not between it and the function.
+# Roxygen attaches a block to the NEXT statement, so a definition placed in
+# between silently steals the documentation -- read_built.Rd disappears, this
+# internal gets documented and exported in its place, and read_built() stops
+# being exported. devtools::test() does not catch it, because load_all()
+# exposes internals regardless of NAMESPACE; only an installed package breaks.
+.assert_no_lowercase_collision <- function(d, path) {
+  lower <- tolower(names(d))
+  if (anyDuplicated(lower)) {
+    clashes <- unique(lower[duplicated(lower)])
+    detail <- vapply(clashes, function(x) {
+      paste0(x, " <- ", paste(names(d)[lower == x], collapse = ", "))
+    }, character(1))
+    stop("read_built(): lowercasing column names produces duplicates in ",
+         basename(path), ": ", paste(detail, collapse = "; "),
+         ". Rename the colliding columns at the source.", call. = FALSE)
+  }
+  invisible(TRUE)
+}
+
 #' Read the study's built dataset
 #'
 #' @description
@@ -98,6 +125,13 @@ built_manifest <- function(cfg = study_config()) {
 #' print labels rather than names.
 #'
 #' @param cfg List. A study manifest from \code{\link{study_config}}.
+#' @param refresh Logical. If \code{TRUE}, force a re-read from the source and
+#'   a reconversion regardless of the manifest's role or cached stamp.
+#'   "The source changed" is not always something a timestamp can express --
+#'   a rebuild that preserves \code{mtime}, a restored backup, a correction
+#'   applied out of band. Errors if the manifest entry has
+#'   \code{role: "primary"}: that role means the source has been retired and
+#'   the parquet is authoritative, so there is nothing to refresh from.
 #'
 #' @return A data frame with lower-cased names, no logical columns and no
 #'   \code{haven_labelled} columns.
@@ -120,14 +154,47 @@ built_manifest <- function(cfg = study_config()) {
 #'           file.path(root, "datasets", "example.csv"), row.names = FALSE)
 #' names(read_built(study_config(root)))
 #' unlink(root, recursive = TRUE)
-read_built <- function(cfg = study_config()) {
+read_built <- function(cfg = study_config(), refresh = FALSE) {
   p <- built_path(cfg)
+  manifest_path <- file.path(cfg$root, "manifest.yaml")
+
   if (!file.exists(p)) {
-    stop("read_built(): missing ", p, call. = FALSE)
+    # role: "primary" means the source was retired on purpose -- promotion
+    # exists precisely so this dataset can still be served with no source on
+    # disk. A promoted entry whose parquet is ALSO missing is still an
+    # error, but the parquet -- not the source retired on purpose -- is the
+    # copy that's actually missing.
+    entry <- .manifest_entry(manifest_path, p)
+    if (identical(entry$role, "primary")) {
+      parquet <- .derived_paths(p)$parquet
+      if (!file.exists(parquet)) {
+        stop("read_built(): missing ", parquet, call. = FALSE)
+      }
+    } else {
+      stop("read_built(): missing ", p, call. = FALSE)
+    }
   }
 
   # Carries SAS variable labels through; listings print labels, not names.
-  d <- as.data.frame(read_clinical_data(p, convert_types = FALSE))
+  # The collision check runs INSIDE the reader closure, before .cache_read()
+  # writes anything: a check placed after .cache_read() returns would already
+  # be too late on a cache miss, which writes the .parquet, .schema.csv and
+  # manifest entry for a dataset it is about to discover can never be read.
+  d <- as.data.frame(
+    .cache_read(p,
+                function(f) {
+                  raw <- read_clinical_data(f, convert_types = FALSE)
+                  .assert_no_lowercase_collision(raw, f)
+                  raw
+                },
+                manifest_path = manifest_path,
+                refresh = refresh)
+  )
+
+  # Lowercasing is unconditional, so a source carrying both FOO and foo would
+  # yield two columns named foo and every downstream d$foo would silently take
+  # the first. The check above already ruled this out for `d`; this just
+  # applies it.
   names(d) <- tolower(names(d))
 
   logi <- vapply(d, is.logical, logical(1))

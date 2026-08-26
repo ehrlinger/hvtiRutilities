@@ -4,13 +4,16 @@
 \alias{read_clinical_data}
 \title{Read and prepare a clinical dataset in one step}
 \usage{
-read_clinical_data(file, convert_types = TRUE, ...)
+read_clinical_data(file, convert_types = FALSE, ...)
 }
 \arguments{
 \item{file}{Character. Path to the dataset file.}
 
-\item{convert_types}{Logical. If \code{TRUE} (default), runs
-\code{\link{r_data_types}} on the result.}
+\item{convert_types}{Logical. Apply \code{\link{r_data_types}} to the data
+after reading. Defaults to \code{FALSE}: the file is returned as read.
+\code{TRUE} converts any two-valued numeric column to logical, which is
+wrong for 0/1 event and censoring flags, so type conversion belongs to a
+declared variable-derivation step rather than to reading.}
 
 \item{...}{Additional arguments passed to \code{\link{r_data_types}}
 (e.g., \code{factor_size}, \code{skip_vars}, \code{binary_factor}).
@@ -42,7 +45,7 @@ Supported formats:
 # Read a CSV
 tmp <- tempfile(fileext = ".csv")
 write.csv(mtcars, tmp, row.names = FALSE)
-dta <- read_clinical_data(tmp)
+dta <- read_clinical_data(tmp, convert_types = FALSE)
 str(dta[, 1:5])
 unlink(tmp)
 
@@ -56,7 +59,7 @@ unlink(tmp)
 # Read an RDS file
 tmp <- tempfile(fileext = ".rds")
 saveRDS(iris, tmp)
-dta <- read_clinical_data(tmp, factor_size = 5)
+dta <- read_clinical_data(tmp, convert_types = TRUE, factor_size = 5)
 str(dta)
 unlink(tmp)
 }

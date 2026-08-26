@@ -9,8 +9,12 @@ update_manifest(
   manifest_path = "manifest.yaml",
   extract_date = Sys.Date(),
   n_rows = NULL,
+  n_cols = NULL,
   source = NULL,
   sort_key = NULL,
+  schema_sha256 = NULL,
+  role = c("source", "primary"),
+  reader = NULL,
   verbose = FALSE
 )
 }
@@ -31,11 +35,32 @@ files only when \code{options(manifest.allow_heavy_rowcount = TRUE)} is
 set.
 all other file types supply this value explicitly.}
 
+\item{n_cols}{Integer. Column count. Pass it from a frame already read; a
+row count alone cannot detect a dropped column.}
+
 \item{source}{Character. Free-text description of the data source (e.g.
 \code{"Epic EMR, query v4.2, ICD mapping v3.2"}).}
 
 \item{sort_key}{Character. Column name(s) that define the canonical sort
 order of the dataset.}
+
+\item{schema_sha256}{Character. SHA-256 of this dataset's schema sidecar,
+making the manifest-to-sidecar link tamper-evident.}
+
+\item{role}{Character, always \code{"source"}. This function only ever
+writes \code{role = "source"} entries; a \code{role = "primary"}
+(promoted) entry's \code{sha256} must describe its \strong{parquet}, not
+the source this function hashes, so calling it on a promoted entry would
+write a manifest that can never verify. No exported function performs
+promotion yet — the internal \code{.update_promoted_entry()} is what
+maintains a promoted entry once one exists. See the \emph{Promotion}
+section of the read-layer design spec.}
+
+\item{reader}{Character. The package and version that produced this
+derived file (e.g. \code{"haven 2.5.5"}). Under \code{role = "primary"}
+the parquet is the data, so the reader that produced it is part of its
+provenance: a reader defect found later is otherwise unfindable once the
+source is retired. \code{NULL} (default) omits the field.}
 
 \item{verbose}{Logical. If \code{TRUE}, report which manifest entry was
 added or updated via \code{\link[base]{message}}.  Defaults to
