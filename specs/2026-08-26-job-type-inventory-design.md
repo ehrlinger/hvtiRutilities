@@ -327,13 +327,26 @@ NEWS for the exact DESCRIPTION version).
 `R/taxonomy.R` deleted; `Imports: hvtiRutilities`; both functions re-exported
 via `@importFrom` + `@export` so the public surface is unchanged.
 
-Of the 18 references outside `taxonomy.R` itself, **14 move with the table**
-(all of `tests/testthat/test-taxonomy.R`, which tests the table's internal
-consistency) and **4 stay** and keep working untouched via the re-export:
-`R/templates.R` (1), `tests/testthat/test-templates.R` (2), and
-`inst/templates/README.md` (1). The templates-match-taxonomy tests stay —
-they assert that the templates on disk cover the taxonomy, which is a
-`hvtiRtemplates` claim about its own `inst/` and does not travel.
+The split is **not** file-level. `tests/testthat/test-taxonomy.R` holds nine
+`test_that` blocks; **three test the table alone and move**, six exercise the
+table against the installed templates and stay:
+
+| block | line | destination |
+|---|---|---|
+| `hvti_taxonomy() has the expected shape` | 1 | **moves** |
+| `every template folder is documented in the taxonomy` | 10 | stays |
+| `every prefix-shaped template name is classified` | 28 | stays |
+| `the taxonomy and the non-prefix list are disjoint` | 50 | **moves** |
+| `exactly the artifact-kind rows have an NA prefix` | 55 | **moves** |
+| `a template's ordinal major identifies the folder it sits in` | 67 | stays |
+| `a template sits in the folder its prefix is filed under` | 78 | stays |
+| `within a folder, ordinal minors follow taxonomy row order` | 88 | stays |
+| `the within-folder ordering rule itself can fail…` | 106 | stays |
+
+The six that stay all call `template_list()`: they assert that the templates
+on disk agree with the taxonomy, which is a `hvtiRtemplates` claim about its
+own `inst/` and does not travel. `R/templates.R` (1 reference) and
+`inst/templates/README.md` (1) keep working untouched via the re-export.
 
 Merges after PR 1 installs. No window where the prefix table exists twice.
 
