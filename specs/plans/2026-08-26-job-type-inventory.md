@@ -465,6 +465,23 @@ test_that("study is relative to the root, never absolute", {
   expect_false(grepl(d, out$study, fixed = TRUE))
 })
 
+test_that("a root holding regex metacharacters still strips correctly", {
+  # The root is arbitrary input. An earlier draft anchored a regex on the
+  # unescaped root, which passed every other test in this file because `.`
+  # and `-` match themselves -- and produced a wrong study the moment a
+  # directory name carried a metacharacter. Strip by position instead.
+  d <- withr::local_tempdir()
+  odd <- file.path(d, "study (copy) v1.2+")
+  dir.create(file.path(odd, "epsilon", "distributions"), recursive = TRUE)
+  file.create(file.path(odd, "epsilon", "distributions", "ac.dead.lst"))
+
+  out <- hvtiRutilities:::.job_placement(
+    file.path(odd, "epsilon/distributions/ac.dead.lst"), odd
+  )
+  expect_equal(out$study, "epsilon")
+  expect_equal(out$status, "placed")
+})
+
 test_that("a multi-level study path is joined, not truncated", {
   # Real studies are cardiac/rhythm/maze/atricure/gender. Taking only the
   # taxonomy folder's immediate parent would collapse every study under maze
@@ -508,18 +525,18 @@ Create `R/job_census.R` with the placement resolver. Later tasks append to this 
 # makes a missing job indistinguishable from a job that does not exist, and
 # that is exactly how shape-census.R under-reported twice.
 
-# Quote a path for use inside a regex. Regex metacharacters in a temp-dir
-# name would otherwise break the anchor below.
-.escape_regex <- function(x) {
-  gsub("([.|()\\^{}+$*?\\[\\]\\\\])", "\\\\\\1", x)
-}
-
 .job_placement <- function(paths, root) {
   folders <- unique(hvti_taxonomy()$folder)
 
-  rel <- sub(paste0("^", .escape_regex(normalizePath(root, mustWork = FALSE)),
-                    .Platform$file.sep), "",
-             normalizePath(paths, mustWork = FALSE))
+  # Strip the root prefix BY POSITION, not with a regex anchor. A root path is
+  # arbitrary input -- a directory named "study (copy)" or "v1.2+" carries
+  # regex metacharacters -- and an unescaped anchor matches the wrong thing
+  # while still looking like it worked, because `.` and `-` match themselves.
+  # normalizePath() on both sides so a symlinked root (/var -> /private/var on
+  # macOS) does not make the prefix fail to line up.
+  nroot <- normalizePath(root, mustWork = FALSE)
+  npaths <- normalizePath(paths, mustWork = FALSE)
+  rel <- substring(npaths, nchar(nroot) + 2L)
 
   parts <- strsplit(rel, "/", fixed = TRUE)
 
@@ -1490,7 +1507,7 @@ EOF
 
 1. **A multi-level study path was untested.** The fixture's studies were single-component (`alpha`, `beta`), so the `paste(dirs[seq_len(i - 1L)], collapse = "/")` join was only ever exercised in its degenerate one-element case — and real studies are `cardiac/rhythm/maze/atricure/gender`. A truncating implementation would have passed every test while collapsing every study under `maze` into one row named `gender`. Fixture gained `gamma/sub/distributions/ac.dead.lst`; Task 3 gained an assertion on it; the file counts in Tasks 4 and 5 moved from 11/22 to 12/24 to match.
 2. **A dead line in Task 5's test** referenced a `prefix_class_known` column that does not exist. Rewritten as a `distinct_studies()` helper, which also makes the test say what it is for: `ac` now sits in two studies and `hz` in one, so the assertion demonstrates both sides of the template gate rather than just the blocked side.
-3. **`.escape_regex()` was defined after its caller.** Moved above `.job_placement()`.
+3. **`.escape_regex()` escaped nothing, and is now deleted.** Verified in R: `a.b(c)` came back as `a.b(c)` — the bracket expression was malformed, so `.job_placement()` anchored a regex on an *unescaped* root path. Every test in this plan still passed, because `.` and `-` match themselves; it broke only on a root carrying a regex metacharacter, and then produced a wrong `study` rather than an error. Replaced with positional stripping (`substring(npaths, nchar(nroot) + 2L)`), which needs no escaping at all, and pinned with a new test using a root named `study (copy) v1.2+`.
 
 **Known gap, stated rather than hidden.**
 
