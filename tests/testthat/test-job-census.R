@@ -68,23 +68,40 @@ test_that("a second study is what makes a prefix templatable", {
 })
 
 test_that("print leads with prefixes ranked by distinct studies", {
-  # Against the 12-file fixture: ac sits at 2 distinct studies (beta,
-  # gamma/sub); hz, hp, pp and zz each sit at 1. A regression that deleted
-  # the ranked-table block entirely, or stopped ordering it by distinct
-  # studies, must fail this test -- asserting only the explanatory sentence
-  # above the table (as the previous version of this test did) would not
-  # catch that.
+  # Purpose-built corpus, NOT the shared 12-file fixture. In that fixture
+  # the only 2-study prefix is "ac", which also happens to sort first
+  # alphabetically -- so asserting "ac before the 1-study prefixes" there
+  # passes exactly as well under a regression that sorts purely
+  # alphabetically (ignoring distinct_studies) as it does under the real
+  # sort. It does not discriminate on the ordering criterion; it only
+  # catches the ranked-table block being deleted outright.
+  #
+  # Here "hz" (late alphabetically) sits at 2 distinct studies and "ac"
+  # (early alphabetically) sits at 1, so alphabetical order and
+  # distinct-studies order disagree: correct output ranks hz ahead of ac,
+  # while a regression to alphabetical-only ranking would put ac ahead of
+  # hz. This still also fails if the ranked-table block stops printing
+  # entirely, since both grep matches below come up empty.
   d <- withr::local_tempdir()
-  make_corpus_fixture(d)
+  dir.create(file.path(d, "s1", "distributions"), recursive = TRUE)
+  dir.create(file.path(d, "s2", "distributions"), recursive = TRUE)
+  dir.create(file.path(d, "s3", "distributions"), recursive = TRUE)
+  file.create(file.path(d, "s1", "distributions", "hz.a.sas"))
+  file.create(file.path(d, "s2", "distributions", "hz.b.sas"))
+  file.create(file.path(d, "s3", "distributions", "ac.a.sas"))
 
   out <- capture.output(print(job_census(d)))
 
-  ac_row <- grep("^\\s*[0-9]+\\s+ac\\s+2\\b", out)
+  # hz's row must show a distinct-studies count of 2 ...
+  hz_row <- grep("^\\s*[0-9]+\\s+hz\\s+2\\b", out)
+  expect_length(hz_row, 1L)
+
+  # ... and ac's row a count of 1 ...
+  ac_row <- grep("^\\s*[0-9]+\\s+ac\\s+1\\b", out)
   expect_length(ac_row, 1L)
 
-  single_study_rows <- grep("^\\s*[0-9]+\\s+(hz|hp|pp|zz)\\s+1\\b", out)
-  expect_true(length(single_study_rows) >= 4L)
-  expect_true(all(ac_row < single_study_rows))
+  # ... with hz (the 2-study prefix) printed ahead of ac (the 1-study one).
+  expect_true(hz_row < ac_row)
 })
 
 test_that("print reports every accounting bucket, including empty ones", {
