@@ -414,3 +414,35 @@ test_that("a directory is never returned as a file row", {
   expect_false(any(dir.exists(out$path)))
   expect_equal(nrow(out), 1L)
 })
+
+test_that("a filename invalid in the session encoding is escaped, not fatal", {
+  # This cannot be an end-to-end test: APFS refuses to create a file whose
+  # name is not valid UTF-8 ("Illegal byte sequence"), so the corpus case is
+  # unreproducible on macOS and on the macOS CI runner. The sanitiser is
+  # therefore tested directly, on the byte sequence that actually broke a
+  # corpus sweep -- a Latin-1 e-acute (0xe9) in a job filename.
+  bad <- rawToChar(as.raw(c(0x68, 0x7a, 0x2e, 0xe9, 0x74, 0x75, 0x2e,
+                            0x6c, 0x73, 0x74)))
+  out <- hvtiRutilities:::.sanitize_paths(bad)
+
+  expect_false(is.na(iconv(out, "UTF-8", "UTF-8")))
+  expect_match(out, "<e9>", fixed = TRUE)
+})
+
+test_that("the sanitiser leaves valid paths untouched", {
+  valid <- c("/a/b/hz.dead.lst", "/a/b/étude.sas")
+  expect_identical(hvtiRutilities:::.sanitize_paths(valid), valid)
+})
+
+test_that("an escaped name still parses to its prefix, stem and extension", {
+  # The escape must not cost the classification: an unreadable byte in the
+  # middle of a name should still leave a usable prefix, since that is what
+  # the census counts.
+  bad <- rawToChar(as.raw(c(0x68, 0x7a, 0x2e, 0xe9, 0x74, 0x75, 0x2e,
+                            0x6c, 0x73, 0x74)))
+  san <- hvtiRutilities:::.sanitize_paths(bad)
+  f <- hvtiRutilities:::.job_name_fields(san)
+
+  expect_equal(f$naming, "legacy")
+  expect_equal(f$prefix, "hz")
+})

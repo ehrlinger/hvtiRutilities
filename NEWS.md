@@ -1,3 +1,21 @@
+# hvtiRutilities 1.1.3
+
+## Bug fixes
+
+- `job_files()` no longer aborts a sweep when a filename is invalid in the
+  session's encoding. A shared corpus does not guarantee valid names -- one
+  Latin-1 byte in a name created on Windows was enough to kill the sweep of a
+  841,042-file directory with `input string 841042 is invalid`. Invalid bytes
+  are now replaced with their `<xx>` escape, so the file appears in the output
+  with a legible, greppable name instead of taking the directory down with it.
+
+  Two of the three string operations involved failed *silently* rather than
+  loudly, which is the worse half of this bug: `grepl()` warns and returns
+  `FALSE`, leaving the prefix unclassified, and `strsplit()` warns and returns
+  `NA`, marking the file unplaced. Only `substring()` raised an error. Had the
+  error not fired first, the file would have been miscounted rather than
+  reported.
+
 # hvtiRutilities 1.1.2
 
 ## Bug fixes

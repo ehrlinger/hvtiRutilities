@@ -73,6 +73,35 @@
   )
 }
 
+# Make every path safe to run string operations on.
+#
+# A shared corpus does not guarantee that filenames are valid in the session's
+# encoding. A name created on Windows, or by an older tool, can carry Latin-1
+# bytes that are not valid UTF-8 -- and R's string functions handle that
+# THREE different ways, two of them silent:
+#
+#   grepl(p, x)      warns and returns FALSE   -> prefix silently unclassified
+#   strsplit(x, p)   warns and returns NA      -> file silently "unplaced"
+#   substring(x, n)  ERRORS, "invalid multibyte string"
+#
+# So one bad name in a corpus of 841,042 aborts the sweep of an entire
+# top-level directory, and the two silent modes would have mis-classified it
+# even if the error had not fired first. Both outcomes are the failure this
+# sweep exists to prevent: a confident answer that is quietly incomplete.
+#
+# iconv(sub = "byte") replaces each invalid byte with its <xx> escape, making
+# the string valid UTF-8 while keeping it distinguishable and greppable. The
+# escaped form is what lands in `path`, so a file with a mangled name is
+# visible in the output rather than fatal to it. Valid names are returned
+# untouched -- iconv returns NA only for strings it cannot convert, and those
+# are exactly the ones needing the escape.
+.sanitize_paths <- function(paths) {
+  ok <- !is.na(iconv(paths, "", "UTF-8"))
+  if (all(ok)) return(paths)
+  paths[!ok] <- iconv(paths[!ok], "", "UTF-8", sub = "byte")
+  paths
+}
+
 # Validate, normalise and de-overlap the sweep roots.
 #
 # A root that does not exist is an ERROR, not an empty result. The corpus
@@ -210,6 +239,7 @@ job_files <- function(roots) {
     paths <- list.files(r, recursive = TRUE, full.names = TRUE,
                         all.files = TRUE, no.. = TRUE)
     if (!length(paths)) return(NULL)
+    paths <- .sanitize_paths(paths)
 
     base <- basename(paths)
     fields <- .job_name_fields(base)
