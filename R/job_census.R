@@ -188,14 +188,32 @@ job_files <- function(roots) {
   roots <- .job_roots(roots)
 
   per_root <- lapply(roots, function(r) {
+    # ONE filesystem pass, not three. `r` arrives already normalised from
+    # .job_roots(), and list.files() prefixes every result with the root
+    # exactly as given -- so these paths are already root-prefixed and
+    # .job_placement_rel() can strip the prefix directly.
+    #
+    # The two passes removed were a per-file normalizePath() and a per-file
+    # dir.exists(), each a stat syscall. On a local disk that is invisible;
+    # over the SMB mount the corpus is actually read from, each stat is a
+    # network round-trip and they dominated the walk.
+    #
+    # Removing normalizePath() also FIXES an attribution bug rather than
+    # trading correctness for speed. It resolves symlinks, so a file under a
+    # symlinked subdirectory came back as its real path -- and when that real
+    # path lies outside the root, the prefix strip slices at the wrong offset
+    # and yields a mangled `study` with no error. The walked path is the
+    # right answer: a file found under a study belongs to that study.
+    #
+    # dir.exists() was belt-and-braces: list.files(recursive = TRUE) does not
+    # return directories at all.
     paths <- list.files(r, recursive = TRUE, full.names = TRUE,
                         all.files = TRUE, no.. = TRUE)
-    paths <- paths[!dir.exists(paths)]
     if (!length(paths)) return(NULL)
 
     base <- basename(paths)
     fields <- .job_name_fields(base)
-    place <- .job_placement(paths, r)
+    place <- .job_placement_rel(paths, r)
 
     # study "." means the taxonomy folder was the first component under the
     # root -- the root IS a study. Two study roots passed together both label
