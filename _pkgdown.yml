@@ -155,6 +155,25 @@ reference:
   - job_files
   - job_census
 
+- title: Candidate Pool Preparation
+  desc: >-
+    Getting a covariate list out of a SAS job and into a model without changing
+    the model on the way. Each of these exists because of a failure that was
+    silent: a comment swallowing a variable name, a mean-imputed binary being
+    dummy-coded, a screen spending its step budget on five forms of one
+    concept, a rank-deficient design from two names for the same thing.
+  contents:
+  - sas_variable_block
+  - covariate_audit
+  - imputed_levels
+  - covariates_to_numeric
+  - pool_collinear_pairs
+  - concept_of
+  - concept_map
+  - prune_to_one_form
+  - selection_crowding
+  - POOL_AFFIXES
+
 - title: Package Utilities
   contents:
   - hvtiRutilities-package
