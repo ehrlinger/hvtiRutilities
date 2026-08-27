@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -472,6 +472,85 @@
 
         </dt>
         <dd>Roll a job-file inventory up to studies and prefixes</dd>
+      </dl></div><div class="section level2">
+      <h2 id="candidate-pool-preparation">Candidate Pool Preparation<a class="anchor" aria-label="anchor" href="#candidate-pool-preparation"></a></h2>
+
+      <div class="section-desc"><p>Getting a covariate list out of a SAS job and into a model without changing the model on the way. Each of these exists because of a failure that was silent: a comment swallowing a variable name, a mean-imputed binary being dummy-coded, a screen spending its step budget on five forms of one concept, a rank-deficient design from two names for the same thing.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="sas_variable_block.html">sas_variable_block()</a></code>
+
+        </dt>
+        <dd>Read a variable list out of a SAS job</dd>
+
+        <dt>
+
+          <code><a href="covariate_audit.html">covariate_audit()</a></code>
+
+        </dt>
+        <dd>Audit what would happen to each covariate in a model</dd>
+
+        <dt>
+
+          <code><a href="imputed_levels.html">imputed_levels()</a></code>
+
+        </dt>
+        <dd>Levels of a column that are not clean integers</dd>
+
+        <dt>
+
+          <code><a href="covariates_to_numeric.html">covariates_to_numeric()</a></code>
+
+        </dt>
+        <dd>Apply what covariate_audit() reports</dd>
+
+        <dt>
+
+          <code><a href="pool_collinear_pairs.html">pool_collinear_pairs()</a></code>
+
+        </dt>
+        <dd>Candidate pairs carrying the same information under unrelated names</dd>
+
+        <dt>
+
+          <code><a href="concept_of.html">concept_of()</a></code>
+
+        </dt>
+        <dd>The concept a candidate variable belongs to</dd>
+
+        <dt>
+
+          <code><a href="concept_map.html">concept_map()</a></code>
+
+        </dt>
+        <dd>Map a candidate pool to concepts</dd>
+
+        <dt>
+
+          <code><a href="prune_to_one_form.html">prune_to_one_form()</a></code>
+
+        </dt>
+        <dd>Prune a candidate pool to one form per concept</dd>
+
+        <dt>
+
+          <code><a href="selection_crowding.html">selection_crowding()</a></code>
+
+        </dt>
+        <dd>Concepts represented more than once among selected covariates</dd>
+
+        <dt>
+
+          <code><a href="pool_conventions.html">POOL_AFFIXES</a></code> <code><a href="pool_conventions.html">POOL_PLAIN_SUFFIX</a></code> <code><a href="pool_conventions.html">POOL_MIN_STEM</a></code>
+
+        </dt>
+        <dd>Affix conventions for grouping a SAS candidate pool into concepts</dd>
       </dl></div><div class="section level2">
       <h2 id="package-utilities">Package Utilities<a class="anchor" aria-label="anchor" href="#package-utilities"></a></h2>
 

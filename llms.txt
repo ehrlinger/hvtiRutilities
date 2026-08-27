@@ -352,6 +352,38 @@ Sweep the job corpus by filename – which studies ran which job types
   [`print(`*`<hvti_job_census>`*`)`](https://ehrlinger.github.io/hvtiRutilities/reference/job_census.md)
   : Roll a job-file inventory up to studies and prefixes
 
+## Candidate Pool Preparation
+
+Getting a covariate list out of a SAS job and into a model without
+changing the model on the way. Each of these exists because of a failure
+that was silent: a comment swallowing a variable name, a mean-imputed
+binary being dummy-coded, a screen spending its step budget on five
+forms of one concept, a rank-deficient design from two names for the
+same thing.
+
+- [`sas_variable_block()`](https://ehrlinger.github.io/hvtiRutilities/reference/sas_variable_block.md)
+  : Read a variable list out of a SAS job
+- [`covariate_audit()`](https://ehrlinger.github.io/hvtiRutilities/reference/covariate_audit.md)
+  : Audit what would happen to each covariate in a model
+- [`imputed_levels()`](https://ehrlinger.github.io/hvtiRutilities/reference/imputed_levels.md)
+  : Levels of a column that are not clean integers
+- [`covariates_to_numeric()`](https://ehrlinger.github.io/hvtiRutilities/reference/covariates_to_numeric.md)
+  : Apply what covariate_audit() reports
+- [`pool_collinear_pairs()`](https://ehrlinger.github.io/hvtiRutilities/reference/pool_collinear_pairs.md)
+  : Candidate pairs carrying the same information under unrelated names
+- [`concept_of()`](https://ehrlinger.github.io/hvtiRutilities/reference/concept_of.md)
+  : The concept a candidate variable belongs to
+- [`concept_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/concept_map.md)
+  : Map a candidate pool to concepts
+- [`prune_to_one_form()`](https://ehrlinger.github.io/hvtiRutilities/reference/prune_to_one_form.md)
+  : Prune a candidate pool to one form per concept
+- [`selection_crowding()`](https://ehrlinger.github.io/hvtiRutilities/reference/selection_crowding.md)
+  : Concepts represented more than once among selected covariates
+- [`POOL_AFFIXES`](https://ehrlinger.github.io/hvtiRutilities/reference/pool_conventions.md)
+  [`POOL_PLAIN_SUFFIX`](https://ehrlinger.github.io/hvtiRutilities/reference/pool_conventions.md)
+  [`POOL_MIN_STEM`](https://ehrlinger.github.io/hvtiRutilities/reference/pool_conventions.md)
+  : Affix conventions for grouping a SAS candidate pool into concepts
+
 ## Package Utilities
 
 - [`hvtiRutilities-package`](https://ehrlinger.github.io/hvtiRutilities/reference/hvtiRutilities-package.md)

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,6 +55,26 @@
       <small>Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.1.4" id="hvtirutilities-114">hvtiRutilities 1.1.4<a class="anchor" aria-label="anchor" href="#hvtirutilities-114"></a></h2>
+<div class="section level3">
+<h3 id="new-features-1-1-4">New features<a class="anchor" aria-label="anchor" href="#new-features-1-1-4"></a></h3>
+<p>Candidate-pool preparation helpers, ported from a study’s local <code>R/</code> (<a href="https://github.com/ehrlinger/hvtiRutilities/issues/47" class="external-link">#47</a>). They were written for one study and are needed by the <code>hm</code> and <code>bh</code> job templates in <code>hvtiRtemplates</code>, which cannot depend on one study’s private helpers.</p>
+<ul><li><p><strong><code><a href="../reference/sas_variable_block.html">sas_variable_block()</a></code></strong> reads a variable list out of a <code>.sas</code> job rather than transcribing it — a transcribed list drifts from the job it claims to reproduce and nothing catches it. Comment handling is the whole difficulty, and it is silent in <strong>both</strong> directions: a banner comment (<code>/***** Patient Variables *****/</code>) contains <code>*</code>, so line-by-line stripping leaves it intact and it swallows the <strong>first</strong> name on the next line (<code>female</code>, <code>afib_pr</code>, <code>plvidd</code> and <code>size</code> were lost this way), while a <code>/* ... */</code> spanning two lines is never stripped and a commented-<strong>out</strong> variable is read as live (<code>avet_con</code> entered a screen that way). Both are regression-tested.</p></li>
+<li>
+<p><strong><code><a href="../reference/covariate_audit.html">covariate_audit()</a></code></strong>, <strong><code><a href="../reference/imputed_levels.html">imputed_levels()</a></code></strong> and <strong><code><a href="../reference/covariates_to_numeric.html">covariates_to_numeric()</a></code></strong> report and apply what happens to a covariate on its way into a model. <code>%vars(missing=1, impute=1)</code> mean-imputes and adds a paired <code>ms_*</code> indicator, so a 0/1 clinical variable arrives with <strong>three</strong> values — 0, 1, and the cohort mean (one real column’s third value is 0.714, the prevalence of hypertension, not any patient’s status). In SAS those enter linearly; read into R they arrive as <strong>factors</strong> and get dummy-coded, which is a different model with a different parameter count and nothing in the output says so.</p>
+<p><code>NA</code> in <code>noninteger_levels</code> means <strong>“not knowable here”</strong>, not “none”: mean imputation is detectable in a discrete column but invisible by construction in a continuous one.</p>
+</li>
+<li>
+<p><strong><code><a href="../reference/concept_of.html">concept_of()</a></code></strong>, <strong><code><a href="../reference/concept_map.html">concept_map()</a></code></strong>, <strong><code><a href="../reference/prune_to_one_form.html">prune_to_one_form()</a></code></strong> and <strong><code><a href="../reference/selection_crowding.html">selection_crowding()</a></code></strong> group a candidate pool into clinical concepts. A SAS pool offers every transformation as a separate candidate, so a stepwise screen spends its steps on them and a per-variable frequency reports each separately — five forms of age each cleared 80% on one screen while the retained set collapsed to four concepts, and the paper reports concepts.</p>
+<p>The rule is deliberately conservative, because grouping too little only costs some pruning while grouping too much silently merges two clinical concepts. Stem truncation is handled automatically but only when unambiguous; contractions need an explicit alias.</p>
+</li>
+<li><p><strong><code><a href="../reference/pool_collinear_pairs.html">pool_collinear_pairs()</a></code></strong> catches what concept grouping cannot: candidates that are the same information under unrelated names. <code>male</code> and <code>female</code> are exact complements, both were offered to a screen, and 101 of 500 replicates selected <strong>both</strong> — fitting a rank-deficient design with nothing in the output saying so.</p></li>
+<li><p><strong><code>POOL_AFFIXES</code></strong>, <strong><code>POOL_PLAIN_SUFFIX</code></strong> and <strong><code>POOL_MIN_STEM</code></strong> carry the legacy naming conventions as documented <strong>defaults</strong>, overridable per study rather than edited in place.</p></li>
+</ul><p>The affix and alias machinery is a <strong>permanent compatibility layer, not a temporary shim</strong>: stem truncation exists because SAS capped names at 8 characters, and reproducing a legacy SAS job in R is routine work rather than a migration with an end date.</p>
+<p><code>concept_frequencies()</code> is deliberately <strong>not</strong> ported yet — it takes a bagging object whose structure does not exist in this package. It belongs with the <code>bh</code> work.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.1.3" id="hvtirutilities-113">hvtiRutilities 1.1.3<a class="anchor" aria-label="anchor" href="#hvtirutilities-113"></a></h2>
 <div class="section level3">
