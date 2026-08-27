@@ -374,3 +374,43 @@ test_that("the fixture exercises every naming convention and prefix class", {
   expect_setequal(unique(out$status), c("placed", "nested", "unplaced"))
   expect_true(any(out$is_template))
 })
+
+test_that("a file under a symlinked subdir keeps the study it was walked into", {
+  # normalizePath() resolves symlinks. When a subdirectory inside the corpus
+  # points somewhere outside the root, the resolved path no longer carries
+  # the root prefix, so stripping by position slices at the wrong offset and
+  # produces a mangled `study` -- silently, with no error. The walked path is
+  # the right answer: a file found under a study belongs to that study.
+  skip_on_os("windows")
+
+  d <- withr::local_tempdir()
+  outside <- withr::local_tempdir()
+  dir.create(file.path(outside, "distributions"), recursive = TRUE)
+  file.create(file.path(outside, "distributions", "hz.dead.lst"))
+
+  dir.create(file.path(d, "alpha"), recursive = TRUE)
+  file.symlink(outside, file.path(d, "alpha", "linked"))
+  skip_if_not(file.exists(file.path(d, "alpha", "linked", "distributions",
+                                    "hz.dead.lst")))
+
+  out <- job_files(d)
+  row <- out[out$stem %in% "hz.dead", ]
+
+  expect_equal(nrow(row), 1L)
+  expect_equal(row$study, "alpha/linked")
+  expect_equal(row$folder, "distributions")
+  expect_equal(row$status, "placed")
+})
+
+test_that("a directory is never returned as a file row", {
+  # The per-file dir.exists() filter was removed as redundant. This pins the
+  # property it was guarding, so the removal cannot regress silently.
+  d <- withr::local_tempdir()
+  dir.create(file.path(d, "alpha", "distributions", "nested.dir"),
+             recursive = TRUE)
+  file.create(file.path(d, "alpha", "distributions", "hz.dead.lst"))
+
+  out <- job_files(d)
+  expect_false(any(dir.exists(out$path)))
+  expect_equal(nrow(out), 1L)
+})
