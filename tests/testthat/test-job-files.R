@@ -446,3 +446,25 @@ test_that("an escaped name still parses to its prefix, stem and extension", {
   expect_equal(f$naming, "legacy")
   expect_equal(f$prefix, "hz")
 })
+
+test_that("the sanitiser stays non-fatal when warnings are errors", {
+  # Not because iconv() warns -- it does not; it returns NA silently, which is
+  # what the probe relies on. This pins that property. If a future change
+  # swapped the probe for something that warns (validUTF8(), a regex, an
+  # encoding conversion with a different `sub`), the sweep would abort again
+  # under strict warning handling, and the failure would look like the very
+  # bug this function was written to fix.
+  withr::local_options(warn = 2)
+
+  bad <- rawToChar(as.raw(c(0x68, 0x7a, 0x2e, 0xe9, 0x74, 0x75, 0x2e,
+                            0x6c, 0x73, 0x74)))
+  expect_no_error(out <- hvtiRutilities:::.sanitize_paths(bad))
+  expect_match(out, "<e9>", fixed = TRUE)
+
+  # And the whole sweep, not just the helper.
+  d <- withr::local_tempdir()
+  dir.create(file.path(d, "alpha", "distributions"), recursive = TRUE)
+  file.create(file.path(d, "alpha", "distributions", "hz.dead.lst"))
+  expect_no_error(res <- job_files(d))
+  expect_equal(nrow(res), 1L)
+})
