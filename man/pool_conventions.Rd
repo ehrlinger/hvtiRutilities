@@ -6,7 +6,7 @@
 \alias{POOL_MIN_STEM}
 \title{Affix conventions for grouping a SAS candidate pool into concepts}
 \format{
-Character vectors, and an integer for `POOL_MIN_STEM`.
+Character vectors, and an integer for \code{POOL_MIN_STEM}.
 }
 \usage{
 POOL_AFFIXES
@@ -16,15 +16,20 @@ POOL_PLAIN_SUFFIX
 POOL_MIN_STEM
 }
 \description{
-Defaults for [concept_of()], [concept_map()] and friends, describing the
-naming conventions a legacy `vars.sas` uses: `ln_` (log), `in_` (inverse),
-`in2` (inverse squared) and a trailing `2` (squared).
+Defaults for \code{\link{concept_of}}, \code{\link{concept_map}} and friends,
+describing the
+naming conventions a legacy \code{vars.sas} uses: \code{ln_} (log),
+\code{in_} (inverse),
+\code{in2} (inverse squared) and a trailing \code{2} (squared).
 
-`POOL_PLAIN_SUFFIX` is the suffix untransformed measurements carry
-(`crcl_pr`, `bun_pr`, `hct_pr`). `POOL_MIN_STEM` guards the prefix rule: two
+\code{POOL_PLAIN_SUFFIX} is the suffix untransformed measurements carry
+(\code{crcl_pr}, \code{bun_pr}, \code{hct_pr}). \code{POOL_MIN_STEM} guards
+the prefix rule: two
 characters would match half a pool by accident.
 
-These are **defaults, not constants** — pass your study's own conventions
-through the `affixes`, `plain_suffix` and `min_stem` arguments where they
+These are \strong{defaults, not constants} -- pass your study's own
+conventions
+through the \code{affixes}, \code{plain_suffix} and \code{min_stem} arguments
+where they
 differ, rather than editing a copy of this package.
 }

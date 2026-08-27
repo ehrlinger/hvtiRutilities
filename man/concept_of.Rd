@@ -16,71 +16,88 @@ concept_of(
 \arguments{
 \item{v}{Character scalar: the variable name.}
 
-\item{pool}{Character vector: the candidate pool `v` belongs to.}
+\item{pool}{Character vector: the candidate pool \code{v} belongs to.}
 
 \item{affixes}{Character vector of regular expressions for the study's
-transformation affixes. See [POOL_AFFIXES].}
+transformation affixes. See \code{\link{POOL_AFFIXES}}.}
 
 \item{plain_suffix}{Suffix carried by untransformed measurements.}
 
-\item{aliases}{Named character vector, `c(variable = concept)`, declaring
-groupings no affix rule can reach. An alias on the variable itself wins
+\item{aliases}{Named character vector, \code{c(variable = concept)},
+declaring groupings no affix rule can reach. An alias on the variable
+itself wins
 over every rule: it is the study saying so directly.}
 
 \item{min_stem}{Minimum stem length before the prefix rule is tried.}
 }
 \value{
-A character scalar: the concept, or `v` itself when no rule applies.
+A character scalar: the concept, or \code{v} itself when no rule
+  applies.
 }
 \description{
 A SAS candidate pool offers every transformation of a variable as a separate
-candidate: `age`, `ln_age`, `in_age`, `age2` and `agee` all compete. A
+candidate: \code{age}, \code{ln_age}, \code{in_age}, \code{age2} and
+\code{agee} all compete. A
 stepwise screen then spends its steps on them, and a per-variable selection
 frequency reports each form separately. On one real screen five forms of age
-each cleared 80% while the retained set collapsed to four distinct clinical
-concepts — and the paper the job comes from reports **concepts**.
+each cleared 80\% while the retained set collapsed to four distinct clinical
+concepts -- and the paper the job comes from reports \strong{concepts}.
 }
 \details{
-**The rule is deliberately conservative.** A variable joins a concept only
-when stripping one known affix yields a name that is *itself* in the pool (or
-that name plus `plain_suffix`). So `zexp2` groups under `zexp` because `zexp`
-is a candidate, and `ln_crcl` groups under `crcl_pr` because that is the
+\strong{The rule is deliberately conservative.} A variable joins a concept
+only
+when stripping one known affix yields a name that is \emph{itself} in the
+pool (or
+that name plus \code{plain_suffix}). So \code{zexp2} groups under \code{zexp}
+because \code{zexp}
+is a candidate, and \code{ln_crcl} groups under \code{crcl_pr} because that
+is the
 plain form present. A name whose stem is absent stays its own concept:
-`agee` does not join `age`, because no rule strips a trailing `e`.
+\code{agee} does not join \code{age}, because no rule strips a trailing
+\code{e}.
 
-Grouping too little costs some pruning. Grouping too much **silently merges
-two clinical concepts and discards a real candidate**, which is the error
+Grouping too little costs some pruning. Grouping too much \strong{silently
+merges
+two clinical concepts and discards a real candidate}, which is the error
 that cannot be seen in the output. The rule errs the safe way, and callers
 are expected to report the map so a human can check it.
 
-**Two mechanisms are needed, and only one can be mechanical.** `vars.sas`
+\strong{Two mechanisms are needed, and only one can be mechanical.}
+\code{vars.sas}
 truncates the stem when it names a derivative, so stripping the affix yields
 a name absent by exact match:
 
-* *Truncation* — `effi` is a **prefix** of `effic`, so it can be found.
+\itemize{
+\item \emph{Truncation} -- \code{effi} is a \strong{prefix} of \code{effic},
+so it can be found.
   Handled automatically, but only when the stem prefixes exactly one pool
   member that is not itself a derived form, and only when the stem is at
-  least `min_stem` characters. Ambiguity declines to group rather than
+  least \code{min_stem} characters. Ambiguity declines to group rather than
   guessing.
-* *Contraction* — `arin` is not a prefix of `area_int` and no rule can find
-  it. Declare it via `aliases`, so the judgement is recorded in the job
+\item \emph{Contraction} -- \code{arin} is not a prefix of \code{area_int}
+and no rule can find
+  it. Declare it via \code{aliases}, so the judgement is recorded in the job
   rather than inferred by the function.
+}
 
-Left ungrouped on a real screen, `effic` at 86.4% and `ln_effi` at 60.8% were
-both reported as retained risk factors at r = 0.9988, and `in_arin` at 70.6%
-hid a concept whose union across its forms was 86.4%.
+Left ungrouped on a real screen, \code{effic} at 86.4\% and \code{ln_effi} at
+60.8\% were
+both reported as retained risk factors at r = 0.9988, and \code{in_arin} at
+70.6\%
+hid a concept whose union across its forms was 86.4\%.
 }
 \section{A permanent compatibility layer, not a temporary shim}{
 
 Stem truncation exists because SAS capped variable names at 8 characters. A
 modern builder has no such cap and a pool built that way needs none of this,
-because `ln_efficiency` strips cleanly to `efficiency`.
+because \code{ln_efficiency} strips cleanly to \code{efficiency}.
 
 But the two regimes coexist indefinitely: reproducing a legacy SAS job in R
 is routine work, not a migration with an end date, so truncated pools keep
-arriving from `built*.sas7bdat` extracts for as long as old jobs are re-run.
-**Do not delete the prefix rule or the alias table when a new builder
-ships.** They are how a legacy pool is read. The right expectation is that
+arriving from \code{built*.sas7bdat} extracts for as long as old jobs are
+re-run.
+\strong{Do not delete the prefix rule or the alias table when a new builder
+ships.} They are how a legacy pool is read. The right expectation is that
 new datasets simply never need them.
 }
 
@@ -89,5 +106,6 @@ pool <- c("age", "ln_age", "age2", "agee")
 vapply(pool, concept_of, character(1), pool = pool)
 }
 \seealso{
-[concept_map()], [prune_to_one_form()], [selection_crowding()]
+\code{\link{concept_map}}, \code{\link{prune_to_one_form}},
+  \code{\link{selection_crowding}}
 }

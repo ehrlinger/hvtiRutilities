@@ -9,7 +9,7 @@ prune_to_one_form(pool, ...)
 \arguments{
 \item{pool}{Character vector of candidate names.}
 
-\item{...}{Passed to [concept_map()].}
+\item{...}{Passed to \code{\link{concept_map}}.}
 }
 \value{
 The kept names, in the pool's original order, so the scope handed to
@@ -22,5 +22,5 @@ Prune a candidate pool to one form per concept
 prune_to_one_form(c("age", "ln_age", "age2", "bsa"))
 }
 \seealso{
-[concept_map()], [pool_collinear_pairs()]
+\code{\link{concept_map}}, \code{\link{pool_collinear_pairs}}
 }

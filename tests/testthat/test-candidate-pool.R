@@ -223,3 +223,15 @@ test_that("selection_crowding on nothing gives an empty frame, not error", {
   expect_equal(nrow(e), 0L)
   expect_named(e, c("phase", "concept", "n_forms", "forms"))
 })
+
+test_that("the unterminated-block error reports a file line, not a slice", {
+  # With `after` given the search runs over a slice of the file, so a
+  # slice-relative index sends the reader to the wrong line. A diagnostic that
+  # is confidently wrong is worse than one that omits the number.
+  x <- c("%macro model;", "early", "decoy", ";", "%mend;",   # lines 1-5
+         "%macro final;", "early", "age")                    # `early` is line 7
+  expect_error(
+    sas_variable_block(x, "^early$", after = "%macro\\s+final"),
+    "at line 7"
+  )
+})

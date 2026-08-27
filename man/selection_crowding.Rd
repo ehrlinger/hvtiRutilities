@@ -9,45 +9,57 @@ selection_crowding(selected, aliases = character(0), ...)
 \arguments{
 \item{selected}{Character vector of phase-qualified selected parameter names.}
 
-\item{aliases}{Named character vector, as for [concept_of()]. Only those
-whose target was selected in a given phase are forwarded, because
-[concept_map()] refuses an alias pointing outside its pool — right for a
-*candidate* pool, wrong here, where a parent form may legitimately be
-absent (`in_arin` can be selected while `area_int` is not).}
+\item{aliases}{Named character vector, as for \code{\link{concept_of}}.
+  Only those
+  whose target was selected in a given phase are forwarded, because
+\code{\link{concept_map}} refuses an alias pointing outside its pool -- right
+for a
+  \emph{candidate} pool, wrong here, where a parent form may legitimately be
+  absent (\code{in_arin} can be selected while \code{area_int} is not).}
 
-\item{...}{Passed to [concept_map()].}
+\item{...}{Passed to \code{\link{concept_map}}.}
 }
 \value{
-A data frame with columns `phase`, `concept`, `n_forms` and `forms`,
-  ordered by phase then decreasing `n_forms`. Empty when nothing is crowded.
+A data frame with columns \code{phase}, \code{concept},
+  \code{n_forms} and \code{forms},
+ordered by phase then decreasing \code{n_forms}. Empty when nothing is
+crowded.
 }
 \description{
-[concept_map()] and [prune_to_one_form()] act on a candidate pool **before**
+\code{\link{concept_map}} and \code{\link{prune_to_one_form}} act on a
+candidate pool \strong{before}
 a screen. This is the after-the-fact view, and it is the only one available
-for a job run without pruning — which is the case for any faithful
-reproduction of a SAS `%macro model`, since SAS had no notion of a concept.
+for a job run without pruning -- which is the case for any faithful
+reproduction of a SAS \code{\%macro model}, since SAS had no notion of a
+concept.
 }
 \details{
-**Why it is worth reporting.** A step budget is shared: `max_steps` caps
+\strong{Why it is worth reporting.} A step budget is shared: \code{max_steps}
+caps
 total steps across both phases. So a slot spent on a second form of a concept
 already in the model is a slot no other variable could have. When the
-selection also stopped *on* the cap, the two facts together say the model is
-not merely budget-limited but budget-limited **by redundancy** — and neither
+selection also stopped \emph{on} the cap, the two facts together say the
+model is
+not merely budget-limited but budget-limited \strong{by redundancy} -- and
+neither
 fact is visible in a coefficient table.
 
-Grouping is [concept_map()]'s, so it is conservative by construction.
+Grouping is \code{\link{concept_map}}'s, so it is conservative by
+construction.
 Under-grouping only understates crowding; over-grouping would assert two
 clinical concepts are one. This errs the safe way, and the result is a
-**floor**: a concept nobody listed is still counted as separate variables.
+\strong{floor}: a concept nobody listed is still counted as separate
+variables.
 
-`selected` is phase-qualified, as `setdiff(names(coef(sel)),
-names(coef(base)))` returns it: `"late.age"`, `"early.zexp2"`. Phases are
-counted separately — one form of age in each phase is two slots but not a
+\code{selected} is phase-qualified, as \code{setdiff(names(coef(sel)),
+names(coef(base)))} returns it: \code{"late.age"}, \code{"early.zexp2"}.
+Phases are
+counted separately -- one form of age in each phase is two slots but not a
 crowded concept.
 }
 \examples{
 selection_crowding(c("early.age", "early.ln_age", "late.bsa"))
 }
 \seealso{
-[concept_map()], [prune_to_one_form()]
+\code{\link{concept_map}}, \code{\link{prune_to_one_form}}
 }

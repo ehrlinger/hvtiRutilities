@@ -14,29 +14,40 @@ pool_collinear_pairs(data, pool, threshold = 0.99)
 \item{threshold}{Absolute correlation at or above which a pair is reported.}
 }
 \value{
-A data frame with columns `var1`, `var2`, `r` and `complement`,
-  ordered by decreasing `abs(r)`. Empty when the pool is clean, so the caller
+A data frame with columns \code{var1}, \code{var2}, \code{r} and
+  \code{complement},
+ordered by decreasing \code{abs(r)}. Empty when the pool is clean, so the
+caller
   decides whether to warn, fail, or print it.
 }
 \description{
-**What this catches that pruning cannot.** [concept_map()] groups
-*transformations*, by stripping a known affix and finding the parent. Two
+\strong{What this catches that pruning cannot.} \code{\link{concept_map}}
+groups
+\emph{transformations}, by stripping a known affix and finding the parent.
+Two
 candidates that are numerically the same information but share no affix
 relationship are invisible to it.
 
-`male` and `female` are the case that got through a real screen: exact
-complements, both offered, and 101 of 500 replicates selected **both**. With
-a free `log_mu` a design holding both is singular, so those replicates were
+\code{male} and \code{female} are the case that got through a real screen:
+exact
+complements, both offered, and 101 of 500 replicates selected \strong{both}.
+With
+a free \code{log_mu} a design holding both is singular, so those replicates
+were
 fitting a rank-deficient model and nothing in the output said so.
 }
 \details{
-**Run it on the pool actually screened, after pruning.** On an unpruned pool
-every `ln_x` correlates with its own `x` at ~1 and the report is a wall of
+\strong{Run it on the pool actually screened, after pruning.} On an unpruned
+pool
+every \code{ln_x} correlates with its own \code{x} at ~1 and the report is a
+wall of
 expected pairs. After pruning, anything flagged is something pruning could
 not catch, which is exactly the set a human needs to look at.
 
-`complement` separates the two cases a reader treats differently: an exact
-complement (`x + y == 1`) is a coding duplicate and one of the pair should
+\code{complement} separates the two cases a reader treats differently: an
+exact
+complement (\code{x + y == 1}) is a coding duplicate and one of the pair
+should
 simply not be a candidate, while a high correlation between genuinely
 different measurements is a judgement call about what the model can identify.
 }
@@ -46,5 +57,5 @@ d <- data.frame(male = c(1, 0, 1, 0), female = c(0, 1, 0, 1),
 pool_collinear_pairs(d, c("male", "female", "age"))
 }
 \seealso{
-[concept_map()], [prune_to_one_form()]
+\code{\link{concept_map}}, \code{\link{prune_to_one_form}}
 }

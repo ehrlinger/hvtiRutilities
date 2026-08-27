@@ -20,5 +20,5 @@ that imputation happened at all: a genuine 0/1 indicator has no such level.
 imputed_levels(c(0, 1, 0.714047, 1))
 }
 \seealso{
-[covariate_audit()]
+\code{\link{covariate_audit}}
 }

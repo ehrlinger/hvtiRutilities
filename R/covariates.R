@@ -8,7 +8,7 @@
 #'
 #' @return A character vector of the offending levels, possibly empty.
 #'
-#' @seealso [covariate_audit()]
+#' @seealso \code{\link{covariate_audit}}
 #'
 #' @export
 #'
@@ -24,54 +24,70 @@ imputed_levels <- function(x) {
 #'
 #' @description
 #' Reports, one row per variable, what a column is and what using it as a model
-#' covariate would do to it — so a job can **report** the decision rather than
+#' covariate would do to it -- so a job can \strong{report} the decision rather
+#' than
 #' make it silently.
 #'
 #' @details
-#' **The problem this exists for.** `vars.sas` is commonly called as
-#' `%vars(missing=1, impute=1)`, which mean-imputes missing values and adds a
-#' paired `ms_*` missing indicator. So a 0/1 clinical variable arrives carrying
+#' \strong{The problem this exists for.} \code{vars.sas} is commonly called as
+#' \code{\%vars(missing=1, impute=1)}, which mean-imputes missing values and
+#' adds a
+#' paired \code{ms_*} missing indicator. So a 0/1 clinical variable arrives
+#' carrying
 #' three distinct values: 0, 1, and the cohort mean. One real example:
-#' `hx_htn`'s third value is 0.714047, the prevalence of hypertension, not any
+#' \code{hx_htn}'s third value is 0.714047, the prevalence of hypertension, not
+#' any
 #' patient's hypertension status.
 #'
-#' In SAS these columns are numeric and enter a model **linearly**: an imputed
-#' row contributes the mean, and the `ms_*` indicator carries whatever the
-#' missingness itself is worth. That is the design the `.sas` job specifies.
+#' In SAS these columns are numeric and enter a model \strong{linearly}: an
+#' imputed
+#' row contributes the mean, and the \code{ms_*} indicator carries whatever the
+#' missingness itself is worth. That is the design the \code{.sas} job
+#' specifies.
 #'
-#' Read into R they arrive as **factors**. Put a factor in a model formula and
-#' `model.matrix()` builds dummies from it, which makes "this value was imputed"
-#' its own category with its own coefficient. **That is a different model, with
-#' a different parameter count, and nothing in the output says so.** Multi-level
-#' counts have the same problem for a different reason: a `surg_num` with levels
+#' Read into R they arrive as \strong{factors}. Put a factor in a model formula
+#' and
+#' \code{model.matrix()} builds dummies from it, which makes "this value was
+#' imputed"
+#' its own category with its own coefficient. \strong{That is a different model,
+#' with
+#' a different parameter count, and nothing in the output says so.} Multi-level
+#' counts have the same problem for a different reason: a \code{surg_num} with
+#' levels
 #' 1, 2, 3, 4 is a number of previous operations, not four unordered categories.
 #'
-#' `max_levels` bounds where an imputed value is looked for at all. On a
-#' **continuous** covariate every value is its own level and most are
+#' \code{max_levels} bounds where an imputed value is looked for at all. On a
+#' \strong{continuous} covariate every value is its own level and most are
 #' non-integers, so an unbounded search returns the whole column.
 #'
-#' That bound is also an honest statement of the limit. Mean imputation *is*
+#' That bound is also an honest statement of the limit. Mean imputation
+#' \emph{is}
 #' detectable in a discrete column, because the mean is not a value the column
 #' can legitimately take. In a continuous column it is invisible by construction
-#' — an imputed mean looks exactly like a measured value — and the paired `ms_*`
-#' indicator is the only record that it happened. So `NA` in
-#' `noninteger_levels` means **"not knowable here"**, not "none".
+#' -- an imputed mean looks exactly like a measured value -- and the paired
+#' \code{ms_*}
+#' indicator is the only record that it happened. So \code{NA} in
+#' \code{noninteger_levels} means \strong{"not knowable here"}, not "none".
 #'
 #' @param data A data frame.
 #' @param vars Character vector of covariate names.
 #' @param max_levels Integer. Columns with more distinct values than this are
-#'   treated as continuous and their non-integer levels are reported as `NA`.
+#' treated as continuous and their non-integer levels are reported as \code{NA}.
 #'
-#' @return A data frame with columns `variable`, `storage`, `n_levels`,
-#'   `noninteger_levels` and `action`. `noninteger_levels` reports
-#'   `value (rows)` **per level**: per level rather than as a total because the
+#' @return A data frame with columns \code{variable}, \code{storage},
+#'   \code{n_levels},
+#' \code{noninteger_levels} and \code{action}. \code{noninteger_levels} reports
+#' \code{value (rows)} \strong{per level}: per level rather than as a total
+#' because the
 #'   total cannot distinguish a mean-imputed binary (one such level, in a
 #'   minority of rows) from an inverse transformation whose several non-integer
-#'   levels are ordinary data. A blank means "no such level"; `NA` means "not
-#'   looked for". `action` is what [covariates_to_numeric()] would do, and an
-#'   `action` beginning `ERROR` marks a variable that must not be fitted.
+#' levels are ordinary data. A blank means "no such level"; \code{NA} means "not
+#' looked for". \code{action} is what \code{\link{covariates_to_numeric}} would
+#' do, and an
+#' \code{action} beginning \code{ERROR} marks a variable that must not be
+#' fitted.
 #'
-#' @seealso [covariates_to_numeric()], [imputed_levels()]
+#' @seealso \code{\link{covariates_to_numeric}}, \code{\link{imputed_levels}}
 #'
 #' @export
 #'
@@ -128,18 +144,21 @@ covariate_audit <- function(data, vars, max_levels = 12L) {
 #' Factors whose levels are all numeric become numeric, so they enter a model
 #' linearly the way the SAS job specifies.
 #'
-#' A factor with a genuinely non-numeric level is **left alone** and will be
-#' dummy-coded — the right outcome for a real categorical, and the wrong one for
-#' a mean-imputed binary. [covariate_audit()]'s `action` column is where a
+#' A factor with a genuinely non-numeric level is \strong{left alone} and will
+#' be
+#' dummy-coded -- the right outcome for a real categorical, and the wrong one
+#' for
+#' a mean-imputed binary. \code{\link{covariate_audit}}'s \code{action} column
+#' is where a
 #' reader sees which of the two happened; check it before reading any
 #' coefficient.
 #'
 #' @param data A data frame.
 #' @param vars Character vector of covariate names.
 #'
-#' @return `data`, with the convertible columns coerced to numeric.
+#' @return \code{data}, with the convertible columns coerced to numeric.
 #'
-#' @seealso [covariate_audit()]
+#' @seealso \code{\link{covariate_audit}}
 #'
 #' @export
 #'
@@ -160,24 +179,33 @@ covariates_to_numeric <- function(data, vars) {
 #' Candidate pairs carrying the same information under unrelated names
 #'
 #' @description
-#' **What this catches that pruning cannot.** [concept_map()] groups
-#' *transformations*, by stripping a known affix and finding the parent. Two
+#' \strong{What this catches that pruning cannot.} \code{\link{concept_map}}
+#' groups
+#' \emph{transformations}, by stripping a known affix and finding the parent.
+#' Two
 #' candidates that are numerically the same information but share no affix
 #' relationship are invisible to it.
 #'
-#' `male` and `female` are the case that got through a real screen: exact
-#' complements, both offered, and 101 of 500 replicates selected **both**. With
-#' a free `log_mu` a design holding both is singular, so those replicates were
+#' \code{male} and \code{female} are the case that got through a real screen:
+#' exact
+#' complements, both offered, and 101 of 500 replicates selected \strong{both}.
+#' With
+#' a free \code{log_mu} a design holding both is singular, so those replicates
+#' were
 #' fitting a rank-deficient model and nothing in the output said so.
 #'
 #' @details
-#' **Run it on the pool actually screened, after pruning.** On an unpruned pool
-#' every `ln_x` correlates with its own `x` at ~1 and the report is a wall of
+#' \strong{Run it on the pool actually screened, after pruning.} On an unpruned
+#' pool
+#' every \code{ln_x} correlates with its own \code{x} at ~1 and the report is a
+#' wall of
 #' expected pairs. After pruning, anything flagged is something pruning could
 #' not catch, which is exactly the set a human needs to look at.
 #'
-#' `complement` separates the two cases a reader treats differently: an exact
-#' complement (`x + y == 1`) is a coding duplicate and one of the pair should
+#' \code{complement} separates the two cases a reader treats differently: an
+#' exact
+#' complement (\code{x + y == 1}) is a coding duplicate and one of the pair
+#' should
 #' simply not be a candidate, while a high correlation between genuinely
 #' different measurements is a judgement call about what the model can identify.
 #'
@@ -185,11 +213,13 @@ covariates_to_numeric <- function(data, vars) {
 #' @param pool Character vector of candidate names.
 #' @param threshold Absolute correlation at or above which a pair is reported.
 #'
-#' @return A data frame with columns `var1`, `var2`, `r` and `complement`,
-#'   ordered by decreasing `abs(r)`. Empty when the pool is clean, so the caller
+#' @return A data frame with columns \code{var1}, \code{var2}, \code{r} and
+#'   \code{complement},
+#' ordered by decreasing \code{abs(r)}. Empty when the pool is clean, so the
+#' caller
 #'   decides whether to warn, fail, or print it.
 #'
-#' @seealso [concept_map()], [prune_to_one_form()]
+#' @seealso \code{\link{concept_map}}, \code{\link{prune_to_one_form}}
 #'
 #' @export
 #'
