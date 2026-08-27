@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -56,14 +56,24 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="1.1.1" id="hvtirutilities-111">hvtiRutilities 1.1.1<a class="anchor" aria-label="anchor" href="#hvtirutilities-111"></a></h2>
+<h2 class="pkg-version" data-toc-text="1.1.2" id="hvtirutilities-112">hvtiRutilities 1.1.2<a class="anchor" aria-label="anchor" href="#hvtirutilities-112"></a></h2>
 <div class="section level3">
-<h3 id="breaking-changes-1-1-1">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-1-1-1"></a></h3>
+<h3 id="bug-fixes-1-1-2">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-1-2"></a></h3>
+<ul><li>
+<code><a href="../reference/job_files.html">job_files()</a></code> now credits a file under a symlinked subdirectory to the study it was walked into. It normalised every path before stripping the root prefix, and <code><a href="https://rdrr.io/r/base/normalizePath.html" class="external-link">normalizePath()</a></code> resolves symlinks – so when a subdirectory inside the corpus pointed somewhere outside the root, the resolved path no longer carried that prefix, the strip sliced at the wrong offset, and <code>study</code> came back mangled with no error raised.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="performance-1-1-2">Performance<a class="anchor" aria-label="anchor" href="#performance-1-1-2"></a></h3>
+<ul><li>
+<code><a href="../reference/job_files.html">job_files()</a></code> makes one filesystem pass per file instead of three. The per-file <code><a href="https://rdrr.io/r/base/normalizePath.html" class="external-link">normalizePath()</a></code> is unnecessary – <code><a href="https://rdrr.io/r/base/list.files.html" class="external-link">list.files()</a></code> prefixes its results with the root exactly as given, and the root is already normalised – and the per-file <code><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.exists()</a></code> was redundant, since <code>list.files(recursive = TRUE)</code> never returns directories. Each removed pass was a stat syscall; on a local disk that is invisible, but the corpus is read over an SMB mount where every stat is a network round-trip and the two passes dominated the walk. A partial corpus sweep over the share reached one top-level directory in an hour before this change.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="breaking-changes-1-1-2">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-1-1-2"></a></h3>
 <ul><li>
 <code><a href="../reference/read_clinical_data.html">read_clinical_data()</a></code>’s <code>convert_types</code> argument now defaults to <code>FALSE</code>. It defaulted to <code>TRUE</code>, applying <code><a href="../reference/r_data_types.html">r_data_types()</a></code> to every column, which converts any two-valued numeric column to logical — including 0/1 event and censoring flags, which <code>hzr_kaplan()</code> and similar then reject. Reading and type derivation are now separate steps. Callers who omit the argument get a once-per-session warning; pass <code>convert_types = TRUE</code> to restore the old behaviour.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="new-features-1-1-1">New features<a class="anchor" aria-label="anchor" href="#new-features-1-1-1"></a></h3>
+<h3 id="new-features-1-1-2">New features<a class="anchor" aria-label="anchor" href="#new-features-1-1-2"></a></h3>
 <ul><li>
 <p><code><a href="../reference/job_files.html">job_files()</a></code> and <code><a href="../reference/job_census.html">job_census()</a></code> — a filename-only inventory of the job corpus. <code><a href="../reference/job_files.html">job_files()</a></code> returns one row per file with its study, taxonomy folder, prefix and naming convention; <code><a href="../reference/job_census.html">job_census()</a></code> rolls that up to <code>(study, prefix, folder, is_template)</code> with <code>n_jobs</code> (distinct stems) and <code>n_files</code>. The print method leads with distinct-studies-per-prefix, which is the lookup that says whether a job type can be templated yet.</p>
 <p>Nothing is filtered: placement and classification are columns, so a file the sweep cannot classify stays in the output rather than vanishing. There is no extension allowlist, deliberately — see <code>specs/2026-08-26-job-type-inventory-design.md</code> §4.4.</p>
@@ -81,7 +91,7 @@
 <li><p><code><a href="../reference/update_manifest.html">update_manifest()</a></code> gains <code>reader</code>, recording the package and version that produced a derived file (e.g. <code>"haven 2.5.5"</code>). The parquet cache supplies it automatically. Under <code>role: "primary"</code> this is part of the parquet’s provenance: a reader defect found later is otherwise unfindable once the source is gone.</p></li>
 </ul></div>
 <div class="section level3">
-<h3 id="bug-fixes-1-1-1">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-1-1"></a></h3>
+<h3 id="bug-fixes-1-1-2-1">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-1-2-1"></a></h3>
 <ul><li>
 <code><a href="../reference/read_built.html">read_built()</a></code> now errors when lowercasing column names produces duplicates, naming the colliding pair, instead of returning two identically named columns where every downstream selection silently takes the first. SAS names cannot collide this way; <code>.csv</code>, <code>.xlsx</code> and <code>.rds</code> sources can.</li>
 <li>
@@ -91,14 +101,14 @@
 <li>The parquet cache’s schema sidecar write, and both of the manifest writes it triggers (<code><a href="../reference/update_manifest.html">update_manifest()</a></code> and the internal stamp update), are now atomic — a temporary file, then a rename — matching <code>.write_parquet_atomic()</code>’s existing discipline, which is now shared by all three through one helper. Two first reads racing on the same dataset could previously leave one process hashing a sidecar the other was midway through truncating, recording a <code>schema_sha256</code> that matched nothing on disk and putting the entry into permanent verification failure.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="notes-1-1-1">Notes<a class="anchor" aria-label="anchor" href="#notes-1-1-1"></a></h3>
+<h3 id="notes-1-1-2">Notes<a class="anchor" aria-label="anchor" href="#notes-1-1-2"></a></h3>
 <ul><li>
 <code>utils</code> is added to <code>DESCRIPTION</code>’s <code>Imports:</code>. <code>R/parquet_cache.R</code> calls <code><a href="https://rdrr.io/r/utils/write.table.html" class="external-link">utils::write.csv()</a></code> and <code><a href="https://rdrr.io/r/utils/packageDescription.html" class="external-link">utils::packageVersion()</a></code>, and <code>utils</code> was already imported in <code>NAMESPACE</code>, but it was missing from <code>DESCRIPTION</code> — which <code>R CMD check</code> flags.</li>
 <li>
 <code><a href="../reference/update_manifest.html">update_manifest()</a></code> rebuilds a manifest entry from its own known fields rather than merging into whatever is already there, so any field a study’s own tooling added to an entry is silently dropped the first time a cache miss (or any other call to <code><a href="../reference/update_manifest.html">update_manifest()</a></code>) rewrites it. The parquet cache preserves <code>extract_date</code>, <code>source</code> and <code>sort_key</code> specifically, because losing those would clobber values <code><a href="../reference/study_init.html">study_init()</a></code> sets explicitly; no other field is preserved. This is unchanged in this release — recorded here so it’s a known limitation rather than a surprise.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="documentation-1-1-1">Documentation<a class="anchor" aria-label="anchor" href="#documentation-1-1-1"></a></h3>
+<h3 id="documentation-1-1-2">Documentation<a class="anchor" aria-label="anchor" href="#documentation-1-1-2"></a></h3>
 <ul><li>
 <code><a href="../reference/proc_contents.html">proc_contents()</a></code> now documents that its <code>label</code> column is never <code>NA</code>: it falls back to the variable’s own name via <code>labelled::var_label(null_action = "fill")</code>, so an unlabelled variable is indistinguishable from one labelled with its own name. Callers recording the output as a durable description of a source dataset should read labels from the source attributes directly. Measured on an 879-variable clinical build, 14 variables carry no label and would be recorded as labelled with their names.</li>
 <li>

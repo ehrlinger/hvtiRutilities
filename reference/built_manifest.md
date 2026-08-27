@@ -43,7 +43,7 @@ write.csv(data.frame(dead = c(1, 0, 0), iv_dead = 1:3),
           file.path(root, "datasets", "example.csv"), row.names = FALSE)
 built_manifest(study_config(root))
 #>          file size_bytes               mtime
-#> 1 example.csv         29 2026-08-26 22:33:46
+#> 1 example.csv         29 2026-08-27 01:16:23
 #>                                                             sha256
 #> 1 ff053e4e2cbfceda40422125c091a5cd1171909ccaffcd7154e900f5cbf69b4f
 unlink(root, recursive = TRUE)

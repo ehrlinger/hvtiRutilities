@@ -1,6 +1,34 @@
 # Changelog
 
-## hvtiRutilities 1.1.1
+## hvtiRutilities 1.1.2
+
+### Bug fixes
+
+- [`job_files()`](https://ehrlinger.github.io/hvtiRutilities/reference/job_files.md)
+  now credits a file under a symlinked subdirectory to the study it was
+  walked into. It normalised every path before stripping the root
+  prefix, and
+  [`normalizePath()`](https://rdrr.io/r/base/normalizePath.html)
+  resolves symlinks – so when a subdirectory inside the corpus pointed
+  somewhere outside the root, the resolved path no longer carried that
+  prefix, the strip sliced at the wrong offset, and `study` came back
+  mangled with no error raised.
+
+### Performance
+
+- [`job_files()`](https://ehrlinger.github.io/hvtiRutilities/reference/job_files.md)
+  makes one filesystem pass per file instead of three. The per-file
+  [`normalizePath()`](https://rdrr.io/r/base/normalizePath.html) is
+  unnecessary – [`list.files()`](https://rdrr.io/r/base/list.files.html)
+  prefixes its results with the root exactly as given, and the root is
+  already normalised – and the per-file
+  [`dir.exists()`](https://rdrr.io/r/base/files2.html) was redundant,
+  since `list.files(recursive = TRUE)` never returns directories. Each
+  removed pass was a stat syscall; on a local disk that is invisible,
+  but the corpus is read over an SMB mount where every stat is a network
+  round-trip and the two passes dominated the walk. A partial corpus
+  sweep over the share reached one top-level directory in an hour before
+  this change.
 
 ### Breaking changes
 
