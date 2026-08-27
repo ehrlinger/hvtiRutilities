@@ -1,3 +1,68 @@
+# hvtiRutilities 1.1.4
+
+## New features
+
+Candidate-pool preparation helpers, ported from a study's local `R/` (#47).
+They were written for one study and are needed by the `hm` and `bh` job
+templates in `hvtiRtemplates`, which cannot depend on one study's private
+helpers.
+
+- **`sas_variable_block()`** reads a variable list out of a `.sas` job rather
+  than transcribing it — a transcribed list drifts from the job it claims to
+  reproduce and nothing catches it. Comment handling is the whole difficulty,
+  and it is silent in **both** directions: a banner comment
+  (`/***** Patient Variables *****/`) contains `*`, so line-by-line stripping
+  leaves it intact and it swallows the **first** name on the next line
+  (`female`, `afib_pr`, `plvidd` and `size` were lost this way), while a
+  `/* ... */` spanning two lines is never stripped and a commented-**out**
+  variable is read as live (`avet_con` entered a screen that way). Both are
+  regression-tested.
+
+- **`covariate_audit()`**, **`imputed_levels()`** and
+  **`covariates_to_numeric()`** report and apply what happens to a covariate on
+  its way into a model. `%vars(missing=1, impute=1)` mean-imputes and adds a
+  paired `ms_*` indicator, so a 0/1 clinical variable arrives with **three**
+  values — 0, 1, and the cohort mean (one real column's third value is 0.714,
+  the prevalence of hypertension, not any patient's status). In SAS those enter
+  linearly; read into R they arrive as **factors** and get dummy-coded, which
+  is a different model with a different parameter count and nothing in the
+  output says so.
+
+  `NA` in `noninteger_levels` means **"not knowable here"**, not "none": mean
+  imputation is detectable in a discrete column but invisible by construction
+  in a continuous one.
+
+- **`concept_of()`**, **`concept_map()`**, **`prune_to_one_form()`** and
+  **`selection_crowding()`** group a candidate pool into clinical concepts. A
+  SAS pool offers every transformation as a separate candidate, so a stepwise
+  screen spends its steps on them and a per-variable frequency reports each
+  separately — five forms of age each cleared 80% on one screen while the
+  retained set collapsed to four concepts, and the paper reports concepts.
+
+  The rule is deliberately conservative, because grouping too little only costs
+  some pruning while grouping too much silently merges two clinical concepts.
+  Stem truncation is handled automatically but only when unambiguous;
+  contractions need an explicit alias.
+
+- **`pool_collinear_pairs()`** catches what concept grouping cannot: candidates
+  that are the same information under unrelated names. `male` and `female` are
+  exact complements, both were offered to a screen, and 101 of 500 replicates
+  selected **both** — fitting a rank-deficient design with nothing in the
+  output saying so.
+
+- **`POOL_AFFIXES`**, **`POOL_PLAIN_SUFFIX`** and **`POOL_MIN_STEM`** carry the
+  legacy naming conventions as documented **defaults**, overridable per study
+  rather than edited in place.
+
+The affix and alias machinery is a **permanent compatibility layer, not a
+temporary shim**: stem truncation exists because SAS capped names at 8
+characters, and reproducing a legacy SAS job in R is routine work rather than a
+migration with an end date.
+
+`concept_frequencies()` is deliberately **not** ported yet — it takes a bagging
+object whose structure does not exist in this package. It belongs with the `bh`
+work.
+
 # hvtiRutilities 1.1.3
 
 ## Bug fixes
