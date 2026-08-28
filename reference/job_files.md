@@ -38,7 +38,7 @@ findable. A sweep that reports only what it kept makes a missing job
 indistinguishable from a job that does not exist.
 
 There is deliberately no extension allowlist. See `vignette`-adjacent
-design note `specs/2026-08-26-job-type-inventory-design.md`, section
+design note `dev/specs/2026-08-26-job-type-inventory-design.md`, section
 4.4: a plausible default tuned on the hazard prefixes would have dropped
 every R-side job in the corpus.
 

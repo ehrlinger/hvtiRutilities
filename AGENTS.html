@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.5</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -106,7 +106,7 @@
 <li>
 <strong><code>testthat</code> edition 3.</strong> <code>DESCRIPTION</code> sets <code>Config/testthat/edition: 3</code>.</li>
 <li>
-<strong><code>.Rbuildignore</code> excludes the session-tooling directories</strong> — <code>.claude</code>, <code>.superpowers</code>, <code>.remember</code>, <code>.vscode</code>, <code>specs</code>. Add new tooling directories there when they appear; otherwise they land in the tarball as a NOTE.</li>
+<strong><code>.Rbuildignore</code> excludes the session-tooling directories</strong> — <code>.claude</code>, <code>.superpowers</code>, <code>.remember</code>, <code>.vscode</code>, <code>dev</code>. Add new tooling directories there when they appear; otherwise they land in the tarball as a NOTE. <code>ROADMAP.md</code> is listed for the same reason: it sits at the root but is not one of the files <code>R CMD check</code> expects there.</li>
 <li>
 <strong><code>_study.yml</code> records the STUDY cohort, not a job’s cohort.</strong> <code><a href="reference/cohort_counts.html">cohort_counts()</a></code> derives from the whole built dataset. A job analysing a filtered subset has a different N, so <code><a href="reference/assert_cohort.html">assert_cohort()</a></code> gates the wrong number — it passes while the job runs on a cohort nobody checked. Such a job must supply its own gate with counts from its own reference.</li>
 <li>

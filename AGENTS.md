@@ -68,9 +68,10 @@ forgotten `document()` fails the PR rather than landing quietly.
 - **`testthat` edition 3.** `DESCRIPTION` sets
   `Config/testthat/edition: 3`.
 - **`.Rbuildignore` excludes the session-tooling directories** —
-  `.claude`, `.superpowers`, `.remember`, `.vscode`, `specs`. Add new
+  `.claude`, `.superpowers`, `.remember`, `.vscode`, `dev`. Add new
   tooling directories there when they appear; otherwise they land in the
-  tarball as a NOTE.
+  tarball as a NOTE. `ROADMAP.md` is listed for the same reason: it sits
+  at the root but is not one of the files `R CMD check` expects there.
 - **`_study.yml` records the STUDY cohort, not a job’s cohort.**
   [`cohort_counts()`](https://ehrlinger.github.io/hvtiRutilities/reference/cohort_counts.md)
   derives from the whole built dataset. A job analysing a filtered
