@@ -3,12 +3,12 @@
 **Date:** 2026-08-14
 **Status:** Approved design, pending implementation plan
 **Package:** `hvtiRutilities`
-**Predecessor:** `specs/2026-08-05-proc-contents-means-design.md`
+**Predecessor:** `dev/specs/2026-08-05-proc-contents-means-design.md`
 
 ## Context
 
 `proc_means()` shipped in 1.0.2 as a port of SAS `PROC MEANS`. Phase 0 of the
-macro canonicalization program (`specs/2026-07-10-sas-macro-canonicalization-design.md`)
+macro canonicalization program (`dev/specs/2026-07-10-sas-macro-canonicalization-design.md`)
 has since inventoried the legacy macro library, and the inventory surfaced
 `unistats` — a 208-line `PROC UNIVARIATE` wrapper that had been invisible to the
 earlier file discovery because it carries no file extension.

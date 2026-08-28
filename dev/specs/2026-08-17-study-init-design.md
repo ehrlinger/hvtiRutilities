@@ -3,7 +3,7 @@
 **Date:** 2026-08-17
 **Status:** Approved design, pending implementation plan
 **Package:** `hvtiRutilities`
-**Predecessor:** `specs/plans/2026-08-17-hvtirutilities-provenance.md` (Stage 1)
+**Predecessor:** `dev/specs/2026-08-17-hvtirutilities-provenance-plan.md` (Stage 1)
 **Successor:** study close-out (deferred; see *Sequencing*)
 
 ## Context

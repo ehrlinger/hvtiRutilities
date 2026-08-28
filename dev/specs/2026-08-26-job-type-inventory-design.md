@@ -289,7 +289,8 @@ An earlier draft recommended changing `new_job()` to emit
 flat folder sort into run order past nine entries"* — so putting the endpoint
 first looked like an oversight discarding that sort order. **That reasoning was
 wrong**, and reading `inst/templates/README.md` and
-`specs/2026-08-21-template-set-layout-design.md` is what shows why:
+`dev/specs/2026-08-21-template-set-layout-design.md` — both in `hvtiRtemplates`,
+not this repo — is what shows why:
 
 1. **The layout rule depends on the set key leading.** *"Authored files sit
    flat. Generated artifacts sit under `<endpoint>-<type>/`."* A job named

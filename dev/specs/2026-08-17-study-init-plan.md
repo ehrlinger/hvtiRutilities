@@ -1204,8 +1204,8 @@ failed (`FAIL`).
   "New submission" plus environment-specific URL 404s).
 - `r_dir_impurities("R")` returns `character(0)`.
 
-Design: `specs/2026-08-17-study-init-design.md`
-Plan: `specs/plans/2026-08-17-study-init.md`
+Design: `dev/specs/2026-08-17-study-init-design.md`
+Plan: `dev/specs/2026-08-17-study-init-plan.md`
 
 Study close-out is deferred; its data model is recorded in the design doc's
 Sequencing section so the two halves do not drift.

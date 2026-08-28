@@ -12,7 +12,7 @@
 
 ## Spec
 
-`specs/2026-07-10-sas-macro-canonicalization-design.md`
+`dev/specs/2026-07-10-sas-macro-canonicalization-design.md`
 
 ## File Structure
 
@@ -1728,10 +1728,10 @@ git commit -m "chore: full check clean for macro canonicalization functions"
 ## Task 10: Run against the real corpus
 
 **Files:**
-- Create: `specs/artifacts/macro_manifest.yaml`
-- Create: `specs/artifacts/macro_signatures.yaml`
-- Create: `specs/artifacts/collision_report.md`
-- Create: `specs/artifacts/macro_overrides.yaml`
+- Create: `dev/specs/artifacts/macro_manifest.yaml`
+- Create: `dev/specs/artifacts/macro_signatures.yaml`
+- Create: `dev/specs/artifacts/collision_report.md`
+- Create: `dev/specs/artifacts/macro_overrides.yaml`
 
 This is where the tool meets the 179 files. It will produce ambiguities — that
 is the correct outcome, not a failure. Expect rule 6 to fire for `skip` (11
@@ -1813,12 +1813,12 @@ Rscript -e '
 - [ ] **Step 5: STOP. Human review gate.**
 
 Rule 6 fired. Every `ambiguous` macro now needs a human decision written into
-`specs/artifacts/macro_overrides.yaml`. This is not automatable and must not be
+`dev/specs/artifacts/macro_overrides.yaml`. This is not automatable and must not be
 automated — that is the entire point of the design.
 
 Seed the file with the one decision already established during design:
 
-`specs/artifacts/macro_overrides.yaml`:
+`dev/specs/artifacts/macro_overrides.yaml`:
 ```yaml
 - macro: cr_compare_cp
   canonical_file: CR_compare_CP.sas

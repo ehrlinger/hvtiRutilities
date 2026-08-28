@@ -15,7 +15,7 @@ plain haven read when `arrow` is absent.
 **Tech Stack:** R (>= 4.1), haven, yaml, digest, labelled, testthat edition 3,
 arrow (Suggests, optional at runtime).
 
-**Spec:** `specs/2026-08-25-read-layer-manifest-parquet-design.md`
+**Spec:** `dev/specs/2026-08-25-read-layer-manifest-parquet-design.md`
 
 ## Global Constraints
 
@@ -1154,7 +1154,7 @@ The design changed after Task 5 shipped. Validity is now decided by the
 manifest entry's `role` — a fact about whether SAS still builds the dataset —
 rather than by a single size/mtime heuristic. Read the *Validity check*,
 *Miss path* and *Promotion* sections of
-`specs/2026-08-25-read-layer-manifest-parquet-design.md`; they are the
+`dev/specs/2026-08-25-read-layer-manifest-parquet-design.md`; they are the
 authority for this task.
 
 Five changes:
@@ -1408,7 +1408,7 @@ release gate requires 0/0/0. Add it.
 - Modify: `R/parquet_cache.R`, `R/study_data.R`, `R/manifest.R`
 - Modify: `tests/testthat/test-parquet_cache.R`, `tests/testthat/test-manifest.R`
 - Modify: `NEWS.md`
-- Modify: `specs/2026-08-25-read-layer-manifest-parquet-design.md` is already
+- Modify: `dev/specs/2026-08-25-read-layer-manifest-parquet-design.md` is already
   amended — **read it first; it is the authority for every item here.**
 
 **Interfaces:**
