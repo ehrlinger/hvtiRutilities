@@ -56,8 +56,9 @@ forgotten `document()` fails the PR rather than landing quietly.
   so a green lint is not the bar — do not *add* lints.
 - **`testthat` edition 3.** `DESCRIPTION` sets `Config/testthat/edition: 3`.
 - **`.Rbuildignore` excludes the session-tooling directories** — `.claude`, `.superpowers`,
-  `.remember`, `.vscode`, `specs`. Add new tooling directories there when they appear;
-  otherwise they land in the tarball as a NOTE.
+  `.remember`, `.vscode`, `dev`. Add new tooling directories there when they appear;
+  otherwise they land in the tarball as a NOTE. `ROADMAP.md` is listed for the same
+  reason: it sits at the root but is not one of the files `R CMD check` expects there.
 - **`_study.yml` records the STUDY cohort, not a job's cohort.** `cohort_counts()` derives
   from the whole built dataset. A job analysing a filtered subset has a different N, so
   `assert_cohort()` gates the wrong number — it passes while the job runs on a cohort nobody

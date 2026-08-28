@@ -1,3 +1,17 @@
+# hvtiRutilities 1.1.5
+
+## Documentation
+
+- **Development records moved to `dev/specs/`,** adopting the portfolio
+  convention settled in `ehrlinger/house-style`. Designs and their plans now
+  share a directory and a slug, with `-design` / `-plan` carrying the
+  distinction `specs/` and `specs/plans/` used to encode a second time. The
+  six paths quoted in `NEWS.md`, `R/`, `man/` and the tests were repointed,
+  so nothing here links at a file that no longer exists.
+- **`ROADMAP.md` moved to the repository root.** It says where the package is
+  going rather than what was decided on a date, so it is not a development
+  record. `.Rbuildignore` gained a matching line to keep the tarball clean.
+
 # hvtiRutilities 1.1.4
 
 ## New features
@@ -127,7 +141,7 @@ work.
   Nothing is filtered: placement and classification are columns, so a file
   the sweep cannot classify stays in the output rather than vanishing. There
   is no extension allowlist, deliberately — see
-  `specs/2026-08-26-job-type-inventory-design.md` §4.4.
+  `dev/specs/2026-08-26-job-type-inventory-design.md` §4.4.
 - `hvti_taxonomy()` and `hvti_non_prefixes()` — the analysis-prefix table,
   moved here from `hvtiRtemplates`, which now imports them back. The table is
   shared vocabulary rather than template machinery, and this package is the
@@ -453,7 +467,7 @@ work.
   this fails loudly rather than encode a guess.
 
   The `PROC UNIVARIATE` inference statistics remain out of scope. See
-  `specs/2026-08-14-proc-means-unistats-design.md`.
+  `dev/specs/2026-08-14-proc-means-unistats-design.md`.
 
 ## Bug fixes
 
