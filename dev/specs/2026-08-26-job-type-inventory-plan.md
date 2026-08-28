@@ -8,7 +8,7 @@
 
 **Tech Stack:** R (≥ 4.1.0), roxygen2 8.1.0, testthat edition 3, `withr` for temp dirs in tests, base R for the sweep (no dplyr — the sweep is vectorised base and adding NSE here buys nothing).
 
-**Spec:** `specs/2026-08-26-job-type-inventory-design.md`. Read it before Task 1.
+**Spec:** `dev/specs/2026-08-26-job-type-inventory-design.md`. Read it before Task 1.
 
 ## Global Constraints
 
@@ -1260,7 +1260,7 @@ Add under the existing `## New features` heading:
   Nothing is filtered: placement and classification are columns, so a file
   the sweep cannot classify stays in the output rather than vanishing. There
   is no extension allowlist, deliberately — see
-  `specs/2026-08-26-job-type-inventory-design.md` §4.4.
+  `dev/specs/2026-08-26-job-type-inventory-design.md` §4.4.
 - `hvti_taxonomy()` and `hvti_non_prefixes()` — the analysis-prefix table,
   moved here from `hvtiRtemplates`, which now imports them back. The table is
   shared vocabulary rather than template machinery, and this package is the
@@ -1309,7 +1309,7 @@ git commit -m "chore: bump to 1.1.1 for the job-type inventory"
 git push -u origin feat/job-type-inventory
 gh pr create --title "Job-type inventory sweep, and the taxonomy moves down" --body "$(cat <<'EOF'
 Implements §2 of `hvtiRtemplates/specs/2026-08-26-job-type-census-sweep.md`,
-per the design in `specs/2026-08-26-job-type-inventory-design.md`.
+per the design in `dev/specs/2026-08-26-job-type-inventory-design.md`.
 
 `job_files()` returns one row per corpus file; `job_census()` rolls it up to
 `(study, prefix, folder)` with `n_jobs` and `n_files`. The print method leads

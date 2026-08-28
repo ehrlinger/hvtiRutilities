@@ -1,9 +1,9 @@
 # Parsing a job filename into its prefix.
 #
 # Four naming conventions are live in the corpus at once, and they are not
-# variations on one pattern -- see
-# specs/2026-08-26-job-type-inventory-design.md section 4.2. Each gets its own
-# anchored regex, and the parsers run most-specific-first.
+# variations on one pattern -- see section 4.2 of
+# dev/specs/2026-08-26-job-type-inventory-design.md. Each gets its own anchored
+# regex, and the parsers run most-specific-first.
 #
 # The order is load-bearing, not stylistic. `legacy` is permissive enough to
 # match almost any dotted name -- it reads "03.01-ac.qmd" as prefix "03" --

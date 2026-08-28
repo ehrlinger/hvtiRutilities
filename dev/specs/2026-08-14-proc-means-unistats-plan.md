@@ -8,7 +8,7 @@
 
 **Tech Stack:** R (>= 4.1.0), testthat edition 3, roxygen2 8.1.0, `e1071` (new, Suggests-only, tests only).
 
-**Spec:** `specs/2026-08-14-proc-means-unistats-design.md`
+**Spec:** `dev/specs/2026-08-14-proc-means-unistats-design.md`
 
 ## Global Constraints
 
@@ -1166,7 +1166,7 @@ At the top of `NEWS.md`, add:
   this fails loudly rather than encode a guess.
 
   The `PROC UNIVARIATE` inference statistics remain out of scope. See
-  `specs/2026-08-14-proc-means-unistats-design.md`.
+  `dev/specs/2026-08-14-proc-means-unistats-design.md`.
 
 ## Internal changes
 

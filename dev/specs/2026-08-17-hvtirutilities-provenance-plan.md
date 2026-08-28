@@ -1667,7 +1667,7 @@ No study-specific literal appears in `R/`. Every study value comes from
 Adoption in `R_hazard` (deleting the per-study copies and rewiring the `.qmd`
 files) is Stage 4 and is not in this PR.
 
-Plan: `specs/plans/2026-08-17-hvtirutilities-provenance.md` (in this repo; the
+Plan: `dev/specs/2026-08-17-hvtirutilities-provenance-plan.md` (in this repo; the
 authored copy is in the R_hazard study tree under
 `docs/plans/`, which has no version control)
 Design: `analyses/R_hazard/docs/specs/2026-08-13-templates-and-provenance-design.md`

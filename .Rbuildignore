@@ -12,7 +12,8 @@
 ^\.claude$
 ^CLAUDE\.md$
 ^badges$
-^specs$
+^dev$
 ^\.superpowers$
 ^\.remember$
 ^AGENTS\.md$
+^ROADMAP\.md$

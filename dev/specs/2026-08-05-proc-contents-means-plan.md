@@ -8,7 +8,7 @@
 
 **Tech Stack:** R (>= 4.1.0), `labelled`, `stats`, `testthat` 3rd edition, roxygen2 7.3.3.
 
-**Design spec:** [`specs/2026-08-05-proc-contents-means-design.md`](../2026-08-05-proc-contents-means-design.md)
+**Design spec:** [`dev/specs/2026-08-05-proc-contents-means-design.md`](2026-08-05-proc-contents-means-design.md)
 
 **Branch:** `spec/proc-contents-means`, based on `main` @ 1.0.1.
 

@@ -36,7 +36,7 @@ indistinguishable from a job that does not exist.
 
 There is deliberately no extension allowlist. See
 \code{vignette}-adjacent design note
-\code{specs/2026-08-26-job-type-inventory-design.md}, section 4.4: a
+\code{dev/specs/2026-08-26-job-type-inventory-design.md}, section 4.4: a
 plausible default tuned on the hazard prefixes would have dropped every
 R-side job in the corpus.
 
