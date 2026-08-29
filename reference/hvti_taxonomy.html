@@ -9,7 +9,7 @@ prefix encodes both the type of analysis and the folder the job belongs in."></h
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.5</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.6</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -79,6 +79,21 @@ prefix encodes both the type of analysis and the folder the job belongs in.</p>
     <p>This is data rather than documentation on purpose. The same table lived in a
 README and drifted from the files it described; as a function it is checked
 by the test suite against the templates actually present.</p>
+<p><strong>Row order within a folder is load-bearing, not cosmetic.</strong>
+<code>hvtiRtemplates</code> derives a template's ordinal from this table: the
+major field is the folder's position and the minor is the row's position
+within that folder, and its test suite asserts both. So inserting a row
+renumbers every row below it in the same folder. That is free while a folder
+is mostly untemplated and expensive afterwards, because the ordinal is in the
+filename of every job a study has scaffolded.</p>
+<p><strong><code>hs</code> is filed under <code>graphs</code>, which reads oddly for a job
+named "setup".</strong> It was moved there from <code>analyses</code> on 2026-08-29 on the
+corpus rather than on the name: all ten <code>tp.hs.*</code> templates in the SAS
+library and ten of the eleven R <code>hs</code> jobs in <code>/studies</code> sit in
+<code>graphs/</code>. It computes patient-level predictions that the plotting jobs
+beside it consume, in the <code>setup</code> / <code>uses_setup</code> pairing the
+corpus uses throughout. See
+<code>hvtiRtemplates:dev/specs/2026-08-29-hs-template-design.md</code>.</p>
 <p><code>folder</code> names two different things. For most rows it is the analysis
 type's home folder, matched to a job prefix. One row, <code>estimates</code>, is an
 artifact kind rather than a job type: it holds serialized fits and cached

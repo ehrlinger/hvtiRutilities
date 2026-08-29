@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.5</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.6</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,6 +55,17 @@
       <small>Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.1.6" id="hvtirutilities-116">hvtiRutilities 1.1.6<a class="anchor" aria-label="anchor" href="#hvtirutilities-116"></a></h2>
+<div class="section level3">
+<h3 id="taxonomy-1-1-6">Taxonomy<a class="anchor" aria-label="anchor" href="#taxonomy-1-1-6"></a></h3>
+<ul><li>
+<p><strong><code>hs</code> moved from <code>analyses</code> to <code>graphs</code>,</strong> positioned immediately after <code>hp</code>. The move follows the corpus rather than the name: all ten <code>tp.hs.*</code> templates in the SAS library, and ten of the eleven R <code>hs</code> jobs across <code>/studies</code>, sit in <code>graphs/</code>. <code>hs</code> computes patient-level predictions that the plotting jobs beside it consume — the <code>setup</code> / <code>uses_setup</code> pairing the corpus uses throughout.</p>
+<p>⚠️ <strong>Row order within a folder is load-bearing.</strong> <code>hvtiRtemplates</code> derives a template’s ordinal from this table — folder position gives the major, row position within the folder gives the minor — and asserts both. Placing <code>hs</code> after <code>hp</code> is what makes its template <code>graphs/06.02-hs.qmd</code>; anywhere else in the block gives a different ordinal. The insertion shifts the implied minor of <code>mp</code>, <code>lp</code>, <code>np</code>, <code>dp</code>, <code>fp</code>, <code>gp</code>, <code>cp</code>, <code>ce</code> and <code>rp</code> by one, which costs nothing today because <code>hp</code> is the only templated prefix in <code>graphs</code> and it keeps <code>06.01</code>. It will not stay free: once any of those nine ships, the same insertion would renumber a live template.</p>
+<p>Requested by <code>hvtiRtemplates</code> for its <code>hs</code> template, designed in <code>hvtiRtemplates:dev/specs/2026-08-29-hs-template-design.md</code>.</p>
+</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.1.5" id="hvtirutilities-115">hvtiRutilities 1.1.5<a class="anchor" aria-label="anchor" href="#hvtirutilities-115"></a></h2>
 <div class="section level3">

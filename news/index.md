@@ -1,5 +1,30 @@
 # Changelog
 
+## hvtiRutilities 1.1.6
+
+### Taxonomy
+
+- **`hs` moved from `analyses` to `graphs`,** positioned immediately
+  after `hp`. The move follows the corpus rather than the name: all ten
+  `tp.hs.*` templates in the SAS library, and ten of the eleven R `hs`
+  jobs across `/studies`, sit in `graphs/`. `hs` computes patient-level
+  predictions that the plotting jobs beside it consume — the `setup` /
+  `uses_setup` pairing the corpus uses throughout.
+
+  ⚠️ **Row order within a folder is load-bearing.** `hvtiRtemplates`
+  derives a template’s ordinal from this table — folder position gives
+  the major, row position within the folder gives the minor — and
+  asserts both. Placing `hs` after `hp` is what makes its template
+  `graphs/06.02-hs.qmd`; anywhere else in the block gives a different
+  ordinal. The insertion shifts the implied minor of `mp`, `lp`, `np`,
+  `dp`, `fp`, `gp`, `cp`, `ce` and `rp` by one, which costs nothing
+  today because `hp` is the only templated prefix in `graphs` and it
+  keeps `06.01`. It will not stay free: once any of those nine ships,
+  the same insertion would renumber a live template.
+
+  Requested by `hvtiRtemplates` for its `hs` template, designed in
+  `hvtiRtemplates:dev/specs/2026-08-29-hs-template-design.md`.
+
 ## hvtiRutilities 1.1.5
 
 ### Documentation
