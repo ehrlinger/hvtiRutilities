@@ -7,6 +7,23 @@
 #' README and drifted from the files it described; as a function it is checked
 #' by the test suite against the templates actually present.
 #'
+#' \strong{Row order within a folder is load-bearing, not cosmetic.}
+#' \code{hvtiRtemplates} derives a template's ordinal from this table: the
+#' major field is the folder's position and the minor is the row's position
+#' within that folder, and its test suite asserts both. So inserting a row
+#' renumbers every row below it in the same folder. That is free while a folder
+#' is mostly untemplated and expensive afterwards, because the ordinal is in the
+#' filename of every job a study has scaffolded.
+#'
+#' \strong{\code{hs} is filed under \code{graphs}, which reads oddly for a job
+#' named "setup".} It was moved there from \code{analyses} on 2026-08-29 on the
+#' corpus rather than on the name: all ten \code{tp.hs.*} templates in the SAS
+#' library and ten of the eleven R \code{hs} jobs in \code{/studies} sit in
+#' \code{graphs/}. It computes patient-level predictions that the plotting jobs
+#' beside it consume, in the \code{setup} / \code{uses_setup} pairing the
+#' corpus uses throughout. See
+#' \code{hvtiRtemplates:dev/specs/2026-08-29-hs-template-design.md}.
+#'
 #' \code{folder} names two different things. For most rows it is the analysis
 #' type's home folder, matched to a job prefix. One row, \code{estimates}, is an
 #' artifact kind rather than a job type: it holds serialized fits and cached
@@ -33,7 +50,6 @@ hvti_taxonomy <- function() {
     c("cd",    "Cumulative distribution",   "distributions", "cumulative distribution plots; follow-up summaries"),
     c("nd",    "Nonparametric distributions", "distributions", "distribution estimates stratified by group"),
     c("hm",    "Hazard model",              "analyses",      "risk factor analysis; builds on the HZ fit"),
-    c("hs",    "Hazard setup",              "analyses",      "patient-level survival predictions from the HM model"),
     c("mm",    "Mixed model",               "analyses",      "continuous repeated-measures longitudinal analysis"),
     c("gm",    "Generalized model",         "analyses",      "repeated-measures ordinal / count models"),
     c("lm",    "Logistic model",            "analyses",      "logistic regression; propensity score development"),
@@ -51,6 +67,7 @@ hvti_taxonomy <- function() {
     c("ls",    "Life table / STS",          "analyses",      "STS observed-versus-predicted analyses"),
     c(NA_character_, "Estimates", "estimates", "model fits and cached results; written by one job, read by later ones in the set"),
     c("hp",    "Hazard plot",               "graphs",        "overlays actuarial and predicted survival; patient-specific curves"),
+    c("hs",    "Hazard setup",              "graphs",        "patient-level survival predictions from the HM model"),
     c("mp",    "Mixed model plot",          "graphs",        "individual and population-level trends from MM"),
     c("lp",    "Logistic plot",             "graphs",        "ordinal or binary logistic model results"),
     c("np",    "Nonparametric plot",        "graphs",        "nonparametric distribution figures"),
