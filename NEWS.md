@@ -1,5 +1,32 @@
 # hvtiRutilities 1.1.7
 
+## Compatibility
+
+**No API change, and nothing breaking.** No export is added, removed or
+renamed; no signature changes; `NAMESPACE` is identical to 1.1.6. Downstream
+packages need no action.
+
+One behavioural change, scoped to a single function: `write_collision_report()`
+now writes an extra `## Provenance` section, so that report's bytes differ from
+one produced by 1.1.6. Nothing else's output moves. A rendered-output diff
+elsewhere is noise, not signal.
+
+## Documentation
+
+- **`hvti_taxonomy()`'s roxygen no longer says row order within a folder is
+  load-bearing.** It was true when written and is not any more.
+  `hvtiRtemplates` froze template ordinals into a ledger on 2026-08-31
+  (`e71bef4`, v1.0.15), so a minor is now assigned once and never recomputed
+  from row position. Rows may be inserted or reordered freely; **folder** order
+  is still load-bearing and still needs coordinating.
+
+  That coupling was removed because it had already failed in this package's
+  direction: the 1.1.6 `hs` move shifted `bh` from sixth to fifth in
+  `analyses` while its shipped filename stayed `04.06`, and nothing caught it
+  -- the ordinal checks verify format, folder-major and uniqueness, never
+  position. `bh` was renumbered to `04.05` and `04.06` retired rather than
+  freed, because it had shipped in v1.0.13 and v1.0.14.
+
 ## New features
 
 - **`write_collision_report()` now ends with a Provenance section derived from
