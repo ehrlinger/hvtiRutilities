@@ -71,12 +71,30 @@ write_macro_manifest <- function(x, path) {
 #'
 #' @description
 #' Reports every macro name defined in more than one file, with its distinct
-#' body count and defining files. In SAS, `%include`-ing two files that define
-#' the same macro means the second silently shadows the first, so this report
-#' is a prerequisite for building a trustworthy SAS harness.
+#' body count and defining files. In SAS, \code{\%include}-ing two files that
+#' define the same macro means the second silently shadows the first, so this
+#' report is a prerequisite for building a trustworthy SAS harness.
+#'
+#' @details
+#' The report ends with a \strong{Provenance} section derived from the scanned
+#' corpus rather than from the clock: a fingerprint over every
+#' (macro, file, body hash) triple and the excluded-directory list, the file,
+#' definition and name counts, and the package version.
+#'
+#' A generated-on field would defeat the byte-for-byte reproducibility that
+#' makes the artifact reviewable, which is why neither this report nor
+#' \code{\link{write_macro_manifest}} carries one. An artifact with no identity
+#' at all is the opposite failure: a committed report and a design's prose can
+#' disagree with nothing to say which is stale. An input-derived stamp avoids
+#' both, because it is identical on every re-run of the same corpus.
+#'
+#' The fingerprint follows content, not location. \code{\link{sas_triage}}
+#' records file basenames, so re-scanning the same corpus from a different
+#' mount point yields the same value and a share remount does not invalidate
+#' every committed report.
 #'
 #' @param x A \code{data.frame} returned by \code{\link{sas_triage}}.
-#' @param path Character. Destination `.md` path.
+#' @param path Character. Destination \code{.md} path.
 #'
 #' @return Invisibly, \code{path}.
 #'
@@ -134,6 +152,53 @@ write_collision_report <- function(x, path) {
     )
   }
 
+  lines <- c(lines, .report_provenance(defs, ex))
+
   writeLines(lines, path)
   invisible(path)
+}
+
+## Provenance derived from the inputs rather than the clock.
+##
+## A generated-on field would defeat byte-for-byte reproducibility, which is
+## why the manifest carries none. But an artifact with no identity at all
+## cannot be attributed to the run that produced it: a committed report and a
+## design's prose can disagree with nothing to say which is stale. That is not
+## hypothetical -- it happened to the `skip` figures.
+##
+## A stamp taken from the corpus is identical on every re-run of that corpus,
+## so it costs nothing and settles the question. `file` is a basename, so the
+## fingerprint follows the content scanned rather than where it was mounted --
+## a share remount must not invalidate every committed report.
+.report_provenance <- function(defs, ex) {
+  ident <- sort(unique(paste(defs$macro, defs$file, defs$body_hash)))
+  if (!is.null(ex) && nrow(ex) > 0L) {
+    ident <- c(ident, sort(paste("!excluded", ex$directory, ex$n_sas)))
+  }
+
+  fp <- digest::digest(
+    paste(ident, collapse = "\n"),
+    algo = "sha256", serialize = FALSE
+  )
+
+  c(
+    "", "## Provenance", "",
+    "Derived from the scanned corpus, never from the clock, so the report",
+    "reproduces byte-for-byte on any re-run of the same corpus. A report that",
+    "disagrees with prose elsewhere can be settled by re-running and comparing",
+    "the fingerprint.", "",
+    "| Field | Value |", "|---|---|",
+    sprintf("| corpus fingerprint | `%s` |", substr(fp, 1L, 16L)),
+    sprintf("| files scanned | %d |", length(unique(defs$file))),
+    sprintf("| macro definitions | %d |", nrow(defs)),
+    sprintf("| distinct macro names | %d |", length(unique(defs$macro))),
+    sprintf(
+      "| excluded subdirectories | %d |",
+      if (is.null(ex)) 0L else nrow(ex)
+    ),
+    sprintf(
+      "| hvtiRutilities | %s |",
+      as.character(utils::packageVersion("hvtiRutilities"))
+    )
+  )
 }

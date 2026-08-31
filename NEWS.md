@@ -1,3 +1,39 @@
+# hvtiRutilities 1.1.7
+
+## New features
+
+- **`write_collision_report()` now ends with a Provenance section derived from
+  the scanned corpus rather than from the clock**: a fingerprint over every
+  (macro, file, body hash) triple and the excluded-directory list, the file,
+  definition and name counts, and the package version.
+
+  Neither the report nor `write_macro_manifest()` carries a generated-on
+  field, deliberately -- it would defeat the byte-for-byte reproducibility
+  that makes the artifact reviewable. But an artifact with **no** identity is
+  the opposite failure, and it has already cost something: the committed
+  `collision_report.md` and the canonicalization design disagree on `skip`
+  (10 files / 7 bodies against 13 / 10) and on four other rows, and nothing in
+  either file says which measurement is current. An input-derived stamp avoids
+  both failures, because it is identical on every re-run of the same corpus.
+
+  The fingerprint follows content, not location. `sas_triage()` records file
+  basenames, so re-scanning the same corpus from a different mount point
+  yields the same value -- a share remount must not invalidate every committed
+  report.
+
+  This is prospective. The committed artifact predates the stamp and gains one
+  only when the corpus is next swept, which needs share access.
+
+## Bug fixes
+
+- **`write_collision_report()`'s help page was missing a clause.** The roxygen
+  wrote `%include` unescaped, and `%` opens a comment in Rd, so everything
+  after it on that line was dropped: the rendered Description read "In SAS, `
+  the same macro means the second silently shadows the first". `R CMD check`
+  cannot catch this -- the Rd is valid, the text is simply commented out.
+  Escaped, and the three markdown backticks in the same block converted to
+  `\code{}` per this package's Rd-not-markdown rule.
+
 # hvtiRutilities 1.1.6
 
 ## Taxonomy
