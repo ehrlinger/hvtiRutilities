@@ -118,11 +118,65 @@ Worse, redefinitions diverge. Measured by hashing each normalized macro body:
 | `hazboot` | 7 | **7** |
 | `kaplan` | 6 | **6** |
 
+> ⚠️ **These figures disagree with `artifacts/collision_report.md`, and the
+> disagreement is not resolved.** The report is the generated artifact; this
+> table is prose. They do not agree, and neither has been shown to be current:
+>
+> | macro | this table | collision report |
+> |---|---|---|
+> | `skip` | 13 files / 10 bodies | 10 / 7 |
+> | `mrg` | 12 / 3 | 13 / **4** |
+> | `numobs` | 8 / 3 | 5 / 1 — and *canonical*, not ambiguous |
+> | `cumdist` | 7 / 7 | **absent from the report entirely** |
+> | `kaplan` | 6 / 6 | 2 / 2 |
+> | `hazboot` | 7 / 7 | 7 / 7 ✓ |
+>
+> **Do not reconcile these by editing one side.** At least three confounders are
+> in play and they move counts in *both* directions, so no arithmetic on the
+> committed files can separate them:
+>
+> 1. **The report excludes 8 subdirectories** and says so: `archive` (20),
+>    `tests` (17), `table_mac` (17), `readin_samples` (17), `logis_reclassi`
+>    (4), `macros_to_test` (2), `repeat_test` (2) and `CVS` (0) — **79 `.sas`
+>    files** in total. Exclusion can only *lower* a count, which fits `skip`
+>    and `kaplan` but not `mrg`, where the report is **higher**.
+> 2. **The file-discovery fix** took the corpus from 202 files to 336. A figure
+>    measured before it is low across the board.
+> 3. **The `.sas_scan()` stateful scanner** changed which `%macro` lines are read
+>    as definitions rather than comment text. That moves both file counts and
+>    distinct-body counts in either direction, which is the only one of the three
+>    that explains `mrg` rising.
+>
+> **Why it cannot be adjudicated from the artifacts.** `write_collision_report()`
+> deliberately stamps no generated-on field, so the corpus reproduces
+> byte-for-byte — see `R/write_macro_manifest.R`. The guarantee is real and worth
+> keeping, but it means a committed report records *no* identity for the run that
+> produced it: not a date, not a corpus path, not a package version. Two runs can
+> be proven identical; a checked-in report cannot be attributed to a build.
+>
+> **Resolving it requires re-running `sas_triage()` against the corpus**, which
+> needs access to the SMB share. Until then, treat `artifacts/` as the
+> measurement and this table as narrative that predates it.
+>
+> **A fix that keeps byte-reproducibility.** Provenance defeats reproducibility
+> only when it is taken from the *clock*. A stamp derived from the *inputs* —
+> corpus checksum, file count, exclusion list, package version — is identical on
+> every re-run of the same corpus and would have made this discrepancy
+> self-diagnosing. Recorded here as a proposal; not implemented.
+
+
 In SAS, `%include`-ing two files that both define `%macro dist` means the
-second **silently shadows** the first. With `cumdist` carrying 7 different
-implementations across 7 files, and `kaplan` 6 across 6, any harness that
-includes multiple macro files is exposed to order-dependent behaviour. Detecting
-this is a Phase 0 deliverable, because Phase 1's harness will do exactly that.
+second **silently shadows** the first. With `hazboot` carrying 7 different
+implementations across 7 files, and `std_dif` — a macro *called by name* from
+analysis code — diverging 5 ways across 5 files, any harness that includes
+multiple macro files is exposed to order-dependent behaviour. Detecting this is
+a Phase 0 deliverable, because Phase 1's harness will do exactly that.
+
+Those two are cited because `artifacts/collision_report.md` corroborates both
+exactly — `hazboot` as a row of the table above, `std_dif` from the prose in
+*Public entry points versus private helpers* below. They are the only two
+figures in this document that it does. See the warning above the table before
+quoting any other.
 
 `skip` is the largest row in the table above but is **not** an example of this
 risk, and the original draft was wrong to lead with it. `%macro skip; ... %mend
@@ -308,6 +362,11 @@ Rule 6 fires for `skip` (10 bodies), `cumdist` (7), `hazboot` (7), `kaplan` (6),
 `mrg` (3), `numobs` (3), and much of the rest of the 126 multiply-defined names
 — 337 definitions in all. For every name that is genuinely a macro, that is the
 expected and correct outcome, not a failure.
+
+These counts are the disputed ones — see the warning under the divergence table.
+`numobs` in particular is recorded as *canonical* in
+`artifacts/collision_report.md`, so on that measurement Rule 6 does not fire for
+it at all.
 
 **`skip` is the exception, and it is a false positive.** Rule 6 asks a human to
 choose the canonical body among divergent definitions of one name. `skip` is not
