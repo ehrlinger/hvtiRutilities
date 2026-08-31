@@ -267,7 +267,7 @@ Create `R/job_names.R`:
 #
 # Four naming conventions are live in the corpus at once, and they are not
 # variations on one pattern -- see
-# specs/2026-08-26-job-type-inventory-design.md section 4.2. Each gets its own
+# dev/specs/2026-08-26-job-type-inventory-design.md section 4.2. Each gets its own
 # anchored regex, and the parsers run most-specific-first.
 #
 # The order is load-bearing, not stylistic. `legacy` is permissive enough to
@@ -734,7 +734,7 @@ Append to `R/job_census.R`:
 #'
 #' There is deliberately no extension allowlist. See
 #' \code{vignette}-adjacent design note
-#' \code{specs/2026-08-26-job-type-inventory-design.md}, section 4.4: a
+#' \code{dev/specs/2026-08-26-job-type-inventory-design.md}, section 4.4: a
 #' plausible default tuned on the hazard prefixes would have dropped every
 #' R-side job in the corpus.
 #'
