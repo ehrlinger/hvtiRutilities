@@ -135,10 +135,11 @@ Worse, redefinitions diverge. Measured by hashing each normalized macro body:
 > in play and they move counts in *both* directions, so no arithmetic on the
 > committed files can separate them:
 >
-> 1. **The report excludes 8 subdirectories** (56 `.sas` files: `archive`,
->    `tests`, `table_mac`, `readin_samples` and four more) and says so. Exclusion
->    can only *lower* a count — which fits `skip` and `kaplan`, but not `mrg`,
->    where the report is **higher**.
+> 1. **The report excludes 8 subdirectories** and says so: `archive` (20),
+>    `tests` (17), `table_mac` (17), `readin_samples` (17), `logis_reclassi`
+>    (4), `macros_to_test` (2), `repeat_test` (2) and `CVS` (0) — **79 `.sas`
+>    files** in total. Exclusion can only *lower* a count, which fits `skip`
+>    and `kaplan` but not `mrg`, where the report is **higher**.
 > 2. **The file-discovery fix** took the corpus from 202 files to 336. A figure
 >    measured before it is low across the board.
 > 3. **The `.sas_scan()` stateful scanner** changed which `%macro` lines are read
@@ -171,9 +172,11 @@ analysis code — diverging 5 ways across 5 files, any harness that includes
 multiple macro files is exposed to order-dependent behaviour. Detecting this is
 a Phase 0 deliverable, because Phase 1's harness will do exactly that.
 
-Those two are cited because they are the only rows the generated
-`artifacts/collision_report.md` corroborates exactly. See the warning below
-before quoting any other figure from this table.
+Those two are cited because `artifacts/collision_report.md` corroborates both
+exactly — `hazboot` as a row of the table above, `std_dif` from the prose in
+*Public entry points versus private helpers* below. They are the only two
+figures in this document that it does. See the warning above the table before
+quoting any other.
 
 `skip` is the largest row in the table above but is **not** an example of this
 risk, and the original draft was wrong to lead with it. `%macro skip; ... %mend
