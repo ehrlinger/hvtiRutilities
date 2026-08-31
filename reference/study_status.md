@@ -57,7 +57,7 @@ data frame of `item`, `status` – `"OK"`, `"MISSING"` or `"FAIL"` – and
 root <- file.path(tempdir(), "study-status-example")
 dir.create(root, showWarnings = FALSE)
 study_status(root)
-#> Study: /tmp/Rtmpt4U42K/study-status-example
+#> Study: /tmp/Rtmp3Hrw6P/study-status-example
 #> 
 #> [ ] _study.yml — no _study.yml at this root; run study_init()
 #> [ ] renv.lock — no renv.lock; run renv::init() in the study project

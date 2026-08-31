@@ -43,6 +43,6 @@ yaml::write_yaml(
   file.path(root, "_study.yml")
 )
 sas_path("datasets", start = root)
-#> [1] "/tmp/Rtmpt4U42K/sas-path-example/datasets"
+#> [1] "/tmp/Rtmp3Hrw6P/sas-path-example/datasets"
 unlink(root, recursive = TRUE)
 ```
