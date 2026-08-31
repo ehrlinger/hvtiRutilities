@@ -14,7 +14,11 @@
   `collision_report.md` and the canonicalization design disagree on `skip`
   (10 files / 7 bodies against 13 / 10) and on four other rows, and nothing in
   either file says which measurement is current. An input-derived stamp avoids
-  both failures, because it is identical on every re-run of the same corpus.
+  both failures, because it is a function of the inputs alone. Determinism is
+  over the corpus *and* the package version -- the version row is expected to
+  change between builds, since that is what attributes an artifact to one --
+  while the fingerprint depends on the corpus alone and stays comparable
+  across versions.
 
   The fingerprint follows content, not location. `sas_triage()` records file
   basenames, so re-scanning the same corpus from a different mount point

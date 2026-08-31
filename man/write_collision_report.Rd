@@ -31,7 +31,13 @@ makes the artifact reviewable, which is why neither this report nor
 \code{\link{write_macro_manifest}} carries one. An artifact with no identity
 at all is the opposite failure: a committed report and a design's prose can
 disagree with nothing to say which is stale. An input-derived stamp avoids
-both, because it is identical on every re-run of the same corpus.
+both, because it is a function of the inputs alone.
+
+Determinism is therefore over the corpus \emph{and} the package version, not
+the corpus alone: re-running under a different version changes the version
+row, by design, because that is what attributes the artifact to a build. The
+fingerprint itself depends only on the corpus, so it stays comparable across
+versions.
 
 The fingerprint follows content, not location. \code{\link{sas_triage}}
 records file basenames, so re-scanning the same corpus from a different

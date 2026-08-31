@@ -86,7 +86,13 @@ write_macro_manifest <- function(x, path) {
 #' \code{\link{write_macro_manifest}} carries one. An artifact with no identity
 #' at all is the opposite failure: a committed report and a design's prose can
 #' disagree with nothing to say which is stale. An input-derived stamp avoids
-#' both, because it is identical on every re-run of the same corpus.
+#' both, because it is a function of the inputs alone.
+#'
+#' Determinism is therefore over the corpus \emph{and} the package version, not
+#' the corpus alone: re-running under a different version changes the version
+#' row, by design, because that is what attributes the artifact to a build. The
+#' fingerprint itself depends only on the corpus, so it stays comparable across
+#' versions.
 #'
 #' The fingerprint follows content, not location. \code{\link{sas_triage}}
 #' records file basenames, so re-scanning the same corpus from a different
@@ -183,10 +189,13 @@ write_collision_report <- function(x, path) {
 
   c(
     "", "## Provenance", "",
-    "Derived from the scanned corpus, never from the clock, so the report",
-    "reproduces byte-for-byte on any re-run of the same corpus. A report that",
-    "disagrees with prose elsewhere can be settled by re-running and comparing",
-    "the fingerprint.", "",
+    "Derived from the inputs, never from the clock: the same corpus under the",
+    "same package version reproduces this report byte-for-byte. The package",
+    "version is part of the identity, so a different version is expected to",
+    "differ here -- that is the point, since it says which build produced the",
+    "artifact. A report that disagrees with prose elsewhere can be settled by",
+    "re-running and comparing the fingerprint, which depends on the corpus",
+    "alone.", "",
     "| Field | Value |", "|---|---|",
     sprintf("| corpus fingerprint | `%s` |", substr(fp, 1L, 16L)),
     sprintf("| files scanned | %d |", length(unique(defs$file))),
