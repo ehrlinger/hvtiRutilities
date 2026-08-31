@@ -142,15 +142,7 @@ work.
   passes dominated the walk. A partial corpus sweep over the share reached one
   top-level directory in an hour before this change.
 
-## Breaking changes
-
-- `read_clinical_data()`'s `convert_types` argument now defaults to `FALSE`.
-  It defaulted to `TRUE`, applying `r_data_types()` to every column, which
-  converts any two-valued numeric column to logical — including 0/1 event and
-  censoring flags, which `hzr_kaplan()` and similar then reject. Reading and
-  type derivation are now separate steps. Callers who omit the argument get a
-  once-per-session warning; pass `convert_types = TRUE` to restore the old
-  behaviour.
+# hvtiRutilities 1.1.1
 
 ## New features
 
@@ -170,6 +162,21 @@ work.
   moved here from `hvtiRtemplates`, which now imports them back. The table is
   shared vocabulary rather than template machinery, and this package is the
   lower layer.
+
+# hvtiRutilities 1.1.0
+
+## Breaking changes
+
+- `read_clinical_data()`'s `convert_types` argument now defaults to `FALSE`.
+  It defaulted to `TRUE`, applying `r_data_types()` to every column, which
+  converts any two-valued numeric column to logical — including 0/1 event and
+  censoring flags, which `hzr_kaplan()` and similar then reject. Reading and
+  type derivation are now separate steps. Callers who omit the argument get a
+  once-per-session warning; pass `convert_types = TRUE` to restore the old
+  behaviour.
+
+## New features
+
 - `dataset_schema()` — one row per column giving creation position, name, R
   class, SAS type, `format.sas` and label. Labels and formats are read from
   the column attributes directly, so an absent label is `NA` rather than the
