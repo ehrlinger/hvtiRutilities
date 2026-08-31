@@ -5,7 +5,8 @@
 **Package:** `hvtiRutilities`
 **Amended:** 2026-08-14 — Phase 2..N ownership map re-derived from
 `hvtiRtemplates::hvti_taxonomy()`, and a rule added for shared assets that carry
-no `%macro` definition. See *Amendments* below.
+no `%macro` definition. 2026-08-31 — `%macro skip` reclassified: it is a
+per-study hold, not a helper and not dead code. See *Amendments* below.
 
 ## Context
 
@@ -118,10 +119,16 @@ Worse, redefinitions diverge. Measured by hashing each normalized macro body:
 | `kaplan` | 6 | **6** |
 
 In SAS, `%include`-ing two files that both define `%macro dist` means the
-second **silently shadows** the first. With `skip` carrying 10 different
-implementations across 13 files, any harness that includes multiple macro files
-is exposed to order-dependent behaviour. Detecting this is a Phase 0
-deliverable, because Phase 1's harness will do exactly that.
+second **silently shadows** the first. With `cumdist` carrying 7 different
+implementations across 7 files, and `kaplan` 6 across 6, any harness that
+includes multiple macro files is exposed to order-dependent behaviour. Detecting
+this is a Phase 0 deliverable, because Phase 1's harness will do exactly that.
+
+`skip` is the largest row in the table above but is **not** an example of this
+risk, and the original draft was wrong to lead with it. `%macro skip; ... %mend
+skip;` is a hold: it wraps a block the analyst does not want executed for this
+study, without deleting it from the SAS template. Nothing ever calls `%skip`,
+so shadowing it is harmless. See the 2026-08-31 amendment.
 
 ### Public entry points versus private helpers
 
@@ -140,9 +147,12 @@ So the corpus contains two populations:
   real port targets. 87 have a name exactly matching their file basename
   (`ExpdObsdPlot` in `ExpdObsdPlot.sas`), and a further 6 match after a variant
   suffix is stripped.
-- **Private inline helpers.** `skip`, `mrg`, `numobs`, `token`, `break`,
-  `hazboot`, `skkip`. Vendored by copy-paste into whichever file needed them,
-  then drifted independently.
+- **Private inline helpers.** `mrg`, `numobs`, `token`, `hazboot`. Vendored by
+  copy-paste into whichever file needed them, then drifted independently.
+- **Hold wrappers.** `skip`, and its misspelling `skkip`. Not helpers and not a
+  third population of macros at all — a syntactic device for parking a block of
+  live template code, described in the 2026-08-31 amendment. `break` is in this
+  list on the strength of its name only; it has not been checked.
 
 The 87 figure is a **floor, not a count**. The heuristic undercounts, because
 variant-named files define the base macro: `std_dif_wt.sas` and `std_difma.sas`
@@ -296,8 +306,14 @@ stop("Cannot auto-detect n_rows for file type '.", ext, "'. ...
 
 Rule 6 fires for `skip` (10 bodies), `cumdist` (7), `hazboot` (7), `kaplan` (6),
 `mrg` (3), `numobs` (3), and much of the rest of the 126 multiply-defined names
-— 337 definitions in all. That is the expected and correct outcome, not a
-failure.
+— 337 definitions in all. For every name that is genuinely a macro, that is the
+expected and correct outcome, not a failure.
+
+**`skip` is the exception, and it is a false positive.** Rule 6 asks a human to
+choose the canonical body among divergent definitions of one name. `skip` is not
+a name in that sense, so its 10 bodies are 10 unrelated parked blocks and the
+question has no answer. It must be excluded before the ladder rather than
+adjudicated by it. See the 2026-08-31 amendment.
 
 ### Public/private classification
 
@@ -468,6 +484,58 @@ classifies it, and it would have fallen through Phase 0 unremarked. It is data
 consumed by 201 of the 229 templates across every folder. The new subsection
 records the rule — a file with no `%macro` definition is an asset, routed by who
 loads it — and its two worked cases.
+
+### 2026-08-31 — `%macro skip` is a hold, not a helper
+
+`%macro skip; ... %mend skip;` is the corpus's idiom for **putting a block of
+code on hold**. The analyst does not want it to run for this particular study,
+and does not want it deleted from the SAS template either, so it is wrapped in a
+macro that is never invoked. It is the SAS equivalent of commenting a block out,
+reached for because `/* ... */` cannot nest and breaks on any `*/` inside.
+
+The original draft read this three ways, all wrong, and each licenses a
+different mistake:
+
+| the draft said | the mistake it licenses |
+|---|---|
+| `skip` is a *private inline helper* that *drifted independently* | treating 10 parked blocks as one macro with a versioning problem |
+| `skip`'s divergence exposes the harness to *shadowing* | chasing an order-dependence bug that cannot occur, since nothing calls `%skip` |
+| Rule 6 firing on `skip` is the *expected and correct outcome* | sending a human an unanswerable question |
+
+A fourth statement of the same error lives outside this document, in
+`artifacts/macro_overrides.yaml`, which listed `skip` among helpers that
+"retire with the SAS". That is corrected in the same change.
+
+**The dangerous reading is that the body is dead code.** It is not. It is live
+template code the analyst deliberately preserved, and the exclusion is per-study
+state rather than a property of the template. Anything that treats a held block
+as dead is free to drop it — and the port would then silently lose code that
+the next study re-enables.
+
+**What follows for the tooling.** Two changes, neither yet made:
+
+1. **Exclude the wrapper before the rule ladder, do not resolve it.** `skip` and
+   `skkip` are not entries in the macro namespace, so name-based canonicalization
+   should never see them. Refusing the question is the fix; auto-picking a
+   winner would be the same laundering of a coin-flip that Rule 6 exists to
+   prevent.
+2. **Mark what is nested inside one.** `sas_macro_defs()` counts depth, so an
+   inner `%mend` does not close the wrapper and a real macro defined inside a
+   held block is recorded as an ordinary definition. That parse is correct, but
+   the definition carries no marker, so the census cannot tell a macro that is
+   live in the template from one sitting in a block a study parked. A `held`
+   flag on the definition is what separates them.
+
+### 2026-08-31 — `sas_macro_signature()` must not trust the header block
+
+Macro header blocks document parameters that do not exist. `%vars` documents an
+`IMPUTE=` parameter that appears nowhere on its `%macro` line. A signature taken
+from the header alone is therefore a claim about the macro, not a description of
+it, and Phase 1's harness would invoke it with an argument SAS rejects.
+
+`sas_macro_signature()` must diff the documented signature against the parsed
+`%macro` line and report the disagreement, rather than returning either one as
+the answer. Not yet implemented.
 
 ### Figures superseded since the original draft
 
