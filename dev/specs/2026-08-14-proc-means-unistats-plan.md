@@ -987,7 +987,7 @@ library(hvtiRutilities)
 cs <- function(x, stat, w = NULL) hvtiRutilities:::.compute_stat(x, stat, w)
 
 # ---------------------------------------------------------------------------
-# KNOWN VALIDATION GAP -- see specs/2026-08-14-proc-means-unistats-design.md
+# KNOWN VALIDATION GAP -- see dev/specs/2026-08-14-proc-means-unistats-design.md
 #
 # e1071 takes no weights, so the WEIGHTED forms of skewness and kurtosis have no
 # independent oracle available today. The expected values below are computed

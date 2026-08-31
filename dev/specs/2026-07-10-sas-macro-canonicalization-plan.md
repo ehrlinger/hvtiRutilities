@@ -1784,10 +1784,10 @@ appear, `sas_triage()` will have errored, which is the designed behaviour.
 Rscript -e '
   devtools::load_all(".")
   tbl <- sas_triage("/tmp/macro.library")
-  dir.create("specs/artifacts", showWarnings = FALSE, recursive = TRUE)
-  write_collision_report(tbl, "specs/artifacts/collision_report.md")
+  dir.create("dev/specs/artifacts", showWarnings = FALSE, recursive = TRUE)
+  write_collision_report(tbl, "dev/specs/artifacts/collision_report.md")
 '
-head -20 specs/artifacts/collision_report.md
+head -20 dev/specs/artifacts/collision_report.md
 ```
 
 Expected: a table whose rows include `skip` with 14 files / 11 distinct bodies,
@@ -1805,7 +1805,7 @@ Rscript -e '
   sigs <- do.call(rbind, lapply(files, sas_macro_signature))
   yaml::write_yaml(
     lapply(seq_len(nrow(sigs)), function(i) as.list(sigs[i, ])),
-    "specs/artifacts/macro_signatures.yaml"
+    "dev/specs/artifacts/macro_signatures.yaml"
   )
 '
 ```
@@ -1839,10 +1839,10 @@ Present the collision report to the maintainer. Do not proceed until every
 Rscript -e '
   devtools::load_all(".")
   tbl <- sas_triage("/tmp/macro.library",
-                    overrides = "specs/artifacts/macro_overrides.yaml")
+                    overrides = "dev/specs/artifacts/macro_overrides.yaml")
   stopifnot(!any(tbl$decision == "ambiguous"))
-  write_macro_manifest(tbl, "specs/artifacts/macro_manifest.yaml")
-  write_collision_report(tbl, "specs/artifacts/collision_report.md")
+  write_macro_manifest(tbl, "dev/specs/artifacts/macro_manifest.yaml")
+  write_collision_report(tbl, "dev/specs/artifacts/collision_report.md")
   cat("canonical definitions:", sum(tbl$decision == "canonical"), "\n")
 '
 ```
@@ -1854,10 +1854,10 @@ Expected: no error; `macro_manifest.yaml` written.
 ```bash
 Rscript -e '
   devtools::load_all(".")
-  tbl <- sas_triage("/tmp/macro.library", overrides = "specs/artifacts/macro_overrides.yaml")
+  tbl <- sas_triage("/tmp/macro.library", overrides = "dev/specs/artifacts/macro_overrides.yaml")
   write_macro_manifest(tbl, "/tmp/m2.yaml")
 ' 
-cmp specs/artifacts/macro_manifest.yaml /tmp/m2.yaml && echo "IDENTICAL"
+cmp dev/specs/artifacts/macro_manifest.yaml /tmp/m2.yaml && echo "IDENTICAL"
 ```
 
 Expected: `IDENTICAL`.
@@ -1865,7 +1865,7 @@ Expected: `IDENTICAL`.
 - [ ] **Step 8: Commit the artifacts**
 
 ```bash
-git add specs/artifacts
+git add dev/specs/artifacts
 git commit -m "chore: canonical macro manifest, signatures, and collision report"
 ```
 
