@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.6</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.7</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,6 +55,36 @@
       <small>Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.1.7" id="hvtirutilities-117">hvtiRutilities 1.1.7<a class="anchor" aria-label="anchor" href="#hvtirutilities-117"></a></h2>
+<div class="section level3">
+<h3 id="compatibility-1-1-7">Compatibility<a class="anchor" aria-label="anchor" href="#compatibility-1-1-7"></a></h3>
+<p><strong>No API change, and nothing breaking.</strong> No export is added, removed or renamed; no signature changes; <code>NAMESPACE</code> is identical to 1.1.6. Downstream packages need no action.</p>
+<p>One behavioural change, scoped to a single function: <code><a href="../reference/write_collision_report.html">write_collision_report()</a></code> now writes an extra <code>## Provenance</code> section, so that report’s bytes differ from one produced by 1.1.6. Nothing else’s output moves. A rendered-output diff elsewhere is noise, not signal.</p>
+</div>
+<div class="section level3">
+<h3 id="documentation-1-1-7">Documentation<a class="anchor" aria-label="anchor" href="#documentation-1-1-7"></a></h3>
+<ul><li>
+<p><strong><code><a href="../reference/hvti_taxonomy.html">hvti_taxonomy()</a></code>’s roxygen now states the row-order constraint precisely.</strong> It said the ordinal is <em>derived</em> from row position. That is no longer the mechanism – <code>hvtiRtemplates</code> v1.0.15 (<code>e71bef4</code>) froze ordinals into a ledger, assigned once and never recomputed, because an ordinal is an identity rather than a position.</p>
+<p><strong>The constraint itself still holds, for a different reason.</strong> That package’s <code>tests/testthat/test-taxonomy.R</code> still <em>asserts</em> that within-folder ordinal order matches the row order here, and it is live and unskipped at v1.0.15. So reordering rows turns its CI red even though no number is recomputed. Two guards in that package now disagree; until the test is retired, row order is fixed. The check compares only prefixes with a template on disk, so inserting a row for an untemplated prefix is safe – what is not safe is changing the relative order of two <em>templated</em> prefixes in one folder. <strong>Folder</strong> order is load-bearing independently.</p>
+<p>Worth the caution because the coupling already failed once, in this package’s direction: the 1.1.6 <code>hs</code> move shifted <code>bh</code> from sixth to fifth in <code>analyses</code> while its shipped filename stayed <code>04.06</code>, and nothing caught it – the ledger checks verify format, folder-major and uniqueness, never position. <code>bh</code> was renumbered to <code>04.05</code> and <code>04.06</code> retired rather than freed, because it had shipped in v1.0.13 and v1.0.14.</p>
+</li>
+</ul></div>
+<div class="section level3">
+<h3 id="new-features-1-1-7">New features<a class="anchor" aria-label="anchor" href="#new-features-1-1-7"></a></h3>
+<ul><li>
+<p><strong><code><a href="../reference/write_collision_report.html">write_collision_report()</a></code> now ends with a Provenance section derived from the scanned corpus rather than from the clock</strong>: a fingerprint over every (macro, file, body hash) triple and the excluded-directory list, the file, definition and name counts, and the package version.</p>
+<p>Neither the report nor <code><a href="../reference/write_macro_manifest.html">write_macro_manifest()</a></code> carries a generated-on field, deliberately – it would defeat the byte-for-byte reproducibility that makes the artifact reviewable. But an artifact with <strong>no</strong> identity is the opposite failure, and it has already cost something: the committed <code>collision_report.md</code> and the canonicalization design disagree on <code>skip</code> (10 files / 7 bodies against 13 / 10) and on four other rows, and nothing in either file says which measurement is current. An input-derived stamp avoids both failures, because it is a function of the inputs alone. Determinism is over the corpus <em>and</em> the package version – the version row is expected to change between builds, since that is what attributes an artifact to one – while the fingerprint depends on the corpus alone and stays comparable across versions.</p>
+<p>The fingerprint follows content, not location. <code><a href="../reference/sas_triage.html">sas_triage()</a></code> records file basenames, so re-scanning the same corpus from a different mount point yields the same value – a share remount must not invalidate every committed report.</p>
+<p>This is prospective. The committed artifact predates the stamp and gains one only when the corpus is next swept, which needs share access.</p>
+</li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-1-1-7">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-1-7"></a></h3>
+<ul><li>
+<strong><code><a href="../reference/write_collision_report.html">write_collision_report()</a></code>’s help page was missing a clause.</strong> The roxygen wrote <code>%include</code> unescaped, and <code>%</code> opens a comment in Rd, so everything after it on that line was dropped: the rendered Description read “In SAS, <code>the same macro means the second silently shadows the first".</code>R CMD check<code>cannot catch this -- the Rd is valid, the text is simply commented out. Escaped, and the three markdown backticks in the same block converted to</code>` per this package’s Rd-not-markdown rule.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.1.6" id="hvtirutilities-116">hvtiRutilities 1.1.6<a class="anchor" aria-label="anchor" href="#hvtirutilities-116"></a></h2>
 <div class="section level3">
