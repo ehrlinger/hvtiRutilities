@@ -13,19 +13,28 @@ elsewhere is noise, not signal.
 
 ## Documentation
 
-- **`hvti_taxonomy()`'s roxygen no longer says row order within a folder is
-  load-bearing.** It was true when written and is not any more.
-  `hvtiRtemplates` froze template ordinals into a ledger on 2026-08-31
-  (`e71bef4`, v1.0.15), so a minor is now assigned once and never recomputed
-  from row position. Rows may be inserted or reordered freely; **folder** order
-  is still load-bearing and still needs coordinating.
+- **`hvti_taxonomy()`'s roxygen now states the row-order constraint
+  precisely.** It said the ordinal is *derived* from row position. That is no
+  longer the mechanism -- `hvtiRtemplates` v1.0.15 (`e71bef4`) froze ordinals
+  into a ledger, assigned once and never recomputed, because an ordinal is an
+  identity rather than a position.
 
-  That coupling was removed because it had already failed in this package's
-  direction: the 1.1.6 `hs` move shifted `bh` from sixth to fifth in
-  `analyses` while its shipped filename stayed `04.06`, and nothing caught it
-  -- the ordinal checks verify format, folder-major and uniqueness, never
-  position. `bh` was renumbered to `04.05` and `04.06` retired rather than
-  freed, because it had shipped in v1.0.13 and v1.0.14.
+  **The constraint itself still holds, for a different reason.** That package's
+  `tests/testthat/test-taxonomy.R` still *asserts* that within-folder ordinal
+  order matches the row order here, and it is live and unskipped at v1.0.15. So
+  reordering rows turns its CI red even though no number is recomputed. Two
+  guards in that package now disagree; until the test is retired, row order is
+  fixed. The check compares only prefixes with a template on disk, so inserting
+  a row for an untemplated prefix is safe -- what is not safe is changing the
+  relative order of two *templated* prefixes in one folder. **Folder** order is
+  load-bearing independently.
+
+  Worth the caution because the coupling already failed once, in this package's
+  direction: the 1.1.6 `hs` move shifted `bh` from sixth to fifth in `analyses`
+  while its shipped filename stayed `04.06`, and nothing caught it -- the
+  ledger checks verify format, folder-major and uniqueness, never position.
+  `bh` was renumbered to `04.05` and `04.06` retired rather than freed, because
+  it had shipped in v1.0.13 and v1.0.14.
 
 ## New features
 
