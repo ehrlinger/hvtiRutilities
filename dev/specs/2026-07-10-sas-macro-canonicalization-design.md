@@ -126,7 +126,7 @@ this is a Phase 0 deliverable, because Phase 1's harness will do exactly that.
 
 `skip` is the largest row in the table above but is **not** an example of this
 risk, and the original draft was wrong to lead with it. `%macro skip; ... %mend
-skip;` is a hold: it wraps a block the analyst does not want run for this
+skip;` is a hold: it wraps a block the analyst does not want executed for this
 study, without deleting it from the SAS template. Nothing ever calls `%skip`,
 so shadowing it is harmless. See the 2026-08-31 amendment.
 

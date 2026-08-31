@@ -17,7 +17,7 @@
 #
 # EXCEPT `skip` (and `skkip`), which are NOT helpers and do NOT retire with the
 # SAS. `%macro skip; ... %mend skip;` is a hold: it parks a block the analyst
-# does not want run for this study without deleting it from the template. The
+# does not want executed for this study without deleting it from the template. The
 # body is live code that must survive into the R port, and its ambiguity here is
 # a false positive -- 10 unrelated parked blocks, not 10 versions of one macro.
 # Do not resolve it; it should be excluded before the rule ladder. See the
