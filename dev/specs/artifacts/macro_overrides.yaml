@@ -10,10 +10,18 @@
 # Each entry requires: macro, canonical_file, rationale, decided_by, decided_on.
 #
 # 26 macro names are ambiguous. Only the 7 PUBLIC entry points below actually
-# need porting to R; the other 19 are private inline helpers (skip, mrg,
-# bnprev, break, ...) that retire with the SAS and can be resolved later or
-# left ambiguous. See specs/artifacts/collision_report.md for the full list,
-# file counts, and distinct-body counts.
+# need porting to R; most of the other 19 are private inline helpers (mrg,
+# bnprev, ...) that retire with the SAS and can be resolved later or left
+# ambiguous. See specs/artifacts/collision_report.md for the full list, file
+# counts, and distinct-body counts.
+#
+# EXCEPT `skip` (and `skkip`), which are NOT helpers and do NOT retire with the
+# SAS. `%macro skip; ... %mend skip;` is a hold: it parks a block the analyst
+# does not want run for this study without deleting it from the template. The
+# body is live code that must survive into the R port, and its ambiguity here is
+# a false positive -- 10 unrelated parked blocks, not 10 versions of one macro.
+# Do not resolve it; it should be excluded before the rule ladder. See the
+# 2026-08-31 amendment in 2026-07-10-sas-macro-canonicalization-design.md.
 #
 # PRIORITY — the 7 ambiguous PUBLIC entry points, awaiting your decision:
 #   linregm, logistc, mw_var, np_ice, repeat, std_dif, usmatchd
