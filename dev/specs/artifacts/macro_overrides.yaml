@@ -5,14 +5,14 @@
 # divergent bodies. It NEVER guesses which is canonical. Resolve each by adding
 # an entry below, then re-run:
 #
-#   sas_triage(dir, overrides = "specs/artifacts/macro_overrides.yaml")
+#   sas_triage(dir, overrides = "dev/specs/artifacts/macro_overrides.yaml")
 #
 # Each entry requires: macro, canonical_file, rationale, decided_by, decided_on.
 #
 # 26 macro names are ambiguous. Only the 7 PUBLIC entry points below actually
 # need porting to R; most of the other 19 are private inline helpers (mrg,
 # bnprev, ...) that retire with the SAS and can be resolved later or left
-# ambiguous. See specs/artifacts/collision_report.md for the full list, file
+# ambiguous. See collision_report.md for the full list, file
 # counts, and distinct-body counts.
 #
 # EXCEPT `skip` (and `skkip`), which are NOT helpers and do NOT retire with the
