@@ -1,3 +1,79 @@
+# hvtiRutilities 1.1.7
+
+## Compatibility
+
+**No API change, and nothing breaking.** No export is added, removed or
+renamed; no signature changes; `NAMESPACE` is identical to 1.1.6. Downstream
+packages need no action.
+
+One behavioural change, scoped to a single function: `write_collision_report()`
+now writes an extra `## Provenance` section, so that report's bytes differ from
+one produced by 1.1.6. Nothing else's output moves. A rendered-output diff
+elsewhere is noise, not signal.
+
+## Documentation
+
+- **`hvti_taxonomy()`'s roxygen now states the row-order constraint
+  precisely.** It said the ordinal is *derived* from row position. That is no
+  longer the mechanism -- `hvtiRtemplates` v1.0.15 (`e71bef4`) froze ordinals
+  into a ledger, assigned once and never recomputed, because an ordinal is an
+  identity rather than a position.
+
+  **The constraint itself still holds, for a different reason.** That package's
+  `tests/testthat/test-taxonomy.R` still *asserts* that within-folder ordinal
+  order matches the row order here, and it is live and unskipped at v1.0.15. So
+  reordering rows turns its CI red even though no number is recomputed. Two
+  guards in that package now disagree; until the test is retired, row order is
+  fixed. The check compares only prefixes with a template on disk, so inserting
+  a row for an untemplated prefix is safe -- what is not safe is changing the
+  relative order of two *templated* prefixes in one folder. **Folder** order is
+  load-bearing independently.
+
+  Worth the caution because the coupling already failed once, in this package's
+  direction: the 1.1.6 `hs` move shifted `bh` from sixth to fifth in `analyses`
+  while its shipped filename stayed `04.06`, and nothing caught it -- the
+  ledger checks verify format, folder-major and uniqueness, never position.
+  `bh` was renumbered to `04.05` and `04.06` retired rather than freed, because
+  it had shipped in v1.0.13 and v1.0.14.
+
+## New features
+
+- **`write_collision_report()` now ends with a Provenance section derived from
+  the scanned corpus rather than from the clock**: a fingerprint over every
+  (macro, file, body hash) triple and the excluded-directory list, the file,
+  definition and name counts, and the package version.
+
+  Neither the report nor `write_macro_manifest()` carries a generated-on
+  field, deliberately -- it would defeat the byte-for-byte reproducibility
+  that makes the artifact reviewable. But an artifact with **no** identity is
+  the opposite failure, and it has already cost something: the committed
+  `collision_report.md` and the canonicalization design disagree on `skip`
+  (10 files / 7 bodies against 13 / 10) and on four other rows, and nothing in
+  either file says which measurement is current. An input-derived stamp avoids
+  both failures, because it is a function of the inputs alone. Determinism is
+  over the corpus *and* the package version -- the version row is expected to
+  change between builds, since that is what attributes an artifact to one --
+  while the fingerprint depends on the corpus alone and stays comparable
+  across versions.
+
+  The fingerprint follows content, not location. `sas_triage()` records file
+  basenames, so re-scanning the same corpus from a different mount point
+  yields the same value -- a share remount must not invalidate every committed
+  report.
+
+  This is prospective. The committed artifact predates the stamp and gains one
+  only when the corpus is next swept, which needs share access.
+
+## Bug fixes
+
+- **`write_collision_report()`'s help page was missing a clause.** The roxygen
+  wrote `%include` unescaped, and `%` opens a comment in Rd, so everything
+  after it on that line was dropped: the rendered Description read "In SAS, `
+  the same macro means the second silently shadows the first". `R CMD check`
+  cannot catch this -- the Rd is valid, the text is simply commented out.
+  Escaped, and the three markdown backticks in the same block converted to
+  `\code{}` per this package's Rd-not-markdown rule.
+
 # hvtiRutilities 1.1.6
 
 ## Taxonomy

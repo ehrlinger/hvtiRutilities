@@ -9,16 +9,40 @@ write_collision_report(x, path)
 \arguments{
 \item{x}{A \code{data.frame} returned by \code{\link{sas_triage}}.}
 
-\item{path}{Character. Destination `.md` path.}
+\item{path}{Character. Destination \code{.md} path.}
 }
 \value{
 Invisibly, \code{path}.
 }
 \description{
 Reports every macro name defined in more than one file, with its distinct
-body count and defining files. In SAS, `%include`-ing two files that define
-the same macro means the second silently shadows the first, so this report
-is a prerequisite for building a trustworthy SAS harness.
+body count and defining files. In SAS, \code{\%include}-ing two files that
+define the same macro means the second silently shadows the first, so this
+report is a prerequisite for building a trustworthy SAS harness.
+}
+\details{
+The report ends with a \strong{Provenance} section derived from the scanned
+corpus rather than from the clock: a fingerprint over every
+(macro, file, body hash) triple and the excluded-directory list, the file,
+definition and name counts, and the package version.
+
+A generated-on field would defeat the byte-for-byte reproducibility that
+makes the artifact reviewable, which is why neither this report nor
+\code{\link{write_macro_manifest}} carries one. An artifact with no identity
+at all is the opposite failure: a committed report and a design's prose can
+disagree with nothing to say which is stale. An input-derived stamp avoids
+both, because it is a function of the inputs alone.
+
+Determinism is therefore over the corpus \emph{and} the package version, not
+the corpus alone: re-running under a different version changes the version
+row, by design, because that is what attributes the artifact to a build. The
+fingerprint itself depends only on the corpus, so it stays comparable across
+versions.
+
+The fingerprint follows content, not location. \code{\link{sas_triage}}
+records file basenames, so re-scanning the same corpus from a different
+mount point yields the same value and a share remount does not invalidate
+every committed report.
 }
 \examples{
 \donttest{

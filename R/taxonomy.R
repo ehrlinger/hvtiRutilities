@@ -7,13 +7,31 @@
 #' README and drifted from the files it described; as a function it is checked
 #' by the test suite against the templates actually present.
 #'
-#' \strong{Row order within a folder is load-bearing, not cosmetic.}
-#' \code{hvtiRtemplates} derives a template's ordinal from this table: the
-#' major field is the folder's position and the minor is the row's position
-#' within that folder, and its test suite asserts both. So inserting a row
-#' renumbers every row below it in the same folder. That is free while a folder
-#' is mostly untemplated and expensive afterwards, because the ordinal is in the
-#' filename of every job a study has scaffolded.
+#' \strong{Both folder order and row order within a folder are still
+#' load-bearing. Coordinate any change with \code{hvtiRtemplates}.}
+#'
+#' A template's ordinal takes its major from a hardcoded folder map, so adding
+#' or reordering a \emph{folder} renumbers templates.
+#'
+#' The minor is subtler than it was. It is no longer \emph{derived} from row
+#' position: as of \code{hvtiRtemplates} v1.0.15 it is assigned once, recorded
+#' in \code{dev/specs/artifacts/2026-08-29-template-roadmap.json} and never
+#' recomputed, because an ordinal is an identity rather than a position. But
+#' that package's \code{tests/testthat/test-taxonomy.R} still \emph{asserts}
+#' that within-folder ordinal order matches the row order here, so reordering
+#' rows turns its CI red even though no number is recomputed. The two guards
+#' disagree; until that test is retired, treat row order as fixed.
+#'
+#' The check compares only prefixes that have a template on disk, so inserting
+#' a row for an untemplated prefix is safe. What is not safe is changing the
+#' relative order of two \emph{templated} prefixes in one folder.
+#'
+#' Why this is worth the caution: the coupling has already failed once, in this
+#' package's direction. Moving \code{hs} out of \code{analyses} in 1.1.6 shifted
+#' \code{bh} from sixth to fifth while its shipped filename stayed
+#' \code{04.06}, and nothing caught it -- the ledger checks verify format,
+#' folder-major and uniqueness, never position. \code{bh} was renumbered to
+#' \code{04.05} and \code{04.06} retired rather than freed, because it shipped.
 #'
 #' \strong{\code{hs} is filed under \code{graphs}, which reads oddly for a job
 #' named "setup".} It was moved there from \code{analyses} on 2026-08-29 on the
