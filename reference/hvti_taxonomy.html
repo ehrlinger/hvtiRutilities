@@ -9,7 +9,7 @@ prefix encodes both the type of analysis and the folder the job belongs in."></h
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.7</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.8</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -54,7 +54,7 @@ prefix encodes both the type of analysis and the folder the job belongs in."></h
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Analysis prefix taxonomy</h1>
-      <small class="dont-index">Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/v1.1.7/R/taxonomy.R" class="external-link"><code>R/taxonomy.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/R/taxonomy.R" class="external-link"><code>R/taxonomy.R</code></a></small>
       <div class="d-none name"><code>hvti_taxonomy.Rd</code></div>
     </div>
 
@@ -79,27 +79,24 @@ prefix encodes both the type of analysis and the folder the job belongs in.</p>
     <p>This is data rather than documentation on purpose. The same table lived in a
 README and drifted from the files it described; as a function it is checked
 by the test suite against the templates actually present.</p>
-<p><strong>Both folder order and row order within a folder are still
-load-bearing. Coordinate any change with <code>hvtiRtemplates</code>.</strong></p>
-<p>A template's ordinal takes its major from a hardcoded folder map, so adding
-or reordering a <em>folder</em> renumbers templates.</p>
-<p>The minor is subtler than it was. It is no longer <em>derived</em> from row
-position: as of <code>hvtiRtemplates</code> v1.0.15 it is assigned once, recorded
-in <code>dev/specs/artifacts/2026-08-29-template-roadmap.json</code> and never
-recomputed, because an ordinal is an identity rather than a position. But
-that package's <code>tests/testthat/test-taxonomy.R</code> still <em>asserts</em>
-that within-folder ordinal order matches the row order here, so reordering
-rows turns its CI red even though no number is recomputed. The two guards
-disagree; until that test is retired, treat row order as fixed.</p>
-<p>The check compares only prefixes that have a template on disk, so inserting
-a row for an untemplated prefix is safe. What is not safe is changing the
-relative order of two <em>templated</em> prefixes in one folder.</p>
-<p>Why this is worth the caution: the coupling has already failed once, in this
-package's direction. Moving <code>hs</code> out of <code>analyses</code> in 1.1.6 shifted
-<code>bh</code> from sixth to fifth while its shipped filename stayed
-<code>04.06</code>, and nothing caught it – the ledger checks verify format,
-folder-major and uniqueness, never position. <code>bh</code> was renumbered to
-<code>04.05</code> and <code>04.06</code> retired rather than freed, because it shipped.</p>
+<p><strong>Folder order is load-bearing. Row order within a folder is not,
+as of 2026-08-31.</strong></p>
+<p>A template's ordinal takes its major from a hardcoded <code>FOLDER_ORDINAL</code>
+map in <code>hvtiRtemplates</code>, whose authority is this table's folder order.
+Adding or reordering a folder therefore renumbers template majors. That is
+now <em>checked</em> rather than merely documented: since <code>hvtiRtemplates</code>
+v1.0.16 its <code>test-roadmap.R</code> parses that map out of the Python source
+and compares it against <code>unique(hvti_taxonomy()$folder)</code>, so a folder
+change here turns its CI red naming the drift, instead of silently
+validating every ordinal's major against the wrong folder.</p>
+<p>Row order within a folder is free. An ordinal is assigned once and recorded
+in <code>hvtiRtemplates</code>'s template ledger, never recomputed from position,
+and the test that asserted alignment with row order was retired in v1.0.16.</p>
+<p>Both guards exist because the coupling failed here first. Moving <code>hs</code>
+out of <code>analyses</code> in 1.1.6 shifted <code>bh</code> from sixth to fifth while
+its shipped filename stayed <code>04.06</code>, and nothing caught it. <code>bh</code>
+was renumbered to <code>04.05</code> and <code>04.06</code> retired rather than freed,
+because it had shipped. An ordinal is an identity, not a position.</p>
 <p><strong><code>hs</code> is filed under <code>graphs</code>, which reads oddly for a job
 named "setup".</strong> It was moved there from <code>analyses</code> on 2026-08-29 on the
 corpus rather than on the name: all ten <code>tp.hs.*</code> templates in the SAS

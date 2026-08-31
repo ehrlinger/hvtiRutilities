@@ -1,5 +1,30 @@
 # Changelog
 
+## hvtiRutilities 1.1.8
+
+### Documentation
+
+- **[`hvti_taxonomy()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_taxonomy.md):
+  row order within a folder is no longer load-bearing, and folder order
+  now has a real check behind it.** `hvtiRtemplates` v1.0.16 (`3e14345`,
+  [\#57](https://github.com/ehrlinger/hvtiRutilities/issues/57)) retired
+  the test that asserted within-folder ordinal order matches this
+  table’s row order, so rows may be inserted or reordered freely. An
+  ordinal is assigned once in that package’s ledger and never recomputed
+  from position.
+
+  It did not simply delete the guard. `test-roadmap.R` now parses the
+  hardcoded `FOLDER_ORDINAL` map out of `check-roadmap-counts.py` and
+  compares it against `unique(hvti_taxonomy()$folder)`. So **folder**
+  order stays load-bearing, but a folder change here turns that
+  package’s CI red naming the drift, rather than silently validating
+  every ordinal’s major against the wrong folder. The warning in the
+  roxygen is now backed by a check instead of by discipline.
+
+  This supersedes the 1.1.7 note, which said the constraint still held.
+  It did at the time: 1.1.7 shipped while the retiring PR was still
+  open.
+
 ## hvtiRutilities 1.1.7
 
 ### Compatibility
