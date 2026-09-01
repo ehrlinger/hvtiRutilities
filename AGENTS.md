@@ -119,11 +119,12 @@ forgotten `document()` fails the PR rather than landing quietly.
   digit.
 - **Patch-digit bumps only**, as fixes land. The minor and major digits are the maintainer's
   decision, taken when a feature set is consolidated into a release. Do not roll them.
-- **Bump when you name a version, not when you merge.** A pull request lands
-  without touching `Version:`. Its entry goes under a standing
-  `# hvtiRutilities (unreleased)` heading in `NEWS.md`, and a separate commit renames that
-  heading, moves `DESCRIPTION` to match, at most once a day.
-  `.claude/house-style.md` carries the rule and the reasoning.
+- **Bump when you name a version, not when you merge.** A pull request lands without touching
+  `Version:`. Its entry goes under a `# hvtiRutilities (unreleased)` heading in `NEWS.md`,
+  which you add when it is not already there. A separate commit then renames that heading to
+  the new version and updates `DESCRIPTION`, at most once a day. The heading is gone again
+  after a bump, so the next change re-adds it. `.claude/house-style.md` carries the rule and
+  the reasoning.
 
 ## Prose
 
