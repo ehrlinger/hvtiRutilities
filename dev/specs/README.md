@@ -28,7 +28,8 @@ condenses it; `plan` files carry none.
 |---|---|---|
 | 2026-09-02 | [Ordinal variables — the representation decision](2026-09-02-ordinal-representation-design.md) | decision note; §7 open, awaiting the statisticians |
 | 2026-09-02 | [Handoff — ordinal variables](2026-09-02-ordinal-representation-handoff.md) | step 1 answered by the design note above |
-| 2026-09-02 | [Handoff — label length, the fallback rule, and the exception that is not one](2026-09-02-label-length-and-fallback-handoff.md) | not started; no design note yet |
+| 2026-09-02 | [Labels — length, fallback, value labels, and what `r_data_types()` is doing wrong](2026-09-02-label-length-and-fallback-design.md) | approved; §7 decided (B then C), plan pending |
+| 2026-09-02 | [Handoff — label length, the fallback rule, and the exception that is not one](2026-09-02-label-length-and-fallback-handoff.md) | answered by the design note above |
 | 2026-08-26 | [Job-type inventory — the level-one corpus sweep](2026-08-26-job-type-inventory-design.md) | implemented here; `hvtiRtemplates` re-export pending |
 | 2026-08-26 | [Job-type inventory — plan](2026-08-26-job-type-inventory-plan.md) | plan for the design above |
 | 2026-08-25 | [Read layer, dataset manifest, and lazy parquet cache](2026-08-25-read-layer-manifest-parquet-design.md) | approved in outline |

@@ -2,10 +2,15 @@
 
 **Date:** 2026-09-02
 **Repo:** hvtiRutilities (with a build-step piece in hvtiRdatabuild)
-**Status:** not started. Nothing changed in either repo.
+**Status:** design note written — see
+`2026-09-02-label-length-and-fallback-design.md`, which reframes the problem
+around value labels. Nothing changed in either repo yet.
 **Origin:** biostats training, 2026-09-02.
 
 ⚠️ No study, variable or patient identifier appears here.
+
+> The body below is the meeting record, left as captured. Only the `Status:`
+> line above has been updated.
 
 ---
 
