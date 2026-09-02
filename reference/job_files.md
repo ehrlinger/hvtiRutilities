@@ -26,9 +26,16 @@ job_files(roots)
 ## Value
 
 A data frame with one row per file and the columns `path`, `study`,
-`folder`, `status`, `depth`, `naming`, `prefix`, `is_template`, `stem`,
-`ext`, `prefix_class`, `folder_expected` and `folder_ok`. Zero rows if
-the roots hold no files.
+`folder`, `status`, `depth`, `naming`, `prefix`, `is_template`,
+`qualifier1`, `qualifiers`, `n_qualifiers`, `stem`, `ext`,
+`prefix_class`, `folder_expected` and `folder_ok`. The three qualifier
+columns carry the dot-fields of a `legacy` name that lie between the
+prefix and the extension, and are `NA` (count zero) for every other
+convention. They are named by position because the second field means a
+different thing in each taxonomy folder; see
+[`hvti_taxonomy`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_taxonomy.md)
+and the design note referenced in `R/job_names.R`. Zero rows if the
+roots hold no files.
 
 ## Details
 

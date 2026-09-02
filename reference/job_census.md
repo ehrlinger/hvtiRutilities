@@ -20,7 +20,7 @@ print(x, ...)
   [`job_files`](https://ehrlinger.github.io/hvtiRutilities/reference/job_files.md)
   for what a root must be – or a data frame returned by
   [`job_files`](https://ehrlinger.github.io/hvtiRutilities/reference/job_files.md).
-  A data frame missing any of that function's 13 columns is an error,
+  A data frame missing any of that function's 16 columns is an error,
   not a silently empty census.
 
 - ...:

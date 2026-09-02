@@ -90,8 +90,15 @@ files would otherwise be counted twice under two study labels.</p></dd>
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A data frame with one row per file and the columns <code>path</code>,
   <code>study</code>, <code>folder</code>, <code>status</code>, <code>depth</code>, <code>naming</code>,
-  <code>prefix</code>, <code>is_template</code>, <code>stem</code>, <code>ext</code>,
+  <code>prefix</code>, <code>is_template</code>, <code>qualifier1</code>,
+  <code>qualifiers</code>, <code>n_qualifiers</code>, <code>stem</code>, <code>ext</code>,
   <code>prefix_class</code>, <code>folder_expected</code> and <code>folder_ok</code>.
+  The three qualifier columns carry the dot-fields of a <code>legacy</code>
+  name that lie between the prefix and the extension, and are <code>NA</code>
+  (count zero) for every other convention. They are named by position
+  because the second field means a different thing in each taxonomy
+  folder; see <code><a href="hvti_taxonomy.html">hvti_taxonomy</a></code> and the design note referenced
+  in <code class="file">R/job_names.R</code>.
   Zero rows if the roots hold no files.</p>
     </div>
     <div class="section level2">
