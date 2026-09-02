@@ -1,9 +1,9 @@
 # Labels — length, fallback, value labels, and what `r_data_types()` is doing wrong
 
 **Date:** 2026-09-02
-**Status:** **Design. Approved in outline is not yet true — §7 proposes a
-breaking change to `r_data_types()` and needs a decision before any plan.**
-The rest (§4, §5, §6) is buildable as designed.
+**Status:** **Approved.** §7 answered on 2026-09-02 by John Ehrlinger:
+option **B, then C**. All of §4, §5, §6 and §7 are buildable as designed;
+an implementation plan is the next artifact.
 **Package:** `hvtiRutilities`, with a build-step piece in `hvtiRdatabuild`
 **Implements:** `dev/specs/2026-09-02-label-length-and-fallback-handoff.md`
 **Reads with:** `dev/specs/2026-09-02-ordinal-representation-design.md`. The two
@@ -175,6 +175,36 @@ parse existing labels **once**, into declarations, and report what it did.
 `haven::read_sas()`. That is a small, additive change and it is the highest-
 leverage item in this note.
 
+### 5.1 The design does not depend on the catalogues existing
+
+Whether the studies hold `.sas7bcat` catalogues alongside their `.sas7bdat`
+files is **open** — referred to the data managers on 2026-09-02 (§8). The
+distinction is one letter and it decides how much input 1 is worth: a
+`.sas7bdat` stores the format's **name** in `format.sas` (`YESNOF.`), and the
+code-to-text mapping lives only in the catalogue. No catalogue, no
+`val_labels` from a read, however the read is written.
+
+Nothing above blocks on that answer, and it must stay that way:
+
+- **`catalog_file` is additive.** It defaults to `NULL`, which is what
+  `read_clinical_data()` already passes implicitly. Exposing it changes no
+  existing call and is worth doing whether or not a catalogue is ever supplied.
+- **Input 2 is the load-bearing one either way.** If the catalogues exist,
+  the declaration covers what the catalogue misses. If they do not, it covers
+  everything. Its design does not change; only how much of the corpus reaches
+  it does.
+- **The converter must say which input it used** — §7.1's second clause. That
+  is what makes the answer to this question observable from a report rather
+  than from asking around, and it is the reason not to wait for it.
+
+**Contingency, if there are no catalogues.** The formats are likely defined by
+`PROC FORMAT` in the SAS corpus, and this package already reads SAS source —
+`sas_variable_block()` and `sas_macro_defs()` are the idiom. Mining `PROC
+FORMAT` into declarations would be a third input, additive to input 2 rather
+than a replacement for it. ⚠️ Do not build it speculatively; it is written
+down so that a "no" from the data managers has an answer ready, not so that it
+gets started now.
+
 ## 6. The `0`/`1` prefix — an ambiguity to settle before building
 
 Asked directly whether the prefixes should come off, John said *"I think they
@@ -197,8 +227,10 @@ the ordinal note's §6.1, and it applies to every variable this section touches.
 
 ## 7. Rethinking `r_data_types()`
 
-⚠️ **This section is the open decision. Everything above is buildable without
-it; nothing below should be built until it is answered.**
+✅ **Decided 2026-09-02 by John Ehrlinger: option B, then C** (§7.3). B lands
+first as a non-breaking argument on the existing function; C follows as a
+separate declaration-first converter with `r_data_types()` deprecated in
+place. D was ruled out.
 
 ### 7.1 The principle both notes arrive at
 
@@ -242,11 +274,27 @@ object.
 | **C. New function beside it** — a declaration-first converter; `r_data_types()` deprecated in place | honest about being a different contract. Costs a name and a migration across the family. |
 | **D. Change `r_data_types()`'s contract outright** | ⛔ It is exported, re-exported, used in three vignettes and by `read_clinical_data()`, and `AGENTS.md` is explicit that *"a breaking change here is a breaking change everywhere"*. Not without a deliberate decision. |
 
-**Recommendation: B, then C.** B fixes the defect on the family's own
-deprecation pattern without breaking a caller. C is where this should end up,
-because the two behaviours really are different contracts and pretending
-otherwise is what produced a `factor_size` parameter in the first place. Do
-not do D.
+**Decided: B, then C.** B fixes the defect on the family's own deprecation
+pattern without breaking a caller. C is where this ends up, because the two
+behaviours really are different contracts and pretending otherwise is what
+produced a `factor_size` parameter in the first place. D is ruled out.
+
+**What B commits to.** A `use_value_labels` argument on `r_data_types()`,
+default `FALSE` in the release that introduces it, warning once when it is
+not supplied — the shape of the `convert_types` warning at
+`R/read_clinical_data.R:66`, which named the harm in plain terms rather than
+saying "deprecated". The default flips to `TRUE` in a later release. Until it
+flips, no existing caller changes behaviour.
+
+**What C commits to.** A separate converter whose contract is
+declaration-first: value labels, then declaration, then inference, with the
+rule that fired recorded per column. `r_data_types()` is deprecated in place
+at that point, not removed — it is exported, re-exported, and used in three
+vignettes and by `read_clinical_data()`.
+
+⚠️ **B is not a licence to skip the report.** The reporting requirement below
+applies to B as much as to C: an argument that silently changes which rule
+fires is the same defect in a new place.
 
 **Whichever is chosen, the converter must report.** One row per column: the
 rule that fired, the source of the levels (value labels, declaration, or
@@ -255,12 +303,13 @@ unimplemented and this note has fixed the symptom again.
 
 ## 8. What is not decided here
 
-- §7's option. Nothing in `R/` changes until it is answered.
 - Where the enumerated-levels declaration lives — the same open question as
   the ordinal note's §8, and it must get **one** answer, not two.
-- Whether `.sas7bcat` catalogues are available for the studies in the corpus.
-  §5's first input is worth little if they are not, and this is a question for
-  the data managers, not for the code.
+- **Whether `.sas7bcat` catalogues are available for the studies in the
+  corpus.** Referred to the data managers on 2026-09-02; John did not know.
+  §5's first input is worth little if they are not. §5.1 says why nothing
+  blocks on the answer, and what the fallback is. This is a question for the
+  data managers, not for the code — record the answer here when it comes.
 - The REDCap path, and the upstream fix — data managers encoding REDCaps in a
   trackable way.
 
@@ -270,8 +319,13 @@ unimplemented and this note has fixed the symptom again.
 - [x] Current behaviour recorded with file references and confirmed by running it
 - [x] The label-length, fallback and prefix items covered
 - [x] Interaction with the ordinal design stated explicitly (§6, §7.1)
-- [ ] **§7 answered — the `r_data_types()` decision**
-- [ ] `catalog_file` exposed on `read_clinical_data()` (§5) — additive, can go first
+- [x] **§7 answered — B then C, John Ehrlinger, 2026-09-02**
+- [ ] `catalog_file` exposed on `read_clinical_data()` (§5) — additive, can go
+      first, and does not wait on the catalogue question
+- [ ] **Data managers asked whether `.sas7bcat` catalogues exist (§5.1)**;
+      answer recorded in §8
+- [ ] B: `use_value_labels` on `r_data_types()`, default `FALSE`, warning once,
+      with the per-column report (§7.3)
 - [ ] Test asserting the fallback does not prettify (§2.1)
 - [ ] `label_max` on the display seam, with truncation discoverable (§4)
 - [ ] One home for the enumerated-levels declaration, shared with the ordinal note
