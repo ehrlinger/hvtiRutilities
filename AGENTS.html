@@ -138,15 +138,30 @@
 </ol></div>
 <div class="section level2">
 <h2 id="git-and-versioning">Git and versioning<a class="anchor" aria-label="anchor" href="#git-and-versioning"></a></h2>
-<ul><li>
-<strong>Never push to <code>main</code>.</strong> Branch, then open a PR and let the maintainer merge. A push rejected with “Changes must be made through a pull request” means branch — never force-push around it.</li>
+<ul><li><p><strong>Never push to <code>main</code>.</strong> Branch, then open a PR and let the maintainer merge. A push rejected with “Changes must be made through a pull request” means branch — never force-push around it.</p></li>
 <li>
-<strong><code>main</code> is protected by a GitHub ruleset, and nothing in this repo records that.</strong> A clone shows no trace of it, so it is stated here. The ruleset is named <code>protect main</code>, is identical across all twelve repositories in the HVTI R package family, and enforces four rules on the default branch: no deletion, no force-push, pull-request-only, and an <strong>automatic Copilot code review</strong> on every PR. The rejection above comes from the server, not a local hook. ⚠️ It currently requires <strong>zero approvals</strong>. <code>require_code_owner_review</code> is set but inert because no repository in the family has a <code>CODEOWNERS</code> file, so a PR can merge unreviewed. Adding <code>CODEOWNERS</code> makes that flag live and changes who can merge what.</li>
-<li>Versions are <strong>straight three digits</strong> (<code>1.0.11</code>). Never a <code>.9000</code> suffix or a fourth digit.</li>
-<li>
-<strong>Patch-digit bumps only</strong>, as fixes land. The minor and major digits are the maintainer’s decision, taken when a feature set is consolidated into a release. Do not roll them.</li>
-<li>
-<strong>Bump when you name a version, not when you merge.</strong> A pull request lands without touching <code>Version:</code>. Its entry goes under a <code># hvtiRutilities (unreleased)</code> heading in <code>NEWS.md</code>, which you add when it is not already there. A separate commit then renames that heading to the new version and updates <code>DESCRIPTION</code>, at most once a day. The heading is gone again after a bump, so the next change re-adds it. <code>.claude/house-style.md</code> carries the rule and the reasoning.</li>
+<p><strong><code>main</code> is protected by a GitHub ruleset, and nothing in this repo records that.</strong> A clone shows no trace of it, so it is stated here. The ruleset is named <code>protect main</code> and enforces four rules on the default branch: no deletion, no force-push, pull-request-only, and an <strong>automatic Copilot code review</strong> on every PR. The rejection above comes from the server, not a local hook.</p>
+<p>Because the file is the only record, it is the one thing here with no way to detect its own drift. <strong>Verified against the live ruleset on 2026-09-02</strong>; re-verify with</p>
+<pre><code>gh api repos/ehrlinger/hvtiRutilities/rules/branches/main \
+  --jq '.[] | {type, params: .parameters}'</code></pre>
+<p>⚠️ <strong>A PR needs one approving review, and the author cannot supply it.</strong> <code>required_approving_review_count</code> is <strong>1</strong>, so a PR sits at <code>REVIEW_REQUIRED</code> / <code>mergeStateStatus=BLOCKED</code> until somebody else approves. GitHub refuses self-approval, so an agent — or a solo maintainer — cannot open a PR and merge it unassisted. Plan for the wait rather than discovering it at merge time. <code>require_extra_approval_for_unattributed_changes</code> is <strong>true</strong>, which can ask for a second approval on commits GitHub cannot attribute to a verified author.</p>
+<p><code>require_code_owner_review</code> is <strong>false</strong> here. Adding a <code>CODEOWNERS</code> file would not by itself change anything until that flag is turned on; doing both changes who can approve what.</p>
+<p><strong>Copilot reviews on open and does not re-review when you push.</strong> <code>copilot_code_review.review_on_push</code> is <code>false</code>, so a review posted when the PR opened stays as posted after you fix what it found — pushing does not clear it, and re-requesting the reviewer through the API does not reliably re-trigger it. Say in the PR what you changed and why instead of waiting for a second pass. In the other direction, <code>dismiss_stale_reviews_on_push</code> and <code>require_last_push_approval</code> are both <code>false</code>, so a human approval <strong>survives</strong> later pushes to the branch. Nothing re-gates after an approval lands.</p>
+<p>⚠️ <strong>The family is not uniform — do not carry these facts to a sibling repo unchecked.</strong> All twelve <code>hvti*</code> repositories were checked on 2026-09-02:</p>
+<table class="table"><colgroup><col width="50%"><col width="50%"></colgroup><thead><tr><th>repos</th>
+<th>state</th>
+</tr></thead><tbody><tr><td>10 of 12</td>
+<td>
+<code>protect main</code>, active, exactly as described above</td>
+</tr><tr><td><code>hvtiGraphics</code></td>
+<td>
+<code>protect main</code>, active, but <strong>zero</strong> approvals and <code>require_code_owner_review: true</code> — the only repo the previous version of this bullet actually described</td>
+</tr><tr><td><code>hvtiEDAreports</code></td>
+<td>ruleset named <code>main</code>, <strong><code>enforcement: disabled</code></strong>, and no classic branch protection, so nothing gates <code>main</code> there. Not tested by pushing — read from the API</td>
+</tr></tbody></table></li>
+<li><p>Versions are <strong>straight three digits</strong> (<code>1.0.11</code>). Never a <code>.9000</code> suffix or a fourth digit.</p></li>
+<li><p><strong>Patch-digit bumps only</strong>, as fixes land. The minor and major digits are the maintainer’s decision, taken when a feature set is consolidated into a release. Do not roll them.</p></li>
+<li><p><strong>Bump when you name a version, not when you merge.</strong> A pull request lands without touching <code>Version:</code>. Its entry goes under a <code># hvtiRutilities (unreleased)</code> heading in <code>NEWS.md</code>, which you add when it is not already there. A separate commit then renames that heading to the new version and updates <code>DESCRIPTION</code>, at most once a day. The heading is gone again after a bump, so the next change re-adds it. <code>.claude/house-style.md</code> carries the rule and the reasoning.</p></li>
 </ul></div>
 <div class="section level2">
 <h2 id="prose">Prose<a class="anchor" aria-label="anchor" href="#prose"></a></h2>
