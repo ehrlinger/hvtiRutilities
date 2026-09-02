@@ -2,8 +2,9 @@
 
 **Date:** 2026-09-02
 **Status:** **Approved.** §7 answered on 2026-09-02 by John Ehrlinger:
-option **B, then C**. All of §4, §5, §6 and §7 are buildable as designed;
-an implementation plan is the next artifact.
+option **B, then C**. All of §4, §5, §6 and §7 are buildable as designed.
+B has an implementation plan:
+`dev/specs/2026-09-02-r-data-types-value-labels-plan.md`.
 **Package:** `hvtiRutilities`, with a build-step piece in `hvtiRdatabuild`
 **Implements:** `dev/specs/2026-09-02-label-length-and-fallback-handoff.md`
 **Reads with:** `dev/specs/2026-09-02-ordinal-representation-design.md`. The two
