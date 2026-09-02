@@ -6,7 +6,7 @@ recommendation for the statisticians to accept, amend or reject. Nothing in
 this package changes until they have.
 **Package:** `hvtiRutilities`, with a build-step piece in `hvtiRdatabuild`
 **Implements:** step 1 of `dev/specs/2026-09-02-ordinal-representation-handoff.md`
-**Reads with:** `dev/specs/2026-09-02-label-length-and-fallback-handoff.md` —
+**Reads with:** `dev/specs/2026-09-02-label-length-and-fallback-design.md` —
 the two land in the same code path (§6), and one of them breaks the other today
 (§6.1).
 
@@ -92,8 +92,8 @@ trimming (§6).
 answered.
 
 **Out, tracked elsewhere:** the enumerated-levels attribute for REDCap labels
-that carry ~8 mutually exclusive options. That is the label-length handoff's
-§2. It supplies level *text*; ordinality is about level *sequence and intent*.
+that carry ~8 mutually exclusive options. That is the label-length design note's
+§5. It supplies level *text*; ordinality is about level *sequence and intent*.
 They meet but they are not the same problem.
 
 ## 5. Whatever is decided, ordinality must be inspectable
@@ -172,7 +172,7 @@ which the linear terms quietly disappear.
 
 Trimming a label to 40 characters must not touch level text. The label
 describes the variable; the levels are the variable's values. The
-enumerated-levels attribute from the label-length handoff's §2 exists for
+enumerated-levels declaration from the label-length design note's §5 exists for
 exactly this reason, and an ordinal's level sequence should travel with it
 rather than with the display label.
 
