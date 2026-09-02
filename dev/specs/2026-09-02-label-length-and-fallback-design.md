@@ -151,6 +151,35 @@ it does not raise.
 break on a word boundary and mark the cut, not `substr()`. That is a detail,
 but it is the detail that decides whether the parameter gets used.
 
+### 4.1 The name fallback is exempt from the cap
+
+🔴 `label_max` applies to labels. It must **never** apply to a variable name
+standing in for one.
+
+§2.1 establishes that an unlabelled variable falls back to its own name,
+verbatim, and that this is the design: a bare `hgb_bs` on a draft figure is the
+visible signal that a label is missing. But that fallback happens *inside*
+`label_map()`, which §4 has just given a `label_max`. Without an exemption the
+two compose badly:
+
+| variable | label | `label_map(label_max = 40)` returns |
+|---|---|---|
+| `age` | `"Age at operation (years)"` | `"Age at operation (years)"` |
+| `preop_creatinine_clearance_calculated` | *none* | `"preop_creatinine_clearance_calculat"` ← **wrong** |
+
+The truncated name is neither a label nor a variable name. It matches nothing
+in the data, so it cannot be looked up, and it reads as a deliberately short
+label rather than as a missing one — destroying precisely the signal §2.1
+exists to preserve. The failure is silent and it looks like success.
+
+**Rule:** truncation applies to a label only. Where `label_map()` has filled
+from the variable name, the name passes through whole, however long, and
+`truncated` is `FALSE`.
+
+This interaction is not in the handoff. It falls out of combining the cap with
+the fallback, and it is invisible to a review that reads §2.1 and §4 as
+separate decisions.
+
 ## 5. Value labels are the code-to-text source
 
 The handoff's recipe — *"read the label, convert the numbers to what the label
@@ -224,6 +253,45 @@ Note also that once level text becomes non-numeric, `covariates_to_numeric()`
 silently stops converting the column and `covariate_audit()` reports
 `ERROR: factor with non-numeric levels`. That is the collision documented in
 the ordinal note's §6.1, and it applies to every variable this section touches.
+
+### 6.1 The matching rule: a separator is required
+
+§6 settles *what* gets stripped. This settles *how* it is matched, and the
+distinction is load-bearing in this domain.
+
+The example above — `0 No`, `1 Yes` → `No`, `Yes` — is a leading integer
+followed by a space. A rule general enough to match it also matches real level
+text in a cardiac surgery package:
+
+| level text | digit-then-space rule | separator-required rule |
+|---|---|---|
+| `"1. Yes"` | `"Yes"` | `"Yes"` |
+| `"0 = No"` | `"No"` | `"No"` |
+| `"01 - home"` | `"home"` | `"home"` |
+| `"1 vessel disease"` | `"vessel disease"` ← **wrong** | unchanged |
+| `"2 vessel"` | `"vessel"` ← **wrong** | unchanged |
+| `"3 vessel"` | `"vessel"` ← **wrong** | unchanged |
+
+🔴 The digit-then-space rule turns three distinct levels into two identical
+strings. Nothing errors. A downstream `table()` or model merges them, and the
+factor's level count silently stops matching the data dictionary — the failure
+presents as data, not as a bug.
+
+**Rule:** strip a leading integer only when a separator follows it — `.`, `:`,
+`=`, `)` or `-`, with optional surrounding whitespace. A bare digit-then-space
+is left alone.
+
+**The cost, stated plainly.** Unpunctuated `0 No` / `1 Yes` are *not* stripped
+and still print with their prefix. That is the intended trade: a missed strip
+is visible in the output and fixable by stating the level text in the §5
+catalogue, whereas a wrong strip is silent and corrupts the level set. It also
+means §5 does the real work here and §6 only tidies what §5 could not reach.
+
+**Ordering, for §7.** Stripping is a display operation and never rewrites
+stored level text, so a level named `01 home` keeps its ordering prefix in the
+data while the table prints `home`. That is what keeps the
+order-in-the-level-name option of the ordinal note's §2 available rather than
+quietly foreclosed.
 
 ## 7. Rethinking `r_data_types()`
 
@@ -328,6 +396,10 @@ unimplemented and this note has fixed the symptom again.
       with the per-column report (§7.3)
 - [ ] Test asserting the fallback does not prettify (§2.1)
 - [ ] `label_max` on the display seam, with truncation discoverable (§4)
+- [ ] Test asserting a variable name longer than `label_max` is **not**
+      truncated when it stands in for a missing label (§4.1)
+- [ ] Prefix stripping requires a separator; test asserts
+      `"1 vessel disease"` and `"2 vessel"` survive unchanged (§6.1)
 - [ ] One home for the enumerated-levels declaration, shared with the ordinal note
 - [ ] Build-step conversion in `hvtiRdatabuild`, calling this package rather than
       reimplementing it
