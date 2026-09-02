@@ -145,7 +145,8 @@
 <li>Versions are <strong>straight three digits</strong> (<code>1.0.11</code>). Never a <code>.9000</code> suffix or a fourth digit.</li>
 <li>
 <strong>Patch-digit bumps only</strong>, as fixes land. The minor and major digits are the maintainer’s decision, taken when a feature set is consolidated into a release. Do not roll them.</li>
-<li>Bump <code>DESCRIPTION</code> and add the matching <code>NEWS.md</code> entry in the same commit.</li>
+<li>
+<strong>Bump when you name a version, not when you merge.</strong> A pull request lands without touching <code>Version:</code>. Its entry goes under a <code># hvtiRutilities (unreleased)</code> heading in <code>NEWS.md</code>, which you add when it is not already there. A separate commit then renames that heading to the new version and updates <code>DESCRIPTION</code>, at most once a day. The heading is gone again after a bump, so the next change re-adds it. <code>.claude/house-style.md</code> carries the rule and the reasoning.</li>
 </ul></div>
 <div class="section level2">
 <h2 id="prose">Prose<a class="anchor" aria-label="anchor" href="#prose"></a></h2>
