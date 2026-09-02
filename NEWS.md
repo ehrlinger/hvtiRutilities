@@ -1,3 +1,37 @@
+# hvtiRutilities (unreleased)
+
+## Bug fixes
+
+- **`job_files()` no longer discards the part of a legacy job name that says
+  what the job does.** The `legacy` parser captured the first dot-field as the
+  prefix and threw the rest away, so `dp.trends`, `dp.gfup` and
+  `dp.spaghetti.echo` all reduced to one bucket called `dp`. A bucket cannot
+  be templated, and the census that fed the `hvtiRtemplates` roadmap ordered
+  its work by the size of buckets like that one.
+
+  Three columns now carry those fields through: `qualifier1` (the first),
+  `qualifiers` (all of them, dot-joined) and `n_qualifiers` (how many). They
+  are `NA`, count zero, for the `set`, `template` and `r_transitional`
+  conventions, whose grammars account for every field and so have no
+  qualifier slot.
+
+  The fields are named by POSITION, not by meaning. A census over all
+  2,240,554 corpus rows on 2026-09-02 measured what the second field holds,
+  and it differs by taxonomy folder: an outcome in `analyses`, a table type
+  in `descriptive`, a clinical variable in `distributions`, and a mix of plot
+  types and variables in `graphs`. Naming the column `outcome` or
+  `refinement` would bake one folder's reading into all of them, which is the
+  error being undone. Assigning meaning is a separate step that dispatches on
+  `folder`; see `hvtiRtemplates`
+  `dev/specs/2026-09-02-per-folder-naming-parse-design.md`.
+
+  A two-field name such as `hzdead.sas7bdat` has NO qualifier. The extension
+  separator and the field separator are the same character, so the qualifiers
+  are taken by dropping the first and last fields by position rather than by
+  a second regex. 426 corpus rows turn on that distinction.
+
+  `job_files()` therefore promises 16 columns rather than 13.
+
 # hvtiRutilities 1.1.8
 
 ## Documentation

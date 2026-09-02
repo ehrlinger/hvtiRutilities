@@ -95,7 +95,8 @@ test_that("job_files() returns one row per file and drops nothing", {
   expect_equal(
     names(out),
     c("path", "study", "folder", "status", "depth", "naming", "prefix",
-      "is_template", "stem", "ext", "prefix_class", "folder_expected",
+      "is_template", "qualifier1", "qualifiers", "n_qualifiers", "stem",
+      "ext", "prefix_class", "folder_expected",
       "folder_ok")
   )
 })
@@ -227,7 +228,8 @@ test_that("a root with no files returns a 0-row frame with the full column set",
   expect_equal(
     names(out),
     c("path", "study", "folder", "status", "depth", "naming", "prefix",
-      "is_template", "stem", "ext", "prefix_class", "folder_expected",
+      "is_template", "qualifier1", "qualifiers", "n_qualifiers", "stem",
+      "ext", "prefix_class", "folder_expected",
       "folder_ok")
   )
 })

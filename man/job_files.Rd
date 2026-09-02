@@ -19,8 +19,15 @@ files would otherwise be counted twice under two study labels.}
 \value{
 A data frame with one row per file and the columns \code{path},
   \code{study}, \code{folder}, \code{status}, \code{depth}, \code{naming},
-  \code{prefix}, \code{is_template}, \code{stem}, \code{ext},
+  \code{prefix}, \code{is_template}, \code{qualifier1},
+  \code{qualifiers}, \code{n_qualifiers}, \code{stem}, \code{ext},
   \code{prefix_class}, \code{folder_expected} and \code{folder_ok}.
+  The three qualifier columns carry the dot-fields of a \code{legacy}
+  name that lie between the prefix and the extension, and are \code{NA}
+  (count zero) for every other convention. They are named by position
+  because the second field means a different thing in each taxonomy
+  folder; see \code{\link{hvti_taxonomy}} and the design note referenced
+  in \file{R/job_names.R}.
   Zero rows if the roots hold no files.
 }
 \description{
