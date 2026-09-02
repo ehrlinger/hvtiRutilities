@@ -12,7 +12,7 @@ job_census(x)
 \arguments{
 \item{x}{Character roots to sweep -- see \code{\link{job_files}} for what a
 root must be -- or a data frame returned by \code{\link{job_files}}. A
-data frame missing any of that function's 13 columns is an error, not a
+data frame missing any of that function's 16 columns is an error, not a
 silently empty census.}
 
 \item{...}{Ignored; present for S3 consistency with \code{print}.}

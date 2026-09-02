@@ -67,3 +67,48 @@ test_that("the parser is vectorised and order-preserving", {
   expect_equal(nrow(out), 3L)
   expect_equal(out$naming, c("legacy", NA, "template"))
 })
+
+test_that("legacy qualifiers are the fields between prefix and extension", {
+  out <- hvtiRutilities:::.job_name_fields("hz.dead.lst")
+  expect_equal(out$qualifier1, "dead")
+  expect_equal(out$qualifiers, "dead")
+  expect_equal(out$n_qualifiers, 1L)
+})
+
+test_that("a two-field legacy name has NO qualifier", {
+  # The extension separator and the field separator are the same character,
+  # so a parser counting from the left alone reads "sas7bdat" as the thing
+  # the job does. hzdead.sas7bdat is an estimates dataset with no qualifier
+  # at all, and 426 corpus rows depend on the difference.
+  out <- hvtiRutilities:::.job_name_fields("hzdead.sas7bdat")
+  expect_true(is.na(out$qualifier1))
+  expect_true(is.na(out$qualifiers))
+  expect_equal(out$n_qualifiers, 0L)
+})
+
+test_that("qualifiers deeper than one level are kept, in order", {
+  # tp.dp.spaghetti.echo is real and is three levels. A parser that stops at
+  # the second field cannot tell it from tp.dp.spaghetti.
+  out <- hvtiRutilities:::.job_name_fields("tp.dp.spaghetti.echo.sas")
+  expect_equal(out$prefix, "dp")
+  expect_equal(out$qualifier1, "spaghetti")
+  expect_equal(out$qualifiers, "spaghetti.echo")
+  expect_equal(out$n_qualifiers, 2L)
+})
+
+test_that("the tp. marker is stripped before qualifiers are read", {
+  # Otherwise qualifier1 is the prefix of the template it marks.
+  out <- hvtiRutilities:::.job_name_fields("tp.hm.dead.sas")
+  expect_true(out$is_template)
+  expect_equal(out$qualifier1, "dead")
+})
+
+test_that("only the legacy convention has a qualifier slot", {
+  # set, template and r_transitional each account for every field in their
+  # grammar, so a qualifier there would be invented rather than read.
+  out <- hvtiRutilities:::.job_name_fields(
+    c("03.01-ac.qmd", "dead_pa-hz-03.01-ac.qmd", "03-ac-dead.qmd", "README")
+  )
+  expect_true(all(is.na(out$qualifier1)))
+  expect_equal(out$n_qualifiers, rep(0L, 4))
+})

@@ -190,8 +190,15 @@
 #'
 #' @return A data frame with one row per file and the columns \code{path},
 #'   \code{study}, \code{folder}, \code{status}, \code{depth}, \code{naming},
-#'   \code{prefix}, \code{is_template}, \code{stem}, \code{ext},
+#'   \code{prefix}, \code{is_template}, \code{qualifier1},
+#'   \code{qualifiers}, \code{n_qualifiers}, \code{stem}, \code{ext},
 #'   \code{prefix_class}, \code{folder_expected} and \code{folder_ok}.
+#'   The three qualifier columns carry the dot-fields of a \code{legacy}
+#'   name that lie between the prefix and the extension, and are \code{NA}
+#'   (count zero) for every other convention. They are named by position
+#'   because the second field means a different thing in each taxonomy
+#'   folder; see \code{\link{hvti_taxonomy}} and the design note referenced
+#'   in \file{R/job_names.R}.
 #'   Zero rows if the roots hold no files.
 #'
 #' @seealso \code{\link{job_census}}, \code{\link{hvti_taxonomy}}
@@ -296,6 +303,9 @@ job_files <- function(roots) {
       naming = fields$naming,
       prefix = fields$prefix,
       is_template = fields$is_template,
+      qualifier1 = fields$qualifier1,
+      qualifiers = fields$qualifiers,
+      n_qualifiers = fields$n_qualifiers,
       stem = stem,
       ext = ext,
       prefix_class = prefix_class,
@@ -313,7 +323,9 @@ job_files <- function(roots) {
     out <- data.frame(
       path = character(0), study = character(0), folder = character(0),
       status = character(0), depth = integer(0), naming = character(0),
-      prefix = character(0), is_template = logical(0), stem = character(0),
+      prefix = character(0), is_template = logical(0),
+      qualifier1 = character(0), qualifiers = character(0),
+      n_qualifiers = integer(0), stem = character(0),
       ext = character(0), prefix_class = character(0),
       folder_expected = character(0), folder_ok = logical(0),
       stringsAsFactors = FALSE
@@ -323,15 +335,15 @@ job_files <- function(roots) {
   out
 }
 
-# The 13 columns job_files() promises. job_census() validates against this
+# The 16 columns job_files() promises. job_census() validates against this
 # rather than trusting any data frame it is handed: a frame that is not
 # job_files() output otherwise produced a valid-LOOKING census whose print
 # emitted three confident zeros and then aborted with "invalid argument
 # type", naming nothing.
 .job_files_columns <- function() {
   c("path", "study", "folder", "status", "depth", "naming", "prefix",
-    "is_template", "stem", "ext", "prefix_class", "folder_expected",
-    "folder_ok")
+    "is_template", "qualifier1", "qualifiers", "n_qualifiers", "stem",
+    "ext", "prefix_class", "folder_expected", "folder_ok")
 }
 
 #' Roll a job-file inventory up to studies and prefixes
@@ -382,7 +394,7 @@ job_files <- function(roots) {
 #'
 #' @param x Character roots to sweep -- see \code{\link{job_files}} for what a
 #'   root must be -- or a data frame returned by \code{\link{job_files}}. A
-#'   data frame missing any of that function's 13 columns is an error, not a
+#'   data frame missing any of that function's 16 columns is an error, not a
 #'   silently empty census.
 #'
 #' @return A data frame of class \code{hvti_job_census} with one row per
