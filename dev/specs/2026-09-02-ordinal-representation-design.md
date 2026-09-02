@@ -43,7 +43,7 @@ confirmed by running it on 2026-09-02.
 | step | file | what happens to an ordinal |
 |---|---|---|
 | type inference, binary | `R/r_data_types.R:101` | numeric with exactly 2 distinct values → **logical**. This is the dichotomised default, in code. |
-| type inference, multi-level | `R/r_data_types.R:109` | numeric with 3 to `factor_size` distinct values → `factor(., exclude = NA)`, **unordered** |
+| type inference, multi-level | `R/r_data_types.R:109` | numeric with more than 2 and **fewer than** `factor_size` distinct values → `factor(., exclude = NA)`, **unordered**. The bound is strict, so the default `factor_size = 10` converts 3 to 9. |
 | type inference, already ordered | `R/r_data_types.R:101-113` | an `ordered()` factor is `is.factor()`, so every branch skips it. It **passes through untouched.** |
 | covariate audit | `R/covariates.R` | reports `storage = class(col)[1]`, so an ordered factor reads `"ordered"` |
 | covariate conversion | `R/covariates.R` | a factor whose levels all parse as numbers → `as.numeric(as.character(col))`, so it **enters a model linearly** |

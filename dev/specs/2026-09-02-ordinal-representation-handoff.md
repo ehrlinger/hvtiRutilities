@@ -2,10 +2,16 @@
 
 **Date:** 2026-09-02
 **Repo:** hvtiRutilities
-**Status:** not started, and **not ready to code**. Step 1 is a decision, not an implementation.
+**Status:** step 1 done — see `2026-09-02-ordinal-representation-design.md`.
+Still **not ready to code**: the design note's §7 is open, awaiting the
+statisticians. Steps 2 and 3 below are unchanged.
 **Origin:** biostats training, 2026-09-02. John, in the room: *"Ordinals are an interesting phenomenon in R that we have to really process through because we don't have an ordinal data type… I've been thinking about that for years because I don't have a solution."*
 
 ⚠️ No study, variable or patient identifier appears here.
+
+> The body below is the meeting record, left as captured. Only the `Status:`
+> line above and the step-1 filename in §3 have been updated to match the
+> repo.
 
 ---
 
@@ -27,7 +33,7 @@ Current practice is to **dichotomise**, and it is usually fine. From the floor: 
 
 ## 3. What to actually do
 
-**Step 1 — write the decision note, not the code.** `dev/specs/2026-09-0X-ordinal-representation-design.md`. State the three options, what each costs, and what CORR's default should be. Take it to Blackstone and the statisticians, because that is where the answer lives.
+**Step 1 — write the decision note, not the code.** `dev/specs/2026-09-02-ordinal-representation-design.md`. State the three options, what each costs, and what CORR's default should be. Take it to Blackstone and the statisticians, because that is where the answer lives.
 
 **Step 2 — whatever is decided, make the representation *inspectable*.** The failure this family keeps hitting is a value that means "fine" and a value that means "never looked" being the same value. Applied here: a variable that is ordinal but stored as an unordered factor must not be indistinguishable from one that is genuinely unordered. Whatever the decision, there should be a way to ask a dataset which of its variables are ordinal and be told, rather than inferring it from level names.
 
