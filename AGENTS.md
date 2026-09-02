@@ -107,14 +107,46 @@ forgotten `document()` fails the PR rather than landing quietly.
   rejected with "Changes must be made through a pull request" means branch — never
   force-push around it.
 - **`main` is protected by a GitHub ruleset, and nothing in this repo records that.** A clone
-  shows no trace of it, so it is stated here. The ruleset is named `protect main`, is
-  identical across all twelve repositories in the HVTI R package family, and enforces four
-  rules on the default branch: no deletion, no force-push, pull-request-only, and an
+  shows no trace of it, so it is stated here. The ruleset is named `protect main` and enforces
+  four rules on the default branch: no deletion, no force-push, pull-request-only, and an
   **automatic Copilot code review** on every PR. The rejection above comes from the server,
   not a local hook.
-  ⚠️ It currently requires **zero approvals**. `require_code_owner_review` is set but inert
-  because no repository in the family has a `CODEOWNERS` file, so a PR can merge unreviewed.
-  Adding `CODEOWNERS` makes that flag live and changes who can merge what.
+
+  Because the file is the only record, it is the one thing here with no way to detect its own
+  drift. **Verified against the live ruleset on 2026-09-02**; re-verify with
+
+  ```
+  gh api repos/ehrlinger/hvtiRutilities/rules/branches/main \
+    --jq '.[] | {type, params: .parameters}'
+  ```
+
+  ⚠️ **A PR needs one approving review, and the author cannot supply it.**
+  `required_approving_review_count` is **1**, so a PR sits at `REVIEW_REQUIRED` /
+  `mergeStateStatus=BLOCKED` until somebody else approves. GitHub refuses self-approval, so an
+  agent — or a solo maintainer — cannot open a PR and merge it unassisted. Plan for the wait
+  rather than discovering it at merge time.
+  `require_extra_approval_for_unattributed_changes` is **true**, which can ask for a second
+  approval on commits GitHub cannot attribute to a verified author.
+
+  `require_code_owner_review` is **false** here. Adding a `CODEOWNERS` file would not by itself
+  change anything until that flag is turned on; doing both changes who can approve what.
+
+  **Copilot reviews on open and does not re-review when you push.**
+  `copilot_code_review.review_on_push` is `false`, so a review posted when the PR opened stays
+  as posted after you fix what it found — pushing does not clear it, and re-requesting the
+  reviewer through the API does not reliably re-trigger it. Say in the PR what you changed and
+  why instead of waiting for a second pass. In the other direction,
+  `dismiss_stale_reviews_on_push` and `require_last_push_approval` are both `false`, so a human
+  approval **survives** later pushes to the branch. Nothing re-gates after an approval lands.
+
+  ⚠️ **The family is not uniform — do not carry these facts to a sibling repo unchecked.**
+  All twelve `hvti*` repositories were checked on 2026-09-02:
+
+  | repos | state |
+  |---|---|
+  | 10 of 12 | `protect main`, active, exactly as described above |
+  | `hvtiGraphics` | `protect main`, active, but **zero** approvals and `require_code_owner_review: true` — the only repo the previous version of this bullet actually described |
+  | `hvtiEDAreports` | ruleset named `main`, **`enforcement: disabled`**, and no classic branch protection, so nothing gates `main` there. Not tested by pushing — read from the API |
 - Versions are **straight three digits** (`1.0.11`). Never a `.9000` suffix or a fourth
   digit.
 - **Patch-digit bumps only**, as fixes land. The minor and major digits are the maintainer's
