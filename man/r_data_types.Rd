@@ -8,7 +8,8 @@ r_data_types(
   dataset,
   factor_size = 10,
   skip_vars = NULL,
-  binary_factor = FALSE
+  binary_factor = FALSE,
+  use_value_labels = FALSE
 )
 }
 \arguments{

@@ -66,9 +66,12 @@ reference:
   - read_clinical_data
 
 - title: Data Type Conversion
-  desc: Automatically infer and convert column types
+  desc: >
+    Automatically infer and convert column types, and read back which rule
+    fired on which column.
   contents:
   - r_data_types
+  - type_conversion_report
 
 - title: Variable Labels
   desc: Extract, look up, register, and override variable labels

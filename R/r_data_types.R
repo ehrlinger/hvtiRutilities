@@ -187,5 +187,7 @@ r_data_types <- function(dataset,
   }
 
   labelled::var_label(new_data) <- keep_label
+  attr(new_data, "hvti_type_conversion") <-
+    .type_report(converted, dataset, skip_vars)
   new_data
 }
