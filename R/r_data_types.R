@@ -1,3 +1,79 @@
+# The character values that stand in for a missing observation in exported
+# clinical data. Held here so the dispatcher and its tests agree on the list.
+.na_strings <- c("NA", "na", "Na", "nA")
+
+# Convert one column and say why.
+#
+# This is the only place a conversion decision is made. Returning the rule
+# alongside the value is what keeps type_conversion_report() from being a
+# second, drifting description of what the conversion does -- a report derived
+# from a separate predicate can disagree with the data it claims to describe,
+# and the disagreement is invisible.
+#
+# Branch order reproduces the four dplyr::across() passes this replaced:
+# NA strings, binary-to-logical, character-to-factor, n_distinct-to-factor,
+# then the optional logical-to-factor. The value-label branch is new and runs
+# ahead of all of them, because a declared type beats an inferred one.
+.convert_column <- function(x, factor_size, binary_factor, use_value_labels) {
+  storage_in <- class(x)[1]
+  out <- function(value, rule, level_source = NA_character_) {
+    list(value = value, rule = rule, level_source = level_source,
+         storage_in = storage_in)
+  }
+
+  # Dates and times are never altered by type conversion.
+  if (inherits(x, c("Date", "POSIXct", "POSIXlt"))) {
+    return(out(x, "unchanged"))
+  }
+
+  has_val_labels <- inherits(x, "haven_labelled") &&
+    length(labelled::val_labels(x)) > 0L
+
+  if (has_val_labels && use_value_labels) {
+    return(out(labelled::to_factor(x), "value_labels", "value labels"))
+  }
+
+  # Value labels are not being used. Drop them rather than carrying them into
+  # the numeric branches: as.logical() has no vctrs cast from haven_labelled
+  # and aborts, which made a two-valued formatted SAS variable an error.
+  if (inherits(x, "haven_labelled")) {
+    x <- haven::zap_labels(x)
+  }
+
+  if (is.character(x)) {
+    for (s in .na_strings) {
+      x <- dplyr::na_if(x, s)
+    }
+  }
+
+  n <- dplyr::n_distinct(x, na.rm = TRUE)
+
+  if (!is.factor(x) && !is.character(x) && n == 2L) {
+    was_logical <- is.logical(x)
+    x <- as.logical(x)
+    if (binary_factor) {
+      return(out(factor(x, exclude = NA), "binary_factor", "inference"))
+    }
+    return(out(x, if (was_logical) "unchanged" else "binary_logical"))
+  }
+
+  if (is.character(x)) {
+    return(out(factor(x, exclude = NA), "character_factor", "inference"))
+  }
+
+  if (n < factor_size && n > 2L && !is.factor(x) && is.numeric(x)) {
+    return(out(factor(x, exclude = NA), "n_distinct_factor", "inference"))
+  }
+
+  # A column that was already logical and did not take the binary branch --
+  # all-NA, or a single distinct value.
+  if (binary_factor && is.logical(x)) {
+    return(out(factor(x, exclude = NA), "binary_factor", "inference"))
+  }
+
+  out(x, "unchanged")
+}
+
 #' Automatically infer and convert data types
 #'
 #' @description
@@ -56,7 +132,8 @@
 r_data_types <- function(dataset,
                          factor_size = 10,
                          skip_vars = NULL,
-                         binary_factor = FALSE) {
+                         binary_factor = FALSE,
+                         use_value_labels = FALSE) {
   # Validate inputs before doing any work
   if (!is.data.frame(dataset)) {
     stop("'dataset' must be a data.frame or similar tabular object.")
@@ -92,32 +169,13 @@ r_data_types <- function(dataset,
   }
 
   # Convert Variables to new types
-  new_data <- dplyr::mutate(new_data, dplyr::across(dplyr::where(is.character),
-                                                    ~ . |>
-                                                      dplyr::na_if("na") |>
-                                                      dplyr::na_if("NA") |>
-                                                      dplyr::na_if("Na") |>
-                                                      dplyr::na_if("nA")))
-  new_data <- dplyr::mutate(new_data, dplyr::across(dplyr::where(function(x) {
-    !is.factor(x) &
-      !is.character(x) &
-      !inherits(x, c("Date", "POSIXct", "POSIXlt")) &
-      dplyr::n_distinct(x, na.rm = TRUE) == 2
-  }), ~ as.logical(.)))
-  new_data <- dplyr::mutate(new_data, dplyr::across(dplyr::where(is.character),
-                                                    ~ factor(., exclude = NA)))
-  new_data <- dplyr::mutate(new_data, dplyr::across(dplyr::where(function(x) {
-    dplyr::n_distinct(x, na.rm = TRUE) < factor_size &
-      dplyr::n_distinct(x, na.rm = TRUE) > 2 &
-      !is.factor(x) & is.numeric(x)
-  }), ~ factor(., exclude = NA)))
-
-  # Opt to convert binary variables into factors, rather than logical data.
-  if (binary_factor) {
-    new_data <- dplyr::mutate(new_data,
-                              dplyr::across(dplyr::where(is.logical),
-                                            ~ factor(., exclude = NA)))
-  }
+  converted <- lapply(new_data, .convert_column,
+                      factor_size      = factor_size,
+                      binary_factor    = binary_factor,
+                      use_value_labels = use_value_labels)
+  # `[]<-` rather than a rebuild: it preserves the tibble/data.table class of
+  # the input, which the contract promises and the extended tests assert.
+  new_data[] <- lapply(converted, `[[`, "value")
 
   # Restore skipped columns in original order
   if (!is.null(skip_vars)) {
