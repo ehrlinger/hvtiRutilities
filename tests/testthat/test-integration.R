@@ -105,13 +105,32 @@ test_that("multiple sequential conversions are idempotent", {
   dta <- sample_data(n = 25)
 
   # First conversion
-  conv1 <- r_data_types(dta)
+  conv1 <- r_data_types(dta, use_value_labels = FALSE)
 
   # Second conversion on already converted data
-  conv2 <- r_data_types(conv1)
+  conv2 <- r_data_types(conv1, use_value_labels = FALSE)
 
-  # Values and types must be identical, not just class names
-  expect_equal(conv1, conv2)
+  # Values and types must be identical, not just class names. The conversion
+  # report is deliberately excluded: it records the transition each call made,
+  # not the state it arrived at, so it is not idempotent and must not be --
+  # see the test below.
+  expect_equal(conv1, conv2, ignore_attr = "hvti_type_conversion")
+})
+
+test_that("the conversion report is not idempotent, and should not be", {
+  # The data settles after one pass; the record of how it got there does not.
+  # A second pass over already-converted data has nothing left to do, and
+  # saying "unchanged" is the true answer for it. A report that repeated the
+  # first pass's rules would be claiming work that this call did not do.
+  dta <- sample_data(n = 25)
+
+  rep1 <- type_conversion_report(r_data_types(dta, use_value_labels = FALSE))
+  conv <- r_data_types(dta, use_value_labels = FALSE)
+  rep2 <- type_conversion_report(r_data_types(conv, use_value_labels = FALSE))
+
+  expect_true(any(rep1$rule != "unchanged"))
+  expect_true(all(rep2$rule == "unchanged"))
+  expect_equal(rep1$variable, rep2$variable)
 })
 
 test_that("real-world workflow with messy data", {

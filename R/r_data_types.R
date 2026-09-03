@@ -134,6 +134,20 @@ r_data_types <- function(dataset,
                          skip_vars = NULL,
                          binary_factor = FALSE,
                          use_value_labels = FALSE) {
+  if (missing(use_value_labels) &&
+        is.null(.hvti_deprecated$use_value_labels)) {
+    .hvti_deprecated$use_value_labels <- TRUE
+    warning(
+      "r_data_types(): 'use_value_labels' defaults to FALSE, so a column ",
+      "carrying SAS value labels is converted from its numeric codes and ",
+      "the level text -- Home, Rehab, SNF -- is discarded. Pass ",
+      "use_value_labels = TRUE to convert through the labels instead, or ",
+      "FALSE to silence this warning. The default will become TRUE in a ",
+      "later release.",
+      call. = FALSE
+    )
+  }
+
   # Validate inputs before doing any work
   if (!is.data.frame(dataset)) {
     stop("'dataset' must be a data.frame or similar tabular object.")
