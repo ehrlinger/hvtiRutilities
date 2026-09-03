@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.8</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.9</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,6 +55,61 @@
       <small>Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.1.9" id="hvtirutilities-119">hvtiRutilities 1.1.9<a class="anchor" aria-label="anchor" href="#hvtirutilities-119"></a></h2>
+<div class="section level3">
+<h3 id="new-features-1-1-9">New features<a class="anchor" aria-label="anchor" href="#new-features-1-1-9"></a></h3>
+<ul><li>
+<p><strong><code><a href="../reference/read_clinical_data.html">read_clinical_data()</a></code> can read a SAS format catalog.</strong> A <code>.sas7bdat</code> stores a format’s <em>name</em> — <code>YESNOF.</code> — not its values; the code-to-text mapping lives in a separate <code>.sas7bcat</code>. Without one, reading a SAS dataset yields numeric codes and no value labels however the read is written, and nothing downstream can recover text that never arrived. This package had never read a format catalog.</p>
+<p>The new <code>catalog_file</code> argument passes one through to <code><a href="https://haven.tidyverse.org/reference/read_sas.html" class="external-link">haven::read_sas()</a></code>. It defaults to <code>NULL</code> — what was read before it existed — so no existing call changes. It follows <code>...</code> and so must be named, which keeps it from capturing an argument that previously reached <code><a href="../reference/r_data_types.html">r_data_types()</a></code> positionally.</p>
+<p>Supplying a catalog with a non-SAS file is an error rather than a silent no-op, and supplying one alongside <code>convert_types = TRUE</code> without <code>use_value_labels = TRUE</code> warns: decoding a mapping and then discarding it is the loss the argument exists to end.</p>
+</li>
+<li>
+<p><strong><code><a href="../reference/r_data_types.html">r_data_types()</a></code> can keep the level text of a SAS formatted variable.</strong> <code>haven</code> reads a numeric-plus-format variable as a <code>haven_labelled</code> vector carrying its own code-to-text mapping. <code><a href="../reference/r_data_types.html">r_data_types()</a></code> threw it away: the column is <code><a href="https://rdrr.io/r/base/numeric.html" class="external-link">is.numeric()</a></code> and is not a factor, so the factor branch saw only the codes and <code>Home</code>, <code>Rehab</code>, <code>SNF</code> were lost. Downstream, every table reconstructed them by hand from the variable label — which is why REDCap labels ended up enumerating eight options.</p>
+<p>The new <code>use_value_labels</code> argument converts through <code><a href="https://larmarange.github.io/labelled/reference/to_factor.html" class="external-link">labelled::to_factor()</a></code> instead. It runs ahead of every inference rule, so a declared type beats both the binary-to-logical branch and the <code>factor_size</code> threshold.</p>
+<p>It defaults to <code>FALSE</code> and warns once per session when it is not supplied, the same shape as the <code>convert_types</code> warning. The default becomes <code>TRUE</code> in a later release; until then no existing caller changes behaviour.</p>
+</li>
+<li>
+<p><strong><code><a href="../reference/type_conversion_report.html">type_conversion_report()</a></code> says which rule fired on which column.</strong> One row per column: the rule, whether the levels came from value labels or from counting distinct values, how many there were, and the class in and out. A column that became a factor because it was declared one and a column that became a factor because it happened to have seven distinct values were previously the same object.</p>
+<p>The report records the transition a call made, not the state it arrived at, so it is deliberately not idempotent: a second pass over already-converted data reports <code>unchanged</code> throughout, which is the true answer for it.</p>
+</li>
+<li>
+<p><strong><code><a href="../reference/label_map.html">label_map()</a></code> caps a label for display, and keeps the original.</strong> Labels were capped at 40 characters historically. When the constraint lifted, long descriptive labels became normal, and a table or an axis has nowhere to put them — so they get trimmed by hand, every time, which is where the typos come from.</p>
+<p>The new <code>label_max</code> argument, default 40, cuts the printed label on a word boundary and marks the cut with <code>...</code>. The marker counts against the budget, so the result is never longer than <code>label_max</code>. Truncation is a view, not a change to the data: the source text stays in a new <code>label_full</code> column and a new <code>truncated</code> column says what was cut, which makes the report <code>subset(lmap, truncated)</code> rather than another function. Pass <code>Inf</code> or <code>NA</code> to disable it.</p>
+<p><code>label_max</code> must be at least 4, so a cut always has room to be marked, and <code>TRUE</code>/<code>FALSE</code> are refused rather than coerced — <code>as.numeric(TRUE)</code> is 1, which would have meant “cap at one character”. <code>NA</code> still disables truncation.</p>
+<p>A side effect worth knowing: the “most columns lack descriptive labels” warning is now driven by whether a label is absent rather than by <code>label == key</code>, so a variable whose real label happens to equal its own name no longer counts towards the 50% threshold.</p>
+<p><code><a href="../reference/dataset_schema.html">dataset_schema()</a></code> deliberately does not gain the argument, and errors if you pass it. A schema sidecar outlives the source dataset, and a truncated label recorded there is unrecoverable.</p>
+<p>The variable-name fallback is <strong>exempt</strong>. An unlabelled variable still reports its own name, whole, however long, with <code>truncated</code> as <code>FALSE</code>. A truncated name would match nothing in the data and would read as a deliberately short label rather than as a missing one — destroying exactly the signal the fallback exists to give. The cap and the fallback are each sensible alone; composed without the exemption they fail silently and the failure looks like success.</p>
+</li>
+<li>
+<p><strong><code><a href="../reference/apply_value_labels.html">apply_value_labels()</a></code> declares the code-to-text mapping for coded variables.</strong> There are no <code>.sas7bcat</code> format catalogs in the study corpus, so <code>catalog_file</code> — added above — is an argument nobody can exercise yet, and the mapping has to be declared rather than read. That is why REDCap labels enumerate eight mutually exclusive options: the label was the only field that survived the read.</p>
+<p>A study writes <code>value_labels.yml</code> beside its <code>config.yml</code> and <code>labels_overrides.yml</code>:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">disp</span><span class="kw">:</span></span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="at">  </span><span class="fu">1</span><span class="kw">:</span><span class="at"> Home</span></span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="at">  </span><span class="fu">2</span><span class="kw">:</span><span class="at"> Rehab</span></span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="at">  </span><span class="fu">3</span><span class="kw">:</span><span class="at"> SNF</span></span></code></pre></div>
+<p><code><a href="../reference/apply_value_labels.html">apply_value_labels()</a></code> writes those into <code><a href="https://larmarange.github.io/labelled/reference/val_labels.html" class="external-link">labelled::val_labels()</a></code> — the same slot a catalog would have filled — so <code>r_data_types(use_value_labels = TRUE)</code> converts them to a factor with text levels without a second code path, and nothing downstream needs to know which input supplied them. It declares; it does not convert. A study with no such file gets its data back unchanged, so the call is safe to make unconditionally.</p>
+<p>This is the home for enumerated level definitions, and it is deliberately <strong>not</strong> the display label. Two things it will not do quietly: value labels already on a column win over the file and the variable is named in a warning, so a mapping read from a source is never overwritten; and a variable named in the file but absent from the data is reported rather than skipped, because a typo that declares nothing is the failure a declaration file is least able to notice.</p>
+<p>The <code>ordered:</code> key is reserved for the ordinal declaration and is refused with an error rather than partly honoured. Ordinality is still blocked on a statistical decision, and an <code>ordered: true</code> that silently did nothing would read in the file as though ordinality had been declared.</p>
+</li>
+</ul></div>
+<div class="section level3">
+<h3 id="compatibility-1-1-9">Compatibility<a class="anchor" aria-label="anchor" href="#compatibility-1-1-9"></a></h3>
+<ul><li>
+<strong><code><a href="../reference/label_map.html">label_map()</a></code> returns four columns, and shorter labels, in this release.</strong> <code>label_max</code> defaults to 40 immediately rather than defaulting off for a release the way <code>convert_types</code> and <code>use_value_labels</code> did. So the <code>label</code> column now carries the trimmed text, and <code>label_full</code> and <code>truncated</code> sit beside it. Code that reads <code>key</code> and <code>label</code> by name is unaffected; code that assumes two columns, or that expects the untrimmed text in <code>label</code>, is not — read <code>label_full</code>, or pass <code>label_max = Inf</code>. <code>hvtiPlotR</code> and <code>hvtiRtables</code> both consume label maps and are the callers to check.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-1-1-9">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-1-9"></a></h3>
+<ul><li><p><strong><code><a href="../reference/r_data_types.html">r_data_types()</a></code> no longer errors on a two-valued SAS formatted variable.</strong> <code><a href="https://rdrr.io/r/base/logical.html" class="external-link">as.logical()</a></code> has no <code>vctrs</code> cast from <code>haven_labelled</code>, and the binary branch called it before anything had dropped the labels — so <code>read_clinical_data(convert_types = TRUE)</code> aborted on any SAS export carrying a formatted yes/no variable. The labels are now dropped explicitly before the numeric branches when <code>use_value_labels = FALSE</code>, making that path a conversion rather than a crash.</p></li>
+<li>
+<p><strong><code><a href="../reference/job_files.html">job_files()</a></code> no longer discards the part of a legacy job name that says what the job does.</strong> The <code>legacy</code> parser captured the first dot-field as the prefix and threw the rest away, so <code>dp.trends</code>, <code>dp.gfup</code> and <code>dp.spaghetti.echo</code> all reduced to one bucket called <code>dp</code>. A bucket cannot be templated, and the census that fed the <code>hvtiRtemplates</code> roadmap ordered its work by the size of buckets like that one.</p>
+<p>Three columns now carry those fields through: <code>qualifier1</code> (the first), <code>qualifiers</code> (all of them, dot-joined) and <code>n_qualifiers</code> (how many). They are <code>NA</code>, count zero, for the <code>set</code>, <code>template</code> and <code>r_transitional</code> conventions, whose grammars account for every field and so have no qualifier slot.</p>
+<p>The fields are named by POSITION, not by meaning. A census over all 2,240,554 corpus rows on 2026-09-02 measured what the second field holds, and it differs by taxonomy folder: an outcome in <code>analyses</code>, a table type in <code>descriptive</code>, a clinical variable in <code>distributions</code>, and a mix of plot types and variables in <code>graphs</code>. Naming the column <code>outcome</code> or <code>refinement</code> would bake one folder’s reading into all of them, which is the error being undone. Assigning meaning is a separate step that dispatches on <code>folder</code>; see <code>hvtiRtemplates</code> <code>dev/specs/2026-09-02-per-folder-naming-parse-design.md</code>.</p>
+<p>A two-field name such as <code>hzdead.sas7bdat</code> has NO qualifier. The extension separator and the field separator are the same character, so the qualifiers are taken by dropping the first and last fields by position rather than by a second regex. 426 corpus rows turn on that distinction.</p>
+<p><code><a href="../reference/job_files.html">job_files()</a></code> therefore promises 16 columns rather than 13.</p>
+</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.1.8" id="hvtirutilities-118">hvtiRutilities 1.1.8<a class="anchor" aria-label="anchor" href="#hvtirutilities-118"></a></h2>
 <div class="section level3">

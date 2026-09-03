@@ -1,5 +1,205 @@
 # Changelog
 
+## hvtiRutilities 1.1.9
+
+### New features
+
+- **[`read_clinical_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_clinical_data.md)
+  can read a SAS format catalog.** A `.sas7bdat` stores a format’s
+  *name* — `YESNOF.` — not its values; the code-to-text mapping lives in
+  a separate `.sas7bcat`. Without one, reading a SAS dataset yields
+  numeric codes and no value labels however the read is written, and
+  nothing downstream can recover text that never arrived. This package
+  had never read a format catalog.
+
+  The new `catalog_file` argument passes one through to
+  [`haven::read_sas()`](https://haven.tidyverse.org/reference/read_sas.html).
+  It defaults to `NULL` — what was read before it existed — so no
+  existing call changes. It follows `...` and so must be named, which
+  keeps it from capturing an argument that previously reached
+  [`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
+  positionally.
+
+  Supplying a catalog with a non-SAS file is an error rather than a
+  silent no-op, and supplying one alongside `convert_types = TRUE`
+  without `use_value_labels = TRUE` warns: decoding a mapping and then
+  discarding it is the loss the argument exists to end.
+
+- **[`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
+  can keep the level text of a SAS formatted variable.** `haven` reads a
+  numeric-plus-format variable as a `haven_labelled` vector carrying its
+  own code-to-text mapping.
+  [`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
+  threw it away: the column is
+  [`is.numeric()`](https://rdrr.io/r/base/numeric.html) and is not a
+  factor, so the factor branch saw only the codes and `Home`, `Rehab`,
+  `SNF` were lost. Downstream, every table reconstructed them by hand
+  from the variable label — which is why REDCap labels ended up
+  enumerating eight options.
+
+  The new `use_value_labels` argument converts through
+  [`labelled::to_factor()`](https://larmarange.github.io/labelled/reference/to_factor.html)
+  instead. It runs ahead of every inference rule, so a declared type
+  beats both the binary-to-logical branch and the `factor_size`
+  threshold.
+
+  It defaults to `FALSE` and warns once per session when it is not
+  supplied, the same shape as the `convert_types` warning. The default
+  becomes `TRUE` in a later release; until then no existing caller
+  changes behaviour.
+
+- **[`type_conversion_report()`](https://ehrlinger.github.io/hvtiRutilities/reference/type_conversion_report.md)
+  says which rule fired on which column.** One row per column: the rule,
+  whether the levels came from value labels or from counting distinct
+  values, how many there were, and the class in and out. A column that
+  became a factor because it was declared one and a column that became a
+  factor because it happened to have seven distinct values were
+  previously the same object.
+
+  The report records the transition a call made, not the state it
+  arrived at, so it is deliberately not idempotent: a second pass over
+  already-converted data reports `unchanged` throughout, which is the
+  true answer for it.
+
+- **[`label_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)
+  caps a label for display, and keeps the original.** Labels were capped
+  at 40 characters historically. When the constraint lifted, long
+  descriptive labels became normal, and a table or an axis has nowhere
+  to put them — so they get trimmed by hand, every time, which is where
+  the typos come from.
+
+  The new `label_max` argument, default 40, cuts the printed label on a
+  word boundary and marks the cut with `...`. The marker counts against
+  the budget, so the result is never longer than `label_max`. Truncation
+  is a view, not a change to the data: the source text stays in a new
+  `label_full` column and a new `truncated` column says what was cut,
+  which makes the report `subset(lmap, truncated)` rather than another
+  function. Pass `Inf` or `NA` to disable it.
+
+  `label_max` must be at least 4, so a cut always has room to be marked,
+  and `TRUE`/`FALSE` are refused rather than coerced —
+  `as.numeric(TRUE)` is 1, which would have meant “cap at one
+  character”. `NA` still disables truncation.
+
+  A side effect worth knowing: the “most columns lack descriptive
+  labels” warning is now driven by whether a label is absent rather than
+  by `label == key`, so a variable whose real label happens to equal its
+  own name no longer counts towards the 50% threshold.
+
+  [`dataset_schema()`](https://ehrlinger.github.io/hvtiRutilities/reference/dataset_schema.md)
+  deliberately does not gain the argument, and errors if you pass it. A
+  schema sidecar outlives the source dataset, and a truncated label
+  recorded there is unrecoverable.
+
+  The variable-name fallback is **exempt**. An unlabelled variable still
+  reports its own name, whole, however long, with `truncated` as
+  `FALSE`. A truncated name would match nothing in the data and would
+  read as a deliberately short label rather than as a missing one —
+  destroying exactly the signal the fallback exists to give. The cap and
+  the fallback are each sensible alone; composed without the exemption
+  they fail silently and the failure looks like success.
+
+- **[`apply_value_labels()`](https://ehrlinger.github.io/hvtiRutilities/reference/apply_value_labels.md)
+  declares the code-to-text mapping for coded variables.** There are no
+  `.sas7bcat` format catalogs in the study corpus, so `catalog_file` —
+  added above — is an argument nobody can exercise yet, and the mapping
+  has to be declared rather than read. That is why REDCap labels
+  enumerate eight mutually exclusive options: the label was the only
+  field that survived the read.
+
+  A study writes `value_labels.yml` beside its `config.yml` and
+  `labels_overrides.yml`:
+
+  ``` yaml
+  disp:
+    1: Home
+    2: Rehab
+    3: SNF
+  ```
+
+  [`apply_value_labels()`](https://ehrlinger.github.io/hvtiRutilities/reference/apply_value_labels.md)
+  writes those into
+  [`labelled::val_labels()`](https://larmarange.github.io/labelled/reference/val_labels.html)
+  — the same slot a catalog would have filled — so
+  `r_data_types(use_value_labels = TRUE)` converts them to a factor with
+  text levels without a second code path, and nothing downstream needs
+  to know which input supplied them. It declares; it does not convert. A
+  study with no such file gets its data back unchanged, so the call is
+  safe to make unconditionally.
+
+  This is the home for enumerated level definitions, and it is
+  deliberately **not** the display label. Two things it will not do
+  quietly: value labels already on a column win over the file and the
+  variable is named in a warning, so a mapping read from a source is
+  never overwritten; and a variable named in the file but absent from
+  the data is reported rather than skipped, because a typo that declares
+  nothing is the failure a declaration file is least able to notice.
+
+  The `ordered:` key is reserved for the ordinal declaration and is
+  refused with an error rather than partly honoured. Ordinality is still
+  blocked on a statistical decision, and an `ordered: true` that
+  silently did nothing would read in the file as though ordinality had
+  been declared.
+
+### Compatibility
+
+- **[`label_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)
+  returns four columns, and shorter labels, in this release.**
+  `label_max` defaults to 40 immediately rather than defaulting off for
+  a release the way `convert_types` and `use_value_labels` did. So the
+  `label` column now carries the trimmed text, and `label_full` and
+  `truncated` sit beside it. Code that reads `key` and `label` by name
+  is unaffected; code that assumes two columns, or that expects the
+  untrimmed text in `label`, is not — read `label_full`, or pass
+  `label_max = Inf`. `hvtiPlotR` and `hvtiRtables` both consume label
+  maps and are the callers to check.
+
+### Bug fixes
+
+- **[`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
+  no longer errors on a two-valued SAS formatted variable.**
+  [`as.logical()`](https://rdrr.io/r/base/logical.html) has no `vctrs`
+  cast from `haven_labelled`, and the binary branch called it before
+  anything had dropped the labels — so
+  `read_clinical_data(convert_types = TRUE)` aborted on any SAS export
+  carrying a formatted yes/no variable. The labels are now dropped
+  explicitly before the numeric branches when
+  `use_value_labels = FALSE`, making that path a conversion rather than
+  a crash.
+
+- **[`job_files()`](https://ehrlinger.github.io/hvtiRutilities/reference/job_files.md)
+  no longer discards the part of a legacy job name that says what the
+  job does.** The `legacy` parser captured the first dot-field as the
+  prefix and threw the rest away, so `dp.trends`, `dp.gfup` and
+  `dp.spaghetti.echo` all reduced to one bucket called `dp`. A bucket
+  cannot be templated, and the census that fed the `hvtiRtemplates`
+  roadmap ordered its work by the size of buckets like that one.
+
+  Three columns now carry those fields through: `qualifier1` (the
+  first), `qualifiers` (all of them, dot-joined) and `n_qualifiers` (how
+  many). They are `NA`, count zero, for the `set`, `template` and
+  `r_transitional` conventions, whose grammars account for every field
+  and so have no qualifier slot.
+
+  The fields are named by POSITION, not by meaning. A census over all
+  2,240,554 corpus rows on 2026-09-02 measured what the second field
+  holds, and it differs by taxonomy folder: an outcome in `analyses`, a
+  table type in `descriptive`, a clinical variable in `distributions`,
+  and a mix of plot types and variables in `graphs`. Naming the column
+  `outcome` or `refinement` would bake one folder’s reading into all of
+  them, which is the error being undone. Assigning meaning is a separate
+  step that dispatches on `folder`; see `hvtiRtemplates`
+  `dev/specs/2026-09-02-per-folder-naming-parse-design.md`.
+
+  A two-field name such as `hzdead.sas7bdat` has NO qualifier. The
+  extension separator and the field separator are the same character, so
+  the qualifiers are taken by dropping the first and last fields by
+  position rather than by a second regex. 426 corpus rows turn on that
+  distinction.
+
+  [`job_files()`](https://ehrlinger.github.io/hvtiRutilities/reference/job_files.md)
+  therefore promises 16 columns rather than 13.
+
 ## hvtiRutilities 1.1.8
 
 ### Documentation
