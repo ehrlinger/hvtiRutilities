@@ -163,8 +163,8 @@ change except the crash**, which becomes a defined conversion. The existing 575 
 tests are the gate.
 
 **Files:**
-- Modify: `/Users/ehrlinj/Documents/GitHub/hvtiRutilities/R/r_data_types.R:95-119`
-- Create: `/Users/ehrlinj/Documents/GitHub/hvtiRutilities/tests/testthat/test-r_data_types-value-labels.R`
+- Modify: `R/r_data_types.R:95-119`
+- Create: `tests/testthat/test-r_data_types-value-labels.R`
 
 **Interfaces:**
 - Consumes: nothing.
@@ -182,7 +182,7 @@ tests are the gate.
 - [ ] **Step 1: Create the branch**
 
 ```bash
-cd /Users/ehrlinj/Documents/GitHub/hvtiRutilities
+cd /path/to/hvtiRutilities   # this plan's commands are relative to the repo root
 git checkout main && git pull
 git checkout -b feat/use-value-labels
 ```
@@ -424,10 +424,10 @@ the levels, and what it produced. Without that, §7.1's second clause is unimple
 this note has fixed the symptom again."*
 
 **Files:**
-- Create: `/Users/ehrlinj/Documents/GitHub/hvtiRutilities/R/type_report.R`
-- Modify: `/Users/ehrlinj/Documents/GitHub/hvtiRutilities/R/r_data_types.R`
-- Create: `/Users/ehrlinj/Documents/GitHub/hvtiRutilities/tests/testthat/test-type-report.R`
-- Modify: `/Users/ehrlinj/Documents/GitHub/hvtiRutilities/_pkgdown.yml`
+- Create: `R/type_report.R`
+- Modify: `R/r_data_types.R`
+- Create: `tests/testthat/test-type-report.R`
+- Modify: `_pkgdown.yml`
 
 **Interfaces:**
 - Consumes: `.convert_column()`'s `list(value, rule, level_source, storage_in)` from Task 1.
@@ -723,9 +723,9 @@ EOF
 The argument itself: the `TRUE` branch, and the one-time warning on the `FALSE` default.
 
 **Files:**
-- Modify: `/Users/ehrlinj/Documents/GitHub/hvtiRutilities/R/r_data_types.R`
-- Modify: `/Users/ehrlinj/Documents/GitHub/hvtiRutilities/tests/testthat/test-r_data_types-value-labels.R`
-- Modify: `/Users/ehrlinj/Documents/GitHub/hvtiRutilities/tests/testthat/test-read_clinical_data.R:149-169`
+- Modify: `R/r_data_types.R`
+- Modify: `tests/testthat/test-r_data_types-value-labels.R`
+- Modify: `tests/testthat/test-read_clinical_data.R:149-169`
 
 **Interfaces:**
 - Consumes: `.convert_column()`'s `use_value_labels` branch from Task 1 (already written,
@@ -972,8 +972,8 @@ EOF
 # Task 4: Documentation, NEWS, and the PR
 
 **Files:**
-- Modify: `/Users/ehrlinj/Documents/GitHub/hvtiRutilities/R/r_data_types.R` (roxygen block)
-- Modify: `/Users/ehrlinj/Documents/GitHub/hvtiRutilities/NEWS.md`
+- Modify: `R/r_data_types.R` (roxygen block)
+- Modify: `NEWS.md`
 - Regenerate: `man/`, `NAMESPACE`
 
 **Interfaces:**
