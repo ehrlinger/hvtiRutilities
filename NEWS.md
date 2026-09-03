@@ -48,6 +48,92 @@
   so it is deliberately not idempotent: a second pass over already-converted
   data reports `unchanged` throughout, which is the true answer for it.
 
+- **`label_map()` caps a label for display, and keeps the original.** Labels
+  were capped at 40 characters historically. When the constraint lifted, long
+  descriptive labels became normal, and a table or an axis has nowhere to put
+  them — so they get trimmed by hand, every time, which is where the typos
+  come from.
+
+  The new `label_max` argument, default 40, cuts the printed label on a word
+  boundary and marks the cut with `...`. The marker counts against the
+  budget, so the result is never longer than `label_max`. Truncation is a
+  view, not a change to the data: the source text stays in a new `label_full`
+  column and a new `truncated` column says what was cut, which makes the
+  report `subset(lmap, truncated)` rather than another function. Pass `Inf`
+  or `NA` to disable it.
+
+  `label_max` must be at least 4, so a cut always has room to be marked, and
+  `TRUE`/`FALSE` are refused rather than coerced — `as.numeric(TRUE)` is 1,
+  which would have meant "cap at one character". `NA` still disables
+  truncation.
+
+  A side effect worth knowing: the "most columns lack descriptive labels"
+  warning is now driven by whether a label is absent rather than by
+  `label == key`, so a variable whose real label happens to equal its own
+  name no longer counts towards the 50% threshold.
+
+  `dataset_schema()` deliberately does not gain the argument, and errors if
+  you pass it. A schema sidecar outlives the source dataset, and a truncated
+  label recorded there is unrecoverable.
+
+  The variable-name fallback is **exempt**. An unlabelled variable still
+  reports its own name, whole, however long, with `truncated` as `FALSE`. A
+  truncated name would match nothing in the data and would read as a
+  deliberately short label rather than as a missing one — destroying exactly
+  the signal the fallback exists to give. The cap and the fallback are each
+  sensible alone; composed without the exemption they fail silently and the
+  failure looks like success.
+
+- **`apply_value_labels()` declares the code-to-text mapping for coded
+  variables.** There are no `.sas7bcat` format catalogs in the study corpus,
+  so `catalog_file` — added above — is an argument nobody can exercise yet,
+  and the mapping has to be declared rather than read. That is why REDCap
+  labels enumerate eight mutually exclusive options: the label was the only
+  field that survived the read.
+
+  A study writes `value_labels.yml` beside its `config.yml` and
+  `labels_overrides.yml`:
+
+  ```yaml
+  disp:
+    1: Home
+    2: Rehab
+    3: SNF
+  ```
+
+  `apply_value_labels()` writes those into `labelled::val_labels()` — the
+  same slot a catalog would have filled — so `r_data_types(use_value_labels =
+  TRUE)` converts them to a factor with text levels without a second code
+  path, and nothing downstream needs to know which input supplied them. It
+  declares; it does not convert. A study with no such file gets its data back
+  unchanged, so the call is safe to make unconditionally.
+
+  This is the home for enumerated level definitions, and it is deliberately
+  **not** the display label. Two things it will not do quietly: value labels
+  already on a column win over the file and the variable is named in a
+  warning, so a mapping read from a source is never overwritten; and a
+  variable named in the file but absent from the data is reported rather than
+  skipped, because a typo that declares nothing is the failure a declaration
+  file is least able to notice.
+
+  The `ordered:` key is reserved for the ordinal declaration and is refused
+  with an error rather than partly honoured. Ordinality is still blocked on a
+  statistical decision, and an `ordered: true` that silently did nothing
+  would read in the file as though ordinality had been declared.
+
+## Compatibility
+
+- **`label_map()` returns four columns, and shorter labels, in this
+  release.** `label_max` defaults to 40 immediately rather than defaulting
+  off for a release the way `convert_types` and `use_value_labels` did. So
+  the `label` column now carries the trimmed text, and `label_full` and
+  `truncated` sit beside it. Code that reads `key` and `label` by name is
+  unaffected; code that assumes two columns, or that expects the untrimmed
+  text in `label`, is not — read `label_full`, or pass `label_max = Inf`.
+  `hvtiPlotR` and `hvtiRtables` both consume label maps and are the callers
+  to check.
+
+
 ## Bug fixes
 
 - **`r_data_types()` no longer errors on a two-valued SAS formatted

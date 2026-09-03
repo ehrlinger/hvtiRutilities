@@ -1,4 +1,100 @@
 ## =============================================================================
+## Internal: label_max validation and word-boundary truncation.
+## See dev/specs/2026-09-02-label-length-and-fallback-design.md section 4.
+
+.label_marker <- "..."
+
+## The smallest cap that can hold the marker plus one character of label.
+.label_marker_min <- nchar(.label_marker) + 1L
+
+.validate_label_max <- function(label_max) {
+  # NA is admitted because it disables truncation, and bare NA is logical.
+  # TRUE and FALSE are not: as.numeric(TRUE) is 1, so TRUE would silently
+  # mean "cap at one character" rather than being rejected.
+  ok <- length(label_max) == 1L &&
+    (is.numeric(label_max) ||
+       (is.logical(label_max) && is.na(label_max)))
+  if (!ok) {
+    stop("'label_max' must be a single number, Inf or NA.", call. = FALSE)
+  }
+  if (is.na(label_max) || !is.finite(label_max)) {
+    return(Inf)
+  }
+  # A cap with no room for the marker plus a character of label cannot
+  # produce a marked cut, and an unmarked cut is what the marker exists to
+  # prevent. Refuse it rather than quietly dropping the guarantee.
+  if (label_max < .label_marker_min) {
+    stop(
+      sprintf(
+        paste0("'label_max' must be at least %d, or Inf/NA to disable ",
+               "truncation."),
+        .label_marker_min
+      ),
+      call. = FALSE
+    )
+  }
+  as.numeric(label_max)
+}
+
+## Cut on a word boundary and mark the cut. substr() alone produces
+## "Ascending aorta only versus ascending plu", which reads as a short label
+## rather than a cut one; the marker is what makes the parameter usable. The
+## marker counts against the budget, so the result is never longer than
+## label_max.
+.truncate_labels <- function(text, label_max) {
+  if (!length(text) || !is.finite(label_max)) {
+    return(text)
+  }
+
+  # Guaranteed >= 1 by .validate_label_max(), so every cut is marked.
+  budget <- label_max - nchar(.label_marker)
+  out <- text
+
+  for (i in which(!is.na(text) & nchar(text) > label_max)) {
+    s <- text[i]
+    head <- substr(s, 1, budget)
+    # Keep the whole head when the cut already lands between words;
+    # otherwise drop the partial word at the end.
+    if (grepl("[[:space:]]", substr(s, budget + 1L, budget + 1L))) {
+      stem <- head
+    } else {
+      trimmed <- sub("[[:space:]][^[:space:]]*$", "", head)
+      stem <- if (nzchar(trimmed)) trimmed else head
+    }
+    # A marker hanging off a comma or a dash reads as a typo.
+    stem <- sub("[[:space:][:punct:]]+$", "", stem)
+    if (!nzchar(stem)) {
+      stem <- head
+    }
+    out[i] <- paste0(stem, .label_marker)
+  }
+
+  out
+}
+
+## Keep label_full and truncated honest after an override. Without this the
+## new label lands in `label`, uncapped, while `label_full` still shows the
+## text it replaced -- a column that lies is worse than no column.
+.refresh_truncation <- function(map, keys) {
+  if (!all(c("label_full", "truncated") %in% names(map))) {
+    return(map)
+  }
+  label_max <- attr(map, "label_max")
+  if (is.null(label_max)) {
+    # A hand-built map carrying these columns; assume the documented default.
+    label_max <- 40
+  }
+  idx <- which(map$key %in% keys)
+  if (!length(idx)) {
+    return(map)
+  }
+  map$label_full[idx] <- map$label[idx]
+  map$label[idx] <- .truncate_labels(map$label_full[idx], label_max)
+  map$truncated[idx] <- map$label[idx] != map$label_full[idx]
+  map
+}
+
+## =============================================================================
 #' Build a lookup map of data labels
 #'
 #' @description
@@ -7,20 +103,48 @@
 #' This is particularly useful when working with SAS datasets that include
 #' variable labels, or any dataset labeled with the \code{labelled} package.
 #'
-#' A warning is issued when more than 50\% of columns lack descriptive labels
-#' (i.e., the label is identical to the variable name). This typically indicates
-#' the data was imported from a source without labels (e.g., plain CSV) and
-#' labels should be supplied via \code{\link{add_labels}} or a
-#' \code{labels_overrides.yml} file (see \code{\link{apply_label_overrides}}).
+#' A warning is issued when more than 50\% of columns carry no label at all.
+#' This typically indicates the data was imported from a source without labels
+#' (e.g., plain CSV) and labels should be supplied via
+#' \code{\link{add_labels}} or a \code{labels_overrides.yml} file (see
+#' \code{\link{apply_label_overrides}}). A variable whose real label happens
+#' to equal its own name does \strong{not} count towards the threshold: the
+#' absent label is read as \code{NA} rather than filled, so the two cases are
+#' distinguishable here even though \code{\link{proc_contents}} cannot tell
+#' them apart.
+#'
+#' Labels longer than \code{label_max} are cut for display. The cut breaks on
+#' a word boundary and is marked with \code{...}, and the source text is kept
+#' in \code{label_full} - truncation is a view, not a change to the data.
+#' \code{\link{dataset_schema}} deliberately has no such parameter: it records
+#' the label as the source carried it, because a schema sidecar outlives the
+#' source dataset.
+#'
+#' The variable-name fallback is \strong{exempt} from the cap. A name standing
+#' in for a missing label passes through whole, however long, and
+#' \code{truncated} is \code{FALSE}. A truncated name would match nothing in
+#' the data and would read as a deliberately short label rather than as a
+#' missing one, destroying the signal the fallback exists to give.
 #'
 #' @param data A data frame, tibble, or similar object with variable labels
 #'   (typically created using the \code{labelled} package or imported from SAS).
+#' @param label_max Maximum length of a displayed label, in characters,
+#'   including the \code{...} marker. Defaults to 40, the historical
+#'   convention. Must be at least 4, so that a cut always has room to be
+#'   marked; use \code{Inf} or \code{NA} to disable truncation. Does not
+#'   apply to a variable name filled in for a missing label.
 #'
-#' @return A data frame with two columns:
+#' @return A data frame with four columns:
 #' \describe{
 #'   \item{key}{Character vector of variable names from the input dataset}
-#'   \item{label}{Character vector of variable labels. For unlabeled variables,
-#'     the variable name is used as the label (due to \code{null_action = "fill"})}
+#'   \item{label}{Character vector of labels fit to print: the variable label
+#'     cut to \code{label_max}, or the variable's own name where the source
+#'     carries no label}
+#'   \item{label_full}{The label as the source carried it, never truncated,
+#'     or the variable name where there is none}
+#'   \item{truncated}{Logical: \code{TRUE} where \code{label} was cut from
+#'     \code{label_full}. Always \code{FALSE} for a filled variable name.
+#'     \code{subset(x, truncated)} is the report of what was cut}
 #' }
 #'
 #' @seealso \code{\link{get_label}} for looking up a single label,
@@ -48,20 +172,40 @@
 #' # With sample data (has labels)
 #' dta <- sample_data(n = 20)
 #' label_map(dta)
-label_map <- function(data) {
+#'
+#' # Which labels were cut, and what they were
+#' subset(label_map(dta, label_max = 20), truncated)
+#'
+#' # Keep the source text
+#' label_map(dta, label_max = Inf)
+label_map <- function(data, label_max = 40) {
+  label_max <- .validate_label_max(label_max)
+
+  # null_action = "na" distinguishes a variable with no label from one whose
+  # label happens to equal its name. "fill" cannot: both come back as the
+  # name, and the fallback then has no way to exempt itself from the cap.
+  declared <- as.character(
+    labelled::var_label(data, unlist = TRUE, null_action = "na")
+  )
+  filled <- is.na(declared)
+  full <- ifelse(filled, names(data), declared)
+
+  display <- full
+  display[!filled] <- .truncate_labels(full[!filled], label_max)
+
   result <- data.frame(
     key = names(data),
-    label = data |>
-      labelled::var_label(
-        unlist = TRUE,
-        null_action = "fill"
-      ),
+    label = display,
+    label_full = full,
+    truncated = !filled & display != full,
     stringsAsFactors = FALSE
   )
+  rownames(result) <- NULL
+  attr(result, "label_max") <- label_max
 
-  # Warn when most columns lack real labels (key == label)
+  # Warn when most columns lack real labels
   if (nrow(result) > 0) {
-    n_missing <- sum(result$key == result$label)
+    n_missing <- sum(filled)
     pct_missing <- n_missing / nrow(result)
     if (pct_missing > 0.5) {
       warning(
@@ -269,7 +413,7 @@ add_labels <- function(label_map_df, new_labels) {
       new_rows <- new_rows[names(label_map_df)]
       label_map_df <- rbind(label_map_df, new_rows)
     }
-    return(label_map_df)
+    return(.refresh_truncation(label_map_df, new_keys))
   }
 
   # Apply labels directly to the data frame via labelled

@@ -74,13 +74,16 @@ reference:
   - type_conversion_report
 
 - title: Variable Labels
-  desc: Extract, look up, register, and override variable labels
+  desc: >
+    Extract, look up, register and override variable labels, and declare the
+    code-to-text mappings for coded variables
   contents:
   - label_map
   - get_label
   - get_labels
   - add_labels
   - apply_label_overrides
+  - apply_value_labels
   - clean_labels
 
 - title: Data Documentation

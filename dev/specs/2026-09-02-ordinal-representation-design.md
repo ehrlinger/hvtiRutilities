@@ -210,9 +210,19 @@ Record the answer with **who made it and when**, in this note.
 
 ## 8. What is not decided here
 
-- Where the ordinality declaration lives — column attribute, `vars`,
-  `_study.yml`, or the schema sidecar. Each has a different blast radius and a
-  different answer to "does it survive a parquet round trip".
+- ~~Where the ordinality declaration lives — column attribute, `vars`,
+  `_study.yml`, or the schema sidecar.~~ ✅ **Answered 2026-09-03:
+  `value_labels.yml`**, read by `apply_value_labels()`, with `ordered:` a
+  **reserved key refused with an error** until §7 is answered. The full
+  reasoning is in the label-length note's §8.1; it is one home, as §5 of this
+  note required. The column-attribute option was ruled out on this note's own
+  parquet-round-trip objection.
+
+  ⚠️ This settles *where*, not *what*. Whether the declaration carries the
+  level sequence or only the fact of ordinality is still the open item
+  below, and nothing about the ordinal half is implemented — the key errors
+  rather than half-working, so a file cannot claim ordinality that no code
+  honours.
 - Whether the declaration carries the level sequence or only the fact of
   ordinality.
 - Whether `r_data_types()` gains an argument or a companion function. §5's
@@ -231,8 +241,11 @@ Record the answer with **who made it and when**, in this note.
 - [x] Interaction with the nominal converter and label trimming stated, with
       the silent-failure collision named
 - [ ] **Taken to the statisticians; §7 answered, with who decided and when**
-- [ ] Follow-on design note for the declaration's location (§8), once §7 is
-      answered
+- [x] Follow-on design note for the declaration's location (§8). **Answered
+      2026-09-03** without waiting on §7: with no `.sas7bcat` catalogues in
+      the corpus, the declaration became the *only* source of code-to-text
+      mappings, so the nominal half could not wait. See the label-length
+      note's §8.1
 - [ ] Only then: converter and check, with tests
 
 No `NEWS.md` entry and no version bump. Nothing in `R/` changed.
