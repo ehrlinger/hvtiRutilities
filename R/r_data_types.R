@@ -30,7 +30,13 @@
     length(labelled::val_labels(x)) > 0L
 
   if (has_val_labels && use_value_labels) {
-    return(out(labelled::to_factor(x), "value_labels", "value labels"))
+    # nolabel_to_na = FALSE is the default and is named because this code
+    # depends on it: a code the catalogue does not cover survives as its own
+    # level rather than becoming NA. Losing an uncatalogued code silently is
+    # the failure this branch exists to prevent, so it is not left to a
+    # default that could move.
+    return(out(labelled::to_factor(x, nolabel_to_na = FALSE),
+               "value_labels", "value labels"))
   }
 
   # Value labels are not being used. Drop them rather than carrying them into
@@ -48,13 +54,16 @@
 
   n <- dplyr::n_distinct(x, na.rm = TRUE)
 
-  if (!is.factor(x) && !is.character(x) && n == 2L) {
-    was_logical <- is.logical(x)
+  # A column that is already logical is excluded rather than passed through
+  # as.logical() as a no-op. The output is identical either way, but a matched
+  # rule that changes nothing would have to report itself as "unchanged" --
+  # which the report defines as no rule matching at all.
+  if (!is.factor(x) && !is.character(x) && !is.logical(x) && n == 2L) {
     x <- as.logical(x)
     if (binary_factor) {
       return(out(factor(x, exclude = NA), "binary_factor", "inference"))
     }
-    return(out(x, if (was_logical) "unchanged" else "binary_logical"))
+    return(out(x, "binary_logical"))
   }
 
   if (is.character(x)) {

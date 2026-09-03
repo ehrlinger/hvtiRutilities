@@ -67,9 +67,9 @@ test_that("value labels beat factor_size", {
 })
 
 test_that("an unlabelled code keeps its code as the level text", {
-  # labelled::to_factor(levels = "default") uses the label where there is one
-  # and the value where there is not, so a code missing from the catalogue is
-  # visible in the output rather than silently dropped to NA.
+  # labelled::to_factor(nolabel_to_na = FALSE) uses the label where there is
+  # one and the value where there is not, so a code missing from the
+  # catalogue is visible in the output rather than silently dropped to NA.
   p <- haven::labelled(c(1, 2, 9, 1), labels = c(Home = 1, Rehab = 2))
 
   out <- r_data_types(data.frame(v = p), use_value_labels = TRUE)

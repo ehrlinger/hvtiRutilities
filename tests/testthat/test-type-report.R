@@ -79,3 +79,29 @@ test_that("the accessor says what went wrong rather than returning NULL", {
   expect_error(type_conversion_report(mtcars),
                "did not come from r_data_types")
 })
+
+test_that("a logical column reports unchanged because no rule matched it", {
+  # The binary branch would convert this column with as.logical(), a no-op,
+  # and then have to report a rule that changed nothing. "unchanged" means no
+  # rule matched, so the branch excludes logical inputs and the column reaches
+  # the fall-through honestly. The data is the same either way; the record of
+  # what happened to it is not.
+  dta <- data.frame(flag = c(TRUE, FALSE, TRUE, FALSE))
+
+  rep <- type_conversion_report(r_data_types(dta, use_value_labels = FALSE))
+
+  expect_equal(rep$rule, "unchanged")
+  expect_equal(rep$storage_in, "logical")
+  expect_equal(rep$storage_out, "logical")
+})
+
+test_that("binary_factor still reaches a column that was already logical", {
+  dta <- data.frame(flag = c(TRUE, FALSE, TRUE, FALSE))
+
+  out <- r_data_types(dta, binary_factor = TRUE, use_value_labels = FALSE)
+  rep <- type_conversion_report(out)
+
+  expect_s3_class(out$flag, "factor")
+  expect_equal(rep$rule, "binary_factor")
+  expect_equal(rep$level_source, "inference")
+})
