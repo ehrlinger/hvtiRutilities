@@ -12,8 +12,8 @@ test_that("label_map returns data.frame with correct structure", {
 
   expect_s3_class(result, "data.frame")
   expect_equal(nrow(result), 2)
-  expect_equal(ncol(result), 2)
-  expect_named(result, c("key", "label"))
+  expect_equal(ncol(result), 4)
+  expect_named(result, c("key", "label", "label_full", "truncated"))
 })
 
 test_that("label_map extracts correct key-label pairs", {
@@ -104,9 +104,14 @@ test_that("label_map handles long labels", {
   long_label <- paste(rep("Very long label text", 10), collapse = " ")
   labelled::var_label(dta$var1) <- long_label
 
+  # The default cap trims the printed label; label_full keeps the source
+  # text. See dev/specs/2026-09-02-label-length-and-fallback-design.md s4.
   result <- label_map(dta)
 
-  expect_equal(result$label, long_label)
+  expect_equal(result$label_full, long_label)
+  expect_lte(nchar(result$label), 40)
+  expect_true(result$truncated)
+  expect_equal(label_map(dta, label_max = Inf)$label, long_label)
 })
 
 test_that("label_map handles Unicode characters in labels", {

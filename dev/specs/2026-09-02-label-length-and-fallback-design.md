@@ -1,8 +1,11 @@
 # Labels — length, fallback, value labels, and what `r_data_types()` is doing wrong
 
 **Date:** 2026-09-02
-**Status:** **Approved.** §7 answered on 2026-09-02 by John Ehrlinger:
-option **B, then C**. All of §4, §5, §6 and §7 are buildable as designed.
+**Status:** **Approved, and largely built.** §7 answered on 2026-09-02 by
+John Ehrlinger: option **B, then C**. §8's catalogue question answered
+2026-09-03 — **there are none**; §4, §4.1, §5's input 2 and the §2.1 test all
+landed 2026-09-03. §6.1 prefix stripping and the `hvtiRdatabuild` build step
+remain.
 B has an implementation plan:
 `dev/specs/2026-09-02-r-data-types-value-labels-plan.md`.
 **Package:** `hvtiRutilities`, with a build-step piece in `hvtiRdatabuild`
@@ -374,13 +377,58 @@ unimplemented and this note has fixed the symptom again.
 
 - Where the enumerated-levels declaration lives — the same open question as
   the ordinal note's §8, and it must get **one** answer, not two.
-- **Whether `.sas7bcat` catalogues are available for the studies in the
-  corpus.** Referred to the data managers on 2026-09-02; John did not know.
-  §5's first input is worth little if they are not. §5.1 says why nothing
-  blocks on the answer, and what the fallback is. This is a question for the
-  data managers, not for the code — record the answer here when it comes.
+- ~~Whether `.sas7bcat` catalogues are available for the studies in the
+  corpus.~~ ✅ **Answered 2026-09-03: there are none.** The corpus holds
+  `.sas7bdat` files with no accompanying format catalogues, so §5's input 1
+  never fires from a read and `catalog_file` (shipped in #94) stays an
+  additive argument nobody can exercise yet. **Input 2 is therefore not a
+  supplement — it is the only source of code-to-text mappings**, exactly the
+  case §5.1 anticipated. It is settled in §8.1.
 - The REDCap path, and the upstream fix — data managers encoding REDCaps in a
   trackable way.
+
+### 8.1 Decided — the enumerated-levels declaration's home
+
+✅ **Decided 2026-09-03 by John Ehrlinger.** One home, shared with the ordinal
+note's §8, as that note required.
+
+**`value_labels.yml`**, sitting beside `config.yml` and
+`labels_overrides.yml`, read by `apply_value_labels()` and written into
+**`labelled::val_labels()`** on the column:
+
+```yaml
+approach:
+  1: Ascending aorta only
+  2: Ascending aorta plus arch
+```
+
+Three reasons this beats a new attribute:
+
+1. **It lands in the slot a catalogue would have filled.** §5's input 1 and
+   input 2 converge on one representation, so
+   `r_data_types(use_value_labels = TRUE)` from #93 consumes a declaration
+   without a second code path — and nothing downstream has to know which
+   input it came from. With no catalogues (§8), that is the whole corpus.
+2. **The precedent already exists one level up.** `apply_label_overrides()` +
+   `labels_overrides.yml` is the same shape declaring *variable* labels. This
+   is the same pattern declaring *value* labels, so the idiom transfers and
+   the study-config layout gains one file rather than one concept.
+3. **It keeps the declaration out of the display label**, which is §5's whole
+   point, and it survives being written down — unlike a column attribute,
+   which does not survive a parquet round trip. That was the ordinal note's
+   own objection to the attribute option.
+
+**What is reserved, not built.** `ordered:` is a reserved key in the same
+file and is **refused with an error**, not partly honoured. Ordinality is
+blocked on ordinal §7, and an `ordered: true` that silently did nothing
+would read in the file as though ordinality had been declared — the failure
+mode both notes exist to prevent. Reserving it now is what makes this *one*
+home rather than a nominal home plus a later ordinal one.
+
+**Priority order is enforced, not aspirational.** Value labels already on a
+column win over the file, and the variable is named in a warning. It will
+essentially never fire while there are no catalogues; it is there so that
+§5's stated order is real if one ever arrives.
 
 ## 9. Definition of done
 
@@ -394,21 +442,42 @@ unimplemented and this note has fixed the symptom again.
       It reaches `haven::read_sas()` and is validated; that a real `.sas7bcat`
       decodes is **not** proven — no catalogue exists to test against, which is
       the open item two lines below.
-- [ ] **Data managers asked whether `.sas7bcat` catalogues exist (§5.1)**;
-      answer recorded in §8
+- [x] **Data managers asked whether `.sas7bcat` catalogues exist (§5.1)**;
+      answer recorded in §8. **None exist — answered 2026-09-03.**
 - [x] B: `use_value_labels` on `r_data_types()`, default `FALSE`, warning once,
       with the per-column report (§7.3). **Done 2026-09-02**, PR #93; plan at
       `dev/specs/2026-09-02-r-data-types-value-labels-plan.md`.
-- [ ] Test asserting the fallback does not prettify (§2.1)
-- [ ] `label_max` on the display seam, with truncation discoverable (§4)
-- [ ] Test asserting a variable name longer than `label_max` is **not**
-      truncated when it stands in for a missing label (§4.1)
+- [x] Test asserting the fallback does not prettify (§2.1). **Done
+      2026-09-03**, `tests/testthat/test-label_map-fallback.R`. The fallback
+      itself needed no change; §2.1 was right that the test was the work.
+- [x] `label_max` on the display seam, with truncation discoverable (§4).
+      **Done 2026-09-03.** `label_map(label_max = 40)` only — not
+      `proc_contents()`/`proc_means()`, whose `label` column is a SAS `PROC`
+      port and is parity-checked. `label_full` and `truncated` columns make
+      the report `subset(lmap, truncated)`, so no new export.
+- [x] Test asserting a variable name longer than `label_max` is **not**
+      truncated when it stands in for a missing label (§4.1). **Done
+      2026-09-03.** Implemented by reading labels with
+      `null_action = "na"` rather than `"fill"`: `"fill"` collapses "no
+      label" and "label equal to the name" into the same string, and the cap
+      then has no way to tell a filled name from a real label.
 - [ ] Prefix stripping requires a separator; test asserts
       `"1 vessel disease"` and `"2 vessel"` survive unchanged (§6.1)
-- [ ] One home for the enumerated-levels declaration, shared with the ordinal note
+- [x] One home for the enumerated-levels declaration, shared with the
+      ordinal note. **Decided and built 2026-09-03** — see §8.1.
+      `apply_value_labels()` / `value_labels.yml`.
 - [ ] Build-step conversion in `hvtiRdatabuild`, calling this package rather than
       reimplementing it
-- [ ] Versions bumped and `NEWS.md` updated in both repos **when code lands** —
-      nothing to bump for this note
+- [ ] Prefix stripping requires a separator (§6.1) — **not done**, and
+      deliberately after §5: §6 says capture the mapping first, and §8.1 has
+      only just given it somewhere to be captured
+- [ ] Build-step conversion in `hvtiRdatabuild`, calling this package rather
+      than reimplementing it — **not done**
+- [x] `NEWS.md` updated for the code that landed 2026-09-03 under the
+      unreleased heading. Version bumped separately, per `AGENTS.md`.
 
-No `NEWS.md` entry and no version bump. Nothing in `R/` changed.
+⚠️ **`label_max` defaults to 40 in the release that introduces it**, chosen
+over the two-release deprecation window used for `convert_types` and
+`use_value_labels`. So `label_map()` returns different `label` text, and two
+extra columns, in the release this lands. `hvtiPlotR` and `hvtiRtables` are
+the consumers to check.

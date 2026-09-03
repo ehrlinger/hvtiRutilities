@@ -4,18 +4,29 @@
 \alias{label_map}
 \title{Build a lookup map of data labels}
 \usage{
-label_map(data)
+label_map(data, label_max = 40)
 }
 \arguments{
 \item{data}{A data frame, tibble, or similar object with variable labels
 (typically created using the \code{labelled} package or imported from SAS).}
+
+\item{label_max}{Maximum length of a displayed label, in characters,
+including the \code{...} marker. Defaults to 40, the historical
+convention. Use \code{Inf} or \code{NA} to disable truncation. Does not
+apply to a variable name filled in for a missing label.}
 }
 \value{
-A data frame with two columns:
+A data frame with four columns:
 \describe{
   \item{key}{Character vector of variable names from the input dataset}
-  \item{label}{Character vector of variable labels. For unlabeled variables,
-    the variable name is used as the label (due to \code{null_action = "fill"})}
+  \item{label}{Character vector of labels fit to print: the variable label
+    cut to \code{label_max}, or the variable's own name where the source
+    carries no label (due to \code{null_action = "fill"} semantics)}
+  \item{label_full}{The label as the source carried it, never truncated,
+    or the variable name where there is none}
+  \item{truncated}{Logical: \code{TRUE} where \code{label} was cut from
+    \code{label_full}. Always \code{FALSE} for a filled variable name.
+    \code{subset(x, truncated)} is the report of what was cut}
 }
 }
 \description{
@@ -29,6 +40,19 @@ A warning is issued when more than 50\% of columns lack descriptive labels
 the data was imported from a source without labels (e.g., plain CSV) and
 labels should be supplied via \code{\link{add_labels}} or a
 \code{labels_overrides.yml} file (see \code{\link{apply_label_overrides}}).
+
+Labels longer than \code{label_max} are cut for display. The cut breaks on
+a word boundary and is marked with \code{...}, and the source text is kept
+in \code{label_full} - truncation is a view, not a change to the data.
+\code{\link{dataset_schema}} deliberately has no such parameter: it records
+the label as the source carried it, because a schema sidecar outlives the
+source dataset.
+
+The variable-name fallback is \strong{exempt} from the cap. A name standing
+in for a missing label passes through whole, however long, and
+\code{truncated} is \code{FALSE}. A truncated name would match nothing in
+the data and would read as a deliberately short label rather than as a
+missing one, destroying the signal the fallback exists to give.
 }
 \examples{
 # Generate labeled survival data
@@ -48,6 +72,12 @@ print(tbl)
 # With sample data (has labels)
 dta <- sample_data(n = 20)
 label_map(dta)
+
+# Which labels were cut, and what they were
+subset(label_map(dta, label_max = 20), truncated)
+
+# Keep the source text
+label_map(dta, label_max = Inf)
 }
 \seealso{
 \code{\link{get_label}} for looking up a single label,
