@@ -21,7 +21,8 @@ fired on which column.
 
 ## Variable Labels
 
-Extract, look up, register, and override variable labels
+Extract, look up, register and override variable labels, and declare the
+code-to-text mappings for coded variables
 
 - [`label_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)
   : Build a lookup map of data labels
@@ -33,6 +34,8 @@ Extract, look up, register, and override variable labels
   : Add or update labels in a label map
 - [`apply_label_overrides()`](https://ehrlinger.github.io/hvtiRutilities/reference/apply_label_overrides.md)
   : Apply label overrides from a YAML file
+- [`apply_value_labels()`](https://ehrlinger.github.io/hvtiRutilities/reference/apply_value_labels.md)
+  : Declare value labels for coded variables from a YAML file
 - [`clean_labels()`](https://ehrlinger.github.io/hvtiRutilities/reference/clean_labels.md)
   : Apply label overrides from a YAML file (deprecated)
 

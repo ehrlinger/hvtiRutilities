@@ -3,19 +3,49 @@
 data frame with variable names (keys) and their corresponding labels.
 This is particularly useful when working with SAS datasets that include
 variable labels, or any dataset labeled with the labelled package.
-A warning is issued when more than 50% of columns lack descriptive labels
-(i.e., the label is identical to the variable name). This typically indicates
-the data was imported from a source without labels (e.g., plain CSV) and
-labels should be supplied via add_labels or a
-labels_overrides.yml file (see apply_label_overrides)."><meta property="og:description" content="Extracts variable labels from a labeled dataset and returns them as a
+A warning is issued when more than 50% of columns carry no label at all.
+This typically indicates the data was imported from a source without labels
+(e.g., plain CSV) and labels should be supplied via
+add_labels or a labels_overrides.yml file (see
+apply_label_overrides). A variable whose real label happens
+to equal its own name does not count towards the threshold: the
+absent label is read as NA rather than filled, so the two cases are
+distinguishable here even though proc_contents cannot tell
+them apart.
+Labels longer than label_max are cut for display. The cut breaks on
+a word boundary and is marked with ..., and the source text is kept
+in label_full - truncation is a view, not a change to the data.
+dataset_schema deliberately has no such parameter: it records
+the label as the source carried it, because a schema sidecar outlives the
+source dataset.
+The variable-name fallback is exempt from the cap. A name standing
+in for a missing label passes through whole, however long, and
+truncated is FALSE. A truncated name would match nothing in
+the data and would read as a deliberately short label rather than as a
+missing one, destroying the signal the fallback exists to give."><meta property="og:description" content="Extracts variable labels from a labeled dataset and returns them as a
 data frame with variable names (keys) and their corresponding labels.
 This is particularly useful when working with SAS datasets that include
 variable labels, or any dataset labeled with the labelled package.
-A warning is issued when more than 50% of columns lack descriptive labels
-(i.e., the label is identical to the variable name). This typically indicates
-the data was imported from a source without labels (e.g., plain CSV) and
-labels should be supplied via add_labels or a
-labels_overrides.yml file (see apply_label_overrides)."></head><body>
+A warning is issued when more than 50% of columns carry no label at all.
+This typically indicates the data was imported from a source without labels
+(e.g., plain CSV) and labels should be supplied via
+add_labels or a labels_overrides.yml file (see
+apply_label_overrides). A variable whose real label happens
+to equal its own name does not count towards the threshold: the
+absent label is read as NA rather than filled, so the two cases are
+distinguishable here even though proc_contents cannot tell
+them apart.
+Labels longer than label_max are cut for display. The cut breaks on
+a word boundary and is marked with ..., and the source text is kept
+in label_full - truncation is a view, not a change to the data.
+dataset_schema deliberately has no such parameter: it records
+the label as the source carried it, because a schema sidecar outlives the
+source dataset.
+The variable-name fallback is exempt from the cap. A name standing
+in for a missing label passes through whole, however long, and
+truncated is FALSE. A truncated name would match nothing in
+the data and would read as a deliberately short label rather than as a
+missing one, destroying the signal the fallback exists to give."></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -77,16 +107,31 @@ labels_overrides.yml file (see apply_label_overrides)."></head><body>
 data frame with variable names (keys) and their corresponding labels.
 This is particularly useful when working with SAS datasets that include
 variable labels, or any dataset labeled with the <code>labelled</code> package.</p>
-<p>A warning is issued when more than 50% of columns lack descriptive labels
-(i.e., the label is identical to the variable name). This typically indicates
-the data was imported from a source without labels (e.g., plain CSV) and
-labels should be supplied via <code><a href="add_labels.html">add_labels</a></code> or a
-<code>labels_overrides.yml</code> file (see <code><a href="apply_label_overrides.html">apply_label_overrides</a></code>).</p>
+<p>A warning is issued when more than 50% of columns carry no label at all.
+This typically indicates the data was imported from a source without labels
+(e.g., plain CSV) and labels should be supplied via
+<code><a href="add_labels.html">add_labels</a></code> or a <code>labels_overrides.yml</code> file (see
+<code><a href="apply_label_overrides.html">apply_label_overrides</a></code>). A variable whose real label happens
+to equal its own name does <strong>not</strong> count towards the threshold: the
+absent label is read as <code>NA</code> rather than filled, so the two cases are
+distinguishable here even though <code><a href="proc_contents.html">proc_contents</a></code> cannot tell
+them apart.</p>
+<p>Labels longer than <code>label_max</code> are cut for display. The cut breaks on
+a word boundary and is marked with <code>...</code>, and the source text is kept
+in <code>label_full</code> - truncation is a view, not a change to the data.
+<code><a href="dataset_schema.html">dataset_schema</a></code> deliberately has no such parameter: it records
+the label as the source carried it, because a schema sidecar outlives the
+source dataset.</p>
+<p>The variable-name fallback is <strong>exempt</strong> from the cap. A name standing
+in for a missing label passes through whole, however long, and
+<code>truncated</code> is <code>FALSE</code>. A truncated name would match nothing in
+the data and would read as a deliberately short label rather than as a
+missing one, destroying the signal the fallback exists to give.</p>
     </div>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">label_map</span><span class="op">(</span><span class="va">data</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">label_map</span><span class="op">(</span><span class="va">data</span>, label_max <span class="op">=</span> <span class="fl">40</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -97,15 +142,33 @@ labels should be supplied via <code><a href="add_labels.html">add_labels</a></co
 <dd><p>A data frame, tibble, or similar object with variable labels
 (typically created using the <code>labelled</code> package or imported from SAS).</p></dd>
 
+
+<dt id="arg-label-max">label_max<a class="anchor" aria-label="anchor" href="#arg-label-max"></a></dt>
+<dd><p>Maximum length of a displayed label, in characters,
+including the <code>...</code> marker. Defaults to 40, the historical
+convention. Must be at least 4, so that a cut always has room to be
+marked; use <code>Inf</code> or <code>NA</code> to disable truncation. Does not
+apply to a variable name filled in for a missing label.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A data frame with two columns:</p><dl><dt>key</dt>
+    <p>A data frame with four columns:</p><dl><dt>key</dt>
 <dd><p>Character vector of variable names from the input dataset</p></dd>
 
   <dt>label</dt>
-<dd><p>Character vector of variable labels. For unlabeled variables,
-    the variable name is used as the label (due to <code>null_action = "fill"</code>)</p></dd>
+<dd><p>Character vector of labels fit to print: the variable label
+    cut to <code>label_max</code>, or the variable's own name where the source
+    carries no label</p></dd>
+
+  <dt>label_full</dt>
+<dd><p>The label as the source carried it, never truncated,
+    or the variable name where there is none</p></dd>
+
+  <dt>truncated</dt>
+<dd><p>Logical: <code>TRUE</code> where <code>label</code> was cut from
+    <code>label_full</code>. Always <code>FALSE</code> for a filled variable name.
+    <code>subset(x, truncated)</code> is the report of what was cut</p></dd>
 
 
 </dl></div>
@@ -123,13 +186,20 @@ labels should be supplied via <code><a href="add_labels.html">add_labels</a></co
 <span class="r-in"><span><span class="va">dta</span> <span class="op">&lt;-</span> <span class="fu"><a href="generate_survival_data.html">generate_survival_data</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">50</span>, seed <span class="op">=</span> <span class="fl">42</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">lmap</span> <span class="op">&lt;-</span> <span class="fu">label_map</span><span class="op">(</span><span class="va">dta</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">lmap</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                     key                                          label</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ccfid             ccfid                                     Patient ID</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> origin_year origin_year                 Calendar year for iv_opyrs = 0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> iv_opyrs       iv_opyrs Observation interval (years) since origin_year</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> iv_dead         iv_dead                Follow-up time to death (years)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> dead               dead           Death indicator (1=dead, 0=censored)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> reop               reop                      Reoperation (1=yes, 0=no)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           key                                 label</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1       ccfid                            Patient ID</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2 origin_year        Calendar year for iv_opyrs = 0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3    iv_opyrs Observation interval (years) since...</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4     iv_dead       Follow-up time to death (years)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5        dead  Death indicator (1=dead, 0=censored)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6        reop             Reoperation (1=yes, 0=no)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                       label_full truncated</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1                                     Patient ID     FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2                 Calendar year for iv_opyrs = 0     FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3 Observation interval (years) since origin_year      TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4                Follow-up time to death (years)     FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5           Death indicator (1=dead, 0=censored)     FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6                      Reoperation (1=yes, 0=no)     FALSE</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Use for publication-ready tables</span></span></span>
 <span class="r-in"><span><span class="va">summary_vars</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"age"</span>, <span class="st">"bmi"</span>, <span class="st">"hgb_bs"</span><span class="op">)</span></span></span>
@@ -147,14 +217,30 @@ labels should be supplied via <code><a href="add_labels.html">add_labels</a></co
 <span class="r-in"><span><span class="co"># With sample data (has labels)</span></span></span>
 <span class="r-in"><span><span class="va">dta</span> <span class="op">&lt;-</span> <span class="fu"><a href="sample_data.html">sample_data</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">label_map</span><span class="op">(</span><span class="va">dta</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>             key                label</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> id           id   Patient Identifier</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> boolean boolean     Binary Indicator</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> logical logical       Logical Status</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> f_real   f_real Random Uniform Value</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> float     float  Random Normal Value</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> char       char               Gender</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> factor   factor       Category Group</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       key                label           label_full truncated</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1      id   Patient Identifier   Patient Identifier     FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2 boolean     Binary Indicator     Binary Indicator     FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3 logical       Logical Status       Logical Status     FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4  f_real Random Uniform Value Random Uniform Value     FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5   float  Random Normal Value  Random Normal Value     FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6    char               Gender               Gender     FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 7  factor       Category Group       Category Group     FALSE</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Which labels were cut, and what they were</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="fu">label_map</span><span class="op">(</span><span class="va">dta</span>, label_max <span class="op">=</span> <span class="fl">20</span><span class="op">)</span>, <span class="va">truncated</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] key        label      label_full truncated </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;0 rows&gt; (or 0-length row.names)</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Keep the source text</span></span></span>
+<span class="r-in"><span><span class="fu">label_map</span><span class="op">(</span><span class="va">dta</span>, label_max <span class="op">=</span> <span class="cn">Inf</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       key                label           label_full truncated</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1      id   Patient Identifier   Patient Identifier     FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2 boolean     Binary Indicator     Binary Indicator     FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3 logical       Logical Status       Logical Status     FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4  f_real Random Uniform Value Random Uniform Value     FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5   float  Random Normal Value  Random Normal Value     FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6    char               Gender               Gender     FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 7  factor       Category Group       Category Group     FALSE</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

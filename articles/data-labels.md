@@ -55,17 +55,28 @@ dta <- generate_survival_data(n = 200, seed = 42)
 
 lmap <- label_map(dta)
 head(lmap, 10)
-#>                     key                                          label
-#> ccfid             ccfid                                     Patient ID
-#> origin_year origin_year                 Calendar year for iv_opyrs = 0
-#> iv_opyrs       iv_opyrs Observation interval (years) since origin_year
-#> iv_dead         iv_dead                Follow-up time to death (years)
-#> dead               dead           Death indicator (1=dead, 0=censored)
-#> reop               reop                      Reoperation (1=yes, 0=no)
-#> iv_reop         iv_reop          Follow-up time to reoperation (years)
-#> age                 age                         Age at surgery (years)
-#> sex                 sex                                            Sex
-#> bmi                 bmi                        Body mass index (kg/m2)
+#>            key                                 label
+#> 1        ccfid                            Patient ID
+#> 2  origin_year        Calendar year for iv_opyrs = 0
+#> 3     iv_opyrs Observation interval (years) since...
+#> 4      iv_dead       Follow-up time to death (years)
+#> 5         dead  Death indicator (1=dead, 0=censored)
+#> 6         reop             Reoperation (1=yes, 0=no)
+#> 7      iv_reop Follow-up time to reoperation (years)
+#> 8          age                Age at surgery (years)
+#> 9          sex                                   Sex
+#> 10         bmi               Body mass index (kg/m2)
+#>                                        label_full truncated
+#> 1                                      Patient ID     FALSE
+#> 2                  Calendar year for iv_opyrs = 0     FALSE
+#> 3  Observation interval (years) since origin_year      TRUE
+#> 4                 Follow-up time to death (years)     FALSE
+#> 5            Death indicator (1=dead, 0=censored)     FALSE
+#> 6                       Reoperation (1=yes, 0=no)     FALSE
+#> 7           Follow-up time to reoperation (years)     FALSE
+#> 8                          Age at surgery (years)     FALSE
+#> 9                                             Sex     FALSE
+#> 10                        Body mass index (kg/m2)     FALSE
 ```
 
 The result is a two-column data frame: `key` (variable name) and `label`
@@ -91,10 +102,10 @@ lmap_csv <- label_map(csv_data)
 #> Warning: 3 of 3 variables (100%) lack descriptive labels. Consider adding a
 #> labels_overrides.yml or using add_labels().
 print(lmap_csv)
-#>           key  label
-#> pat_id pat_id pat_id
-#> hgb       hgb    hgb
-#> egfr     egfr   egfr
+#>      key  label label_full truncated
+#> 1 pat_id pat_id     pat_id     FALSE
+#> 2    hgb    hgb        hgb     FALSE
+#> 3   egfr   egfr       egfr     FALSE
 ```
 
 The warning is intentional: it prevents the common mistake of generating
@@ -144,9 +155,12 @@ automatically picks up the new labels:
 
 lmap <- label_map(dta)
 lmap[lmap$key %in% c("age_group", "ef_low"), ]
-#>                 key                            label
-#> age_group age_group             Age Group at Surgery
-#> ef_low       ef_low Reduced Ejection Fraction (<40%)
+#>          key                            label                       label_full
+#> 25 age_group             Age Group at Surgery             Age Group at Surgery
+#> 26    ef_low Reduced Ejection Fraction (<40%) Reduced Ejection Fraction (<40%)
+#>    truncated
+#> 25     FALSE
+#> 26     FALSE
 ```
 
 #### Method B: Update the label map (for reporting)
@@ -168,11 +182,16 @@ lmap <- add_labels(lmap, c(
 ))
 
 tail(lmap, 4)
-#>                       key                            label
-#> hypertension hypertension                     Hypertension
-#> 1               age_group             Age Group at Surgery
-#> 2                  ef_low Reduced Ejection Fraction (<40%)
-#> 3              risk_score             Composite Risk Score
+#>             key                            label
+#> 24 hypertension                     Hypertension
+#> 25    age_group             Age Group at Surgery
+#> 26       ef_low Reduced Ejection Fraction (<40%)
+#> 27   risk_score             Composite Risk Score
+#>                          label_full truncated
+#> 24                     Hypertension     FALSE
+#> 25             Age Group at Surgery     FALSE
+#> 26 Reduced Ejection Fraction (<40%)     FALSE
+#> 27             Composite Risk Score     FALSE
 ```
 
 #### Which method should I use?
@@ -211,11 +230,11 @@ lmap <- label_map(generate_survival_data(n = 50, seed = 1))
 # Apply study-specific overrides
 lmap <- apply_label_overrides(lmap, overrides_file = tmp_overrides)
 lmap[lmap$key %in% c("lvefvs_b", "hgb_bs", "gfr_bs", "nyha_class"), ]
-#>                   key                label
-#> hgb_bs         hgb_bs    Hemoglobin (g/dL)
-#> gfr_bs         gfr_bs eGFR (mL/min/1.73m2)
-#> lvefvs_b     lvefvs_b    Baseline LVEF (%)
-#> nyha_class nyha_class           NYHA Class
+#>           key                label           label_full truncated
+#> 11     hgb_bs    Hemoglobin (g/dL)    Hemoglobin (g/dL)     FALSE
+#> 14     gfr_bs eGFR (mL/min/1.73m2) eGFR (mL/min/1.73m2)     FALSE
+#> 15   lvefvs_b    Baseline LVEF (%)    Baseline LVEF (%)     FALSE
+#> 22 nyha_class           NYHA Class           NYHA Class     FALSE
 ```
 
 In a real project, `labels_overrides.yml` lives alongside `config.yml`
@@ -404,17 +423,28 @@ cat("Variables:", nrow(lmap), "\n")
 cat("All labeled:", !any(lmap$key == lmap$label), "\n")
 #> All labeled: TRUE
 head(lmap, 10)
-#>                     key                                          label
-#> ccfid             ccfid                                     Patient ID
-#> origin_year origin_year                 Calendar year for iv_opyrs = 0
-#> iv_opyrs       iv_opyrs Observation interval (years) since origin_year
-#> iv_dead         iv_dead                Follow-up time to death (years)
-#> dead               dead           Death indicator (1=dead, 0=censored)
-#> reop               reop                      Reoperation (1=yes, 0=no)
-#> iv_reop         iv_reop          Follow-up time to reoperation (years)
-#> age                 age                         Age at surgery (years)
-#> sex                 sex                                            Sex
-#> bmi                 bmi                        Body mass index (kg/m2)
+#>            key                                 label
+#> 1        ccfid                            Patient ID
+#> 2  origin_year        Calendar year for iv_opyrs = 0
+#> 3     iv_opyrs Observation interval (years) since...
+#> 4      iv_dead       Follow-up time to death (years)
+#> 5         dead  Death indicator (1=dead, 0=censored)
+#> 6         reop             Reoperation (1=yes, 0=no)
+#> 7      iv_reop Follow-up time to reoperation (years)
+#> 8          age                Age at surgery (years)
+#> 9          sex                                   Sex
+#> 10         bmi               Body mass index (kg/m2)
+#>                                        label_full truncated
+#> 1                                      Patient ID     FALSE
+#> 2                  Calendar year for iv_opyrs = 0     FALSE
+#> 3  Observation interval (years) since origin_year      TRUE
+#> 4                 Follow-up time to death (years)     FALSE
+#> 5            Death indicator (1=dead, 0=censored)     FALSE
+#> 6                       Reoperation (1=yes, 0=no)     FALSE
+#> 7           Follow-up time to reoperation (years)     FALSE
+#> 8                          Age at surgery (years)     FALSE
+#> 9                                             Sex     FALSE
+#> 10                        Body mass index (kg/m2)     FALSE
 ```
 
 ## Labels and `r_data_types()`

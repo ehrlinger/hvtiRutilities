@@ -192,31 +192,56 @@ After conversion:
 
 lmap <- label_map(model_data)
 print(lmap)
-#>                       key                                          label
-#> ccfid               ccfid                                     Patient ID
-#> origin_year   origin_year                 Calendar year for iv_opyrs = 0
-#> iv_opyrs         iv_opyrs Observation interval (years) since origin_year
-#> iv_dead           iv_dead                Follow-up time to death (years)
-#> dead                 dead           Death indicator (1=dead, 0=censored)
-#> reop                 reop                      Reoperation (1=yes, 0=no)
-#> iv_reop           iv_reop          Follow-up time to reoperation (years)
-#> age                   age                         Age at surgery (years)
-#> sex                   sex                                            Sex
-#> bmi                   bmi                        Body mass index (kg/m2)
-#> hgb_bs             hgb_bs                     Baseline hemoglobin (g/dL)
-#> wbc_bs             wbc_bs                      Baseline WBC count (K/uL)
-#> plate_bs         plate_bs                 Baseline platelet count (K/uL)
-#> gfr_bs             gfr_bs                  Baseline eGFR (mL/min/1.73m2)
-#> lvefvs_b         lvefvs_b              Baseline LV ejection fraction (%)
-#> lvmass_b         lvmass_b                           Baseline LV mass (g)
-#> lvmsi_b           lvmsi_b                  Baseline LV mass index (g/m2)
-#> stvoli_b         stvoli_b           Baseline SV index - systolic (mL/m2)
-#> stvold_b         stvold_b          Baseline SV index - diastolic (mL/m2)
-#> bypass_time   bypass_time              Cardiopulmonary bypass time (min)
-#> xclamp_time   xclamp_time                  Aortic cross-clamp time (min)
-#> nyha_class     nyha_class                          NYHA functional class
-#> diabetes         diabetes                              Diabetes mellitus
-#> hypertension hypertension                                   Hypertension
+#>             key                                 label
+#> 1         ccfid                            Patient ID
+#> 2   origin_year        Calendar year for iv_opyrs = 0
+#> 3      iv_opyrs Observation interval (years) since...
+#> 4       iv_dead       Follow-up time to death (years)
+#> 5          dead  Death indicator (1=dead, 0=censored)
+#> 6          reop             Reoperation (1=yes, 0=no)
+#> 7       iv_reop Follow-up time to reoperation (years)
+#> 8           age                Age at surgery (years)
+#> 9           sex                                   Sex
+#> 10          bmi               Body mass index (kg/m2)
+#> 11       hgb_bs            Baseline hemoglobin (g/dL)
+#> 12       wbc_bs             Baseline WBC count (K/uL)
+#> 13     plate_bs        Baseline platelet count (K/uL)
+#> 14       gfr_bs         Baseline eGFR (mL/min/1.73m2)
+#> 15     lvefvs_b     Baseline LV ejection fraction (%)
+#> 16     lvmass_b                  Baseline LV mass (g)
+#> 17      lvmsi_b         Baseline LV mass index (g/m2)
+#> 18     stvoli_b  Baseline SV index - systolic (mL/m2)
+#> 19     stvold_b Baseline SV index - diastolic (mL/m2)
+#> 20  bypass_time     Cardiopulmonary bypass time (min)
+#> 21  xclamp_time         Aortic cross-clamp time (min)
+#> 22   nyha_class                 NYHA functional class
+#> 23     diabetes                     Diabetes mellitus
+#> 24 hypertension                          Hypertension
+#>                                        label_full truncated
+#> 1                                      Patient ID     FALSE
+#> 2                  Calendar year for iv_opyrs = 0     FALSE
+#> 3  Observation interval (years) since origin_year      TRUE
+#> 4                 Follow-up time to death (years)     FALSE
+#> 5            Death indicator (1=dead, 0=censored)     FALSE
+#> 6                       Reoperation (1=yes, 0=no)     FALSE
+#> 7           Follow-up time to reoperation (years)     FALSE
+#> 8                          Age at surgery (years)     FALSE
+#> 9                                             Sex     FALSE
+#> 10                        Body mass index (kg/m2)     FALSE
+#> 11                     Baseline hemoglobin (g/dL)     FALSE
+#> 12                      Baseline WBC count (K/uL)     FALSE
+#> 13                 Baseline platelet count (K/uL)     FALSE
+#> 14                  Baseline eGFR (mL/min/1.73m2)     FALSE
+#> 15              Baseline LV ejection fraction (%)     FALSE
+#> 16                           Baseline LV mass (g)     FALSE
+#> 17                  Baseline LV mass index (g/m2)     FALSE
+#> 18           Baseline SV index - systolic (mL/m2)     FALSE
+#> 19          Baseline SV index - diastolic (mL/m2)     FALSE
+#> 20              Cardiopulmonary bypass time (min)     FALSE
+#> 21                  Aortic cross-clamp time (min)     FALSE
+#> 22                          NYHA functional class     FALSE
+#> 23                              Diabetes mellitus     FALSE
+#> 24                                   Hypertension     FALSE
 ```
 
 The label map is useful for annotating tables and plots with descriptive

@@ -304,31 +304,56 @@
 <div class="sourceCode cell-code" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">lmap</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/label_map.html">label_map</a></span><span class="op">(</span><span class="va">model_data</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">lmap</span><span class="op">)</span></span>
-<span><span class="co">#&gt;                       key                                          label</span></span>
-<span><span class="co">#&gt; ccfid               ccfid                                     Patient ID</span></span>
-<span><span class="co">#&gt; origin_year   origin_year                 Calendar year for iv_opyrs = 0</span></span>
-<span><span class="co">#&gt; iv_opyrs         iv_opyrs Observation interval (years) since origin_year</span></span>
-<span><span class="co">#&gt; iv_dead           iv_dead                Follow-up time to death (years)</span></span>
-<span><span class="co">#&gt; dead                 dead           Death indicator (1=dead, 0=censored)</span></span>
-<span><span class="co">#&gt; reop                 reop                      Reoperation (1=yes, 0=no)</span></span>
-<span><span class="co">#&gt; iv_reop           iv_reop          Follow-up time to reoperation (years)</span></span>
-<span><span class="co">#&gt; age                   age                         Age at surgery (years)</span></span>
-<span><span class="co">#&gt; sex                   sex                                            Sex</span></span>
-<span><span class="co">#&gt; bmi                   bmi                        Body mass index (kg/m2)</span></span>
-<span><span class="co">#&gt; hgb_bs             hgb_bs                     Baseline hemoglobin (g/dL)</span></span>
-<span><span class="co">#&gt; wbc_bs             wbc_bs                      Baseline WBC count (K/uL)</span></span>
-<span><span class="co">#&gt; plate_bs         plate_bs                 Baseline platelet count (K/uL)</span></span>
-<span><span class="co">#&gt; gfr_bs             gfr_bs                  Baseline eGFR (mL/min/1.73m2)</span></span>
-<span><span class="co">#&gt; lvefvs_b         lvefvs_b              Baseline LV ejection fraction (%)</span></span>
-<span><span class="co">#&gt; lvmass_b         lvmass_b                           Baseline LV mass (g)</span></span>
-<span><span class="co">#&gt; lvmsi_b           lvmsi_b                  Baseline LV mass index (g/m2)</span></span>
-<span><span class="co">#&gt; stvoli_b         stvoli_b           Baseline SV index - systolic (mL/m2)</span></span>
-<span><span class="co">#&gt; stvold_b         stvold_b          Baseline SV index - diastolic (mL/m2)</span></span>
-<span><span class="co">#&gt; bypass_time   bypass_time              Cardiopulmonary bypass time (min)</span></span>
-<span><span class="co">#&gt; xclamp_time   xclamp_time                  Aortic cross-clamp time (min)</span></span>
-<span><span class="co">#&gt; nyha_class     nyha_class                          NYHA functional class</span></span>
-<span><span class="co">#&gt; diabetes         diabetes                              Diabetes mellitus</span></span>
-<span><span class="co">#&gt; hypertension hypertension                                   Hypertension</span></span></code></pre></div>
+<span><span class="co">#&gt;             key                                 label</span></span>
+<span><span class="co">#&gt; 1         ccfid                            Patient ID</span></span>
+<span><span class="co">#&gt; 2   origin_year        Calendar year for iv_opyrs = 0</span></span>
+<span><span class="co">#&gt; 3      iv_opyrs Observation interval (years) since...</span></span>
+<span><span class="co">#&gt; 4       iv_dead       Follow-up time to death (years)</span></span>
+<span><span class="co">#&gt; 5          dead  Death indicator (1=dead, 0=censored)</span></span>
+<span><span class="co">#&gt; 6          reop             Reoperation (1=yes, 0=no)</span></span>
+<span><span class="co">#&gt; 7       iv_reop Follow-up time to reoperation (years)</span></span>
+<span><span class="co">#&gt; 8           age                Age at surgery (years)</span></span>
+<span><span class="co">#&gt; 9           sex                                   Sex</span></span>
+<span><span class="co">#&gt; 10          bmi               Body mass index (kg/m2)</span></span>
+<span><span class="co">#&gt; 11       hgb_bs            Baseline hemoglobin (g/dL)</span></span>
+<span><span class="co">#&gt; 12       wbc_bs             Baseline WBC count (K/uL)</span></span>
+<span><span class="co">#&gt; 13     plate_bs        Baseline platelet count (K/uL)</span></span>
+<span><span class="co">#&gt; 14       gfr_bs         Baseline eGFR (mL/min/1.73m2)</span></span>
+<span><span class="co">#&gt; 15     lvefvs_b     Baseline LV ejection fraction (%)</span></span>
+<span><span class="co">#&gt; 16     lvmass_b                  Baseline LV mass (g)</span></span>
+<span><span class="co">#&gt; 17      lvmsi_b         Baseline LV mass index (g/m2)</span></span>
+<span><span class="co">#&gt; 18     stvoli_b  Baseline SV index - systolic (mL/m2)</span></span>
+<span><span class="co">#&gt; 19     stvold_b Baseline SV index - diastolic (mL/m2)</span></span>
+<span><span class="co">#&gt; 20  bypass_time     Cardiopulmonary bypass time (min)</span></span>
+<span><span class="co">#&gt; 21  xclamp_time         Aortic cross-clamp time (min)</span></span>
+<span><span class="co">#&gt; 22   nyha_class                 NYHA functional class</span></span>
+<span><span class="co">#&gt; 23     diabetes                     Diabetes mellitus</span></span>
+<span><span class="co">#&gt; 24 hypertension                          Hypertension</span></span>
+<span><span class="co">#&gt;                                        label_full truncated</span></span>
+<span><span class="co">#&gt; 1                                      Patient ID     FALSE</span></span>
+<span><span class="co">#&gt; 2                  Calendar year for iv_opyrs = 0     FALSE</span></span>
+<span><span class="co">#&gt; 3  Observation interval (years) since origin_year      TRUE</span></span>
+<span><span class="co">#&gt; 4                 Follow-up time to death (years)     FALSE</span></span>
+<span><span class="co">#&gt; 5            Death indicator (1=dead, 0=censored)     FALSE</span></span>
+<span><span class="co">#&gt; 6                       Reoperation (1=yes, 0=no)     FALSE</span></span>
+<span><span class="co">#&gt; 7           Follow-up time to reoperation (years)     FALSE</span></span>
+<span><span class="co">#&gt; 8                          Age at surgery (years)     FALSE</span></span>
+<span><span class="co">#&gt; 9                                             Sex     FALSE</span></span>
+<span><span class="co">#&gt; 10                        Body mass index (kg/m2)     FALSE</span></span>
+<span><span class="co">#&gt; 11                     Baseline hemoglobin (g/dL)     FALSE</span></span>
+<span><span class="co">#&gt; 12                      Baseline WBC count (K/uL)     FALSE</span></span>
+<span><span class="co">#&gt; 13                 Baseline platelet count (K/uL)     FALSE</span></span>
+<span><span class="co">#&gt; 14                  Baseline eGFR (mL/min/1.73m2)     FALSE</span></span>
+<span><span class="co">#&gt; 15              Baseline LV ejection fraction (%)     FALSE</span></span>
+<span><span class="co">#&gt; 16                           Baseline LV mass (g)     FALSE</span></span>
+<span><span class="co">#&gt; 17                  Baseline LV mass index (g/m2)     FALSE</span></span>
+<span><span class="co">#&gt; 18           Baseline SV index - systolic (mL/m2)     FALSE</span></span>
+<span><span class="co">#&gt; 19          Baseline SV index - diastolic (mL/m2)     FALSE</span></span>
+<span><span class="co">#&gt; 20              Cardiopulmonary bypass time (min)     FALSE</span></span>
+<span><span class="co">#&gt; 21                  Aortic cross-clamp time (min)     FALSE</span></span>
+<span><span class="co">#&gt; 22                          NYHA functional class     FALSE</span></span>
+<span><span class="co">#&gt; 23                              Diabetes mellitus     FALSE</span></span>
+<span><span class="co">#&gt; 24                                   Hypertension     FALSE</span></span></code></pre></div>
 </div>
 <p>The label map is useful for annotating tables and plots with descriptive names.</p>
 </section></section><section class="level2"><h2 id="preparing-data-for-survival-analysis">Preparing Data for Survival Analysis<a class="anchor" aria-label="anchor" href="#preparing-data-for-survival-analysis"></a>

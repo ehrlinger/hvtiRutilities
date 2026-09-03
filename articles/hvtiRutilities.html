@@ -159,17 +159,17 @@
 <span><span class="co">#&gt; 'data.frame':    100 obs. of  7 variables:</span></span>
 <span><span class="co">#&gt;  $ id     : int  1 2 3 4 5 6 7 8 9 10 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Patient Identifier"</span></span>
-<span><span class="co">#&gt;  $ boolean: int  2 1 1 2 2 1 2 1 1 2 ...</span></span>
+<span><span class="co">#&gt;  $ boolean: int  1 1 1 1 1 1 2 2 2 1 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Binary Indicator"</span></span>
-<span><span class="co">#&gt;  $ logical: chr  "T" "F" "F" "T" ...</span></span>
+<span><span class="co">#&gt;  $ logical: chr  "F" "F" "F" "F" ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Logical Status"</span></span>
-<span><span class="co">#&gt;  $ f_real : num  0.971 0.809 0.462 0.528 0.945 ...</span></span>
+<span><span class="co">#&gt;  $ f_real : num  0.69 0.69 0.574 0.532 0.532 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Random Uniform Value"</span></span>
-<span><span class="co">#&gt;  $ float  : num  0.0771 -1.1078 0.6591 -0.6126 0.374 ...</span></span>
+<span><span class="co">#&gt;  $ float  : num  1.624 -0.77 -0.446 0.924 2.116 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Random Normal Value"</span></span>
-<span><span class="co">#&gt;  $ char   : chr  "female" "male" "male" "male" ...</span></span>
+<span><span class="co">#&gt;  $ char   : chr  "female" "female" "male" "male" ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Gender"</span></span>
-<span><span class="co">#&gt;  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 4 3 3 4 4 5 3 4 1 4 ...</span></span>
+<span><span class="co">#&gt;  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 3 2 1 3 4 4 2 5 1 4 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Category Group"</span></span></code></pre></div>
 </div>
 <p>Notice that the sample data has: - <code>boolean</code>: integer values (1, 2) - <code>logical</code>: character values (“F”, “T”) - <code>char</code>: character values (“male”, “female”)</p>
@@ -191,15 +191,15 @@
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Patient Identifier"</span></span>
 <span><span class="co">#&gt;  $ boolean: logi  TRUE TRUE TRUE TRUE TRUE TRUE ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Binary Indicator"</span></span>
-<span><span class="co">#&gt;  $ logical: Factor w/ 2 levels "F","T": 2 1 1 2 2 1 2 1 1 2 ...</span></span>
+<span><span class="co">#&gt;  $ logical: Factor w/ 2 levels "F","T": 1 1 1 1 1 1 2 2 2 1 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Logical Status"</span></span>
-<span><span class="co">#&gt;  $ f_real : Factor w/ 9 levels "0.403186748269945",..: 9 5 2 3 8 6 9 2 9 2 ...</span></span>
+<span><span class="co">#&gt;  $ f_real : Factor w/ 9 levels "0.160540754674003",..: 7 7 6 5 5 3 4 9 4 9 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Random Uniform Value"</span></span>
-<span><span class="co">#&gt;  $ float  : num  0.0771 -1.1078 0.6591 -0.6126 0.374 ...</span></span>
+<span><span class="co">#&gt;  $ float  : num  1.624 -0.77 -0.446 0.924 2.116 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Random Normal Value"</span></span>
-<span><span class="co">#&gt;  $ char   : Factor w/ 2 levels "female","male": 1 2 2 2 1 2 1 2 2 2 ...</span></span>
+<span><span class="co">#&gt;  $ char   : Factor w/ 2 levels "female","male": 1 1 2 2 2 1 2 2 2 1 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Gender"</span></span>
-<span><span class="co">#&gt;  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 4 3 3 4 4 5 3 4 1 4 ...</span></span>
+<span><span class="co">#&gt;  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 3 2 1 3 4 4 2 5 1 4 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Category Group"</span></span>
 <span><span class="co">#&gt;  - attr(*, "hvti_type_conversion")='data.frame': 7 obs. of  6 variables:</span></span>
 <span><span class="co">#&gt;   ..$ variable    : chr [1:7] "id" "boolean" "logical" "f_real" ...</span></span>
@@ -319,15 +319,24 @@
 <span><span class="co"># Extract all labels into a lookup table</span></span>
 <span><span class="va">lmap</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/label_map.html">label_map</a></span><span class="op">(</span><span class="va">dta</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">lmap</span>, <span class="fl">8</span><span class="op">)</span></span>
-<span><span class="co">#&gt;                     key                                          label</span></span>
-<span><span class="co">#&gt; ccfid             ccfid                                     Patient ID</span></span>
-<span><span class="co">#&gt; origin_year origin_year                 Calendar year for iv_opyrs = 0</span></span>
-<span><span class="co">#&gt; iv_opyrs       iv_opyrs Observation interval (years) since origin_year</span></span>
-<span><span class="co">#&gt; iv_dead         iv_dead                Follow-up time to death (years)</span></span>
-<span><span class="co">#&gt; dead               dead           Death indicator (1=dead, 0=censored)</span></span>
-<span><span class="co">#&gt; reop               reop                      Reoperation (1=yes, 0=no)</span></span>
-<span><span class="co">#&gt; iv_reop         iv_reop          Follow-up time to reoperation (years)</span></span>
-<span><span class="co">#&gt; age                 age                         Age at surgery (years)</span></span></code></pre></div>
+<span><span class="co">#&gt;           key                                 label</span></span>
+<span><span class="co">#&gt; 1       ccfid                            Patient ID</span></span>
+<span><span class="co">#&gt; 2 origin_year        Calendar year for iv_opyrs = 0</span></span>
+<span><span class="co">#&gt; 3    iv_opyrs Observation interval (years) since...</span></span>
+<span><span class="co">#&gt; 4     iv_dead       Follow-up time to death (years)</span></span>
+<span><span class="co">#&gt; 5        dead  Death indicator (1=dead, 0=censored)</span></span>
+<span><span class="co">#&gt; 6        reop             Reoperation (1=yes, 0=no)</span></span>
+<span><span class="co">#&gt; 7     iv_reop Follow-up time to reoperation (years)</span></span>
+<span><span class="co">#&gt; 8         age                Age at surgery (years)</span></span>
+<span><span class="co">#&gt;                                       label_full truncated</span></span>
+<span><span class="co">#&gt; 1                                     Patient ID     FALSE</span></span>
+<span><span class="co">#&gt; 2                 Calendar year for iv_opyrs = 0     FALSE</span></span>
+<span><span class="co">#&gt; 3 Observation interval (years) since origin_year      TRUE</span></span>
+<span><span class="co">#&gt; 4                Follow-up time to death (years)     FALSE</span></span>
+<span><span class="co">#&gt; 5           Death indicator (1=dead, 0=censored)     FALSE</span></span>
+<span><span class="co">#&gt; 6                      Reoperation (1=yes, 0=no)     FALSE</span></span>
+<span><span class="co">#&gt; 7          Follow-up time to reoperation (years)     FALSE</span></span>
+<span><span class="co">#&gt; 8                         Age at surgery (years)     FALSE</span></span></code></pre></div>
 </div>
 <p>Use <code><a href="../reference/get_label.html">get_label()</a></code> for safe single-variable lookup — it errors on typos instead of silently returning <code>NA</code>:</p>
 <div class="cell">
