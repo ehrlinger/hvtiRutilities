@@ -100,13 +100,20 @@ read_clinical_data <- function(file, convert_types = FALSE, ...,
   # Reading a catalog and then throwing away what it decoded is the silent
   # loss this argument exists to end, so it is named rather than left to the
   # once-per-session warning in r_data_types(), which may already be spent.
+  # The test is on the VALUE, not on whether the name was passed. An explicit
+  # use_value_labels = FALSE alongside a catalog is the same waste as omitting
+  # it -- the catalog is read and everything it decoded is then thrown away --
+  # and both escapes named in the message are honest: dropping catalog_file
+  # yields byte-identical output, since a catalog whose labels are zapped
+  # changes nothing.
   if (!is.null(catalog_file) && isTRUE(convert_types) &&
-        !("use_value_labels" %in% ...names())) {
+        !isTRUE(list(...)[["use_value_labels"]])) {
     warning(
       "read_clinical_data(): a 'catalog_file' was supplied, but ",
-      "'use_value_labels' was not, so r_data_types() will convert the ",
+      "'use_value_labels' is not TRUE, so r_data_types() will convert the ",
       "value labels the catalog decoded back to their numeric codes and ",
-      "discard the level text. Pass use_value_labels = TRUE to keep it.",
+      "discard the level text. Pass use_value_labels = TRUE to keep it, or ",
+      "drop catalog_file -- without it the result is the same.",
       call. = FALSE
     )
   }

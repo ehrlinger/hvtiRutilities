@@ -23,17 +23,32 @@ test_that("omitting catalog_file reads exactly as before", {
 })
 
 test_that("catalog_file reaches haven::read_sas()", {
-  # A file that exists but is not a catalogue: haven's own parse error is the
-  # evidence the argument was forwarded. Asserting the happy path is not
-  # possible without a real .sas7bcat, but an argument that is silently
-  # dropped would read the data and succeed here.
+  # A file that exists but is not a catalogue. The same read succeeds without
+  # it, so an error here can only come from the one thing that changed -- and
+  # an argument that were silently dropped would read the data and succeed.
+  #
+  # The assertion is deliberately NOT on haven's message text, which belongs
+  # to ReadStat and can move between versions and platforms. It is instead
+  # that an error occurred AND that it is not one of ours: every validation
+  # in read_clinical_data() passes for this call, so any error left has to
+  # have come from downstream. That survives an upstream rewording without
+  # weakening into "something, somewhere, failed".
   bogus <- withr::local_tempfile(fileext = ".sas7bcat")
   writeLines("not a catalog", bogus)
 
-  expect_error(
+  expect_equal(nrow(read_clinical_data(sas_fixture(),
+                                       convert_types = FALSE)), 150)
+
+  msg <- tryCatch({
     read_clinical_data(sas_fixture(), convert_types = FALSE,
-                       catalog_file = bogus),
-    "Failed to parse"
+                       catalog_file = bogus)
+    NA_character_
+  }, error = function(e) conditionMessage(e))
+
+  expect_false(is.na(msg))
+  expect_no_match(
+    msg,
+    "Format catalog not found|only applies to|single file path|File not found"
   )
 })
 
@@ -86,6 +101,22 @@ test_that("fetching a catalogue then discarding it warns", {
   expect_warning(
     try(read_clinical_data(sas_fixture(), convert_types = TRUE,
                            catalog_file = bogus), silent = TRUE),
+    "use_value_labels"
+  )
+})
+
+test_that("an explicit use_value_labels = FALSE still warns", {
+  # Naming the argument is not the point; its value is. FALSE alongside a
+  # catalog reads the mapping and discards it just as omitting it does, so
+  # letting the name alone silence the warning would hide the same waste
+  # behind one extra word.
+  bogus <- withr::local_tempfile(fileext = ".sas7bcat")
+  writeLines("not a catalog", bogus)
+
+  expect_warning(
+    try(read_clinical_data(sas_fixture(), convert_types = TRUE,
+                           catalog_file = bogus, use_value_labels = FALSE),
+        silent = TRUE),
     "use_value_labels"
   )
 })
