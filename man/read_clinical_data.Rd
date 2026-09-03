@@ -4,7 +4,7 @@
 \alias{read_clinical_data}
 \title{Read and prepare a clinical dataset in one step}
 \usage{
-read_clinical_data(file, convert_types = FALSE, ...)
+read_clinical_data(file, convert_types = FALSE, ..., catalog_file = NULL)
 }
 \arguments{
 \item{file}{Character. Path to the dataset file.}
@@ -16,8 +16,15 @@ wrong for 0/1 event and censoring flags, so type conversion belongs to a
 declared variable-derivation step rather than to reading.}
 
 \item{...}{Additional arguments passed to \code{\link{r_data_types}}
-(e.g., \code{factor_size}, \code{skip_vars}, \code{binary_factor}).
-Ignored when \code{convert_types = FALSE}.}
+(e.g., \code{factor_size}, \code{skip_vars}, \code{binary_factor},
+\code{use_value_labels}). Ignored when \code{convert_types = FALSE}.}
+
+\item{catalog_file}{Character. Path to a SAS format catalog
+(\code{.sas7bcat}), passed to \code{haven::read_sas()}. Defaults to
+\code{NULL}, which is what was read before this argument existed, so no
+existing call changes. Only valid for a \code{.sas7bdat} data file;
+supplying one with any other format is an error rather than a silent
+no-op. Must be named, because it follows \code{...}.}
 }
 \value{
 A data frame with labels preserved and (optionally) types
@@ -40,6 +47,19 @@ Supported formats:
     \code{readxl::read_excel()}}
   \item{\code{.rds}}{R serialized objects via \code{readRDS()}}
 }
+}
+\details{
+\strong{SAS format catalogs.} A \code{.sas7bdat} file stores a format's
+\emph{name} -- \code{YESNOF.} -- and not its values. The code-to-text
+mapping lives in a separate \code{.sas7bcat} catalog. Without one, reading
+a SAS dataset yields numeric codes and no value labels, however the read is
+written, and no amount of downstream work can recover text that never
+arrived. Pass \code{catalog_file} to read the two together.
+
+A catalog on its own is only half the journey. With
+\code{convert_types = TRUE}, \code{\link{r_data_types}} discards value
+labels unless \code{use_value_labels = TRUE} is passed through \code{...},
+so supplying a catalog without it warns.
 }
 \examples{
 # Read a CSV
