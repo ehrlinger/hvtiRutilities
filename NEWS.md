@@ -62,6 +62,16 @@
   report `subset(lmap, truncated)` rather than another function. Pass `Inf`
   or `NA` to disable it.
 
+  `label_max` must be at least 4, so a cut always has room to be marked, and
+  `TRUE`/`FALSE` are refused rather than coerced — `as.numeric(TRUE)` is 1,
+  which would have meant "cap at one character". `NA` still disables
+  truncation.
+
+  A side effect worth knowing: the "most columns lack descriptive labels"
+  warning is now driven by whether a label is absent rather than by
+  `label == key`, so a variable whose real label happens to equal its own
+  name no longer counts towards the 50% threshold.
+
   `dataset_schema()` deliberately does not gain the argument, and errors if
   you pass it. A schema sidecar outlives the source dataset, and a truncated
   label recorded there is unrecoverable.

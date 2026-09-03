@@ -2,17 +2,36 @@
 ## Internal: label_max validation and word-boundary truncation.
 ## See dev/specs/2026-09-02-label-length-and-fallback-design.md section 4.
 
+.label_marker <- "..."
+
+## The smallest cap that can hold the marker plus one character of label.
+.label_marker_min <- nchar(.label_marker) + 1L
+
 .validate_label_max <- function(label_max) {
-  if (length(label_max) != 1L ||
-      !(is.numeric(label_max) || is.logical(label_max))) {
+  # NA is admitted because it disables truncation, and bare NA is logical.
+  # TRUE and FALSE are not: as.numeric(TRUE) is 1, so TRUE would silently
+  # mean "cap at one character" rather than being rejected.
+  ok <- length(label_max) == 1L &&
+    (is.numeric(label_max) ||
+       (is.logical(label_max) && is.na(label_max)))
+  if (!ok) {
     stop("'label_max' must be a single number, Inf or NA.", call. = FALSE)
   }
   if (is.na(label_max) || !is.finite(label_max)) {
     return(Inf)
   }
-  if (label_max < 1) {
-    stop("'label_max' must be at least 1, or Inf/NA to disable truncation.",
-         call. = FALSE)
+  # A cap with no room for the marker plus a character of label cannot
+  # produce a marked cut, and an unmarked cut is what the marker exists to
+  # prevent. Refuse it rather than quietly dropping the guarantee.
+  if (label_max < .label_marker_min) {
+    stop(
+      sprintf(
+        paste0("'label_max' must be at least %d, or Inf/NA to disable ",
+               "truncation."),
+        .label_marker_min
+      ),
+      call. = FALSE
+    )
   }
   as.numeric(label_max)
 }
@@ -27,17 +46,12 @@
     return(text)
   }
 
-  marker <- "..."
-  budget <- label_max - nchar(marker)
+  # Guaranteed >= 1 by .validate_label_max(), so every cut is marked.
+  budget <- label_max - nchar(.label_marker)
   out <- text
 
   for (i in which(!is.na(text) & nchar(text) > label_max)) {
     s <- text[i]
-    if (budget < 1) {
-      out[i] <- substr(s, 1, label_max)
-      next
-    }
-
     head <- substr(s, 1, budget)
     # Keep the whole head when the cut already lands between words;
     # otherwise drop the partial word at the end.
@@ -52,7 +66,7 @@
     if (!nzchar(stem)) {
       stem <- head
     }
-    out[i] <- paste0(stem, marker)
+    out[i] <- paste0(stem, .label_marker)
   }
 
   out
@@ -89,11 +103,15 @@
 #' This is particularly useful when working with SAS datasets that include
 #' variable labels, or any dataset labeled with the \code{labelled} package.
 #'
-#' A warning is issued when more than 50\% of columns lack descriptive labels
-#' (i.e., the label is identical to the variable name). This typically indicates
-#' the data was imported from a source without labels (e.g., plain CSV) and
-#' labels should be supplied via \code{\link{add_labels}} or a
-#' \code{labels_overrides.yml} file (see \code{\link{apply_label_overrides}}).
+#' A warning is issued when more than 50\% of columns carry no label at all.
+#' This typically indicates the data was imported from a source without labels
+#' (e.g., plain CSV) and labels should be supplied via
+#' \code{\link{add_labels}} or a \code{labels_overrides.yml} file (see
+#' \code{\link{apply_label_overrides}}). A variable whose real label happens
+#' to equal its own name does \strong{not} count towards the threshold: the
+#' absent label is read as \code{NA} rather than filled, so the two cases are
+#' distinguishable here even though \code{\link{proc_contents}} cannot tell
+#' them apart.
 #'
 #' Labels longer than \code{label_max} are cut for display. The cut breaks on
 #' a word boundary and is marked with \code{...}, and the source text is kept
@@ -112,7 +130,8 @@
 #'   (typically created using the \code{labelled} package or imported from SAS).
 #' @param label_max Maximum length of a displayed label, in characters,
 #'   including the \code{...} marker. Defaults to 40, the historical
-#'   convention. Use \code{Inf} or \code{NA} to disable truncation. Does not
+#'   convention. Must be at least 4, so that a cut always has room to be
+#'   marked; use \code{Inf} or \code{NA} to disable truncation. Does not
 #'   apply to a variable name filled in for a missing label.
 #'
 #' @return A data frame with four columns:
@@ -120,7 +139,7 @@
 #'   \item{key}{Character vector of variable names from the input dataset}
 #'   \item{label}{Character vector of labels fit to print: the variable label
 #'     cut to \code{label_max}, or the variable's own name where the source
-#'     carries no label (due to \code{null_action = "fill"} semantics)}
+#'     carries no label}
 #'   \item{label_full}{The label as the source carried it, never truncated,
 #'     or the variable name where there is none}
 #'   \item{truncated}{Logical: \code{TRUE} where \code{label} was cut from

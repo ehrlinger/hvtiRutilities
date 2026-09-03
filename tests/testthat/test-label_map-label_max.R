@@ -52,7 +52,7 @@ test_that("an over-long label breaks on a word boundary and is marked", {
 test_that("the cut never exceeds label_max", {
   txt <- "Ascending aorta only versus ascending plus arch"
 
-  for (n in 8:46) {
+  for (n in 4:46) {
     got <- label_map(lab(txt), label_max = n)$label
     expect_lte(nchar(got), n)
   }
@@ -92,6 +92,39 @@ test_that("label_max is validated", {
   expect_error(label_map(lab("x"), label_max = -1), "label_max")
   expect_error(label_map(lab("x"), label_max = "40"), "label_max")
   expect_error(label_map(lab("x"), label_max = c(10, 20)), "label_max")
+  expect_error(label_map(lab("x"), label_max = NULL), "label_max")
+})
+
+test_that("TRUE and FALSE are rejected rather than coerced to 1 and 0", {
+  # NA must pass the type gate to disable truncation, which is why logicals
+  # are admitted at all. TRUE silently meant "cap at one character".
+  expect_error(label_map(lab("x"), label_max = TRUE), "label_max")
+  expect_error(label_map(lab("x"), label_max = FALSE), "label_max")
+})
+
+test_that("a cap too small to hold the marker is rejected", {
+  # The documented guarantee is that a cut is marked. Below four characters
+  # there is no room for "..." plus one character of label, so the cap is
+  # refused rather than silently producing an unmarked cut.
+  for (n in 1:3) {
+    expect_error(label_map(lab("Ascending aorta"), label_max = n),
+                 "label_max")
+  }
+
+  result <- label_map(lab("Ascending aorta"), label_max = 4)
+
+  expect_equal(result$label, "A...")
+  expect_true(result$truncated)
+})
+
+test_that("every accepted cap produces a marked cut", {
+  txt <- "Ascending aorta only versus ascending plus arch"
+
+  for (n in 4:(nchar(txt) - 1)) {
+    got <- label_map(lab(txt), label_max = n)$label
+    expect_match(got, "\\.\\.\\.$")
+    expect_lte(nchar(got), n)
+  }
 })
 
 test_that("truncated labels are discoverable by filtering the map", {

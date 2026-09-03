@@ -12,7 +12,8 @@ label_map(data, label_max = 40)
 
 \item{label_max}{Maximum length of a displayed label, in characters,
 including the \code{...} marker. Defaults to 40, the historical
-convention. Use \code{Inf} or \code{NA} to disable truncation. Does not
+convention. Must be at least 4, so that a cut always has room to be
+marked; use \code{Inf} or \code{NA} to disable truncation. Does not
 apply to a variable name filled in for a missing label.}
 }
 \value{
@@ -21,7 +22,7 @@ A data frame with four columns:
   \item{key}{Character vector of variable names from the input dataset}
   \item{label}{Character vector of labels fit to print: the variable label
     cut to \code{label_max}, or the variable's own name where the source
-    carries no label (due to \code{null_action = "fill"} semantics)}
+    carries no label}
   \item{label_full}{The label as the source carried it, never truncated,
     or the variable name where there is none}
   \item{truncated}{Logical: \code{TRUE} where \code{label} was cut from
@@ -35,11 +36,15 @@ data frame with variable names (keys) and their corresponding labels.
 This is particularly useful when working with SAS datasets that include
 variable labels, or any dataset labeled with the \code{labelled} package.
 
-A warning is issued when more than 50\% of columns lack descriptive labels
-(i.e., the label is identical to the variable name). This typically indicates
-the data was imported from a source without labels (e.g., plain CSV) and
-labels should be supplied via \code{\link{add_labels}} or a
-\code{labels_overrides.yml} file (see \code{\link{apply_label_overrides}}).
+A warning is issued when more than 50\% of columns carry no label at all.
+This typically indicates the data was imported from a source without labels
+(e.g., plain CSV) and labels should be supplied via
+\code{\link{add_labels}} or a \code{labels_overrides.yml} file (see
+\code{\link{apply_label_overrides}}). A variable whose real label happens
+to equal its own name does \strong{not} count towards the threshold: the
+absent label is read as \code{NA} rather than filled, so the two cases are
+distinguishable here even though \code{\link{proc_contents}} cannot tell
+them apart.
 
 Labels longer than \code{label_max} are cut for display. The cut breaks on
 a word boundary and is marked with \code{...}, and the source text is kept
