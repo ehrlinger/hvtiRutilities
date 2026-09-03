@@ -128,7 +128,7 @@ which package reads which format and ensures labels are preserved.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">read_clinical_data</span><span class="op">(</span><span class="va">file</span>, convert_types <span class="op">=</span> <span class="cn">FALSE</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">read_clinical_data</span><span class="op">(</span><span class="va">file</span>, convert_types <span class="op">=</span> <span class="cn">FALSE</span>, <span class="va">...</span>, catalog_file <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -149,14 +149,36 @@ declared variable-derivation step rather than to reading.</p></dd>
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Additional arguments passed to <code><a href="r_data_types.html">r_data_types</a></code>
-(e.g., <code>factor_size</code>, <code>skip_vars</code>, <code>binary_factor</code>).
-Ignored when <code>convert_types = FALSE</code>.</p></dd>
+(e.g., <code>factor_size</code>, <code>skip_vars</code>, <code>binary_factor</code>,
+<code>use_value_labels</code>). Ignored when <code>convert_types = FALSE</code>.</p></dd>
+
+
+<dt id="arg-catalog-file">catalog_file<a class="anchor" aria-label="anchor" href="#arg-catalog-file"></a></dt>
+<dd><p>Character. Path to a SAS format catalog
+(<code>.sas7bcat</code>), passed to <code><a href="https://haven.tidyverse.org/reference/read_sas.html" class="external-link">haven::read_sas()</a></code>. Defaults to
+<code>NULL</code>, which is what was read before this argument existed, so no
+existing call changes. Only valid for a <code>.sas7bdat</code> data file;
+supplying one with any other format is an error rather than a silent
+no-op. Must be named, because it follows <code>...</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A data frame with labels preserved and (optionally) types
   converted.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p><strong>SAS format catalogs.</strong> A <code>.sas7bdat</code> file stores a format's
+<em>name</em> – <code>YESNOF.</code> – and not its values. The code-to-text
+mapping lives in a separate <code>.sas7bcat</code> catalog. Without one, reading
+a SAS dataset yields numeric codes and no value labels, however the read is
+written, and no amount of downstream work can recover text that never
+arrived. Pass <code>catalog_file</code> to read the two together.</p>
+<p>A catalog on its own is only half the journey. With
+<code>convert_types = TRUE</code>, <code><a href="r_data_types.html">r_data_types</a></code> discards value
+labels unless <code>use_value_labels = TRUE</code> is passed through <code>...</code>,
+so supplying a catalog without it warns.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

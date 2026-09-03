@@ -34,7 +34,7 @@ Supported formats:
 ## Usage
 
 ``` r
-read_clinical_data(file, convert_types = FALSE, ...)
+read_clinical_data(file, convert_types = FALSE, ..., catalog_file = NULL)
 ```
 
 ## Arguments
@@ -56,12 +56,36 @@ read_clinical_data(file, convert_types = FALSE, ...)
 
   Additional arguments passed to
   [`r_data_types`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
-  (e.g., `factor_size`, `skip_vars`, `binary_factor`). Ignored when
-  `convert_types = FALSE`.
+  (e.g., `factor_size`, `skip_vars`, `binary_factor`,
+  `use_value_labels`). Ignored when `convert_types = FALSE`.
+
+- catalog_file:
+
+  Character. Path to a SAS format catalog (`.sas7bcat`), passed to
+  [`haven::read_sas()`](https://haven.tidyverse.org/reference/read_sas.html).
+  Defaults to `NULL`, which is what was read before this argument
+  existed, so no existing call changes. Only valid for a `.sas7bdat`
+  data file; supplying one with any other format is an error rather than
+  a silent no-op. Must be named, because it follows `...`.
 
 ## Value
 
 A data frame with labels preserved and (optionally) types converted.
+
+## Details
+
+**SAS format catalogs.** A `.sas7bdat` file stores a format's *name* –
+`YESNOF.` – and not its values. The code-to-text mapping lives in a
+separate `.sas7bcat` catalog. Without one, reading a SAS dataset yields
+numeric codes and no value labels, however the read is written, and no
+amount of downstream work can recover text that never arrived. Pass
+`catalog_file` to read the two together.
+
+A catalog on its own is only half the journey. With
+`convert_types = TRUE`,
+[`r_data_types`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
+discards value labels unless `use_value_labels = TRUE` is passed through
+`...`, so supplying a catalog without it warns.
 
 ## See also
 
