@@ -1,4 +1,4 @@
-# hvtiRutilities 1.1.9
+# hvtiRutilities 1.2.0
 
 ## New features
 
