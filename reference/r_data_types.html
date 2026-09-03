@@ -72,7 +72,8 @@ various NA representations. Preserves variable labels from SAS/labelled data.</p
 <span>  <span class="va">dataset</span>,</span>
 <span>  factor_size <span class="op">=</span> <span class="fl">10</span>,</span>
 <span>  skip_vars <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  binary_factor <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  binary_factor <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  use_value_labels <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -96,23 +97,47 @@ These columns will remain unchanged. Default is NULL (convert all columns).</p><
 
 
 <dt id="arg-binary-factor">binary_factor<a class="anchor" aria-label="anchor" href="#arg-binary-factor"></a></dt>
-<dd><p>Logical. If TRUE, binary variables are converted to factors
-instead of logical. Default is FALSE (convert to logical).</p></dd>
+<dd><p>Logical. If TRUE, binary variables are converted to
+factors instead of logical. Default is FALSE (convert to logical).</p></dd>
+
+
+<dt id="arg-use-value-labels">use_value_labels<a class="anchor" aria-label="anchor" href="#arg-use-value-labels"></a></dt>
+<dd><p>Logical. If TRUE, a column carrying value labels –
+what <span class="pkg">haven</span> reads from a SAS numeric-plus-format variable – is
+converted through <code><a href="https://larmarange.github.io/labelled/reference/to_factor.html" class="external-link">to_factor</a></code>, so the level text is
+kept. If FALSE the value labels are dropped and the numeric codes are
+converted instead. Default is FALSE, which warns once per session; the
+default becomes TRUE in a later release.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>An object of the same class as <code>dataset</code> with columns converted
-  according to the function's rules. Variable labels are preserved.</p>
+    <p>An object of the same class as <code>dataset</code> with columns
+  converted according to the function's rules. Variable labels are
+  preserved. The result carries a per-column conversion report, read with
+  <code><a href="type_conversion_report.html">type_conversion_report</a></code>.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>The function applies the following transformations in order:</p><ol><li><p>Converts character strings "NA", "na", "Na", "nA" to actual NA values</p></li>
-<li><p>Converts numeric/integer columns with exactly 2 unique values to logical</p></li>
-<li><p>Converts remaining character columns to factors</p></li>
-<li><p>Converts numeric columns with 3 to <code>factor_size</code> unique values to factors</p></li>
-<li><p>Optionally converts logical columns to factors if <code>binary_factor = TRUE</code></p></li>
+    <p>Each column is converted by the first rule that matches, in this order:</p><ol><li><p>When <code>use_value_labels = TRUE</code> and the column carries value
+    labels, they become the factor levels. This runs ahead of every rule
+    below: a declared type is not subject to a threshold on distinct
+    values.</p></li>
+<li><p>Character strings "NA", "na", "Na" and "nA" become <code>NA</code>.</p></li>
+<li><p>Numeric or integer columns with exactly 2 distinct values become
+    logical, or factors when <code>binary_factor = TRUE</code>.</p></li>
+<li><p>Remaining character columns become factors.</p></li>
+<li><p>Numeric columns with 3 to <code>factor_size</code> distinct values
+    become factors.</p></li>
+<li><p>Logical columns become factors when <code>binary_factor = TRUE</code>.</p></li>
 </ol><p>Date, POSIXct, and POSIXlt columns are never altered by type conversion.</p>
+<p>Which rule fired on which column is recorded on the result and read back
+with <code><a href="type_conversion_report.html">type_conversion_report</a></code>.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
+    <div class="dont-index"><p><code><a href="type_conversion_report.html">type_conversion_report</a></code> for the record of which rule
+  fired on which column.</p></div>
     </div>
 
     <div class="section level2">
@@ -135,7 +160,7 @@ instead of logical. Default is FALSE (convert to logical).</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   ..- attr(*, "label")= chr "Gender"</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 2 4 5 2 3 3 2 2 4 2 ...</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   ..- attr(*, "label")= chr "Category Group"</span>
-<span class="r-in"><span><span class="va">dta_converted</span> <span class="op">&lt;-</span> <span class="fu">r_data_types</span><span class="op">(</span><span class="va">dta</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">dta_converted</span> <span class="op">&lt;-</span> <span class="fu">r_data_types</span><span class="op">(</span><span class="va">dta</span>, use_value_labels <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">dta_converted</span><span class="op">)</span>  <span class="co"># Converted types</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 'data.frame':	100 obs. of  7 variables:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  $ id     : int  1 2 3 4 5 6 7 8 9 10 ...</span>
@@ -152,29 +177,52 @@ instead of logical. Default is FALSE (convert to logical).</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   ..- attr(*, "label")= chr "Gender"</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 2 4 5 2 3 3 2 2 4 2 ...</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   ..- attr(*, "label")= chr "Category Group"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  - attr(*, "hvti_type_conversion")='data.frame':	7 obs. of  6 variables:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   ..$ variable    : chr [1:7] "id" "boolean" "logical" "f_real" ...</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   ..$ storage_in  : chr [1:7] "integer" "integer" "character" "numeric" ...</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   ..$ rule        : chr [1:7] "unchanged" "binary_logical" "character_factor" "n_distinct_factor" ...</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   ..$ level_source: chr [1:7] NA NA "inference" "inference" ...</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   ..$ n_levels    : int [1:7] NA NA 2 9 NA 2 5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   ..$ storage_out : chr [1:7] "integer" "logical" "factor" "factor" ...</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Real data example with mtcars</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="fu">datasets</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/r/datasets/mtcars.html" class="external-link">mtcars</a></span><span class="op">$</span><span class="va">vs</span><span class="op">)</span>  <span class="co"># numeric (0/1)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  num [1:32] 0 0 1 1 0 1 0 1 1 1 ...</span>
-<span class="r-in"><span><span class="va">mtcars_converted</span> <span class="op">&lt;-</span> <span class="fu">r_data_types</span><span class="op">(</span><span class="fu">datasets</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/r/datasets/mtcars.html" class="external-link">mtcars</a></span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">mtcars_converted</span> <span class="op">&lt;-</span> <span class="fu">r_data_types</span><span class="op">(</span><span class="fu">datasets</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/r/datasets/mtcars.html" class="external-link">mtcars</a></span>,</span></span>
+<span class="r-in"><span>                                 use_value_labels <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">mtcars_converted</span><span class="op">$</span><span class="va">vs</span><span class="op">)</span>  <span class="co"># logical (FALSE/TRUE)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  logi [1:32] FALSE FALSE TRUE TRUE FALSE TRUE ...</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  - attr(*, "label")= chr "vs"</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Skip specific columns</span></span></span>
-<span class="r-in"><span><span class="va">mtcars_partial</span> <span class="op">&lt;-</span> <span class="fu">r_data_types</span><span class="op">(</span><span class="fu">datasets</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/r/datasets/mtcars.html" class="external-link">mtcars</a></span>, skip_vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"vs"</span>, <span class="st">"am"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">mtcars_partial</span> <span class="op">&lt;-</span> <span class="fu">r_data_types</span><span class="op">(</span><span class="fu">datasets</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/r/datasets/mtcars.html" class="external-link">mtcars</a></span>,</span></span>
+<span class="r-in"><span>                               skip_vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"vs"</span>, <span class="st">"am"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>                               use_value_labels <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">mtcars_partial</span><span class="op">$</span><span class="va">vs</span><span class="op">)</span>  <span class="co"># Still numeric (unchanged)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  num [1:32] 0 0 1 1 0 1 0 1 1 1 ...</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  - attr(*, "label")= chr "vs"</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Control factor creation threshold</span></span></span>
-<span class="r-in"><span><span class="va">mtcars_strict</span> <span class="op">&lt;-</span> <span class="fu">r_data_types</span><span class="op">(</span><span class="fu">datasets</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/r/datasets/mtcars.html" class="external-link">mtcars</a></span>, factor_size <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">mtcars_strict</span> <span class="op">&lt;-</span> <span class="fu">r_data_types</span><span class="op">(</span><span class="fu">datasets</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/r/datasets/mtcars.html" class="external-link">mtcars</a></span>, factor_size <span class="op">=</span> <span class="fl">5</span>,</span></span>
+<span class="r-in"><span>                              use_value_labels <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Keep binary variables as factors</span></span></span>
-<span class="r-in"><span><span class="va">mtcars_factors</span> <span class="op">&lt;-</span> <span class="fu">r_data_types</span><span class="op">(</span><span class="fu">datasets</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/r/datasets/mtcars.html" class="external-link">mtcars</a></span>, binary_factor <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">mtcars_factors</span> <span class="op">&lt;-</span> <span class="fu">r_data_types</span><span class="op">(</span><span class="fu">datasets</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/r/datasets/mtcars.html" class="external-link">mtcars</a></span>, binary_factor <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
+<span class="r-in"><span>                               use_value_labels <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">mtcars_factors</span><span class="op">$</span><span class="va">vs</span><span class="op">)</span>  <span class="co"># Factor instead of logical</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Factor w/ 2 levels "FALSE","TRUE": 1 1 2 2 1 2 1 2 2 2 ...</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  - attr(*, "label")= chr "vs"</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Keep the level text of a SAS formatted variable</span></span></span>
+<span class="r-in"><span><span class="va">disp</span> <span class="op">&lt;-</span> <span class="fu">haven</span><span class="fu">::</span><span class="fu"><a href="https://haven.tidyverse.org/reference/labelled.html" class="external-link">labelled</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">1</span>, <span class="fl">3</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>                        labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>Home <span class="op">=</span> <span class="fl">1</span>, Rehab <span class="op">=</span> <span class="fl">2</span>, SNF <span class="op">=</span> <span class="fl">3</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>                        label  <span class="op">=</span> <span class="st">"Discharge disposition"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">converted</span> <span class="op">&lt;-</span> <span class="fu">r_data_types</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>disp <span class="op">=</span> <span class="va">disp</span><span class="op">)</span>, use_value_labels <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/levels.html" class="external-link">levels</a></span><span class="op">(</span><span class="va">converted</span><span class="op">$</span><span class="va">disp</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Home"  "Rehab" "SNF"  </span>
+<span class="r-in"><span><span class="fu"><a href="type_conversion_report.html">type_conversion_report</a></span><span class="op">(</span><span class="va">converted</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   variable     storage_in         rule level_source n_levels storage_out</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1     disp haven_labelled value_labels value labels        3      factor</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

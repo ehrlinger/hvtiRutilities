@@ -106,6 +106,7 @@ dta_clean <- r_data_types(dta,
   factor_size = 5,
   skip_vars = c("ccfid", "iv_dead", "iv_reop", "iv_opyrs")
 )
+#> Warning: r_data_types(): 'use_value_labels' defaults to FALSE, so a column carrying SAS value labels is converted from its numeric codes and the level text -- Home, Rehab, SNF -- is discarded. Pass use_value_labels = TRUE to convert through the labels instead, or FALSE to silence this warning. The default will become TRUE in a later release.
 dict_clean <- data_dictionary(dta_clean)
 head(dict_clean, 10)
 #>                variable                                          label

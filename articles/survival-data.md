@@ -158,6 +158,11 @@ model_data <- r_data_types(
   factor_size = 5,
   skip_vars = c("ccfid", "iv_dead", "iv_reop", "iv_opyrs")
 )
+#> Warning: r_data_types(): 'use_value_labels' defaults to FALSE, so a column
+#> carrying SAS value labels is converted from its numeric codes and the level
+#> text -- Home, Rehab, SNF -- is discarded. Pass use_value_labels = TRUE to
+#> convert through the labels instead, or FALSE to silence this warning. The
+#> default will become TRUE in a later release.
 
 str(model_data[, c("dead", "reop", "sex", "nyha_class", "diabetes", "hypertension")])
 #> 'data.frame':    500 obs. of  6 variables:

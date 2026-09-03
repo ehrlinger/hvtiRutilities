@@ -265,6 +265,11 @@
 <span>  factor_size <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>  skip_vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ccfid"</span>, <span class="st">"iv_dead"</span>, <span class="st">"iv_reop"</span>, <span class="st">"iv_opyrs"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: r_data_types(): 'use_value_labels' defaults to FALSE, so a column</span></span>
+<span><span class="co">#&gt; carrying SAS value labels is converted from its numeric codes and the level</span></span>
+<span><span class="co">#&gt; text -- Home, Rehab, SNF -- is discarded. Pass use_value_labels = TRUE to</span></span>
+<span><span class="co">#&gt; convert through the labels instead, or FALSE to silence this warning. The</span></span>
+<span><span class="co">#&gt; default will become TRUE in a later release.</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">model_data</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"dead"</span>, <span class="st">"reop"</span>, <span class="st">"sex"</span>, <span class="st">"nyha_class"</span>, <span class="st">"diabetes"</span>, <span class="st">"hypertension"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="co">#&gt; 'data.frame':    500 obs. of  6 variables:</span></span>

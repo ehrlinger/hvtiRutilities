@@ -11,10 +11,13 @@ convert_types, because coercing a two-valued numeric to logical breaks
 
 ## Data Type Conversion
 
-Automatically infer and convert column types
+Automatically infer and convert column types, and read back which rule
+fired on which column.
 
 - [`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
   : Automatically infer and convert data types
+- [`type_conversion_report()`](https://ehrlinger.github.io/hvtiRutilities/reference/type_conversion_report.md)
+  : Read the per-column type-conversion report
 
 ## Variable Labels
 
