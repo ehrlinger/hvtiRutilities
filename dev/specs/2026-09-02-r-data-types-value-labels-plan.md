@@ -1,10 +1,16 @@
 # `use_value_labels` Implementation Plan (design note §7, option B)
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development
-> (recommended) or superpowers:executing-plans to implement this plan task-by-task.
-> Steps use checkbox (`- [ ]`) syntax for tracking.
+> **How to work through this:** task by task, in order, running the verification step
+> before moving on. Steps use checkbox (`- [ ]`) syntax so progress is trackable in
+> place. Nothing here depends on a particular editor or agent framework — every task
+> carries its own code, commands and expected output, so it reads the same to a person
+> working by hand as to an agent. (Agents with a plan-execution skill can drive it with
+> that; it is a convenience, not a requirement.)
 
 **Date:** 2026-09-02
+**Status:** **Executed** on 2026-09-02 as PR #93 — all four tasks, `devtools::test()` at
+0 failures and `devtools::check()` at 0/0/0 with the manual and vignettes built. Two
+things the plan did not foresee are recorded at the end, under *"What execution changed"*.
 **Package:** `hvtiRutilities`
 **Spec:** `dev/specs/2026-09-02-label-length-and-fallback-design.md`, §7.3 option **B**,
 decided by John Ehrlinger on 2026-09-02. **Read §2.2, §7.1, §7.2 and §7.3 before Task 1.**
@@ -1262,3 +1268,52 @@ Every `haven_labelled` fixture is constructed in-process with `haven::labelled()
 deliberate — B must not wait on the open question of whether `.sas7bcat` catalogues exist
 in the corpus (§5.1) — but it does mean this PR proves the conversion, not the read. The
 end-to-end claim needs `catalog_file` (§5) and a real file, and belongs to that PR.
+
+---
+
+## What execution changed
+
+Recorded on 2026-09-02, after the plan was carried out as PR #93. The plan is left as
+written above; this section says where it was wrong, because a plan that is quietly
+edited to match what happened teaches nothing the next time.
+
+**1. The predicted cascade landed in the wrong file, for a better reason.** Task 3 Step 5
+predicted the new warning would break `test-read_clinical_data.R`. It did not. It broke
+`test-integration.R:114`, an idempotence test comparing whole objects with
+`expect_equal(conv1, conv2)` — which now includes the report attribute:
+
+```
+- attr(actual, 'hvti_type_conversion')[3, ]    character  character_factor  inference
++ attr(expected, 'hvti_type_conversion')[3, ]  factor     unchanged         NA
+```
+
+The data is idempotent. **The report is not, and must not be** — it records the transition
+a call made, not the state it arrived at, so a second pass over already-converted data
+correctly reports `unchanged` throughout. The comparison now excludes the attribute and a
+companion test asserts the report differs the way it should.
+
+This is the per-column dispatcher paying for itself. Because `.convert_column()` returns
+the value and the rule together, the report *could not* have reported anything but
+`unchanged` on the second pass. Had the report been built from a separate predicate over
+the input — the design the plan's self-review rejected — it would have re-derived
+`character_factor` from a column that was already a factor, agreed with `expect_equal()`,
+and shipped a report that quietly misattributes work to the wrong call. **The test broke
+because the design was right.**
+
+`test-read_clinical_data.R` escaped only because test files run alphabetically and
+`test-integration.R` had already spent the one-shot flag. Task 3 Step 6 was applied
+anyway: an assertion that passes by accident of ordering is worse than one that fails.
+
+**2. Review found a real inconsistency in the rule vocabulary.** The plan's self-review
+item 5 decided that a column already `logical` should report `"unchanged"` rather than
+`"binary_logical"`, on the grounds that `as.logical()` on it is a no-op. That was
+half-right. The predicate still *matched*, so a matched rule was reporting itself as
+`"unchanged"` — which `type_conversion_report()`'s own documentation defines as no rule
+matching at all. The fix is to exclude logical inputs from the binary branch (`!is.logical(x)`),
+so the column reaches the fall-through honestly. Output is identical either way.
+
+**Also corrected: the plan asserted `labelled::to_factor(levels = "default")`.** There is
+no such value — `to_factor()` accepts only `"labels"`, `"values"` or `"prefixed"` and
+errors on anything else. The behaviour the value-label branch actually depends on — an
+uncatalogued code surviving as its own level instead of becoming `NA` — is governed by
+`nolabel_to_na = FALSE`. That argument is now named explicitly at the call site.
