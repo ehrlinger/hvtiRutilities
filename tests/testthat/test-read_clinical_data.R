@@ -165,7 +165,11 @@ test_that("passing convert_types explicitly never warns", {
   assign("convert_types", NULL, envir = env)
 
   expect_silent(read_clinical_data(tmp, convert_types = FALSE))
-  expect_silent(read_clinical_data(tmp, convert_types = TRUE))
+  # convert_types = TRUE reaches r_data_types(), which has a one-shot warning
+  # of its own. Naming use_value_labels here keeps this assertion about
+  # convert_types rather than about which test file ran first.
+  expect_silent(read_clinical_data(tmp, convert_types = TRUE,
+                                   use_value_labels = FALSE))
 })
 
 test_that("convert_types = TRUE still converts", {

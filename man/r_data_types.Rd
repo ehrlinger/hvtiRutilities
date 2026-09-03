@@ -8,7 +8,8 @@ r_data_types(
   dataset,
   factor_size = 10,
   skip_vars = NULL,
-  binary_factor = FALSE
+  binary_factor = FALSE,
+  use_value_labels = FALSE
 )
 }
 \arguments{
@@ -21,12 +22,21 @@ to factors. Must be between 2 and 50. Default is 10.}
 \item{skip_vars}{Character vector of column names to exclude from conversion.
 These columns will remain unchanged. Default is NULL (convert all columns).}
 
-\item{binary_factor}{Logical. If TRUE, binary variables are converted to factors
-instead of logical. Default is FALSE (convert to logical).}
+\item{binary_factor}{Logical. If TRUE, binary variables are converted to
+factors instead of logical. Default is FALSE (convert to logical).}
+
+\item{use_value_labels}{Logical. If TRUE, a column carrying value labels --
+what \pkg{haven} reads from a SAS numeric-plus-format variable -- is
+converted through \code{\link[labelled]{to_factor}}, so the level text is
+kept. If FALSE the value labels are dropped and the numeric codes are
+converted instead. Default is FALSE, which warns once per session; the
+default becomes TRUE in a later release.}
 }
 \value{
-An object of the same class as \code{dataset} with columns converted
-  according to the function's rules. Variable labels are preserved.
+An object of the same class as \code{dataset} with columns
+  converted according to the function's rules. Variable labels are
+  preserved. The result carries a per-column conversion report, read with
+  \code{\link{type_conversion_report}}.
 }
 \description{
 Intelligently converts column types in a dataset based on their content.
@@ -34,37 +44,63 @@ Handles character-to-factor conversion, binary numeric variables, and
 various NA representations. Preserves variable labels from SAS/labelled data.
 }
 \details{
-The function applies the following transformations in order:
+Each column is converted by the first rule that matches, in this order:
 \enumerate{
-  \item Converts character strings "NA", "na", "Na", "nA" to actual NA values
-  \item Converts numeric/integer columns with exactly 2 unique values to logical
-  \item Converts remaining character columns to factors
-  \item Converts numeric columns with 3 to \code{factor_size} unique values to factors
-  \item Optionally converts logical columns to factors if \code{binary_factor = TRUE}
+  \item When \code{use_value_labels = TRUE} and the column carries value
+    labels, they become the factor levels. This runs ahead of every rule
+    below: a declared type is not subject to a threshold on distinct
+    values.
+  \item Character strings "NA", "na", "Na" and "nA" become \code{NA}.
+  \item Numeric or integer columns with exactly 2 distinct values become
+    logical, or factors when \code{binary_factor = TRUE}.
+  \item Remaining character columns become factors.
+  \item Numeric columns with 3 to \code{factor_size} distinct values
+    become factors.
+  \item Logical columns become factors when \code{binary_factor = TRUE}.
 }
 
 Date, POSIXct, and POSIXlt columns are never altered by type conversion.
+
+Which rule fired on which column is recorded on the result and read back
+with \code{\link{type_conversion_report}}.
 }
 \examples{
 # Basic usage with sample data
 dta <- sample_data(n = 100)
 str(dta)  # Original types
-dta_converted <- r_data_types(dta)
+dta_converted <- r_data_types(dta, use_value_labels = FALSE)
 str(dta_converted)  # Converted types
 
 # Real data example with mtcars
 str(datasets::mtcars$vs)  # numeric (0/1)
-mtcars_converted <- r_data_types(datasets::mtcars)
+mtcars_converted <- r_data_types(datasets::mtcars,
+                                 use_value_labels = FALSE)
 str(mtcars_converted$vs)  # logical (FALSE/TRUE)
 
 # Skip specific columns
-mtcars_partial <- r_data_types(datasets::mtcars, skip_vars = c("vs", "am"))
+mtcars_partial <- r_data_types(datasets::mtcars,
+                               skip_vars = c("vs", "am"),
+                               use_value_labels = FALSE)
 str(mtcars_partial$vs)  # Still numeric (unchanged)
 
 # Control factor creation threshold
-mtcars_strict <- r_data_types(datasets::mtcars, factor_size = 5)
+mtcars_strict <- r_data_types(datasets::mtcars, factor_size = 5,
+                              use_value_labels = FALSE)
 
 # Keep binary variables as factors
-mtcars_factors <- r_data_types(datasets::mtcars, binary_factor = TRUE)
+mtcars_factors <- r_data_types(datasets::mtcars, binary_factor = TRUE,
+                               use_value_labels = FALSE)
 str(mtcars_factors$vs)  # Factor instead of logical
+
+# Keep the level text of a SAS formatted variable
+disp <- haven::labelled(c(1, 2, 1, 3),
+                        labels = c(Home = 1, Rehab = 2, SNF = 3),
+                        label  = "Discharge disposition")
+converted <- r_data_types(data.frame(disp = disp), use_value_labels = TRUE)
+levels(converted$disp)
+type_conversion_report(converted)
+}
+\seealso{
+\code{\link{type_conversion_report}} for the record of which rule
+  fired on which column.
 }

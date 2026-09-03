@@ -1,6 +1,44 @@
 # hvtiRutilities (unreleased)
 
+## New features
+
+- **`r_data_types()` can keep the level text of a SAS formatted variable.**
+  `haven` reads a numeric-plus-format variable as a `haven_labelled` vector
+  carrying its own code-to-text mapping. `r_data_types()` threw it away: the
+  column is `is.numeric()` and is not a factor, so the factor branch saw only
+  the codes and `Home`, `Rehab`, `SNF` were lost. Downstream, every table
+  reconstructed them by hand from the variable label — which is why REDCap
+  labels ended up enumerating eight options.
+
+  The new `use_value_labels` argument converts through
+  `labelled::to_factor()` instead. It runs ahead of every inference rule, so
+  a declared type beats both the binary-to-logical branch and the
+  `factor_size` threshold.
+
+  It defaults to `FALSE` and warns once per session when it is not supplied,
+  the same shape as the `convert_types` warning. The default becomes `TRUE`
+  in a later release; until then no existing caller changes behaviour.
+
+- **`type_conversion_report()` says which rule fired on which column.** One
+  row per column: the rule, whether the levels came from value labels or from
+  counting distinct values, how many there were, and the class in and out. A
+  column that became a factor because it was declared one and a column that
+  became a factor because it happened to have seven distinct values were
+  previously the same object.
+
+  The report records the transition a call made, not the state it arrived at,
+  so it is deliberately not idempotent: a second pass over already-converted
+  data reports `unchanged` throughout, which is the true answer for it.
+
 ## Bug fixes
+
+- **`r_data_types()` no longer errors on a two-valued SAS formatted
+  variable.** `as.logical()` has no `vctrs` cast from `haven_labelled`, and
+  the binary branch called it before anything had dropped the labels — so
+  `read_clinical_data(convert_types = TRUE)` aborted on any SAS export
+  carrying a formatted yes/no variable. The labels are now dropped explicitly
+  before the numeric branches when `use_value_labels = FALSE`, making that
+  path a conversion rather than a crash.
 
 - **`job_files()` no longer discards the part of a legacy job name that says
   what the job does.** The `legacy` parser captured the first dot-field as the
