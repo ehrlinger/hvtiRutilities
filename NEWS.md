@@ -2,6 +2,24 @@
 
 ## New features
 
+- **`read_clinical_data()` can read a SAS format catalog.** A `.sas7bdat`
+  stores a format's *name* — `YESNOF.` — not its values; the code-to-text
+  mapping lives in a separate `.sas7bcat`. Without one, reading a SAS dataset
+  yields numeric codes and no value labels however the read is written, and
+  nothing downstream can recover text that never arrived. This package had
+  never read a format catalog.
+
+  The new `catalog_file` argument passes one through to `haven::read_sas()`.
+  It defaults to `NULL` — what was read before it existed — so no existing
+  call changes. It follows `...` and so must be named, which keeps it from
+  capturing an argument that previously reached `r_data_types()`
+  positionally.
+
+  Supplying a catalog with a non-SAS file is an error rather than a silent
+  no-op, and supplying one alongside `convert_types = TRUE` without
+  `use_value_labels = TRUE` warns: decoding a mapping and then discarding it
+  is the loss the argument exists to end.
+
 - **`r_data_types()` can keep the level text of a SAS formatted variable.**
   `haven` reads a numeric-plus-format variable as a `haven_labelled` vector
   carrying its own code-to-text mapping. `r_data_types()` threw it away: the

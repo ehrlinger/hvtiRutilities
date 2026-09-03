@@ -389,12 +389,16 @@ unimplemented and this note has fixed the symptom again.
 - [x] The label-length, fallback and prefix items covered
 - [x] Interaction with the ordinal design stated explicitly (§6, §7.1)
 - [x] **§7 answered — B then C, John Ehrlinger, 2026-09-02**
-- [ ] `catalog_file` exposed on `read_clinical_data()` (§5) — additive, can go
-      first, and does not wait on the catalogue question
+- [x] `catalog_file` exposed on `read_clinical_data()` (§5) — additive, can go
+      first, and does not wait on the catalogue question. **Done 2026-09-03.**
+      It reaches `haven::read_sas()` and is validated; that a real `.sas7bcat`
+      decodes is **not** proven — no catalogue exists to test against, which is
+      the open item two lines below.
 - [ ] **Data managers asked whether `.sas7bcat` catalogues exist (§5.1)**;
       answer recorded in §8
-- [ ] B: `use_value_labels` on `r_data_types()`, default `FALSE`, warning once,
-      with the per-column report (§7.3)
+- [x] B: `use_value_labels` on `r_data_types()`, default `FALSE`, warning once,
+      with the per-column report (§7.3). **Done 2026-09-02**, PR #93; plan at
+      `dev/specs/2026-09-02-r-data-types-value-labels-plan.md`.
 - [ ] Test asserting the fallback does not prettify (§2.1)
 - [ ] `label_max` on the display seam, with truncation discoverable (§4)
 - [ ] Test asserting a variable name longer than `label_max` is **not**
