@@ -16,7 +16,8 @@ see its §9.1.
 
 `hvtiRutilities` v1.1.9 gave `label_map()` a `label_max` argument defaulting to
 40 and two new columns, `label_full` and `truncated`. `hvtiGraphics` is the
-**only** repository in the family that consumes the function, and its chapter
+**only** repository in the family that *executes* the function — other mentions
+across the family are `dev/specs/` design prose — and its chapter
 `data_governance.qmd` now contradicts itself:
 
 - **line 79** — prose: *"`label_map()` returns the current variable-to-label
@@ -34,6 +35,11 @@ output for `data_governance` was written against `hvtiRutilities` **1.1.8**, so
 the site currently serves a two-column table that matches the prose. The
 contradiction appears the moment anyone re-renders that chapter — including
 someone re-rendering it for an unrelated reason.
+
+This is checkable without rendering anything:
+`_freeze/data_governance/execute-results/html.json` and its `tex.json` sibling
+both contain the two-column sentence and the frozen chunk output. Read them
+first if you want to confirm the state before you start.
 
 🔴 That is the repo's own named failure mode: *"Stale `_freeze/` publishes a
 lie that nothing can detect."* Here it is publishing a *true-looking* page
