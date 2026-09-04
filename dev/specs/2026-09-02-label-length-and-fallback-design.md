@@ -479,5 +479,63 @@ essentially never fire while there are no catalogues; it is there so that
 ⚠️ **`label_max` defaults to 40 in the release that introduces it**, chosen
 over the two-release deprecation window used for `convert_types` and
 `use_value_labels`. So `label_map()` returns different `label` text, and two
-extra columns, in the release this lands. `hvtiPlotR` and `hvtiRtables` are
-the consumers to check.
+extra columns, in the release this lands — v1.1.9.
+
+### 9.1 Who actually consumes this — checked, not assumed
+
+🔴 This note and `NEWS.md` 1.1.9 both name **`hvtiPlotR` and `hvtiRtables`** as
+"the consumers to check". **That is wrong, and it came from this file.** The
+handoff's §1 records an intention — *"hvtiPlotR will use labels for axis
+labels. hvtiRtables will use labels for tables"* — and the claim was written
+as though it described code that exists.
+
+All twelve `hvti*` repositories were grepped on 2026-09-04 for `label_map`,
+`get_label`, `apply_label_overrides` and `apply_value_labels`.
+
+⚠️ **Scope, stated because the first version of this table got it wrong.** The
+table below is about **runtime consumers** — code that executes. The sweep
+that produced it covered `.R`, `.qmd`, `.Rmd` and `.yml`, which silently
+excluded `.md`, and `.claude/worktrees/` copies are excluded deliberately.
+Re-run without the extension filter, on review from Codex, 2026-09-04:
+
+| repo | reality |
+|---|---|
+| `hvtiPlotR` | does **not** depend on this package and never calls `label_map()`. Its three `get_labels()` hits are ggplot2's `panel_params[[1]]$y$get_labels()` |
+| `hvtiRtables` | no dependency, no usage at all |
+| `hvtiRdatabuild` | depends on this package; its only *shipped* mention is a prose row in `vignettes/coming-from-sas.qmd`. Also named in two `dev/specs/` design notes — design prose, not a call |
+| `hvtiRtemplates` | depends on this package; uses `update_manifest()`, `hvti_taxonomy`, `hvti_non_prefixes` — nothing in the label API |
+| **`hvtiGraphics`** | **the one real consumer.** `data_governance.qmd` documents the two-column return *and* runs `label_map(dat)` in a live chunk. Also named in two of its own `dev/specs/` notes |
+
+**What the wider sweep added, and what it did not.** Nine `.md` hits and two
+`.json` hits were invisible to the first pass. None of them is a consumer:
+
+- The `.md` hits are `dev/specs/` design prose in `hvtiRdatabuild` and
+  `hvtiGraphics`. Neither repo is in `.Rbuildignore` terms a shipped surface
+  here, and neither note executes.
+- Both `.json` hits are `hvtiGraphics/_freeze/data_governance/execute-results/`
+  — the committed cache for the chapter already named. They contain the
+  two-column sentence *and* the frozen chunk output, which **corroborates** the
+  handoff's claim that the published site is serving output built against
+  `hvtiRutilities` 1.1.8 rather than adding a consumer.
+
+So the conclusion is unchanged and now rests on a sweep with no extension
+filter.
+
+So the compatibility risk of the four-column change was **close to nil in
+code**, and the one genuine consequence is a book chapter whose prose
+contradicts its own rendered output. Handed off rather than fixed here:
+`2026-09-04-hvtigraphics-label-map-shape-handoff.md`, to be executed in
+`hvtiGraphics` in its own session. It is not a one-line edit there — that
+repo's committed `_freeze/` cache means a prose change to a chunk-bearing
+chapter must ship with a re-render, and rendering against an older
+`hvtiRutilities` would regenerate the wrong output and pass the gate.
+
+⚠️ `NEWS.md` 1.1.9 still carries the wrong pair. It is a tagged release, so
+the entry stays as shipped rather than being rewritten under a released
+heading; this section is the correction of record.
+
+**Two lessons worth keeping.** A design note states intent, and intent read
+later looks exactly like fact — before naming a downstream consumer in release
+copy, grep for the call. And a grep is only as good as its `--include` list: a
+sweep offered as evidence should state its scope, because a reader cannot see
+the extensions it skipped.
