@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.9</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.10</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,6 +55,21 @@
       <small>Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.1.10" id="hvtirutilities-1110">hvtiRutilities 1.1.10<a class="anchor" aria-label="anchor" href="#hvtirutilities-1110"></a></h2>
+<div class="section level3">
+<h3 id="new-features-1-1-10">New features<a class="anchor" aria-label="anchor" href="#new-features-1-1-10"></a></h3>
+<ul><li>
+<p><strong><code><a href="../reference/strip_level_prefix.html">strip_level_prefix()</a></code> and <code><a href="../reference/level_map.html">level_map()</a></code> take the code off level text.</strong> Categorical levels arrive as <code>1. Yes</code> / <code>0 = No</code> / <code>01 - home</code>, and the prefix is stripped by hand in every table, which is where the typos come from.</p>
+<p><code><a href="../reference/strip_level_prefix.html">strip_level_prefix()</a></code> does it by rule. It is a display helper: it returns new text and never rewrites the levels of the object it was given, so a level named <code>01 - home</code> keeps its ordering prefix in the data while a table prints <code>home</code>.</p>
+<p><strong>A separator is required</strong> — one of <code>.</code> <code>:</code> <code>=</code> <code>)</code> <code>-</code> must follow the leading integer. That restraint is the feature. A rule general enough to turn <code>0 No</code> into <code>No</code> also turns <code>1 vessel disease</code>, <code>2 vessel</code> and <code>3 vessel</code> into two identical strings; nothing errors, a downstream <code><a href="https://rdrr.io/r/base/table.html" class="external-link">table()</a></code> or model merges them, and the level count silently stops matching the data dictionary. A missed strip is visible in the output and fixable by declaring the text in <code>value_labels.yml</code>; a wrong strip is silent and corrupts the level set. So <code>0 No</code> and <code>1 Yes</code> are deliberately <strong>not</strong> stripped.</p>
+<p>Two further refusals, both of which preserve the level set:</p>
+<ul><li>Text whose remainder begins with a digit is left alone, because <code>1-2 vessels</code> matches leading-integer-then-hyphen and would otherwise become <code>2 vessels</code>, colliding with a real <code>2 vessels</code> level. Ranges are ordinary in this domain.</li>
+<li>If stripping would make two entries identical, every entry involved keeps its original text and a warning names the text they collided on. The level set survives whatever the input.</li>
+</ul><p><code><a href="../reference/level_map.html">level_map()</a></code> reports what stripping would do across a dataset: one row per level with <code>key</code>, <code>code</code>, <code>level</code>, <code>level_full</code> and <code>stripped</code>. The shape mirrors <code><a href="../reference/label_map.html">label_map()</a></code> one level down, so <code>subset(level_map(d), stripped)</code> answers “which levels will print differently” exactly as <code>subset(label_map(d), truncated)</code> answers it for labels. Codes come from value labels where a column carries them, from integer level positions for a plain factor, and are <code>NA</code> for a character column. High-cardinality columns are skipped and named in a warning rather than expanding a readable report into thousands of rows.</p>
+</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.1.9" id="hvtirutilities-119">hvtiRutilities 1.1.9<a class="anchor" aria-label="anchor" href="#hvtirutilities-119"></a></h2>
 <div class="section level3">
