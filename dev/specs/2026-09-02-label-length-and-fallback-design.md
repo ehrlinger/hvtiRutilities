@@ -479,5 +479,35 @@ essentially never fire while there are no catalogues; it is there so that
 ⚠️ **`label_max` defaults to 40 in the release that introduces it**, chosen
 over the two-release deprecation window used for `convert_types` and
 `use_value_labels`. So `label_map()` returns different `label` text, and two
-extra columns, in the release this lands. `hvtiPlotR` and `hvtiRtables` are
-the consumers to check.
+extra columns, in the release this lands — v1.1.9.
+
+### 9.1 Who actually consumes this — checked, not assumed
+
+🔴 This note and `NEWS.md` 1.1.9 both name **`hvtiPlotR` and `hvtiRtables`** as
+"the consumers to check". **That is wrong, and it came from this file.** The
+handoff's §1 records an intention — *"hvtiPlotR will use labels for axis
+labels. hvtiRtables will use labels for tables"* — and the claim was written
+as though it described code that exists.
+
+All twelve `hvti*` repositories were grepped on 2026-09-04 for `label_map`,
+`get_label`, `apply_label_overrides` and `apply_value_labels`:
+
+| repo | reality |
+|---|---|
+| `hvtiPlotR` | does **not** depend on this package and never calls `label_map()`. Its three `get_labels()` hits are ggplot2's `panel_params[[1]]$y$get_labels()` |
+| `hvtiRtables` | no dependency, no usage at all |
+| `hvtiRdatabuild` | depends on this package, but its only mention is a prose row in `coming-from-sas.qmd` |
+| `hvtiRtemplates` | depends on this package; uses `update_manifest()`, `hvti_taxonomy`, `hvti_non_prefixes` — nothing in the label API |
+| **`hvtiGraphics`** | **the one real consumer.** `data_governance.qmd` documents the two-column return *and* runs `label_map(dat)` in a live chunk |
+
+So the compatibility risk of the four-column change was **close to nil in
+code**, and the one genuine consequence is a book chapter whose prose
+contradicts its own rendered output. Fixed separately in `hvtiGraphics`.
+
+⚠️ `NEWS.md` 1.1.9 still carries the wrong pair. It is a tagged release, so
+the entry stays as shipped rather than being rewritten under a released
+heading; this section is the correction of record.
+
+**The lesson worth keeping:** a design note states intent, and intent read
+later looks exactly like fact. Before naming a downstream consumer in release
+copy, grep for the call.
