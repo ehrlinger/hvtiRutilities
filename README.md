@@ -2,14 +2,14 @@
 # hvtiRutilities
 
 <!-- badges: start -->
-  [![CRAN version](https://img.shields.io/badge/dynamic/regex?url=https%3A%2F%2Fraw.githubusercontent.com%2Fehrlinger%2FhvtiRutilities%2Fmain%2FDESCRIPTION&search=Version%3A%20(%5B%5Cd.%5D%2B)&replace=%241&label=package%20version)](https://github.com/ehrlinger/hvtiRutilities/blob/main/DESCRIPTION)
-
-[![Codecov test coverage](https://codecov.io/gh/ehrlinger/hvtiRutilities/graph/badge.svg)](https://app.codecov.io/gh/ehrlinger/hvtiRutilities)
-
-[![active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/badges/latest/active.svg)
-
 [![R-CMD-check](https://github.com/ehrlinger/hvtiRutilities/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ehrlinger/hvtiRutilities/actions/workflows/R-CMD-check.yaml)
+[![Codecov test coverage](https://codecov.io/gh/ehrlinger/hvtiRutilities/graph/badge.svg)](https://app.codecov.io/gh/ehrlinger/hvtiRutilities)
+[![active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/badges/latest/active.svg)
+[![pkgdown](https://github.com/ehrlinger/hvtiRutilities/actions/workflows/pkgdown.yaml/badge.svg)](https://github.com/ehrlinger/hvtiRutilities/actions/workflows/pkgdown.yaml)
 
+[![R package version](https://img.shields.io/github/r-package/v/ehrlinger/hvtiRutilities)](https://github.com/ehrlinger/hvtiRutilities)
+
+[![lint](https://github.com/ehrlinger/hvtiRutilities/actions/workflows/lint.yaml/badge.svg)](https://github.com/ehrlinger/hvtiRutilities/actions/workflows/lint.yaml)
 <!-- badges: end -->
 
 ## Overview
