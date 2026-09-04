@@ -1,5 +1,10 @@
 # hvtiRutilities
 
+[![R package
+version](https://img.shields.io/github/r-package/v/ehrlinger/hvtiRutilities)](https://github.com/ehrlinger/hvtiRutilities)
+
+[![lint](https://github.com/ehrlinger/hvtiRutilities/actions/workflows/lint.yaml/badge.svg)](https://github.com/ehrlinger/hvtiRutilities/actions/workflows/lint.yaml)
+
 ## Overview
 
 hvtiRutilities provides utility functions for working with clinical
