@@ -84,6 +84,8 @@ reference:
   - add_labels
   - apply_label_overrides
   - apply_value_labels
+  - strip_level_prefix
+  - level_map
   - clean_labels
 
 - title: Data Documentation

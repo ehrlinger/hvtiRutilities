@@ -292,10 +292,81 @@ catalogue, whereas a wrong strip is silent and corrupts the level set. It also
 means §5 does the real work here and §6 only tidies what §5 could not reach.
 
 **Ordering, for §7.** Stripping is a display operation and never rewrites
-stored level text, so a level named `01 home` keeps its ordering prefix in the
-data while the table prints `home`. That is what keeps the
+stored level text, so a level named `01 - home` keeps its ordering prefix in
+the data while the table prints `home`. That is what keeps the
 order-in-the-level-name option of the ordinal note's §2 available rather than
 quietly foreclosed.
+
+⚠️ This paragraph read `01 home`, without the separator, until 2026-09-04 —
+an example its own rule leaves untouched. Corrected to `01 - home`, matching
+the table above it. See §6.2.
+
+### 6.2 What §6.1 missed — ranges, and collisions by another door
+
+Found while implementing §6.1 on 2026-09-04. Both are the section's own
+failure mode reappearing, and neither is visible from reading the rule.
+
+🔴 **The separator list contains `-`, and `-` also makes ranges.**
+`"1-2 vessels"` matches leading-integer-then-hyphen and strips to
+`"2 vessels"` — which then collides with a real `"2 vessels"` level. That is
+exactly the silent level-merge §6.1 was written to prevent, reintroduced by
+§6.1's own separator list. `"0-1 day"` is the same shape, and ranges are
+ordinary in a cardiac surgery package.
+
+**Added rule:** do not strip when the remainder begins with a digit. It costs
+nothing real — a level whose text starts with a digit after its code is
+already ambiguous — and it closes the range case completely.
+
+🔴 **The separator rule reduces collisions; it does not eliminate them.**
+Two distinct codes can carry the same text: `"1. Yes"` and `"2. Yes"` both
+strip to `"Yes"`. So can a strip landing on a level that was already bare:
+`"Yes"` and `"1. Yes"`.
+
+**Added rule:** every entry involved in a collision keeps its original text,
+and a warning names the text they collided on. A collision means more than one
+**distinct** original mapping to the same output — repeated copies of the same
+text are not a merge, since the level set had one member before and has one
+after, and treating them as one made the function unusable on a raw character
+column where repeats are ordinary (Codex, PR #100). Reverting rather than merging
+means **the level set is preserved whatever the input** — which is the
+guarantee that makes the function safe to call on a dictionary nobody has
+audited. Decided 2026-09-04 by John Ehrlinger, over warning-and-merging or
+erroring outright.
+
+🔴 **§6.1's own ordering example did not obey §6.1's own rule.** The
+"Ordering, for §7" paragraph above read *"a level named `01 home` keeps its
+ordering prefix in the data while the table prints `home`"* — but `01 home`
+has no separator, so the rule stated four paragraphs earlier leaves it exactly
+as it is. The example and the rule contradicted each other in the same
+section.
+
+Caught by Codex on PR #100 after the wrong form had been copied into
+`NEWS.md` and the PR description. Corrected everywhere to `01 - home`, which
+is the form §6.1's own table already used. **The habit worth keeping: run a
+worked example in a spec through the rule the spec states, because a reader
+will trust the example over the rule.**
+
+⚠️ **And the correction is not cosmetic.** The ordinal note's
+"order in the level name" option is written there as `01 home`, `02 rehab`,
+`03 SNF` — the unpunctuated form, in both that note's §2 table and its
+handoff. Under §6.1's rule those levels are **not** stripped, so a study
+adopting that convention would see `01 home` printed in every table, and the
+"stripping and ordering compose" claim in the ordering paragraph would simply
+be false for it.
+
+They compose only when the convention carries a separator: `01 - home`,
+`02 - rehab`. That is now a **constraint on the ordinal decision**, not a
+detail of this one — if the statisticians choose order-in-the-level-name in
+the ordinal note's §7, the convention has to include the separator or lose
+the tidy display. Recorded here rather than in the ordinal note because the
+constraint comes from this rule; the ordinal note's §7 is still open and
+should be answered knowing it.
+
+**Consequence for the output.** A frame can now print a mix — some levels
+tidied, some still carrying prefixes. That is intended: the prefix is the
+visible signal that a level needs its text declared in `value_labels.yml`,
+and §6 already said §5 does the real work while §6 only tidies what §5 could
+not reach.
 
 ## 7. Rethinking `r_data_types()`
 
@@ -468,9 +539,9 @@ essentially never fire while there are no catalogues; it is there so that
       `apply_value_labels()` / `value_labels.yml`.
 - [ ] Build-step conversion in `hvtiRdatabuild`, calling this package rather than
       reimplementing it
-- [ ] Prefix stripping requires a separator (§6.1) — **not done**, and
-      deliberately after §5: §6 says capture the mapping first, and §8.1 has
-      only just given it somewhere to be captured
+- [x] Prefix stripping requires a separator (§6.1). **Done 2026-09-04**,
+      after §5 as §6 required: `strip_level_prefix()` for the rule and
+      `level_map()` for the report. See §6.2 for a gap this section had.
 - [ ] Build-step conversion in `hvtiRdatabuild`, calling this package rather
       than reimplementing it — **not done**
 - [x] `NEWS.md` updated for the code that landed 2026-09-03 under the
