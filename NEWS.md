@@ -1,3 +1,47 @@
+# hvtiRutilities (unreleased)
+
+## New features
+
+- **`strip_level_prefix()` and `level_map()` take the code off level text.**
+  Categorical levels arrive as `1. Yes` / `0 = No` / `01 - home`, and the
+  prefix is stripped by hand in every table, which is where the typos come
+  from.
+
+  `strip_level_prefix()` does it by rule. It is a display helper: it returns
+  new text and never rewrites the levels of the object it was given, so a
+  level named `01 home` keeps its ordering prefix in the data while a table
+  prints `home`.
+
+  **A separator is required** — one of `.` `:` `=` `)` `-` must follow the
+  leading integer. That restraint is the feature. A rule general enough to
+  turn `0 No` into `No` also turns `1 vessel disease`, `2 vessel` and
+  `3 vessel` into two identical strings; nothing errors, a downstream
+  `table()` or model merges them, and the level count silently stops matching
+  the data dictionary. A missed strip is visible in the output and fixable by
+  declaring the text in `value_labels.yml`; a wrong strip is silent and
+  corrupts the level set. So `0 No` and `1 Yes` are deliberately **not**
+  stripped.
+
+  Two further refusals, both of which preserve the level set:
+
+  - Text whose remainder begins with a digit is left alone, because
+    `1-2 vessels` matches leading-integer-then-hyphen and would otherwise
+    become `2 vessels`, colliding with a real `2 vessels` level. Ranges are
+    ordinary in this domain.
+  - If stripping would make two entries identical, every entry involved keeps
+    its original text and a warning names the text they collided on. The level
+    set survives whatever the input.
+
+  `level_map()` reports what stripping would do across a dataset: one row per
+  level with `key`, `code`, `level`, `level_full` and `stripped`. The shape
+  mirrors `label_map()` one level down, so `subset(level_map(d), stripped)`
+  answers "which levels will print differently" exactly as
+  `subset(label_map(d), truncated)` answers it for labels. Codes come from
+  value labels where a column carries them, from integer level positions for a
+  plain factor, and are `NA` for a character column. High-cardinality columns
+  are skipped and named in a warning rather than expanding a readable report
+  into thousands of rows.
+
 # hvtiRutilities 1.1.9
 
 ## New features
