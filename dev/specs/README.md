@@ -26,6 +26,7 @@ condenses it; `plan` files carry none.
 
 | date | note | status |
 |---|---|---|
+| 2026-09-04 | [Handoff — `hvtiGraphics` documents a `label_map()` shape that no longer exists](2026-09-04-hvtigraphics-label-map-shape-handoff.md) | open; **execute in `hvtiGraphics`**, not here |
 | 2026-09-02 | [Ordinal variables — the representation decision](2026-09-02-ordinal-representation-design.md) | decision note; §7 open, awaiting the statisticians |
 | 2026-09-02 | [Handoff — ordinal variables](2026-09-02-ordinal-representation-handoff.md) | step 1 answered by the design note above |
 | 2026-09-02 | [Labels — length, fallback, value labels, and what `r_data_types()` is doing wrong](2026-09-02-label-length-and-fallback-design.md) | approved; §7 decided (B then C); B has a plan, C does not |

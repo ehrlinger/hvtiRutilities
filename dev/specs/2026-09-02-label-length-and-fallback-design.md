@@ -502,7 +502,12 @@ All twelve `hvti*` repositories were grepped on 2026-09-04 for `label_map`,
 
 So the compatibility risk of the four-column change was **close to nil in
 code**, and the one genuine consequence is a book chapter whose prose
-contradicts its own rendered output. Fixed separately in `hvtiGraphics`.
+contradicts its own rendered output. Handed off rather than fixed here:
+`2026-09-04-hvtigraphics-label-map-shape-handoff.md`, to be executed in
+`hvtiGraphics` in its own session. It is not a one-line edit there — that
+repo's committed `_freeze/` cache means a prose change to a chunk-bearing
+chapter must ship with a re-render, and rendering against an older
+`hvtiRutilities` would regenerate the wrong output and pass the gate.
 
 ⚠️ `NEWS.md` 1.1.9 still carries the wrong pair. It is a tagged release, so
 the entry stays as shipped rather than being rewritten under a released
