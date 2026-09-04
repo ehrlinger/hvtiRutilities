@@ -42,6 +42,7 @@
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/job_census.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/job_files.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/label_map.html</loc></url>
+<url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/level_map.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/parity_headline.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/parity_tolerance.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/pool_collinear_pairs.html</loc></url>
@@ -63,6 +64,7 @@
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/sas_triage.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/sas_variable_block.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/selection_crowding.html</loc></url>
+<url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/strip_level_prefix.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/study_checklist.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/study_config.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/study_init.html</loc></url>

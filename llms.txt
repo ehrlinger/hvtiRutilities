@@ -236,6 +236,10 @@ code-to-text mappings for coded variables
   : Apply label overrides from a YAML file
 - [`apply_value_labels()`](https://ehrlinger.github.io/hvtiRutilities/reference/apply_value_labels.md)
   : Declare value labels for coded variables from a YAML file
+- [`strip_level_prefix()`](https://ehrlinger.github.io/hvtiRutilities/reference/strip_level_prefix.md)
+  : Strip a leading code prefix from level text
+- [`level_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/level_map.md)
+  : Report what stripping a code prefix would do to a dataset's levels
 - [`clean_labels()`](https://ehrlinger.github.io/hvtiRutilities/reference/clean_labels.md)
   : Apply label overrides from a YAML file (deprecated)
 
