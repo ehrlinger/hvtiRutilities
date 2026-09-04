@@ -50,12 +50,17 @@ level set.} Two consequences follow.
     \code{"2 vessels"} level. Ranges are ordinary in this domain.
 }
 
-\strong{Collisions revert rather than merge.} If stripping would make two
-entries identical - two codes carrying the same text, or a stripped entry
-landing on one that was already bare - every entry involved keeps its
-original text and a warning names the text they collided on. The level set
-is preserved whatever the input, which is the guarantee this function is
-worth having for.
+\strong{Collisions revert rather than merge.} If stripping would bring two
+\emph{different} texts together - two codes carrying the same words, or a
+stripped entry landing on one that was already bare - every entry involved
+keeps its original text and a warning names the text they collided on. The
+level set is preserved whatever the input, which is the guarantee this
+function is worth having for.
+
+Repeated copies of the same text are not a collision. Two occurrences of
+\code{"1. Yes"} both become \code{"Yes"} without complaint, because the
+level set had one member before and has one after. That is what makes the
+function usable on a raw character column, where repeats are ordinary.
 
 Stripping never produces an empty string: \code{"1."} is returned unchanged.
 }

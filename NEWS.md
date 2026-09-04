@@ -9,7 +9,7 @@
 
   `strip_level_prefix()` does it by rule. It is a display helper: it returns
   new text and never rewrites the levels of the object it was given, so a
-  level named `01 home` keeps its ordering prefix in the data while a table
+  level named `01 - home` keeps its ordering prefix in the data while a table
   prints `home`.
 
   **A separator is required** — one of `.` `:` `=` `)` `-` must follow the

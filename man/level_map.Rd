@@ -14,7 +14,10 @@ to every discrete column - factor, value-labelled, or character. Naming a
 column that is not in \code{data} is an error.}
 
 \item{max_levels}{Maximum distinct values a column may have before it is
-skipped. A single positive whole number; defaults to 20.}
+skipped. A single positive whole number, finite; defaults to 20. To
+report every column, pass a number at least as large as the widest one -
+\code{Inf} is refused, because a threshold that never fires reads as a
+cap that is working.}
 }
 \value{
 A data frame with one row per reported level and the columns

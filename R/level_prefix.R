@@ -44,12 +44,17 @@
 #'     \code{"2 vessels"} level. Ranges are ordinary in this domain.
 #' }
 #'
-#' \strong{Collisions revert rather than merge.} If stripping would make two
-#' entries identical - two codes carrying the same text, or a stripped entry
-#' landing on one that was already bare - every entry involved keeps its
-#' original text and a warning names the text they collided on. The level set
-#' is preserved whatever the input, which is the guarantee this function is
-#' worth having for.
+#' \strong{Collisions revert rather than merge.} If stripping would bring two
+#' \emph{different} texts together - two codes carrying the same words, or a
+#' stripped entry landing on one that was already bare - every entry involved
+#' keeps its original text and a warning names the text they collided on. The
+#' level set is preserved whatever the input, which is the guarantee this
+#' function is worth having for.
+#'
+#' Repeated copies of the same text are not a collision. Two occurrences of
+#' \code{"1. Yes"} both become \code{"Yes"} without complaint, because the
+#' level set had one member before and has one after. That is what makes the
+#' function usable on a raw character column, where repeats are ordinary.
 #'
 #' Stripping never produces an empty string: \code{"1."} is returned unchanged.
 #'
@@ -107,13 +112,29 @@ strip_level_prefix <- function(x) {
 ## Preserve the level set. A strip that makes two entries identical is the
 ## silent merge the separator rule exists to prevent, arriving by a different
 ## door, so both members go back to their original text.
+##
+## The test is whether more than one DISTINCT original maps to the same
+## output. Repeated copies of the same text are not a merge -- the level set
+## had one member before and has one after -- and treating them as one would
+## make the function unusable on a raw character column, where repeats are
+## the normal case.
 .revert_collisions <- function(out, original, changed) {
-  collided <- unique(out[!is.na(out) & duplicated(out)])
+  keep <- !is.na(out)
+  if (!any(keep)) {
+    return(out)
+  }
+
+  sources <- vapply(
+    split(original[keep], out[keep]),
+    function(o) length(unique(o)),
+    integer(1)
+  )
+  collided <- names(sources)[sources > 1L]
   if (length(collided) == 0L) {
     return(out)
   }
 
-  hit <- changed & !is.na(out) & out %in% collided
+  hit <- changed & keep & out %in% collided
   if (!any(hit)) {
     return(out)
   }
@@ -171,7 +192,10 @@ strip_level_prefix <- function(x) {
 #'   to every discrete column - factor, value-labelled, or character. Naming a
 #'   column that is not in \code{data} is an error.
 #' @param max_levels Maximum distinct values a column may have before it is
-#'   skipped. A single positive whole number; defaults to 20.
+#'   skipped. A single positive whole number, finite; defaults to 20. To
+#'   report every column, pass a number at least as large as the widest one -
+#'   \code{Inf} is refused, because a threshold that never fires reads as a
+#'   cap that is working.
 #'
 #' @return A data frame with one row per reported level and the columns
 #' \describe{
@@ -207,9 +231,11 @@ level_map <- function(data, vars = NULL, max_levels = 20L) {
   ok <- length(max_levels) == 1L &&
     is.numeric(max_levels) &&
     !is.na(max_levels) &&
-    max_levels >= 1
+    is.finite(max_levels) &&
+    max_levels >= 1 &&
+    max_levels == trunc(max_levels)
   if (!ok) {
-    stop("'max_levels' must be a single positive number.", call. = FALSE)
+    stop("'max_levels' must be a single positive whole number.", call. = FALSE)
   }
 
   if (is.null(vars)) {

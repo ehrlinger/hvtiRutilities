@@ -97,6 +97,25 @@ test_that("max_levels is validated", {
 
   expect_error(level_map(d, max_levels = 0), "max_levels")
   expect_error(level_map(d, max_levels = "20"), "max_levels")
+  expect_error(level_map(d, max_levels = c(5, 10)), "max_levels")
+  expect_error(level_map(d, max_levels = NA), "max_levels")
+})
+
+test_that("max_levels must be a whole number", {
+  # A fractional threshold is used as-is while the skip warning reports its
+  # truncation, so the message and the behaviour disagree.
+  d <- data.frame(a = factor(c("1. x", "2. y")))
+
+  expect_error(level_map(d, max_levels = 1.5), "whole")
+  expect_error(level_map(d, max_levels = 2.5), "whole")
+  expect_equal(nrow(level_map(d, max_levels = 2)), 2L)
+  expect_equal(nrow(level_map(d, max_levels = 2.0)), 2L)
+})
+
+test_that("max_levels must be finite", {
+  d <- data.frame(a = factor(c("1. x", "2. y")))
+
+  expect_error(level_map(d, max_levels = Inf), "max_levels")
 })
 
 test_that("a collision is reported and the levels keep their prefixes", {

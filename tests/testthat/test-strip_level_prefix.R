@@ -65,6 +65,29 @@ test_that("a collision reverts both members rather than merging them", {
   expect_equal(length(unique(out)), 3L)
 })
 
+test_that("a repeated identical input is not a collision", {
+  # Two copies of the same text map to the same output, which loses nothing:
+  # the level set had one member before and has one after. Treating it as a
+  # merge would make the function unusable on a raw character column, where
+  # repeats are the normal case.
+  x <- c("1. Yes", "1. Yes")
+
+  expect_silent(out <- strip_level_prefix(x))
+  expect_equal(out, c("Yes", "Yes"))
+})
+
+test_that("repeats alongside a genuine collision still revert the collision", {
+  x <- c("1. Yes", "1. Yes", "2. Yes", "3. No")
+
+  expect_warning(out <- strip_level_prefix(x), "Yes")
+  expect_equal(out, c("1. Yes", "1. Yes", "2. Yes", "No"))
+})
+
+test_that("repeats of already-bare text are left alone", {
+  expect_silent(out <- strip_level_prefix(c("Yes", "Yes", "1. No")))
+  expect_equal(out, c("Yes", "Yes", "No"))
+})
+
 test_that("a collision with an already-unprefixed level also reverts", {
   x <- c("Yes", "1. Yes")
 
