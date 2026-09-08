@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.10</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.11</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,6 +55,17 @@
       <small>Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.1.11" id="hvtirutilities-1111">hvtiRutilities 1.1.11<a class="anchor" aria-label="anchor" href="#hvtirutilities-1111"></a></h2>
+<div class="section level3">
+<h3 id="new-features-1-1-11">New features<a class="anchor" aria-label="anchor" href="#new-features-1-1-11"></a></h3>
+<ul><li>
+<p><strong><code><a href="../reference/hvti_taxonomy.html">hvti_taxonomy()</a></code> gains two imputation prefixes, <code>si</code> and <code>mi</code></strong>, both in the <code>datasets</code> folder. They close §7 of the imputation package spec, which had been open since 2026-09-03. 44 prefixes now, across 45 rows – the extra row is <code>estimates</code>, an artifact kind carrying <code>prefix = NA</code>.</p>
+<p><strong>Two prefixes, not one, and the split is the point.</strong> 223 studies call single mean imputation, 326 call multiple imputation, and 18 call both. One prefix could not label those 18 unambiguously. <code>mi</code> is safe only because it is paired: standing alone it reads as multiple imputation to a statistician, which would misname the single-imputation job.</p>
+</li>
+<li><p><strong><code>vars</code> keeps “imputations” in its description, deliberately.</strong> A job that imputes as one step among several is <code>vars</code> – porting <code>vars.sas</code> found mean imputation across 394 variables inside it. A job whose whole purpose is imputation is <code>si</code> or <code>mi</code>. Removing the word would have made the <code>vars</code> description less accurate, not more.</p></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.1.10" id="hvtirutilities-1110">hvtiRutilities 1.1.10<a class="anchor" aria-label="anchor" href="#hvtirutilities-1110"></a></h2>
 <div class="section level3">
