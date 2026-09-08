@@ -54,6 +54,23 @@ beside it consume, in the `setup` / `uses_setup` pairing the corpus uses
 throughout. See
 `hvtiRtemplates:dev/specs/2026-08-29-hs-template-design.md`.
 
+**`si` and `mi` are two prefixes, not one, and that is the point.** 223
+studies call single mean imputation, 326 call multiple imputation, and
+18 call both. They are different methods with different inferential
+properties, and 18 studies running both means one prefix could not label
+them unambiguously. `mi` is safe here only because it is *paired*:
+standing alone it reads as multiple imputation to a statistician, so
+using it for the single-imputation job would misname exactly the thing
+the split exists to distinguish.
+
+**Neither replaces `vars`, whose description still says "imputations" on
+purpose.** `vars` is the job that enhances a dataset with temporary
+variables, imputations and propensity terms together – porting
+`vars.sas` found mean imputation across 394 variables inside it. `si`
+and `mi` name jobs whose *whole purpose* is imputation. A job that
+imputes as one step among several is `vars`; a job that exists to impute
+is `si` or `mi`.
+
 `folder` names two different things. For most rows it is the analysis
 type's home folder, matched to a job prefix. One row, `estimates`, is an
 artifact kind rather than a job type: it holds serialized fits and
@@ -65,18 +82,18 @@ not a string, because there is no prefix to assign it.
 
 ``` r
 head(hvti_taxonomy())
-#>   prefix              name      folder
-#> 1     bd             Build    datasets
-#> 2   vars         Variables    datasets
-#> 3     dt        Data check    datasets
-#> 4     dc       Descriptive descriptive
-#> 5     lg      Logit trends descriptive
-#> 6     rg Regression trends descriptive
+#>   prefix                name      folder
+#> 1     bd               Build    datasets
+#> 2   vars           Variables    datasets
+#> 3     dt          Data check    datasets
+#> 4     si   Single imputation    datasets
+#> 5     mi Multiple imputation    datasets
+#> 6     dc         Descriptive descriptive
 #>                                                           description
 #> 1                     assembles raw sources into the analytic dataset
 #> 2 macro enhancing the dataset with temp vars, imputations, propensity
 #> 3                                     initial QC of the build dataset
-#> 4                       Table 1s, covariate summaries, balance tables
-#> 5                        variable transformation and linearity checks
-#> 6                 trend checks for continuous and polytomous outcomes
+#> 4        mean imputation of missing covariates; one completed dataset
+#> 5       m completed datasets for pooled analysis; not a variant of si
+#> 6                       Table 1s, covariate summaries, balance tables
 ```

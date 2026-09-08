@@ -105,6 +105,21 @@ library and ten of the eleven R <code>hs</code> jobs in <code>/studies</code> si
 beside it consume, in the <code>setup</code> / <code>uses_setup</code> pairing the
 corpus uses throughout. See
 <code>hvtiRtemplates:dev/specs/2026-08-29-hs-template-design.md</code>.</p>
+<p><strong><code>si</code> and <code>mi</code> are two prefixes, not one, and that is the
+point.</strong> 223 studies call single mean imputation, 326 call multiple
+imputation, and 18 call both. They are different methods with different
+inferential properties, and 18 studies running both means one prefix could
+not label them unambiguously. <code>mi</code> is safe here only because it is
+<em>paired</em>: standing alone it reads as multiple imputation to a
+statistician, so using it for the single-imputation job would misname
+exactly the thing the split exists to distinguish.</p>
+<p><strong>Neither replaces <code>vars</code>, whose description still says
+"imputations" on purpose.</strong> <code>vars</code> is the job that enhances a dataset
+with temporary variables, imputations and propensity terms together –
+porting <code>vars.sas</code> found mean imputation across 394 variables inside
+it. <code>si</code> and <code>mi</code> name jobs whose <em>whole purpose</em> is
+imputation. A job that imputes as one step among several is <code>vars</code>;
+a job that exists to impute is <code>si</code> or <code>mi</code>.</p>
 <p><code>folder</code> names two different things. For most rows it is the analysis
 type's home folder, matched to a job prefix. One row, <code>estimates</code>, is an
 artifact kind rather than a job type: it holds serialized fits and cached
@@ -116,20 +131,20 @@ string, because there is no prefix to assign it.</p>
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu">hvti_taxonomy</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   prefix              name      folder</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1     bd             Build    datasets</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2   vars         Variables    datasets</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3     dt        Data check    datasets</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4     dc       Descriptive descriptive</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5     lg      Logit trends descriptive</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6     rg Regression trends descriptive</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   prefix                name      folder</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1     bd               Build    datasets</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2   vars           Variables    datasets</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3     dt          Data check    datasets</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4     si   Single imputation    datasets</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5     mi Multiple imputation    datasets</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6     dc         Descriptive descriptive</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                                                           description</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1                     assembles raw sources into the analytic dataset</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2 macro enhancing the dataset with temp vars, imputations, propensity</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 3                                     initial QC of the build dataset</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4                       Table 1s, covariate summaries, balance tables</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5                        variable transformation and linearity checks</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6                 trend checks for continuous and polytomous outcomes</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4        mean imputation of missing covariates; one completed dataset</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5       m completed datasets for pooled analysis; not a variant of si</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6                       Table 1s, covariate summaries, balance tables</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
