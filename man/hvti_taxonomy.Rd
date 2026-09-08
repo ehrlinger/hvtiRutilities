@@ -51,6 +51,23 @@ beside it consume, in the \code{setup} / \code{uses_setup} pairing the
 corpus uses throughout. See
 \code{hvtiRtemplates:dev/specs/2026-08-29-hs-template-design.md}.
 
+\strong{\code{si} and \code{mi} are two prefixes, not one, and that is the
+point.} 223 studies call single mean imputation, 326 call multiple
+imputation, and 18 call both. They are different methods with different
+inferential properties, and 18 studies running both means one prefix could
+not label them unambiguously. \code{mi} is safe here only because it is
+\emph{paired}: standing alone it reads as multiple imputation to a
+statistician, so using it for the single-imputation job would misname
+exactly the thing the split exists to distinguish.
+
+\strong{Neither replaces \code{vars}, whose description still says
+"imputations" on purpose.} \code{vars} is the job that enhances a dataset
+with temporary variables, imputations and propensity terms together --
+porting \code{vars.sas} found mean imputation across 394 variables inside
+it. \code{si} and \code{mi} name jobs whose \emph{whole purpose} is
+imputation. A job that imputes as one step among several is \code{vars};
+a job that exists to impute is \code{si} or \code{mi}.
+
 \code{folder} names two different things. For most rows it is the analysis
 type's home folder, matched to a job prefix. One row, \code{estimates}, is an
 artifact kind rather than a job type: it holds serialized fits and cached

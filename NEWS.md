@@ -1,3 +1,24 @@
+# hvtiRutilities (unreleased)
+
+## New features
+
+* **`hvti_taxonomy()` gains two imputation prefixes, `si` and `mi`**, both in
+  the `datasets` folder. They close §7 of the imputation package spec, which
+  had been open since 2026-09-03. 44 prefixes now, across 45 rows -- the extra
+  row is `estimates`, an artifact kind carrying `prefix = NA`.
+
+  **Two prefixes, not one, and the split is the point.** 223 studies call
+  single mean imputation, 326 call multiple imputation, and 18 call both. One
+  prefix could not label those 18 unambiguously. `mi` is safe only because it
+  is paired: standing alone it reads as multiple imputation to a statistician,
+  which would misname the single-imputation job.
+
+* **`vars` keeps "imputations" in its description, deliberately.** A job that
+  imputes as one step among several is `vars` -- porting `vars.sas` found mean
+  imputation across 394 variables inside it. A job whose whole purpose is
+  imputation is `si` or `mi`. Removing the word would have made the `vars`
+  description less accurate, not more.
+
 # hvtiRutilities 1.1.10
 
 ## New features
