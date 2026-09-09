@@ -2,7 +2,9 @@
 
 **Date:** 2026-09-08
 **Repo:** `hvtiRutilities`, beside `sas_triage()` and `sas_macro_defs()`.
-**Status:** not started. Nothing in this repo has changed.
+**Status:** not started — **no package code has changed**. `R/`, `man/`, `NAMESPACE` and
+`DESCRIPTION` are untouched; this note is the only file it adds. The tool §2 specifies has not
+been written.
 **Origin:** the biostats deck reports "32 of 176 macro files ported, 104 to go, 35 with no
 owner yet" and nobody could say where it came from. It came from a hand survey run once, three
 weeks ago.
