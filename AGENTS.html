@@ -62,11 +62,11 @@
 <div class="section level2">
 <h2 id="definition-of-done">Definition of done<a class="anchor" aria-label="anchor" href="#definition-of-done"></a></h2>
 <ul><li>
-<code><a href="https://devtools.r-lib.org/reference/test.html" class="external-link">devtools::test()</a></code> passes. 42 test files against 30 source files; a change without a test is not done.</li>
+<code>devtools::test()</code> passes. 42 test files against 30 source files; a change without a test is not done.</li>
 <li>
-<code><a href="https://devtools.r-lib.org/reference/check.html" class="external-link">devtools::check()</a></code> is <strong>0 errors, 0 warnings, 0 notes</strong>. It reached 0/0/0 on 2026-08-20; do not let a NOTE creep back and become “the usual one”.</li>
+<code>devtools::check()</code> is <strong>0 errors, 0 warnings, 0 notes</strong>. It reached 0/0/0 on 2026-08-20; do not let a NOTE creep back and become “the usual one”.</li>
 <li>
-<code><a href="https://devtools.r-lib.org/reference/document.html" class="external-link">devtools::document()</a></code> has been run and <code>man/</code>, <code>NAMESPACE</code> and <code>DESCRIPTION</code> are committed with the source change. CI checks this and fails the PR otherwise.</li>
+<code>devtools::document()</code> has been run and <code>man/</code>, <code>NAMESPACE</code> and <code>DESCRIPTION</code> are committed with the source change. CI checks this and fails the PR otherwise.</li>
 <li>Every new export is in <code>_pkgdown.yml</code>. See the rules below — this one <em>errors</em>, it does not warn.</li>
 <li>Not “it looks right”. A run that finished is not a run that is correct.</li>
 </ul></div>
@@ -82,7 +82,7 @@
 <td>the PDF manual build — catches raw Unicode in <code>.Rd</code> that <code>--no-manual</code> skips</td>
 </tr><tr><td><code>lint.yaml</code></td>
 <td>
-<code><a href="https://lintr.r-lib.org/reference/lint.html" class="external-link">lintr::lint_package()</a></code>, plus a <strong>docs-current</strong> job that runs <code>roxygenise()</code> and then <code>git diff --exit-code man/ NAMESPACE DESCRIPTION</code>
+<code>lintr::lint_package()</code>, plus a <strong>docs-current</strong> job that runs <code>roxygenise()</code> and then <code>git diff --exit-code man/ NAMESPACE DESCRIPTION</code>
 </td>
 </tr><tr><td><code>pkgdown.yaml</code></td>
 <td>the site build, including a topic missing from the reference index</td>
@@ -93,7 +93,7 @@
 </tr></tbody></table></div>
 <div class="section level2">
 <h2 id="generated-files-never-hand-edit">Generated files: never hand-edit<a class="anchor" aria-label="anchor" href="#generated-files-never-hand-edit"></a></h2>
-<p><code>man/*.Rd</code> and <code>NAMESPACE</code> come from roxygen. Edit the roxygen block in <code>R/</code> and run <code><a href="https://devtools.r-lib.org/reference/document.html" class="external-link">devtools::document()</a></code>. The <strong>docs-current</strong> job regenerates and diffs, so a hand-edit or a forgotten <code>document()</code> fails the PR rather than landing quietly.</p>
+<p><code>man/*.Rd</code> and <code>NAMESPACE</code> come from roxygen. Edit the roxygen block in <code>R/</code> and run <code>devtools::document()</code>. The <strong>docs-current</strong> job regenerates and diffs, so a hand-edit or a forgotten <code>document()</code> fails the PR rather than landing quietly.</p>
 </div>
 <div class="section level2">
 <h2 id="rules-for-this-repo">Rules for this repo<a class="anchor" aria-label="anchor" href="#rules-for-this-repo"></a></h2>

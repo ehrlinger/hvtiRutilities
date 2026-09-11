@@ -1170,8 +1170,7 @@ belongs with the `bh` work.
   present the maintainer is derived from the `cre` role, and having both
   declared different addresses.
 - README: the repostatus badge now uses `https://` (the `http://` form
-  301-redirected, failing
-  [`urlchecker::url_check()`](https://urlchecker.r-lib.org/reference/url_check.html)).
+  301-redirected, failing `urlchecker::url_check()`).
 - DESCRIPTION `Date:` refreshed to the 1.0.1 release date.
 
 ### Bug fixes

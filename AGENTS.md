@@ -12,15 +12,14 @@ affordances live in `CLAUDE.md`, which imports this file.
 
 ## Definition of done
 
-- [`devtools::test()`](https://devtools.r-lib.org/reference/test.html)
-  passes. 42 test files against 30 source files; a change without a test
-  is not done.
-- [`devtools::check()`](https://devtools.r-lib.org/reference/check.html)
-  is **0 errors, 0 warnings, 0 notes**. It reached 0/0/0 on 2026-08-20;
-  do not let a NOTE creep back and become “the usual one”.
-- [`devtools::document()`](https://devtools.r-lib.org/reference/document.html)
-  has been run and `man/`, `NAMESPACE` and `DESCRIPTION` are committed
-  with the source change. CI checks this and fails the PR otherwise.
+- `devtools::test()` passes. 42 test files against 30 source files; a
+  change without a test is not done.
+- `devtools::check()` is **0 errors, 0 warnings, 0 notes**. It reached
+  0/0/0 on 2026-08-20; do not let a NOTE creep back and become “the
+  usual one”.
+- `devtools::document()` has been run and `man/`, `NAMESPACE` and
+  `DESCRIPTION` are committed with the source change. CI checks this and
+  fails the PR otherwise.
 - Every new export is in `_pkgdown.yml`. See the rules below — this one
   *errors*, it does not warn.
 - Not “it looks right”. A run that finished is not a run that is
@@ -34,7 +33,7 @@ Six workflows. Know what each one fails on before you push:
 |----|----|
 | `R-CMD-check.yaml` | `R CMD check` on Linux (release, devel, oldrel-1), macOS, Windows |
 | `check-manual.yaml` | the PDF manual build — catches raw Unicode in `.Rd` that `--no-manual` skips |
-| `lint.yaml` | [`lintr::lint_package()`](https://lintr.r-lib.org/reference/lint.html), plus a **docs-current** job that runs `roxygenise()` and then `git diff --exit-code man/ NAMESPACE DESCRIPTION` |
+| `lint.yaml` | `lintr::lint_package()`, plus a **docs-current** job that runs `roxygenise()` and then `git diff --exit-code man/ NAMESPACE DESCRIPTION` |
 | `pkgdown.yaml` | the site build, including a topic missing from the reference index |
 | `house-style.yaml` | composes `.house-style-tools/compose-house-style.R` against `repos.yml`; it asserts the registry still contains this repo’s path rather than failing later with a misleading cause |
 | `test-coverage.yaml` | coverage upload |
@@ -42,10 +41,9 @@ Six workflows. Know what each one fails on before you push:
 ## Generated files: never hand-edit
 
 `man/*.Rd` and `NAMESPACE` come from roxygen. Edit the roxygen block in
-`R/` and run
-[`devtools::document()`](https://devtools.r-lib.org/reference/document.html).
-The **docs-current** job regenerates and diffs, so a hand-edit or a
-forgotten `document()` fails the PR rather than landing quietly.
+`R/` and run `devtools::document()`. The **docs-current** job
+regenerates and diffs, so a hand-edit or a forgotten `document()` fails
+the PR rather than landing quietly.
 
 ## Rules for this repo
 
