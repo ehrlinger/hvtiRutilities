@@ -1,3 +1,16 @@
+# hvtiRutilities (unreleased)
+
+## Bug fixes
+
+* **`hvti_taxonomy()` relabels five prefixes** after a biostatistician's
+  review of the job catalog, 2026-09-11. `bn`, `nd`, `nm` and `np` are
+  non-linear, not non-parametric: "Bootstrap non-linear", "Non-linear
+  distributions", "Non-linear model" and "Non-linear plot", and the three
+  descriptions that said "nonparametric" now say "non-linear". `nb` is
+  "Boosting", not "Notebook", and its description reads "boosting models
+  (Boostmtree, BoostMLR)". Only labels change; no prefix, folder or order
+  moves.
+
 # hvtiRutilities 1.1.11
 
 ## New features
