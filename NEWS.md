@@ -8,8 +8,8 @@
   distributions", "Non-linear model" and "Non-linear plot", and the three
   descriptions that said "nonparametric" now say "non-linear". `nb` is
   "Boosting", not "Notebook", and its description reads "boosting models
-  (Boostmtree, BoostMLR)". Only labels change; no prefix, folder or order
-  moves.
+  (Boostmtree, BoostMLR)". Names and descriptions change; no prefix, folder
+  or order moves.
 
 # hvtiRutilities 1.1.11
 

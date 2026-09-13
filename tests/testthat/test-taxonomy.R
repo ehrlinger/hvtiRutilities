@@ -58,6 +58,29 @@ test_that("the imputation prefixes are pinned by prefix, name and folder", {
   expect_true(nzchar(mi$description))
 })
 
+test_that("the relabelled non-linear and boosting rows are pinned", {
+  # A biostatistician's review of the job catalog, 2026-09-11, relabelled
+  # these five: bn, nd, nm and np are non-linear, not non-parametric, and nb
+  # holds boosting models, not notebooks. The shape checks above still pass
+  # if one is reverted or relabelled halfway, so names and descriptions are
+  # pinned here.
+  tx <- hvti_taxonomy()
+  want <- list(
+    bn = c("Bootstrap non-linear",
+           "bootstrap confidence intervals for non-linear estimates"),
+    nd = c("Non-linear distributions",
+           "distribution estimates stratified by group"),
+    nm = c("Non-linear model", "non-linear regression models"),
+    np = c("Non-linear plot", "non-linear distribution figures"),
+    nb = c("Boosting", "boosting models (Boostmtree, BoostMLR)")
+  )
+  for (p in names(want)) {
+    row <- tx[match(p, tx$prefix), ]
+    expect_equal(row$name, want[[p]][[1]], label = p)
+    expect_equal(row$description, want[[p]][[2]], label = p)
+  }
+})
+
 test_that("`si` and `mi` are two rows, not one prefix wearing two names", {
   # Guards the failure the pairing exists to prevent: a single imputation
   # prefix serving both methods.
