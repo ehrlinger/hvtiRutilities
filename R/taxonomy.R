@@ -94,7 +94,6 @@ hvti_taxonomy <- function() {
     c("br",    "Bootstrap regression",      "analyses",      "linear regression with bagging"),
     c("nm",    "Non-linear model",          "analyses",      "non-linear regression models"),
     c("rf",    "Random forest",             "analyses",      "random forest and randomForestSRC models"),
-    c("pm",    "Propensity model",          "analyses",      "count outcome with balancing score"),
     c("rm",    "Regression model",          "analyses",      "linear regression with balancing score"),
     c("cm",    "Cox matching",              "analyses",      "Cox PH with propensity matching / IPTW"),
     c("ls",    "Life table / STS",          "analyses",      "STS observed-versus-predicted analyses"),
@@ -135,4 +134,28 @@ hvti_taxonomy <- function() {
 #' hvti_non_prefixes()
 hvti_non_prefixes <- function() {
   c("plots", "ppt", "PPTs", "test", "pp", "ref", "refs")
+}
+
+#' Legacy prefixes folded into a taxonomy prefix
+#'
+#' @description
+#' A legacy prefix that names the same job as a prefix in
+#' \code{\link{hvti_taxonomy}}, so a census counts its files under that
+#' prefix. \code{pm} folds into \code{lm}: a review of the job catalog on
+#' 2026-09-11 found that the propensity work filed as \code{pm} belongs with
+#' the logistic models in \code{lm}.
+#'
+#' @details
+#' The map is stored, never derived. A fold is a judgement about what a legacy
+#' name means, and a rule that inferred it from spelling would also fold names
+#' that merely look alike. Every name is absent from \code{hvti_taxonomy()}
+#' and every value is present in it; the tests pin both.
+#'
+#' @return A named character vector, \code{c(legacy = prefix)}.
+#' @seealso \code{\link{job_files}}, which applies it.
+#' @export
+#' @examples
+#' hvti_prefix_folds()
+hvti_prefix_folds <- function() {
+  c(pm = "lm")
 }

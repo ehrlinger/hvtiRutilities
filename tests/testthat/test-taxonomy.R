@@ -10,6 +10,17 @@ test_that("hvti_taxonomy() has the expected shape", {
   expect_true(all(nzchar(tx$description)))
 })
 
+test_that("every fold leaves a dropped prefix for a taxonomy prefix", {
+  # pm left the taxonomy on 2026-09-13, folded into lm. A fold whose name is
+  # still in the taxonomy would count one prefix under two; a fold into a
+  # prefix the taxonomy lacks would make the census call it unknown.
+  folds <- hvti_prefix_folds()
+  tx <- hvti_taxonomy()$prefix
+  expect_identical(folds, c(pm = "lm"))
+  expect_false(any(names(folds) %in% tx))
+  expect_true(all(folds %in% tx))
+})
+
 test_that("the taxonomy and the non-prefix list are disjoint", {
   expect_equal(intersect(hvti_taxonomy()$prefix, hvti_non_prefixes()),
                character(0))

@@ -1,5 +1,15 @@
 # hvtiRutilities (unreleased)
 
+## New features
+
+* **`hvti_prefix_folds()` records legacy prefixes that fold into another**,
+  and `job_files()` applies it: a folded file is reported under the prefix it
+  folds into and classed `known`, while `stem` keeps the name as written. The
+  first fold is `pm` into `lm`. A review of the job catalog on 2026-09-11 found
+  that propensity work filed as `pm` belongs with the logistic models in `lm`,
+  so `pm` leaves `hvti_taxonomy()` and future censuses count its files as
+  `lm`.
+
 ## Bug fixes
 
 * **`hvti_taxonomy()` relabels five prefixes** after a biostatistician's
