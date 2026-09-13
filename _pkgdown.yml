@@ -156,6 +156,7 @@ reference:
   contents:
   - hvti_taxonomy
   - hvti_non_prefixes
+  - hvti_prefix_folds
 
 - title: Corpus Inventory
   desc: Sweep the job corpus by filename -- which studies ran which job types

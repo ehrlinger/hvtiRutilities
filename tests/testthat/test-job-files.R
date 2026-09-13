@@ -137,6 +137,22 @@ test_that("prefix_class is three-way, not two", {
   expect_equal(out$prefix_class[out$prefix %in% "zz"], "unknown")
 })
 
+test_that("a folded legacy prefix is counted as the prefix it folds into", {
+  # pm left the taxonomy on 2026-09-13, folded into lm by hvti_prefix_folds().
+  # Its files must count as lm and be known, not drop into the unknown bucket,
+  # and the stem must still show the name as written so the file is findable.
+  d <- withr::local_tempdir()
+  dir.create(file.path(d, "alpha", "analyses"), recursive = TRUE)
+  file.create(file.path(d, "alpha", "analyses", "pm.count.sas"))
+  out <- job_files(d)
+
+  expect_equal(nrow(out), 1L)
+  expect_equal(out$prefix, "lm")
+  expect_equal(out$prefix_class, "known")
+  expect_equal(out$stem, "pm.count")
+  expect_true(out$folder_ok)
+})
+
 test_that("folder_ok flags a prefix sitting outside its taxonomy folder", {
   # hz belongs in distributions. The corpus answer for hz was 'zero misfiled'
   # -- but that was verified, not assumed, and every prefix gets the check.

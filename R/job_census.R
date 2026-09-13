@@ -164,6 +164,10 @@
 #' findable. A sweep that reports only what it kept makes a missing job
 #' indistinguishable from a job that does not exist.
 #'
+#' A legacy prefix listed in \code{\link{hvti_prefix_folds}} is reported as
+#' the prefix it folds into, so a \code{pm.*} file counts as \code{lm}.
+#' \code{stem} keeps the name as written, so a folded file stays findable.
+#'
 #' There is deliberately no extension allowlist. See
 #' \code{vignette}-adjacent design note
 #' \code{dev/specs/2026-08-26-job-type-inventory-design.md}, section 4.4: a
@@ -279,6 +283,13 @@ job_files <- function(roots) {
     no_real_ext <- has_ext & !nzchar(stem)
     stem <- ifelse(no_real_ext, base, stem)
     ext <- ifelse(no_real_ext, NA_character_, ext)
+
+    # A folded legacy prefix is counted as the prefix it folds into, before
+    # classification, so it lands as "known" rather than "unknown". The stem
+    # is untouched and still shows the name as written.
+    folds <- hvti_prefix_folds()
+    folded <- !is.na(fields$prefix) & fields$prefix %in% names(folds)
+    fields$prefix[folded] <- unname(folds[fields$prefix[folded]])
 
     tx <- hvti_taxonomy()
     # incomparables = NA keeps an unmatched (NA) prefix from matching the

@@ -41,6 +41,10 @@ not reasons to drop a row, so a file this sweep cannot classify stays
 findable. A sweep that reports only what it kept makes a missing job
 indistinguishable from a job that does not exist.
 
+A legacy prefix listed in \code{\link{hvti_prefix_folds}} is reported as
+the prefix it folds into, so a \code{pm.*} file counts as \code{lm}.
+\code{stem} keeps the name as written, so a folded file stays findable.
+
 There is deliberately no extension allowlist. See
 \code{vignette}-adjacent design note
 \code{dev/specs/2026-08-26-job-type-inventory-design.md}, section 4.4: a
