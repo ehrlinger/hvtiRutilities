@@ -44,6 +44,11 @@ not reasons to drop a row, so a file this sweep cannot classify stays
 findable. A sweep that reports only what it kept makes a missing job
 indistinguishable from a job that does not exist.
 
+A legacy prefix listed in
+[`hvti_prefix_folds`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_prefix_folds.md)
+is reported as the prefix it folds into, so a `pm.*` file counts as
+`lm`. `stem` keeps the name as written, so a folded file stays findable.
+
 There is deliberately no extension allowlist. See `vignette`-adjacent
 design note `dev/specs/2026-08-26-job-type-inventory-design.md`, section
 4.4: a plausible default tuned on the hazard prefixes would have dropped

@@ -356,6 +356,8 @@ The two-letter prefix system inherited from the CORR analysis binder
   : Analysis prefix taxonomy
 - [`hvti_non_prefixes()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_non_prefixes.md)
   : Second fields that are not analysis prefixes
+- [`hvti_prefix_folds()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_prefix_folds.md)
+  : Legacy prefixes folded into a taxonomy prefix
 
 ## Corpus Inventory
 
