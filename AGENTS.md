@@ -33,7 +33,7 @@ Six workflows. Know what each one fails on before you push:
 |----|----|
 | `R-CMD-check.yaml` | `R CMD check` on Linux (release, devel, oldrel-1), macOS, Windows |
 | `check-manual.yaml` | the PDF manual build — catches raw Unicode in `.Rd` that `--no-manual` skips |
-| `lint.yaml` | `lintr::lint_package()`, plus a **docs-current** job that runs `roxygenise()` and then `git diff --exit-code man/ NAMESPACE DESCRIPTION` |
+| `lint.yaml` | [`lintr::lint_package()`](https://lintr.r-lib.org/reference/lint.html), plus a **docs-current** job that runs `roxygenise()` and then `git diff --exit-code man/ NAMESPACE DESCRIPTION` |
 | `pkgdown.yaml` | the site build, including a topic missing from the reference index |
 | `house-style.yaml` | composes `.house-style-tools/compose-house-style.R` against `repos.yml`; it asserts the registry still contains this repo’s path rather than failing later with a misleading cause |
 | `test-coverage.yaml` | coverage upload |
