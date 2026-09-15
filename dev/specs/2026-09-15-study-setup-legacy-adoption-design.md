@@ -112,6 +112,10 @@ The shell command does not copy work files. Those remain on demand through
 
 ## The `qhsprograms` source repository
 
+`qhsprograms` lives in the existing Azure DevOps project
+`HVTI-CORR-DM-Tools`. It is separate from the future `CORR_STUDIES` project,
+which contains study-specific source and recovery metadata.
+
 The first commit imports the meaningful current contents of
 `/programs/execs/cmd/` without changing their behavior or layout. The
 repository mirrors that path under `execs/cmd/` so a deployed file has one

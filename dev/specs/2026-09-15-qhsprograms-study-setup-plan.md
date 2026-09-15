@@ -108,13 +108,13 @@ scanner before committing; do not substitute a handwritten pattern search.
 
 - [ ] **Step 5: Commit and create the ADO repository**
 
-Require `QHS_ADO_ORG_URL` and `QHS_PROGRAMS_PROJECT` in the operator's
-environment, then run:
+Create the repository in the existing `HVTI-CORR-DM-Tools` project. This is
+separate from the future `CORR_STUDIES` project used for study recovery:
 
 ```sh
 az repos create --name qhsprograms \
-  --organization "$QHS_ADO_ORG_URL" \
-  --project "$QHS_PROGRAMS_PROJECT"
+  --organization "https://dev.azure.com/ClevelandClinic" \
+  --project "HVTI-CORR-DM-Tools"
 ```
 
 Add the returned HTTPS URL as `origin`, push a feature branch, and open the
@@ -304,6 +304,9 @@ Run exactly:
 ```text
 Rscript --vanilla -e renv::init(bare=TRUE,restart=FALSE)
 ```
+
+Because bare initialization does not create `renv.lock`, follow it with a
+separate `renv::snapshot(prompt=FALSE)` process when the lockfile is absent.
 
 Preserve any existing `renv.lock`, `renv/`, `.Rprofile`, `.Renviron`, and
 `.renvignore`; if their state makes initialization unsafe, stop with an
