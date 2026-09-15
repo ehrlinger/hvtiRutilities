@@ -146,6 +146,44 @@ test_that("study_status reports each named dataset and cohort", {
   expect_equal(check_for(status, "cohort:imaging")$status, "MISSING")
 })
 
+test_that("study_status reports a malformed named dataset without stopping", {
+  root <- make_registered_study(withr::local_tempdir())
+  cfg <- yaml::read_yaml(file.path(root, "_study.yml"))
+  cfg$additional_datasets$bad <- list(cohort = NULL)
+  yaml::write_yaml(cfg, file.path(root, "_study.yml"))
+
+  status <- expect_no_error(study_status(root))
+
+  expect_equal(check_for(status, "dataset:bad")$status, "FAIL")
+  expect_equal(check_for(status, "cohort:bad")$status, "MISSING")
+})
+
+test_that("study_status fails an unreadable ancillary dataset", {
+  root <- make_registered_study(withr::local_tempdir())
+  bad <- file.path(study_dir("datasets", root), "bad.rds")
+  writeLines("not an RDS file", bad)
+  cfg <- yaml::read_yaml(file.path(root, "_study.yml"))
+  cfg$additional_datasets$bad <- list(
+    built = "bad.rds",
+    population = NULL,
+    cohort = NULL
+  )
+  yaml::write_yaml(cfg, file.path(root, "_study.yml"))
+
+  status <- study_status(root)
+
+  expect_equal(check_for(status, "dataset:bad")$status, "FAIL")
+  expect_equal(check_for(status, "cohort:bad")$status, "MISSING")
+})
+
+test_that("missing study status includes both recovery forms", {
+  status <- study_status(withr::local_tempdir())
+  detail <- check_for(status, "_study.yml")$detail
+
+  expect_match(detail, "study-setup --recover", fixed = TRUE)
+  expect_match(detail, "study-setup 42 --recover", fixed = TRUE)
+})
+
 test_that("provenance is FAIL when a .qmd source has no sidecar", {
   root <- withr::local_tempdir()
   writeLines("---\ntitle: x\n---", file.path(root, "01.hz.dead_JR.qmd"))

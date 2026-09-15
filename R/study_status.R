@@ -34,15 +34,40 @@
 }
 
 .status_named_dataset <- function(cfg, dataset) {
-  contract <- .study_dataset(cfg, dataset)
-  path <- built_path(cfg, dataset)
   data_item <- paste0("dataset:", dataset)
   cohort_item <- paste0("cohort:", dataset)
+  resolved <- tryCatch(
+    list(
+      contract = .study_dataset(cfg, dataset),
+      path = built_path(cfg, dataset)
+    ),
+    error = function(e) e
+  )
+  if (inherits(resolved, "error")) {
+    return(rbind(
+      .status_row(data_item, "FAIL", conditionMessage(resolved)),
+      .status_row(cohort_item, "MISSING",
+                  "requires a valid dataset contract")
+    ))
+  }
+  contract <- resolved$contract
+  path <- resolved$path
 
   if (!file.exists(path)) {
     return(rbind(
       .status_row(data_item, "MISSING", paste("not found:", path)),
       .status_row(cohort_item, "MISSING", "requires the dataset")
+    ))
+  }
+
+  data <- tryCatch(
+    read_built(cfg, dataset = dataset),
+    error = function(e) e
+  )
+  if (inherits(data, "error")) {
+    return(rbind(
+      .status_row(data_item, "FAIL", conditionMessage(data)),
+      .status_row(cohort_item, "MISSING", "requires a readable dataset")
     ))
   }
 
@@ -56,7 +81,7 @@
 
   gate <- tryCatch({
     assert_cohort(
-      read_built(cfg, dataset = dataset),
+      data,
       cfg,
       dataset = dataset
     )
@@ -237,7 +262,9 @@ study_status <- function(root = getwd()) {
   if (!file.exists(yml)) {
     row_yml <- .status_row("_study.yml", "MISSING",
                            paste0("no _study.yml at this root; recovery may ",
-                                  "be available with study-setup --recover"))
+                                  "be available with study-setup --recover; ",
+                                  "if its Tracker ID cannot be inferred, run ",
+                                  "study-setup 42 --recover"))
   } else {
     parsed <- tryCatch(
       study_config(root, require_data = FALSE),

@@ -353,8 +353,9 @@ verify_manifest <- function(manifest_path = "manifest.yaml",
 
   resolve_entry <- function(file) {
     if (search_nested) {
-      nested <- file.path(data_dir, "datasets", file)
-      if (file.exists(nested)) return(nested)
+      nested <- file.path(data_dir, c("00_datasets", "datasets"), file)
+      found <- nested[file.exists(nested)]
+      if (length(found)) return(found[[1L]])
     }
     file.path(data_dir, file)
   }

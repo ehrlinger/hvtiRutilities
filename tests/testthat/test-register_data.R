@@ -182,12 +182,57 @@ test_that("register_data creates a verifiable manifest entry", {
 
   report <- verify_manifest(
     file.path(root, "manifest.yaml"),
-    data_dir = study_dir("datasets", root),
     stop_on_error = FALSE
   )
 
   expect_identical(report$file, "built.csv")
   expect_identical(report$status, "OK")
+})
+
+test_that("register_data refuses files that share derived output paths", {
+  root <- registration_study()
+  write_registration_csv(root, "built.csv")
+  register_data(root, "built.csv", "dead", "iv_dead")
+  before <- study_manifest_bytes(root)
+  d <- data.frame(id = 1:2, dead = c(0L, 1L), iv_dead = 1:2)
+  saveRDS(d, file.path(study_dir("datasets", root), "built.rds"))
+
+  expect_error(
+    register_data(root, "built.rds", dataset = "secondary", role = "named"),
+    "derived path stem"
+  )
+  expect_identical(study_manifest_bytes(root), before)
+})
+
+test_that("pair replacement retains a backup when restoration fails", {
+  root <- withr::local_tempdir()
+  targets <- file.path(root, c("_study.yml", "manifest.yaml"))
+  prepared <- file.path(root, c("._study-new", ".manifest-new"))
+  writeLines("old study", targets[[1L]])
+  writeLines("old manifest", targets[[2L]])
+  writeLines("new study", prepared[[1L]])
+  writeLines("new manifest", prepared[[2L]])
+
+  local_mocked_bindings(
+    .registration_rename = function(from, to) {
+      if (grepl("^\\.manifest-new$", basename(from))) return(FALSE)
+      if (grepl("-backup-", basename(from)) &&
+            identical(basename(to), "_study.yml")) {
+        return(FALSE)
+      }
+      file.rename(from, to)
+    }
+  )
+
+  expect_warning(
+    expect_error(.replace_study_pair(prepared, targets), "prepared manifest"),
+    "backup remains"
+  )
+  backups <- list.files(root, pattern = "_study[.]yml-backup",
+                        all.files = TRUE, full.names = TRUE)
+  expect_length(backups, 1L)
+  expect_identical(readLines(backups), "old study")
+  expect_identical(readLines(targets[[2L]]), "old manifest")
 })
 
 test_that("register_data refuses an absent or extensionless file", {

@@ -15,6 +15,10 @@
   entry
 }
 
+.registration_rename <- function(from, to) {
+  file.rename(from, to)
+}
+
 .replace_study_pair <- function(prepared, targets) {
   backups <- vapply(
     targets,
@@ -35,15 +39,22 @@
     if (!complete) {
       unlink(targets[placed])
       for (i in which(backed_up)) {
-        file.rename(backups[[i]], targets[[i]])
+        restored <- .registration_rename(backups[[i]], targets[[i]])
+        if (!restored) {
+          warning(
+            "register_data(): could not restore ", targets[[i]],
+            "; its backup remains at ", backups[[i]],
+            call. = FALSE
+          )
+        }
       }
     }
     unlink(prepared[file.exists(prepared)])
-    unlink(backups[file.exists(backups)])
+    if (complete) unlink(backups[file.exists(backups)])
   }, add = TRUE)
 
   for (i in which(existed)) {
-    if (!file.rename(targets[[i]], backups[[i]])) {
+    if (!.registration_rename(targets[[i]], backups[[i]])) {
       stop("register_data(): could not prepare existing manifest: ",
            targets[[i]], call. = FALSE)
     }
@@ -51,7 +62,7 @@
   }
 
   for (i in seq_along(targets)) {
-    if (!file.rename(prepared[[i]], targets[[i]])) {
+    if (!.registration_rename(prepared[[i]], targets[[i]])) {
       stop("register_data(): could not move prepared manifest into place: ",
            targets[[i]], call. = FALSE)
     }
@@ -207,6 +218,18 @@ register_data <- function(root = getwd(), built, event = NULL, time = NULL,
          call. = FALSE)
   }
   if (is.null(manifest$datasets)) manifest$datasets <- list()
+  files <- vapply(
+    manifest$datasets,
+    function(item) {
+      if (!is.character(item$file) || length(item$file) != 1L ||
+            is.na(item$file) || !nzchar(item$file)) {
+        stop("register_data(): manifest.yaml has an invalid dataset entry",
+             call. = FALSE)
+      }
+      item$file
+    },
+    character(1)
+  )
   listed <- vapply(
     manifest$datasets,
     function(item) identical(item$file, built),
@@ -215,6 +238,16 @@ register_data <- function(root = getwd(), built, event = NULL, time = NULL,
   if (any(listed)) {
     stop("register_data(): ", built, " is already listed in manifest.yaml",
          call. = FALSE)
+  }
+  stem <- tools::file_path_sans_ext(built)
+  existing_stems <- tools::file_path_sans_ext(files)
+  if (stem %in% existing_stems) {
+    conflict <- files[[match(stem, existing_stems)]]
+    stop(
+      "register_data(): ", built, " and ", conflict,
+      " share the derived path stem '", stem, "'",
+      call. = FALSE
+    )
   }
   manifest$datasets <- c(manifest$datasets, list(entry))
 
