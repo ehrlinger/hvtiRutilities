@@ -11,9 +11,12 @@ a decision someone made with reasons, and those reasons are written down.
 
 Replaces the production `mkdirs` path with a Study Tracker-driven
 `study-setup` command and lets `_study.yml` record identity before a built
-dataset exists. `register_data()` completes the dataset and cohort contract
-later. Existing studies enter through an explicit, non-destructive `--adopt`
-path; missing manifests enter through an explicit `--recover` path.
+dataset exists. `study_setup()` creates that package-owned state, while
+`register_data()` later records one canonical study dataset or a named subset.
+Each subset has its own cohort gate and cannot replace the study-wide cohort.
+The old `study_init()` name remains as a deprecated compatibility wrapper.
+Existing studies enter through an explicit, non-destructive `--adopt` path;
+missing manifests enter through an explicit `--recover` path.
 
 **Decisions already settled** are in the
 [study setup and legacy adoption design][study-setup-design].

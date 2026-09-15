@@ -27,9 +27,10 @@ needed to derive cohort counts. A new study has none of those yet. The current
 `_study.yml` therefore records data readiness, but it cannot record identity at
 the time identity first becomes known.
 
-This design separates those moments. Study setup records identity and creates
-the R environment. `register_data()` completes the data contract after the
-first built dataset exists.
+This design separates those moments. `study_setup()` records identity and
+creates the R environment. `register_data()` records the canonical study
+dataset or a named subset after that dataset exists. The old `study_init()`
+name is retained only as a deprecated compatibility entry point.
 
 ## Evidence read for this design
 
@@ -90,7 +91,8 @@ The new Azure DevOps `qhsprograms` repository owns:
 - creation and validation of the standard study directory structure;
 - safe creation of R environment files;
 - the distinction between identity-ready and data-ready studies;
-- completion of the data contract through `register_data()`; and
+- registration of the canonical study dataset and named subsets through
+  `register_data()`; and
 - the read-only status report consumed by the command.
 
 The shell command does not copy work files. Those remain on demand through
@@ -211,7 +213,8 @@ citation: ~
 cohort: ~
 ```
 
-After data registration, the existing `built` and `cohort` shape is retained:
+After the canonical study dataset is registered, the existing `built` and
+`cohort` shape is retained:
 
 ```yaml
 built: "built.sas7bdat"
@@ -223,6 +226,29 @@ cohort:
   time: "iv_dead"
 ```
 
+The canonical dataset has the reserved logical name `study`. Named subsets
+are additive and carry their own file and cohort contract:
+
+```yaml
+subsets:
+  analysis_cohort:
+    built: "analysis_cohort.sas7bdat"
+    population: "Eligible patients with complete imaging"
+    cohort:
+      n: 812
+      n_events: 211
+      n_censored: 601
+      event: "dead"
+      time: "iv_dead"
+```
+
+There is exactly one canonical study dataset and any number of distinctly
+named subsets. Registering a subset never changes the top-level `built`,
+`population`, or `cohort`. Existing manifests with no `subsets` key retain
+their current meaning. A subset may be registered before the canonical
+dataset. The study then has registered data but is not data-ready under the
+default study contract.
+
 Existing manifests with no Study Tracker fields remain valid. This is an
 additive schema change.
 
@@ -233,19 +259,21 @@ Callers that only need identity use `require_data = FALSE`. `study_root()` and
 before its first dataset exists.
 
 `study_status()` reports `_study.yml` as `OK` when the identity state parses.
-The dataset, cohort, and manifest checks report `MISSING` until
-`register_data()` completes them. A check that cannot run has not failed.
+The canonical dataset and cohort checks report `MISSING` until they are
+registered. The manifest check covers whichever registered files it contains,
+and registered subsets receive separate dataset and cohort rows. A check that
+cannot run has not failed.
 
 ## Package-owned setup
 
 The package adds:
 
 ```r
-study_scaffold(root, study, study_tracker_id,
-               umbrella = NULL, owner = NULL,
-               irb_number = NULL, cvir_no = NULL,
-               study_creation_date = NULL,
-               adopt = FALSE)
+study_setup(root, study, study_tracker_id,
+            umbrella = NULL, owner = NULL,
+            irb_number = NULL, cvir_no = NULL,
+            study_creation_date = NULL,
+            adopt = FALSE)
 ```
 
 For a new root it creates the standard directories:
@@ -279,6 +307,7 @@ The package adds:
 
 ```r
 register_data(root = getwd(), built, event, time,
+              dataset = "study", role = c("study", "subset"),
               population = NULL, source = NULL,
               extract_date = NULL)
 ```
@@ -286,13 +315,30 @@ register_data(root = getwd(), built, event, time,
 The function requires a valid identity manifest and an existing file under
 `datasets/`. It reads the data, checks the event and time variables, derives
 the three cohort counts, and prepares the updated `_study.yml` and
-`manifest.yaml` before replacing either. It preserves every identity field and
-refuses a second registration unless a later design adds an explicit update
-operation.
+`manifest.yaml` before replacing either. It never accepts caller-supplied
+counts.
 
-`study_init()` remains for compatibility. Its current successful output and
-failure guarantees do not change. Internally it may compose the new
-primitives, but a failure before data validation must still write nothing.
+`role = "study"` requires the reserved `dataset = "study"` and writes the
+top-level study data contract. `role = "subset"` requires a non-reserved,
+non-empty lower-snake-case dataset name and writes that entry beneath
+`subsets`. Requiring the role makes an accidental attempt to replace the study
+cohort fail rather than quietly changing its meaning. A second registration
+of the canonical dataset or an existing subset name is refused. Updating
+registered data is a separate operation and is not part of this design.
+
+`built_path()`, `built_manifest()`, `read_built()`, `cohort_counts()`,
+`assert_cohort()`, and `record_provenance()` gain `dataset = "study"` as their
+last argument. Their default and positional behavior is unchanged. Passing a
+subset name selects its registered file and its own cohort gate, and records
+that logical name in provenance. An unknown name fails and lists the
+registered choices.
+
+`study_init()` is deprecated in favor of `study_setup()` followed by
+`register_data()`. It remains through the 1.x series as a compatibility
+wrapper. It emits the package's standard deprecation warning, but its files,
+return value, and failure guarantees do not change. Internally it may compose
+the new primitives, but a failure before data validation must still write
+nothing.
 
 ## Automatic `renv` initialization
 
@@ -432,11 +478,16 @@ The `hvtiRutilities` tests cover:
 - the default data-ready failure of `study_config()`;
 - identity-only parsing;
 - `study_status()` reporting pre-dataset checks as `MISSING`;
-- scaffold creation, adoption, preservation, and atomic writes;
+- `study_setup()` creation, adoption, preservation, and atomic writes;
 - `register_data()` deriving rather than accepting counts;
-- identity preservation during registration;
-- refusal to register twice; and
-- byte-identical current `study_init()` behavior.
+- identity and canonical-cohort preservation during subset registration;
+- any number of uniquely named subsets;
+- rejection of reserved, empty, duplicate, and unknown dataset names;
+- subset registration before or after the canonical dataset;
+- dataset selection by every data-contract and provenance helper;
+- refusal to replace a canonical or previously registered dataset; and
+- the `study_init()` warning with otherwise unchanged files, return value, and
+  failure behavior.
 
 The package definition of done remains `devtools::test()` plus
 `devtools::check()` at 0 errors, 0 warnings, and 0 notes, with regenerated
@@ -465,8 +516,9 @@ and this setup command is deliberately read-only against it.
 2. `study-setup` can create, inspect, adopt, and recover a study by Study
    Tracker ID without copying work templates or writing absolute paths.
 3. A study has valid recorded identity before its first built dataset exists.
-4. `register_data()` completes that identity with derived cohort and manifest
-   evidence without replacing it.
+4. `register_data()` records one canonical study dataset and named subsets,
+   each with derived cohort and manifest evidence, without letting a subset
+   replace the study cohort.
 5. Automatic `renv` setup is rerunnable and never replaces an existing
    environment file silently.
 6. A missing `_study.yml` tells a person exactly how to attempt recovery, while
