@@ -1,7 +1,7 @@
 # Study setup, legacy adoption, and recovery
 
 **Date:** 2026-09-15
-**Status:** Approved design, pending implementation plans
+**Status:** Approved design, implementation plans complete
 **Repositories:** `qhsprograms` (new Azure DevOps repository),
 `hvtiRutilities`, `hvtiRtemplates`, and a small downstream migration in
 `hvtiRdatabuild`
