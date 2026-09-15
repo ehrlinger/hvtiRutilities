@@ -59,13 +59,13 @@ test_that("study_status verifies data in a numbered datasets directory", {
 })
 
 test_that("study_status reports FAIL when _study.yml is present but invalid", {
-  root <- make_study_fixture(withr::local_tempdir(), omit = "built",
+  root <- make_study_fixture(withr::local_tempdir(), omit = "study",
                              write_data = FALSE)
   st   <- study_status(root)
 
   row <- check_for(st, "_study.yml")
   expect_equal(row$status, "FAIL")
-  expect_match(row$detail, "built")
+  expect_match(row$detail, "study")
 })
 
 test_that("study_status reports MISSING, not FAIL, for checks it cannot run", {

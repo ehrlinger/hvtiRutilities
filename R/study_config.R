@@ -9,10 +9,18 @@
 # way round.
 
 # Required keys, in the order they are reported. Nested keys are dotted.
-.study_required <- function() {
-  c("study", "built",
-    "cohort.n", "cohort.n_events", "cohort.n_censored",
-    "cohort.event", "cohort.time")
+.study_required <- function(require_data = TRUE) {
+  if (!require_data) return("study")
+
+  c(
+    "study",
+    "built",
+    "cohort.n",
+    "cohort.n_events",
+    "cohort.n_censored",
+    "cohort.event",
+    "cohort.time"
+  )
 }
 
 .study_pluck <- function(cfg, key) {
@@ -45,6 +53,8 @@
 #'
 #' @param start Character. Directory to start the upward walk from. Defaults
 #'   to \code{getwd()}.
+#' @param require_data Logical. If \code{TRUE}, require the default dataset and
+#'   cohort contract. Use \code{FALSE} when only study identity is needed.
 #'
 #' @return A list with elements \code{root}, \code{file}, \code{study},
 #'   \code{population}, \code{built}, \code{citation}, and \code{cohort} (a
@@ -67,7 +77,7 @@
 #' cfg <- study_config(root)
 #' cfg$study
 #' unlink(root, recursive = TRUE)
-study_config <- function(start = getwd()) {
+study_config <- function(start = getwd(), require_data = TRUE) {
   dir     <- normalizePath(start, mustWork = TRUE)
   walked  <- character(0)
   found   <- NULL
@@ -94,47 +104,50 @@ study_config <- function(start = getwd()) {
   raw <- yaml::read_yaml(found)
 
   missing <- Filter(function(k) is.null(.study_pluck(raw, k)),
-                    .study_required())
+                    .study_required(require_data))
   if (length(missing)) {
+    action <- if (require_data && "built" %in% missing) {
+      " Run register_data() after the default study dataset exists."
+    } else {
+      ""
+    }
     stop("study_config(): ", found, " is missing required key",
          if (length(missing) > 1) "s" else "", ": ",
          paste(gsub(".", ":", missing, fixed = TRUE), collapse = ", "),
-         ". No defaults are supplied for a study manifest.", call. = FALSE)
+         ". No defaults are supplied for a study manifest.", action,
+         call. = FALSE)
   }
 
-  if (!nzchar(tools::file_ext(raw$built))) {
+  if (!is.null(raw$built) && !nzchar(tools::file_ext(raw$built))) {
     stop("study_config(): built: '", raw$built, "' has no file extension. ",
          "Give the dataset filename in full (for example ",
          "'built080426.sas7bdat'); the reader dispatches on the extension.",
          call. = FALSE)
   }
 
-  n   <- as.integer(raw$cohort$n)
-  ev  <- as.integer(raw$cohort$n_events)
-  cen <- as.integer(raw$cohort$n_censored)
+  if (!is.null(raw$cohort)) {
+    raw$cohort$n <- as.integer(raw$cohort$n)
+    raw$cohort$n_events <- as.integer(raw$cohort$n_events)
+    raw$cohort$n_censored <- as.integer(raw$cohort$n_censored)
+  }
 
   # An internally inconsistent cohort block would make assert_cohort() a
   # gate that can never pass, and the error it raised would point at the
   # data rather than at the manifest that is actually wrong.
-  if (!identical(n, ev + cen)) {
-    stop("study_config(): ", found, " cohort is inconsistent: n = ", n,
-         " but n_events + n_censored = ", ev + cen,
-         " (n_events = ", ev, ", n_censored = ", cen, ").", call. = FALSE)
+  if (!is.null(raw$cohort)) {
+    n <- raw$cohort$n
+    ev <- raw$cohort$n_events
+    cen <- raw$cohort$n_censored
+    if (!identical(n, ev + cen)) {
+      stop("study_config(): ", found, " cohort is inconsistent: n = ", n,
+           " but n_events + n_censored = ", ev + cen,
+           " (n_events = ", ev, ", n_censored = ", cen, ").",
+           call. = FALSE)
+    }
   }
 
-  list(
-    root       = dir,
-    file       = found,
-    study      = raw$study,
-    population = raw$population,
-    built      = raw$built,
-    citation   = raw$citation,
-    cohort     = list(
-      n          = n,
-      n_events   = ev,
-      n_censored = cen,
-      event      = raw$cohort$event,
-      time       = raw$cohort$time
-    )
-  )
+  out <- c(list(root = dir, file = found), raw)
+  out$root <- dir
+  out$file <- found
+  out
 }

@@ -34,7 +34,7 @@
 #' study_root(root)
 #' unlink(root, recursive = TRUE)
 study_root <- function(start = getwd()) {
-  study_config(start)$root
+  study_config(start, require_data = FALSE)$root
 }
 
 #' Build a path under the study root

@@ -41,7 +41,7 @@
   path <- file.path(root, "manifest.yaml")
   if (!file.exists(path)) {
     return(.status_row("manifest.yaml", "MISSING",
-                       "no manifest.yaml; study_init() seeds one"))
+                       "no manifest.yaml; register_data() creates it"))
   }
 
   rep <- tryCatch(
@@ -192,9 +192,13 @@ study_status <- function(root = getwd()) {
   cfg <- NULL
   if (!file.exists(yml)) {
     row_yml <- .status_row("_study.yml", "MISSING",
-                           "no _study.yml at this root; run study_init()")
+                           paste0("no _study.yml at this root; recovery may ",
+                                  "be available with study-setup --recover"))
   } else {
-    parsed <- tryCatch(study_config(root), error = function(e) e)
+    parsed <- tryCatch(
+      study_config(root, require_data = FALSE),
+      error = function(e) e
+    )
     if (inherits(parsed, "error")) {
       row_yml <- .status_row("_study.yml", "FAIL", conditionMessage(parsed))
     } else {
@@ -218,6 +222,17 @@ study_status <- function(root = getwd()) {
                               "requires a valid _study.yml")
     row_cohort <- .status_row("cohort", "MISSING",
                               "requires a valid _study.yml")
+  } else if (is.null(cfg$built)) {
+    row_data <- .status_row(
+      "dataset",
+      "MISSING",
+      "no default dataset registered; run register_data()"
+    )
+    row_cohort <- .status_row(
+      "cohort",
+      "MISSING",
+      "requires a registered default dataset"
+    )
   } else {
     p <- built_path(cfg)
     if (!file.exists(p)) {

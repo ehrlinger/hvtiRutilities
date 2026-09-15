@@ -128,6 +128,7 @@ reference:
 - title: Study Setup
   desc: Initialize a study for reproducible analysis, and audit whether it is ready
   contents:
+  - study_setup
   - study_init
   - study_status
   - study_checklist
