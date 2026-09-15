@@ -12,9 +12,11 @@ a decision someone made with reasons, and those reasons are written down.
 Replaces the production `mkdirs` path with a Study Tracker-driven
 `study-setup` command and lets `_study.yml` record identity before a built
 dataset exists. `study_setup()` creates that package-owned state, while
-`register_data()` later records one canonical study dataset or a named subset.
-Each subset has its own cohort gate and cannot replace the study-wide cohort.
-The old `study_init()` name remains as a deprecated compatibility wrapper.
+`register_data()` later records one default study dataset or an additional
+named dataset. The default is what unnamed calls use, not a claim that every
+study has one scientifically canonical source. New studies use numbered
+working directories; legacy studies keep their existing layout.
+The unused `study_init()` export is replaced outright by the two-stage API.
 Existing studies enter through an explicit, non-destructive `--adopt` path;
 missing manifests enter through an explicit `--recover` path.
 
@@ -26,17 +28,22 @@ Azure DevOps repository. The command owns Tracker and Azure DevOps access;
 status. `renv` initialization is automatic when it can preserve every existing
 environment file.
 
-**Still open.** Two implementation plans, one for the new `qhsprograms`
-repository and one for this package. The first pilot is a dry run against a
-disposable copy of the designated legacy study; it does not remove the study's
-`.git` or copied `templates/` directories.
+Each study receives a brief README with its Tracker link and a place for the
+protocol summary. `hvtiRtemplates::add_job()` replaces the unused `new_job()`
+name and resolves numbered or legacy working directories without mixing them.
+
+**Still open.** Implementation plans for `qhsprograms`, this package, and
+`hvtiRtemplates`, plus the dependent caller migration in `hvtiRdatabuild`. The
+first pilot is a dry run against a disposable copy of the designated legacy
+study; it does not remove the study's `.git` or copied `templates/`
+directories.
 
 ## `study_checkpoint()`
 
 Records low-burden milestones such as the first abstract and first manuscript
 submission in a study's future `CORR_STUDIES` repository. The checkpoint keeps
-source and reproducibility metadata, including `_study.yml` and `renv.lock`,
-and excludes data, results, credentials, and PHI.
+source and reproducibility metadata, including `_study.yml`, `README.md`, and
+`renv.lock`, and excludes data, results, credentials, and PHI.
 
 **What it builds on.** The setup and recovery design above gives each study a
 stable Tracker identity and a deterministically named repository. A missing

@@ -2,8 +2,9 @@
 
 **Date:** 2026-09-15
 **Status:** Approved design, pending implementation plans
-**Repositories:** `qhsprograms` (new Azure DevOps repository) and
-`hvtiRutilities`
+**Repositories:** `qhsprograms` (new Azure DevOps repository),
+`hvtiRutilities`, `hvtiRtemplates`, and a small downstream migration in
+`hvtiRdatabuild`
 **Production destination:** `/programs/execs/cmd/`
 
 ## Context
@@ -17,7 +18,7 @@ template system.
 The Study Tracker record now exists before the study directory. It already
 holds the project number and the identity metadata we otherwise ask a person
 to type again. Work files come later through
-`hvtiRtemplates::new_job()`, one editable file at a time. Copying the whole
+`hvtiRtemplates::add_job()`, one editable file at a time. Copying the whole
 template tree creates files nobody requested, and `cp -R` can replace a file
 whose study copy has already diverged from the package source.
 
@@ -28,9 +29,10 @@ needed to derive cohort counts. A new study has none of those yet. The current
 the time identity first becomes known.
 
 This design separates those moments. `study_setup()` records identity and
-creates the R environment. `register_data()` records the canonical study
-dataset or a named subset after that dataset exists. The old `study_init()`
-name is retained only as a deprecated compatibility entry point.
+creates the R environment. `register_data()` records the default study dataset
+or an additional named dataset after that dataset exists. `study_init()` is
+removed rather than retained as a compatibility entry point because no study
+team has adopted it.
 
 ## Evidence read for this design
 
@@ -73,7 +75,8 @@ interface, but neither side has to impersonate the other.
 
 ## Scope
 
-This work is split across two repositories, with one boundary between them.
+This work is split across three owning repositories plus one downstream
+consumer migration, with the operational boundary kept outside the R packages.
 
 The new Azure DevOps `qhsprograms` repository owns:
 
@@ -91,12 +94,21 @@ The new Azure DevOps `qhsprograms` repository owns:
 - creation and validation of the standard study directory structure;
 - safe creation of R environment files;
 - the distinction between identity-ready and data-ready studies;
-- registration of the canonical study dataset and named subsets through
-  `register_data()`; and
+- default and named data registration through `register_data()`; and
 - the read-only status report consumed by the command.
 
+`hvtiRtemplates` owns template discovery and `add_job()`. It learns how to
+place a new work file into either a numbered new-study folder or an unnumbered
+legacy folder without creating both forms in one study.
+
+`hvtiRdatabuild` has package-development fixtures and guidance that call
+`study_init()`. They move to `study_setup()` plus `register_data()` in the same
+coordinated change. The local family scan found no study scripts calling
+`study_init()`; historical design notes and NEWS entries remain unchanged as
+records of what shipped.
+
 The shell command does not copy work files. Those remain on demand through
-`hvtiRtemplates::new_job()`.
+`hvtiRtemplates::add_job()`.
 
 ## The `qhsprograms` source repository
 
@@ -195,7 +207,7 @@ Activity, workflow status, and SharePoint URL remain live Tracker state. They
 may be displayed by `--status`, but are not frozen into `_study.yml` as study
 identity.
 
-## `_study.yml` has two valid states
+## `_study.yml` separates identity from default data readiness
 
 A pre-dataset manifest is valid identity, not a failed data contract:
 
@@ -213,7 +225,7 @@ citation: ~
 cohort: ~
 ```
 
-After the canonical study dataset is registered, the existing `built` and
+After the default study dataset is registered, the existing `built` and
 `cohort` shape is retained:
 
 ```yaml
@@ -226,11 +238,11 @@ cohort:
   time: "iv_dead"
 ```
 
-The canonical dataset has the reserved logical name `study`. Named subsets
-are additive and carry their own file and cohort contract:
+The default dataset has the reserved logical name `study`. Additional named
+datasets are additive. A row subset may carry its own cohort contract:
 
 ```yaml
-subsets:
+additional_datasets:
   analysis_cohort:
     built: "analysis_cohort.sas7bdat"
     population: "Eligible patients with complete imaging"
@@ -242,12 +254,19 @@ subsets:
       time: "iv_dead"
 ```
 
-There is exactly one canonical study dataset and any number of distinctly
-named subsets. Registering a subset never changes the top-level `built`,
-`population`, or `cohort`. Existing manifests with no `subsets` key retain
-their current meaning. A subset may be registered before the canonical
-dataset. The study then has registered data but is not data-ready under the
-default study contract.
+This first schema has one default dataset and any number of distinctly named
+additional datasets. "Default" identifies what functions use when no dataset
+is named; it does not claim that every study has one scientifically canonical
+source. An additional dataset may be a row subset or an ancillary file with
+different observations. Registering one never changes the top-level `built`,
+`population`, or `cohort`. An ancillary dataset that has no meaningful event
+and time variables records `cohort: ~`.
+
+Existing manifests with no `additional_datasets` key retain their current
+meaning. An additional dataset may be registered before the default dataset.
+The study then has registered data but is not data-ready under the default
+study contract. Supporting more than one default is deferred until a real
+study requires the ambiguity to be resolved.
 
 Existing manifests with no Study Tracker fields remain valid. This is an
 additive schema change.
@@ -259,10 +278,11 @@ Callers that only need identity use `require_data = FALSE`. `study_root()` and
 before its first dataset exists.
 
 `study_status()` reports `_study.yml` as `OK` when the identity state parses.
-The canonical dataset and cohort checks report `MISSING` until they are
+The default dataset and cohort checks report `MISSING` until they are
 registered. The manifest check covers whichever registered files it contains,
-and registered subsets receive separate dataset and cohort rows. A check that
-cannot run has not failed.
+and additional datasets receive separate dataset and cohort rows. A named
+dataset with `cohort: ~` reports its cohort as `MISSING`, not `FAIL`. A check
+that cannot run has not failed.
 
 ## Package-owned setup
 
@@ -279,14 +299,19 @@ study_setup(root, study, study_tracker_id,
 For a new root it creates the standard directories:
 
 ```text
-analyses/
-datasets/
-descriptive/
-distributions/
-documents/
-estimates/
-graphs/
+00_datasets/
+10_descriptive/
+20_distributions/
+30_analyses/
+40_graphs/
+50_documents/
+90_estimates/
 ```
+
+The numbers are assigned identifiers, not positions calculated from the
+taxonomy. The gaps allow a future directory to be inserted without renaming
+the rest, and `90_estimates` remains last because it holds saved output rather
+than work.
 
 It writes the pre-dataset `_study.yml`, `.renvignore`, and `.Renviron` through
 temporary files followed by atomic renames. It may create an R project file as
@@ -298,47 +323,108 @@ renames an existing file or directory. Existing `.Renviron`, `.renvignore`,
 `.Rprofile`, `renv/`, `renv.lock`, `_study.yml`, and work files win over
 defaults. A conflict is reported and left for a person.
 
+Adoption detects one directory scheme for the study. A study with any of the
+established bare working directories remains unnumbered, and missing
+directories are created in that scheme. A study with numbered directories
+uses the numbered scheme. If any numbered and bare working directories coexist
+at the root, setup reports a mixed-layout conflict and creates neither form.
+An empty existing target adopted as a study uses the numbered scheme.
+
 The package does not query Study Tracker and does not know Azure DevOps. The
 command passes the validated structural record into this function.
+
+All package paths resolve taxonomy names through the detected study layout.
+For example, the logical `datasets` directory resolves to `00_datasets` in a
+new study and `datasets` in a legacy study. A resolver never falls back from a
+missing expected directory to the other spelling, because that would create a
+split study silently.
+
+`hvtiRtemplates::add_job()` uses the same rule. It replaces the unused
+`new_job()` name before study teams adopt the template API; no deprecation
+wrapper is needed. The bare-folder behavior remains for legacy studies, while
+a numbered study receives new work in its numbered directory. Detecting both
+layout forms at one root is an error. This is a required cross-repository
+change; setup cannot adopt numbered folders while the job writer still
+promises to use bare ones.
+
+## Human-readable study README
+
+After package-owned setup succeeds, `study-setup` creates `README.md` when it
+does not already exist. It is the human landing page for the study repository,
+while `_study.yml` remains the machine-readable source for identity and data
+contracts.
+
+The initial README contains:
+
+- the Study Tracker topic as its title;
+- a zero-padded `STNNNN` label linked to the Tracker topic URL, whose
+  `topic_id` query value remains unpadded;
+- umbrella, owner, IRB number, CVIR number, and creation date;
+- an empty protocol-summary section;
+- a link to `_study.yml` for the current data contracts; and
+- a link to the protocol document when available.
+
+The established Tracker link is:
+
+```text
+http://hviresearch.ccf.org/StudyTracker/index.php?page=Topic&topic_id=42
+```
+
+When the protocol arrives, a person adds the study objective or research
+question, population, primary outcome or endpoint, and the protocol filename
+and version or date. Protocol extraction is not automated in this iteration.
+The summary is a finding aid; the protocol remains authoritative for study
+intent. The README does not copy mutable Tracker activity or workflow status.
+
+Setup, adoption, and recovery never replace an existing README. Recovery first
+uses local and Azure DevOps history, then may regenerate only the Tracker
+identity portion when no versioned copy exists. A protocol link is relative
+when the document is approved for the repository, or uses its approved
+SharePoint URL. It is never an absolute SMB or local filesystem path.
 
 ## Completing the data contract
 
 The package adds:
 
 ```r
-register_data(root = getwd(), built, event, time,
-              dataset = "study", role = c("study", "subset"),
+register_data(root = getwd(), built, event = NULL, time = NULL,
+              dataset = "study", role = c("study", "named"),
               population = NULL, source = NULL,
               extract_date = NULL)
 ```
 
 The function requires a valid identity manifest and an existing file under
-`datasets/`. It reads the data, checks the event and time variables, derives
-the three cohort counts, and prepares the updated `_study.yml` and
-`manifest.yaml` before replacing either. It never accepts caller-supplied
+the study's logical `datasets` directory. It reads the data and prepares the
+updated `_study.yml` and `manifest.yaml` before replacing either. It never
+accepts caller-supplied counts. `event` and `time` must be supplied together.
+When supplied, the function checks both variables and derives the three cohort
 counts.
 
 `role = "study"` requires the reserved `dataset = "study"` and writes the
-top-level study data contract. `role = "subset"` requires a non-reserved,
+top-level default data contract; it also requires `event` and `time`.
+`role = "named"` requires a non-reserved,
 non-empty lower-snake-case dataset name and writes that entry beneath
-`subsets`. Requiring the role makes an accidental attempt to replace the study
-cohort fail rather than quietly changing its meaning. A second registration
-of the canonical dataset or an existing subset name is refused. Updating
-registered data is a separate operation and is not part of this design.
+`additional_datasets`. A named dataset may omit `event` and `time` when a
+cohort contract has no meaning for that file. Requiring the role makes an
+accidental attempt to replace the default study cohort fail rather than
+quietly changing its meaning. A second registration of the default dataset or
+an existing named dataset is refused. Updating registered data is a separate
+operation and is not part of this design.
 
 `built_path()`, `built_manifest()`, `read_built()`, `cohort_counts()`,
 `assert_cohort()`, and `record_provenance()` gain `dataset = "study"` as their
 last argument. Their default and positional behavior is unchanged. Passing a
-subset name selects its registered file and its own cohort gate, and records
-that logical name in provenance. An unknown name fails and lists the
-registered choices.
+named dataset selects its registered file and, when present, its own cohort
+gate, and records that logical name in provenance. `assert_cohort()` fails with
+an actionable missing-contract error when that dataset has `cohort: ~`. An
+unknown name fails and lists the registered choices.
 
-`study_init()` is deprecated in favor of `study_setup()` followed by
-`register_data()`. It remains through the 1.x series as a compatibility
-wrapper. It emits the package's standard deprecation warning, but its files,
-return value, and failure guarantees do not change. Internally it may compose
-the new primitives, but a failure before data validation must still write
-nothing.
+`study_init()` is replaced by `study_setup()` followed by `register_data()` and
+is removed from the package exports. There is no deprecated wrapper because no
+study team has used the function. Current package-development fixtures and
+messages are migrated before removal. The validation guarantee from
+`study_init()` carries forward: a failed registration writes neither
+`_study.yml` nor `manifest.yaml` changes.
 
 ## Automatic `renv` initialization
 
@@ -375,9 +461,9 @@ with the same `st-<id>-` prefix is an error to resolve in Azure DevOps.
 
 Study repositories contain source and reproducibility metadata only. Data,
 results, PHI, credentials, and the copied legacy template corpus are excluded.
-`_study.yml`, `.Renviron`, `.renvignore`, `.Rprofile`, and `renv.lock` are
-eligible to be tracked because their schemas prohibit secrets and absolute
-paths.
+`_study.yml`, `README.md`, `.Renviron`, `.renvignore`, `.Rprofile`, and
+`renv.lock` are eligible to be tracked because their schemas prohibit secrets
+and absolute paths.
 
 ## Recovery
 
@@ -422,9 +508,10 @@ Operations then proceed in this order:
 
 1. create or select the target;
 2. create missing package-owned structure and identity;
-3. initialize or validate `renv`;
-4. connect the study repository when `CORR_STUDIES` is available; and
-5. print `study_status()`.
+3. create the README when it is absent;
+4. initialize or validate `renv`;
+5. connect the study repository when `CORR_STUDIES` is available; and
+6. print `study_status()`.
 
 Each completed step is safe to observe on a rerun. A later failure does not
 delete an earlier valid step. The next status call reports what remains.
@@ -435,6 +522,7 @@ These cases are errors with no write:
 - the target exists and neither `--status` nor `--adopt` was requested;
 - the target is a file rather than a directory;
 - the target cannot be written;
+- numbered and bare working directories coexist at the study root;
 - an existing identity carries a different Study Tracker ID;
 - a recovery source carries a different Study Tracker ID; or
 - Azure DevOps contains more than one repository for the ID.
@@ -451,8 +539,9 @@ the exact directories, file counts, and repository state are recorded, and a
 backup destination is chosen. Removal requires a distinct command and a
 second approval after the inventory is shown.
 
-Numbered-folder migration is Level 3. It may rewrite paths in SAS and R work,
-so setup and Level 1 adoption do not perform it.
+Numbered-folder migration is Level 3 for legacy studies. It may rewrite paths
+in SAS and R work, so Level 1 adoption does not perform it. New studies begin
+with the numbered layout and need no migration.
 
 ## Testing
 
@@ -463,6 +552,9 @@ a local bare Git repository standing in for Azure DevOps. They cover:
 - exact-one-row Tracker lookup;
 - dry run with zero filesystem and network writes;
 - new creation and automatic `renv` invocation;
+- numbered directories for new studies;
+- initial README content, link formatting, and preservation;
+- README recovery from history and identity-only regeneration;
 - refusal to mutate an existing target without `--adopt`;
 - preservation of every existing environment and work file;
 - partial `renv` failure followed by a stable status result;
@@ -473,21 +565,31 @@ a local bare Git repository standing in for Azure DevOps. They cover:
 
 The `hvtiRutilities` tests cover:
 
-- both valid `_study.yml` states;
+- identity-only, named-only, and default-data-ready manifests;
 - backward compatibility with every current manifest fixture;
 - the default data-ready failure of `study_config()`;
 - identity-only parsing;
 - `study_status()` reporting pre-dataset checks as `MISSING`;
 - `study_setup()` creation, adoption, preservation, and atomic writes;
 - `register_data()` deriving rather than accepting counts;
-- identity and canonical-cohort preservation during subset registration;
-- any number of uniquely named subsets;
+- identity and default-cohort preservation during named-data registration;
+- any number of uniquely named additional datasets;
 - rejection of reserved, empty, duplicate, and unknown dataset names;
-- subset registration before or after the canonical dataset;
+- named-data registration before or after the default dataset;
+- named data with and without a cohort contract;
 - dataset selection by every data-contract and provenance helper;
-- refusal to replace a canonical or previously registered dataset; and
-- the `study_init()` warning with otherwise unchanged files, return value, and
-  failure behavior.
+- numbered creation, legacy resolution, and mixed-layout refusal;
+- refusal to replace a default or previously registered dataset;
+- removal of the `study_init()` export; and
+- equivalent all-or-nothing behavior through setup plus registration.
+
+The `hvtiRtemplates` tests cover the `add_job()` name, numbered and bare study
+layouts, and refusal to write when both forms of its destination exist. The
+rename removes `new_job()` from the public index because there are no adopted
+callers to carry through a deprecation period.
+
+The `hvtiRdatabuild` fixtures and messages use the two-stage API. Its tests
+prove that analysis-set behavior is unchanged after the caller migration.
 
 The package definition of done remains `devtools::test()` plus
 `devtools::check()` at 0 errors, 0 warnings, and 0 notes, with regenerated
@@ -500,10 +602,10 @@ this work.
 ## Deferred work
 
 `study_checkpoint()` follows this design but is not part of its implementation
-plan. A checkpoint will commit `_study.yml`, the environment lock, source, and
-other approved reproducibility metadata to the study repository, while
-excluding data, results, credentials, and PHI. Natural events include first
-abstract submission and first manuscript submission.
+plan. A checkpoint will commit `_study.yml`, `README.md`, the environment lock,
+source, and other approved reproducibility metadata to the study repository,
+while excluding data, results, credentials, and PHI. Natural events include
+first abstract submission and first manuscript submission.
 
 Checkpoint-to-Tracker task updates require a separate design. Tracker
 transitions are not linear, the current system does not retain the path taken,
@@ -516,12 +618,15 @@ and this setup command is deliberately read-only against it.
 2. `study-setup` can create, inspect, adopt, and recover a study by Study
    Tracker ID without copying work templates or writing absolute paths.
 3. A study has valid recorded identity before its first built dataset exists.
-4. `register_data()` records one canonical study dataset and named subsets,
-   each with derived cohort and manifest evidence, without letting a subset
-   replace the study cohort.
-5. Automatic `renv` setup is rerunnable and never replaces an existing
+4. New studies use the numbered directory scheme, while legacy adoption does
+   not rename or split existing directories.
+5. `register_data()` records one default study dataset and additional named
+   datasets without letting one replace the default cohort.
+6. Every new study has a brief README linking its Tracker record and leaving a
+   stable place for the later protocol summary.
+7. Automatic `renv` setup is rerunnable and never replaces an existing
    environment file silently.
-6. A missing `_study.yml` tells a person exactly how to attempt recovery, while
+8. A missing `_study.yml` tells a person exactly how to attempt recovery, while
    an analysis never performs that recovery implicitly.
-7. The legacy-study dry run reports its current mixed state and changes
+9. The legacy-study dry run reports its current mixed state and changes
    nothing.
