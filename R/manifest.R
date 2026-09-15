@@ -264,14 +264,12 @@ update_manifest <- function(file,
 #' @param manifest_path Character. Path to the manifest YAML file.
 #'   Defaults to \code{"manifest.yaml"} in the current working directory.
 #' @param data_dir Character. Directory holding the dataset files. When
-#'   supplied, it is used exactly as given. When \code{NULL} (default), each
-#'   entry is resolved individually: \code{datasets/} beneath the manifest's
-#'   own directory is preferred for that entry when the file actually exists
-#'   there, matching the layout \code{\link{study_setup}} creates, where
-#'   \code{manifest.yaml} sits at the study root and datasets one level down;
-#'   otherwise the entry resolves beside the manifest, so a flat layout is
-#'   equally supported even when an unrelated \code{datasets/} directory is
-#'   also present.
+#'   supplied, it is used exactly as given. When \code{NULL} (default), the
+#'   manifest directory is inspected once. \code{00_datasets/} supports the
+#'   numbered layout created by \code{\link{study_setup}}, \code{datasets/}
+#'   supports an adopted legacy layout, and a manifest with neither uses its
+#'   own directory. Both dataset directories together are a mixed layout and
+#'   produce an error; entries never fall back between layouts.
 #' @param stop_on_error Logical. If \code{TRUE} (default) the function calls
 #'   \code{stop()} on the first failed check, preventing the analysis from
 #'   proceeding.  Set to \code{FALSE} to collect all errors and report them
@@ -341,22 +339,25 @@ verify_manifest <- function(manifest_path = "manifest.yaml",
                                 stringsAsFactors = FALSE)))
   }
 
-  # An explicit data_dir is used exactly as given. Only the default searches,
-  # because register_data() writes manifest.yaml at the study root while data
-  # live one level down -- but a flat layout is equally legal, and choosing on
-  # directory existence alone would send a flat study's lookups into an
-  # unrelated datasets/ directory and fail every entry.
-  search_nested <- is.null(data_dir)
   if (is.null(data_dir)) {
     data_dir <- dirname(normalizePath(manifest_path))
+    numbered <- file.path(data_dir, "00_datasets")
+    legacy <- file.path(data_dir, "datasets")
+    if (dir.exists(numbered) && dir.exists(legacy)) {
+      stop(
+        "verify_manifest(): study directory layout is mixed; both ",
+        "00_datasets/ and datasets/ exist",
+        call. = FALSE
+      )
+    }
+    if (dir.exists(numbered)) {
+      data_dir <- numbered
+    } else if (dir.exists(legacy)) {
+      data_dir <- legacy
+    }
   }
 
   resolve_entry <- function(file) {
-    if (search_nested) {
-      nested <- file.path(data_dir, c("00_datasets", "datasets"), file)
-      found <- nested[file.exists(nested)]
-      if (length(found)) return(found[[1L]])
-    }
     file.path(data_dir, file)
   }
 

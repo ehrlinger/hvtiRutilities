@@ -38,15 +38,23 @@
   on.exit({
     if (!complete) {
       unlink(targets[placed])
+      restore_failures <- character(0)
       for (i in which(backed_up)) {
         restored <- .registration_rename(backups[[i]], targets[[i]])
         if (!restored) {
-          warning(
-            "register_data(): could not restore ", targets[[i]],
-            "; its backup remains at ", backups[[i]],
-            call. = FALSE
+          restore_failures <- c(
+            restore_failures,
+            paste0(targets[[i]], " (backup: ", backups[[i]], ")")
           )
         }
+      }
+      if (length(restore_failures)) {
+        warning(
+          "register_data(): could not restore: ",
+          paste(restore_failures, collapse = "; "),
+          "; each backup remains in place",
+          call. = FALSE
+        )
       }
     }
     unlink(prepared[file.exists(prepared)])

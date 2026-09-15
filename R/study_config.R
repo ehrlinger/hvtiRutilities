@@ -33,6 +33,83 @@
   out
 }
 
+.study_validate_additional <- function(value, found) {
+  if (is.null(value)) return(value)
+  has_names <- !is.null(names(value)) &&
+    length(names(value)) == length(value) &&
+    all(nzchar(names(value))) && !anyDuplicated(names(value))
+  named <- is.list(value) && (length(value) == 0L || has_names)
+  if (!named) {
+    stop(
+      "study_config(): ", found,
+      " additional_datasets must be a named mapping.",
+      call. = FALSE
+    )
+  }
+  for (name in names(value)) {
+    contract <- value[[name]]
+    valid_name <- !identical(name, "study") &&
+      grepl("^[a-z][a-z0-9_]*$", name)
+    valid_file <- is.list(contract) &&
+      is.character(contract$built) && length(contract$built) == 1L &&
+      !is.na(contract$built) && nzchar(contract$built) &&
+      identical(basename(contract$built), contract$built) &&
+      nzchar(tools::file_ext(contract$built))
+    if (!valid_name || !valid_file) {
+      stop(
+        "study_config(): ", found,
+        " has an invalid additional dataset contract for '", name, "'.",
+        call. = FALSE
+      )
+    }
+    cohort <- contract$cohort
+    if (!is.null(cohort)) {
+      required <- c("n", "n_events", "n_censored", "event", "time")
+      if (!is.list(cohort) || any(vapply(
+        required,
+        function(key) is.null(cohort[[key]]),
+        logical(1)
+      ))) {
+        stop(
+          "study_config(): ", found,
+          " has an incomplete cohort for dataset '", name, "'.",
+          call. = FALSE
+        )
+      }
+      raw_counts <- unlist(
+        cohort[c("n", "n_events", "n_censored")],
+        use.names = FALSE
+      )
+      valid_text <- vapply(
+        cohort[c("event", "time")],
+        function(x) {
+          is.character(x) && length(x) == 1L && !is.na(x) && nzchar(x)
+        },
+        logical(1)
+      )
+      counts <- if (is.numeric(raw_counts)) {
+        as.integer(raw_counts)
+      } else {
+        integer(0)
+      }
+      if (!is.numeric(raw_counts) || length(counts) != 3L ||
+            anyNA(counts) || any(counts < 0L) ||
+            any(as.numeric(counts) != raw_counts) || !all(valid_text) ||
+            counts[[1L]] != counts[[2L]] + counts[[3L]]) {
+        stop(
+          "study_config(): ", found,
+          " has an inconsistent cohort for dataset '", name, "'.",
+          call. = FALSE
+        )
+      }
+      value[[name]]$cohort$n <- counts[[1L]]
+      value[[name]]$cohort$n_events <- counts[[2L]]
+      value[[name]]$cohort$n_censored <- counts[[3L]]
+    }
+  }
+  value
+}
+
 #' Read the study manifest
 #'
 #' @description
@@ -106,6 +183,10 @@ study_config <- function(start = getwd(), require_data = TRUE) {
   }
 
   raw <- yaml::read_yaml(found)
+  raw$additional_datasets <- .study_validate_additional(
+    raw$additional_datasets,
+    found
+  )
 
   missing <- Filter(function(k) is.null(.study_pluck(raw, k)),
                     .study_required(require_data))

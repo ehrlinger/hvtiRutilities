@@ -189,6 +189,18 @@ test_that("register_data creates a verifiable manifest entry", {
   expect_identical(report$status, "OK")
 })
 
+test_that("verify_manifest refuses a mixed study layout by default", {
+  root <- registration_study()
+  write_registration_csv(root, "built.csv")
+  register_data(root, "built.csv", "dead", "iv_dead")
+  dir.create(file.path(root, "datasets"))
+
+  expect_error(
+    verify_manifest(file.path(root, "manifest.yaml")),
+    "mixed"
+  )
+})
+
 test_that("register_data refuses files that share derived output paths", {
   root <- registration_study()
   write_registration_csv(root, "built.csv")
@@ -223,7 +235,6 @@ test_that("pair replacement retains a backup when restoration fails", {
       file.rename(from, to)
     }
   )
-
   expect_warning(
     expect_error(.replace_study_pair(prepared, targets), "prepared manifest"),
     "backup remains"
@@ -233,6 +244,27 @@ test_that("pair replacement retains a backup when restoration fails", {
   expect_length(backups, 1L)
   expect_identical(readLines(backups), "old study")
   expect_identical(readLines(targets[[2L]]), "old manifest")
+})
+
+test_that("register_data rejects an unnamed additional dataset sequence", {
+  root <- registration_study()
+  cfg <- yaml::read_yaml(file.path(root, "_study.yml"))
+  cfg$additional_datasets <- list(list(built = "old.csv"))
+  yaml::write_yaml(cfg, file.path(root, "_study.yml"))
+  write_registration_csv(root, "new.csv")
+  before <- readLines(file.path(root, "_study.yml"))
+
+  expect_error(
+    register_data(
+      root,
+      "new.csv",
+      dataset = "secondary",
+      role = "named"
+    ),
+    "named mapping"
+  )
+  expect_identical(readLines(file.path(root, "_study.yml")), before)
+  expect_false(file.exists(file.path(root, "manifest.yaml")))
 })
 
 test_that("register_data refuses an absent or extensionless file", {

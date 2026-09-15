@@ -154,8 +154,23 @@ test_that("study_status reports a malformed named dataset without stopping", {
 
   status <- expect_no_error(study_status(root))
 
-  expect_equal(check_for(status, "dataset:bad")$status, "FAIL")
-  expect_equal(check_for(status, "cohort:bad")$status, "MISSING")
+  expect_equal(check_for(status, "_study.yml")$status, "FAIL")
+  expect_match(
+    check_for(status, "_study.yml")$detail,
+    "invalid additional dataset contract"
+  )
+})
+
+test_that("study_status reports an unnamed additional dataset sequence", {
+  root <- make_registered_study(withr::local_tempdir())
+  cfg <- yaml::read_yaml(file.path(root, "_study.yml"))
+  cfg$additional_datasets <- list(list(built = "bad.csv"))
+  yaml::write_yaml(cfg, file.path(root, "_study.yml"))
+
+  status <- expect_no_error(study_status(root))
+
+  expect_equal(check_for(status, "_study.yml")$status, "FAIL")
+  expect_match(check_for(status, "_study.yml")$detail, "named mapping")
 })
 
 test_that("study_status fails an unreadable ancillary dataset", {
