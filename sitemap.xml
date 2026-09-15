@@ -58,6 +58,7 @@
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/read_built.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/read_clinical_data.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/record_provenance.html</loc></url>
+<url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/register_data.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/sample_data.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/sas_macro_defs.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/sas_macro_signature.html</loc></url>
@@ -68,8 +69,9 @@
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/strip_level_prefix.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/study_checklist.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/study_config.html</loc></url>
-<url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/study_init.html</loc></url>
+<url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/study_dir.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/study_root.html</loc></url>
+<url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/study_status.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/type_conversion_report.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.html</loc></url>

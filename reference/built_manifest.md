@@ -7,7 +7,7 @@ later reader tell whether two results were produced from the same data.
 ## Usage
 
 ``` r
-built_manifest(cfg = study_config())
+built_manifest(cfg = study_config(), dataset = "study")
 ```
 
 ## Arguments
@@ -16,6 +16,10 @@ built_manifest(cfg = study_config())
 
   List. A study manifest from
   [`study_config`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md).
+
+- dataset:
+
+  Character(1). Logical dataset name. Defaults to `"study"`.
 
 ## Value
 
@@ -43,7 +47,7 @@ write.csv(data.frame(dead = c(1, 0, 0), iv_dead = 1:3),
           file.path(root, "datasets", "example.csv"), row.names = FALSE)
 built_manifest(study_config(root))
 #>          file size_bytes               mtime
-#> 1 example.csv         29 2026-09-13 18:21:09
+#> 1 example.csv         29 2026-09-15 20:01:16
 #>                                                             sha256
 #> 1 ff053e4e2cbfceda40422125c091a5cd1171909ccaffcd7154e900f5cbf69b4f
 unlink(root, recursive = TRUE)

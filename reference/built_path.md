@@ -1,12 +1,12 @@
 # Path to the study's built dataset
 
-Resolves `<study root>/datasets/<built>`, where `built` is the filename
-declared in `_study.yml`. The path is not checked for existence.
+Resolves the registered filename beneath the study's logical `datasets`
+directory. The path is not checked for existence.
 
 ## Usage
 
 ``` r
-built_path(cfg = study_config())
+built_path(cfg = study_config(), dataset = "study")
 ```
 
 ## Arguments
@@ -15,6 +15,10 @@ built_path(cfg = study_config())
 
   List. A study manifest from
   [`study_config`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md).
+
+- dataset:
+
+  Character(1). Logical dataset name. Defaults to `"study"`.
 
 ## Value
 
@@ -38,6 +42,6 @@ yaml::write_yaml(
   file.path(root, "_study.yml")
 )
 built_path(study_config(root))
-#> [1] "/tmp/RtmpFE3jvN/built-path-example/datasets/example.sas7bdat"
+#> [1] "/tmp/RtmpntQrp5/built-path-example/datasets/example.sas7bdat"
 unlink(root, recursive = TRUE)
 ```

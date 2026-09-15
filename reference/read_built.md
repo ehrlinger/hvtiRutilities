@@ -16,7 +16,7 @@ attribute because listings print labels rather than names.
 ## Usage
 
 ``` r
-read_built(cfg = study_config(), refresh = FALSE)
+read_built(cfg = study_config(), refresh = FALSE, dataset = "study")
 ```
 
 ## Arguments
@@ -35,6 +35,10 @@ read_built(cfg = study_config(), refresh = FALSE)
   band. Errors if the manifest entry has `role: "primary"`: that role
   means the source has been retired and the parquet is authoritative, so
   there is nothing to refresh from.
+
+- dataset:
+
+  Character(1). Logical dataset name. Defaults to `"study"`.
 
 ## Value
 

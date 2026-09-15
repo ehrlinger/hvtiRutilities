@@ -17,7 +17,7 @@ not simplify it to `sum(d[[event]])`.
 ## Usage
 
 ``` r
-cohort_counts(d, cfg = study_config())
+cohort_counts(d, cfg = study_config(), dataset = "study")
 ```
 
 ## Arguments
@@ -32,6 +32,10 @@ cohort_counts(d, cfg = study_config())
   List. A study manifest from
   [`study_config`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md);
   supplies `cohort$event` and `cohort$time`.
+
+- dataset:
+
+  Character(1). Logical dataset name. Defaults to `"study"`.
 
 ## Value
 

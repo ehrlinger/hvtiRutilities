@@ -86,7 +86,7 @@ print labels rather than names.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">read_built</span><span class="op">(</span>cfg <span class="op">=</span> <span class="fu"><a href="study_config.html">study_config</a></span><span class="op">(</span><span class="op">)</span>, refresh <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">read_built</span><span class="op">(</span>cfg <span class="op">=</span> <span class="fu"><a href="study_config.html">study_config</a></span><span class="op">(</span><span class="op">)</span>, refresh <span class="op">=</span> <span class="cn">FALSE</span>, dataset <span class="op">=</span> <span class="st">"study"</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -105,6 +105,11 @@ a rebuild that preserves <code>mtime</code>, a restored backup, a correction
 applied out of band. Errors if the manifest entry has
 <code>role: "primary"</code>: that role means the source has been retired and
 the parquet is authoritative, so there is nothing to refresh from.</p></dd>
+
+
+<dt id="arg-dataset">dataset<a class="anchor" aria-label="anchor" href="#arg-dataset"></a></dt>
+<dd><p>Character(1). Logical dataset name. Defaults to
+<code>"study"</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

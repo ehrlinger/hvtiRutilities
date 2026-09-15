@@ -17,7 +17,12 @@ result is not.
 ## Usage
 
 ``` r
-record_provenance(path, extra = list(), cfg = study_config())
+record_provenance(
+  path,
+  extra = list(),
+  cfg = study_config(),
+  dataset = "study"
+)
 ```
 
 ## Arguments
@@ -37,6 +42,10 @@ record_provenance(path, extra = list(), cfg = study_config())
 
   List. A study manifest from
   [`study_config`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md).
+
+- dataset:
+
+  Character(1). Logical dataset name. Defaults to `"study"`.
 
 ## Value
 

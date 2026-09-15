@@ -43,12 +43,13 @@ study_status(root = getwd())
 
 An object of class `"study_status"`: a list with `root`, `checks` (a
 data frame of `item`, `status` – `"OK"`, `"MISSING"` or `"FAIL"` – and
-`detail`, six rows), and `counts` (a list of `r_files`, `qmd`,
-`sas_jobs` and `sidecars`).
+`detail`). The six base rows are followed by dataset and cohort rows for
+each named dataset. `counts` lists `r_files`, `qmd`, `sas_jobs` and
+`sidecars`.
 
 ## See also
 
-[`study_init`](https://ehrlinger.github.io/hvtiRutilities/reference/study_init.md),
+[`study_setup`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md),
 [`study_checklist`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checklist.md)
 
 ## Examples
@@ -57,11 +58,11 @@ data frame of `item`, `status` – `"OK"`, `"MISSING"` or `"FAIL"` – and
 root <- file.path(tempdir(), "study-status-example")
 dir.create(root, showWarnings = FALSE)
 study_status(root)
-#> Study: /tmp/RtmpFE3jvN/study-status-example
+#> Study: /tmp/RtmpntQrp5/study-status-example
 #> 
-#> [ ] _study.yml — no _study.yml at this root; run study_init()
+#> [ ] _study.yml — no _study.yml at this root; recovery may be available with study-setup --recover; if its Tracker ID cannot be inferred, run study-setup 42 --recover
 #> [ ] renv.lock — no renv.lock; run renv::init() in the study project
-#> [ ] manifest.yaml — no manifest.yaml; study_init() seeds one
+#> [ ] manifest.yaml — no manifest.yaml; register_data() creates it
 #> [ ] dataset — requires a valid _study.yml
 #> [ ] cohort — requires a valid _study.yml
 #> [ ] provenance — no .qmd/.Rmd sources found; 0 sidecars

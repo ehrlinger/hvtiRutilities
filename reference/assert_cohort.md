@@ -9,7 +9,7 @@ happily on an unreconciled cohort.
 ## Usage
 
 ``` r
-assert_cohort(d, cfg = study_config())
+assert_cohort(d, cfg = study_config(), dataset = "study")
 ```
 
 ## Arguments
@@ -23,6 +23,10 @@ assert_cohort(d, cfg = study_config())
 
   List. A study manifest from
   [`study_config`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md).
+
+- dataset:
+
+  Character(1). Logical dataset name. Defaults to `"study"`.
 
 ## Value
 

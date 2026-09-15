@@ -131,13 +131,14 @@ rather than silent.</p>
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>An object of class <code>"study_status"</code>: a list with <code>root</code>,
   <code>checks</code> (a data frame of <code>item</code>, <code>status</code> –
-  <code>"OK"</code>, <code>"MISSING"</code> or <code>"FAIL"</code> – and <code>detail</code>, six
-  rows), and <code>counts</code> (a list of <code>r_files</code>, <code>qmd</code>,
-  <code>sas_jobs</code> and <code>sidecars</code>).</p>
+  <code>"OK"</code>, <code>"MISSING"</code> or <code>"FAIL"</code> – and <code>detail</code>).
+  The six base rows are followed by dataset and cohort rows for each named
+  dataset. <code>counts</code> lists <code>r_files</code>, <code>qmd</code>,
+  <code>sas_jobs</code> and <code>sidecars</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="study_init.html">study_init</a></code>, <code><a href="study_checklist.html">study_checklist</a></code></p></div>
+    <div class="dont-index"><p><code><a href="study_setup.html">study_setup</a></code>, <code><a href="study_checklist.html">study_checklist</a></code></p></div>
     </div>
 
     <div class="section level2">
@@ -145,11 +146,11 @@ rather than silent.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">root</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"study-status-example"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="va">root</span>, showWarnings <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">study_status</span><span class="op">(</span><span class="va">root</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Study: /tmp/RtmpFE3jvN/study-status-example</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Study: /tmp/RtmpntQrp5/study-status-example</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [ ] _study.yml — no _study.yml at this root; run study_init()</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [ ] _study.yml — no _study.yml at this root; recovery may be available with study-setup --recover; if its Tracker ID cannot be inferred, run study-setup 42 --recover</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [ ] renv.lock — no renv.lock; run renv::init() in the study project</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [ ] manifest.yaml — no manifest.yaml; study_init() seeds one</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [ ] manifest.yaml — no manifest.yaml; register_data() creates it</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [ ] dataset — requires a valid _study.yml</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [ ] cohort — requires a valid _study.yml</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [ ] provenance — no .qmd/.Rmd sources found; 0 sidecars</span>

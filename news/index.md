@@ -755,10 +755,9 @@ belongs with the `bh` work.
   [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md))
   rewrites it. The parquet cache preserves `extract_date`, `source` and
   `sort_key` specifically, because losing those would clobber values
-  [`study_init()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_init.md)
-  sets explicitly; no other field is preserved. This is unchanged in
-  this release — recorded here so it’s a known limitation rather than a
-  surprise.
+  `study_init()` sets explicitly; no other field is preserved. This is
+  unchanged in this release — recorded here so it’s a known limitation
+  rather than a surprise.
 
 ### Documentation
 
@@ -812,9 +811,8 @@ belongs with the `bh` work.
 
 ### New features
 
-- [`study_init()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_init.md)
-  initializes a study for reproducible analysis: it writes the
-  `_study.yml` identity manifest that
+- `study_init()` initializes a study for reproducible analysis: it
+  writes the `_study.yml` identity manifest that
   [`study_config()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md)
   reads, and seeds a `manifest.yaml` pinning the built dataset’s
   SHA-256. The cohort counts are derived from the dataset rather than
@@ -886,11 +884,10 @@ belongs with the `bh` work.
 ### Notes
 
 - No new dependencies.
-- [`study_init()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_init.md)
-  does not run `renv::init()`. A missing `renv.lock` is reported as an
-  open item instead: creating one restarts the R session and rewrites
-  `.Rprofile`, which a function that writes two YAML files has no
-  business doing.
+- `study_init()` does not run `renv::init()`. A missing `renv.lock` is
+  reported as an open item instead: creating one restarts the R session
+  and rewrites `.Rprofile`, which a function that writes two YAML files
+  has no business doing.
 - [`study_status()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md)
   reports a `manifest.yaml` entry as verified when its SHA-256 matches
   but its row count could not be re-derived, and says how many counts
