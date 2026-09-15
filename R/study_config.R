@@ -93,9 +93,15 @@ study_config <- function(start = getwd(), require_data = TRUE) {
   }
 
   if (is.null(found)) {
-    stop("study_config(): no _study.yml found. Walked, in order:\n  ",
+    stop("study_config(): no _study.yml found.\n\n",
+         "Recovery may be available from CORR_STUDIES:\n",
+         "  study-setup --recover\n\n",
+         "If the Study Tracker ID cannot be determined from this ",
+         "repository:\n",
+         "  study-setup 42 --recover\n\n",
+         "Walked, in order:\n  ",
          paste(walked, collapse = "\n  "),
-         "\nStart from inside a study tree, or create a _study.yml at its root.",
+         "\nStart from inside a study tree.",
          call. = FALSE)
   }
 

@@ -19,6 +19,10 @@
 
 ## Bug fixes
 
+* **A missing `_study.yml` now points to the explicit recovery command.**
+  `study_config()` tells the user to run `study-setup --recover`, with the
+  Tracker-ID form when the repository cannot identify the study.
+
 * **`hvti_taxonomy()` relabels five prefixes** after a biostatistician's
   review of the job catalog, 2026-09-11. `bn`, `nd`, `nm` and `np` are
   non-linear, not non-parametric: "Bootstrap non-linear", "Non-linear
