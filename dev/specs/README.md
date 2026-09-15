@@ -26,6 +26,7 @@ condenses it; `plan` files carry none.
 
 | date | note | status |
 |---|---|---|
+| 2026-09-15 | [Study setup and adoption][study-setup] | approved; two plans pending |
 | 2026-09-08 | [Handoff — macro port coverage, and the number nobody can re-derive](2026-09-08-macro-port-coverage-handoff.md) | open; the headline "32 of 176" is unreproducible **and** over a 57% denominator |
 | 2026-09-04 | [Handoff — `hvtiGraphics` documents a `label_map()` shape that no longer exists](2026-09-04-hvtigraphics-label-map-shape-handoff.md) | open; **execute in `hvtiGraphics`**, not here |
 | 2026-09-02 | [Ordinal variables — the representation decision](2026-09-02-ordinal-representation-design.md) | decision note; §7 open, awaiting the statisticians |
@@ -47,5 +48,7 @@ condenses it; `plan` files carry none.
 | 2026-08-05 | [`proc_contents()` / `proc_means()` — plan](2026-08-05-proc-contents-means-plan.md) | plan for the design above |
 | 2026-07-10 | [SAS macro canonicalization (Phase 0)](2026-07-10-sas-macro-canonicalization-design.md) | shipped in 1.0.4 |
 | 2026-07-10 | [SAS macro canonicalization — plan](2026-07-10-sas-macro-canonicalization-plan.md) | plan for the design above |
+
+[study-setup]: 2026-09-15-study-setup-legacy-adoption-design.md
 
 `artifacts/` holds supporting output referenced by the notes above.
