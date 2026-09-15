@@ -47,7 +47,7 @@
   rep <- tryCatch(
     withCallingHandlers(
       verify_manifest(manifest_path = path,
-                      data_dir      = file.path(root, "datasets"),
+                      data_dir      = study_dir("datasets", root),
                       stop_on_error = FALSE,
                       verbose       = FALSE),
       warning = function(w) invokeRestart("muffleWarning")),

@@ -141,6 +141,7 @@ reference:
   - sas_path
   - built_path
   - built_manifest
+  - study_dir
   - read_built
   - cohort_counts
   - assert_cohort

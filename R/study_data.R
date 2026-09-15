@@ -35,7 +35,7 @@
 #' built_path(study_config(root))
 #' unlink(root, recursive = TRUE)
 built_path <- function(cfg = study_config()) {
-  file.path(cfg$root, "datasets", cfg$built)
+  file.path(study_dir("datasets", cfg$root), cfg$built)
 }
 
 #' Record the state of the built dataset

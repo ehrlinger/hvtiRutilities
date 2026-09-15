@@ -11,6 +11,18 @@ test_that("built_path resolves under datasets/ using the manifest name", {
   )
 })
 
+test_that("built_path resolves under numbered datasets", {
+  skip_if_not_installed("haven")
+  root <- make_study_fixture(withr::local_tempdir())
+  file.rename(file.path(root, "datasets"),
+              file.path(root, "00_datasets"))
+
+  expect_equal(
+    normalizePath(built_path(study_config(root))),
+    normalizePath(file.path(root, "00_datasets", "built_test.sas7bdat"))
+  )
+})
+
 test_that("built_manifest reports file, size, mtime and sha256", {
   skip_if_not_installed("haven")
   root <- make_study_fixture(withr::local_tempdir())

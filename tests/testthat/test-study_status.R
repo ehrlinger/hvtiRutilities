@@ -40,6 +40,24 @@ test_that("study_status reports OK for a valid manifest and its dataset", {
   expect_equal(check_for(st, "cohort")$status, "OK")
 })
 
+test_that("study_status verifies data in a numbered datasets directory", {
+  skip_if_not_installed("haven")
+  root <- make_study_fixture(withr::local_tempdir())
+  file.rename(file.path(root, "datasets"),
+              file.path(root, "00_datasets"))
+  built <- file.path(root, "00_datasets", "built_test.sas7bdat")
+  update_manifest(
+    file = built,
+    manifest_path = file.path(root, "manifest.yaml"),
+    n_rows = 20L
+  )
+
+  status <- study_status(root)
+
+  expect_equal(check_for(status, "manifest.yaml")$status, "OK")
+  expect_equal(check_for(status, "dataset")$status, "OK")
+})
+
 test_that("study_status reports FAIL when _study.yml is present but invalid", {
   root <- make_study_fixture(withr::local_tempdir(), omit = "built",
                              write_data = FALSE)
