@@ -89,6 +89,8 @@ provenance_path <- function(path) {
 #'   example a \code{template} block naming the template and its version.
 #'   Required keys cannot be displaced.
 #' @param cfg List. A study manifest from \code{\link{study_config}}.
+#' @param dataset Character(1). Logical dataset name. Defaults to
+#'   \code{"study"}.
 #'
 #' @return Invisibly, the record that was written, as a list.
 #'
@@ -114,7 +116,8 @@ provenance_path <- function(path) {
 #' rec <- record_provenance(out, cfg = study_config(root))
 #' rec$job
 #' unlink(root, recursive = TRUE)
-record_provenance <- function(path, extra = list(), cfg = study_config()) {
+record_provenance <- function(path, extra = list(), cfg = study_config(),
+                              dataset = "study") {
   sidecar <- provenance_path(path)
 
   lock      <- file.path(cfg$root, "renv.lock")
@@ -125,7 +128,12 @@ record_provenance <- function(path, extra = list(), cfg = study_config()) {
     NULL
   }
 
-  bm <- built_manifest(cfg)
+  contract <- .study_dataset(cfg, dataset)
+  if (is.null(contract$cohort)) {
+    stop("record_provenance(): dataset '", dataset,
+         "' has no cohort contract", call. = FALSE)
+  }
+  bm <- built_manifest(cfg, dataset)
 
   record <- list(
     job      = tools::file_path_sans_ext(basename(path)),
@@ -145,15 +153,16 @@ record_provenance <- function(path, extra = list(), cfg = study_config()) {
     packages  = .loaded_packages(),
     renv_lock = lock_rec,
     data      = list(list(
+      dataset = dataset,
       file   = bm$file,
       bytes  = bm$size_bytes,
       mtime  = bm$mtime,
       sha256 = bm$sha256
     )),
     cohort = list(
-      n          = cfg$cohort$n,
-      n_events   = cfg$cohort$n_events,
-      n_censored = cfg$cohort$n_censored
+      n          = contract$cohort$n,
+      n_events   = contract$cohort$n_events,
+      n_censored = contract$cohort$n_censored
     )
   )
 

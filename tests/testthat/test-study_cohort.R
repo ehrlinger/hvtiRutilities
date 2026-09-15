@@ -63,3 +63,26 @@ test_that("assert_cohort fails on a fixture whose data no longer matches", {
 
   expect_error(assert_cohort(d, cfg), "events=8")
 })
+
+test_that("cohort helpers select a named cohort contract", {
+  root <- make_registered_study(withr::local_tempdir())
+  cfg <- study_config(root)
+  data <- read_built(cfg, dataset = "complete_cases")
+
+  expect_identical(
+    cohort_counts(data, cfg, dataset = "complete_cases"),
+    list(n = 2L, n_events = 1L, n_censored = 1L)
+  )
+  expect_true(assert_cohort(data, cfg, dataset = "complete_cases"))
+})
+
+test_that("assert_cohort rejects an ancillary dataset without a contract", {
+  root <- make_registered_study(withr::local_tempdir(), ancillary = TRUE)
+  cfg <- study_config(root)
+  data <- read_built(cfg, dataset = "imaging")
+
+  expect_error(
+    assert_cohort(data, cfg, dataset = "imaging"),
+    "no cohort contract"
+  )
+})

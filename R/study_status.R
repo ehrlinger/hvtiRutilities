@@ -33,6 +33,49 @@
              stringsAsFactors = FALSE)
 }
 
+.status_named_dataset <- function(cfg, dataset) {
+  contract <- .study_dataset(cfg, dataset)
+  path <- built_path(cfg, dataset)
+  data_item <- paste0("dataset:", dataset)
+  cohort_item <- paste0("cohort:", dataset)
+
+  if (!file.exists(path)) {
+    return(rbind(
+      .status_row(data_item, "MISSING", paste("not found:", path)),
+      .status_row(cohort_item, "MISSING", "requires the dataset")
+    ))
+  }
+
+  data_row <- .status_row(data_item, "OK", basename(path))
+  if (is.null(contract$cohort)) {
+    return(rbind(
+      data_row,
+      .status_row(cohort_item, "MISSING", "no cohort contract registered")
+    ))
+  }
+
+  gate <- tryCatch({
+    assert_cohort(
+      read_built(cfg, dataset = dataset),
+      cfg,
+      dataset = dataset
+    )
+    TRUE
+  }, error = function(e) conditionMessage(e))
+  cohort_row <- if (isTRUE(gate)) {
+    .status_row(
+      cohort_item,
+      "OK",
+      paste0("N=", contract$cohort$n,
+             " / events=", contract$cohort$n_events,
+             " / censored=", contract$cohort$n_censored)
+    )
+  } else {
+    .status_row(cohort_item, "FAIL", gate)
+  }
+  rbind(data_row, cohort_row)
+}
+
 # verify_manifest(stop_on_error = FALSE) reports failures through warning()
 # and returns the report invisibly. tryCatch() with a warning handler would
 # capture the condition and discard the report, so the warning is muffled with
@@ -257,9 +300,20 @@ study_status <- function(root = getwd()) {
     }
   }
 
+  named_rows <- lapply(
+    names(cfg$additional_datasets),
+    function(dataset) .status_named_dataset(cfg, dataset)
+  )
+  if (length(named_rows)) {
+    named_rows <- do.call(rbind, named_rows)
+  } else {
+    named_rows <- NULL
+  }
+
   out <- list(
     root   = root,
     checks = rbind(row_yml, row_lock, row_man, row_data, row_cohort,
+                   named_rows,
                    .status_provenance(root)),
     counts = list(
       r_files  = length(.status_files(root, "[.]R$")),

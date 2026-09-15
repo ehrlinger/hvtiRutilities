@@ -136,6 +136,16 @@ test_that("study_status reports renv.lock when present", {
   expect_equal(check_for(study_status(root), "renv.lock")$status, "OK")
 })
 
+test_that("study_status reports each named dataset and cohort", {
+  root <- make_registered_study(withr::local_tempdir(), ancillary = TRUE)
+  status <- study_status(root)
+
+  expect_equal(check_for(status, "dataset:complete_cases")$status, "OK")
+  expect_equal(check_for(status, "cohort:complete_cases")$status, "OK")
+  expect_equal(check_for(status, "dataset:imaging")$status, "OK")
+  expect_equal(check_for(status, "cohort:imaging")$status, "MISSING")
+})
+
 test_that("provenance is FAIL when a .qmd source has no sidecar", {
   root <- withr::local_tempdir()
   writeLines("---\ntitle: x\n---", file.path(root, "01.hz.dead_JR.qmd"))

@@ -123,3 +123,27 @@ test_that("read_built still lowercases names when there is no collision", {
 
   expect_true(all(names(d) == tolower(names(d))))
 })
+
+test_that("data helpers select a named dataset", {
+  root <- make_registered_study(withr::local_tempdir())
+  cfg <- study_config(root)
+
+  expect_identical(
+    basename(built_path(cfg, dataset = "complete_cases")),
+    "complete.csv"
+  )
+  expect_identical(
+    built_manifest(cfg, dataset = "complete_cases")$file,
+    "complete.csv"
+  )
+  expect_equal(nrow(read_built(cfg, dataset = "complete_cases")), 2L)
+})
+
+test_that("data helpers list registered choices for an unknown dataset", {
+  root <- make_registered_study(withr::local_tempdir())
+
+  expect_error(
+    built_path(study_config(root), dataset = "unknown"),
+    "study, complete_cases"
+  )
+})

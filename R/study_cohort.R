@@ -22,6 +22,8 @@
 #' @param d A data frame, typically from \code{\link{read_built}}.
 #' @param cfg List. A study manifest from \code{\link{study_config}}; supplies
 #'   \code{cohort$event} and \code{cohort$time}.
+#' @param dataset Character(1). Logical dataset name. Defaults to
+#'   \code{"study"}.
 #'
 #' @return A list with integer elements \code{n}, \code{n_events} and
 #'   \code{n_censored}.
@@ -34,9 +36,14 @@
 #' cfg <- list(cohort = list(event = "dead", time = "iv_dead"))
 #' d <- data.frame(dead = c(1, 1, 0, 0, 0), iv_dead = 1:5)
 #' cohort_counts(d, cfg)
-cohort_counts <- function(d, cfg = study_config()) {
-  event <- cfg$cohort$event
-  time  <- cfg$cohort$time
+cohort_counts <- function(d, cfg = study_config(), dataset = "study") {
+  contract <- .study_dataset(cfg, dataset)
+  if (is.null(contract$cohort)) {
+    stop("cohort_counts(): dataset '", dataset,
+         "' has no cohort contract", call. = FALSE)
+  }
+  event <- contract$cohort$event
+  time  <- contract$cohort$time
 
   missing_cols <- setdiff(c(event, time), names(d))
   if (length(missing_cols)) {
@@ -64,6 +71,8 @@ cohort_counts <- function(d, cfg = study_config()) {
 #'
 #' @param d A data frame, typically from \code{\link{read_built}}.
 #' @param cfg List. A study manifest from \code{\link{study_config}}.
+#' @param dataset Character(1). Logical dataset name. Defaults to
+#'   \code{"study"}.
 #'
 #' @return \code{invisible(TRUE)} on success; otherwise an error.
 #'
@@ -76,11 +85,16 @@ cohort_counts <- function(d, cfg = study_config()) {
 #'                           event = "dead", time = "iv_dead"))
 #' d <- data.frame(dead = c(1, 1, 0, 0, 0), iv_dead = 1:5)
 #' assert_cohort(d, cfg)
-assert_cohort <- function(d, cfg = study_config()) {
-  cc   <- cohort_counts(d, cfg)
-  want <- list(n          = as.integer(cfg$cohort$n),
-               n_events   = as.integer(cfg$cohort$n_events),
-               n_censored = as.integer(cfg$cohort$n_censored))
+assert_cohort <- function(d, cfg = study_config(), dataset = "study") {
+  contract <- .study_dataset(cfg, dataset)
+  if (is.null(contract$cohort)) {
+    stop("assert_cohort(): dataset '", dataset,
+         "' has no cohort contract", call. = FALSE)
+  }
+  cc <- cohort_counts(d, cfg, dataset)
+  want <- list(n = as.integer(contract$cohort$n),
+               n_events = as.integer(contract$cohort$n_events),
+               n_censored = as.integer(contract$cohort$n_censored))
 
   if (!identical(cc, want)) {
     stop("cohort gate: expected N=", want$n, " / events=", want$n_events,

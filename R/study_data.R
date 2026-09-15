@@ -7,6 +7,30 @@
 # this package is shared across studies and a literal filename in R/ is exactly
 # the early binding this design exists to remove.
 
+.study_dataset <- function(cfg, dataset = "study") {
+  if (length(dataset) != 1L || is.na(dataset) || !nzchar(dataset)) {
+    stop("dataset must be one non-empty name", call. = FALSE)
+  }
+
+  if (identical(dataset, "study")) {
+    return(list(
+      dataset = dataset,
+      built = cfg$built,
+      population = cfg$population,
+      cohort = cfg$cohort
+    ))
+  }
+
+  out <- cfg$additional_datasets[[dataset]]
+  if (is.null(out)) {
+    choices <- c("study", names(cfg$additional_datasets))
+    stop("unknown dataset '", dataset, "'; registered: ",
+         paste(choices, collapse = ", "), call. = FALSE)
+  }
+  out$dataset <- dataset
+  out
+}
+
 #' Path to the study's built dataset
 #'
 #' @description
@@ -15,6 +39,8 @@
 #' existence.
 #'
 #' @param cfg List. A study manifest from \code{\link{study_config}}.
+#' @param dataset Character(1). Logical dataset name. Defaults to
+#'   \code{"study"}.
 #'
 #' @return Character(1). The path to the built dataset.
 #'
@@ -34,8 +60,13 @@
 #' )
 #' built_path(study_config(root))
 #' unlink(root, recursive = TRUE)
-built_path <- function(cfg = study_config()) {
-  file.path(study_dir("datasets", cfg$root), cfg$built)
+built_path <- function(cfg = study_config(), dataset = "study") {
+  contract <- .study_dataset(cfg, dataset)
+  if (is.null(contract$built)) {
+    stop("built_path(): dataset '", dataset, "' has no registered file",
+         call. = FALSE)
+  }
+  file.path(study_dir("datasets", cfg$root), contract$built)
 }
 
 #' Record the state of the built dataset
@@ -46,6 +77,8 @@ built_path <- function(cfg = study_config()) {
 #' tell whether two results were produced from the same data.
 #'
 #' @param cfg List. A study manifest from \code{\link{study_config}}.
+#' @param dataset Character(1). Logical dataset name. Defaults to
+#'   \code{"study"}.
 #'
 #' @return A one-row data frame with columns \code{file}, \code{size_bytes},
 #'   \code{mtime} and \code{sha256}.
@@ -68,14 +101,15 @@ built_path <- function(cfg = study_config()) {
 #'           file.path(root, "datasets", "example.csv"), row.names = FALSE)
 #' built_manifest(study_config(root))
 #' unlink(root, recursive = TRUE)
-built_manifest <- function(cfg = study_config()) {
-  p <- built_path(cfg)
+built_manifest <- function(cfg = study_config(), dataset = "study") {
+  contract <- .study_dataset(cfg, dataset)
+  p <- built_path(cfg, dataset)
   if (!file.exists(p)) {
     stop("built_manifest(): missing ", p, call. = FALSE)
   }
   info <- file.info(p)
   data.frame(
-    file       = cfg$built,
+    file       = contract$built,
     size_bytes = as.numeric(info$size),
     mtime      = format(info$mtime, "%Y-%m-%d %H:%M:%S"),
     sha256     = digest::digest(p, algo = "sha256", file = TRUE),
@@ -132,6 +166,8 @@ built_manifest <- function(cfg = study_config()) {
 #'   applied out of band. Errors if the manifest entry has
 #'   \code{role: "primary"}: that role means the source has been retired and
 #'   the parquet is authoritative, so there is nothing to refresh from.
+#' @param dataset Character(1). Logical dataset name. Defaults to
+#'   \code{"study"}.
 #'
 #' @return A data frame with lower-cased names, no logical columns and no
 #'   \code{haven_labelled} columns.
@@ -154,8 +190,9 @@ built_manifest <- function(cfg = study_config()) {
 #'           file.path(root, "datasets", "example.csv"), row.names = FALSE)
 #' names(read_built(study_config(root)))
 #' unlink(root, recursive = TRUE)
-read_built <- function(cfg = study_config(), refresh = FALSE) {
-  p <- built_path(cfg)
+read_built <- function(cfg = study_config(), refresh = FALSE,
+                       dataset = "study") {
+  p <- built_path(cfg, dataset)
   manifest_path <- file.path(cfg$root, "manifest.yaml")
 
   if (!file.exists(p)) {
