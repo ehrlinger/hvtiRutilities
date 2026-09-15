@@ -4,7 +4,12 @@
 \alias{record_provenance}
 \title{Write the provenance record for a rendered output}
 \usage{
-record_provenance(path, extra = list(), cfg = study_config())
+record_provenance(
+  path,
+  extra = list(),
+  cfg = study_config(),
+  dataset = "study"
+)
 }
 \arguments{
 \item{path}{Character(1). Path to the rendered output the record belongs to.
@@ -15,6 +20,9 @@ example a \code{template} block naming the template and its version.
 Required keys cannot be displaced.}
 
 \item{cfg}{List. A study manifest from \code{\link{study_config}}.}
+
+\item{dataset}{Character(1). Logical dataset name. Defaults to
+\code{"study"}.}
 }
 \value{
 Invisibly, the record that was written, as a list.

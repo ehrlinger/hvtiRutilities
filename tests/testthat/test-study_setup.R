@@ -23,6 +23,11 @@ test_that("study_setup creates numbered identity state", {
   expect_identical(cfg$owner, "Analyst")
   expect_null(cfg$built)
   expect_null(cfg$cohort)
+  expect_null(cfg$citation)
+  expect_match(
+    paste(readLines(file.path(root, "_study.yml")), collapse = "\n"),
+    "citation"
+  )
   expect_error(study_config(root), "register_data")
   expect_equal(normalizePath(study_root(root)), normalizePath(root))
 })
@@ -39,7 +44,7 @@ test_that("study_setup creates missing environment files", {
   ignore <- readLines(file.path(root, ".renvignore"))
   expect_true(all(c("00_datasets/", "datasets/", "40_graphs/", "graphs/",
                     "90_estimates/", "estimates/", "templates/") %in%
-                  ignore))
+                    ignore))
 })
 
 test_that("study_setup adopts a legacy layout without replacing files", {
@@ -108,4 +113,11 @@ test_that("study_setup resumes matching adoption without replacing identity", {
 
   expect_identical(readLines(file.path(root, "_study.yml")), before)
   expect_true(file.exists(file.path(root, ".renvignore")))
+})
+
+test_that("the replaced study_init API is unavailable", {
+  expect_error(
+    getExportedValue("hvtiRutilities", "study_init"),
+    "not an exported object"
+  )
 })

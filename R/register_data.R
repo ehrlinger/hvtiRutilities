@@ -18,10 +18,12 @@
 .replace_study_pair <- function(prepared, targets) {
   backups <- vapply(
     targets,
-    function(path) tempfile(
-      pattern = paste0(".", basename(path), "-backup-"),
-      tmpdir = dirname(path)
-    ),
+    function(path) {
+      tempfile(
+        pattern = paste0(".", basename(path), "-backup-"),
+        tmpdir = dirname(path)
+      )
+    },
     character(1)
   )
   existed <- file.exists(targets)
@@ -109,7 +111,7 @@ register_data <- function(root = getwd(), built, event = NULL, time = NULL,
   source <- scalar(source, "source")
 
   if (!identical(basename(built), built) ||
-      !nzchar(tools::file_ext(built))) {
+        !nzchar(tools::file_ext(built))) {
     stop("register_data(): built must be one filename with its extension",
          call. = FALSE)
   }
@@ -133,7 +135,7 @@ register_data <- function(root = getwd(), built, event = NULL, time = NULL,
     }
   } else {
     if (identical(dataset, "study") ||
-        !grepl("^[a-z][a-z0-9_]*$", dataset)) {
+          !grepl("^[a-z][a-z0-9_]*$", dataset)) {
       stop("register_data(): a named dataset must have a non-reserved ",
            "lower-snake-case name", call. = FALSE)
     }
@@ -146,7 +148,7 @@ register_data <- function(root = getwd(), built, event = NULL, time = NULL,
          call. = FALSE)
   }
   if (role == "named" &&
-      !is.null(raw$additional_datasets[[dataset]])) {
+        !is.null(raw$additional_datasets[[dataset]])) {
     stop("register_data(): dataset '", dataset, "' is already registered",
          call. = FALSE)
   }
@@ -200,7 +202,7 @@ register_data <- function(root = getwd(), built, event = NULL, time = NULL,
   }
   if (is.null(manifest)) manifest <- list()
   if (!is.list(manifest) ||
-      (!is.null(manifest$datasets) && !is.list(manifest$datasets))) {
+        (!is.null(manifest$datasets) && !is.list(manifest$datasets))) {
     stop("register_data(): manifest.yaml has an invalid datasets field",
          call. = FALSE)
   }

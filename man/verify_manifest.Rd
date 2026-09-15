@@ -20,7 +20,7 @@ Defaults to \code{"manifest.yaml"} in the current working directory.}
 supplied, it is used exactly as given. When \code{NULL} (default), each
 entry is resolved individually: \code{datasets/} beneath the manifest's
 own directory is preferred for that entry when the file actually exists
-there, matching the layout \code{\link{study_init}} creates, where
+there, matching the layout \code{\link{study_setup}} creates, where
 \code{manifest.yaml} sits at the study root and datasets one level down;
 otherwise the entry resolves beside the manifest, so a flat layout is
 equally supported even when an unrelated \code{datasets/} directory is

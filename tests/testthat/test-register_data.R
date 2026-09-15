@@ -145,3 +145,64 @@ test_that("register_data identifies itself in argument errors", {
   expect_error(register_data(root, "", "dead", "iv_dead"),
                "register_data[(][)]")
 })
+
+test_that("register_data records source and the requested extract date", {
+  root <- registration_study()
+  write_registration_csv(root, "built.csv")
+
+  register_data(
+    root,
+    "built.csv",
+    "dead",
+    "iv_dead",
+    source = "Synthetic fixture",
+    extract_date = "2006-05-03"
+  )
+
+  manifest <- yaml::read_yaml(file.path(root, "manifest.yaml"))
+  expect_identical(manifest$datasets[[1L]]$source, "Synthetic fixture")
+  expect_identical(manifest$datasets[[1L]]$extract_date, "2006-05-03")
+})
+
+test_that("register_data defaults extract date to the dataset mtime", {
+  root <- registration_study()
+  path <- write_registration_csv(root, "built.csv")
+  Sys.setFileTime(path, as.POSIXct("2006-05-03 14:03:00", tz = "UTC"))
+
+  register_data(root, "built.csv", "dead", "iv_dead")
+
+  manifest <- yaml::read_yaml(file.path(root, "manifest.yaml"))
+  expect_identical(manifest$datasets[[1L]]$extract_date, "2006-05-03")
+})
+
+test_that("register_data creates a verifiable manifest entry", {
+  root <- registration_study()
+  write_registration_csv(root, "built.csv")
+  register_data(root, "built.csv", "dead", "iv_dead")
+
+  report <- verify_manifest(
+    file.path(root, "manifest.yaml"),
+    data_dir = study_dir("datasets", root),
+    stop_on_error = FALSE
+  )
+
+  expect_identical(report$file, "built.csv")
+  expect_identical(report$status, "OK")
+})
+
+test_that("register_data refuses an absent or extensionless file", {
+  root <- registration_study()
+  before <- readLines(file.path(root, "_study.yml"))
+
+  expect_error(
+    register_data(root, "missing.csv", "dead", "iv_dead"),
+    "missing"
+  )
+  expect_error(
+    register_data(root, "missing", "dead", "iv_dead"),
+    "extension"
+  )
+
+  expect_identical(readLines(file.path(root, "_study.yml")), before)
+  expect_false(file.exists(file.path(root, "manifest.yaml")))
+})

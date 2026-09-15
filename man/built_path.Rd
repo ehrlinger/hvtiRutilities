@@ -4,18 +4,20 @@
 \alias{built_path}
 \title{Path to the study's built dataset}
 \usage{
-built_path(cfg = study_config())
+built_path(cfg = study_config(), dataset = "study")
 }
 \arguments{
 \item{cfg}{List. A study manifest from \code{\link{study_config}}.}
+
+\item{dataset}{Character(1). Logical dataset name. Defaults to
+\code{"study"}.}
 }
 \value{
 Character(1). The path to the built dataset.
 }
 \description{
-Resolves \code{<study root>/datasets/<built>}, where \code{built} is the
-filename declared in \code{_study.yml}. The path is not checked for
-existence.
+Resolves the registered filename beneath the study's logical
+\code{datasets} directory. The path is not checked for existence.
 }
 \examples{
 root <- file.path(tempdir(), "built-path-example")

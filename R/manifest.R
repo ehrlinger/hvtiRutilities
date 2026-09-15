@@ -267,7 +267,7 @@ update_manifest <- function(file,
 #'   supplied, it is used exactly as given. When \code{NULL} (default), each
 #'   entry is resolved individually: \code{datasets/} beneath the manifest's
 #'   own directory is preferred for that entry when the file actually exists
-#'   there, matching the layout \code{\link{study_init}} creates, where
+#'   there, matching the layout \code{\link{study_setup}} creates, where
 #'   \code{manifest.yaml} sits at the study root and datasets one level down;
 #'   otherwise the entry resolves beside the manifest, so a flat layout is
 #'   equally supported even when an unrelated \code{datasets/} directory is
@@ -342,7 +342,7 @@ verify_manifest <- function(manifest_path = "manifest.yaml",
   }
 
   # An explicit data_dir is used exactly as given. Only the default searches,
-  # because study_init() writes manifest.yaml at the study root while datasets
+  # because register_data() writes manifest.yaml at the study root while data
   # live one level down -- but a flat layout is equally legal, and choosing on
   # directory existence alone would send a flat study's lookups into an
   # unrelated datasets/ directory and fail every entry.

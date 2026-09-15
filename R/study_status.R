@@ -1,6 +1,6 @@
 # The compliance auditor. One read-only function serves both ends of a study's
-# life: study_init() calls it to report what a new study still lacks, and
-# close-out will call it to grade a publication record. Two near-identical
+# life: study_setup() calls it to report what a new study still lacks, and
+# close-out can call it to grade a publication record. Two near-identical
 # scanners would drift.
 #
 # Every check is reported, never raised. A study with no _study.yml is the
@@ -211,11 +211,12 @@
 #'
 #' @return An object of class \code{"study_status"}: a list with \code{root},
 #'   \code{checks} (a data frame of \code{item}, \code{status} --
-#'   \code{"OK"}, \code{"MISSING"} or \code{"FAIL"} -- and \code{detail}, six
-#'   rows), and \code{counts} (a list of \code{r_files}, \code{qmd},
-#'   \code{sas_jobs} and \code{sidecars}).
+#'   \code{"OK"}, \code{"MISSING"} or \code{"FAIL"} -- and \code{detail}).
+#'   The six base rows are followed by dataset and cohort rows for each named
+#'   dataset. \code{counts} lists \code{r_files}, \code{qmd},
+#'   \code{sas_jobs} and \code{sidecars}.
 #'
-#' @seealso \code{\link{study_init}}, \code{\link{study_checklist}}
+#' @seealso \code{\link{study_setup}}, \code{\link{study_checklist}}
 #'
 #' @export
 #'

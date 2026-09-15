@@ -2,6 +2,13 @@
 
 ## New features
 
+* **Study setup now follows the study's real sequence.** `study_setup()`
+  records Tracker identity and creates numbered folders before data exist;
+  `register_data()` later adds the default study dataset or a distinctly named
+  subset or ancillary file. Existing bare-folder studies can be adopted
+  without moving their files, and all data and provenance helpers accept a
+  named dataset. The unused `study_init()` entry point has been removed.
+
 * **`hvti_prefix_folds()` records legacy prefixes that fold into another**,
   and `job_files()` applies it: a folded file is reported under the prefix it
   folds into and classed `known`, while `stem` keeps the name as written. The

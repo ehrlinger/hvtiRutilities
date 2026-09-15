@@ -4,10 +4,13 @@
 \alias{built_manifest}
 \title{Record the state of the built dataset}
 \usage{
-built_manifest(cfg = study_config())
+built_manifest(cfg = study_config(), dataset = "study")
 }
 \arguments{
 \item{cfg}{List. A study manifest from \code{\link{study_config}}.}
+
+\item{dataset}{Character(1). Logical dataset name. Defaults to
+\code{"study"}.}
 }
 \value{
 A one-row data frame with columns \code{file}, \code{size_bytes},

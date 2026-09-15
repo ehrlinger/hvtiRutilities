@@ -29,17 +29,17 @@
 #' Resolve a directory in the study layout
 #'
 #' @description
-#' Maps a logical study directory such as code{"datasets"} to the numbered
+#' Maps a logical study directory such as \code{"datasets"} to the numbered
 #' spelling used by new studies or the bare spelling retained by legacy
 #' studies. A root containing both layouts is an error.
 #'
 #' @param folder Character. One logical study directory name.
-#' @param root Character. Study root. Defaults to code{study_root()}.
+#' @param root Character. Study root. Defaults to \code{study_root()}.
 #'
 #' @return Character(1). The resolved directory path. Its existence is not
 #'   required.
 #'
-#' @seealso code{\link{study_root}}, code{\link{sas_path}}
+#' @seealso \code{\link{study_root}}, \code{\link{sas_path}}
 #'
 #' @export
 #'
@@ -53,7 +53,7 @@ study_dir <- function(folder, root = study_root()) {
   folders <- .study_folders()
 
   if (length(folder) != 1L || is.na(folder) ||
-      !folder %in% names(folders)) {
+        !folder %in% names(folders)) {
     stop("unknown study folder: ", paste(folder, collapse = ", "),
          call. = FALSE)
   }

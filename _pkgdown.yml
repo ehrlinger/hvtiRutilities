@@ -130,7 +130,6 @@ reference:
   contents:
   - study_setup
   - register_data
-  - study_init
   - study_status
   - study_checklist
   - preflight_report

@@ -8,7 +8,7 @@ study_checklist(status, path = NULL)
 }
 \arguments{
 \item{status}{An object of class \code{"study_status"}, from
-\code{\link{study_status}} or \code{\link{study_init}}.}
+\code{\link{study_status}} or \code{\link{study_setup}}.}
 
 \item{path}{Character(1) or \code{NULL}. Where to write the markdown. When
 \code{NULL} (default) the lines are returned instead of written.}
@@ -29,5 +29,5 @@ cat(study_checklist(study_status(root)), sep = "\n")
 unlink(root, recursive = TRUE)
 }
 \seealso{
-\code{\link{study_status}}, \code{\link{study_init}}
+\code{\link{study_status}}, \code{\link{study_setup}}
 }

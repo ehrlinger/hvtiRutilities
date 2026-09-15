@@ -4,33 +4,34 @@
 \alias{study_config}
 \title{Read the study manifest}
 \usage{
-study_config(start = getwd())
+study_config(start = getwd(), require_data = TRUE)
 }
 \arguments{
 \item{start}{Character. Directory to start the upward walk from. Defaults
 to \code{getwd()}.}
+
+\item{require_data}{Logical. If \code{TRUE}, require the default dataset and
+cohort contract. Use \code{FALSE} when only study identity is needed.}
 }
 \value{
-A list with elements \code{root}, \code{file}, \code{study},
-  \code{population}, \code{built}, \code{citation}, and \code{cohort} (a
-  list of \code{n}, \code{n_events}, \code{n_censored}, \code{event},
-  \code{time}).
+The manifest as a list, with \code{root} and \code{file} attached.
+  Additive identity and named-dataset fields are retained.
 }
 \description{
 Walks up from \code{start} until a \code{_study.yml} is found, parses it,
-validates that every required key is present, and returns the result with
-the study root attached.
+validates the requested identity or data contract, and returns the result
+with the study root attached.
 
-A study without a manifest must not render, so an absent or incomplete
+A study without a manifest must not render, so an absent
 \code{_study.yml} is an error rather than a set of defaults. The directories
 walked are named in the error, because the usual cause is starting from
 outside the study tree.
 
-Required keys are \code{study}, \code{built}, and a \code{cohort} block
-holding \code{n}, \code{n_events}, \code{n_censored}, \code{event} and
-\code{time}. \code{population} and \code{citation} are optional.
-\code{built} must carry its file extension, because the reader dispatches
-on it.
+Study identity always requires \code{study}. With
+\code{require_data = TRUE}, \code{built} and a \code{cohort} block holding
+\code{n}, \code{n_events}, \code{n_censored}, \code{event} and \code{time}
+are also required. \code{built} must carry its file extension, because the
+reader dispatches on it.
 }
 \examples{
 root <- file.path(tempdir(), "study-example")

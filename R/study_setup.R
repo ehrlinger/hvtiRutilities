@@ -89,7 +89,7 @@ study_setup <- function(root, study, study_tracker_id,
   study <- .study_scalar(study, "study", required = TRUE)
   tracker <- suppressWarnings(as.integer(study_tracker_id))
   if (length(tracker) != 1L || is.na(tracker) || tracker < 1L ||
-      !identical(as.character(tracker), as.character(study_tracker_id))) {
+        !identical(as.character(tracker), as.character(study_tracker_id))) {
     stop("study_setup(): study_tracker_id must be one positive integer",
          call. = FALSE)
   }

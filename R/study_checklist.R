@@ -10,14 +10,14 @@
 #' detail alongside. File counts follow.
 #'
 #' @param status An object of class \code{"study_status"}, from
-#'   \code{\link{study_status}} or \code{\link{study_init}}.
+#'   \code{\link{study_status}} or \code{\link{study_setup}}.
 #' @param path Character(1) or \code{NULL}. Where to write the markdown. When
 #'   \code{NULL} (default) the lines are returned instead of written.
 #'
 #' @return When \code{path} is \code{NULL}, a character vector of markdown
 #'   lines. Otherwise \code{path}, invisibly, after writing.
 #'
-#' @seealso \code{\link{study_status}}, \code{\link{study_init}}
+#' @seealso \code{\link{study_status}}, \code{\link{study_setup}}
 #'
 #' @export
 #'
@@ -29,7 +29,7 @@
 study_checklist <- function(status, path = NULL) {
   if (!inherits(status, "study_status")) {
     stop("study_checklist(): status must be a study_status object, from ",
-         "study_status() or study_init().", call. = FALSE)
+         "study_status() or study_setup().", call. = FALSE)
   }
 
   boxes <- vapply(

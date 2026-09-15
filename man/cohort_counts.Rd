@@ -4,13 +4,16 @@
 \alias{cohort_counts}
 \title{Count the analysable cohort}
 \usage{
-cohort_counts(d, cfg = study_config())
+cohort_counts(d, cfg = study_config(), dataset = "study")
 }
 \arguments{
 \item{d}{A data frame, typically from \code{\link{read_built}}.}
 
 \item{cfg}{List. A study manifest from \code{\link{study_config}}; supplies
 \code{cohort$event} and \code{cohort$time}.}
+
+\item{dataset}{Character(1). Logical dataset name. Defaults to
+\code{"study"}.}
 }
 \value{
 A list with integer elements \code{n}, \code{n_events} and

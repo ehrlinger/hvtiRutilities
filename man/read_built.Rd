@@ -4,7 +4,7 @@
 \alias{read_built}
 \title{Read the study's built dataset}
 \usage{
-read_built(cfg = study_config(), refresh = FALSE)
+read_built(cfg = study_config(), refresh = FALSE, dataset = "study")
 }
 \arguments{
 \item{cfg}{List. A study manifest from \code{\link{study_config}}.}
@@ -16,6 +16,9 @@ a rebuild that preserves \code{mtime}, a restored backup, a correction
 applied out of band. Errors if the manifest entry has
 \code{role: "primary"}: that role means the source has been retired and
 the parquet is authoritative, so there is nothing to refresh from.}
+
+\item{dataset}{Character(1). Logical dataset name. Defaults to
+\code{"study"}.}
 }
 \value{
 A data frame with lower-cased names, no logical columns and no

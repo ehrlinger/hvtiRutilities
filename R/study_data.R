@@ -34,9 +34,8 @@
 #' Path to the study's built dataset
 #'
 #' @description
-#' Resolves \code{<study root>/datasets/<built>}, where \code{built} is the
-#' filename declared in \code{_study.yml}. The path is not checked for
-#' existence.
+#' Resolves the registered filename beneath the study's logical
+#' \code{datasets} directory. The path is not checked for existence.
 #'
 #' @param cfg List. A study manifest from \code{\link{study_config}}.
 #' @param dataset Character(1). Logical dataset name. Defaults to

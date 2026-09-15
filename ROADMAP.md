@@ -32,11 +32,11 @@ Each study receives a brief README with its Tracker link and a place for the
 protocol summary. `hvtiRtemplates::add_job()` replaces the unused `new_job()`
 name and resolves numbered or legacy working directories without mixing them.
 
-**Still open.** Implementation plans for `qhsprograms`, this package, and
-`hvtiRtemplates`, plus the dependent caller migration in `hvtiRdatabuild`. The
-first pilot is a dry run against a disposable copy of the designated legacy
-study; it does not remove the study's `.git` or copied `templates/`
-directories.
+**Implementation.** The four implementation plans are complete. Package work
+begins in `hvtiRutilities`, followed by `hvtiRtemplates`, the dependent caller
+migration in `hvtiRdatabuild`, and the new `qhsprograms` repository. The first
+pilot is a dry run against a disposable copy of the designated legacy study;
+it does not remove the study's `.git` or copied `templates/` directories.
 
 ## `study_checkpoint()`
 
