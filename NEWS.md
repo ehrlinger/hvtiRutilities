@@ -2,6 +2,13 @@
 
 ## New features
 
+* **Study setup now follows the study's real sequence.** `study_setup()`
+  records Tracker identity and creates numbered folders before data exist;
+  `register_data()` later adds the default study dataset or a distinctly named
+  subset or ancillary file. Existing bare-folder studies can be adopted
+  without moving their files, and all data and provenance helpers accept a
+  named dataset. The unused `study_init()` entry point has been removed.
+
 * **`hvti_prefix_folds()` records legacy prefixes that fold into another**,
   and `job_files()` applies it: a folded file is reported under the prefix it
   folds into and classed `known`, while `stem` keeps the name as written. The
@@ -11,6 +18,10 @@
   `lm`.
 
 ## Bug fixes
+
+* **A missing `_study.yml` now points to the explicit recovery command.**
+  `study_config()` tells the user to run `study-setup --recover`, with the
+  Tracker-ID form when the repository cannot identify the study.
 
 * **`hvti_taxonomy()` relabels five prefixes** after a biostatistician's
   review of the job catalog, 2026-09-11. `bn`, `nd`, `nm` and `np` are

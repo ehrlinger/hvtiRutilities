@@ -568,6 +568,16 @@ test_that("verify_manifest returns empty data frame for empty manifest", {
   expect_equal(nrow(report), 0L)
 })
 
+test_that("an empty manifest still rejects a mixed study layout", {
+  root <- withr::local_tempdir()
+  dir.create(file.path(root, "00_datasets"))
+  dir.create(file.path(root, "datasets"))
+  mpath <- file.path(root, "manifest.yaml")
+  yaml::write_yaml(list(datasets = list()), mpath)
+
+  expect_error(verify_manifest(mpath), "mixed")
+})
+
 # ---------------------------------------------------------------------------
 # verbose — console output is opt-in, silent by default
 # ---------------------------------------------------------------------------

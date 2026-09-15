@@ -128,7 +128,8 @@ reference:
 - title: Study Setup
   desc: Initialize a study for reproducible analysis, and audit whether it is ready
   contents:
-  - study_init
+  - study_setup
+  - register_data
   - study_status
   - study_checklist
   - preflight_report
@@ -141,6 +142,7 @@ reference:
   - sas_path
   - built_path
   - built_manifest
+  - study_dir
   - read_built
   - cohort_counts
   - assert_cohort

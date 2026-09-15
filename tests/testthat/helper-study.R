@@ -55,3 +55,46 @@ make_study_fixture <- function(dir,
 
   dir
 }
+
+make_registered_study <- function(dir, ancillary = FALSE) {
+  root <- file.path(dir, "study")
+  study_setup(root, "Registered fixture", 42L)
+  data_dir <- study_dir("datasets", root)
+
+  write.csv(
+    data.frame(dead = c(1L, 0L, 0L), iv_dead = 1:3),
+    file.path(data_dir, "built.csv"),
+    row.names = FALSE
+  )
+  register_data(root, "built.csv", "dead", "iv_dead")
+
+  write.csv(
+    data.frame(dead = c(1L, 0L), iv_dead = 1:2),
+    file.path(data_dir, "complete.csv"),
+    row.names = FALSE
+  )
+  register_data(
+    root,
+    "complete.csv",
+    "dead",
+    "iv_dead",
+    dataset = "complete_cases",
+    role = "named"
+  )
+
+  if (ancillary) {
+    write.csv(
+      data.frame(id = 1:2, measure = c(3.1, 4.2)),
+      file.path(data_dir, "imaging.csv"),
+      row.names = FALSE
+    )
+    register_data(
+      root,
+      "imaging.csv",
+      dataset = "imaging",
+      role = "named"
+    )
+  }
+
+  root
+}

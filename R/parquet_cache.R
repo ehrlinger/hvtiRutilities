@@ -174,7 +174,7 @@
 
 # Read `path`, using or populating the parquet cache beside it.
 #
-# manifest_path is passed in rather than derived from `path`: study_init()
+# manifest_path is passed in rather than derived from `path`: register_data()
 # writes manifest.yaml at the STUDY ROOT while datasets live in
 # <root>/datasets/, so dirname(path) is the wrong directory. Derived files
 # (.parquet, .schema.csv) do sit beside the source.
@@ -268,8 +268,8 @@
 
   # update_manifest() replaces the whole entry rather than merging into it, so
   # a cache-driven write that omitted extract_date/source/sort_key would reset
-  # them to today's date and NULL -- clobbering values a caller such as
-  # study_init() set explicitly, on every cache miss, not just the first.
+  # them to today's date and NULL -- clobbering values register_data() set
+  # explicitly, on every cache miss, not just the first.
   # Preserving them here keeps the cache confined to the fields it owns.
   update_manifest(
     file          = path,

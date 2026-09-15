@@ -129,3 +129,22 @@ test_that("record_provenance returns the record invisibly", {
   expect_type(rec, "list")
   expect_equal(rec$job, "01.hz.dead_JR")
 })
+
+test_that("record_provenance records the selected named dataset", {
+  root <- make_registered_study(withr::local_tempdir())
+  out <- make_output(root)
+
+  record_provenance(
+    out,
+    cfg = study_config(root),
+    dataset = "complete_cases"
+  )
+  record <- jsonlite::fromJSON(
+    provenance_path(out),
+    simplifyVector = FALSE
+  )
+
+  expect_identical(record$data[[1L]]$dataset, "complete_cases")
+  expect_identical(record$data[[1L]]$file, "complete.csv")
+  expect_identical(record$cohort$n, 2L)
+})

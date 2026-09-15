@@ -82,7 +82,7 @@ test_that("the sidecar of a promoted entry is never regenerated", {
   side <- file.path(dir, "datasets", "built_test.schema.csv")
   writeLines("do not overwrite", side)
 
-  # manifest.yaml lives at the study root (study_init() writes it there),
+  # manifest.yaml lives at the study root (register_data() writes it there),
   # not beside the datasets it describes.
   mp <- file.path(dir, "manifest.yaml")
   m <- yaml::read_yaml(mp)

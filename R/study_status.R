@@ -1,6 +1,6 @@
 # The compliance auditor. One read-only function serves both ends of a study's
-# life: study_init() calls it to report what a new study still lacks, and
-# close-out will call it to grade a publication record. Two near-identical
+# life: study_setup() calls it to report what a new study still lacks, and
+# close-out can call it to grade a publication record. Two near-identical
 # scanners would drift.
 #
 # Every check is reported, never raised. A study with no _study.yml is the
@@ -33,6 +33,74 @@
              stringsAsFactors = FALSE)
 }
 
+.status_named_dataset <- function(cfg, dataset) {
+  data_item <- paste0("dataset:", dataset)
+  cohort_item <- paste0("cohort:", dataset)
+  resolved <- tryCatch(
+    list(
+      contract = .study_dataset(cfg, dataset),
+      path = built_path(cfg, dataset)
+    ),
+    error = function(e) e
+  )
+  if (inherits(resolved, "error")) {
+    return(rbind(
+      .status_row(data_item, "FAIL", conditionMessage(resolved)),
+      .status_row(cohort_item, "MISSING",
+                  "requires a valid dataset contract")
+    ))
+  }
+  contract <- resolved$contract
+  path <- resolved$path
+
+  if (!file.exists(path)) {
+    return(rbind(
+      .status_row(data_item, "MISSING", paste("not found:", path)),
+      .status_row(cohort_item, "MISSING", "requires the dataset")
+    ))
+  }
+
+  data <- tryCatch(
+    .read_registration_data(path),
+    error = function(e) e
+  )
+  if (inherits(data, "error")) {
+    return(rbind(
+      .status_row(data_item, "FAIL", conditionMessage(data)),
+      .status_row(cohort_item, "MISSING", "requires a readable dataset")
+    ))
+  }
+
+  data_row <- .status_row(data_item, "OK", basename(path))
+  if (is.null(contract$cohort)) {
+    return(rbind(
+      data_row,
+      .status_row(cohort_item, "MISSING", "no cohort contract registered")
+    ))
+  }
+
+  gate <- tryCatch({
+    assert_cohort(
+      data,
+      cfg,
+      dataset = dataset
+    )
+    TRUE
+  }, error = function(e) conditionMessage(e))
+  cohort_row <- if (isTRUE(gate)) {
+    .status_row(
+      cohort_item,
+      "OK",
+      paste0("N=", contract$cohort$n,
+             " / events=", contract$cohort$n_events,
+             " / censored=", contract$cohort$n_censored)
+    )
+  } else {
+    .status_row(cohort_item, "FAIL", gate)
+  }
+  rbind(data_row, cohort_row)
+}
+
 # verify_manifest(stop_on_error = FALSE) reports failures through warning()
 # and returns the report invisibly. tryCatch() with a warning handler would
 # capture the condition and discard the report, so the warning is muffled with
@@ -41,13 +109,13 @@
   path <- file.path(root, "manifest.yaml")
   if (!file.exists(path)) {
     return(.status_row("manifest.yaml", "MISSING",
-                       "no manifest.yaml; study_init() seeds one"))
+                       "no manifest.yaml; register_data() creates it"))
   }
 
   rep <- tryCatch(
     withCallingHandlers(
       verify_manifest(manifest_path = path,
-                      data_dir      = file.path(root, "datasets"),
+                      data_dir      = study_dir("datasets", root),
                       stop_on_error = FALSE,
                       verbose       = FALSE),
       warning = function(w) invokeRestart("muffleWarning")),
@@ -168,11 +236,12 @@
 #'
 #' @return An object of class \code{"study_status"}: a list with \code{root},
 #'   \code{checks} (a data frame of \code{item}, \code{status} --
-#'   \code{"OK"}, \code{"MISSING"} or \code{"FAIL"} -- and \code{detail}, six
-#'   rows), and \code{counts} (a list of \code{r_files}, \code{qmd},
-#'   \code{sas_jobs} and \code{sidecars}).
+#'   \code{"OK"}, \code{"MISSING"} or \code{"FAIL"} -- and \code{detail}).
+#'   The six base rows are followed by dataset and cohort rows for each named
+#'   dataset. \code{counts} lists \code{r_files}, \code{qmd},
+#'   \code{sas_jobs} and \code{sidecars}.
 #'
-#' @seealso \code{\link{study_init}}, \code{\link{study_checklist}}
+#' @seealso \code{\link{study_setup}}, \code{\link{study_checklist}}
 #'
 #' @export
 #'
@@ -192,9 +261,15 @@ study_status <- function(root = getwd()) {
   cfg <- NULL
   if (!file.exists(yml)) {
     row_yml <- .status_row("_study.yml", "MISSING",
-                           "no _study.yml at this root; run study_init()")
+                           paste0("no _study.yml at this root; recovery may ",
+                                  "be available with study-setup --recover; ",
+                                  "if its Tracker ID cannot be inferred, run ",
+                                  "study-setup 42 --recover"))
   } else {
-    parsed <- tryCatch(study_config(root), error = function(e) e)
+    parsed <- tryCatch(
+      study_config(root, require_data = FALSE),
+      error = function(e) e
+    )
     if (inherits(parsed, "error")) {
       row_yml <- .status_row("_study.yml", "FAIL", conditionMessage(parsed))
     } else {
@@ -218,33 +293,66 @@ study_status <- function(root = getwd()) {
                               "requires a valid _study.yml")
     row_cohort <- .status_row("cohort", "MISSING",
                               "requires a valid _study.yml")
+  } else if (is.null(cfg$built)) {
+    row_data <- .status_row(
+      "dataset",
+      "MISSING",
+      "no default dataset registered; run register_data()"
+    )
+    row_cohort <- .status_row(
+      "cohort",
+      "MISSING",
+      "requires a registered default dataset"
+    )
   } else {
-    p <- built_path(cfg)
-    if (!file.exists(p)) {
+    p <- tryCatch(built_path(cfg), error = function(e) e)
+    if (inherits(p, "error")) {
+      row_data <- .status_row("dataset", "FAIL", conditionMessage(p))
+      row_cohort <- .status_row(
+        "cohort", "MISSING", "requires a valid dataset path"
+      )
+    } else if (!file.exists(p)) {
       row_data   <- .status_row("dataset", "MISSING",
                                 paste("not found:", p))
       row_cohort <- .status_row("cohort", "MISSING",
                                 "requires the built dataset")
     } else {
       row_data <- .status_row("dataset", "OK", basename(p))
-      gate <- tryCatch({
-        assert_cohort(read_built(cfg), cfg)
-        TRUE
-      }, error = function(e) conditionMessage(e))
-      row_cohort <- if (isTRUE(gate)) {
-        .status_row("cohort", "OK",
-                    paste0("N=", cfg$cohort$n,
-                           " / events=", cfg$cohort$n_events,
-                           " / censored=", cfg$cohort$n_censored))
+      if (is.null(cfg$cohort)) {
+        row_cohort <- .status_row(
+          "cohort", "MISSING", "no cohort contract registered"
+        )
       } else {
-        .status_row("cohort", "FAIL", gate)
+        gate <- tryCatch({
+          assert_cohort(.read_registration_data(p), cfg)
+          TRUE
+        }, error = function(e) conditionMessage(e))
+        row_cohort <- if (isTRUE(gate)) {
+          .status_row("cohort", "OK",
+                      paste0("N=", cfg$cohort$n,
+                             " / events=", cfg$cohort$n_events,
+                             " / censored=", cfg$cohort$n_censored))
+        } else {
+          .status_row("cohort", "FAIL", gate)
+        }
       }
     }
+  }
+
+  named_rows <- lapply(
+    names(cfg$additional_datasets),
+    function(dataset) .status_named_dataset(cfg, dataset)
+  )
+  if (length(named_rows)) {
+    named_rows <- do.call(rbind, named_rows)
+  } else {
+    named_rows <- NULL
   }
 
   out <- list(
     root   = root,
     checks = rbind(row_yml, row_lock, row_man, row_data, row_cohort,
+                   named_rows,
                    .status_provenance(root)),
     counts = list(
       r_files  = length(.status_files(root, "[.]R$")),

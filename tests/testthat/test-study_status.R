@@ -40,14 +40,42 @@ test_that("study_status reports OK for a valid manifest and its dataset", {
   expect_equal(check_for(st, "cohort")$status, "OK")
 })
 
+test_that("study_status verifies data in a numbered datasets directory", {
+  skip_if_not_installed("haven")
+  root <- make_study_fixture(withr::local_tempdir())
+  file.rename(file.path(root, "datasets"),
+              file.path(root, "00_datasets"))
+  built <- file.path(root, "00_datasets", "built_test.sas7bdat")
+  update_manifest(
+    file = built,
+    manifest_path = file.path(root, "manifest.yaml"),
+    n_rows = 20L
+  )
+
+  status <- study_status(root)
+
+  expect_equal(check_for(status, "manifest.yaml")$status, "OK")
+  expect_equal(check_for(status, "dataset")$status, "OK")
+})
+
+test_that("study_status reports a mixed default-data layout without stopping", {
+  root <- make_registered_study(withr::local_tempdir())
+  dir.create(file.path(root, "datasets"))
+
+  status <- expect_no_error(study_status(root))
+
+  expect_equal(check_for(status, "dataset")$status, "FAIL")
+  expect_equal(check_for(status, "cohort")$status, "MISSING")
+})
+
 test_that("study_status reports FAIL when _study.yml is present but invalid", {
-  root <- make_study_fixture(withr::local_tempdir(), omit = "built",
+  root <- make_study_fixture(withr::local_tempdir(), omit = "study",
                              write_data = FALSE)
   st   <- study_status(root)
 
   row <- check_for(st, "_study.yml")
   expect_equal(row$status, "FAIL")
-  expect_match(row$detail, "built")
+  expect_match(row$detail, "study")
 })
 
 test_that("study_status reports MISSING, not FAIL, for checks it cannot run", {
@@ -59,6 +87,16 @@ test_that("study_status reports MISSING, not FAIL, for checks it cannot run", {
   expect_equal(check_for(st, "dataset")$status, "MISSING")
   expect_equal(check_for(st, "cohort")$status, "MISSING")
   expect_match(check_for(st, "dataset")$detail, "_study.yml")
+})
+
+test_that("study_status reports a missing default cohort contract", {
+  skip_if_not_installed("haven")
+  root <- make_study_fixture(withr::local_tempdir(), omit = "cohort")
+
+  status <- study_status(root)
+
+  expect_equal(check_for(status, "dataset")$status, "OK")
+  expect_equal(check_for(status, "cohort")$status, "MISSING")
 })
 
 test_that("study_status reports FAIL when the cohort no longer matches", {
@@ -116,6 +154,93 @@ test_that("study_status reports renv.lock when present", {
   writeLines('{"R": {"Version": "4.5.1"}}', file.path(root, "renv.lock"))
 
   expect_equal(check_for(study_status(root), "renv.lock")$status, "OK")
+})
+
+test_that("study_status reports each named dataset and cohort", {
+  root <- make_registered_study(withr::local_tempdir(), ancillary = TRUE)
+  status <- study_status(root)
+
+  expect_equal(check_for(status, "dataset:complete_cases")$status, "OK")
+  expect_equal(check_for(status, "cohort:complete_cases")$status, "OK")
+  expect_equal(check_for(status, "dataset:imaging")$status, "OK")
+  expect_equal(check_for(status, "cohort:imaging")$status, "MISSING")
+})
+
+test_that("study_status does not create caches or rewrite the manifest", {
+  skip_if_not_installed("arrow")
+  option <- "hvtiRutilities.disable_parquet_cache"
+  old <- getOption(option)
+  withr::defer(options(structure(list(old), names = option)))
+  options(structure(list(TRUE), names = option))
+  root <- make_registered_study(withr::local_tempdir())
+  data_dir <- study_dir("datasets", root)
+  derived <- file.path(
+    data_dir,
+    c("built.parquet", "built.schema.csv",
+      "complete.parquet", "complete.schema.csv")
+  )
+  unlink(derived)
+  manifest <- file.path(root, "manifest.yaml")
+  before <- readLines(manifest)
+  options(structure(list(FALSE), names = option))
+
+  study_status(root)
+
+  expect_identical(readLines(manifest), before)
+  expect_false(any(file.exists(derived)))
+})
+
+test_that("study_status reports a malformed named dataset without stopping", {
+  root <- make_registered_study(withr::local_tempdir())
+  cfg <- yaml::read_yaml(file.path(root, "_study.yml"))
+  cfg$additional_datasets$bad <- list(cohort = NULL)
+  yaml::write_yaml(cfg, file.path(root, "_study.yml"))
+
+  status <- expect_no_error(study_status(root))
+
+  expect_equal(check_for(status, "_study.yml")$status, "FAIL")
+  expect_match(
+    check_for(status, "_study.yml")$detail,
+    "invalid additional dataset contract"
+  )
+})
+
+test_that("study_status reports an unnamed additional dataset sequence", {
+  root <- make_registered_study(withr::local_tempdir())
+  cfg <- yaml::read_yaml(file.path(root, "_study.yml"))
+  cfg$additional_datasets <- list(list(built = "bad.csv"))
+  yaml::write_yaml(cfg, file.path(root, "_study.yml"))
+
+  status <- expect_no_error(study_status(root))
+
+  expect_equal(check_for(status, "_study.yml")$status, "FAIL")
+  expect_match(check_for(status, "_study.yml")$detail, "named mapping")
+})
+
+test_that("study_status fails an unreadable ancillary dataset", {
+  root <- make_registered_study(withr::local_tempdir())
+  bad <- file.path(study_dir("datasets", root), "bad.rds")
+  writeLines("not an RDS file", bad)
+  cfg <- yaml::read_yaml(file.path(root, "_study.yml"))
+  cfg$additional_datasets$bad <- list(
+    built = "bad.rds",
+    population = NULL,
+    cohort = NULL
+  )
+  yaml::write_yaml(cfg, file.path(root, "_study.yml"))
+
+  status <- study_status(root)
+
+  expect_equal(check_for(status, "dataset:bad")$status, "FAIL")
+  expect_equal(check_for(status, "cohort:bad")$status, "MISSING")
+})
+
+test_that("missing study status includes both recovery forms", {
+  status <- study_status(withr::local_tempdir())
+  detail <- check_for(status, "_study.yml")$detail
+
+  expect_match(detail, "study-setup --recover", fixed = TRUE)
+  expect_match(detail, "study-setup 42 --recover", fixed = TRUE)
 })
 
 test_that("provenance is FAIL when a .qmd source has no sidecar", {

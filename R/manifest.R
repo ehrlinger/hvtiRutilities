@@ -264,14 +264,13 @@ update_manifest <- function(file,
 #' @param manifest_path Character. Path to the manifest YAML file.
 #'   Defaults to \code{"manifest.yaml"} in the current working directory.
 #' @param data_dir Character. Directory holding the dataset files. When
-#'   supplied, it is used exactly as given. When \code{NULL} (default), each
-#'   entry is resolved individually: \code{datasets/} beneath the manifest's
-#'   own directory is preferred for that entry when the file actually exists
-#'   there, matching the layout \code{\link{study_init}} creates, where
-#'   \code{manifest.yaml} sits at the study root and datasets one level down;
-#'   otherwise the entry resolves beside the manifest, so a flat layout is
-#'   equally supported even when an unrelated \code{datasets/} directory is
-#'   also present.
+#'   supplied, it is used exactly as given. When \code{NULL} (default), the
+#'   manifest directory is inspected once. \code{00_datasets/} supports the
+#'   numbered layout created by \code{\link{study_setup}}, \code{datasets/}
+#'   supports an adopted legacy layout, and a manifest with neither uses its
+#'   own directory. Outside a study, an empty nested directory does not displace
+#'   files beside the manifest. Both dataset directories together are a mixed
+#'   layout and produce an error; entries never fall back between layouts.
 #' @param stop_on_error Logical. If \code{TRUE} (default) the function calls
 #'   \code{stop()} on the first failed check, preventing the analysis from
 #'   proceeding.  Set to \code{FALSE} to collect all errors and report them
@@ -333,6 +332,19 @@ verify_manifest <- function(manifest_path = "manifest.yaml",
 
   manifest <- yaml::read_yaml(manifest_path)
 
+  if (is.null(data_dir)) {
+    manifest_dir <- dirname(normalizePath(manifest_path))
+    numbered <- file.path(manifest_dir, "00_datasets")
+    legacy <- file.path(manifest_dir, "datasets")
+    if (dir.exists(numbered) && dir.exists(legacy)) {
+      stop(
+        "verify_manifest(): study directory layout is mixed; both ",
+        "00_datasets/ and datasets/ exist",
+        call. = FALSE
+      )
+    }
+  }
+
   if (is.null(manifest$datasets) || length(manifest$datasets) == 0L) {
     if (verbose) message("Manifest contains no dataset entries.")
     return(invisible(data.frame(file = character(), status = character(),
@@ -341,21 +353,36 @@ verify_manifest <- function(manifest_path = "manifest.yaml",
                                 stringsAsFactors = FALSE)))
   }
 
-  # An explicit data_dir is used exactly as given. Only the default searches,
-  # because study_init() writes manifest.yaml at the study root while datasets
-  # live one level down -- but a flat layout is equally legal, and choosing on
-  # directory existence alone would send a flat study's lookups into an
-  # unrelated datasets/ directory and fail every entry.
-  search_nested <- is.null(data_dir)
   if (is.null(data_dir)) {
-    data_dir <- dirname(normalizePath(manifest_path))
+    data_dir <- manifest_dir
+    numbered <- file.path(data_dir, "00_datasets")
+    legacy <- file.path(data_dir, "datasets")
+    nested <- if (dir.exists(numbered)) {
+      numbered
+    } else if (dir.exists(legacy)) {
+      legacy
+    } else {
+      NULL
+    }
+    if (!is.null(nested)) {
+      entry_files <- vapply(
+        manifest$datasets,
+        function(entry) {
+          if (identical(entry$role, "primary")) {
+            basename(.derived_paths(entry$file)$parquet)
+          } else {
+            entry$file
+          }
+        },
+        character(1)
+      )
+      study_root <- file.exists(file.path(data_dir, "_study.yml"))
+      nested_has_data <- any(file.exists(file.path(nested, entry_files)))
+      if (study_root || nested_has_data) data_dir <- nested
+    }
   }
 
   resolve_entry <- function(file) {
-    if (search_nested) {
-      nested <- file.path(data_dir, "datasets", file)
-      if (file.exists(nested)) return(nested)
-    }
     file.path(data_dir, file)
   }
 

@@ -12,9 +12,10 @@ study_status(root = getwd())
 \value{
 An object of class \code{"study_status"}: a list with \code{root},
   \code{checks} (a data frame of \code{item}, \code{status} --
-  \code{"OK"}, \code{"MISSING"} or \code{"FAIL"} -- and \code{detail}, six
-  rows), and \code{counts} (a list of \code{r_files}, \code{qmd},
-  \code{sas_jobs} and \code{sidecars}).
+  \code{"OK"}, \code{"MISSING"} or \code{"FAIL"} -- and \code{detail}).
+  The six base rows are followed by dataset and cohort rows for each named
+  dataset. \code{counts} lists \code{r_files}, \code{qmd},
+  \code{sas_jobs} and \code{sidecars}.
 }
 \description{
 Reports, without writing anything, whether a study has the four things a
@@ -47,5 +48,5 @@ study_status(root)
 unlink(root, recursive = TRUE)
 }
 \seealso{
-\code{\link{study_init}}, \code{\link{study_checklist}}
+\code{\link{study_setup}}, \code{\link{study_checklist}}
 }

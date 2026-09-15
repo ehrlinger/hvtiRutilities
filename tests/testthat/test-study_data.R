@@ -11,6 +11,18 @@ test_that("built_path resolves under datasets/ using the manifest name", {
   )
 })
 
+test_that("built_path resolves under numbered datasets", {
+  skip_if_not_installed("haven")
+  root <- make_study_fixture(withr::local_tempdir())
+  file.rename(file.path(root, "datasets"),
+              file.path(root, "00_datasets"))
+
+  expect_equal(
+    normalizePath(built_path(study_config(root))),
+    normalizePath(file.path(root, "00_datasets", "built_test.sas7bdat"))
+  )
+})
+
 test_that("built_manifest reports file, size, mtime and sha256", {
   skip_if_not_installed("haven")
   root <- make_study_fixture(withr::local_tempdir())
@@ -110,4 +122,37 @@ test_that("read_built still lowercases names when there is no collision", {
   d <- read_built(study_config(dir))
 
   expect_true(all(names(d) == tolower(names(d))))
+})
+
+test_that("data helpers select a named dataset", {
+  root <- make_registered_study(withr::local_tempdir())
+  cfg <- study_config(root)
+
+  expect_identical(
+    basename(built_path(cfg, dataset = "complete_cases")),
+    "complete.csv"
+  )
+  expect_identical(
+    built_manifest(cfg, dataset = "complete_cases")$file,
+    "complete.csv"
+  )
+  expect_equal(nrow(read_built(cfg, dataset = "complete_cases")), 2L)
+})
+
+test_that("data helpers list registered choices for an unknown dataset", {
+  root <- make_registered_study(withr::local_tempdir())
+
+  expect_error(
+    built_path(study_config(root), dataset = "unknown"),
+    "study, complete_cases"
+  )
+})
+
+test_that("data helpers reject a non-character dataset name", {
+  root <- make_registered_study(withr::local_tempdir())
+
+  expect_error(
+    built_path(study_config(root), dataset = 1),
+    "character"
+  )
 })

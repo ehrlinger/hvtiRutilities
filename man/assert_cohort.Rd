@@ -4,12 +4,15 @@
 \alias{assert_cohort}
 \title{Assert the cohort matches the study manifest}
 \usage{
-assert_cohort(d, cfg = study_config())
+assert_cohort(d, cfg = study_config(), dataset = "study")
 }
 \arguments{
 \item{d}{A data frame, typically from \code{\link{read_built}}.}
 
 \item{cfg}{List. A study manifest from \code{\link{study_config}}.}
+
+\item{dataset}{Character(1). Logical dataset name. Defaults to
+\code{"study"}.}
 }
 \value{
 \code{invisible(TRUE)} on success; otherwise an error.

@@ -27,6 +27,7 @@ test_that("study_config errors when no manifest exists, naming what it walked", 
 
   expect_error(study_config(bare), "_study.yml")
   expect_error(study_config(bare), "Walked")
+  expect_error(study_config(bare), "study-setup --recover")
 })
 
 test_that("study_config errors on a missing required key, naming the key", {
@@ -60,4 +61,45 @@ test_that("study_config errors when the cohort counts are inconsistent", {
   yaml::write_yaml(cfg, file.path(root, "_study.yml"))
 
   expect_error(study_config(root), "n_censored")
+})
+
+test_that("study_config can read identity before data registration", {
+  root <- withr::local_tempdir()
+  yaml::write_yaml(
+    list(
+      study = "Identity-only study",
+      study_tracker_id = 42L,
+      population = NULL,
+      built = NULL,
+      citation = NULL,
+      cohort = NULL
+    ),
+    file.path(root, "_study.yml")
+  )
+
+  cfg <- study_config(root, require_data = FALSE)
+
+  expect_identical(cfg$study, "Identity-only study")
+  expect_identical(cfg$study_tracker_id, 42L)
+  expect_null(cfg$built)
+  expect_null(cfg$cohort)
+  expect_error(study_config(root), "register_data")
+})
+
+test_that("study_config preserves additive identity fields", {
+  root <- withr::local_tempdir()
+  yaml::write_yaml(
+    list(
+      study = "Identity-only study",
+      study_tracker_id = 42L,
+      future_identity = "preserve",
+      built = NULL,
+      cohort = NULL
+    ),
+    file.path(root, "_study.yml")
+  )
+
+  cfg <- study_config(root, require_data = FALSE)
+
+  expect_identical(cfg$future_identity, "preserve")
 })
