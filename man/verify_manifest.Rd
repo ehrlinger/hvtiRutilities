@@ -21,8 +21,9 @@ supplied, it is used exactly as given. When \code{NULL} (default), the
 manifest directory is inspected once. \code{00_datasets/} supports the
 numbered layout created by \code{\link{study_setup}}, \code{datasets/}
 supports an adopted legacy layout, and a manifest with neither uses its
-own directory. Both dataset directories together are a mixed layout and
-produce an error; entries never fall back between layouts.}
+own directory. Outside a study, an empty nested directory does not displace
+files beside the manifest. Both dataset directories together are a mixed
+layout and produce an error; entries never fall back between layouts.}
 
 \item{stop_on_error}{Logical. If \code{TRUE} (default) the function calls
 \code{stop()} on the first failed check, preventing the analysis from

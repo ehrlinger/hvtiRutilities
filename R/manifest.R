@@ -268,8 +268,9 @@ update_manifest <- function(file,
 #'   manifest directory is inspected once. \code{00_datasets/} supports the
 #'   numbered layout created by \code{\link{study_setup}}, \code{datasets/}
 #'   supports an adopted legacy layout, and a manifest with neither uses its
-#'   own directory. Both dataset directories together are a mixed layout and
-#'   produce an error; entries never fall back between layouts.
+#'   own directory. Outside a study, an empty nested directory does not displace
+#'   files beside the manifest. Both dataset directories together are a mixed
+#'   layout and produce an error; entries never fall back between layouts.
 #' @param stop_on_error Logical. If \code{TRUE} (default) the function calls
 #'   \code{stop()} on the first failed check, preventing the analysis from
 #'   proceeding.  Set to \code{FALSE} to collect all errors and report them
@@ -350,10 +351,28 @@ verify_manifest <- function(manifest_path = "manifest.yaml",
         call. = FALSE
       )
     }
-    if (dir.exists(numbered)) {
-      data_dir <- numbered
+    nested <- if (dir.exists(numbered)) {
+      numbered
     } else if (dir.exists(legacy)) {
-      data_dir <- legacy
+      legacy
+    } else {
+      NULL
+    }
+    if (!is.null(nested)) {
+      entry_files <- vapply(
+        manifest$datasets,
+        function(entry) {
+          if (identical(entry$role, "primary")) {
+            basename(.derived_paths(entry$file)$parquet)
+          } else {
+            entry$file
+          }
+        },
+        character(1)
+      )
+      study_root <- file.exists(file.path(data_dir, "_study.yml"))
+      nested_has_data <- any(file.exists(file.path(nested, entry_files)))
+      if (study_root || nested_has_data) data_dir <- nested
     }
   }
 
