@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.11</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.12</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,6 +55,19 @@
       <small>Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.1.12" id="hvtirutilities-1112">hvtiRutilities 1.1.12<a class="anchor" aria-label="anchor" href="#hvtirutilities-1112"></a></h2>
+<div class="section level3">
+<h3 id="new-features-1-1-12">New features<a class="anchor" aria-label="anchor" href="#new-features-1-1-12"></a></h3>
+<ul><li><p><strong>Study setup now follows the study’s real sequence.</strong> <code><a href="../reference/study_setup.html">study_setup()</a></code> records Tracker identity and creates numbered folders before data exist; <code><a href="../reference/register_data.html">register_data()</a></code> later adds the default study dataset or a distinctly named subset or ancillary file. Existing bare-folder studies can be adopted without moving their files, and all data and provenance helpers accept a named dataset. The unused <code>study_init()</code> entry point has been removed.</p></li>
+<li><p><strong><code><a href="../reference/hvti_prefix_folds.html">hvti_prefix_folds()</a></code> records legacy prefixes that fold into another</strong>, and <code><a href="../reference/job_files.html">job_files()</a></code> applies it: a folded file is reported under the prefix it folds into and classed <code>known</code>, while <code>stem</code> keeps the name as written. The first fold is <code>pm</code> into <code>lm</code>. A review of the job catalog on 2026-09-11 found that propensity work filed as <code>pm</code> belongs with the logistic models in <code>lm</code>, so <code>pm</code> leaves <code><a href="../reference/hvti_taxonomy.html">hvti_taxonomy()</a></code> and future censuses count its files as <code>lm</code>.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-1-1-12">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-1-12"></a></h3>
+<ul><li><p><strong>A missing <code>_study.yml</code> now points to the explicit recovery command.</strong> <code><a href="../reference/study_config.html">study_config()</a></code> tells the user to run <code>study-setup --recover</code>, with the Tracker-ID form when the repository cannot identify the study.</p></li>
+<li><p><strong><code><a href="../reference/hvti_taxonomy.html">hvti_taxonomy()</a></code> relabels five prefixes</strong> after a biostatistician’s review of the job catalog, 2026-09-11. <code>bn</code>, <code>nd</code>, <code>nm</code> and <code>np</code> are non-linear, not non-parametric: “Bootstrap non-linear”, “Non-linear distributions”, “Non-linear model” and “Non-linear plot”, and the three descriptions that said “nonparametric” now say “non-linear”. <code>nb</code> is “Boosting”, not “Notebook”, and its description reads “boosting models (Boostmtree, BoostMLR)”. Names and descriptions change; no prefix, folder or order moves.</p></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.1.11" id="hvtirutilities-1111">hvtiRutilities 1.1.11<a class="anchor" aria-label="anchor" href="#hvtirutilities-1111"></a></h2>
 <div class="section level3">

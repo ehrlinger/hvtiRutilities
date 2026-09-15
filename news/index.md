@@ -1,5 +1,48 @@
 # Changelog
 
+## hvtiRutilities 1.1.12
+
+### New features
+
+- **Study setup now follows the study’s real sequence.**
+  [`study_setup()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md)
+  records Tracker identity and creates numbered folders before data
+  exist;
+  [`register_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md)
+  later adds the default study dataset or a distinctly named subset or
+  ancillary file. Existing bare-folder studies can be adopted without
+  moving their files, and all data and provenance helpers accept a named
+  dataset. The unused `study_init()` entry point has been removed.
+
+- **[`hvti_prefix_folds()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_prefix_folds.md)
+  records legacy prefixes that fold into another**, and
+  [`job_files()`](https://ehrlinger.github.io/hvtiRutilities/reference/job_files.md)
+  applies it: a folded file is reported under the prefix it folds into
+  and classed `known`, while `stem` keeps the name as written. The first
+  fold is `pm` into `lm`. A review of the job catalog on 2026-09-11
+  found that propensity work filed as `pm` belongs with the logistic
+  models in `lm`, so `pm` leaves
+  [`hvti_taxonomy()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_taxonomy.md)
+  and future censuses count its files as `lm`.
+
+### Bug fixes
+
+- **A missing `_study.yml` now points to the explicit recovery
+  command.**
+  [`study_config()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md)
+  tells the user to run `study-setup --recover`, with the Tracker-ID
+  form when the repository cannot identify the study.
+
+- **[`hvti_taxonomy()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_taxonomy.md)
+  relabels five prefixes** after a biostatistician’s review of the job
+  catalog, 2026-09-11. `bn`, `nd`, `nm` and `np` are non-linear, not
+  non-parametric: “Bootstrap non-linear”, “Non-linear distributions”,
+  “Non-linear model” and “Non-linear plot”, and the three descriptions
+  that said “nonparametric” now say “non-linear”. `nb` is “Boosting”,
+  not “Notebook”, and its description reads “boosting models
+  (Boostmtree, BoostMLR)”. Names and descriptions change; no prefix,
+  folder or order moves.
+
 ## hvtiRutilities 1.1.11
 
 ### New features

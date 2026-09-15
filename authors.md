@@ -10,13 +10,13 @@ Source:
 [`DESCRIPTION`](https://github.com/ehrlinger/hvtiRutilities/blob/main/DESCRIPTION)
 
 Ehrlinger J (2026). *hvtiRutilities: A Collection of Utilities for Use
-by HVTI CORR Group at the Cleveland Clinic*. R package version 1.1.11,
+by HVTI CORR Group at the Cleveland Clinic*. R package version 1.1.12,
 <https://github.com/ehrlinger/hvtiRutilities>.
 
     @Manual{,
       title = {hvtiRutilities: A Collection of Utilities for Use by HVTI CORR Group at the Cleveland Clinic},
       author = {John Ehrlinger},
       year = {2026},
-      note = {R package version 1.1.11},
+      note = {R package version 1.1.12},
       url = {https://github.com/ehrlinger/hvtiRutilities},
     }
