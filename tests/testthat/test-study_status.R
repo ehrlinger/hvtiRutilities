@@ -58,6 +58,16 @@ test_that("study_status verifies data in a numbered datasets directory", {
   expect_equal(check_for(status, "dataset")$status, "OK")
 })
 
+test_that("study_status reports a mixed default-data layout without stopping", {
+  root <- make_registered_study(withr::local_tempdir())
+  dir.create(file.path(root, "datasets"))
+
+  status <- expect_no_error(study_status(root))
+
+  expect_equal(check_for(status, "dataset")$status, "FAIL")
+  expect_equal(check_for(status, "cohort")$status, "MISSING")
+})
+
 test_that("study_status reports FAIL when _study.yml is present but invalid", {
   root <- make_study_fixture(withr::local_tempdir(), omit = "study",
                              write_data = FALSE)
@@ -77,6 +87,16 @@ test_that("study_status reports MISSING, not FAIL, for checks it cannot run", {
   expect_equal(check_for(st, "dataset")$status, "MISSING")
   expect_equal(check_for(st, "cohort")$status, "MISSING")
   expect_match(check_for(st, "dataset")$detail, "_study.yml")
+})
+
+test_that("study_status reports a missing default cohort contract", {
+  skip_if_not_installed("haven")
+  root <- make_study_fixture(withr::local_tempdir(), omit = "cohort")
+
+  status <- study_status(root)
+
+  expect_equal(check_for(status, "dataset")$status, "OK")
+  expect_equal(check_for(status, "cohort")$status, "MISSING")
 })
 
 test_that("study_status reports FAIL when the cohort no longer matches", {
@@ -144,6 +164,30 @@ test_that("study_status reports each named dataset and cohort", {
   expect_equal(check_for(status, "cohort:complete_cases")$status, "OK")
   expect_equal(check_for(status, "dataset:imaging")$status, "OK")
   expect_equal(check_for(status, "cohort:imaging")$status, "MISSING")
+})
+
+test_that("study_status does not create caches or rewrite the manifest", {
+  skip_if_not_installed("arrow")
+  option <- "hvtiRutilities.disable_parquet_cache"
+  old <- getOption(option)
+  withr::defer(options(structure(list(old), names = option)))
+  options(structure(list(TRUE), names = option))
+  root <- make_registered_study(withr::local_tempdir())
+  data_dir <- study_dir("datasets", root)
+  derived <- file.path(
+    data_dir,
+    c("built.parquet", "built.schema.csv",
+      "complete.parquet", "complete.schema.csv")
+  )
+  unlink(derived)
+  manifest <- file.path(root, "manifest.yaml")
+  before <- readLines(manifest)
+  options(structure(list(FALSE), names = option))
+
+  study_status(root)
+
+  expect_identical(readLines(manifest), before)
+  expect_false(any(file.exists(derived)))
 })
 
 test_that("study_status reports a malformed named dataset without stopping", {

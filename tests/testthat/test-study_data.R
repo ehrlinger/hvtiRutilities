@@ -147,3 +147,12 @@ test_that("data helpers list registered choices for an unknown dataset", {
     "study, complete_cases"
   )
 })
+
+test_that("data helpers reject a non-character dataset name", {
+  root <- make_registered_study(withr::local_tempdir())
+
+  expect_error(
+    built_path(study_config(root), dataset = 1),
+    "character"
+  )
+})

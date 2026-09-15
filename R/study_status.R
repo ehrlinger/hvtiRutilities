@@ -61,7 +61,7 @@
   }
 
   data <- tryCatch(
-    read_built(cfg, dataset = dataset),
+    .read_registration_data(path),
     error = function(e) e
   )
   if (inherits(data, "error")) {
@@ -305,25 +305,36 @@ study_status <- function(root = getwd()) {
       "requires a registered default dataset"
     )
   } else {
-    p <- built_path(cfg)
-    if (!file.exists(p)) {
+    p <- tryCatch(built_path(cfg), error = function(e) e)
+    if (inherits(p, "error")) {
+      row_data <- .status_row("dataset", "FAIL", conditionMessage(p))
+      row_cohort <- .status_row(
+        "cohort", "MISSING", "requires a valid dataset path"
+      )
+    } else if (!file.exists(p)) {
       row_data   <- .status_row("dataset", "MISSING",
                                 paste("not found:", p))
       row_cohort <- .status_row("cohort", "MISSING",
                                 "requires the built dataset")
     } else {
       row_data <- .status_row("dataset", "OK", basename(p))
-      gate <- tryCatch({
-        assert_cohort(read_built(cfg), cfg)
-        TRUE
-      }, error = function(e) conditionMessage(e))
-      row_cohort <- if (isTRUE(gate)) {
-        .status_row("cohort", "OK",
-                    paste0("N=", cfg$cohort$n,
-                           " / events=", cfg$cohort$n_events,
-                           " / censored=", cfg$cohort$n_censored))
+      if (is.null(cfg$cohort)) {
+        row_cohort <- .status_row(
+          "cohort", "MISSING", "no cohort contract registered"
+        )
       } else {
-        .status_row("cohort", "FAIL", gate)
+        gate <- tryCatch({
+          assert_cohort(.read_registration_data(p), cfg)
+          TRUE
+        }, error = function(e) conditionMessage(e))
+        row_cohort <- if (isTRUE(gate)) {
+          .status_row("cohort", "OK",
+                      paste0("N=", cfg$cohort$n,
+                             " / events=", cfg$cohort$n_events,
+                             " / censored=", cfg$cohort$n_censored))
+        } else {
+          .status_row("cohort", "FAIL", gate)
+        }
       }
     }
   }

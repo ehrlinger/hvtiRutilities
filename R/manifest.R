@@ -332,6 +332,19 @@ verify_manifest <- function(manifest_path = "manifest.yaml",
 
   manifest <- yaml::read_yaml(manifest_path)
 
+  if (is.null(data_dir)) {
+    manifest_dir <- dirname(normalizePath(manifest_path))
+    numbered <- file.path(manifest_dir, "00_datasets")
+    legacy <- file.path(manifest_dir, "datasets")
+    if (dir.exists(numbered) && dir.exists(legacy)) {
+      stop(
+        "verify_manifest(): study directory layout is mixed; both ",
+        "00_datasets/ and datasets/ exist",
+        call. = FALSE
+      )
+    }
+  }
+
   if (is.null(manifest$datasets) || length(manifest$datasets) == 0L) {
     if (verbose) message("Manifest contains no dataset entries.")
     return(invisible(data.frame(file = character(), status = character(),
@@ -341,16 +354,9 @@ verify_manifest <- function(manifest_path = "manifest.yaml",
   }
 
   if (is.null(data_dir)) {
-    data_dir <- dirname(normalizePath(manifest_path))
+    data_dir <- manifest_dir
     numbered <- file.path(data_dir, "00_datasets")
     legacy <- file.path(data_dir, "datasets")
-    if (dir.exists(numbered) && dir.exists(legacy)) {
-      stop(
-        "verify_manifest(): study directory layout is mixed; both ",
-        "00_datasets/ and datasets/ exist",
-        call. = FALSE
-      )
-    }
     nested <- if (dir.exists(numbered)) {
       numbered
     } else if (dir.exists(legacy)) {

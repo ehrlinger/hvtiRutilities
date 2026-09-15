@@ -40,9 +40,11 @@ study_root <- function(start = getwd()) {
 #' Build a path under the study root
 #'
 #' @description
-#' Joins its arguments onto the study root. Use this instead of any literal
-#' path: the same study is mounted at different absolute paths on the analysis
-#' server and on a laptop.
+#' Joins its arguments onto the study root. A first component naming a logical
+#' study directory is resolved through the study's numbered or legacy layout.
+#' Other components are passed through unchanged. Use this instead of any
+#' literal path: the same study is mounted at different absolute paths on the
+#' analysis server and on a laptop.
 #'
 #' @param ... Character. Path components, passed to \code{file.path()}.
 #' @param start Character. Directory to start the upward walk from. Defaults
@@ -67,5 +69,12 @@ study_root <- function(start = getwd()) {
 #' sas_path("datasets", start = root)
 #' unlink(root, recursive = TRUE)
 sas_path <- function(..., start = getwd()) {
-  file.path(study_root(start), ...)
+  root <- study_root(start)
+  parts <- list(...)
+  if (length(parts) && is.character(parts[[1L]]) &&
+        length(parts[[1L]]) == 1L && !is.na(parts[[1L]]) &&
+        parts[[1L]] %in% names(.study_folders())) {
+    parts[[1L]] <- basename(study_dir(parts[[1L]], root))
+  }
+  do.call(file.path, c(list(root), parts))
 }

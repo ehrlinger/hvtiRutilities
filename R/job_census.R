@@ -49,7 +49,12 @@
   out <- lapply(parts, function(p) {
     # Drop the basename: only directory components can be a taxonomy folder.
     dirs <- utils::head(p, -1L)
-    hits <- which(dirs %in% folders)
+    logical_dirs <- dirs
+    numbered <- match(dirs, unname(.study_folders()))
+    logical_dirs[!is.na(numbered)] <- names(.study_folders())[
+      numbered[!is.na(numbered)]
+    ]
+    hits <- which(logical_dirs %in% folders)
     if (!length(hits)) {
       return(list(study = NA_character_, folder = NA_character_,
                   status = "unplaced", depth = NA_integer_))
@@ -58,7 +63,7 @@
     depth <- length(dirs) - i
     list(
       study  = if (i == 1L) "." else paste(dirs[seq_len(i - 1L)], collapse = "/"),
-      folder = dirs[[i]],
+      folder = logical_dirs[[i]],
       status = if (depth == 0L) "placed" else "nested",
       depth  = as.integer(depth)
     )

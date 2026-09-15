@@ -35,3 +35,23 @@ test_that("sas_path with no components returns the root", {
   root <- make_study_fixture(withr::local_tempdir())
   expect_equal(sas_path(start = root), study_root(root))
 })
+
+test_that("sas_path resolves a logical folder in a numbered study", {
+  root <- make_study_fixture(withr::local_tempdir())
+  file.rename(file.path(root, "datasets"),
+              file.path(root, "00_datasets"))
+
+  expect_equal(
+    sas_path("datasets", "built.csv", start = root),
+    file.path(study_root(root), "00_datasets", "built.csv")
+  )
+})
+
+test_that("sas_path preserves an arbitrary first component", {
+  root <- make_study_fixture(withr::local_tempdir())
+
+  expect_equal(
+    sas_path("custom", "file.txt", start = root),
+    file.path(study_root(root), "custom", "file.txt")
+  )
+})

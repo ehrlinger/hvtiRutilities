@@ -16,9 +16,11 @@ to \code{getwd()}.}
 Character(1). The joined path. It is not checked for existence.
 }
 \description{
-Joins its arguments onto the study root. Use this instead of any literal
-path: the same study is mounted at different absolute paths on the analysis
-server and on a laptop.
+Joins its arguments onto the study root. A first component naming a logical
+study directory is resolved through the study's numbered or legacy layout.
+Other components are passed through unchanged. Use this instead of any
+literal path: the same study is mounted at different absolute paths on the
+analysis server and on a laptop.
 }
 \examples{
 root <- file.path(tempdir(), "sas-path-example")

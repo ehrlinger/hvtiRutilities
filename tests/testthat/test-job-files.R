@@ -277,6 +277,19 @@ test_that("forward-slash paths still split the same way", {
   expect_equal(out$depth, 1L)
 })
 
+test_that("numbered taxonomy folders are classified by logical name", {
+  root <- withr::local_tempdir()
+  study <- file.path(root, "alpha", "30_analyses")
+  dir.create(study, recursive = TRUE)
+  writeLines("# synthetic job", file.path(study, "dead-hz-hm.R"))
+
+  out <- job_files(root)
+
+  expect_equal(out$status, "placed")
+  expect_equal(out$study, "alpha")
+  expect_equal(out$folder, "analyses")
+})
+
 test_that("the same root passed twice is swept once", {
   # Otherwise every file is emitted twice and n_files doubles silently.
   d <- withr::local_tempdir()

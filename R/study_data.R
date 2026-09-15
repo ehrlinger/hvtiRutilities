@@ -8,8 +8,9 @@
 # the early binding this design exists to remove.
 
 .study_dataset <- function(cfg, dataset = "study") {
-  if (length(dataset) != 1L || is.na(dataset) || !nzchar(dataset)) {
-    stop("dataset must be one non-empty name", call. = FALSE)
+  if (!is.character(dataset) || length(dataset) != 1L || is.na(dataset) ||
+        !nzchar(dataset)) {
+    stop("dataset must be one non-empty character name", call. = FALSE)
   }
 
   if (identical(dataset, "study")) {
