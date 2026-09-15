@@ -129,6 +129,7 @@ reference:
   desc: Initialize a study for reproducible analysis, and audit whether it is ready
   contents:
   - study_setup
+  - register_data
   - study_init
   - study_status
   - study_checklist

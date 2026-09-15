@@ -47,10 +47,11 @@
   )
 }
 
-.study_scalar <- function(x, name, required = FALSE) {
+.study_scalar <- function(x, name, required = FALSE,
+                          caller = "study_setup") {
   if (is.null(x) && !required) return(NULL)
   if (length(x) != 1L || is.na(x) || !nzchar(as.character(x))) {
-    stop("study_setup(): ", name, " must be one non-empty value",
+    stop(caller, "(): ", name, " must be one non-empty value",
          call. = FALSE)
   }
   x
