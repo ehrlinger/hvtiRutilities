@@ -17,3 +17,40 @@ test_that("the result is a plain data frame with sequential row names", {
   expect_false(inherits(res, "tbl_df"))
   expect_equal(rownames(res), c("1", "2"))
 })
+
+test_that("variable labels survive, including after rows are dropped", {
+  d <- data.frame(dead = c(1, 0, NA))
+  labelled::var_label(d$dead) <- "Death indicator"
+  res <- proc_freq(d, "dead")
+  expect_equal(labelled::var_label(res$dead), "Death indicator")
+})
+
+test_that("variable labels survive weighting", {
+  d <- data.frame(g = c("a", "b"), wt = c(1, NA))
+  labelled::var_label(d$g) <- "Group"
+  res <- proc_freq(d, "g", weights = "wt")
+  expect_equal(labelled::var_label(res$g), "Group")
+})
+
+test_that("value-labelled variables gain a label column beside them", {
+  d <- data.frame(status = haven::labelled(c(2, 1, 3, 2),
+                                           labels = c(Alive = 1, Dead = 2)),
+                  arm = c("a", "a", "b", "b"))
+  res <- proc_freq(d, c("status", "arm"), list = TRUE)
+  expect_named(res, c("status", "status_label", "arm", "Frequency",
+                      "Percent", "Cum_Frequency", "Cum_Percent"))
+  expect_false(inherits(res$status, "haven_labelled"))
+  expect_equal(res$status, c(1, 2, 2, 3))
+  expect_equal(res$status_label, c("Alive", "Dead", "Dead", NA))
+})
+
+test_that("a missing value-labelled value has an NA label", {
+  d <- data.frame(status = haven::labelled(c(1, NA), labels = c(Alive = 1)))
+  res <- proc_freq(d, "status", missing = TRUE)
+  expect_equal(res$status_label, c(NA, "Alive"))
+})
+
+test_that("variables without value labels get no label column", {
+  res <- proc_freq(data.frame(g = c("a", "b")), "g")
+  expect_false("g_label" %in% names(res))
+})

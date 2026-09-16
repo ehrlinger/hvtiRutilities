@@ -14,6 +14,10 @@ proc_freq <- function(data, tables, missing = FALSE, list = FALSE,
          "cannot be both a weight and a table variable.", call. = FALSE)
   }
 
+  ## Read labels before any row subsetting: subsetting strips them.
+  var_labels <- lapply(data[tables], labelled::var_label)
+  val_labels <- lapply(data[tables], labelled::val_labels)
+
   keys <- as.data.frame(lapply(data[tables], .strip_labels),
                         stringsAsFactors = FALSE)
   names(keys) <- tables
@@ -71,6 +75,11 @@ proc_freq <- function(data, tables, missing = FALSE, list = FALSE,
     out$Col_Percent <- .pct_within(freq, out[c(strata, col_var)])
   }
 
+  for (v in tables) {
+    labelled::var_label(out[[v]]) <- var_labels[[v]]
+  }
+  out <- .add_value_label_columns(out, tables, val_labels)
+
   attr(out, "frequency_missing") <- frequency_missing
   out
 }
@@ -106,4 +115,22 @@ proc_freq <- function(data, tables, missing = FALSE, list = FALSE,
   }
   id <- .group_ids(keys)$id
   100 * freq / as.vector(rowsum(freq, id))[id]
+}
+
+## Internal: insert a <var>_label column after each variable that carried
+## value labels, holding the label for each stored value (NA when none).
+.add_value_label_columns <- function(out, tables, val_labels) {
+  for (v in rev(tables)) {
+    labs <- val_labels[[v]]
+    if (is.null(labs)) {
+      next
+    }
+    lab_col <- names(labs)[match(out[[v]], unname(labs))]
+    pos <- match(v, names(out))
+    out <- cbind(out[seq_len(pos)],
+                 stats::setNames(data.frame(lab_col, stringsAsFactors = FALSE),
+                                 paste0(v, "_label")),
+                 out[-seq_len(pos)])
+  }
+  out
 }
