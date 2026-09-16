@@ -68,6 +68,11 @@
 #' Data are deliberately not required. Call \code{\link{register_data}} after
 #' the default or a named dataset exists.
 #'
+#' When the root holds no \code{.Rproj} file, one named for the root
+#' directory is written, so that opening the project and
+#' \code{\link{study_root}} agree on the study root. An existing project is
+#' left unchanged.
+#'
 #' @param root Character. Study root to create or adopt.
 #' @param study Character(1). Study title.
 #' @param study_tracker_id Integer(1). Study Tracker topic ID.
@@ -188,6 +193,18 @@ study_setup <- function(root, study, study_tracker_id,
     .study_renvignore(),
     file.path(root, ".renvignore")
   )
+
+  # An R project beside _study.yml means opening the project, here::here()
+  # and study_root() all name the same directory. An existing project, of
+  # any name, is the author's and is left alone.
+  if (!length(list.files(root, pattern = "[.]Rproj$"))) {
+    .study_write_lines_if_missing(
+      c("Version: 1.0", "", "RestoreWorkspace: No", "SaveWorkspace: No",
+        "AlwaysSaveHistory: No", "", "EnableCodeIndexing: Yes",
+        "Encoding: UTF-8"),
+      file.path(root, paste0(basename(root), ".Rproj"))
+    )
+  }
 
   study_status(root)
 }

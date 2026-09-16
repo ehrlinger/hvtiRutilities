@@ -1,3 +1,9 @@
+# hvtiRutilities (unreleased)
+
+* `study_setup()` writes `<study>.Rproj` when the root has no R project, so
+  opening the project, `here::here()` and `study_root()` name the same
+  directory. An existing project is left alone.
+
 # hvtiRutilities 1.1.12
 
 ## New features
