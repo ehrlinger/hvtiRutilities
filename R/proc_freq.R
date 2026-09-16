@@ -1,28 +1,52 @@
 #' Frequency tables, in the style of SAS PROC FREQ
 #'
 #' @export
-proc_freq <- function(data, tables, missing = FALSE, list = FALSE) {
+proc_freq <- function(data, tables, missing = FALSE, list = FALSE,
+                      weights = NULL) {
   if (!is.data.frame(data)) {
     stop("'data' must be a data frame.", call. = FALSE)
   }
   .check_columns(tables, data)
 
+  wvec <- .validate_weights(weights, data)
+  if (!is.null(weights) && weights %in% tables) {
+    stop("Weight column '", weights, "' is also named in 'tables'. A column ",
+         "cannot be both a weight and a table variable.", call. = FALSE)
+  }
+
   keys <- as.data.frame(lapply(data[tables], .strip_labels),
                         stringsAsFactors = FALSE)
   names(keys) <- tables
 
+  if (!is.null(wvec)) {
+    keep <- !is.na(wvec)
+    keys <- keys[keep, , drop = FALSE]
+    wvec <- wvec[keep]
+  }
+
   is_missing <- Reduce(`|`, lapply(keys, is.na))
   if (missing) {
-    frequency_missing <- 0L
+    frequency_missing <- if (is.null(wvec)) 0L else 0
   } else {
-    frequency_missing <- sum(is_missing)
+    frequency_missing <- if (is.null(wvec)) {
+      sum(is_missing)
+    } else {
+      sum(wvec[is_missing])
+    }
     keys <- keys[!is_missing, , drop = FALSE]
+    wvec <- wvec[!is_missing]
   }
 
   grouped <- .group_ids(keys)
   n_groups <- nrow(grouped$keys)
   out <- grouped$keys
-  out$Frequency <- tabulate(grouped$id, nbins = n_groups)
+  out$Frequency <- if (is.null(wvec)) {
+    tabulate(grouped$id, nbins = n_groups)
+  } else if (n_groups == 0L) {
+    numeric(0)
+  } else {
+    as.vector(rowsum(wvec, grouped$id))
+  }
 
   ## SAS ORDER=INTERNAL: missing sorts first, factors by level, characters
   ## by byte value (radix sorts in the C locale, as SAS does).
