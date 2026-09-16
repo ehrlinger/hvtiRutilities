@@ -4,8 +4,94 @@
 \alias{proc_freq}
 \title{Frequency tables, in the style of SAS PROC FREQ}
 \usage{
-proc_freq(data, tables, missing = FALSE, list = FALSE)
+proc_freq(data, tables, missing = FALSE, list = FALSE, weights = NULL)
+}
+\arguments{
+\item{data}{A data frame.}
+
+\item{tables}{Character vector of one or more column names defining the
+table.}
+
+\item{missing}{Logical. \code{FALSE} (the SAS default) excludes rows with a
+missing value in any \code{tables} variable from the table and from every
+denominator, and reports their count in the \code{frequency_missing}
+attribute. \code{TRUE}, SAS \code{/ MISSING}, treats missing as a level.}
+
+\item{list}{Logical. \code{TRUE}, SAS \code{/ LIST}, gives cumulative
+columns and percentages of the grand total for an n-way table. It has no
+effect on a one-way table.}
+
+\item{weights}{Character or \code{NULL}. Name of a single numeric column of
+weights, SAS \code{WEIGHT}. \code{Frequency} becomes the sum of weights.
+Rows with a missing weight are excluded entirely; non-positive weights
+are an error, as in \code{\link{proc_means}}.}
+}
+\value{
+A data frame with one column per \code{tables} variable (each
+  followed by a \code{<var>_label} column when the variable carries value
+  labels), then:
+  \itemize{
+    \item for a one-way table, or \code{list = TRUE}: \code{Frequency},
+      \code{Percent}, \code{Cum_Frequency}, \code{Cum_Percent};
+    \item for an n-way crosstab: \code{Frequency}, \code{Percent} (within
+      stratum), \code{Row_Percent}, \code{Col_Percent}.
+  }
+  \code{Frequency} is integer when unweighted and double when weighted.
+  The attribute \code{frequency_missing} holds the count (or weight) of
+  excluded missing rows, and is \code{0} when none were excluded. A table
+  with no remaining rows is returned with zero rows, not an error.
 }
 \description{
-Frequency tables, in the style of SAS PROC FREQ
+Produces the table SAS \code{PROC FREQ} prints for a \code{TABLES}
+statement: one row per observed combination of levels, with frequencies
+and percentages. One call is one table; a SAS step with several
+\code{TABLES} statements is several calls.
+}
+\details{
+The last name in \code{tables} is the column variable, the one before it
+the row variable, and any earlier names are strata, as in SAS
+\code{TABLES a*b*c}.
+
+\strong{Percentages depend on \code{list}, not only the columns shown.}
+For a crosstab of three or more variables, SAS prints one row-by-column
+table per stratum and computes \code{Percent} within that stratum. With
+\code{list = TRUE}, \code{Percent} is of the grand total. The two agree for
+one- and two-way tables and disagree from three variables on.
+
+\strong{Missing values sort first.} SAS treats missing as the smallest
+value, so under \code{missing = TRUE} the missing level heads the table and
+the cumulative columns count it first. \code{dplyr::count()} places
+\code{NA} last, which moves every cumulative value.
+
+Rows follow SAS \code{ORDER=INTERNAL}: factors in declared level order,
+numbers by value, character values by byte value (the C locale, so
+\code{"B"} sorts before \code{"a"}). Unused factor levels are omitted, as
+SAS omits zero-count levels without \code{SPARSE}.
+
+A \code{haven_labelled} variable is grouped on its stored value, and a
+\code{<var>_label} column holding the value label follows it, as SAS groups
+on the internal value and prints the formatted one. Variable labels on the
+\code{tables} columns are kept.
+
+Percentages are not rounded. SAS rounds only for display, and a rounded
+result would fail \code{\link{compare_parity}} against SAS output.
+
+Tests of association (\code{CHISQ}, \code{FISHER}, \code{MEASURES} and the
+rest) are deliberately absent, for the same reason \code{\link{proc_means}}
+has no inference statistics.
+}
+\examples{
+dta <- generate_survival_data(n = 200, seed = 42)
+
+# proc freq; table dead / missing;
+proc_freq(dta, "dead", missing = TRUE)
+
+# proc freq; table sex * dead;
+proc_freq(dta, c("sex", "dead"))
+
+# proc freq; table sex * dead / list;
+proc_freq(dta, c("sex", "dead"), list = TRUE)
+}
+\seealso{
+\code{\link{proc_means}}, \code{\link{proc_contents}}
 }

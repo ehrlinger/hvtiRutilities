@@ -1,3 +1,16 @@
+# hvtiRutilities (unreleased)
+
+## New features
+
+* **`proc_freq()` ports SAS `PROC FREQ` frequency tables.** One-way and n-way
+  tables with the `MISSING` and `LIST` options, cell, row and column
+  percentages, cumulative columns, and `WEIGHT`. Missing values sort first and
+  character levels by byte value, as in SAS. From three variables on, a
+  crosstab computes `Percent` within stratum and a list table out of the grand
+  total, so `list` changes the numbers, not only the layout. Excluded missing
+  rows are counted in `attr(, "frequency_missing")`. Tests of association are
+  not ported.
+
 # hvtiRutilities 1.1.12
 
 ## New features
