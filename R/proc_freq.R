@@ -6,7 +6,18 @@ proc_freq <- function(data, tables, missing = FALSE, list = FALSE,
   if (!is.data.frame(data)) {
     stop("'data' must be a data frame.", call. = FALSE)
   }
+  if (!is.character(tables) || length(tables) == 0L || anyNA(tables)) {
+    stop("'tables' must be a non-empty character vector of column names.",
+         call. = FALSE)
+  }
+  if (anyDuplicated(tables) > 0L) {
+    stop("'tables' names a column more than once: ",
+         paste(unique(tables[duplicated(tables)]), collapse = ", "),
+         call. = FALSE)
+  }
   .check_columns(tables, data)
+  .check_flag(missing, "missing")
+  .check_flag(list, "list")
 
   wvec <- .validate_weights(weights, data)
   if (!is.null(weights) && weights %in% tables) {
@@ -82,6 +93,14 @@ proc_freq <- function(data, tables, missing = FALSE, list = FALSE,
 
   attr(out, "frequency_missing") <- frequency_missing
   out
+}
+
+## Internal: stop unless x is a single TRUE or FALSE
+.check_flag <- function(x, name) {
+  if (!is.logical(x) || length(x) != 1L || is.na(x)) {
+    stop("'", name, "' must be a single TRUE or FALSE.", call. = FALSE)
+  }
+  invisible(TRUE)
 }
 
 ## Internal: the stored values of a column, without value or variable labels.
