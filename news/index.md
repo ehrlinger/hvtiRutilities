@@ -184,6 +184,18 @@
 
 ## hvtiRutilities 1.1.9
 
+This set was judged minor-worthy when it landed (2026-09-03): it adds
+two exported functions,
+[`apply_value_labels()`](https://ehrlinger.github.io/hvtiRutilities/reference/apply_value_labels.md)
+and
+[`type_conversion_report()`](https://ehrlinger.github.io/hvtiRutilities/reference/type_conversion_report.md),
+and changes
+[`label_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)’s
+return to four columns. It shipped as a patch anyway, and the 1.2.0 name
+went to the SAS descriptive-procedure ports four versions later.
+Recorded here because the version number alone understates what this
+release contains.
+
 ### New features
 
 - **[`read_clinical_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_clinical_data.md)
