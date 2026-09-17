@@ -75,7 +75,7 @@ test_that("a labelled variable's value without a label stays its own row", {
   expect_equal(res$Frequency, c(2L, 1L))
 })
 
-test_that("a variable with variable and value labels keeps both in a crosstab", {
+test_that("a crosstab keeps variable labels beside value-label columns", {
   d <- data.frame(status = haven::labelled(c(2, 1, 1, 2),
                                            labels = c(Alive = 1, Dead = 2)),
                   arm = c("a", "a", "b", "b"))
