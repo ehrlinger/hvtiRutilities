@@ -179,7 +179,7 @@ record_provenance <- function(path, extra = list(), cfg = study_config(),
                          null = "null", digits = NA)
     TRUE
   }, error   = function(e) conditionMessage(e),
-     warning = function(w) conditionMessage(w))
+  warning = function(w) conditionMessage(w))
 
   if (!isTRUE(written)) {
     stop("record_provenance(): could not write the provenance sidecar ",

@@ -210,7 +210,7 @@ test_that("verify_manifest [CSV] detects SHA-256 mismatch", {
   mpath <- file.path(tmp, "manifest_tamper.yaml")
   update_manifest(file = csv, manifest_path = mpath)
 
-  write.csv(make_df(5)[c(2,1,3,4,5), ], csv, row.names = FALSE)  # different content → new hash
+  write.csv(make_df(5)[c(2, 1, 3, 4, 5), ], csv, row.names = FALSE)  # different content → new hash
 
   expect_error(
     verify_manifest(manifest_path = mpath, data_dir = tmp),
@@ -269,9 +269,9 @@ test_that("verify_manifest [Excel] passes when file is unchanged", {
 test_that("verify_manifest handles CSV + SAS + Excel in one manifest", {
   withr::local_options(manifest.allow_heavy_rowcount = TRUE)
   tmp <- tempdir()
-  csv  <- write_temp_csv(n = 5,  name = "multi_cohort.csv",   dir = tmp)
-  sas  <- write_temp_sas(n = 8,  name = "multi_labs.sas7bdat",dir = tmp)
-  xlsx <- write_temp_excel(n = 3, name = "multi_adj.xlsx",    dir = tmp)
+  csv  <- write_temp_csv(n = 5,   name = "multi_cohort.csv",    dir = tmp)
+  sas  <- write_temp_sas(n = 8,   name = "multi_labs.sas7bdat", dir = tmp)
+  xlsx <- write_temp_excel(n = 3, name = "multi_adj.xlsx",      dir = tmp)
   mpath <- file.path(tmp, "manifest_multi.yaml")
 
   update_manifest(file = csv,  manifest_path = mpath)
@@ -688,8 +688,8 @@ test_that("strict = TRUE fails an entry whose row count was never recorded", {
   expect_equal(lax$status, "OK")
 
   strict <- suppressWarnings(
-    verify_manifest(manifest_path = mpath, data_dir = tmp,
-                    strict = TRUE, stop_on_error = FALSE))
+                             verify_manifest(manifest_path = mpath, data_dir = tmp,
+                                             strict = TRUE, stop_on_error = FALSE))
   expect_equal(strict$status, "FAIL")
   expect_false(strict$row_count_checked)
   expect_match(strict$message, "not recorded")
@@ -708,8 +708,8 @@ test_that("strict = TRUE fails a SAS entry whose count could not be re-derived",
                "OK")
 
   strict <- suppressWarnings(
-    verify_manifest(manifest_path = mpath, data_dir = tmp,
-                    strict = TRUE, stop_on_error = FALSE))
+                             verify_manifest(manifest_path = mpath, data_dir = tmp,
+                                             strict = TRUE, stop_on_error = FALSE))
   expect_equal(strict$status, "FAIL")
   expect_match(strict$message, "manifest.allow_heavy_rowcount")
 })
@@ -725,8 +725,8 @@ test_that("strict = TRUE fails a file type whose rows cannot be counted", {
                "OK")
 
   strict <- suppressWarnings(
-    verify_manifest(manifest_path = mpath, data_dir = tmp,
-                    strict = TRUE, stop_on_error = FALSE))
+                             verify_manifest(manifest_path = mpath, data_dir = tmp,
+                                             strict = TRUE, stop_on_error = FALSE))
   expect_equal(strict$status, "FAIL")
   expect_match(strict$message, "rds")
 })

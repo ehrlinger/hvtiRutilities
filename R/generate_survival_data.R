@@ -79,7 +79,7 @@
 #'
 #' @importFrom labelled var_label
 #' @importFrom stats rnorm rweibull runif rbinom plogis
-#' 
+#'
 #' @export
 #'
 #' @examples

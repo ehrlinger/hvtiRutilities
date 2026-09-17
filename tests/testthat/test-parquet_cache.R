@@ -1,4 +1,4 @@
-skip_if_no_arrow <- function() skip_if_not_installed("arrow")
+skip_if_no_arrow <- function() testthat::skip_if_not_installed("arrow")
 
 test_that("first read writes a parquet and a sidecar; second read leaves them untouched", {
   # `expect_equal(d1, d2)` alone proves nothing about whether the parquet was
@@ -48,7 +48,7 @@ test_that("changing the source invalidates the cache", {
     iv_dead = as.numeric(1:5)
   )
   suppressWarnings(haven::write_sas(
-    replacement, file.path(dir, "datasets", "built_test.sas7bdat")))
+                                    replacement, file.path(dir, "datasets", "built_test.sas7bdat")))
 
   expect_equal(nrow(read_built(cfg)), 5L)
 })
@@ -113,7 +113,7 @@ test_that("a failed conversion leaves no partial parquet", {
   # successful write, which is the case that actually exercises cleanup.
   expect_error(
     hvtiRutilities:::.write_parquet_atomic(
-      data.frame(a = I(list(1, environment()))), target),
+                                           data.frame(a = I(list(1, environment()))), target),
     NULL
   )
   expect_false(file.exists(target))
@@ -218,7 +218,7 @@ test_that("a cache miss on a promoted entry reconverts without rewriting its pro
   expect_equal(m3$datasets[[1]]$promoted_date, "2026-08-01")
   expect_equal(m3$datasets[[1]]$source_sha256, m$datasets[[1]]$source_sha256)
   expect_equal(m3$datasets[[1]]$sha256,
-              digest::digest(parquet, algo = "sha256", file = TRUE))
+               digest::digest(parquet, algo = "sha256", file = TRUE))
 })
 
 test_that("refresh = TRUE on a promoted entry errors clearly even when the cache is disabled", {
@@ -324,7 +324,7 @@ test_that("a whole-second source mtime is verified by sha256, not trusted direct
   # apply and the sha256 fallback is exercised deterministically regardless
   # of this filesystem's native mtime resolution.
   whole_second <- as.POSIXct(floor(as.numeric(Sys.time())),
-                              origin = "1970-01-01", tz = "UTC")
+                             origin = "1970-01-01", tz = "UTC")
   Sys.setFileTime(src, whole_second)
   mp <- file.path(dir, "manifest.yaml")
   m  <- yaml::read_yaml(mp)
@@ -359,7 +359,7 @@ test_that("an unchanged source with a whole-second mtime is trusted via sha256, 
 
   src <- file.path(dir, "datasets", "built_test.sas7bdat")
   whole_second <- as.POSIXct(floor(as.numeric(Sys.time())),
-                              origin = "1970-01-01", tz = "UTC")
+                             origin = "1970-01-01", tz = "UTC")
   Sys.setFileTime(src, whole_second)
   mp <- file.path(dir, "manifest.yaml")
   m  <- yaml::read_yaml(mp)

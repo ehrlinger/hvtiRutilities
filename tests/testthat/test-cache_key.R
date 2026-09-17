@@ -162,8 +162,8 @@ test_that("a plain global helper still keys by body alone", {
   env$x <- 5
   inputs <- hvtiRutilities:::.cache_inputs(quote(h(x)), env)
   expect_identical(inputs$h,
-    hvtiRutilities:::.cache_digest(
-      hvtiRutilities:::.cache_global_closure_text(env$h)))
+                   hvtiRutilities:::.cache_digest(
+                                                  hvtiRutilities:::.cache_global_closure_text(env$h)))
 })
 
 test_that("a package function still contributes nothing to inputs", {
@@ -328,8 +328,8 @@ test_that("assign-then-use in the same block leaves no free input", {
 
 test_that("digesting an upstream key ignores r_version and reproducible", {
   key1 <- list(code = "sum(d)", inputs = list(d = "aaa"), packages = list(),
-              seed = NULL, reproducible = TRUE,
-              r_version = "R version 4.4.0 (2024-04-24)")
+               seed = NULL, reproducible = TRUE,
+               r_version = "R version 4.4.0 (2024-04-24)")
   key2 <- key1
   key2$r_version <- "R version 4.5.0 (2025-04-01)"
   key2$reproducible <- FALSE
@@ -474,8 +474,8 @@ test_that("a global function referenced as a value (not called) is keyed by its 
   expect_identical(
     inputs$cache_test_asvalue,
     hvtiRutilities:::.cache_digest(
-      hvtiRutilities:::.cache_global_closure_text(get("cache_test_asvalue",
-                                                       envir = globalenv())))
+                                   hvtiRutilities:::.cache_global_closure_text(get("cache_test_asvalue",
+                                                                                   envir = globalenv())))
   )
 })
 

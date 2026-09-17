@@ -1,6 +1,6 @@
 .onAttach <- function(libname, pkgname) {
-  hvtiRutilities.version <- read.dcf(file=system.file("DESCRIPTION", package=pkgname),
-                            fields="Version")
+  hvtiRutilities.version <- read.dcf(file = system.file("DESCRIPTION", package = pkgname),
+                                     fields = "Version")
   packageStartupMessage(paste("\n",
                               pkgname,
                               hvtiRutilities.version,

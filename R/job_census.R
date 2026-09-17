@@ -485,7 +485,7 @@ job_census <- function(x) {
       )
     }))
     out <- out[order(out$prefix, out$study, out$is_template,
-                      out$is_template_naming), , drop = FALSE]
+                     out$is_template_naming), , drop = FALSE]
   }
 
   rownames(out) <- NULL
@@ -529,7 +529,9 @@ print.hvti_job_census <- function(x, ...) {
   say_more <- function(shown, total, noun = NULL) {
     if (total > shown) {
       extra <- total - shown
-      label <- if (is.null(noun)) "" else {
+      label <- if (is.null(noun)) {
+        ""
+      } else {
         plural <- if (extra == 1L) {
           noun
         } else if (grepl("x$", noun)) {

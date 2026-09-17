@@ -13,6 +13,44 @@
   reproducible. Writes are atomic, and inside a study a provenance sidecar
   carries the key. `withr` moves from Suggests to Imports.
 
+## Bug fixes
+
+* **The `lint` CI job could not fail, and now can.** `lintr::lint_package()`
+  returns a lints object and *prints* it, which is not the same as failing on
+  it, so the step exited 0 while reporting lints and every `lint.yaml` run in
+  the repo's history concluded `success`. The package also had no `.lintr`, so
+  lintr fell back to its 80-character default and reported 290 lints against a
+  green check. `lint.yaml` now sets `LINTR_ERROR_ON_LINT`, which makes lintr
+  exit 31 on a non-empty result.
+
+* **A `.lintr` records the line width as a decision rather than a default.**
+  135 characters, because `hvti_taxonomy()` is a data table written as code
+  whose column alignment is the only thing making 45 of its rows readable, and
+  the widest line in the package is 132. Two linters are switched off with
+  their reasoning in the file: `commented_code_linter`, which reads
+  `# WBC (K/uL)` as a call and the expected-value arithmetic in the weighted
+  `proc_means` tests as commented-out code, and `object_name_linter`, which
+  cannot be satisfied for the exported `hvtiRutilities.news()` or for R's own
+  `.Random.seed`. There are no path exclusions.
+
+* **67 of the remaining 69 lints were fixed rather than excluded**, so the gate
+  is green on its merits. 48 were indentation, and the rest were small: braces
+  around two multi-line function bodies and an `if`/`else` with one bare
+  branch, spaces after commas and around named-argument `=`, one trailing
+  space, and `testthat::` qualified in the two test helper closures that
+  `object_usage_linter` inspects. The only name change is the function-local
+  `.MTIME_ROUNDTRIP_TOLERANCE_SECONDS`, shortened to `.MTIME_ROUNDTRIP_TOL_SECONDS`
+  to fit the 30-character limit. No exported object, signature or behaviour
+  changed.
+
+* **`brace_linter` gains `allow_single_line = TRUE`**, which accounts for the
+  last two lints. `test-cache_key.R` tests that a standalone `{ a <- 1 }`
+  nested in another block binds `a` for what follows, so the block is the
+  subject of the test; the linter's default requires an opening brace never to
+  start a line, which a standalone block cannot do in any layout. Measured:
+  2 lints single-line, 1 multi-line, 0 only with this option. Every other
+  brace rule stays in force and the test is unchanged.
+
 # hvtiRutilities 1.2.0
 
 ## New features

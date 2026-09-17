@@ -144,14 +144,14 @@ test_that("a template file cannot, by itself, satisfy the distinct-studies gate"
   d <- withr::local_tempdir()
   make_corpus_fixture(d)
   unlink(file.path(d, "alpha", "analyses", "R_hazard", "qmd",
-                    "dead_pa-hz-03.01-ac.qmd"))
+                   "dead_pa-hz-03.01-ac.qmd"))
 
   out <- job_census(d)
   jobs <- !out$is_template & !out$is_template_naming
   distinct_studies_ac <- length(unique(out$study[jobs & out$prefix %in% "ac"]))
 
   expect_equal(distinct_studies_ac, 2L)   # beta, gamma/sub -- alpha's only
-                                           # attestation left is a template
+  # attestation left is a template
 })
 
 test_that("print leads with prefixes ranked by distinct studies", {

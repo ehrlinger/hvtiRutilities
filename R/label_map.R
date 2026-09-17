@@ -250,7 +250,7 @@ label_map <- function(data, label_max = 40) {
 #' plot(dta[[var]], main = get_label(lmap, var), ylab = get_label(lmap, var))
 get_label <- function(label_map_df, variable) {
   if (!is.data.frame(label_map_df) ||
-      !all(c("key", "label") %in% names(label_map_df))) {
+        !all(c("key", "label") %in% names(label_map_df))) {
     stop("label_map_df must be a data frame with 'key' and 'label' columns.",
          call. = FALSE)
   }
@@ -304,7 +304,7 @@ get_label <- function(label_map_df, variable) {
 #' print(headers)
 get_labels <- function(label_map_df, variables) {
   if (!is.data.frame(label_map_df) ||
-      !all(c("key", "label") %in% names(label_map_df))) {
+        !all(c("key", "label") %in% names(label_map_df))) {
     stop("label_map_df must be a data frame with 'key' and 'label' columns.",
          call. = FALSE)
   }

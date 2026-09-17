@@ -11,7 +11,7 @@
 
 sas_fixture <- function() {
   path <- system.file("examples", "iris.sas7bdat", package = "haven")
-  if (!nzchar(path)) skip("haven's iris.sas7bdat example is not installed")
+  if (!nzchar(path)) testthat::skip("haven's iris.sas7bdat example is not installed")
   path
 }
 

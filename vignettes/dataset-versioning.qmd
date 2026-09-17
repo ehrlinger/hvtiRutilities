@@ -282,10 +282,10 @@ The manifest now tracks all three files independently.
 
 ```{r}
 m <- yaml::read_yaml(manifest_path)
-do.call(rbind, lapply(m$datasets, function(e)
+do.call(rbind, lapply(m$datasets, function(e) {
   data.frame(file = e$file, extract_date = e$extract_date,
              n_rows = e$n_rows, stringsAsFactors = FALSE)
-))
+}))
 ```
 
 Verification covers all of them in a single call.

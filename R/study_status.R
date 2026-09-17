@@ -113,13 +113,13 @@
   }
 
   rep <- tryCatch(
-    withCallingHandlers(
-      verify_manifest(manifest_path = path,
-                      data_dir      = study_dir("datasets", root),
-                      stop_on_error = FALSE,
-                      verbose       = FALSE),
-      warning = function(w) invokeRestart("muffleWarning")),
-    error = function(e) e)
+                  withCallingHandlers(
+                                      verify_manifest(manifest_path = path,
+                                                      data_dir      = study_dir("datasets", root),
+                                                      stop_on_error = FALSE,
+                                                      verbose       = FALSE),
+                                      warning = function(w) invokeRestart("muffleWarning")),
+                  error = function(e) e)
 
   if (inherits(rep, "error")) {
     return(.status_row("manifest.yaml", "FAIL", conditionMessage(rep)))

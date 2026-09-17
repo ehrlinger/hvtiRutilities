@@ -305,8 +305,8 @@
   fn_stripped <- fn
   attributes(fn_stripped) <- NULL
   txt <- paste(deparse(fn_stripped, width.cutoff = 500L,
-                control = c("keepNA", "keepInteger", "niceNames")),
-        collapse = "\n")
+                       control = c("keepNA", "keepInteger", "niceNames")),
+               collapse = "\n")
   if (identical(fn_env, globalenv())) return(txt)
   captures <- .cache_closure_capture_text(fn, fn_env)
   if (is.null(captures)) txt else paste(txt, captures, sep = "\n")

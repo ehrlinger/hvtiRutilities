@@ -1,0 +1,72 @@
+# House lint configuration for hvtiRutilities.
+#
+# ⚠️ This file is DCF, not R: `read.dcf()` parses it, so a value continues
+# only while its lines are indented and an INDENTED `#` terminates the value
+# and starts a bogus record. Every comment therefore has to sit at column 0,
+# above the key it explains, which is why the reasoning below is not beside
+# the linters it describes.
+#
+# This file exists because the `lint` job did not have one. Without a
+# `.lintr` lintr fell back to its defaults -- 80-character lines among them --
+# and reported 290 lints on `main`. The job passed anyway: `lint_package()`
+# *prints* its result rather than failing on it, so the green check meant only
+# that R had started. `lint.yaml` now sets `LINTR_ERROR_ON_LINT`, which makes
+# lintr's print method stop() on a non-empty result. That turns the numbers
+# below into a gate, so every entry here has to be a decision rather than a
+# convenience.
+#
+# line_length 135 rather than lintr's 80, for the same reason and with the
+# same number as hvtiRtemplates. `hvti_taxonomy()` is a data table written as
+# code -- column-aligned rows whose alignment is the only thing that makes the
+# prefix system readable down the page -- and it accounts for 45 of the 196
+# line-length lints on its own. Wrapping it to 80 would destroy that
+# alignment. The widest line in the package is 132 characters, which is also
+# hvtiRtemplates' measurement of the same table; 135 leaves a little room
+# without inviting drift.
+#
+# `commented_code_linter` is OFF: it fires on comments that are prose, not
+# code. lintr parses `# WBC (K/uL)` as a call to `WBC()` and
+# `# alpha/analyses/qmd/03.01-ac.qmd` as division, so a unit comment and a
+# file path both read as commented-out code. Worse, the arithmetic derivations
+# in `test-proc_means_weighted_values.R` -- `# sum(w*v) = 1 + 2 + 6 + 16 = 25`
+# -- are the record of where each expected value comes from, which is the most
+# valuable comment in a numeric test and also the most parseable. Of the 15 it
+# reported, none was commented-out code.
+#
+# `object_name_linter` is OFF: the package's constant convention is
+# SCREAMING_CASE and lintr's default style is snake_case. Widening to
+# `SNAKE_CASE` covers the exported `POOL_AFFIXES` / `POOL_PLAIN_SUFFIX` /
+# `POOL_MIN_STEM` and the internal `.VARIANT_SUFFIXES` / `.NON_SOURCE_RE` /
+# `.STATS`, but it silently drops the `symbols` style that the default list
+# carries, which is what lets `%||%` pass -- so widening the list breaks an
+# infix definition. Three further cases survive any style list and cannot be
+# renamed: `.Random.seed` and `.onAttach` are R's own names, and
+# `hvtiRutilities.news()` is EXPORTED, so renaming it to satisfy a linter
+# would break callers to tidy up a warning. Enforcing the rule would mean a
+# path-keyed exclusion list for the irreducible files, and path keys go stale
+# silently on a rename -- renaming nine files in hvtiRtemplates took its lint
+# count from 0 to 86 in one step. One documented `NULL` beats a list that rots.
+#
+# `brace_linter` is ON but with `allow_single_line = TRUE`, which is the only
+# configuration that admits a standalone nested block. `test-cache_key.R` tests
+# that `{ a <- 1 }` nested inside another block binds `a` for what follows it,
+# so the block IS the subject of the test. The linter's default insists an
+# opening brace never starts a line -- it should trail `function(x)`, `if (...)`
+# and so on -- which a standalone block cannot do, and splitting it across
+# lines still leaves one lint. Measured: single-line 2 lints, multi-line 1,
+# and 0 only with this option. Every other brace rule stays in force.
+#
+# Every OTHER default linter is ON and enforced, indentation, commas, infix
+# spaces and object usage included. Those reported 69 lints once the width and
+# the two exemptions above were set. 67 were FIXED in the source. The other two
+# are the `test-cache_key.R` nested block described above, which no source
+# change can satisfy, so `allow_single_line` covers them and the test is
+# untouched. There are no path exclusions at all. Keep it that way: an
+# exclusion here is invisible in a passing run, which is the same failure shape
+# as the job this file was written to repair.
+linters: linters_with_defaults(
+    line_length_linter = line_length_linter(135L),
+    brace_linter = brace_linter(allow_single_line = TRUE),
+    commented_code_linter = NULL,
+    object_name_linter = NULL
+  )
