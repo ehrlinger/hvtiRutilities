@@ -21,6 +21,7 @@ rank_cols <- c("msign", "probm", "signrank", "probs", "normal", "probn")
 
 problems <- character()
 notes <- character()
+n_absent <- 0L
 
 if (!file.exists(file.path(out_dir, "sas_version.txt"))) {
   problems <- c(problems, "out/sas_version.txt is missing")
@@ -33,6 +34,7 @@ for (i in seq_len(nrow(scenarios))) {
     msg <- paste0(sc$scenario, ": no output file")
     if (sc$optional == 1L) {
       notes <- c(notes, paste0(msg, " (optional: SAS refused the request)"))
+      n_absent <- n_absent + 1L
     } else {
       problems <- c(problems, msg)
     }
@@ -69,5 +71,5 @@ if (length(problems) > 0L) {
   for (p in problems) message("ERROR ", p)
   quit(status = 1L)
 }
-message("OK    ", nrow(scenarios) - length(notes), " of ", nrow(scenarios),
+message("OK    ", nrow(scenarios) - n_absent, " of ", nrow(scenarios),
         " scenario outputs present and well-formed")
