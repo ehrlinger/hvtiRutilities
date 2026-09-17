@@ -1,3 +1,18 @@
+# hvtiRutilities (unreleased)
+
+## New features
+
+* **`cache_fit()` caches expensive computations strictly.** A random forest,
+  varPro fit, imputation, hazard model or partial dependence grid runs once and
+  is reloaded on later renders only while its code, every outside value it
+  reads, its packages' versions and its seed are unchanged. Anything else stops
+  with an error of class `hvtiRutilities_stale_cache` that lists what changed;
+  `refit = TRUE` recomputes. Code is written inline, as a `{}` block, or passed
+  as a quoted call. `seed =` runs the computation under `withr::with_seed()`;
+  random number use without a seed is cached with a warning and recorded as not
+  reproducible. Writes are atomic, and inside a study a provenance sidecar
+  carries the key. `withr` moves from Suggests to Imports.
+
 # hvtiRutilities 1.2.0
 
 ## New features

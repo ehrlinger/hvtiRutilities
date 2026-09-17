@@ -33,6 +33,7 @@ Suggests:
     arrow,
     e1071,
     knitr,
+    mice,
     quarto,
     randomForestSRC,
     rmarkdown,

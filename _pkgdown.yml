@@ -155,6 +155,11 @@ reference:
   - record_provenance
   - provenance_path
 
+- title: Caching
+  desc: Compute expensive results once and reload them only while their inputs are unchanged
+  contents:
+  - cache_fit
+
 - title: Analysis Taxonomy
   desc: The two-letter prefix system inherited from the CORR analysis binder
   contents:

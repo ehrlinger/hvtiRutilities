@@ -222,7 +222,20 @@ cache_fit <- function(name, code, seed = NULL, dir = study_dir("estimates"),
   invisible(path)
 }
 
-# Filled in by Task 4.
+# Records provenance when `dir` lies inside a study. Only "no _study.yml
+# found" means "not a study"; every other failure propagates, and because this
+# runs before the rename, a failure leaves nothing cached.
 .cache_provenance <- function(path, key, dir) {
-  invisible(NULL)
+  root <- tryCatch(
+    study_root(dir),
+    error = function(e) {
+      if (grepl("no _study.yml found", conditionMessage(e), fixed = TRUE)) {
+        return(NULL)
+      }
+      stop(e)
+    }
+  )
+  if (is.null(root)) return(invisible(NULL))
+  record_provenance(path, extra = list(cache_key = key),
+                    cfg = study_config(root))
 }

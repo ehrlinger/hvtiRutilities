@@ -54,8 +54,9 @@
   } else if (is.symbol(head)) {
     out$bare <- as.character(head)
   }
-  # Recurse into arguments. If head was a :: call, skip index 1 (don't recurse
-  # into it again); for other call-valued heads like f(x)(y), recurse into index 1.
+  # Recurse into arguments. If head was a :: call, skip index 1 (don't
+  # recurse into it again); for other call-valued heads like f(x)(y), recurse
+  # into index 1.
   indices <- if (handled_ns_call) seq_along(code)[-1L] else seq_along(code)
   for (i in indices) {
     if (.cache_is_empty_arg(code, i)) next

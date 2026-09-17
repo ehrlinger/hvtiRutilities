@@ -172,3 +172,74 @@ test_that("changing the seed makes the cache stale", {
                       class = "hvtiRutilities_stale_cache")
   expect_match(conditionMessage(err), "seed")
 })
+
+test_that("inside a study the default dir is used and provenance carries the key", {
+  root <- make_study_fixture(withr::local_tempdir())
+  dir.create(file.path(root, "estimates"))
+  withr::local_dir(root)
+  d <- 1:10
+  out <- cache_fit("s", sum(d))
+  expect_true(file.exists(file.path(root, "estimates", "s.rds")))
+  side <- file.path(root, "estimates", "s.provenance.json")
+  expect_true(file.exists(side))
+  rec <- jsonlite::read_json(side)
+  expect_identical(rec$cache_key$inputs$d,
+                   attr(out, "hvtiRutilities_cache_key")$inputs$d)
+})
+
+test_that("outside a study no sidecar is written", {
+  dir <- withr::local_tempdir()
+  cache_fit("s", sum(1:3), dir = dir)
+  expect_identical(list.files(dir, all.files = TRUE, no.. = TRUE), "s.rds")
+})
+
+test_that("a provenance failure inside a study leaves nothing cached", {
+  root <- make_study_fixture(withr::local_tempdir(), write_data = FALSE)
+  dir.create(file.path(root, "estimates"))
+  expect_error(cache_fit("s", sum(1:3), dir = file.path(root, "estimates")))
+  expect_length(list.files(file.path(root, "estimates"), all.files = TRUE,
+                           no.. = TRUE), 0L)
+})
+
+test_that("a survival forest round-trips and records its package version", {
+  skip_if_not_installed("randomForestSRC")
+  withr::local_options(rf.cores = 1L, mc.cores = 1L)
+  dir <- withr::local_tempdir()
+  utils::data("veteran", package = "randomForestSRC", envir = environment())
+  fit <- cache_fit(
+    "vet-rfs",
+    randomForestSRC::rfsrc(Surv(time, status) ~ ., data = veteran,
+                           ntree = 50, seed = -1L),
+    dir = dir
+  )
+  direct <- randomForestSRC::rfsrc(Surv(time, status) ~ ., data = veteran,
+                                   ntree = 50, seed = -1L)
+  expect_equal(fit$predicted.oob, direct$predicted.oob)
+  expect_message(
+    again <- cache_fit(
+      "vet-rfs",
+      randomForestSRC::rfsrc(Surv(time, status) ~ ., data = veteran,
+                             ntree = 50, seed = -1L),
+      dir = dir
+    ),
+    "loaded"
+  )
+  expect_equal(again$predicted.oob, fit$predicted.oob)
+  expect_identical(attr(fit, "hvtiRutilities_cache_key")$packages$randomForestSRC,
+                   as.character(utils::packageVersion("randomForestSRC")))
+})
+
+test_that("a multiple imputation round-trips with a seed", {
+  skip_if_not_installed("mice")
+  dir <- withr::local_tempdir()
+  aq <- datasets::airquality[1:40, 1:4]
+  imp <- cache_fit("aq-mice", mice::mice(aq, m = 2, printFlag = FALSE),
+                   seed = 7, dir = dir)
+  expect_s3_class(imp, "mids")
+  expect_message(
+    again <- cache_fit("aq-mice", mice::mice(aq, m = 2, printFlag = FALSE),
+                       seed = 7, dir = dir),
+    "loaded"
+  )
+  expect_equal(mice::complete(again), mice::complete(imp))
+})
