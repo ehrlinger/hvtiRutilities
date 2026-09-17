@@ -1,0 +1,1837 @@
+NOTE: PROCEDURE PRINTTO used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+23         
+24         data _null_;
+25           file "&root/out/sas_version.txt";
+26           put "&sysvlong";
+27           put "&sysscp &sysscpl";
+28           put "&sysdate9 &systime";
+29         run;
+
+NOTE: The file "/studies/general/proc_univariate-oracle/out/sas_version.txt" is:
+      Filename=/studies/general/proc_univariate-oracle/out/sas_version.txt,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:38:36
+
+NOTE: 3 records were written to the file "/studies/general/proc_univariate-oracle/out/sas_version.txt".
+      The minimum record length was 13.
+      The maximum record length was 16.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+30         
+31         %macro uni(scenario=, fixture=, weight=0, vardef=DF, mu0=0, class=0,
+32                    ttest=1, ranktests=1);
+33           %local _rc vars hdr;
+34         
+35           proc datasets lib=work nolist nowarn;
+36             delete fx o cols;
+37           quit;
+38         
+39           filename _old "&root/out/&scenario..csv";
+40           %if %sysfunc(fexist(_old)) %then %do;
+41             %let _rc = %sysfunc(fdelete(_old));
+42             %if &_rc ne 0 %then %put ERROR: could not delete stale &scenario..csv.;
+43           %end;
+44           filename _old clear;
+45         
+46           data work.fx;
+47             infile "&root/fixtures/&fixture..csv" dsd firstobs=2 truncover;
+48             input id g :$8. x w;
+49           run;
+                                                           The SAS System
+
+50         
+51           proc univariate data=work.fx noprint mu0=&mu0 vardef=&vardef
+52             %if &ranktests = 1 %then normal;
+53             ;
+54             %if &class = 1 %then %do;
+55               class g;
+56             %end;
+57             var x;
+58             %if &weight = 1 %then %do;
+59               weight w;
+60             %end;
+61             output out=work.o
+62               n=n nobs=nobs nmiss=nmiss sum=sum mean=mean std=std var=var cv=cv
+63               stdmean=stdmean uss=uss css=css skewness=skewness kurtosis=kurtosis
+64               sumwgt=sumwgt range=range qrange=qrange mode=mode min=min max=max
+65               median=median q1=q1 q3=q3 p1=p1 p5=p5 p10=p10 p90=p90 p95=p95 p99=p99
+66               %if &ttest = 1 %then %do;
+67                 t=t probt=probt
+68               %end;
+69               %if &ranktests = 1 %then %do;
+70                 msign=msign probm=probm signrank=signrank probs=probs
+71                 normal=normal probn=probn
+72               %end;
+73               pctlpts=0 2.5 16 50 84 97.5 100 pctlpre=pp_;
+74           run;
+75         
+76           %if &syserr > 4 or not %sysfunc(exist(work.o)) %then %do;
+77             %put WARNING: scenario &scenario produced no output (syserr=&syserr).;
+78             %goto done;
+79           %end;
+80         
+81           proc contents data=work.o out=work.cols(keep=name varnum) noprint;
+82           run;
+83         
+84           proc sql noprint;
+85             select name into :vars separated by ' '
+86               from work.cols order by varnum;
+87             select lowcase(name) into :hdr separated by ','
+88               from work.cols order by varnum;
+89           quit;
+90         
+91           data _null_;
+92             set work.o;
+93             file "&root/out/&scenario..csv" dsd lrecl=32767;
+94             format _numeric_ best32.;
+95             if _n_ = 1 then put "&hdr";
+96             put (&vars) (:);
+97           run;
+98         
+99           %done:
+100        %mend uni;
+101        
+102        /* One %uni call per row of scenarios.csv, so the SAS runs cannot drift from
+103           the manifest that make_fixtures.R writes and check_oracle.R reads. */
+104        data _null_;
+105          infile "&root/scenarios.csv" dsd firstobs=2 truncover;
+106          length scenario fixture vardef $32;
+107          input scenario $ fixture $ weight vardef $ mu0 class ttest ranktests
+                                                           The SAS System
+
+108                optional;
+109          call execute(cats('%nrstr(%uni)(scenario=', scenario,
+110                            ', fixture=', fixture, ', weight=', weight,
+111                            ', vardef=', vardef, ', mu0=', mu0,
+112                            ', class=', class, ', ttest=', ttest,
+113                            ', ranktests=', ranktests, ')'));
+114        run;
+
+NOTE: The infile "/studies/general/proc_univariate-oracle/scenarios.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/scenarios.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:31:18,
+      File Size (bytes)=977
+
+NOTE: 25 records were read from the infile "/studies/general/proc_univariate-oracle/scenarios.csv".
+      The minimum record length was 26.
+      The maximum record length was 48.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+NOTE: CALL EXECUTE generated line.
+1         + %uni(scenario=basic, fixture=basic, weight=0, vardef=DF, mu0=0, class=0, ttest=1, ranktests=1)
+
+NOTE: PROCEDURE DATASETS used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+NOTE: Fileref _OLD has been deassigned.
+
+NOTE: The infile "/studies/general/proc_univariate-oracle/fixtures/basic.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/fixtures/basic.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:31:19,
+      File Size (bytes)=105
+
+NOTE: 12 records were read from the infile "/studies/general/proc_univariate-oracle/fixtures/basic.csv".
+      The minimum record length was 5.
+      The maximum record length was 8.
+NOTE: The data set WORK.FX has 12 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+
+NOTE: Output statistic SUMWGT specified but no WEIGHT variable given; WEIGHT of 1 assumed for each observation.
+NOTE: The data set WORK.O has 1 observations and 43 variables.
+NOTE: PROCEDURE UNIVARIATE used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+                                                           The SAS System
+
+NOTE: The data set WORK.COLS has 43 observations and 2 variables.
+NOTE: PROCEDURE CONTENTS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: The file "/studies/general/proc_univariate-oracle/out/basic.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/out/basic.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:38:36
+
+NOTE: 2 records were written to the file "/studies/general/proc_univariate-oracle/out/basic.csv".
+      The minimum record length was 227.
+      The maximum record length was 331.
+NOTE: There were 1 observations read from the data set WORK.O.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+2         + %uni(scenario=basic_mu0, fixture=basic, weight=0, vardef=DF, mu0=2, class=0, ttest=1, ranktests=1)
+
+NOTE: Deleting WORK.FX (memtype=DATA).
+NOTE: Deleting WORK.O (memtype=DATA).
+NOTE: Deleting WORK.COLS (memtype=DATA).
+NOTE: PROCEDURE DATASETS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+NOTE: Fileref _OLD has been deassigned.
+
+NOTE: The infile "/studies/general/proc_univariate-oracle/fixtures/basic.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/fixtures/basic.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:31:19,
+      File Size (bytes)=105
+
+NOTE: 12 records were read from the infile "/studies/general/proc_univariate-oracle/fixtures/basic.csv".
+      The minimum record length was 5.
+      The maximum record length was 8.
+NOTE: The data set WORK.FX has 12 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+                                                           The SAS System
+
+NOTE: Output statistic SUMWGT specified but no WEIGHT variable given; WEIGHT of 1 assumed for each observation.
+NOTE: The data set WORK.O has 1 observations and 43 variables.
+NOTE: PROCEDURE UNIVARIATE used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: The data set WORK.COLS has 43 observations and 2 variables.
+NOTE: PROCEDURE CONTENTS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+
+NOTE: The file "/studies/general/proc_univariate-oracle/out/basic_mu0.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/out/basic_mu0.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:38:36
+
+NOTE: 2 records were written to the file "/studies/general/proc_univariate-oracle/out/basic_mu0.csv".
+      The minimum record length was 227.
+      The maximum record length was 339.
+NOTE: There were 1 observations read from the data set WORK.O.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+3         + %uni(scenario=n20, fixture=n20, weight=0, vardef=DF, mu0=0, class=0, ttest=1, ranktests=1)
+
+NOTE: Deleting WORK.FX (memtype=DATA).
+NOTE: Deleting WORK.O (memtype=DATA).
+NOTE: Deleting WORK.COLS (memtype=DATA).
+NOTE: PROCEDURE DATASETS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+NOTE: Fileref _OLD has been deassigned.
+
+NOTE: The infile "/studies/general/proc_univariate-oracle/fixtures/n20.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/fixtures/n20.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:31:19,
+      File Size (bytes)=157
+
+NOTE: 20 records were read from the infile "/studies/general/proc_univariate-oracle/fixtures/n20.csv".
+      The minimum record length was 5.
+                                                           The SAS System
+
+      The maximum record length was 8.
+NOTE: The data set WORK.FX has 20 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: Output statistic SUMWGT specified but no WEIGHT variable given; WEIGHT of 1 assumed for each observation.
+NOTE: The data set WORK.O has 1 observations and 43 variables.
+NOTE: PROCEDURE UNIVARIATE used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: The data set WORK.COLS has 43 observations and 2 variables.
+NOTE: PROCEDURE CONTENTS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+
+NOTE: The file "/studies/general/proc_univariate-oracle/out/n20.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/out/n20.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:38:36
+
+NOTE: 2 records were written to the file "/studies/general/proc_univariate-oracle/out/n20.csv".
+      The minimum record length was 227.
+      The maximum record length was 306.
+NOTE: There were 1 observations read from the data set WORK.O.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+4         + %uni(scenario=n21, fixture=n21, weight=0, vardef=DF, mu0=0, class=0, ttest=1, ranktests=1)
+
+NOTE: Deleting WORK.FX (memtype=DATA).
+NOTE: Deleting WORK.O (memtype=DATA).
+NOTE: Deleting WORK.COLS (memtype=DATA).
+NOTE: PROCEDURE DATASETS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+NOTE: Fileref _OLD has been deassigned.
+
+NOTE: The infile "/studies/general/proc_univariate-oracle/fixtures/n21.csv" is:
+                                                           The SAS System
+
+      Filename=/studies/general/proc_univariate-oracle/fixtures/n21.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:31:20,
+      File Size (bytes)=165
+
+NOTE: 21 records were read from the infile "/studies/general/proc_univariate-oracle/fixtures/n21.csv".
+      The minimum record length was 5.
+      The maximum record length was 8.
+NOTE: The data set WORK.FX has 21 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+
+NOTE: Output statistic SUMWGT specified but no WEIGHT variable given; WEIGHT of 1 assumed for each observation.
+NOTE: The data set WORK.O has 1 observations and 43 variables.
+NOTE: PROCEDURE UNIVARIATE used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: The data set WORK.COLS has 43 observations and 2 variables.
+NOTE: PROCEDURE CONTENTS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+
+NOTE: The file "/studies/general/proc_univariate-oracle/out/n21.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/out/n21.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:38:36
+
+NOTE: 2 records were written to the file "/studies/general/proc_univariate-oracle/out/n21.csv".
+      The minimum record length was 227.
+      The maximum record length was 319.
+NOTE: There were 1 observations read from the data set WORK.O.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+5         + %uni(scenario=n3, fixture=n3, weight=0, vardef=DF, mu0=0, class=0, ttest=1, ranktests=1)
+
+NOTE: Deleting WORK.FX (memtype=DATA).
+NOTE: Deleting WORK.O (memtype=DATA).
+NOTE: Deleting WORK.COLS (memtype=DATA).
+                                                           The SAS System
+
+NOTE: PROCEDURE DATASETS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+NOTE: Fileref _OLD has been deassigned.
+
+NOTE: The infile "/studies/general/proc_univariate-oracle/fixtures/n3.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/fixtures/n3.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:31:20,
+      File Size (bytes)=35
+
+NOTE: 3 records were read from the infile "/studies/general/proc_univariate-oracle/fixtures/n3.csv".
+      The minimum record length was 5.
+      The maximum record length was 5.
+NOTE: The data set WORK.FX has 3 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: Output statistic SUMWGT specified but no WEIGHT variable given; WEIGHT of 1 assumed for each observation.
+NOTE: The data set WORK.O has 1 observations and 43 variables.
+NOTE: PROCEDURE UNIVARIATE used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: The data set WORK.COLS has 43 observations and 2 variables.
+NOTE: PROCEDURE CONTENTS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+
+NOTE: The file "/studies/general/proc_univariate-oracle/out/n3.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/out/n3.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:38:36
+
+NOTE: 2 records were written to the file "/studies/general/proc_univariate-oracle/out/n3.csv".
+      The minimum record length was 227.
+      The maximum record length was 256.
+NOTE: There were 1 observations read from the data set WORK.O.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+                                                           The SAS System
+
+      cpu time            0.01 seconds
+      
+
+6         + %uni(scenario=n4, fixture=n4, weight=0, vardef=DF, mu0=0, class=0, ttest=1, ranktests=1)
+
+NOTE: Deleting WORK.FX (memtype=DATA).
+NOTE: Deleting WORK.O (memtype=DATA).
+NOTE: Deleting WORK.COLS (memtype=DATA).
+NOTE: PROCEDURE DATASETS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+NOTE: Fileref _OLD has been deassigned.
+
+NOTE: The infile "/studies/general/proc_univariate-oracle/fixtures/n4.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/fixtures/n4.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:31:20,
+      File Size (bytes)=41
+
+NOTE: 4 records were read from the infile "/studies/general/proc_univariate-oracle/fixtures/n4.csv".
+      The minimum record length was 5.
+      The maximum record length was 5.
+NOTE: The data set WORK.FX has 4 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: Output statistic SUMWGT specified but no WEIGHT variable given; WEIGHT of 1 assumed for each observation.
+NOTE: The data set WORK.O has 1 observations and 43 variables.
+NOTE: PROCEDURE UNIVARIATE used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: The data set WORK.COLS has 43 observations and 2 variables.
+NOTE: PROCEDURE CONTENTS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+
+NOTE: The file "/studies/general/proc_univariate-oracle/out/n4.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/out/n4.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+                                                           The SAS System
+
+      Last Modified=17Sep2026:09:38:36
+
+NOTE: 2 records were written to the file "/studies/general/proc_univariate-oracle/out/n4.csv".
+      The minimum record length was 227.
+      The maximum record length was 255.
+NOTE: There were 1 observations read from the data set WORK.O.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+7         + %uni(scenario=const, fixture=const, weight=0, vardef=DF, mu0=0, class=0, ttest=1, ranktests=1)
+
+NOTE: Deleting WORK.FX (memtype=DATA).
+NOTE: Deleting WORK.O (memtype=DATA).
+NOTE: Deleting WORK.COLS (memtype=DATA).
+NOTE: PROCEDURE DATASETS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+NOTE: Fileref _OLD has been deassigned.
+
+NOTE: The infile "/studies/general/proc_univariate-oracle/fixtures/const.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/fixtures/const.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:31:19,
+      File Size (bytes)=53
+
+NOTE: 6 records were read from the infile "/studies/general/proc_univariate-oracle/fixtures/const.csv".
+      The minimum record length was 5.
+      The maximum record length was 5.
+NOTE: The data set WORK.FX has 6 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: Output statistic SUMWGT specified but no WEIGHT variable given; WEIGHT of 1 assumed for each observation.
+NOTE: The data set WORK.O has 1 observations and 43 variables.
+NOTE: PROCEDURE UNIVARIATE used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: The data set WORK.COLS has 43 observations and 2 variables.
+NOTE: PROCEDURE CONTENTS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.00 seconds
+                                                           The SAS System
+
+      cpu time            0.01 seconds
+      
+
+
+NOTE: The file "/studies/general/proc_univariate-oracle/out/const.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/out/const.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:38:36
+
+NOTE: 2 records were written to the file "/studies/general/proc_univariate-oracle/out/const.csv".
+      The minimum record length was 97.
+      The maximum record length was 227.
+NOTE: There were 1 observations read from the data set WORK.O.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+8         + %uni(scenario=allmiss, fixture=allmiss, weight=0, vardef=DF, mu0=0, class=0, ttest=1, ranktests=1)
+
+NOTE: Deleting WORK.FX (memtype=DATA).
+NOTE: Deleting WORK.O (memtype=DATA).
+NOTE: Deleting WORK.COLS (memtype=DATA).
+NOTE: PROCEDURE DATASETS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+NOTE: Fileref _OLD has been deassigned.
+
+NOTE: The infile "/studies/general/proc_univariate-oracle/fixtures/allmiss.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/fixtures/allmiss.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:31:19,
+      File Size (bytes)=42
+
+NOTE: 5 records were read from the infile "/studies/general/proc_univariate-oracle/fixtures/allmiss.csv".
+      The minimum record length was 4.
+      The maximum record length was 4.
+NOTE: The data set WORK.FX has 5 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: Output statistic SUMWGT specified but no WEIGHT variable given; WEIGHT of 1 assumed for each observation.
+NOTE: The data set WORK.O has 1 observations and 43 variables.
+NOTE: PROCEDURE UNIVARIATE used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: The data set WORK.COLS has 43 observations and 2 variables.
+NOTE: PROCEDURE CONTENTS used (Total process time):
+                                                           The SAS System
+
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: The file "/studies/general/proc_univariate-oracle/out/allmiss.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/out/allmiss.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:38:36
+
+NOTE: 2 records were written to the file "/studies/general/proc_univariate-oracle/out/allmiss.csv".
+      The minimum record length was 45.
+      The maximum record length was 227.
+NOTE: There were 1 observations read from the data set WORK.O.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+9         + %uni(scenario=skewed50, fixture=skewed50, weight=0, vardef=DF, mu0=0, class=0, ttest=1, ranktests=1)
+
+NOTE: Deleting WORK.FX (memtype=DATA).
+NOTE: Deleting WORK.O (memtype=DATA).
+NOTE: Deleting WORK.COLS (memtype=DATA).
+NOTE: PROCEDURE DATASETS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+NOTE: Fileref _OLD has been deassigned.
+
+NOTE: The infile "/studies/general/proc_univariate-oracle/fixtures/skewed50.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/fixtures/skewed50.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:31:20,
+      File Size (bytes)=728
+
+NOTE: 50 records were read from the infile "/studies/general/proc_univariate-oracle/fixtures/skewed50.csv".
+      The minimum record length was 10.
+      The maximum record length was 14.
+NOTE: The data set WORK.FX has 50 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: Output statistic SUMWGT specified but no WEIGHT variable given; WEIGHT of 1 assumed for each observation.
+NOTE: The data set WORK.O has 1 observations and 43 variables.
+                                                           The SAS System
+
+NOTE: PROCEDURE UNIVARIATE used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: The data set WORK.COLS has 43 observations and 2 variables.
+NOTE: PROCEDURE CONTENTS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+
+NOTE: The file "/studies/general/proc_univariate-oracle/out/skewed50.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/out/skewed50.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:38:37
+
+NOTE: 2 records were written to the file "/studies/general/proc_univariate-oracle/out/skewed50.csv".
+      The minimum record length was 227.
+      The maximum record length was 442.
+NOTE: There were 1 observations read from the data set WORK.O.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+10        + %uni(scenario=n2000, fixture=n2000, weight=0, vardef=DF, mu0=0, class=0, ttest=1, ranktests=1)
+
+NOTE: Deleting WORK.FX (memtype=DATA).
+NOTE: Deleting WORK.O (memtype=DATA).
+NOTE: Deleting WORK.COLS (memtype=DATA).
+NOTE: PROCEDURE DATASETS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+NOTE: Fileref _OLD has been deassigned.
+
+NOTE: The infile "/studies/general/proc_univariate-oracle/fixtures/n2000.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/fixtures/n2000.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:31:20,
+      File Size (bytes)=31712
+
+NOTE: 2000 records were read from the infile "/studies/general/proc_univariate-oracle/fixtures/n2000.csv".
+      The minimum record length was 7.
+      The maximum record length was 16.
+NOTE: The data set WORK.FX has 2000 observations and 4 variables.
+                                                           The SAS System
+
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: Output statistic SUMWGT specified but no WEIGHT variable given; WEIGHT of 1 assumed for each observation.
+NOTE: The data set WORK.O has 1 observations and 43 variables.
+NOTE: PROCEDURE UNIVARIATE used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: The data set WORK.COLS has 43 observations and 2 variables.
+NOTE: PROCEDURE CONTENTS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+
+NOTE: The file "/studies/general/proc_univariate-oracle/out/n2000.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/out/n2000.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:38:37
+
+NOTE: 2 records were written to the file "/studies/general/proc_univariate-oracle/out/n2000.csv".
+      The minimum record length was 227.
+      The maximum record length was 436.
+NOTE: There were 1 observations read from the data set WORK.O.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+11        + %uni(scenario=n2001, fixture=n2001, weight=0, vardef=DF, mu0=0, class=0, ttest=1, ranktests=1)
+
+NOTE: Deleting WORK.FX (memtype=DATA).
+NOTE: Deleting WORK.O (memtype=DATA).
+NOTE: Deleting WORK.COLS (memtype=DATA).
+NOTE: PROCEDURE DATASETS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+NOTE: Fileref _OLD has been deassigned.
+
+NOTE: The infile "/studies/general/proc_univariate-oracle/fixtures/n2001.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/fixtures/n2001.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+                                                           The SAS System
+
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:31:20,
+      File Size (bytes)=31713
+
+NOTE: 2001 records were read from the infile "/studies/general/proc_univariate-oracle/fixtures/n2001.csv".
+      The minimum record length was 7.
+      The maximum record length was 16.
+NOTE: The data set WORK.FX has 2001 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: Output statistic SUMWGT specified but no WEIGHT variable given; WEIGHT of 1 assumed for each observation.
+NOTE: The data set WORK.O has 1 observations and 43 variables.
+NOTE: PROCEDURE UNIVARIATE used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+
+NOTE: The data set WORK.COLS has 43 observations and 2 variables.
+NOTE: PROCEDURE CONTENTS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+
+NOTE: The file "/studies/general/proc_univariate-oracle/out/n2001.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/out/n2001.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:38:37
+
+NOTE: 2 records were written to the file "/studies/general/proc_univariate-oracle/out/n2001.csv".
+      The minimum record length was 227.
+      The maximum record length was 431.
+NOTE: There were 1 observations read from the data set WORK.O.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+12        + %uni(scenario=class3, fixture=class3, weight=0, vardef=DF, mu0=0, class=1, ttest=1, ranktests=1)
+
+NOTE: Deleting WORK.FX (memtype=DATA).
+NOTE: Deleting WORK.O (memtype=DATA).
+NOTE: Deleting WORK.COLS (memtype=DATA).
+NOTE: PROCEDURE DATASETS used (Total process time):
+      real time           0.00 seconds
+                                                           The SAS System
+
+      cpu time            0.00 seconds
+      
+
+NOTE: Fileref _OLD has been deassigned.
+
+NOTE: The infile "/studies/general/proc_univariate-oracle/fixtures/class3.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/fixtures/class3.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:31:19,
+      File Size (bytes)=135
+
+NOTE: 13 records were read from the infile "/studies/general/proc_univariate-oracle/fixtures/class3.csv".
+      The minimum record length was 6.
+      The maximum record length was 9.
+NOTE: The data set WORK.FX has 13 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: Output statistic SUMWGT specified but no WEIGHT variable given; WEIGHT of 1 assumed for each observation.
+NOTE: The data set WORK.O has 3 observations and 44 variables.
+NOTE: PROCEDURE UNIVARIATE used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: The data set WORK.COLS has 44 observations and 2 variables.
+NOTE: PROCEDURE CONTENTS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+
+NOTE: The file "/studies/general/proc_univariate-oracle/out/class3.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/out/class3.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:38:37
+
+NOTE: 4 records were written to the file "/studies/general/proc_univariate-oracle/out/class3.csv".
+      The minimum record length was 229.
+      The maximum record length was 263.
+NOTE: There were 3 observations read from the data set WORK.O.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+                                                           The SAS System
+
+
+13        + %uni(scenario=wt_exact, fixture=wt_exact, weight=1, vardef=DF, mu0=0, class=0, ttest=1, ranktests=0)
+
+NOTE: Deleting WORK.FX (memtype=DATA).
+NOTE: Deleting WORK.O (memtype=DATA).
+NOTE: Deleting WORK.COLS (memtype=DATA).
+NOTE: PROCEDURE DATASETS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+NOTE: Fileref _OLD has been deassigned.
+
+NOTE: The infile "/studies/general/proc_univariate-oracle/fixtures/wt_exact.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/fixtures/wt_exact.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:31:20,
+      File Size (bytes)=73
+
+NOTE: 8 records were read from the infile "/studies/general/proc_univariate-oracle/fixtures/wt_exact.csv".
+      The minimum record length was 6.
+      The maximum record length was 6.
+NOTE: The data set WORK.FX has 8 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+
+NOTE: The data set WORK.O has 1 observations and 37 variables.
+NOTE: PROCEDURE UNIVARIATE used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: The data set WORK.COLS has 37 observations and 2 variables.
+NOTE: PROCEDURE CONTENTS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+
+NOTE: The file "/studies/general/proc_univariate-oracle/out/wt_exact.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/out/wt_exact.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:38:37
+
+NOTE: 2 records were written to the file "/studies/general/proc_univariate-oracle/out/wt_exact.csv".
+                                                           The SAS System
+
+      The minimum record length was 187.
+      The maximum record length was 210.
+NOTE: There were 1 observations read from the data set WORK.O.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+14        + %uni(scenario=wt_equal, fixture=basic_w2, weight=1, vardef=DF, mu0=0, class=0, ttest=1, ranktests=0)
+
+NOTE: Deleting WORK.FX (memtype=DATA).
+NOTE: Deleting WORK.O (memtype=DATA).
+NOTE: Deleting WORK.COLS (memtype=DATA).
+NOTE: PROCEDURE DATASETS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+NOTE: Fileref _OLD has been deassigned.
+
+NOTE: The infile "/studies/general/proc_univariate-oracle/fixtures/basic_w2.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/fixtures/basic_w2.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:31:19,
+      File Size (bytes)=117
+
+NOTE: 12 records were read from the infile "/studies/general/proc_univariate-oracle/fixtures/basic_w2.csv".
+      The minimum record length was 6.
+      The maximum record length was 9.
+NOTE: The data set WORK.FX has 12 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: The data set WORK.O has 1 observations and 37 variables.
+NOTE: PROCEDURE UNIVARIATE used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: The data set WORK.COLS has 37 observations and 2 variables.
+NOTE: PROCEDURE CONTENTS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+
+                                                           The SAS System
+
+NOTE: The file "/studies/general/proc_univariate-oracle/out/wt_equal.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/out/wt_equal.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:38:37
+
+NOTE: 2 records were written to the file "/studies/general/proc_univariate-oracle/out/wt_equal.csv".
+      The minimum record length was 187.
+      The maximum record length was 269.
+NOTE: There were 1 observations read from the data set WORK.O.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+15        + %uni(scenario=wt_frac, fixture=wt_frac, weight=1, vardef=DF, mu0=0, class=0, ttest=1, ranktests=0)
+
+NOTE: Deleting WORK.FX (memtype=DATA).
+NOTE: Deleting WORK.O (memtype=DATA).
+NOTE: Deleting WORK.COLS (memtype=DATA).
+NOTE: PROCEDURE DATASETS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+NOTE: Fileref _OLD has been deassigned.
+
+NOTE: The infile "/studies/general/proc_univariate-oracle/fixtures/wt_frac.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/fixtures/wt_frac.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:31:20,
+      File Size (bytes)=129
+
+NOTE: 12 records were read from the infile "/studies/general/proc_univariate-oracle/fixtures/wt_frac.csv".
+      The minimum record length was 6.
+      The maximum record length was 12.
+NOTE: The data set WORK.FX has 12 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: The data set WORK.O has 1 observations and 37 variables.
+NOTE: PROCEDURE UNIVARIATE used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: The data set WORK.COLS has 37 observations and 2 variables.
+NOTE: PROCEDURE CONTENTS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+                                                           The SAS System
+
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+
+NOTE: The file "/studies/general/proc_univariate-oracle/out/wt_frac.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/out/wt_frac.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:38:37
+
+NOTE: 2 records were written to the file "/studies/general/proc_univariate-oracle/out/wt_frac.csv".
+      The minimum record length was 187.
+      The maximum record length was 274.
+NOTE: There were 1 observations read from the data set WORK.O.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+16        + %uni(scenario=vardef_n, fixture=basic, weight=0, vardef=N, mu0=0, class=0, ttest=0, ranktests=1)
+
+NOTE: Deleting WORK.FX (memtype=DATA).
+NOTE: Deleting WORK.O (memtype=DATA).
+NOTE: Deleting WORK.COLS (memtype=DATA).
+NOTE: PROCEDURE DATASETS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+NOTE: Fileref _OLD has been deassigned.
+
+NOTE: The infile "/studies/general/proc_univariate-oracle/fixtures/basic.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/fixtures/basic.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:31:19,
+      File Size (bytes)=105
+
+NOTE: 12 records were read from the infile "/studies/general/proc_univariate-oracle/fixtures/basic.csv".
+      The minimum record length was 5.
+      The maximum record length was 8.
+NOTE: The data set WORK.FX has 12 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: Output statistic SUMWGT specified but no WEIGHT variable given; WEIGHT of 1 assumed for each observation.
+NOTE: The data set WORK.O has 1 observations and 41 variables.
+NOTE: PROCEDURE UNIVARIATE used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+                                                           The SAS System
+
+
+NOTE: The data set WORK.COLS has 41 observations and 2 variables.
+NOTE: PROCEDURE CONTENTS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+
+NOTE: The file "/studies/general/proc_univariate-oracle/out/vardef_n.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/out/vardef_n.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:38:37
+
+NOTE: 2 records were written to the file "/studies/general/proc_univariate-oracle/out/vardef_n.csv".
+      The minimum record length was 219.
+      The maximum record length was 280.
+NOTE: There were 1 observations read from the data set WORK.O.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+17        + %uni(scenario=vardef_n_w, fixture=wt_frac, weight=1, vardef=N, mu0=0, class=0, ttest=0, ranktests=0)
+
+NOTE: Deleting WORK.FX (memtype=DATA).
+NOTE: Deleting WORK.O (memtype=DATA).
+NOTE: Deleting WORK.COLS (memtype=DATA).
+NOTE: PROCEDURE DATASETS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+NOTE: Fileref _OLD has been deassigned.
+
+NOTE: The infile "/studies/general/proc_univariate-oracle/fixtures/wt_frac.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/fixtures/wt_frac.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:31:20,
+      File Size (bytes)=129
+
+NOTE: 12 records were read from the infile "/studies/general/proc_univariate-oracle/fixtures/wt_frac.csv".
+      The minimum record length was 6.
+      The maximum record length was 12.
+NOTE: The data set WORK.FX has 12 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+                                                           The SAS System
+
+
+NOTE: The data set WORK.O has 1 observations and 35 variables.
+NOTE: PROCEDURE UNIVARIATE used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: The data set WORK.COLS has 35 observations and 2 variables.
+NOTE: PROCEDURE CONTENTS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+
+NOTE: The file "/studies/general/proc_univariate-oracle/out/vardef_n_w.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/out/vardef_n_w.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:38:37
+
+NOTE: 2 records were written to the file "/studies/general/proc_univariate-oracle/out/vardef_n_w.csv".
+      The minimum record length was 179.
+      The maximum record length was 224.
+NOTE: There were 1 observations read from the data set WORK.O.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+18        + %uni(scenario=vardef_wdf_w, fixture=wt_frac, weight=1, vardef=WDF, mu0=0, class=0, ttest=0, ranktests=0)
+
+NOTE: Deleting WORK.FX (memtype=DATA).
+NOTE: Deleting WORK.O (memtype=DATA).
+NOTE: Deleting WORK.COLS (memtype=DATA).
+NOTE: PROCEDURE DATASETS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+NOTE: Fileref _OLD has been deassigned.
+
+NOTE: The infile "/studies/general/proc_univariate-oracle/fixtures/wt_frac.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/fixtures/wt_frac.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:31:20,
+      File Size (bytes)=129
+
+NOTE: 12 records were read from the infile "/studies/general/proc_univariate-oracle/fixtures/wt_frac.csv".
+      The minimum record length was 6.
+                                                           The SAS System
+
+      The maximum record length was 12.
+NOTE: The data set WORK.FX has 12 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: The skewness and kurtosis are set to missing for VARDEF=WGT or WDF.
+NOTE: The data set WORK.O has 1 observations and 35 variables.
+NOTE: PROCEDURE UNIVARIATE used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: The data set WORK.COLS has 35 observations and 2 variables.
+NOTE: PROCEDURE CONTENTS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+
+NOTE: The file "/studies/general/proc_univariate-oracle/out/vardef_wdf_w.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/out/vardef_wdf_w.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:38:37
+
+NOTE: 2 records were written to the file "/studies/general/proc_univariate-oracle/out/vardef_wdf_w.csv".
+      The minimum record length was 179.
+      The maximum record length was 192.
+NOTE: There were 1 observations read from the data set WORK.O.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+19        + %uni(scenario=vardef_weight_w, fixture=wt_frac, weight=1, vardef=WEIGHT, mu0=0, class=0, ttest=0, ranktests=0)
+
+NOTE: Deleting WORK.FX (memtype=DATA).
+NOTE: Deleting WORK.O (memtype=DATA).
+NOTE: Deleting WORK.COLS (memtype=DATA).
+NOTE: PROCEDURE DATASETS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+NOTE: Fileref _OLD has been deassigned.
+
+NOTE: The infile "/studies/general/proc_univariate-oracle/fixtures/wt_frac.csv" is:
+                                                           The SAS System
+
+      Filename=/studies/general/proc_univariate-oracle/fixtures/wt_frac.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:31:20,
+      File Size (bytes)=129
+
+NOTE: 12 records were read from the infile "/studies/general/proc_univariate-oracle/fixtures/wt_frac.csv".
+      The minimum record length was 6.
+      The maximum record length was 12.
+NOTE: The data set WORK.FX has 12 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: The skewness and kurtosis are set to missing for VARDEF=WGT or WDF.
+NOTE: The data set WORK.O has 1 observations and 35 variables.
+NOTE: PROCEDURE UNIVARIATE used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: The data set WORK.COLS has 35 observations and 2 variables.
+NOTE: PROCEDURE CONTENTS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: The file "/studies/general/proc_univariate-oracle/out/vardef_weight_w.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/out/vardef_weight_w.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:38:37
+
+NOTE: 2 records were written to the file "/studies/general/proc_univariate-oracle/out/vardef_weight_w.csv".
+      The minimum record length was 179.
+      The maximum record length was 192.
+NOTE: There were 1 observations read from the data set WORK.O.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+20        + %uni(scenario=n1, fixture=n1, weight=0, vardef=DF, mu0=0, class=0, ttest=1, ranktests=1)
+
+NOTE: Deleting WORK.FX (memtype=DATA).
+NOTE: Deleting WORK.O (memtype=DATA).
+NOTE: Deleting WORK.COLS (memtype=DATA).
+                                                           The SAS System
+
+NOTE: PROCEDURE DATASETS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+NOTE: Fileref _OLD has been deassigned.
+
+NOTE: The infile "/studies/general/proc_univariate-oracle/fixtures/n1.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/fixtures/n1.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:31:19,
+      File Size (bytes)=23
+
+NOTE: 1 record was read from the infile "/studies/general/proc_univariate-oracle/fixtures/n1.csv".
+      The minimum record length was 5.
+      The maximum record length was 5.
+NOTE: The data set WORK.FX has 1 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: Output statistic SUMWGT specified but no WEIGHT variable given; WEIGHT of 1 assumed for each observation.
+NOTE: The data set WORK.O has 1 observations and 43 variables.
+NOTE: PROCEDURE UNIVARIATE used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: The data set WORK.COLS has 43 observations and 2 variables.
+NOTE: PROCEDURE CONTENTS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+
+NOTE: The file "/studies/general/proc_univariate-oracle/out/n1.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/out/n1.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:38:37
+
+NOTE: 2 records were written to the file "/studies/general/proc_univariate-oracle/out/n1.csv".
+      The minimum record length was 79.
+      The maximum record length was 227.
+NOTE: There were 1 observations read from the data set WORK.O.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+                                                           The SAS System
+
+      cpu time            0.01 seconds
+      
+
+21        + %uni(scenario=n2, fixture=n2, weight=0, vardef=DF, mu0=0, class=0, ttest=1, ranktests=1)
+
+NOTE: Deleting WORK.FX (memtype=DATA).
+NOTE: Deleting WORK.O (memtype=DATA).
+NOTE: Deleting WORK.COLS (memtype=DATA).
+NOTE: PROCEDURE DATASETS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+NOTE: Fileref _OLD has been deassigned.
+
+NOTE: The infile "/studies/general/proc_univariate-oracle/fixtures/n2.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/fixtures/n2.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:31:19,
+      File Size (bytes)=29
+
+NOTE: 2 records were read from the infile "/studies/general/proc_univariate-oracle/fixtures/n2.csv".
+      The minimum record length was 5.
+      The maximum record length was 5.
+NOTE: The data set WORK.FX has 2 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: Output statistic SUMWGT specified but no WEIGHT variable given; WEIGHT of 1 assumed for each observation.
+NOTE: The data set WORK.O has 1 observations and 43 variables.
+NOTE: PROCEDURE UNIVARIATE used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: The data set WORK.COLS has 43 observations and 2 variables.
+NOTE: PROCEDURE CONTENTS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: The file "/studies/general/proc_univariate-oracle/out/n2.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/out/n2.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+                                                           The SAS System
+
+      Last Modified=17Sep2026:09:38:37
+
+NOTE: 2 records were written to the file "/studies/general/proc_univariate-oracle/out/n2.csv".
+      The minimum record length was 161.
+      The maximum record length was 227.
+NOTE: There were 1 observations read from the data set WORK.O.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+22        + %uni(scenario=n21_mu0, fixture=n21, weight=0, vardef=DF, mu0=3, class=0, ttest=1, ranktests=1)
+
+NOTE: Deleting WORK.FX (memtype=DATA).
+NOTE: Deleting WORK.O (memtype=DATA).
+NOTE: Deleting WORK.COLS (memtype=DATA).
+NOTE: PROCEDURE DATASETS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+NOTE: Fileref _OLD has been deassigned.
+
+NOTE: The infile "/studies/general/proc_univariate-oracle/fixtures/n21.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/fixtures/n21.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:31:20,
+      File Size (bytes)=165
+
+NOTE: 21 records were read from the infile "/studies/general/proc_univariate-oracle/fixtures/n21.csv".
+      The minimum record length was 5.
+      The maximum record length was 8.
+NOTE: The data set WORK.FX has 21 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+
+NOTE: Output statistic SUMWGT specified but no WEIGHT variable given; WEIGHT of 1 assumed for each observation.
+NOTE: The data set WORK.O has 1 observations and 43 variables.
+NOTE: PROCEDURE UNIVARIATE used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: The data set WORK.COLS has 43 observations and 2 variables.
+NOTE: PROCEDURE CONTENTS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.00 seconds
+                                                           The SAS System
+
+      cpu time            0.00 seconds
+      
+
+
+NOTE: The file "/studies/general/proc_univariate-oracle/out/n21_mu0.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/out/n21_mu0.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:38:37
+
+NOTE: 2 records were written to the file "/studies/general/proc_univariate-oracle/out/n21_mu0.csv".
+      The minimum record length was 227.
+      The maximum record length was 301.
+NOTE: There were 1 observations read from the data set WORK.O.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+23        + %uni(scenario=wt_exact_mu0, fixture=wt_exact, weight=1, vardef=DF, mu0=4, class=0, ttest=1, ranktests=0)
+
+NOTE: Deleting WORK.FX (memtype=DATA).
+NOTE: Deleting WORK.O (memtype=DATA).
+NOTE: Deleting WORK.COLS (memtype=DATA).
+NOTE: PROCEDURE DATASETS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+NOTE: Fileref _OLD has been deassigned.
+
+NOTE: The infile "/studies/general/proc_univariate-oracle/fixtures/wt_exact.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/fixtures/wt_exact.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:31:20,
+      File Size (bytes)=73
+
+NOTE: 8 records were read from the infile "/studies/general/proc_univariate-oracle/fixtures/wt_exact.csv".
+      The minimum record length was 6.
+      The maximum record length was 6.
+NOTE: The data set WORK.FX has 8 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+
+NOTE: The data set WORK.O has 1 observations and 37 variables.
+NOTE: PROCEDURE UNIVARIATE used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: The data set WORK.COLS has 37 observations and 2 variables.
+NOTE: PROCEDURE CONTENTS used (Total process time):
+      real time           0.00 seconds
+                                                           The SAS System
+
+      cpu time            0.00 seconds
+      
+
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+
+NOTE: The file "/studies/general/proc_univariate-oracle/out/wt_exact_mu0.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/out/wt_exact_mu0.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:38:37
+
+NOTE: 2 records were written to the file "/studies/general/proc_univariate-oracle/out/wt_exact_mu0.csv".
+      The minimum record length was 187.
+      The maximum record length was 210.
+NOTE: There were 1 observations read from the data set WORK.O.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+24        + %uni(scenario=wt_frac_alltests, fixture=wt_frac, weight=1, vardef=DF, mu0=0, class=0, ttest=1, ranktests=1)
+
+NOTE: Deleting WORK.FX (memtype=DATA).
+NOTE: Deleting WORK.O (memtype=DATA).
+NOTE: Deleting WORK.COLS (memtype=DATA).
+NOTE: PROCEDURE DATASETS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+NOTE: Fileref _OLD has been deassigned.
+
+NOTE: The infile "/studies/general/proc_univariate-oracle/fixtures/wt_frac.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/fixtures/wt_frac.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:31:20,
+      File Size (bytes)=129
+
+NOTE: 12 records were read from the infile "/studies/general/proc_univariate-oracle/fixtures/wt_frac.csv".
+      The minimum record length was 6.
+      The maximum record length was 12.
+NOTE: The data set WORK.FX has 12 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: NORMAL option not allowed with a WEIGHT statement.
+NOTE: Output statistic NORMAL/PROBN is not computed when a WEIGHT variable is specified.
+NOTE: Output statistic MSIGN/SIGNRANK/PROBM/PROBS is not computed when a WEIGHT variable is specified.
+                                                           The SAS System
+
+NOTE: The data set WORK.O has 1 observations and 43 variables.
+NOTE: PROCEDURE UNIVARIATE used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: The data set WORK.COLS has 43 observations and 2 variables.
+NOTE: PROCEDURE CONTENTS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: The file "/studies/general/proc_univariate-oracle/out/wt_frac_alltests.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/out/wt_frac_alltests.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:38:37
+
+NOTE: 2 records were written to the file "/studies/general/proc_univariate-oracle/out/wt_frac_alltests.csv".
+      The minimum record length was 227.
+      The maximum record length was 280.
+NOTE: There were 1 observations read from the data set WORK.O.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+25        + %uni(scenario=vardef_n_alltests, fixture=basic, weight=0, vardef=N, mu0=0, class=0, ttest=1, ranktests=1)
+
+NOTE: Deleting WORK.FX (memtype=DATA).
+NOTE: Deleting WORK.O (memtype=DATA).
+NOTE: Deleting WORK.COLS (memtype=DATA).
+NOTE: PROCEDURE DATASETS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+NOTE: Fileref _OLD has been deassigned.
+
+NOTE: The infile "/studies/general/proc_univariate-oracle/fixtures/basic.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/fixtures/basic.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:31:19,
+      File Size (bytes)=105
+
+NOTE: 12 records were read from the infile "/studies/general/proc_univariate-oracle/fixtures/basic.csv".
+      The minimum record length was 5.
+      The maximum record length was 8.
+                                                           The SAS System
+
+NOTE: The data set WORK.FX has 12 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+
+NOTE: Output statistic SUMWGT specified but no WEIGHT variable given; WEIGHT of 1 assumed for each observation.
+NOTE: The data set WORK.O has 1 observations and 43 variables.
+NOTE: PROCEDURE UNIVARIATE used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: The data set WORK.COLS has 43 observations and 2 variables.
+NOTE: PROCEDURE CONTENTS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: The query as specified involves ordering by an item that doesn't appear in its SELECT clause.
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+
+NOTE: The file "/studies/general/proc_univariate-oracle/out/vardef_n_alltests.csv" is:
+      Filename=/studies/general/proc_univariate-oracle/out/vardef_n_alltests.csv,
+      Owner Name=ehrlinj,Group Name=ccdomain,
+      Access Permission=-rwxrwx---,
+      Last Modified=17Sep2026:09:38:37
+
+NOTE: 2 records were written to the file "/studies/general/proc_univariate-oracle/out/vardef_n_alltests.csv".
+      The minimum record length was 227.
+      The maximum record length was 282.
+NOTE: There were 1 observations read from the data set WORK.O.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+115        
+116        proc printto;
+117        run;
+

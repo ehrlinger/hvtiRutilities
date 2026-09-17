@@ -67,7 +67,8 @@
 #'   \code{"css"}. Shape: \code{"skewness"}, \code{"kurtosis"}.
 #' @param weights Character or \code{NULL}. Name of a single numeric column of
 #'   \code{data} to use as an observation weight, mirroring the SAS
-#'   \code{WEIGHT} statement. Observations whose weight is missing are excluded.
+#'   \code{WEIGHT} statement. Observations whose weight is missing are excluded
+#'   from every statistic except \code{nobs}, which counts them, as SAS does.
 #'   A zero or negative weight is an error naming the offending rows: SAS's own
 #'   handling of non-positive weights varies across procedures and versions, so
 #'   this fails loudly rather than encode a guess.
@@ -109,8 +110,11 @@ proc_means <- function(data, vars = NULL, class = NULL,
   labels <- labelled::var_label(data, unlist = TRUE, null_action = "fill")
 
   wvec <- .validate_weights(weights, data)
+  # Rows dropped for a missing weight still count toward nobs, as in SAS.
+  excluded <- data[0, , drop = FALSE]
   if (!is.null(wvec)) {
     keep_w <- !is.na(wvec)
+    excluded <- data[!keep_w, , drop = FALSE]
     data <- data[keep_w, , drop = FALSE]
     wvec <- wvec[keep_w]
   }
@@ -152,7 +156,12 @@ proc_means <- function(data, vars = NULL, class = NULL,
     if (!is.null(wvec)) {
       wvec <- wvec[keep]
     }
-    groups <- unique(data[, class, drop = FALSE])
+    # Levels come from every row with a complete class value, including rows
+    # dropped for a missing weight: SAS PROC MEANS still prints a level whose
+    # every weight is missing (N = 0, with its rows counted in nobs).
+    excl_cls <- excluded[, class, drop = FALSE]
+    excl_cls <- excl_cls[stats::complete.cases(excl_cls), , drop = FALSE]
+    groups <- unique(rbind(data[, class, drop = FALSE], excl_cls))
     groups <- groups[do.call(base::order,
                              c(unname(as.list(groups)),
                                list(method = "radix"))), ,
@@ -166,19 +175,28 @@ proc_means <- function(data, vars = NULL, class = NULL,
       }
       which(ok)
     })
+    grp_excluded <- vapply(seq_len(nrow(groups)), function(i) {
+      ok <- rep(TRUE, nrow(excluded))
+      for (k in class) {
+        ok <- ok & !is.na(excluded[[k]]) & excluded[[k]] == groups[[k]][i]
+      }
+      sum(ok)
+    }, integer(1))
   }
 
   rows <- list()
   for (v in vars) {
     if (is.null(groups)) {
       rows[[length(rows) + 1L]] <-
-        .means_row(data[[v]], v, unname(labels[v]), stats, wvec)
+        .means_row(data[[v]], v, unname(labels[v]), stats, wvec,
+                   n_excluded = nrow(excluded))
     } else {
       for (i in seq_len(nrow(groups))) {
         rows[[length(rows) + 1L]] <- cbind(
           groups[i, , drop = FALSE],
           .means_row(data[[v]][grp_idx[[i]]], v, unname(labels[v]), stats,
-                     if (is.null(wvec)) NULL else wvec[grp_idx[[i]]]),
+                     if (is.null(wvec)) NULL else wvec[grp_idx[[i]]],
+                     n_excluded = grp_excluded[i]),
           stringsAsFactors = FALSE
         )
       }
@@ -487,9 +505,13 @@ proc_means <- function(data, vars = NULL, class = NULL,
 }
 
 ## Internal: one output row for one variable
-.means_row <- function(x, variable, label, stats, w = NULL) {
+.means_row <- function(x, variable, label, stats, w = NULL,
+                       n_excluded = 0L) {
   vals <- lapply(stats, function(s) .compute_stat(x, s, w))
   names(vals) <- stats
+  if ("nobs" %in% stats) {
+    vals$nobs <- vals$nobs + as.integer(n_excluded)
+  }
   cbind(
     data.frame(variable = variable, label = label, stringsAsFactors = FALSE),
     as.data.frame(vals, stringsAsFactors = FALSE)
