@@ -91,6 +91,19 @@
       return(unique(.cache_free_vars(code[[3L]], bound)))
     }
 
+    # pkg::fn / pkg:::fn: neither symbol is a data read (the package name is
+    # covered by .cache_packages(), the function name is not a variable at
+    # all), so this stops here regardless of where the call appears - not
+    # only when it is a call head (see .cache_heads() for that case).
+    if (hd %in% c("::", ":::")) return(character(0))
+
+    # df$col / obj@slot: only the left side is a data read. The right side is
+    # a name, not a variable reference (mirrors all.vars(), which does not
+    # descend into it either).
+    if (hd %in% c("$", "@") && length(code) >= 2L) {
+      return(unique(.cache_free_vars(code[[2L]], bound)))
+    }
+
     # Any other bare call head (f(...)): the head names a function, not a
     # data read, so it is never itself a free variable (mirrors all.vars(),
     # which likewise excludes a call head). Bare heads are separately
@@ -143,7 +156,9 @@
 # .cache_free_vars(), so a name bound by a lambda formal, a for index, or an
 # earlier assignment in the same block shadows only the occurrences it
 # actually covers, not every occurrence in the expression. Used by
-# .cache_inputs() to decide which global helpers to digest.
+# .cache_inputs() to decide which global helpers to digest; pkg::fn and
+# df$col/obj@slot are excluded the same way .cache_free_vars() excludes them,
+# since neither names a bare call head.
 .cache_free_heads <- function(code, bound = character(0)) {
   if (!is.call(code)) return(character(0))
 
@@ -186,6 +201,12 @@
     if (hd %in% c("<-", "=", "<<-") && length(code) >= 3L &&
           is.symbol(code[[2L]]) && nzchar(as.character(code[[2L]]))) {
       return(unique(.cache_free_heads(code[[3L]], bound)))
+    }
+
+    if (hd %in% c("::", ":::")) return(character(0))
+
+    if (hd %in% c("$", "@") && length(code) >= 2L) {
+      return(unique(.cache_free_heads(code[[2L]], bound)))
     }
 
     out <- if (hd %in% bound) character(0) else hd

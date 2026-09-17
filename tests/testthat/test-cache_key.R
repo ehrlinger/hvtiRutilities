@@ -163,6 +163,23 @@ test_that("a helper called inside a lambda body is keyed", {
   expect_true("prep" %in% names(inputs))
 })
 
+test_that("the right side of $ is not treated as a free variable", {
+  env <- new.env()
+  env$df <- data.frame(col = 1)
+  env$col <- 999
+  inputs <- hvtiRutilities:::.cache_inputs(quote(df$col), env)
+  expect_identical(names(inputs), "df")
+})
+
+test_that("both symbols of a namespaced call are excluded outside head position", {
+  env <- new.env()
+  env$x <- 1:3
+  env$stats <- "not the package"
+  env$sd <- "not the function"
+  inputs <- hvtiRutilities:::.cache_inputs(quote(sapply(x, stats::sd)), env)
+  expect_identical(names(inputs), "x")
+})
+
 test_that("a package function used bare does not become an input", {
   out <- hvtiRutilities:::.cache_inputs(quote(median(x)), environment())
   expect_null(out[["median"]])
