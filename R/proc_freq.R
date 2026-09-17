@@ -98,6 +98,7 @@ proc_freq <- function(data, tables, missing = FALSE, list = FALSE,
          call. = FALSE)
   }
   .check_columns(tables, data)
+  .check_output_clash(tables, data)
   .check_flag(missing, "missing")
   .check_flag(list, "list")
 
@@ -181,6 +182,23 @@ proc_freq <- function(data, tables, missing = FALSE, list = FALSE,
 .check_flag <- function(x, name) {
   if (!is.logical(x) || length(x) != 1L || is.na(x)) {
     stop("'", name, "' must be a single TRUE or FALSE.", call. = FALSE)
+  }
+  invisible(TRUE)
+}
+
+## Internal: stop when a tables name would be overwritten by an output column,
+## either a statistic or the <var>_label column of a value-labelled variable.
+.check_output_clash <- function(tables, data) {
+  stat_cols <- c("Frequency", "Percent", "Cum_Frequency", "Cum_Percent",
+                 "Row_Percent", "Col_Percent")
+  has_labels <- vapply(data[tables],
+                       function(x) !is.null(labelled::val_labels(x)),
+                       logical(1))
+  label_cols <- paste0(tables[has_labels], "_label")
+  clash <- tables[tables %in% c(stat_cols, label_cols)]
+  if (length(clash) > 0L) {
+    stop("'tables' names column(s) that clash with output columns: ",
+         paste(clash, collapse = ", "), call. = FALSE)
   }
   invisible(TRUE)
 }
