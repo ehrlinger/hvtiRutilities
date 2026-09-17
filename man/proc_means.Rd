@@ -32,7 +32,8 @@ dropped, matching SAS's default.}
 
 \item{weights}{Character or \code{NULL}. Name of a single numeric column of
 \code{data} to use as an observation weight, mirroring the SAS
-\code{WEIGHT} statement. Observations whose weight is missing are excluded.
+\code{WEIGHT} statement. Observations whose weight is missing are excluded
+from every statistic except \code{nobs}, which counts them, as SAS does.
 A zero or negative weight is an error naming the offending rows: SAS's own
 handling of non-positive weights varies across procedures and versions, so
 this fails loudly rather than encode a guess.}

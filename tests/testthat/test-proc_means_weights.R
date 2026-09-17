@@ -135,3 +135,38 @@ test_that("sumwgt does not overflow on large integer weights", {
   expect_equal(proc_means(dbig, vars = "a", stats = "sumwgt",
                           weights = "wt")$sumwgt, 4e9)
 })
+
+test_that("nobs counts rows excluded for a missing weight, as SAS does", {
+  # SAS: NOBS = N + NMISS + observations excluded for a missing weight.
+  dm <- data.frame(a = c(1, NA, 3, 4), wt = c(1, 2, NA, 1))
+  res <- proc_means(dm, vars = "a", stats = c("n", "nmiss", "nobs"),
+                    weights = "wt")
+  expect_identical(res$n, 2L)
+  expect_identical(res$nmiss, 1L)
+  expect_identical(res$nobs, 4L)
+})
+
+test_that("nobs counts excluded-weight rows within their class level", {
+  dc <- data.frame(a = c(1, 2, 3, NA, 5),
+                   g = c("x", "x", "y", "y", NA),
+                   wt = c(1, NA, NA, 2, NA))
+  res <- proc_means(dc, vars = "a", class = "g",
+                    stats = c("n", "nmiss", "nobs"), weights = "wt")
+  expect_identical(res$n, c(1L, 0L))
+  expect_identical(res$nmiss, c(0L, 1L))
+  expect_identical(res$nobs, c(2L, 2L))
+})
+
+test_that("a class level whose every weight is missing keeps its row", {
+  # SAS 9.4 M8 PROC MEANS (2026-09-17): level y is printed with N = 0,
+  # NMISS = 0 and _FREQ_ = 2. PROC UNIVARIATE drops such a level instead.
+  cw <- data.frame(g = c("x", "x", "y", "y"), a = c(1, 2, 3, 4),
+                   wt = c(1, 2, NA, NA))
+  res <- proc_means(cw, vars = "a", class = "g",
+                    stats = c("n", "nmiss", "nobs", "mean"), weights = "wt")
+  expect_identical(res$g, c("x", "y"))
+  expect_identical(res$n, c(2L, 0L))
+  expect_identical(res$nmiss, c(0L, 0L))
+  expect_identical(res$nobs, c(2L, 2L))
+  expect_true(is.na(res$mean[2]))
+})
