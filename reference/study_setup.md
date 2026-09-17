@@ -9,6 +9,11 @@ Data are deliberately not required. Call
 [`register_data`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md)
 after the default or a named dataset exists.
 
+When the root holds no `.Rproj` file, one named for the root directory
+is written, so that opening the project and
+[`study_root`](https://ehrlinger.github.io/hvtiRutilities/reference/study_root.md)
+agree on the study root. An existing project is left unchanged.
+
 ## Usage
 
 ``` r

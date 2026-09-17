@@ -4,12 +4,20 @@ identity-only _study.yml. With adopt = TRUE, an existing
 study keeps its legacy or numbered directory layout and every existing
 initialization file.
 Data are deliberately not required. Call register_data after
-the default or a named dataset exists."><meta property="og:description" content="Creates the numbered directory structure for a new study and writes an
+the default or a named dataset exists.
+When the root holds no .Rproj file, one named for the root
+directory is written, so that opening the project and
+study_root agree on the study root. An existing project is
+left unchanged."><meta property="og:description" content="Creates the numbered directory structure for a new study and writes an
 identity-only _study.yml. With adopt = TRUE, an existing
 study keeps its legacy or numbered directory layout and every existing
 initialization file.
 Data are deliberately not required. Call register_data after
-the default or a named dataset exists."></head><body>
+the default or a named dataset exists.
+When the root holds no .Rproj file, one named for the root
+directory is written, so that opening the project and
+study_root agree on the study root. An existing project is
+left unchanged."></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -73,6 +81,10 @@ study keeps its legacy or numbered directory layout and every existing
 initialization file.</p>
 <p>Data are deliberately not required. Call <code><a href="register_data.html">register_data</a></code> after
 the default or a named dataset exists.</p>
+<p>When the root holds no <code>.Rproj</code> file, one named for the root
+directory is written, so that opening the project and
+<code><a href="study_root.html">study_root</a></code> agree on the study root. An existing project is
+left unchanged.</p>
     </div>
 
     <div class="section level2">
