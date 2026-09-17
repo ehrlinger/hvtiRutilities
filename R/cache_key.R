@@ -242,6 +242,15 @@
     out$ns    <- as.character(head[[2L]])
     out$ns_fn <- as.character(head[[3L]])
     handled_ns_call <- TRUE
+  } else if (is.symbol(head) && as.character(head) %in% c("::", ":::")) {
+    # `code` itself is a pkg::fn/pkg:::fn call used as a plain value, not as
+    # the head of an enclosing call (e.g. the second argument of
+    # lapply(x, digest::digest)). Its package still needs a version; there is
+    # nothing further to recurse into (the two remaining elements are the
+    # package and function names, not data reads).
+    out$ns    <- as.character(code[[2L]])
+    out$ns_fn <- as.character(code[[3L]])
+    return(lapply(out, unique))
   } else if (is.symbol(head)) {
     out$bare <- as.character(head)
   }

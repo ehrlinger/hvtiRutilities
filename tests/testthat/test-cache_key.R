@@ -69,6 +69,21 @@ test_that("packages come from :: and bare functions, base excluded", {
   expect_identical(names(pk2), "jsonlite")
 })
 
+test_that("pkg::fn used as a function value (not a call head) still versions its package", {
+  pk <- hvtiRutilities:::.cache_packages(
+    quote(lapply(x, digest::digest)), environment()
+  )
+  expect_identical(names(pk), "digest")
+
+  # Existing head behavior is unchanged.
+  heads1 <- hvtiRutilities:::.cache_heads(quote(digest::digest(x)))
+  expect_identical(heads1$ns, "digest")
+  expect_identical(heads1$ns_fn, "digest")
+
+  heads2 <- hvtiRutilities:::.cache_heads(quote(f(x)(y)))
+  expect_identical(heads2$bare, "f")
+})
+
 test_that("identical inputs give identical keys; the seed is part of the key", {
   d <- 1:5
   k1 <- hvtiRutilities:::.cache_key(quote(sum(d)), environment(), NULL)
