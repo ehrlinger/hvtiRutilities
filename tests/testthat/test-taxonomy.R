@@ -114,7 +114,7 @@ test_that("the datasets folder holds the prefixes it is expected to", {
                   c("bd", "vars", "dt", "si", "mi"))
 })
 
-test_that("the random forest family is the three outcome rows plus sid and vt", {
+test_that("the forest family is the outcome rows, umbrellas, sid and vt", {
   # The family splits on the OUTCOME axis. Pinning the set catches the two
   # ways it can regress: a fourth outcome row appearing without a spec, and
   # `rfr`, `sid` or `vt` being dropped back out while the job catalog still
@@ -137,7 +137,8 @@ test_that("the outcome rows name their outcome and the umbrellas say so", {
   tx <- hvti_taxonomy()
   want <- list(
     rfs = c("Random forest survival", "random forest, survival outcome"),
-    rfc = c("Random forest classifier", "random forest, classification outcome"),
+    rfc = c("Random forest classifier",
+            "random forest, classification outcome"),
     rfr = c("Random forest regression", "random forest, regression outcome"),
     sid = c("Random forest clustering",
             "unsupervised sidClustering forest with PAM over K"),
