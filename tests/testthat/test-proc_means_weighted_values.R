@@ -38,7 +38,8 @@ test_that("weighted var uses the VARDEF=DF divisor n-1, not sum(w)-1", {
 test_that("weighted std, stderr and cv follow from weighted var", {
   vw <- 8.875 / 3
   expect_equal(cs(v, "std", w), sqrt(vw))
-  expect_equal(cs(v, "stderr", w), sqrt(vw / 4))
+  # SAS divides by sqrt(sum(w)) = sqrt(8), not sqrt(n) = sqrt(4).
+  expect_equal(cs(v, "stderr", w), sqrt(vw / 8))
   expect_equal(cs(v, "cv", w), 100 * sqrt(vw) / 3.125)
 })
 
@@ -69,4 +70,14 @@ test_that("proc_means reports unweighted quantiles when weights are given", {
   expect_equal(wt$median, raw$median)
   expect_equal(wt$q1, raw$q1)
   expect_equal(wt$q3, raw$q3)
+})
+
+test_that("weighted stderr matches SAS PROC MEANS", {
+  # SAS 9.4 M8 PROC MEANS, VARDEF=DF, on dev/oracle/proc_univariate's
+  # wt_frac fixture (2026-09-17): std / sqrt(sum(w)).
+  x <- c(-3.5, -1, 0, 0, 1.25, 2, 2, 2, 4.75, 6, 9.5, 15)
+  wt <- c(0.5, 1.5, 2, 3, 0.25, 1, 1, 1, 2.5, 0.75, 1, 2)
+  expect_equal(cs(x, "mean", wt), 3.57196969696969, tolerance = 1e-10)
+  expect_equal(cs(x, "std", wt), 6.27512340324039, tolerance = 1e-10)
+  expect_equal(cs(x, "stderr", wt), 1.54482859156832, tolerance = 1e-10)
 })

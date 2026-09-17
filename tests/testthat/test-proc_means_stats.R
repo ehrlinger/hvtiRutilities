@@ -37,6 +37,13 @@ test_that("mode returns the smallest value when modes tie", {
   expect_equal(cs(c(3, 3, 1, 1, 5), "mode"), 1)
 })
 
+test_that("mode is the value itself at n = 1, as in SAS", {
+  # SAS 9.4 M8 PROC MEANS and PROC UNIVARIATE both give MODE = 3 here.
+  expect_equal(cs(3, "mode"), 3)
+  expect_equal(proc_means(data.frame(a = 3), vars = "a", stats = "mode")$mode,
+               3)
+})
+
 test_that("mode is NA when no value repeats", {
   expect_true(is.na(cs(c(1, 2, 3), "mode")))
 })

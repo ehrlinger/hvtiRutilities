@@ -16,6 +16,17 @@
   opening the project, `here::here()` and `study_root()` name the same
   directory. An existing project is left alone.
 
+## Bug fixes
+
+* **`proc_means()` weighted `stderr` now divides by the square root of the
+  sum of the weights, as SAS does.** It divided by the square root of the
+  count, so every weighted `stderr` was wrong unless the weights summed to the
+  count. Confirmed against SAS 9.4 `PROC MEANS` and `PROC UNIVARIATE`.
+
+* **`proc_means()` returns a single observation as its own `mode`.** It
+  returned `NA`, as for any sample with no repeated value; SAS reports the
+  value.
+
 # hvtiRutilities 1.1.12
 
 ## New features
