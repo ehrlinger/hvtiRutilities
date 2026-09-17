@@ -355,7 +355,7 @@ proc_means <- function(data, vars = NULL, class = NULL,
   stderr = list(
     # SAS divides by sqrt(sum(w)), which is sqrt(n) when unweighted.
     fun = function(x, v, w) {
-      sqrt(.wvar(v, w) / if (is.null(w)) length(v) else sum(w))
+      sqrt(.wvar(v, w) / if (is.null(w)) length(v) else sum(as.numeric(w)))
     },
     weighted = TRUE, integer = FALSE
   ),

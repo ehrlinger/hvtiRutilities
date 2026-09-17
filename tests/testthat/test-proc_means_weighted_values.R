@@ -81,3 +81,11 @@ test_that("weighted stderr matches SAS PROC MEANS", {
   expect_equal(cs(x, "std", wt), 6.27512340324039, tolerance = 1e-10)
   expect_equal(cs(x, "stderr", wt), 1.54482859156832, tolerance = 1e-10)
 })
+
+test_that("weighted stderr does not overflow with large integer weights", {
+  # The integer weights sum past .Machine$integer.max.
+  big <- rep(1500000000L, 3)
+  res <- cs(c(1, 2, 4), "stderr", big)
+  expect_false(is.na(res))
+  expect_equal(res, sqrt(cs(c(1, 2, 4), "var", big) / 4.5e9))
+})
