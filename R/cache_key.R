@@ -21,55 +21,15 @@
   is.symbol(code[[i]]) && !nzchar(as.character(code[[i]]))
 }
 
-# Names assigned inside the code. They are derived from the free variables,
-# which are digested, so they are not digested themselves. Also treated as
-# locally bound: anonymous-function formals (function(x) ...) and `for` loop
-# indices, neither of which is an outside input even though all.vars() sees
-# them as ordinary names. A formal's default expression is still walked (for
-# any names it in turn binds, e.g. a nested function or for loop); the free
-# variables of that expression are not bound here and so still flow through
-# to .cache_inputs() as inputs.
-.cache_assigned <- function(code) {
-  if (!is.call(code)) return(character(0))
-  head <- code[[1L]]
-  here <- character(0)
-  if (is.symbol(head) && as.character(head) %in% c("<-", "=", "<<-") &&
-        length(code) >= 2L && is.symbol(code[[2L]])) {
-    here <- as.character(code[[2L]])
-  }
-  if (is.symbol(head) && identical(as.character(head), "for") &&
-        length(code) >= 2L && is.symbol(code[[2L]])) {
-    here <- c(here, as.character(code[[2L]]))
-  }
-  if (is.symbol(head) && identical(as.character(head), "function") &&
-        length(code) >= 2L) {
-    fmls <- code[[2L]]
-    here <- c(here, names(fmls))
-    # A formal with no default is R's missing-argument marker: binding it to
-    # an ordinary variable and passing that on triggers "argument is missing,
-    # with no default" the moment it is read, so it is tested and indexed in
-    # place (fmls[[i]]), never assigned to a bare name first.
-    for (i in seq_along(fmls)) {
-      if (.cache_is_empty_arg(fmls, i)) next
-      if (is.language(fmls[[i]])) here <- c(here, .cache_assigned(fmls[[i]]))
-    }
-  }
-  kids <- character(0)
-  for (i in seq_along(code)[-1L]) {
-    if (.cache_is_empty_arg(code, i)) next
-    kids <- c(kids, .cache_assigned(code[[i]]))
-  }
-  unique(c(here, kids))
-}
-
 # Lexical free-variable walk used by .cache_inputs(): a name is free only at
 # occurrences not covered by an enclosing binding of that name. This replaces
-# a naive "assigned anywhere in the whole expression" filter (what
-# .cache_assigned() above computes), which wrongly hid a name from every
-# occurrence once it was bound ANYWHERE - a lambda formal, a for-loop index,
-# an assignment target - even where a particular occurrence was a genuine,
-# unrelated free variable (e.g. `sapply(1:2, function(d) d) + sum(d)`: the
-# lambda's `d` is bound, but the `sum(d)` afterwards is a real input).
+# a naive "assigned anywhere in the whole expression" filter, which wrongly
+# hid a name from every occurrence once it was bound ANYWHERE - a lambda
+# formal, a for-loop index, an assignment target - even where a particular
+# occurrence was a genuine, unrelated free variable (e.g.
+# `sapply(1:2, function(d) d) + sum(d)`: the lambda's `d` is bound, but the
+# `sum(d)` afterwards is a real input). .cache_free_heads() below applies the
+# same lexical rule to bare call heads.
 #
 # `bound` is the set of names currently in lexical scope. A function's
 # formals are bound only inside its own body; a formal's DEFAULT expression
@@ -177,6 +137,78 @@
   character(0)
 }
 
+# Lexical free-call-head walk, the head analogue of .cache_free_vars(): a bare
+# call head (e.g. `prep` in `prep(z)`) is free only at occurrences not covered
+# by an enclosing binding of that name - the same `bound` threading as
+# .cache_free_vars(), so a name bound by a lambda formal, a for index, or an
+# earlier assignment in the same block shadows only the occurrences it
+# actually covers, not every occurrence in the expression. Used by
+# .cache_inputs() to decide which global helpers to digest.
+.cache_free_heads <- function(code, bound = character(0)) {
+  if (!is.call(code)) return(character(0))
+
+  head <- code[[1L]]
+
+  if (is.symbol(head)) {
+    hd <- as.character(head)
+
+    if (identical(hd, "{")) {
+      out <- character(0)
+      cur <- bound
+      for (i in seq_along(code)[-1L]) {
+        stmt <- code[[i]]
+        out <- c(out, .cache_free_heads(stmt, cur))
+        cur <- union(cur, .cache_bound_after(stmt))
+      }
+      return(unique(out))
+    }
+
+    if (identical(hd, "for") && length(code) >= 4L && is.symbol(code[[2L]])) {
+      idx <- as.character(code[[2L]])
+      out <- .cache_free_heads(code[[3L]], bound)
+      out <- c(out, .cache_free_heads(code[[4L]], union(bound, idx)))
+      return(unique(out))
+    }
+
+    if (identical(hd, "function") && length(code) >= 3L) {
+      fmls <- code[[2L]]
+      out <- character(0)
+      for (i in seq_along(fmls)) {
+        if (.cache_is_empty_arg(fmls, i)) next
+        if (is.language(fmls[[i]])) {
+          out <- c(out, .cache_free_heads(fmls[[i]], bound))
+        }
+      }
+      out <- c(out, .cache_free_heads(code[[3L]], union(bound, names(fmls))))
+      return(unique(out))
+    }
+
+    if (hd %in% c("<-", "=", "<<-") && length(code) >= 3L &&
+          is.symbol(code[[2L]]) && nzchar(as.character(code[[2L]]))) {
+      return(unique(.cache_free_heads(code[[3L]], bound)))
+    }
+
+    out <- if (hd %in% bound) character(0) else hd
+    for (i in seq_along(code)[-1L]) {
+      if (.cache_is_empty_arg(code, i)) next
+      out <- c(out, .cache_free_heads(code[[i]], bound))
+    }
+    return(unique(out))
+  }
+
+  # A call-valued head: pkg::fn(...) (skip the :: call's own symbols) or
+  # f(x)(y) (the head is itself a call and is walked like any other value).
+  out <- character(0)
+  skip_head <- is.call(head) && is.symbol(head[[1L]]) &&
+    as.character(head[[1L]]) %in% c("::", ":::")
+  if (!skip_head) out <- c(out, .cache_free_heads(head, bound))
+  for (i in seq_along(code)[-1L]) {
+    if (.cache_is_empty_arg(code, i)) next
+    out <- c(out, .cache_free_heads(code[[i]], bound))
+  }
+  unique(out)
+}
+
 # Function names in call position: pkg::fn heads (package and function) and
 # bare heads.
 .cache_heads <- function(code) {
@@ -246,8 +278,7 @@
 # function is digested by its body when it is user-defined (global); a
 # package function is skipped here and covered by .cache_packages() instead.
 .cache_inputs <- function(code, env) {
-  heads <- .cache_heads(code)
-  vars  <- sort(unique(.cache_free_vars(code)))
+  vars <- sort(unique(.cache_free_vars(code)))
   out <- list()
   for (v in vars) {
     if (!exists(v, envir = env, inherits = TRUE)) next
@@ -267,7 +298,11 @@
   # Bare call heads (e.g. prep(z)) never appear in all.vars(), which excludes
   # function names in call position; a global helper called this way would
   # otherwise never be seen at all, by this function or by .cache_packages().
-  for (fn in setdiff(heads$bare, c(.cache_assigned(code), names(out)))) {
+  # .cache_free_heads() does the same lexical scoping as .cache_free_vars()
+  # above, so a head shadowed by a lambda formal, a for index, or an earlier
+  # assignment in the same block is excluded only where that binding actually
+  # covers it, not wherever else the same name is bound in the expression.
+  for (fn in setdiff(.cache_free_heads(code), names(out))) {
     if (!exists(fn, envir = env, inherits = TRUE)) next
     f <- get0(fn, envir = env, mode = "function", inherits = TRUE)
     if (is.null(f)) next

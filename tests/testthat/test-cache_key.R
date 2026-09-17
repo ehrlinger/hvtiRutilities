@@ -8,15 +8,6 @@ test_that("code text ignores formatting and comments", {
                    hvtiRutilities:::.cache_code_text(b))
 })
 
-test_that("assigned names are found, including inside nested calls", {
-  code <- quote({
-    fml <- y ~ x
-    dta = subset(d, x > 1)
-    f(g(h <- 1), d[, 1])
-  })
-  expect_setequal(hvtiRutilities:::.cache_assigned(code), c("fml", "dta", "h"))
-})
-
 test_that("call heads separate namespaced and bare functions", {
   heads <- hvtiRutilities:::.cache_heads(
     quote(randomForestSRC::rfsrc(f(x), data = d))
@@ -124,6 +115,52 @@ test_that("editing a global helper's body changes the key", {
   k2 <- hvtiRutilities:::.cache_inputs(code, env)
 
   expect_false(identical(k1, k2))
+})
+
+test_that("a global helper is keyed even when its name is shadowed elsewhere in the code", {
+  eval(quote(prep <- function(x) x + 1), envir = globalenv())
+  on.exit(rm("prep", envir = globalenv()), add = TRUE)
+  env <- new.env()
+  env$z <- 5
+  code <- quote({
+    sapply(1:2, function(prep) prep)
+    prep(z)
+  })
+  inputs <- hvtiRutilities:::.cache_inputs(code, env)
+  expect_true("prep" %in% names(inputs))
+})
+
+test_that("a global helper is keyed even when assigned later in the same expression", {
+  eval(quote(prep <- function(x) x + 1), envir = globalenv())
+  on.exit(rm("prep", envir = globalenv()), add = TRUE)
+  env <- new.env()
+  env$z <- 5
+  code <- quote(prep <- prep(z))
+  inputs <- hvtiRutilities:::.cache_inputs(code, env)
+  expect_true("prep" %in% names(inputs))
+})
+
+test_that("a genuinely local function does not shadow in a global of the same name", {
+  eval(quote(f <- function(x) x * 100), envir = globalenv())
+  on.exit(rm("f", envir = globalenv()), add = TRUE)
+  env <- new.env()
+  env$d <- 5
+  code <- quote({
+    f <- function(x) x
+    f(d)
+  })
+  inputs <- hvtiRutilities:::.cache_inputs(code, env)
+  expect_false("f" %in% names(inputs))
+})
+
+test_that("a helper called inside a lambda body is keyed", {
+  eval(quote(prep <- function(x) x + 1), envir = globalenv())
+  on.exit(rm("prep", envir = globalenv()), add = TRUE)
+  env <- new.env()
+  env$v <- 1:3
+  code <- quote(sapply(v, function(x) prep(x)))
+  inputs <- hvtiRutilities:::.cache_inputs(code, env)
+  expect_true("prep" %in% names(inputs))
 })
 
 test_that("a package function used bare does not become an input", {
