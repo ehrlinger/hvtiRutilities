@@ -158,3 +158,27 @@ test_that("study_setup leaves an existing R project alone", {
     "RestoreWorkspace: Yes"
   )
 })
+
+test_that("study_setup sees a hidden existing R project", {
+  root <- tempfile("rproj-hidden-")
+  on.exit(unlink(root, recursive = TRUE), add = TRUE)
+  suppressMessages(
+    study_setup(root, study = "Rproj adopt", study_tracker_id = 3L)
+  )
+  unlink(list.files(root, "[.]Rproj$", full.names = TRUE))
+  writeLines(
+    "Version: 1.0\n\nRestoreWorkspace: Yes",
+    file.path(root, ".hidden.Rproj")
+  )
+
+  suppressMessages(
+    study_setup(
+      root, study = "Rproj adopt", study_tracker_id = 3L, adopt = TRUE
+    )
+  )
+
+  expect_identical(
+    list.files(root, "[.]Rproj$", all.files = TRUE),
+    ".hidden.Rproj"
+  )
+})

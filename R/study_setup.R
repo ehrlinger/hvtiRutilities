@@ -197,7 +197,7 @@ study_setup <- function(root, study, study_tracker_id,
   # An R project beside _study.yml means opening the project, here::here()
   # and study_root() all name the same directory. An existing project, of
   # any name, is the author's and is left alone.
-  if (!length(list.files(root, pattern = "[.]Rproj$"))) {
+  if (!length(list.files(root, pattern = "[.]Rproj$", all.files = TRUE))) {
     .study_write_lines_if_missing(
       c("Version: 1.0", "", "RestoreWorkspace: No", "SaveWorkspace: No",
         "AlwaysSaveHistory: No", "", "EnableCodeIndexing: Yes",
