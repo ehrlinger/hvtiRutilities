@@ -79,6 +79,31 @@ test_that("an unkeyed file stops unless refit = TRUE", {
   expect_equal(out, 6L, ignore_attr = TRUE)
 })
 
+test_that("a corrupt/unreadable cache file is treated as unkeyed", {
+  dir <- withr::local_tempdir()
+  writeLines("not an rds", file.path(dir, "junk.rds"))
+  expect_error(cache_fit("junk", sum(1:3), dir = dir),
+               class = "hvtiRutilities_unkeyed_cache")
+  out <- suppressMessages(cache_fit("junk", sum(1:3), dir = dir, refit = TRUE))
+  expect_equal(out, 6L, ignore_attr = TRUE)
+})
+
+test_that("a wrapper forwarding its own argument forces it and is refused", {
+  dir <- withr::local_tempdir()
+  d <- 1:10
+  helper <- function(nm, expr) cache_fit(nm, expr, dir = dir)
+  expect_error(helper("w", sum(d)), "already-computed")
+  expect_length(list.files(dir), 0L)
+})
+
+test_that("a wrapper passed a quoted call works", {
+  dir <- withr::local_tempdir()
+  d <- 1:10
+  helper <- function(nm, expr) cache_fit(nm, expr, dir = dir)
+  out <- helper("w", quote(sum(d)))
+  expect_equal(out, 55L, ignore_attr = TRUE)
+})
+
 test_that("a failing computation writes nothing", {
   dir <- withr::local_tempdir()
   expect_error(cache_fit("boom", stop("fit failed"), dir = dir), "fit failed")

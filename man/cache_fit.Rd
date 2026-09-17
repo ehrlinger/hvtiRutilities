@@ -41,6 +41,14 @@ variable holding a \code{\link[base]{quote}}d call built beforehand. Both
 forms give the same key for the same computation. Passing an object that has
 already been computed is an error, because the cache could never skip it.
 
+\code{code} must be written in the call to \code{cache_fit()} itself. A
+wrapper function that forwards its own argument, e.g.
+\code{function(nm, expr) cache_fit(nm, expr)}, forces that argument's
+promise when it resolves \code{code}, so the value is already computed and
+the call is refused as already-computed. A wrapper should instead build and
+pass a quoted call, for example \code{cache_fit(nm, bquote(...))} or by
+passing \code{quote(...)} through.
+
 The code runs in a new environment whose parent is the caller's, so names
 assigned inside a block do not appear in the caller.
 
