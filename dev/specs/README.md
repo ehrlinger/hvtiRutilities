@@ -28,6 +28,7 @@ condenses it; `plan` files carry none.
 |---|---|---|
 | 2026-09-17 | [Porting SAS `PROC UNIVARIATE` to `proc_univariate()`](2026-09-17-proc-univariate-design.md) | approved; awaiting SAS oracle run |
 | 2026-09-17 | [`proc_univariate()` SAS oracle kit plan](2026-09-17-proc-univariate-oracle-plan.md) | plan for PR A of the design above |
+| 2026-09-17 | [`proc_univariate()` implementation plan](2026-09-17-proc-univariate-plan.md) | plan for PR B of the design above; runs after #118, #119, #120 merge |
 | 2026-09-16 | [Porting SAS `PROC FREQ` to `proc_freq()`](2026-09-16-proc-freq-design.md) | implemented; revised after final review |
 | 2026-09-16 | [`proc_freq()` — plan](2026-09-16-proc-freq-plan.md) | plan for the design above |
 | 2026-09-15 | [Study setup and adoption][study-setup] | approved; implementation planned across four repositories/worktrees |
