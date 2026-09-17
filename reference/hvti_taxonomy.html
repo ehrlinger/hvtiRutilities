@@ -126,6 +126,40 @@ artifact kind rather than a job type: it holds serialized fits and cached
 results written by one job and read by a later one in the same set, and no
 analysis produces it directly. That row's <code>prefix</code> is <code>NA</code>, not a
 string, because there is no prefix to assign it.</p>
+<p><strong>The random forest family splits on the OUTCOME axis, not the
+package axis.</strong> <code>rfs</code>, <code>rfc</code> and <code>rfr</code> name the survival,
+classification and regression outcomes, which is the split
+<code>bh</code>/<code>bl</code>/<code>bc</code>/<code>bn</code>/<code>bq</code>/<code>br</code> and
+<code>pm</code>/<code>rm</code>/<code>cm</code> already use. It is a rename of a distinction
+the corpus draws already, not a new one imposed: the jobs carry the outcome
+in field two today, as <code>tp.rfsrc.survival.R</code> and its siblings.</p>
+<p><strong><code>rf</code> and <code>rfsrc</code> are retained as legacy umbrella rows.</strong>
+They named the same set as each other, on the package axis, and neither is
+templated. They stay in the table so a census can still resolve the corpus
+that uses them, which is not small: <code>rfsrc</code> measures 131 studies and
+2,295 jobs, more than <code>rf</code> (47), <code>rfs</code> (25) and <code>rfc</code> (19)
+combined, twice over. Deleting the rows was rejected on two grounds.
+<code><a href="hvti_prefix_folds.html">hvti_prefix_folds</a></code> cannot express the demotion, because a fold
+is one-to-one and <code>rfsrc</code> spans all three outcomes, so there is no
+single prefix to fold it into. And an absent prefix reads to the census as
+one nobody documented, which is the opposite of what a superseded name
+means. Demoted here means <em>never templated</em>, and the two rows keep
+distinct descriptions so a census hit on a legacy job can still say which
+spelling it used.</p>
+<p><strong>Do not read the job catalog's <code>disposition: retire</code> as the
+demotion marker.</strong> <code>rfr</code> carries it too, and <code>rfr</code> is templated.
+That field says the legacy SAS and R job is superseded by the <code>gg_*</code>
+functions, which is true of every row in this family except <code>sid</code> and
+<code>vt</code>; it says nothing about whether a template is owed.</p>
+<p><strong><code>sid</code> and <code>vt</code> are filed under <code>analyses</code> with the
+rest of the family</strong>, and compose on the <code>rf*</code> jobs rather than
+replacing them. The <code>rfc</code>/<code>rfs</code> folder contradiction is
+deliberately NOT settled here: the taxonomy says <code>analyses</code> while the
+SAS library files them under <code>graphs</code> and <code>documents</code>, and the
+2026-08-27 census found the same contradiction corpus-wide for
+<code>ac</code>/<code>hz</code>. It is a systemic open question with its own spec owed,
+and the ML batch is not blocked waiting on it. See
+<code>hvtiRtemplates:dev/specs/2026-09-17-ml-family-roadmap-design.md</code>.</p>
     </div>
 
     <div class="section level2">

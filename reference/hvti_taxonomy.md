@@ -78,6 +78,42 @@ cached results written by one job and read by a later one in the same
 set, and no analysis produces it directly. That row's `prefix` is `NA`,
 not a string, because there is no prefix to assign it.
 
+**The random forest family splits on the OUTCOME axis, not the package
+axis.** `rfs`, `rfc` and `rfr` name the survival, classification and
+regression outcomes, which is the split `bh`/`bl`/`bc`/`bn`/`bq`/`br`
+and `pm`/`rm`/`cm` already use. It is a rename of a distinction the
+corpus draws already, not a new one imposed: the jobs carry the outcome
+in field two today, as `tp.rfsrc.survival.R` and its siblings.
+
+**`rf` and `rfsrc` are retained as legacy umbrella rows.** They named
+the same set as each other, on the package axis, and neither is
+templated. They stay in the table so a census can still resolve the
+corpus that uses them, which is not small: `rfsrc` measures 131 studies
+and 2,295 jobs, more than `rf` (47), `rfs` (25) and `rfc` (19) combined,
+twice over. Deleting the rows was rejected on two grounds.
+[`hvti_prefix_folds`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_prefix_folds.md)
+cannot express the demotion, because a fold is one-to-one and `rfsrc`
+spans all three outcomes, so there is no single prefix to fold it into.
+And an absent prefix reads to the census as one nobody documented, which
+is the opposite of what a superseded name means. Demoted here means
+*never templated*, and the two rows keep distinct descriptions so a
+census hit on a legacy job can still say which spelling it used.
+
+**Do not read the job catalog's `disposition: retire` as the demotion
+marker.** `rfr` carries it too, and `rfr` is templated. That field says
+the legacy SAS and R job is superseded by the `gg_*` functions, which is
+true of every row in this family except `sid` and `vt`; it says nothing
+about whether a template is owed.
+
+**`sid` and `vt` are filed under `analyses` with the rest of the
+family**, and compose on the `rf*` jobs rather than replacing them. The
+`rfc`/`rfs` folder contradiction is deliberately NOT settled here: the
+taxonomy says `analyses` while the SAS library files them under `graphs`
+and `documents`, and the 2026-08-27 census found the same contradiction
+corpus-wide for `ac`/`hz`. It is a systemic open question with its own
+spec owed, and the ML batch is not blocked waiting on it. See
+`hvtiRtemplates:dev/specs/2026-09-17-ml-family-roadmap-design.md`.
+
 ## Examples
 
 ``` r
