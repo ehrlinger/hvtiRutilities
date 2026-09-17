@@ -154,6 +154,67 @@ test_that("for-loop index variables are bound, not free inputs", {
   expect_identical(names(inputs), "v")
 })
 
+test_that("a shadowed lambda formal still leaves a genuine free use as input", {
+  env <- new.env()
+  env$d <- 1:3
+  inputs <- hvtiRutilities:::.cache_inputs(
+    quote(sapply(1:2, function(d) d) + sum(d)), env
+  )
+  expect_true("d" %in% names(inputs))
+})
+
+test_that("a shadowed loop index still leaves a genuine free use as input", {
+  env <- new.env()
+  env$d <- 1:3
+  code <- quote({
+    for (d in 1:2) print(d)
+    sum(d)
+  })
+  inputs <- hvtiRutilities:::.cache_inputs(code, env)
+  expect_true("d" %in% names(inputs))
+})
+
+test_that("a nested function's formal does not shadow the outer scope", {
+  env <- new.env()
+  env$x <- 1:3
+  code <- quote({
+    inner <- function(x) x + 1
+    x + inner(2)
+  })
+  inputs <- hvtiRutilities:::.cache_inputs(code, env)
+  expect_identical(names(inputs), "x")
+})
+
+test_that("a formal default expression's free variable is an input; the formal is not", {
+  env <- new.env()
+  env$m <- 5
+  env$k <- 999
+  inputs <- hvtiRutilities:::.cache_inputs(quote(function(k = m) k), env)
+  expect_identical(names(inputs), "m")
+})
+
+test_that("a read before its assignment in the same block is a free input", {
+  env <- new.env()
+  env$d <- 1:3
+  code <- quote({
+    sum(d)
+    d <- 1
+  })
+  inputs <- hvtiRutilities:::.cache_inputs(code, env)
+  expect_true("d" %in% names(inputs))
+})
+
+test_that("assign-then-use in the same block leaves no free input", {
+  env <- new.env()
+  env$d <- 1:3
+  code <- quote({
+    d <- 1
+    sum(d)
+  })
+  inputs <- hvtiRutilities:::.cache_inputs(code, env)
+  expect_length(inputs, 0L)
+})
+
 test_that(".cache_digest ignores a session serializeVersion option", {
   value <- list(a = 1, b = "x")
   d1 <- hvtiRutilities:::.cache_digest(value)

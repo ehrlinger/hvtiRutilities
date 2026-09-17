@@ -62,6 +62,121 @@
   unique(c(here, kids))
 }
 
+# Lexical free-variable walk used by .cache_inputs(): a name is free only at
+# occurrences not covered by an enclosing binding of that name. This replaces
+# a naive "assigned anywhere in the whole expression" filter (what
+# .cache_assigned() above computes), which wrongly hid a name from every
+# occurrence once it was bound ANYWHERE - a lambda formal, a for-loop index,
+# an assignment target - even where a particular occurrence was a genuine,
+# unrelated free variable (e.g. `sapply(1:2, function(d) d) + sum(d)`: the
+# lambda's `d` is bound, but the `sum(d)` afterwards is a real input).
+#
+# `bound` is the set of names currently in lexical scope. A function's
+# formals are bound only inside its own body; a formal's DEFAULT expression
+# is still evaluated in the enclosing scope, so its free variables are inputs
+# of the enclosing scope, not shielded by the formal it defaults. A `for`
+# index is bound only inside the loop body (not in the sequence expression,
+# and not after the loop - a deliberate simplification of R's real
+# semantics, for cache-key purposes). `<-`/`=`/`<<-` with a symbol target
+# binds that name only for occurrences textually after the assignment within
+# the same block (see .cache_bound_after()); a read before the assignment, in
+# the same block, is a genuine free variable/input.
+.cache_free_vars <- function(code, bound = character(0)) {
+  if (!is.call(code)) {
+    if (is.symbol(code)) {
+      nm <- as.character(code)
+      if (nzchar(nm) && !(nm %in% bound)) return(nm)
+    }
+    return(character(0))
+  }
+
+  head <- code[[1L]]
+
+  if (is.symbol(head)) {
+    hd <- as.character(head)
+
+    if (identical(hd, "{")) {
+      out <- character(0)
+      cur <- bound
+      for (i in seq_along(code)[-1L]) {
+        stmt <- code[[i]]
+        out <- c(out, .cache_free_vars(stmt, cur))
+        cur <- union(cur, .cache_bound_after(stmt))
+      }
+      return(unique(out))
+    }
+
+    if (identical(hd, "for") && length(code) >= 4L && is.symbol(code[[2L]])) {
+      idx <- as.character(code[[2L]])
+      out <- .cache_free_vars(code[[3L]], bound)
+      out <- c(out, .cache_free_vars(code[[4L]], union(bound, idx)))
+      return(unique(out))
+    }
+
+    if (identical(hd, "function") && length(code) >= 3L) {
+      fmls <- code[[2L]]
+      out <- character(0)
+      for (i in seq_along(fmls)) {
+        if (.cache_is_empty_arg(fmls, i)) next
+        if (is.language(fmls[[i]])) {
+          out <- c(out, .cache_free_vars(fmls[[i]], bound))
+        }
+      }
+      out <- c(out, .cache_free_vars(code[[3L]], union(bound, names(fmls))))
+      return(unique(out))
+    }
+
+    if (hd %in% c("<-", "=", "<<-") && length(code) >= 3L &&
+          is.symbol(code[[2L]]) && nzchar(as.character(code[[2L]]))) {
+      return(unique(.cache_free_vars(code[[3L]], bound)))
+    }
+
+    # Any other bare call head (f(...)): the head names a function, not a
+    # data read, so it is never itself a free variable (mirrors all.vars(),
+    # which likewise excludes a call head). Bare heads are separately
+    # collected by .cache_heads() for the global-helper/package checks.
+    out <- character(0)
+    for (i in seq_along(code)[-1L]) {
+      if (.cache_is_empty_arg(code, i)) next
+      out <- c(out, .cache_free_vars(code[[i]], bound))
+    }
+    return(unique(out))
+  }
+
+  # A call-valued head: pkg::fn(...) (skip the :: call's own symbols) or
+  # f(x)(y) (the head is itself a call and is walked like any other value).
+  out <- character(0)
+  skip_head <- is.call(head) && is.symbol(head[[1L]]) &&
+    as.character(head[[1L]]) %in% c("::", ":::")
+  if (!skip_head) out <- c(out, .cache_free_vars(head, bound))
+  for (i in seq_along(code)[-1L]) {
+    if (.cache_is_empty_arg(code, i)) next
+    out <- c(out, .cache_free_vars(code[[i]], bound))
+  }
+  unique(out)
+}
+
+# Names a statement adds to the ENCLOSING scope once it has run, used to
+# thread bindings through a `{}` block. Only `<-`/`=`/`<<-` with a symbol
+# target does this; a `for`'s index and a `function`'s formals are scoped to
+# their own body/formals and never leak out (see .cache_free_vars()). A
+# nested `{}` block's own bindings do leak to what follows it in the same
+# enclosing block, since `{` introduces no scope of its own.
+.cache_bound_after <- function(code) {
+  if (!is.call(code)) return(character(0))
+  head <- code[[1L]]
+  if (!is.symbol(head)) return(character(0))
+  hd <- as.character(head)
+  if (hd %in% c("<-", "=", "<<-") && length(code) >= 3L &&
+        is.symbol(code[[2L]]) && nzchar(as.character(code[[2L]]))) {
+    return(as.character(code[[2L]]))
+  }
+  if (identical(hd, "{")) {
+    return(unique(unlist(lapply(as.list(code)[-1L], .cache_bound_after))))
+  }
+  character(0)
+}
+
 # Function names in call position: pkg::fn heads (package and function) and
 # bare heads.
 .cache_heads <- function(code) {
@@ -117,8 +232,9 @@
         collapse = "\n")
 }
 
-# Digests of the free variables: every name the code reads, less names it
-# assigns and names that are part of pkg::fn. Names that do not resolve
+# Digests of the free variables: every name the code reads free of any
+# enclosing binding (see .cache_free_vars()), less names that are part of
+# pkg::fn (already excluded by the walk itself). Names that do not resolve
 # (column names under non-standard evaluation) are skipped. A value carrying
 # a cache key (attribute "hvtiRutilities_cache_key", attached by cache_fit())
 # is digested by that key instead of itself: the key is stable by
@@ -128,10 +244,9 @@
 # package function is skipped here and covered by .cache_packages() instead.
 .cache_inputs <- function(code, env) {
   heads <- .cache_heads(code)
-  vars  <- setdiff(all.vars(code),
-                   c(.cache_assigned(code), heads$ns, heads$ns_fn))
+  vars  <- sort(unique(.cache_free_vars(code)))
   out <- list()
-  for (v in sort(vars)) {
+  for (v in vars) {
     if (!exists(v, envir = env, inherits = TRUE)) next
     value <- get(v, envir = env, inherits = TRUE)
     if (is.function(value)) {
