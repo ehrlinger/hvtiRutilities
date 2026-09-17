@@ -150,7 +150,10 @@ quantiles at all; that is <code>PROC UNIVARIATE</code>. So
 <code>proc_means(d, stats = "median", weights = "wt")</code> returns the
 <em>unweighted</em> median.</p>
 <p><code>mode</code> returns the smallest value among tied modes, and <code>NA</code> when
-no value repeats, both matching SAS. <code>skewness</code> and <code>kurtosis</code> are
+no value repeats, except that a single observation is its own mode; all
+three match SAS. Weighted <code>stderr</code> divides the weighted standard
+deviation by the square root of the sum of the weights, as SAS does, not by
+the square root of the count. <code>skewness</code> and <code>kurtosis</code> are
 the adjusted Fisher-Pearson forms SAS uses, not R's naive moment ratios, and
 are <code>NA</code> for a constant column rather than <code>NaN</code>.</p>
 <p>The <code>PROC UNIVARIATE</code> inference statistics (<code>NORMAL</code>, <code>PROBN</code>,

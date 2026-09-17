@@ -89,7 +89,10 @@ So `proc_means(d, stats = "median", weights = "wt")` returns the
 *unweighted* median.
 
 `mode` returns the smallest value among tied modes, and `NA` when no
-value repeats, both matching SAS. `skewness` and `kurtosis` are the
+value repeats, except that a single observation is its own mode; all
+three match SAS. Weighted `stderr` divides the weighted standard
+deviation by the square root of the sum of the weights, as SAS does, not
+by the square root of the count. `skewness` and `kurtosis` are the
 adjusted Fisher-Pearson forms SAS uses, not R's naive moment ratios, and
 are `NA` for a constant column rather than `NaN`.
 
