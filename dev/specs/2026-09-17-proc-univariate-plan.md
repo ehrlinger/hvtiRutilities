@@ -366,7 +366,7 @@ Rscript -e 'devtools::test(filter = "stat_engine")'
   if (n < 2L) {
     return(NA_real_)
   }
-  big_w <- if (is.null(w)) n else sum(w)
+  big_w <- if (is.null(w)) n else sum(as.numeric(w))
   d <- switch(vardef,
     df     = n - 1,
     n      = n,
@@ -428,7 +428,7 @@ Rscript -e 'devtools::test(filter = "stat_engine")'
     return(NA_real_)
   }
   use_w <- !is.null(w) && isTRUE(.stderr_sqrt_w[[ctx$procedure]])
-  .wvar(v, w) / (if (use_w) sum(w) else length(v))
+  .wvar(v, w) / (if (use_w) sum(as.numeric(w)) else length(v))
 }
 
 ## Internal: build one registry entry. `weighted` is a single logical, or a
@@ -988,14 +988,14 @@ Rscript -e 'devtools::test(filter = "stat_engine")'
   Replace 1 in `R/stat_engine.R` (after `.stderr_stat()`):
 
 ```r
-  .wvar(v, w) / (if (use_w) sum(w) else length(v))
+  .wvar(v, w) / (if (use_w) sum(as.numeric(w)) else length(v))
 }
 ```
 
   with:
 
 ```r
-  .wvar(v, w) / (if (use_w) sum(w) else length(v))
+  .wvar(v, w) / (if (use_w) sum(as.numeric(w)) else length(v))
 }
 
 ## Internal: Student's t for H0: mean = mu0, and its two-sided p-value
@@ -1008,7 +1008,7 @@ Rscript -e 'devtools::test(filter = "stat_engine")'
   if (s == 0) {
     return(NA_real_)
   }
-  big_w <- if (is.null(w)) n else sum(w)
+  big_w <- if (is.null(w)) n else sum(as.numeric(w))
   t <- (.wmean(v, w) - ctx$mu0) / (s / sqrt(big_w))
   if (what == "t") t else 2 * stats::pt(-abs(t), n - 1)
 }
