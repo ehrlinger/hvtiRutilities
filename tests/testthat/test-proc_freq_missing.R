@@ -110,7 +110,7 @@ test_that("._ sorts before plain NA among special missing values", {
 
 test_that("tagged NAs stay apart in a two-way crosstab", {
   a <- c(haven::tagged_na("a"), haven::tagged_na("b"),
-        haven::tagged_na("a"), 1)
+         haven::tagged_na("a"), 1)
   b <- c("x", "x", "y", "y")
   res <- proc_freq(data.frame(a = a, b = b), c("a", "b"), missing = TRUE)
   expect_equal(res$Frequency, c(1L, 1L, 1L, 1L))

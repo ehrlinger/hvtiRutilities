@@ -57,7 +57,7 @@ test_that("every weight missing gives zero rows, not an error", {
 
 test_that("tagged NAs with weights are separate levels in SAS order", {
   v <- c(1, haven::tagged_na("a"), NA, haven::tagged_na("_"),
-        haven::tagged_na("a"))
+         haven::tagged_na("a"))
   w <- c(1, 2, 3, 4, 5)
   res <- proc_freq(data.frame(v = v, w = w), "v", weights = "w",
                    missing = TRUE)
