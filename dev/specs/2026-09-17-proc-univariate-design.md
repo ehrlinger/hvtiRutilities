@@ -114,7 +114,7 @@ written.
 | `signrank`, `probs` | `d = x - mu0`, drop `d == 0`; ranks of `abs(d)` with average ranks for ties; `S = sum(sign(d) * rank) / 2`. n <= 20: exact two-sided p by enumerating all `2^n` sign assignments of the observed ranks. n > 20: t approximation with `n - 1` df using SAS's tie-corrected variance | rule documented; tie variance and exact-tail convention: **oracle** |
 | `normal`, `probn` | Shapiro-Wilk W and p for 3 <= n <= 2000 via `stats::shapiro.test()` | documented; R implements Royston (1995), SAS cites Royston (1992): digits by **oracle** |
 | `mode` | as `proc_means()`, unweighted | weighted behaviour: **oracle** |
-| `nobs` under `weights` | SAS counts every observation read: `N + NMISS` plus those excluded for a missing or non-positive weight. `proc_means()` currently drops missing-weight rows before counting, so it reports fewer; `proc_univariate()` follows SAS, and the same fix to `proc_means()` is a follow-up | documented |
+| `nobs` under `weights` | SAS counts every observation read: `N + NMISS` plus those excluded for a missing or non-positive weight. `proc_univariate()` follows SAS, and `proc_means()` does the same from #119 (it previously dropped missing-weight rows before counting) | documented |
 
 The exact signed-rank p-value is computed by enumeration, not
 `stats::wilcox.test()`, which reports V rather than S and falls back to a
