@@ -1,4 +1,4 @@
-# hvtiRutilities (unreleased)
+# hvtiRutilities 1.2.0
 
 ## New features
 
