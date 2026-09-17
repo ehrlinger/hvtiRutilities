@@ -53,6 +53,15 @@ for (i in seq_len(nrow(scenarios))) {
     problems <- c(problems, paste0(sc$scenario, ": ", nrow(res),
                                    " row(s), expected ", want_rows))
   }
+  all_na <- vapply(expected, function(col) {
+    col %in% names(res) && all(is.na(res[[col]]))
+  }, logical(1))
+  if (any(all_na)) {
+    cols <- expected[all_na]
+    notes <- c(notes, paste0(sc$scenario, ": entirely missing column(s) ",
+                             paste(cols, collapse = ", "),
+                             " (check oracle.log)"))
+  }
 }
 
 for (n in notes) message("NOTE  ", n)

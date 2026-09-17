@@ -238,6 +238,15 @@ for (i in seq_len(nrow(scenarios))) {
     problems <- c(problems, paste0(sc$scenario, ": ", nrow(res),
                                    " row(s), expected ", want_rows))
   }
+  all_na <- vapply(expected, function(col) {
+    col %in% names(res) && all(is.na(res[[col]]))
+  }, logical(1))
+  if (any(all_na)) {
+    cols <- expected[all_na]
+    notes <- c(notes, paste0(sc$scenario, ": entirely missing column(s) ",
+                             paste(cols, collapse = ", "),
+                             " (check oracle.log)"))
+  }
 }
 
 for (n in notes) message("NOTE  ", n)
@@ -319,6 +328,8 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 - Create: `dev/oracle/proc_univariate/oracle.sas`
 - Create: `dev/oracle/proc_univariate/README.md`
 - Modify: `dev/specs/README.md`
+- Create: `.gitattributes`
+- Modify: `.Rbuildignore`
 
 **Interfaces:**
 - Consumes: `scenarios.csv` column order from Task 1 (the `INPUT` statement reads them positionally); output column names required by Task 2.
@@ -342,7 +353,7 @@ Create `dev/oracle/proc_univariate/oracle.sas`:
 
 %let root = /path/to/hvtiRutilities/dev/oracle/proc_univariate;
 
-options nodate nonumber missing=' ' dlcreatedir;
+options nodate nonumber missing=' ' dlcreatedir nosyntaxcheck;
 
 /* Create out/ if it does not exist. */
 libname _mkout "&root/out";
@@ -359,10 +370,15 @@ run;
 
 %macro uni(scenario=, fixture=, weight=0, vardef=DF, mu0=0, class=0,
            ttest=1, ranktests=1);
+  %local _rc vars hdr;
 
   proc datasets lib=work nolist nowarn;
     delete fx o cols;
   quit;
+
+  filename _old "&root/out/&scenario..csv";
+  %if %sysfunc(fexist(_old)) %then %let _rc = %sysfunc(fdelete(_old));
+  filename _old clear;
 
   data work.fx;
     infile "&root/fixtures/&fixture..csv" dsd firstobs=2 truncover;
@@ -445,6 +461,13 @@ Notes for reviewers (SAS cannot run here, so these are the points to check by re
 - `options missing=' '` with `DSD` writes missing numbers as empty fields; `format _numeric_ best32.` keeps full precision.
 - `%nrstr(%uni)` inside `CALL EXECUTE` defers each macro call until the reading step finishes, the standard idiom.
 - The `INPUT` order must match `scenarios.csv`: `scenario fixture weight vardef mu0 class ttest ranktests optional`.
+- `nosyntaxcheck` on the `OPTIONS` statement: in batch SAS the first erroring
+  step otherwise sets `OBS=0` for every later step, silently emptying every
+  later scenario's output.
+- The `filename _old` / `%sysfunc(fdelete(_old))` block deletes this
+  scenario's previous CSV before the run, so a scenario that fails this time
+  cannot leave behind a stale CSV from an earlier run that the checker would
+  accept.
 
 - [ ] **Step 2: Check lines and manifest agreement**
 
@@ -491,7 +514,9 @@ Real SAS output that `proc_univariate()` is tested against. Design:
    It exits 0 when every required scenario is present with the expected
    columns and rows. A `NOTE` for an `optional` scenario means SAS refused a
    request the design expects it to refuse; read `out/oracle.log` to confirm
-   why.
+   why. Also search `out/oracle.log` for `ERROR` and `Invalid data`; an
+   `Invalid data` line means a fixture was read wrongly (for example with
+   Windows line endings), and the run must be repeated.
 4. Commit `out/` on the branch. The implementation work moves the outputs
    and fixtures under `tests/testthat/fixtures/proc_univariate/`.
 

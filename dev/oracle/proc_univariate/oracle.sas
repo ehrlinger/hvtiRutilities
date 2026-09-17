@@ -12,7 +12,7 @@
 
 %let root = /path/to/hvtiRutilities/dev/oracle/proc_univariate;
 
-options nodate nonumber missing=' ' dlcreatedir;
+options nodate nonumber missing=' ' dlcreatedir nosyntaxcheck;
 
 /* Create out/ if it does not exist. */
 libname _mkout "&root/out";
@@ -29,10 +29,15 @@ run;
 
 %macro uni(scenario=, fixture=, weight=0, vardef=DF, mu0=0, class=0,
            ttest=1, ranktests=1);
+  %local _rc vars hdr;
 
   proc datasets lib=work nolist nowarn;
     delete fx o cols;
   quit;
+
+  filename _old "&root/out/&scenario..csv";
+  %if %sysfunc(fexist(_old)) %then %let _rc = %sysfunc(fdelete(_old));
+  filename _old clear;
 
   data work.fx;
     infile "&root/fixtures/&fixture..csv" dsd firstobs=2 truncover;

@@ -27,7 +27,9 @@ Real SAS output that `proc_univariate()` is tested against. Design:
    It exits 0 when every required scenario is present with the expected
    columns and rows. A `NOTE` for an `optional` scenario means SAS refused a
    request the design expects it to refuse; read `out/oracle.log` to confirm
-   why.
+   why. Also search `out/oracle.log` for `ERROR` and `Invalid data`; an
+   `Invalid data` line means a fixture was read wrongly (for example with
+   Windows line endings), and the run must be repeated.
 4. Commit `out/` on the branch. The implementation work moves the outputs
    and fixtures under `tests/testthat/fixtures/proc_univariate/`.
 
