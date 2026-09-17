@@ -126,7 +126,7 @@ proc_univariate <- function(data, vars = NULL, class = NULL,
   if (!is.numeric(mu0) || length(mu0) != 1L || !is.finite(mu0)) {
     stop("'mu0' must be a single finite number.", call. = FALSE)
   }
-  pctl_names <- .pctl_names(pctlpts, pctlpre, stats)
+  pctl_names <- .pctl_names(pctlpts, pctlpre, c(stats, class))
 
   ctx <- .stat_ctx("univariate", vardef = vardef, mu0 = mu0)
   keywords <- c(stats, sprintf(".pctl:%.17g", pctlpts))
@@ -142,13 +142,14 @@ proc_univariate <- function(data, vars = NULL, class = NULL,
 
 ## Internal: validate pctlpts and pctlpre and return the percentile column
 ## names. Each point is formatted on its own, so one decimal point does not
-## give every name a decimal.
-.pctl_names <- function(pctlpts, pctlpre, stats) {
+## give every name a decimal. `taken` lists the other output column names
+## (stats and class) a generated name must not clash with.
+.pctl_names <- function(pctlpts, pctlpre, taken) {
   if (!is.character(pctlpre) || length(pctlpre) != 1L || is.na(pctlpre) ||
         !nzchar(pctlpre)) {
     stop("'pctlpre' must be a single non-empty string.", call. = FALSE)
   }
-  if (is.null(pctlpts)) {
+  if (length(pctlpts) == 0L) {
     return(character())
   }
   if (!is.numeric(pctlpts)) {
@@ -172,7 +173,7 @@ proc_univariate <- function(data, vars = NULL, class = NULL,
            trim = TRUE)
   }, character(1))
   nms <- paste0(pctlpre, gsub(".", "_", pts, fixed = TRUE))
-  clash <- nms[nms %in% stats | duplicated(nms)]
+  clash <- nms[nms %in% taken | duplicated(nms)]
   if (length(clash) > 0L) {
     stop("Percentile column name(s) duplicate another output column: ",
          paste(unique(clash), collapse = ", "), call. = FALSE)

@@ -221,8 +221,14 @@ proc_means <- function(data, vars = NULL, class = NULL,
   }
 
   if (length(rows) == 0L) {
-    warning("All rows dropped: every value of the class variable(s) is missing; ",
-            "returning a zero-row result.", call. = FALSE)
+    if (ctx$procedure != "means" && nrow(excluded) > 0L) {
+      warning("All rows dropped: every row with a complete class value has ",
+              "a missing weight; returning a zero-row result.",
+              call. = FALSE)
+    } else {
+      warning("All rows dropped: every value of the class variable(s) is ",
+              "missing; returning a zero-row result.", call. = FALSE)
+    }
     return(.empty_means(class, stats, col_names))
   }
 

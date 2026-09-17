@@ -53,6 +53,12 @@ test_that("a percentile name that duplicates a stats column errors", {
                "duplicate another output column: p50")
 })
 
+test_that("a percentile name that duplicates a class column errors", {
+  cls <- data.frame(x = c(1, 2, 3, 4), p50 = c("a", "a", "b", "b"))
+  expect_error(proc_univariate(cls, vars = "x", class = "p50", pctlpts = 50),
+               "duplicate another output column: p50")
+})
+
 test_that("mu0 must be a single finite number", {
   expect_error(proc_univariate(dta, mu0 = NA_real_), "single finite number")
   expect_error(proc_univariate(dta, mu0 = Inf), "single finite number")

@@ -74,3 +74,29 @@ test_that("a class level whose every weight is missing is dropped", {
   expect_identical(res$n, 2L)
   expect_identical(res$nobs, 2L)
 })
+
+test_that("pctlpts = numeric(0) gives the same columns as NULL", {
+  res0 <- proc_univariate(dta, vars = "x", stats = "n", pctlpts = numeric(0))
+  resn <- proc_univariate(dta, vars = "x", stats = "n", pctlpts = NULL)
+  expect_named(res0, c("variable", "label", "n"))
+  expect_equal(res0, resn)
+})
+
+test_that("all-missing weights under class warns about the weight", {
+  cw <- data.frame(x = 1:4, g = c("a", "a", "b", "b"), w = NA_real_)
+  expect_warning(
+    res <- proc_univariate(cw, vars = "x", class = "g",
+                           stats = c("n", "nobs"), weights = "w"),
+    "missing weight"
+  )
+  expect_equal(nrow(res), 0L)
+})
+
+test_that("cv is NA for a zero-mean constant column, 0 otherwise", {
+  res_zero <- proc_univariate(data.frame(x = rep(0, 4)), vars = "x",
+                              stats = "cv")
+  res_five <- proc_univariate(data.frame(x = rep(5, 4)), vars = "x",
+                              stats = "cv")
+  expect_true(is.na(res_zero$cv))
+  expect_equal(res_five$cv, 0)
+})
