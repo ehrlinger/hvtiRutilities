@@ -100,3 +100,21 @@ test_that("SAS special missing values are dropped under missing = FALSE", {
   expect_equal(res$v, 1)
   expect_identical(attr(res, "frequency_missing"), 4L)
 })
+
+test_that("._ sorts before plain NA among special missing values", {
+  v <- c(haven::tagged_na("z"), haven::tagged_na("_"), NA, 3)
+  res <- proc_freq(data.frame(v = v), "v", missing = TRUE)
+  expect_equal(haven::na_tag(res$v), c("_", NA, "z", NA))
+  expect_equal(res$Frequency, c(1L, 1L, 1L, 1L))
+})
+
+test_that("tagged NAs stay apart in a two-way crosstab", {
+  a <- c(haven::tagged_na("a"), haven::tagged_na("b"),
+        haven::tagged_na("a"), 1)
+  b <- c("x", "x", "y", "y")
+  res <- proc_freq(data.frame(a = a, b = b), c("a", "b"), missing = TRUE)
+  expect_equal(res$Frequency, c(1L, 1L, 1L, 1L))
+  expect_equal(res$Row_Percent, c(50, 50, 100, 100))
+  expect_equal(res$Col_Percent, c(50, 50, 50, 50))
+  expect_equal(haven::na_tag(res$a), c("a", "a", "b", NA))
+})

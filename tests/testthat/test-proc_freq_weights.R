@@ -54,3 +54,13 @@ test_that("every weight missing gives zero rows, not an error", {
                       "Cum_Percent"))
   expect_identical(attr(res, "frequency_missing"), 0)
 })
+
+test_that("tagged NAs with weights are separate levels in SAS order", {
+  v <- c(1, haven::tagged_na("a"), NA, haven::tagged_na("_"),
+        haven::tagged_na("a"))
+  w <- c(1, 2, 3, 4, 5)
+  res <- proc_freq(data.frame(v = v, w = w), "v", weights = "w",
+                   missing = TRUE)
+  expect_equal(res$Frequency, c(4, 3, 7, 1))
+  expect_equal(haven::na_tag(res$v), c("_", NA, "a", NA))
+})

@@ -85,3 +85,23 @@ test_that("a crosstab keeps variable labels beside value-label columns", {
   expect_named(res, c("status", "status_label", "arm", "Frequency",
                       "Percent", "Row_Percent", "Col_Percent"))
 })
+
+test_that("a labelled character groups shared labels and a blank value", {
+  v <- haven::labelled(c("b", "c", "", "b", "  "),
+                       labels = c(Bad = "b", Bad = "c"))
+  res <- proc_freq(data.frame(v = v), "v")
+  expect_equal(nrow(res), 1L)
+  expect_equal(res$v, "b")
+  expect_equal(res$v_label, "Bad")
+  expect_equal(res$Frequency, 3L)
+  expect_identical(attr(res, "frequency_missing"), 2L)
+})
+
+test_that("a representative code absent from the data is its own row", {
+  v <- haven::labelled(c(99, 99, 1),
+                       labels = c(Yes = 1, Unknown = 9, Unknown = 99))
+  res <- proc_freq(data.frame(v = v), "v")
+  expect_equal(res$v, c(1, 9))
+  expect_equal(res$v_label, c("Yes", "Unknown"))
+  expect_equal(res$Frequency, c(1L, 2L))
+})
