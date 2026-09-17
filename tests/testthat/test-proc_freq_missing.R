@@ -75,3 +75,28 @@ test_that("blank character values form the missing level", {
   expect_equal(res$Frequency, c(3L, 2L))
   expect_equal(res$Percent, c(60, 40))
 })
+
+test_that("NaN and NA form a single missing level", {
+  res <- proc_freq(data.frame(v = c(1, NA, NaN, 2)), "v", missing = TRUE)
+  expect_equal(nrow(res), 3L)
+  expect_true(is.na(res$v[1]))
+  expect_equal(res$Frequency[1], 2L)
+})
+
+v_tagged <- c(1, haven::tagged_na("b"), haven::tagged_na("a"), NA,
+              haven::tagged_na("a"), 1)
+
+test_that("SAS special missing values are separate levels in SAS order", {
+  res <- proc_freq(data.frame(v = v_tagged), "v", missing = TRUE)
+  expect_equal(nrow(res), 4L)
+  expect_equal(res$Frequency, c(1L, 2L, 1L, 2L))
+  expect_equal(haven::na_tag(res$v), c(NA, "a", "b", NA))
+  expect_equal(res$v[4], 1)
+  expect_equal(res$Cum_Frequency, c(1L, 3L, 4L, 6L))
+})
+
+test_that("SAS special missing values are dropped under missing = FALSE", {
+  res <- proc_freq(data.frame(v = v_tagged), "v")
+  expect_equal(res$v, 1)
+  expect_identical(attr(res, "frequency_missing"), 4L)
+})

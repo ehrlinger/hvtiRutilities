@@ -148,8 +148,12 @@ proc_freq <- function(data, tables, missing = FALSE, list = FALSE,
   }
 
   ## SAS ORDER=INTERNAL: missing sorts first, factors by level, characters
-  ## by byte value (radix sorts in the C locale, as SAS does).
-  ord <- do.call(base::order, c(unname(as.list(out[tables])),
+  ## by byte value (radix sorts in the C locale, as SAS does). Each variable
+  ## sorts on its missing rank first, so special missing values keep SAS order.
+  sort_keys <- unlist(lapply(tables, function(v) {
+    list(.missing_rank(out[[v]]), out[[v]])
+  }), recursive = FALSE)
+  ord <- do.call(base::order, c(sort_keys,
                                 list(na.last = FALSE, method = "radix")))
   out <- out[ord, , drop = FALSE]
   rownames(out) <- NULL
@@ -217,20 +221,46 @@ proc_freq <- function(data, tables, missing = FALSE, list = FALSE,
 
 ## Internal: recode values SAS reads as missing to NA. A blank or
 ## whitespace-only character value is missing in SAS; haven gives it as "".
+## NaN in a double column becomes plain NA, so the two form one level.
 .sas_missing <- function(x) {
   if (is.character(x)) {
     x[!is.na(x) & !nzchar(trimws(x))] <- NA
   }
+  if (is.double(x)) {
+    x[is.nan(x)] <- NA
+  }
   x
+}
+
+## Internal: sort rank of each value's missingness, in SAS order
+## ._ < . < .A < ... < .Z < any non-missing value. A haven tagged NA carries
+## the SAS special missing letter as its tag.
+.missing_rank <- function(x) {
+  rank <- ifelse(is.na(x), 1L, 28L)
+  if (is.double(x)) {
+    tag <- tolower(haven::na_tag(x))
+    rank[tag %in% "_"] <- 0L
+    is_letter <- tag %in% letters
+    rank[is_letter] <- 1L + match(tag[is_letter], letters)
+  }
+  rank
 }
 
 ## Internal: integer group id per row, and one row of keys per group.
 ## Groups on exact values (not as.character()), so doubles that agree to 15
 ## significant digits are not merged. Unused factor levels form no group.
+## Each double column also groups on its NA tag, so SAS special missing
+## values stay apart; the returned keys are the first row of each group in
+## the original keys, which keeps the tag that group_keys() would lose.
 .group_ids <- function(keys) {
-  g <- dplyr::group_by(keys, dplyr::across(dplyr::everything()))
-  list(id = dplyr::group_indices(g),
-       keys = as.data.frame(dplyr::group_keys(g)))
+  gk <- stats::setNames(keys, paste0("k", seq_along(keys)))
+  for (i in which(vapply(keys, is.double, logical(1)))) {
+    gk[[paste0("t", i)]] <- haven::na_tag(keys[[i]])
+  }
+  g <- dplyr::group_by(gk, dplyr::across(dplyr::everything()))
+  id <- dplyr::group_indices(g)
+  first <- match(seq_len(dplyr::n_groups(g)), id)
+  list(id = id, keys = keys[first, , drop = FALSE])
 }
 
 ## Internal: 100 * freq as a share of its total within each group of keys.
