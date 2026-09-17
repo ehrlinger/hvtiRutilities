@@ -53,10 +53,13 @@ passing \code{quote(...)} through.
 The code runs in a new environment whose parent is the caller's, so names
 assigned inside a block do not appear in the caller.
 
-The key digests each free variable of the code: each name it reads, less
-names it assigns. Values read indirectly (inside the body of a function it
-calls, or through \code{get()}) are not seen; pass such values into the code
-as arguments. The exception is a function defined in the global environment
+The key digests each free variable of the code: a name bound by an
+assignment, a \code{function} formal, or a \code{for} index is local within
+that binding's scope, so a name that is also read free elsewhere in the
+code still counts as an input. Values read indirectly (inside the body of a
+function it calls, or through \code{get()}) are not seen; pass such values
+into the code as arguments. The exception is a function defined in the
+global environment
 (as in a shared \code{_common.R}): its own body is part of the key, so
 editing it invalidates a cache that calls it, even though values it in turn
 reads indirectly are still not seen. This reaches only one level deep: a
