@@ -36,7 +36,10 @@
 #' \emph{unweighted} median.
 #'
 #' \code{mode} returns the smallest value among tied modes, and \code{NA} when
-#' no value repeats, both matching SAS. \code{skewness} and \code{kurtosis} are
+#' no value repeats, except that a single observation is its own mode; all
+#' three match SAS. Weighted \code{stderr} divides the weighted standard
+#' deviation by the square root of the sum of the weights, as SAS does, not by
+#' the square root of the count. \code{skewness} and \code{kurtosis} are
 #' the adjusted Fisher-Pearson forms SAS uses, not R's naive moment ratios, and
 #' are \code{NA} for a constant column rather than \code{NaN}.
 #'
@@ -253,7 +256,7 @@ proc_means <- function(data, vars = NULL, class = NULL,
 
 ## Internal: weighted mean, or the plain mean when w is NULL
 .wmean <- function(v, w) {
-  if (is.null(w)) mean(v) else sum(w * v) / sum(w)
+  if (is.null(w)) mean(v) else sum(w * v) / sum(as.numeric(w))
 }
 
 ## Internal: weighted variance at SAS VARDEF=DF -- the divisor is the count of
@@ -368,7 +371,10 @@ proc_means <- function(data, vars = NULL, class = NULL,
     weighted = FALSE, integer = FALSE
   ),
   stderr = list(
-    fun = function(x, v, w) sqrt(.wvar(v, w) / length(v)),
+    # SAS divides by sqrt(sum(w)), which is sqrt(n) when unweighted.
+    fun = function(x, v, w) {
+      sqrt(.wvar(v, w) / if (is.null(w)) length(v) else sum(as.numeric(w)))
+    },
     weighted = TRUE, integer = FALSE
   ),
   cv = list(
@@ -426,6 +432,9 @@ proc_means <- function(data, vars = NULL, class = NULL,
     fun = function(x, v, w) {
       if (length(v) == 0L) {
         return(NA_real_)
+      }
+      if (length(v) == 1L) {
+        return(v)                 # SAS: a single observation is its own mode
       }
       u <- unique(v)
       counts <- tabulate(match(v, u))

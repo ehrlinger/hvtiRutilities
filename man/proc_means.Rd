@@ -81,7 +81,10 @@ quantiles at all; that is \code{PROC UNIVARIATE}. So
 \emph{unweighted} median.
 
 \code{mode} returns the smallest value among tied modes, and \code{NA} when
-no value repeats, both matching SAS. \code{skewness} and \code{kurtosis} are
+no value repeats, except that a single observation is its own mode; all
+three match SAS. Weighted \code{stderr} divides the weighted standard
+deviation by the square root of the sum of the weights, as SAS does, not by
+the square root of the count. \code{skewness} and \code{kurtosis} are
 the adjusted Fisher-Pearson forms SAS uses, not R's naive moment ratios, and
 are \code{NA} for a constant column rather than \code{NaN}.
 
