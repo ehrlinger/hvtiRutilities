@@ -58,3 +58,20 @@ test_that("an all-missing two-way crosstab keeps its columns", {
   expect_named(res, c("a", "b", "Frequency", "Percent", "Row_Percent",
                       "Col_Percent"))
 })
+
+test_that("blank character values are missing and dropped by default", {
+  d2 <- data.frame(s = c("a", "", "a", NA, "  "))
+  res <- proc_freq(d2, "s")
+  expect_equal(res$s, "a")
+  expect_equal(res$Frequency, 2L)
+  expect_equal(res$Percent, 100)
+  expect_identical(attr(res, "frequency_missing"), 3L)
+})
+
+test_that("blank character values form the missing level", {
+  d2 <- data.frame(s = c("a", "", "a", NA, "  "))
+  res <- proc_freq(d2, "s", missing = TRUE)
+  expect_equal(res$s, c(NA, "a"))
+  expect_equal(res$Frequency, c(3L, 2L))
+  expect_equal(res$Percent, c(60, 40))
+})

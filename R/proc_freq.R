@@ -112,8 +112,9 @@ proc_freq <- function(data, tables, missing = FALSE, list = FALSE,
   var_labels <- lapply(data[tables], labelled::var_label)
   val_labels <- lapply(data[tables], labelled::val_labels)
 
-  keys <- as.data.frame(lapply(data[tables], .strip_labels),
-                        stringsAsFactors = FALSE)
+  keys <- as.data.frame(lapply(data[tables], function(x) {
+    .sas_missing(.strip_labels(x))
+  }), stringsAsFactors = FALSE)
   names(keys) <- tables
 
   if (!is.null(wvec)) {
@@ -211,6 +212,15 @@ proc_freq <- function(data, tables, missing = FALSE, list = FALSE,
     x <- haven::zap_labels(x)
   }
   attr(x, "label") <- NULL
+  x
+}
+
+## Internal: recode values SAS reads as missing to NA. A blank or
+## whitespace-only character value is missing in SAS; haven gives it as "".
+.sas_missing <- function(x) {
+  if (is.character(x)) {
+    x[!is.na(x) & !nzchar(trimws(x))] <- NA
+  }
   x
 }
 
