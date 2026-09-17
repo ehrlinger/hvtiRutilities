@@ -27,8 +27,8 @@
 | file | action | responsibility |
 |---|---|---|
 | `dev/oracle/proc_univariate/make_fixtures.R` | create | writes fixtures and the scenario manifest |
-| `dev/oracle/proc_univariate/fixtures/*.csv` | generate | 14 synthetic inputs, columns `id,g,x,w` |
-| `dev/oracle/proc_univariate/scenarios.csv` | generate | 21 SAS runs |
+| `dev/oracle/proc_univariate/fixtures/*.csv` | generate | 16 synthetic inputs, columns `id,g,x,w` |
+| `dev/oracle/proc_univariate/scenarios.csv` | generate | 25 SAS runs |
 | `dev/oracle/proc_univariate/check_oracle.R` | create | validates `out/` against the manifest |
 | `dev/oracle/proc_univariate/oracle.sas` | create | the SAS runs |
 | `dev/oracle/proc_univariate/README.md` | create | how to run the kit |
@@ -85,6 +85,8 @@ fixtures <- list(
                         3, 3.5, 4, 4, 5, 6, 7, 7, 8, 10)),
   n21       = fixture(c(-4, -2, -2, -1, 0.5, 1, 1, 2, 2, 2,
                         3, 3.5, 4, 4, 5, 6, 7, 7, 8, 10, 12)),
+  n1        = fixture(3),
+  n2        = fixture(c(1, 4)),
   n3        = fixture(c(1, 2, 4)),
   n4        = fixture(c(1, 2, 4, 8)),
   const     = fixture(rep(5, 6)),
@@ -102,31 +104,73 @@ for (nm in names(fixtures)) {
                    row.names = FALSE, na = "")
 }
 
-## One row per SAS run.
+## One row per SAS run, in the order listed below.
 ## - `ttest`: request T and PROBT. Off under VARDEF other than DF, which SAS
 ##   requires for the t test.
 ## - `ranktests`: request MSIGN, PROBM, SIGNRANK, PROBS and the NORMAL option
 ##   with NORMAL and PROBN. Off under WEIGHT: SAS computes only the t test.
 ## - `optional`: runs that deliberately request what the design expects SAS
 ##   to refuse. A missing output file for them is itself an oracle result.
+## - `n1`/`n2` exercise the minimum n the engine accepts.
+## - `n21_mu0` reuses `n21` with `mu0 = 3`, the fixture's only value equal to
+##   3: it leaves 20 nonzero differences, which settles whether SAS's exact
+##   signed-rank cutoff (n <= 20) counts the dropped zero difference or not.
+## - `wt_exact_mu0` is a weighted t test with `mu0 != 0`.
 scenarios <- data.frame(
   scenario = c("basic", "basic_mu0", "n20", "n21", "n3", "n4", "const",
                "allmiss", "skewed50", "n2000", "n2001", "class3",
                "wt_exact", "wt_equal", "wt_frac",
                "vardef_n", "vardef_n_w", "vardef_wdf_w", "vardef_weight_w",
+               "n1", "n2", "n21_mu0", "wt_exact_mu0",
                "wt_frac_alltests", "vardef_n_alltests"),
   fixture  = c("basic", "basic", "n20", "n21", "n3", "n4", "const",
                "allmiss", "skewed50", "n2000", "n2001", "class3",
                "wt_exact", "basic_w2", "wt_frac",
                "basic", "wt_frac", "wt_frac", "wt_frac",
+               "n1", "n2", "n21", "wt_exact",
                "wt_frac", "basic"),
-  weight    = c(rep(0L, 12), 1L, 1L, 1L, 0L, 1L, 1L, 1L, 1L, 0L),
-  vardef    = c(rep("DF", 15), "N", "N", "WDF", "WEIGHT", "DF", "N"),
-  mu0       = c(0, 2, rep(0, 19)),
-  class     = c(rep(0L, 11), 1L, rep(0L, 9)),
-  ttest     = c(rep(1L, 15), 0L, 0L, 0L, 0L, 1L, 1L),
-  ranktests = c(rep(1L, 12), 0L, 0L, 0L, 1L, 0L, 0L, 0L, 1L, 1L),
-  optional  = c(rep(0L, 19), 1L, 1L),
+  weight    = c(0L, 0L, 0L, 0L, 0L, 0L, 0L,
+                0L, 0L, 0L, 0L, 0L,
+                1L, 1L, 1L,
+                0L, 1L, 1L, 1L,
+                0L, 0L, 0L, 1L,
+                1L, 0L),
+  vardef    = c("DF", "DF", "DF", "DF", "DF", "DF", "DF",
+                "DF", "DF", "DF", "DF", "DF",
+                "DF", "DF", "DF",
+                "N", "N", "WDF", "WEIGHT",
+                "DF", "DF", "DF", "DF",
+                "DF", "N"),
+  mu0       = c(0, 2, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0,
+                0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 3, 4,
+                0, 0),
+  class     = c(0L, 0L, 0L, 0L, 0L, 0L, 0L,
+                0L, 0L, 0L, 0L, 1L,
+                0L, 0L, 0L,
+                0L, 0L, 0L, 0L,
+                0L, 0L, 0L, 0L,
+                0L, 0L),
+  ttest     = c(1L, 1L, 1L, 1L, 1L, 1L, 1L,
+                1L, 1L, 1L, 1L, 1L,
+                1L, 1L, 1L,
+                0L, 0L, 0L, 0L,
+                1L, 1L, 1L, 1L,
+                1L, 1L),
+  ranktests = c(1L, 1L, 1L, 1L, 1L, 1L, 1L,
+                1L, 1L, 1L, 1L, 1L,
+                0L, 0L, 0L,
+                1L, 0L, 0L, 0L,
+                1L, 1L, 1L, 0L,
+                1L, 1L),
+  optional  = c(0L, 0L, 0L, 0L, 0L, 0L, 0L,
+                0L, 0L, 0L, 0L, 0L,
+                0L, 0L, 0L,
+                0L, 0L, 0L, 0L,
+                0L, 0L, 0L, 0L,
+                1L, 1L),
   stringsAsFactors = FALSE
 )
 utils::write.csv(scenarios, file.path(kit, "scenarios.csv"),
@@ -136,12 +180,12 @@ message("Wrote ", length(fixtures), " fixtures and ", nrow(scenarios),
         " scenarios to ", kit)
 ```
 
-Fixture intent (for reviewers): `basic` has ties and two values equal to 0 (default `mu0`); `basic_mu0` reuses it with `mu0 = 2` so three values equal `mu0`; `n20`/`n21` sit either side of the exact signed-rank limit and include tied absolute differences; `wt_exact` has cumulative weights `1,2,5,6,7,8,9,10`, so `pW` is hit exactly at p = 0.1, 0.5 and 0.9 and missed at 0.25; `basic_w2` gives equal weights; `n3`/`n4` are the minimum n for skewness and kurtosis; `n2000`/`n2001` bracket the Shapiro-Wilk limit; `class3` has three levels of four observations each (enough for kurtosis) plus a missing class value; `wt_frac` weights the two zeros (total 5) above the three 2s (total 3), so a weighted `mode` (0) differs from the unweighted one (2).
+Fixture intent (for reviewers): `basic` has ties and two values equal to 0 (default `mu0`); `basic_mu0` reuses it with `mu0 = 2` so three values equal `mu0`; `n20`/`n21` sit either side of the exact signed-rank limit and include tied absolute differences; `wt_exact` has cumulative weights `1,2,5,6,7,8,9,10`, so `pW` is hit exactly at p = 0.1, 0.5 and 0.9 and missed at 0.25; `basic_w2` gives equal weights; `n1`/`n2` exercise the minimum n the engine accepts; `n3`/`n4` are the minimum n for skewness and kurtosis; `n2000`/`n2001` bracket the Shapiro-Wilk limit; `class3` has three levels of four observations each (enough for kurtosis) plus a missing class value; `wt_frac` weights the two zeros (total 5) above the three 2s (total 3), so a weighted `mode` (0) differs from the unweighted one (2); `n21_mu0` reuses `n21` with `mu0 = 3`, the fixture's only value equal to 3, leaving 20 nonzero differences to settle whether SAS's exact signed-rank cutoff counts a dropped zero difference; `wt_exact_mu0` is a weighted t test with `mu0 != 0`.
 
 - [ ] **Step 2: Run it**
 
 Run: `Rscript dev/oracle/proc_univariate/make_fixtures.R`
-Expected: `Wrote 14 fixtures and 21 scenarios to dev/oracle/proc_univariate`
+Expected: `Wrote 16 fixtures and 25 scenarios to dev/oracle/proc_univariate`
 
 - [ ] **Step 3: Verify determinism and content**
 
@@ -208,8 +252,9 @@ problems <- character()
 notes <- character()
 n_absent <- 0L
 
-if (!file.exists(file.path(out_dir, "sas_version.txt"))) {
-  problems <- c(problems, "out/sas_version.txt is missing")
+version_path <- file.path(out_dir, "sas_version.txt")
+if (!file.exists(version_path) || file.size(version_path) == 0) {
+  problems <- c(problems, "out/sas_version.txt is missing or empty")
 }
 
 for (i in seq_len(nrow(scenarios))) {
@@ -232,8 +277,13 @@ for (i in seq_len(nrow(scenarios))) {
                 if (sc$ranktests == 1L) rank_cols)
   absent <- setdiff(expected, names(res))
   if (length(absent) > 0L) {
-    problems <- c(problems, paste0(sc$scenario, ": missing column(s) ",
-                                   paste(absent, collapse = ", ")))
+    msg <- paste0(sc$scenario, ": missing column(s) ",
+                  paste(absent, collapse = ", "))
+    if (sc$optional == 1L) {
+      notes <- c(notes, paste0(msg, " (optional: SAS refused them)"))
+    } else {
+      problems <- c(problems, msg)
+    }
   }
   want_rows <- if (sc$class == 1L) 3L else 1L
   if (nrow(res) != want_rows) {
@@ -263,7 +313,7 @@ message("OK    ", nrow(scenarios) - n_absent, " of ", nrow(scenarios),
 - [ ] **Step 2: Verify it fails on an empty kit**
 
 Run: `Rscript dev/oracle/proc_univariate/check_oracle.R; echo "exit=$?"`
-Expected: `ERROR out/sas_version.txt is missing`, one `ERROR <scenario>: no output file` per required scenario, two `NOTE` lines for `wt_frac_alltests` and `vardef_n_alltests`, and `exit=1`.
+Expected: `ERROR out/sas_version.txt is missing or empty`, one `ERROR <scenario>: no output file` per required scenario, two `NOTE` lines for `wt_frac_alltests` and `vardef_n_alltests`, and `exit=1`.
 
 - [ ] **Step 3: Verify it passes on well-formed output, using a throwaway fake**
 
@@ -295,7 +345,7 @@ for (i in seq_len(nrow(sc))) {
 ```
 
 Run: `Rscript dev/oracle/proc_univariate/check_oracle.R; echo "exit=$?"`
-Expected: `NOTE  wt_frac_alltests: no output file (optional: SAS refused the request)`, `OK    20 of 21 scenario outputs present and well-formed`, `exit=0`.
+Expected: `NOTE  wt_frac_alltests: no output file (optional: SAS refused the request)`, `OK    24 of 25 scenario outputs present and well-formed`, `exit=0`.
 
 - [ ] **Step 4: Verify each failure path, then remove the fake**
 
@@ -368,6 +418,7 @@ data _null_;
   file "&root/out/sas_version.txt";
   put "&sysvlong";
   put "&sysscp &sysscpl";
+  put "&sysdate9 &systime";
 run;
 
 %macro uni(scenario=, fixture=, weight=0, vardef=DF, mu0=0, class=0,
@@ -512,7 +563,8 @@ Real SAS output that `proc_univariate()` is tested against. Design:
    Commit the regenerated files; never edit them by hand.
 2. In SAS, set `%let root =` at the top of `oracle.sas` to this directory and
    submit the whole file. It writes `out/<scenario>.csv`,
-   `out/sas_version.txt` and `out/oracle.log`.
+   `out/sas_version.txt` and `out/oracle.log`. To re-run, delete `out/`
+   first.
 3. Copy `out/` back into this directory if SAS ran elsewhere, then from the
    package root run:
    `Rscript dev/oracle/proc_univariate/check_oracle.R`.
