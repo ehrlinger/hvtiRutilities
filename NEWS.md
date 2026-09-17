@@ -22,7 +22,8 @@
   With `weights`, SAS `PROC MEANS` and `PROC UNIVARIATE` compute `NOBS` as
   `N + NMISS` plus the observations excluded for a missing weight.
   `proc_means()` dropped those rows before counting, so `nobs` was too low.
-  Every other statistic is unchanged.
+  A class level whose every weight is missing now keeps its row, with `n` of
+  0, as SAS `PROC MEANS` prints it. Every other statistic is unchanged.
 
 # hvtiRutilities 1.1.12
 

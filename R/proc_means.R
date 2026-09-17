@@ -153,7 +153,12 @@ proc_means <- function(data, vars = NULL, class = NULL,
     if (!is.null(wvec)) {
       wvec <- wvec[keep]
     }
-    groups <- unique(data[, class, drop = FALSE])
+    # Levels come from every row with a complete class value, including rows
+    # dropped for a missing weight: SAS PROC MEANS still prints a level whose
+    # every weight is missing (N = 0, with its rows counted in nobs).
+    excl_cls <- excluded[, class, drop = FALSE]
+    excl_cls <- excl_cls[stats::complete.cases(excl_cls), , drop = FALSE]
+    groups <- unique(rbind(data[, class, drop = FALSE], excl_cls))
     groups <- groups[do.call(base::order,
                              c(unname(as.list(groups)),
                                list(method = "radix"))), ,

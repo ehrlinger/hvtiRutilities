@@ -156,3 +156,17 @@ test_that("nobs counts excluded-weight rows within their class level", {
   expect_identical(res$nmiss, c(0L, 1L))
   expect_identical(res$nobs, c(2L, 2L))
 })
+
+test_that("a class level whose every weight is missing keeps its row", {
+  # SAS 9.4 M8 PROC MEANS (2026-09-17): level y is printed with N = 0,
+  # NMISS = 0 and _FREQ_ = 2. PROC UNIVARIATE drops such a level instead.
+  cw <- data.frame(g = c("x", "x", "y", "y"), a = c(1, 2, 3, 4),
+                   wt = c(1, 2, NA, NA))
+  res <- proc_means(cw, vars = "a", class = "g",
+                    stats = c("n", "nmiss", "nobs", "mean"), weights = "wt")
+  expect_identical(res$g, c("x", "y"))
+  expect_identical(res$n, c(2L, 0L))
+  expect_identical(res$nmiss, c(0L, 0L))
+  expect_identical(res$nobs, c(2L, 2L))
+  expect_true(is.na(res$mean[2]))
+})
