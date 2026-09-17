@@ -54,3 +54,23 @@ test_that("variables without value labels get no label column", {
   res <- proc_freq(data.frame(g = c("a", "b")), "g")
   expect_false("g_label" %in% names(res))
 })
+
+test_that("codes sharing a value label form one row at the smallest code", {
+  d <- data.frame(v = haven::labelled(c(9, 99, 1, 99),
+                                      labels = c(Yes = 1, Unknown = 9,
+                                                 Unknown = 99)))
+  res <- proc_freq(d, "v")
+  expect_equal(nrow(res), 2L)
+  expect_equal(res$v, c(1, 9))
+  expect_equal(res$v_label, c("Yes", "Unknown"))
+  expect_equal(res$Frequency, c(1L, 3L))
+  expect_equal(res$Percent, c(25, 75))
+})
+
+test_that("a labelled variable's value without a label stays its own row", {
+  d <- data.frame(v = haven::labelled(c(1, 2, 3), labels = c(A = 1, A = 2)))
+  res <- proc_freq(d, "v")
+  expect_equal(res$v, c(1, 3))
+  expect_equal(res$v_label, c("A", NA))
+  expect_equal(res$Frequency, c(2L, 1L))
+})

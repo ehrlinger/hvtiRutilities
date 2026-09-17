@@ -116,6 +116,9 @@ proc_freq <- function(data, tables, missing = FALSE, list = FALSE,
     .sas_missing(.strip_labels(x))
   }), stringsAsFactors = FALSE)
   names(keys) <- tables
+  for (v in tables) {
+    keys[[v]] <- .label_representative(keys[[v]], val_labels[[v]])
+  }
 
   if (!is.null(wvec)) {
     keep <- !is.na(wvec)
@@ -229,6 +232,21 @@ proc_freq <- function(data, tables, missing = FALSE, list = FALSE,
   if (is.double(x)) {
     x[is.nan(x)] <- NA
   }
+  x
+}
+
+## Internal: SAS forms levels from formatted values, so stored codes sharing
+## a value label are one level. Replace each labelled, non-missing value with
+## the smallest code (byte order for character) carrying the same label.
+## Values without a label, and missing values, are left as they are.
+.label_representative <- function(x, labs) {
+  if (is.null(labs)) {
+    return(x)
+  }
+  labs <- labs[order(unname(labs), method = "radix")]
+  lab <- names(labs)[match(x, unname(labs))]
+  hit <- !is.na(x) & !is.na(lab)
+  x[hit] <- unname(labs)[match(lab[hit], names(labs))]
   x
 }
 
