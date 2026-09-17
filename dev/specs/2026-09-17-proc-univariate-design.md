@@ -1,7 +1,7 @@
 # Porting SAS `PROC UNIVARIATE` to `proc_univariate()`
 
 **Date:** 2026-09-17
-**Status:** Approved design, pending SAS oracle run and implementation plan
+**Status:** Approved design; SAS oracle results (2026-09-17) incorporated; pending implementation plan
 **Package:** `hvtiRutilities`
 **Predecessors:** `dev/specs/2026-08-14-proc-means-unistats-design.md`,
 `dev/specs/2026-09-16-proc-freq-design.md`
@@ -88,40 +88,55 @@ an error and a missing weight drops the observation, as in `proc_means()` and
 the observation; this is a deliberate, documented difference.
 
 **Statistics SAS does not compute are `NA`**, as SAS writes missing to
-`OUT=`:
+`OUT=`. Every rule below was observed in the SAS oracle run:
 
 - `msign`, `probm`, `signrank`, `probs`, `normal`, `probn` when `weights` is
   given (SAS computes only the t test under `WEIGHT`);
-- `t`, `probt` when `vardef` is not `"df"` (SAS requires `VARDEF=DF`);
+- `t`, `probt` and `stdmean` when `vardef` is not `"df"`;
+- `skewness`, `kurtosis` when `vardef` is `"wdf"` or `"weight"`;
 - `normal`, `probn` when n > 2000, with one warning per call stating that SAS
   switches to a Kolmogorov D test there and that it is not ported;
-- any statistic whose own minimum n is not met (as in `proc_means()`).
+- `std`, `var`, `cv`, `stdmean`, `t`, `probt` at n = 1; `skewness` at n < 3;
+  `kurtosis` at n < 4;
+- `t`, `probt`, `skewness`, `kurtosis`, `normal`, `probn` when every value is
+  equal (standard deviation 0). `cv` is `0` there, not `NA`, because the mean
+  is not zero;
+- `mode` when no value repeats (a constant column's mode is its value).
 
 ## Statistic definitions
 
-Confidence tags: **documented** means confirmed in the SAS documentation;
-**oracle** means the SAS run settles it before the implementation plan is
-written.
+Every row was checked against the SAS oracle run (SAS 9.4 M8,
+`lri-sas-p-02`, 2026-09-17; outputs in `dev/oracle/proc_univariate/out/`).
+`n` is the count of non-missing values, `W = sum(w)` (equal to `n` without
+weights), `xbar` the weighted mean, `CSS = sum(w * (x - xbar)^2)`.
 
-| keyword | definition | confidence |
+| keyword | definition | oracle |
 |---|---|---|
-| unweighted quantiles | `stats::quantile(type = 2)`, SAS `PCTLDEF=5`, as `proc_means()` | documented behaviour; digits by oracle |
-| weighted quantiles | Sort `x` ascending with weights `w`; `S_i` = cumulative weight, `W` = total. For fraction `p`: if `S_i = pW` for some `i`, the result is `(x_i + x_{i+1}) / 2`; otherwise `x_{i+1}` where `S_i < pW < S_{i+1}`. Endpoints: `p = 0` gives the minimum and `p = 1` the maximum (the equality branch at `i = n` has no `x_{n+1}`). Equal weights reduce to `type = 2`. `PCTLDEF=` does not apply. | rule documented, formula text not retrieved: **oracle** (endpoints: `pp_0`, `pp_100` in every weighted scenario) |
-| `var`, `std`, `stderr`, `stdmean`, `cv` | CSS divided by `n - 1` (`df`), `n` (`n`), `sum(w) - 1` (`wdf`), `sum(w)` (`weight`); `stderr = std / sqrt(n)` under `df`, using the same divisor otherwise | divisors documented; `stderr`/`cv` under non-DF: **oracle** |
-| `skewness`, `kurtosis` | as `proc_means()` (DF forms) regardless of `vardef` until the oracle shows otherwise | **oracle** |
-| `t`, `probt` | `(xbar - mu0) / (s / sqrt(n))`; two-sided p from t with `n - 1` df. Weighted: weighted mean and weighted `s` | documented |
-| `msign`, `probm` | drop `x == mu0`; `M = (n_plus - n_minus) / 2`; two-sided exact binomial p with `p = 0.5` on `n_plus + n_minus` trials, capped at 1 | documented; two-sided convention: **oracle** |
-| `signrank`, `probs` | `d = x - mu0`, drop `d == 0`; ranks of `abs(d)` with average ranks for ties; `S = sum(sign(d) * rank) / 2`. n <= 20: exact two-sided p by enumerating all `2^n` sign assignments of the observed ranks. n > 20: t approximation with `n - 1` df using SAS's tie-corrected variance | rule documented; tie variance and exact-tail convention: **oracle** |
-| `normal`, `probn` | Shapiro-Wilk W and p for 3 <= n <= 2000 via `stats::shapiro.test()` | documented; R implements Royston (1995), SAS cites Royston (1992): digits by **oracle** |
-| `mode` | as `proc_means()`, unweighted | weighted behaviour: **oracle** |
-| `nobs` under `weights` | SAS counts every observation read: `N + NMISS` plus those excluded for a missing or non-positive weight. `proc_univariate()` follows SAS, and `proc_means()` does the same from #119 (it previously dropped missing-weight rows before counting) | documented |
+| unweighted quantiles | `stats::quantile(type = 2)`, SAS `PCTLDEF=5`, as `proc_means()` | exact match |
+| weighted quantiles | Sort `x` ascending with weights `w`; `S_i` = cumulative weight. For fraction `p`: `p = 0` gives the minimum, `p = 1` the maximum; otherwise, if `S_i = pW` for some `i`, the result is `(x_i + x_{i+1}) / 2`, else `x_i` for the first `i` with `S_i > pW`. `PCTLDEF=` does not apply | exact match, all 48 weighted values including `pp_0`, `pp_100` |
+| `var`, `std`, `cv` | `var = CSS / d` with `d` = `n - 1` (`df`), `n` (`n`), `W - 1` (`wdf`), `W` (`weight`); `std = sqrt(var)`; `cv = 100 * std / xbar` | exact match, all four `vardef` |
+| `stderr`, `stdmean` | `std / sqrt(W)` under `df`; `NA` otherwise | exact match; **`sqrt(W)`, not `sqrt(n)`** |
+| `skewness`, `kurtosis` under `df` | `proc_means()`'s adjusted forms (weights raised to 3/2 and 2) | exact match, weighted and unweighted |
+| `skewness`, `kurtosis` under `n` | moment forms with `s_n^2 = CSS / n` and `z = (x - xbar) / s_n`: `skewness = sum(w^1.5 * z^3) / n`, `kurtosis = sum(w^2 * z^4) / n - 3` | exact match, weighted and unweighted |
+| `skewness`, `kurtosis` under `wdf`, `weight` | `NA` | observed |
+| `t`, `probt` | `(xbar - mu0) / (std / sqrt(W))`; two-sided p from t with `n - 1` df | exact match, weighted and unweighted, `mu0` 0 and non-zero |
+| `msign`, `probm` | drop `x == mu0`; `M = (n_plus - n_minus) / 2`; `p = min(1, 2 * pbinom(min(n_plus, n_minus), n_plus + n_minus, 0.5))` | exact match |
+| `signrank`, `probs` | `d = x - mu0`, drop `d == 0`, `n` = count of non-zero `d`; average ranks `r` of `abs(d)`; `S = sum(sign(d) * r) / 2`. n <= 20: exact two-sided p, the probability that the absolute sign-rank sum is at least `abs(S)` over all `2^n` equally likely sign assignments of `r`. n > 20: `V = n(n+1)(2n+1)/24 - sum(t^3 - t)/48` over tie groups of size `t`; `T = S * sqrt((n - 1) / (n * V - S^2))`; two-sided p from t with `n - 1` df | exact match; the n <= 20 cutoff counts non-zero differences only (`n21_mu0`) |
+| `normal`, `probn` | Shapiro-Wilk via `stats::shapiro.test()` for 3 <= n <= 2000; **`W = 1`, `p = 1` at n = 2**; `NA` at n = 1 | agrees to about 1e-8 (R Royston 1995, SAS Royston 1992); n = 2 observed |
+| `mode` | as `proc_means()`, **unweighted even under `weights`** | observed (`wt_frac`: 2, not the weighted 0) |
+| `nobs` under `weights` | `N + NMISS` plus rows excluded for a missing or non-positive weight; `proc_means()` does the same from #119 | documented |
 
-The exact signed-rank p-value is computed by enumeration, not
-`stats::wilcox.test()`, which reports V rather than S and falls back to a
-normal approximation with ties.
+Implementation note: enumerating `2^20` sign assignments as a matrix needs
+about 160 MB. Compute the exact null distribution of `2 * S` instead, by
+dynamic programming over doubled (integer) ranks.
 
-If the oracle contradicts a row, this table is corrected before the
-implementation plan is written, not patched during implementation.
+### Findings for `proc_means()`
+
+- **Weighted `skewness` and `kurtosis` are confirmed.** Its formulas, awaiting
+  a SAS oracle since 2026-08-14, match SAS exactly.
+- **Weighted `stderr` divides by `sqrt(n)`, SAS by `sqrt(W)`.** Fixed in
+  `proc_means()` on its own branch, after confirming `PROC MEANS` documents
+  the same formula.
 
 ## Architecture: a shared statistic engine
 
@@ -203,7 +218,8 @@ Files by theme: `test-proc_univariate_shape.R`, `_quantiles.R`,
 - **Parity.** `_parity.R` reads each committed SAS output CSV (wherever it
   sits at PR B time, `tests/testthat/fixtures/proc_univariate/`), runs the
   matching `proc_univariate()` call on the same fixture, and compares every
-  value with `expect_equal(tolerance = 1e-10)`. A looser tolerance for a
+  value with `expect_equal(tolerance = 1e-10)`, except `normal` and `probn`
+  at `1e-7` (see the definitions table). A looser tolerance for a
   statistic is allowed only with a written reason in the test (the
   Shapiro-Wilk p-value is the expected candidate).
 - **Hand-computed literals** pin each formula independently of SAS: weighted
