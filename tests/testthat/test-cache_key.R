@@ -117,6 +117,48 @@ test_that("editing a global helper's body changes the key", {
   expect_false(identical(k1, k2))
 })
 
+test_that("a closure factory's captured value changes the key, not just its body", {
+  # As in "editing a global helper's body changes the key" above, the
+  # factory must be *evaluated* in globalenv() so the closures it returns
+  # have environment() chains rooted there (the real _common.R shape),
+  # rather than in the test's own local scope.
+  eval(quote(cache_test_make <- function(a) function(x) x + a),
+       envir = globalenv())
+  on.exit(rm("cache_test_make", envir = globalenv()), add = TRUE)
+  h1 <- eval(quote(cache_test_make(1)), envir = globalenv())
+  h2 <- eval(quote(cache_test_make(2)), envir = globalenv())
+  env <- new.env()
+  env$h <- h1
+  env$x <- 5
+  code <- quote(h(x))
+  k1 <- hvtiRutilities:::.cache_inputs(code, env)
+
+  env$h <- h2
+  k2 <- hvtiRutilities:::.cache_inputs(code, env)
+
+  expect_false(identical(k1, k2))
+})
+
+test_that("a plain global helper still keys by body alone", {
+  eval(quote(cache_test_plain_helper <- function(z) z * 1), envir = globalenv())
+  on.exit(rm("cache_test_plain_helper", envir = globalenv()), add = TRUE)
+  env <- new.env()
+  env$h <- get("cache_test_plain_helper", envir = globalenv())
+  env$x <- 5
+  inputs <- hvtiRutilities:::.cache_inputs(quote(h(x)), env)
+  expect_identical(inputs$h,
+    hvtiRutilities:::.cache_digest(
+      hvtiRutilities:::.cache_global_closure_text(env$h)))
+})
+
+test_that("a package function still contributes nothing to inputs", {
+  env <- new.env()
+  env$h <- median
+  env$x <- 1:3
+  inputs <- hvtiRutilities:::.cache_inputs(quote(h(x)), env)
+  expect_null(inputs[["h"]])
+})
+
 test_that("a global helper is keyed even when its name is shadowed elsewhere in the code", {
   eval(quote(prep <- function(x) x + 1), envir = globalenv())
   on.exit(rm("prep", envir = globalenv()), add = TRUE)

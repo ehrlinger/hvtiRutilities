@@ -275,14 +275,55 @@
 # _common.R shape), attributes (incl. srcref) stripped so layout and comments
 # do not reach the key. NULL for a package function, which .cache_packages()
 # already covers by version.
+#
+# A closure whose environment() is a child frame (e.g. one returned by a
+# factory, `make <- function(a) function(x) x + a`) still has topenv() ==
+# R_GlobalEnv, since topenv() walks up past ordinary frames to the first
+# package/namespace environment. Its own body alone is then a stale key: two
+# closures from `make(1)` and `make(2)` deparse identically but read
+# different captured values. For that case (fn_env not literally globalenv())
+# the closure's own free variables (one level: see
+# .cache_closure_capture_text()) are digested alongside the body, so a
+# changed capture changes the key even though the body did not change. A
+# closure whose environment() IS globalenv() has no captures beyond globals
+# that .cache_inputs() already sees separately, so it keys by body alone, as
+# before.
 .cache_global_closure_text <- function(fn) {
-  if (!identical(environmentName(topenv(environment(fn))), "R_GlobalEnv")) {
+  fn_env <- environment(fn)
+  if (!identical(environmentName(topenv(fn_env)), "R_GlobalEnv")) {
     return(NULL)
   }
-  attributes(fn) <- NULL
-  paste(deparse(fn, width.cutoff = 500L,
+  fn_stripped <- fn
+  attributes(fn_stripped) <- NULL
+  txt <- paste(deparse(fn_stripped, width.cutoff = 500L,
                 control = c("keepNA", "keepInteger", "niceNames")),
         collapse = "\n")
+  if (identical(fn_env, globalenv())) return(txt)
+  captures <- .cache_closure_capture_text(fn, fn_env)
+  if (is.null(captures)) txt else paste(txt, captures, sep = "\n")
+}
+
+# Values a closure captured from a non-global frame environment (e.g. a
+# factory's local scope), so that changing what was captured, not just the
+# closure's own body, changes the key. Considers only the closure's own free
+# variables (its body's free variables, with its own formals bound): a value
+# that does not resolve is skipped, same as .cache_inputs() skips an
+# unresolved free variable of the code itself, and a value that is itself a
+# function is skipped too, both to avoid recursing into a further closure's
+# body/captures (this reaches only one level deep, mirroring the
+# one-level-deep rule for global helpers documented on cache_fit()) and to
+# guard against an environment/closure cycle.
+.cache_closure_capture_text <- function(fn, fn_env) {
+  vars <- sort(unique(.cache_free_vars(body(fn), names(formals(fn)))))
+  parts <- character(0)
+  for (v in vars) {
+    if (!exists(v, envir = fn_env, inherits = TRUE)) next
+    val <- get(v, envir = fn_env, inherits = TRUE)
+    if (is.function(val)) next
+    parts <- c(parts, paste0(v, "=", .cache_digest(val)))
+  }
+  if (length(parts) == 0L) return(NULL)
+  paste(parts, collapse = "\n")
 }
 
 # Digests of the free variables: every name the code reads free of any
