@@ -256,6 +256,9 @@ versions
   : Describe a dataset's variables, in the style of SAS PROC CONTENTS
 - [`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
   : Summarise numeric variables, in the style of SAS PROC MEANS
+- [`proc_univariate()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_univariate.md)
+  : Summarise and test numeric variables, in the style of SAS PROC
+  UNIVARIATE
 - [`proc_freq()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_freq.md)
   : Frequency tables, in the style of SAS PROC FREQ
 - [`compare_datasets()`](https://ehrlinger.github.io/hvtiRutilities/reference/compare_datasets.md)
@@ -432,7 +435,7 @@ same thing.
 
 ### SAS Migration
 
-- [PROC CONTENTS, PROC MEANS and PROC FREQ in
+- [PROC CONTENTS, MEANS, FREQ and UNIVARIATE in
   R](https://ehrlinger.github.io/hvtiRutilities/articles/sas-procedures.md):
 
 ### Specialized Topics

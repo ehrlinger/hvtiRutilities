@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>PROC CONTENTS, PROC MEANS and PROC FREQ in R • hvtiRutilities</title>
+<title>PROC CONTENTS, MEANS, FREQ and UNIVARIATE in R • hvtiRutilities</title>
 <script src="../lightswitch.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Outfit-0.4.10/font.css" rel="stylesheet">
@@ -14,7 +14,7 @@
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><script src="sas-procedures_files/libs/quarto-html/popper.min.js"></script><script src="sas-procedures_files/libs/quarto-html/tippy.umd.min.js"></script><link href="sas-procedures_files/libs/quarto-html/tippy.css" rel="stylesheet">
 <link href="sas-procedures_files/libs/quarto-html/light-border.css" rel="stylesheet">
-<!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="PROC CONTENTS, PROC MEANS and PROC FREQ in R">
+<!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="PROC CONTENTS, MEANS, FREQ and UNIVARIATE in R">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -77,7 +77,7 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
 
-      <h1>PROC CONTENTS, PROC MEANS and PROC FREQ in R</h1>
+      <h1>PROC CONTENTS, MEANS, FREQ and UNIVARIATE in R</h1>
 
       <p class="author">John Ehrlinger</p>
       <p class="date">2026-09-17</p>
@@ -104,10 +104,11 @@
 <span><span class="co">#&gt;  Type hvtiRutilities.news() to see new features, changes, and bug fixes. </span></span>
 <span><span class="co">#&gt; </span></span></code></pre></div>
 </div>
-<section class="level2"><h2 id="three-procedures-you-already-run">Three Procedures You Already Run<a class="anchor" aria-label="anchor" href="#three-procedures-you-already-run"></a>
+<section class="level2"><h2 id="four-procedures-you-already-run">Four Procedures You Already Run<a class="anchor" aria-label="anchor" href="#four-procedures-you-already-run"></a>
 </h2>
 <p>Open a new extract in SAS and you almost certainly run three things before anything else. <code>PROC CONTENTS</code> to see what arrived: how many observations, how many variables, what each one is called and how it is stored. <code>PROC MEANS</code> to see whether the numbers are plausible: means, ranges, how much is missing. And <code>PROC FREQ</code> to see whether the categories look right: how many died, how the cohort splits across the groups you will compare.</p>
 <p>None of them is a modelling step. They are the sanity check you do before you trust the file enough to analyse it. <code><a href="../reference/proc_contents.html">proc_contents()</a></code>, <code><a href="../reference/proc_means.html">proc_means()</a></code> and <code><a href="../reference/proc_freq.html">proc_freq()</a></code> are those three habits, kept intact in R.</p>
+<p>The fourth comes a little later. When a summary needs weights, a percentile such as the 2.5th, or a test against a null value, you reach for <code>PROC UNIVARIATE</code>, and <code><a href="../reference/proc_univariate.html">proc_univariate()</a></code> gives you its output data set.</p>
 <p>The point is not that R lacks a way to describe a data frame. It has several. The point is that you already know what these three tables should look like, and when the R version prints the same numbers in the same shape, you can tell at a glance whether the extract is right. A different summary in a different layout makes you re-learn what “normal” looks like.</p>
 <p>We will use the simulated cardiac surgery cohort that ships with the package, so every example here runs as written:</p>
 <div class="cell">
@@ -402,12 +403,81 @@ run;</code></pre>
 <span><span class="co">#&gt; 4    2   x    0         1      25             4         100</span></span></code></pre></div>
 </div>
 <p>The same site 2 patient is 100 percent of the crosstab and 25 percent of the list. Both are what SAS prints; they answer different questions. Match the option in the SAS step you are reproducing.</p>
+</section></section><section class="level2"><h2 id="weighted-percentiles-and-tests-proc_univariate">Weighted Percentiles and Tests: <code>proc_univariate()</code>
+<a class="anchor" aria-label="anchor" href="#weighted-percentiles-and-tests-proc_univariate"></a>
+</h2>
+<p>Most <code>PROC UNIVARIATE</code> steps in our SAS programs are not after the printed report. They write an <code>OUTPUT</code> data set with percentiles that <code>PROC MEANS</code> cannot give: weighted ones, and decimal points such as the 2.5th and 97.5th for a bootstrap interval.</p>
+<pre class="sas"><code>proc univariate data=cohort noprint;
+  var age;
+  weight wt;
+  output out=pct pctlpts=2.5 16 50 84 97.5 pctlpre=p_;
+run;</code></pre>
+<p>In R, <code>pctlpts</code> and <code>pctlpre</code> are arguments, and each point becomes a column named the way SAS names it, with the decimal point turned into an underscore:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb26"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">wdta</span> <span class="op">&lt;-</span> <span class="va">dta</span></span>
+<span><span class="va">wdta</span><span class="op">$</span><span class="va">wt</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="va">wdta</span><span class="op">$</span><span class="va">sex</span> <span class="op">==</span> <span class="st">"Female"</span>, <span class="fl">2</span>, <span class="fl">1</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/proc_univariate.html">proc_univariate</a></span><span class="op">(</span><span class="va">wdta</span>, vars <span class="op">=</span> <span class="st">"age"</span>, stats <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"n"</span>, <span class="st">"sumwgt"</span><span class="op">)</span>,</span>
+<span>                weights <span class="op">=</span> <span class="st">"wt"</span>, pctlpts <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2.5</span>, <span class="fl">16</span>, <span class="fl">50</span>, <span class="fl">84</span>, <span class="fl">97.5</span><span class="op">)</span>,</span>
+<span>                pctlpre <span class="op">=</span> <span class="st">"p_"</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   variable                  label   n sumwgt p_2_5 p_16 p_50 p_84 p_97_5</span></span>
+<span><span class="co">#&gt; 1      age Age at surgery (years) 200    277  14.6 30.1   45 58.8   72.7</span></span></code></pre></div>
+</div>
+<section class="level3"><h3 id="weighted-quantiles-follow-a-different-rule">Weighted Quantiles Follow a Different Rule<a class="anchor" aria-label="anchor" href="#weighted-quantiles-follow-a-different-rule"></a>
+</h3>
+<p>With <code>weights</code>, <code><a href="../reference/proc_univariate.html">proc_univariate()</a></code> weights <code>median</code>, <code>q1</code>, <code>q3</code>, <code>qrange</code>, <code>pNN</code> and every <code>pctlpts</code> column. <code><a href="../reference/proc_means.html">proc_means()</a></code> does not, because <code>PROC MEANS</code> does not. The same call can therefore give two medians:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb27"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">w4</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">3</span>, <span class="fl">4</span><span class="op">)</span>, wt <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">3</span>, <span class="fl">1</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/proc_means.html">proc_means</a></span><span class="op">(</span><span class="va">w4</span>, vars <span class="op">=</span> <span class="st">"x"</span>, stats <span class="op">=</span> <span class="st">"median"</span>, weights <span class="op">=</span> <span class="st">"wt"</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   variable label median</span></span>
+<span><span class="co">#&gt; 1        x     x    2.5</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/proc_univariate.html">proc_univariate</a></span><span class="op">(</span><span class="va">w4</span>, vars <span class="op">=</span> <span class="st">"x"</span>, stats <span class="op">=</span> <span class="st">"median"</span>, weights <span class="op">=</span> <span class="st">"wt"</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   variable label median</span></span>
+<span><span class="co">#&gt; 1        x     x      2</span></span></code></pre></div>
+</div>
+<p>The weighted rule is not <code>QNTLDEF=5</code> with weights added. SAS sorts the values, accumulates the weights, and takes the first value whose running weight passes the target, here half of the total weight of 6. The running weights are 1, 4, 5 and 6, so the median is 2. When a running weight lands exactly on the target, SAS averages that value and the next one. <code>PCTLDEF=</code> has no effect under <code>WEIGHT</code>, and <code><a href="../reference/proc_univariate.html">proc_univariate()</a></code> has no argument for it.</p>
+</section><section class="level3"><h3 id="vardef-changes-more-than-the-variance">
+<code>VARDEF</code> Changes More Than the Variance<a class="anchor" aria-label="anchor" href="#vardef-changes-more-than-the-variance"></a>
+</h3>
+<p><code>vardef</code> is SAS <code>VARDEF=</code>, the divisor of the variance: <code>"df"</code> for the number of observations minus one, the default; <code>"n"</code> for the number of observations; <code>"wdf"</code> for the sum of the weights minus one; and <code>"weight"</code> for the sum of the weights. Several of our weighted steps use <code>VARDEF=WDF</code>. It changes <code>var</code>, <code>std</code> and <code>cv</code>, and it also changes what SAS is willing to compute. <code>t</code>, <code>probt</code> and <code>stdmean</code> are missing unless the divisor is <code>DF</code>, and <code>skewness</code> and <code>kurtosis</code> are missing under <code>WDF</code> and <code>WEIGHT</code>. <code><a href="../reference/proc_univariate.html">proc_univariate()</a></code> returns <code>NA</code> in the same places:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb28"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/proc_univariate.html">proc_univariate</a></span><span class="op">(</span><span class="va">wdta</span>, vars <span class="op">=</span> <span class="st">"age"</span>, weights <span class="op">=</span> <span class="st">"wt"</span>,</span>
+<span>                stats <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"std"</span>, <span class="st">"stdmean"</span>, <span class="st">"skewness"</span><span class="op">)</span>, vardef <span class="op">=</span> <span class="st">"wdf"</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   variable                  label      std stdmean skewness</span></span>
+<span><span class="co">#&gt; 1      age Age at surgery (years) 14.62749      NA       NA</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/proc_univariate.html">proc_univariate</a></span><span class="op">(</span><span class="va">wdta</span>, vars <span class="op">=</span> <span class="st">"age"</span>, weights <span class="op">=</span> <span class="st">"wt"</span>,</span>
+<span>                stats <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"std"</span>, <span class="st">"stdmean"</span>, <span class="st">"skewness"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   variable                  label      std  stdmean   skewness</span></span>
+<span><span class="co">#&gt; 1      age Age at surgery (years) 17.22653 1.035042 -0.2823725</span></span></code></pre></div>
+</div>
+<p>Under weights, <code>stdmean</code> divides the standard deviation by the square root of the sum of the weights, not of the number of observations.</p>
+</section><section class="level3"><h3 id="tests-for-location-and-normality">Tests for Location and Normality<a class="anchor" aria-label="anchor" href="#tests-for-location-and-normality"></a>
+</h3>
+<p><code>mu0</code> is SAS <code>MU0=</code>, the null value for the three location tests:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb29"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/proc_univariate.html">proc_univariate</a></span><span class="op">(</span><span class="va">dta</span>, vars <span class="op">=</span> <span class="st">"bmi"</span>, mu0 <span class="op">=</span> <span class="fl">25</span>,</span>
+<span>                stats <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mean"</span>, <span class="st">"t"</span>, <span class="st">"probt"</span>, <span class="st">"msign"</span>, <span class="st">"probm"</span>,</span>
+<span>                          <span class="st">"signrank"</span>, <span class="st">"probs"</span>, <span class="st">"normal"</span>, <span class="st">"probn"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   variable                   label    mean        t        probt msign</span></span>
+<span><span class="co">#&gt; 1      bmi Body mass index (kg/m2) 26.7885 5.324349 2.722644e-07    29</span></span>
+<span><span class="co">#&gt;          probm signrank        probs    normal     probn</span></span>
+<span><span class="co">#&gt; 1 4.544338e-05     3978 3.971077e-07 0.9954021 0.8071198</span></span></code></pre></div>
+</div>
+<p><code>t</code> is Student’s t, <code>msign</code> the sign test and <code>signrank</code> the Wilcoxon signed rank test, with an exact p-value when 20 or fewer values differ from <code>mu0</code>. <code>normal</code> is the Shapiro-Wilk statistic.</p>
+<p>Three limits come from SAS. Under <code>weights</code>, SAS computes only the t test, so the sign, signed rank and normality columns are <code>NA</code>. Above 2000 observations SAS replaces Shapiro-Wilk with a Kolmogorov D test, which is not ported, so <code>normal</code> and <code>probn</code> are <code>NA</code> there and the call warns once. And R’s <code><a href="https://rdrr.io/r/stats/shapiro.test.html" class="external-link">shapiro.test()</a></code> implements a later revision of the algorithm than SAS does: <code>normal</code> agrees with SAS to about eight decimal places, and <code>probn</code> slightly less closely.</p>
 </section></section><section class="level2"><h2 id="did-the-extract-change-compare_datasets">Did the Extract Change? <code>compare_datasets()</code>
 <a class="anchor" aria-label="anchor" href="#did-the-extract-change-compare_datasets"></a>
 </h2>
 <p><code>PROC CONTENTS</code> on the old file, <code>PROC CONTENTS</code> on the new one, then read the two listings side by side looking for what moved. <code><a href="../reference/compare_datasets.html">compare_datasets()</a></code> does the reading for you:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb25"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb30"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">v1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/generate_survival_data.html">generate_survival_data</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">100</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
 <span><span class="va">v2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/generate_survival_data.html">generate_survival_data</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">120</span>, seed <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
 <span></span>
@@ -424,7 +494,7 @@ run;</code></pre>
 <p>It reports four kinds of drift: row count, columns added or dropped, class changes on shared columns, and label changes on shared columns. The last one matters more than it sounds. A label that changes from “Baseline eGFR” to “eGFR at discharge” is the same column name measuring a different thing, and nothing but the label will tell you.</p>
 <p>The full result is a list, so you can act on any piece programmatically:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb26"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb31"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">diff</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/compare_datasets.html">compare_datasets</a></span><span class="op">(</span><span class="va">v1</span>, <span class="va">v2</span><span class="op">)</span></span>
 <span><span class="va">diff</span><span class="op">$</span><span class="va">cols_added</span></span>
 <span><span class="co">#&gt; [1] "creatinine"</span></span>
@@ -529,6 +599,46 @@ run;</code></pre>
 </tr>
 <tr class="even">
 <td>
+<code>PROC UNIVARIATE</code> quantiles under <code>WEIGHT</code>
+</td>
+<td>Weighted, <code>PCTLDEF=</code> ignored</td>
+<td>Weighted, same rule</td>
+</tr>
+<tr class="odd">
+<td>
+<code>PROC UNIVARIATE</code> <code>PCTLDEF=</code>
+</td>
+<td>1 to 5</td>
+<td>5 only</td>
+</tr>
+<tr class="even">
+<td>
+<code>PROC UNIVARIATE</code> non-positive weights</td>
+<td>Negative treated as zero, observation still counted</td>
+<td>Error</td>
+</tr>
+<tr class="odd">
+<td>
+<code>PROC UNIVARIATE</code> normality above 2000 observations</td>
+<td>Kolmogorov D</td>
+<td>
+<code>NA</code>, with a warning</td>
+</tr>
+<tr class="even">
+<td>
+<code>PROC UNIVARIATE</code> Shapiro-Wilk</td>
+<td>Royston (1992)</td>
+<td>Royston (1995), through <code><a href="https://rdrr.io/r/stats/shapiro.test.html" class="external-link">shapiro.test()</a></code>
+</td>
+</tr>
+<tr class="odd">
+<td>
+<code>PROC UNIVARIATE</code> plots, printed tables, confidence limits, robust estimators</td>
+<td>Available</td>
+<td>Not ported</td>
+</tr>
+<tr class="even">
+<td>
 <code>PROC CONTENTS</code> sort</td>
 <td>Alphabetic by default</td>
 <td>
@@ -575,12 +685,15 @@ run;</code></pre>
 <li><label><input type="checkbox">Declare ordered clinical scales as ordered factors so <code>class</code> output keeps its clinical sequence.</label></li>
 <li><label><input type="checkbox">Set <code>list</code> to match the SAS step you are reproducing; from three variables on it changes <code>Percent</code>, not just the layout.</label></li>
 <li><label><input type="checkbox">Read <code>attr(, "frequency_missing")</code> when you leave <code>missing = FALSE</code>.</label></li>
+<li><label><input type="checkbox">Use <code><a href="../reference/proc_univariate.html">proc_univariate()</a></code>, not <code><a href="../reference/proc_means.html">proc_means()</a></code>, for percentiles from a weighted step; <code><a href="../reference/proc_means.html">proc_means()</a></code> quantiles ignore the weights.</label></li>
+<li><label><input type="checkbox">Carry <code>VARDEF=</code> across as <code>vardef</code>, and expect <code>NA</code> where SAS leaves a statistic missing under it.</label></li>
+<li><label><input type="checkbox">Read an <code>NA</code> in <code>normal</code> above 2000 observations as “not computed”, not as a test result.</label></li>
 <li><label><input type="checkbox">Run <code><a href="../reference/compare_datasets.html">compare_datasets()</a></code> on every re-pull, and check <code>label_changes</code>, not just the column counts.</label></li>
 </ul></section><section class="level2"><h2 id="see-also">See Also<a class="anchor" aria-label="anchor" href="#see-also"></a>
 </h2>
 <ul>
 <li>
-<code><a href="../reference/proc_contents.html">?proc_contents</a></code>, <code><a href="../reference/proc_means.html">?proc_means</a></code>, <code><a href="../reference/proc_freq.html">?proc_freq</a></code>, <code><a href="../reference/compare_datasets.html">?compare_datasets</a></code>
+<code><a href="../reference/proc_contents.html">?proc_contents</a></code>, <code><a href="../reference/proc_means.html">?proc_means</a></code>, <code><a href="../reference/proc_freq.html">?proc_freq</a></code>, <code><a href="../reference/proc_univariate.html">?proc_univariate</a></code>, <code><a href="../reference/compare_datasets.html">?compare_datasets</a></code>
 </li>
 <li>
 <a href="dataset-versioning.html">Dataset Version Tracking</a> for the manifest system that pairs with <code><a href="../reference/compare_datasets.html">compare_datasets()</a></code>
