@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.12</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,6 +55,22 @@
       <small>Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.2.0" id="hvtirutilities-120">hvtiRutilities 1.2.0<a class="anchor" aria-label="anchor" href="#hvtirutilities-120"></a></h2>
+<div class="section level3">
+<h3 id="new-features-1-2-0">New features<a class="anchor" aria-label="anchor" href="#new-features-1-2-0"></a></h3>
+<ul><li><p><strong><code><a href="../reference/proc_univariate.html">proc_univariate()</a></code> ports the SAS <code>PROC UNIVARIATE</code> output statistics.</strong> Weighted and decimal percentiles (<code>pctlpts</code>, <code>pctlpre</code>), <code>vardef</code>, <code>mu0</code>, <code>stdmean</code>, and the tests for location (<code>t</code>, <code>msign</code>, <code>signrank</code>) and normality (Shapiro-Wilk), checked against SAS 9.4 output. With <code>weights</code> the quantiles are weighted, unlike <code><a href="../reference/proc_means.html">proc_means()</a></code>. Statistics SAS leaves missing are <code>NA</code>. Normality above 2000 observations is <code>NA</code> with a warning, because SAS switches to a Kolmogorov D test there, which is not ported. Non-positive weights are an error. <code><a href="../reference/proc_means.html">proc_means()</a></code> now shares its statistic engine with <code><a href="../reference/proc_univariate.html">proc_univariate()</a></code>; its results are unchanged.</p></li>
+<li><p><strong><code><a href="../reference/proc_freq.html">proc_freq()</a></code> ports SAS <code>PROC FREQ</code> frequency tables.</strong> One-way and n-way tables with the <code>MISSING</code> and <code>LIST</code> options, cell, row and column percentages, cumulative columns, and <code>WEIGHT</code>. Missing values sort first and character levels by byte value, as in SAS. From three variables on, a crosstab computes <code>Percent</code> within stratum and a list table out of the grand total, so <code>list</code> changes the numbers, not only the layout. Excluded missing rows are counted in <code>attr(, "frequency_missing")</code>. Tests of association are not ported. Blank character values and <code>NaN</code> count as missing, SAS special missing values stay distinct, and codes sharing a value label form one row.</p></li>
+<li><p><code><a href="../reference/study_setup.html">study_setup()</a></code> writes <code>&lt;study&gt;.Rproj</code> when the root has no R project, so opening the project, <code>here::here()</code> and <code><a href="../reference/study_root.html">study_root()</a></code> name the same directory. An existing project is left alone.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-1-2-0">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-2-0"></a></h3>
+<ul><li><p><strong><code><a href="../reference/proc_means.html">proc_means()</a></code> now counts missing-weight rows in <code>nobs</code>, as SAS does.</strong> With <code>weights</code>, SAS <code>PROC MEANS</code> and <code>PROC UNIVARIATE</code> compute <code>NOBS</code> as <code>N + NMISS</code> plus the observations excluded for a missing weight. <code><a href="../reference/proc_means.html">proc_means()</a></code> dropped those rows before counting, so <code>nobs</code> was too low. A class level whose every weight is missing now keeps its row, with <code>n</code> of 0, as SAS <code>PROC MEANS</code> prints it. Every other statistic is unchanged.</p></li>
+<li><p><strong><code><a href="../reference/proc_means.html">proc_means()</a></code> weighted <code>stderr</code> now divides by the square root of the sum of the weights, as SAS does.</strong> It divided by the square root of the count, so every weighted <code>stderr</code> was wrong unless the weights summed to the count. Confirmed against SAS 9.4 <code>PROC MEANS</code> and <code>PROC UNIVARIATE</code>.</p></li>
+<li><p><strong><code><a href="../reference/proc_means.html">proc_means()</a></code> returns a single observation as its own <code>mode</code>.</strong> It returned <code>NA</code>, as for any sample with no repeated value; SAS reports the value.</p></li>
+<li><p><code><a href="../reference/proc_freq.html">proc_freq()</a></code> no longer returns <code>NA</code> frequencies and percentages when integer weights sum past <code>.Machine$integer.max</code>. Weights are summed as doubles, so a weighted <code>frequency_missing</code> is double for integer weights too.</p></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.1.12" id="hvtirutilities-1112">hvtiRutilities 1.1.12<a class="anchor" aria-label="anchor" href="#hvtirutilities-1112"></a></h2>
 <div class="section level3">

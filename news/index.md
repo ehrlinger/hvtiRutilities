@@ -1,5 +1,70 @@
 # Changelog
 
+## hvtiRutilities 1.2.0
+
+### New features
+
+- **[`proc_univariate()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_univariate.md)
+  ports the SAS `PROC UNIVARIATE` output statistics.** Weighted and
+  decimal percentiles (`pctlpts`, `pctlpre`), `vardef`, `mu0`,
+  `stdmean`, and the tests for location (`t`, `msign`, `signrank`) and
+  normality (Shapiro-Wilk), checked against SAS 9.4 output. With
+  `weights` the quantiles are weighted, unlike
+  [`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md).
+  Statistics SAS leaves missing are `NA`. Normality above 2000
+  observations is `NA` with a warning, because SAS switches to a
+  Kolmogorov D test there, which is not ported. Non-positive weights are
+  an error.
+  [`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
+  now shares its statistic engine with
+  [`proc_univariate()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_univariate.md);
+  its results are unchanged.
+
+- **[`proc_freq()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_freq.md)
+  ports SAS `PROC FREQ` frequency tables.** One-way and n-way tables
+  with the `MISSING` and `LIST` options, cell, row and column
+  percentages, cumulative columns, and `WEIGHT`. Missing values sort
+  first and character levels by byte value, as in SAS. From three
+  variables on, a crosstab computes `Percent` within stratum and a list
+  table out of the grand total, so `list` changes the numbers, not only
+  the layout. Excluded missing rows are counted in
+  `attr(, "frequency_missing")`. Tests of association are not ported.
+  Blank character values and `NaN` count as missing, SAS special missing
+  values stay distinct, and codes sharing a value label form one row.
+
+- [`study_setup()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md)
+  writes `<study>.Rproj` when the root has no R project, so opening the
+  project, `here::here()` and
+  [`study_root()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_root.md)
+  name the same directory. An existing project is left alone.
+
+### Bug fixes
+
+- **[`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
+  now counts missing-weight rows in `nobs`, as SAS does.** With
+  `weights`, SAS `PROC MEANS` and `PROC UNIVARIATE` compute `NOBS` as
+  `N + NMISS` plus the observations excluded for a missing weight.
+  [`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
+  dropped those rows before counting, so `nobs` was too low. A class
+  level whose every weight is missing now keeps its row, with `n` of 0,
+  as SAS `PROC MEANS` prints it. Every other statistic is unchanged.
+
+- **[`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
+  weighted `stderr` now divides by the square root of the sum of the
+  weights, as SAS does.** It divided by the square root of the count, so
+  every weighted `stderr` was wrong unless the weights summed to the
+  count. Confirmed against SAS 9.4 `PROC MEANS` and `PROC UNIVARIATE`.
+
+- **[`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
+  returns a single observation as its own `mode`.** It returned `NA`, as
+  for any sample with no repeated value; SAS reports the value.
+
+- [`proc_freq()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_freq.md)
+  no longer returns `NA` frequencies and percentages when integer
+  weights sum past `.Machine$integer.max`. Weights are summed as
+  doubles, so a weighted `frequency_missing` is double for integer
+  weights too.
+
 ## hvtiRutilities 1.1.12
 
 ### New features
