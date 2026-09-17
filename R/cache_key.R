@@ -237,9 +237,12 @@
 # pkg::fn (already excluded by the walk itself). Names that do not resolve
 # (column names under non-standard evaluation) are skipped. A value carrying
 # a cache key (attribute "hvtiRutilities_cache_key", attached by cache_fit())
-# is digested by that key instead of itself: the key is stable by
-# construction, so a downstream key does not go stale between a live upstream
-# object and the detached copy readRDS() returns on a later cache hit. A
+# is digested by that key's compared fields (.cache_key_fields) instead of
+# the whole key or the value itself: the key is stable by construction, so a
+# downstream key does not go stale between a live upstream object and the
+# detached copy readRDS() returns on a later cache hit, and does not go stale
+# across an R version bump either, since r_version/reproducible (deliberately
+# excluded from .cache_key_fields, see .cache_key()) are excluded here too. A
 # function is digested by its body when it is user-defined (global); a
 # package function is skipped here and covered by .cache_packages() instead.
 .cache_inputs <- function(code, env) {
@@ -256,7 +259,7 @@
     }
     cache_key <- attr(value, "hvtiRutilities_cache_key")
     out[[v]] <- if (!is.null(cache_key)) {
-      .cache_digest(cache_key)
+      .cache_digest(cache_key[.cache_key_fields])
     } else {
       .cache_digest(value)
     }

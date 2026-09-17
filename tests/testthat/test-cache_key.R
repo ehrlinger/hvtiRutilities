@@ -215,6 +215,36 @@ test_that("assign-then-use in the same block leaves no free input", {
   expect_length(inputs, 0L)
 })
 
+test_that("digesting an upstream key ignores r_version and reproducible", {
+  key1 <- list(code = "sum(d)", inputs = list(d = "aaa"), packages = list(),
+              seed = NULL, reproducible = TRUE,
+              r_version = "R version 4.4.0 (2024-04-24)")
+  key2 <- key1
+  key2$r_version <- "R version 4.5.0 (2025-04-01)"
+  key2$reproducible <- FALSE
+
+  env <- new.env()
+  code <- quote(sum(up))
+
+  env$up <- structure(1:3, hvtiRutilities_cache_key = key1)
+  d1 <- hvtiRutilities:::.cache_inputs(code, env)$up
+  env$up <- structure(1:3, hvtiRutilities_cache_key = key2)
+  d2 <- hvtiRutilities:::.cache_inputs(code, env)$up
+  expect_identical(d1, d2)
+
+  key3 <- key1
+  key3$inputs$d <- "zzz"
+  env$up <- structure(1:3, hvtiRutilities_cache_key = key3)
+  d3 <- hvtiRutilities:::.cache_inputs(code, env)$up
+  expect_false(identical(d1, d3))
+
+  key4 <- key1
+  key4$code <- "sum(d) + 1"
+  env$up <- structure(1:3, hvtiRutilities_cache_key = key4)
+  d4 <- hvtiRutilities:::.cache_inputs(code, env)$up
+  expect_false(identical(d1, d4))
+})
+
 test_that(".cache_digest ignores a session serializeVersion option", {
   value <- list(a = 1, b = "x")
   d1 <- hvtiRutilities:::.cache_digest(value)
