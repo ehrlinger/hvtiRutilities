@@ -40,6 +40,11 @@ initialization file.
 
 Data are deliberately not required. Call \code{\link{register_data}} after
 the default or a named dataset exists.
+
+When the root holds no \code{.Rproj} file, one named for the root
+directory is written, so that opening the project and
+\code{\link{study_root}} agree on the study root. An existing project is
+left unchanged.
 }
 \seealso{
 \code{\link{study_status}}, \code{\link{study_config}},

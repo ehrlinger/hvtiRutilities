@@ -12,6 +12,10 @@
   not ported. Blank character values and `NaN` count as missing, SAS special
   missing values stay distinct, and codes sharing a value label form one row.
 
+* `study_setup()` writes `<study>.Rproj` when the root has no R project, so
+  opening the project, `here::here()` and `study_root()` name the same
+  directory. An existing project is left alone.
+
 # hvtiRutilities 1.1.12
 
 ## New features
