@@ -56,6 +56,8 @@ versions
   : Describe a dataset's variables, in the style of SAS PROC CONTENTS
 - [`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
   : Summarise numeric variables, in the style of SAS PROC MEANS
+- [`proc_freq()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_freq.md)
+  : Frequency tables, in the style of SAS PROC FREQ
 - [`compare_datasets()`](https://ehrlinger.github.io/hvtiRutilities/reference/compare_datasets.md)
   : Compare two versions of a dataset
 

@@ -1,4 +1,4 @@
-# PROC CONTENTS and PROC MEANS in R
+# PROC CONTENTS, PROC MEANS and PROC FREQ in R
 
 ``` r
 
@@ -14,25 +14,28 @@ if (requireNamespace("hvtiRutilities", quietly = TRUE)) {
 #> 
 ```
 
-## Two Procedures You Already Run
+## Three Procedures You Already Run
 
-Open a new extract in SAS and you almost certainly run two things before
-anything else. `PROC CONTENTS` to see what arrived: how many
+Open a new extract in SAS and you almost certainly run three things
+before anything else. `PROC CONTENTS` to see what arrived: how many
 observations, how many variables, what each one is called and how it is
-stored. Then `PROC MEANS` to see whether the numbers are plausible:
-means, ranges, how much is missing.
+stored. `PROC MEANS` to see whether the numbers are plausible: means,
+ranges, how much is missing. And `PROC FREQ` to see whether the
+categories look right: how many died, how the cohort splits across the
+groups you will compare.
 
-Neither is a modelling step. They are the sanity check you do before you
-trust the file enough to analyse it.
-[`proc_contents()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_contents.md)
-and
+None of them is a modelling step. They are the sanity check you do
+before you trust the file enough to analyse it.
+[`proc_contents()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_contents.md),
 [`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
-are those two habits, kept intact in R.
+and
+[`proc_freq()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_freq.md)
+are those three habits, kept intact in R.
 
 The point is not that R lacks a way to describe a data frame. It has
-several. The point is that you already know what these two tables should
-look like, and when the R version prints the same numbers in the same
-shape, you can tell at a glance whether the extract is right. A
+several. The point is that you already know what these three tables
+should look like, and when the R version prints the same numbers in the
+same shape, you can tell at a glance whether the extract is right. A
 different summary in a different layout makes you re-learn what “normal”
 looks like.
 
@@ -367,6 +370,120 @@ proc_means(flags, vars = "complication", stats = c("n", "mean", "sum"))
 #> 1 complication complication 5  0.6   3
 ```
 
+## Do the Categories Look Right? `proc_freq()`
+
+The SAS step
+
+``` sas
+proc freq data=cohort;
+  table dead / missing;
+  table sex * dead;
+run;
+```
+
+is two calls in R, one per `TABLES` statement:
+
+``` r
+
+proc_freq(dta, "dead", missing = TRUE)
+#>   dead Frequency Percent Cum_Frequency Cum_Percent
+#> 1    0        92      46            92          46
+#> 2    1       108      54           200         100
+```
+
+``` r
+
+proc_freq(dta, c("sex", "dead"))
+#>      sex dead Frequency Percent Row_Percent Col_Percent
+#> 1 Female    0        34    17.0    44.15584    36.95652
+#> 2 Female    1        43    21.5    55.84416    39.81481
+#> 3   Male    0        58    29.0    47.15447    63.04348
+#> 4   Male    1        65    32.5    52.84553    60.18519
+```
+
+The result is always a data frame with one row per combination of
+levels, so you can filter or join it. For a crosstab, `Row_Percent` and
+`Col_Percent` replace the cumulative columns. Add `list = TRUE` for the
+`/ LIST` layout:
+
+``` r
+
+proc_freq(dta, c("sex", "dead"), list = TRUE)
+#>      sex dead Frequency Percent Cum_Frequency Cum_Percent
+#> 1 Female    0        34    17.0            34        17.0
+#> 2 Female    1        43    21.5            77        38.5
+#> 3   Male    0        58    29.0           135        67.5
+#> 4   Male    1        65    32.5           200       100.0
+```
+
+### Missing Values
+
+Without `missing = TRUE`, rows with a missing value in any table
+variable are left out of the table and out of every percentage, as in
+SAS. SAS prints how many it dropped as “Frequency Missing”.
+[`proc_freq()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_freq.md)
+keeps that count in an attribute, so it is not lost:
+
+``` r
+
+dta_na <- dta
+dta_na$nyha_class[c(3, 17, 40)] <- NA
+
+res <- proc_freq(dta_na, "nyha_class")
+res
+#>   nyha_class Frequency   Percent Cum_Frequency Cum_Percent
+#> 1          I        46 23.350254            46    23.35025
+#> 2         II        67 34.010152           113    57.36041
+#> 3        III        66 33.502538           179    90.86294
+#> 4         IV        18  9.137056           197   100.00000
+attr(res, "frequency_missing")
+#> [1] 3
+```
+
+With `missing = TRUE`, the missing level comes **first**, because SAS
+sorts missing below every other value.
+[`dplyr::count()`](https://dplyr.tidyverse.org/reference/count.html)
+puts `NA` last, which changes every cumulative column in a hand
+translation.
+
+### The Denominator Trap
+
+This is the
+[`proc_freq()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_freq.md)
+counterpart of the quartile trap: the numbers move and nothing warns
+you.
+
+For two variables, `Percent` is out of the table total whichever layout
+you ask for. From three variables on, a SAS crosstab prints one table
+per level of the first variable and computes `Percent` **within** that
+table. `/ LIST` computes it out of the grand total. Four patients show
+it:
+
+``` r
+
+d <- data.frame(site = c(1, 1, 1, 2),
+                arm  = c("x", "x", "y", "x"),
+                dead = c(0, 1, 0, 0))
+
+proc_freq(d, c("site", "arm", "dead"))
+#>   site arm dead Frequency   Percent Row_Percent Col_Percent
+#> 1    1   x    0         1  33.33333          50          50
+#> 2    1   x    1         1  33.33333          50         100
+#> 3    1   y    0         1  33.33333         100          50
+#> 4    2   x    0         1 100.00000         100         100
+
+proc_freq(d, c("site", "arm", "dead"), list = TRUE)
+#>   site arm dead Frequency Percent Cum_Frequency Cum_Percent
+#> 1    1   x    0         1      25             1          25
+#> 2    1   x    1         1      25             2          50
+#> 3    1   y    0         1      25             3          75
+#> 4    2   x    0         1      25             4         100
+```
+
+The same site 2 patient is 100 percent of the crosstab and 25 percent of
+the list. Both are what SAS prints; they answer different questions.
+Match the option in the SAS step you are reproducing.
+
 ## Did the Extract Change? `compare_datasets()`
 
 `PROC CONTENTS` on the old file, `PROC CONTENTS` on the new one, then
@@ -429,6 +546,14 @@ so you can check the list rather than discover an entry mid-analysis.
 | Variables with no `VAR` statement | All numeric | All numeric (logicals excluded unless named) |
 | Missing class levels | Dropped unless `MISSING` | Dropped |
 | Class level order | `ORDER=INTERNAL` | Factor level order |
+| `PROC FREQ` missing values | Dropped unless `MISSING`; count printed | Dropped unless `missing = TRUE`; count in `attr(, "frequency_missing")` |
+| `PROC FREQ` level order | `ORDER=INTERNAL`, missing first | Same, missing first |
+| `PROC FREQ` percentages | Rounded for display | Unrounded |
+| `PROC FREQ` blank character values | Missing | Missing |
+| `PROC FREQ` codes sharing a value label | One row | One row, at the smallest code |
+| `PROC FREQ` unlabelled doubles | Grouped on the printed value | Grouped on the exact value |
+| `PROC FREQ` non-positive weights | Zero dropped, negative ignored | Error |
+| `PROC FREQ` tests (`CHISQ`, `FISHER`, …) | Available | Not ported |
 | `PROC CONTENTS` sort | Alphabetic by default | `order = "alpha"` by default |
 | `Len`, `Pos`, `Informat` | Reported | Omitted, not recoverable through `haven` |
 | Created / modified timestamps | Reported | Omitted, not recoverable through `haven` |
@@ -457,6 +582,11 @@ quartiles rather than a bare
 Declare ordered clinical scales as ordered factors so `class` output
 keeps its clinical sequence.
 
+Set `list` to match the SAS step you are reproducing; from three
+variables on it changes `Percent`, not just the layout.
+
+Read `attr(, "frequency_missing")` when you leave `missing = FALSE`.
+
 Run
 [`compare_datasets()`](https://ehrlinger.github.io/hvtiRutilities/reference/compare_datasets.md)
 on every re-pull, and check `label_changes`, not just the column counts.
@@ -465,6 +595,7 @@ on every re-pull, and check `label_changes`, not just the column counts.
 
 - [`?proc_contents`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_contents.md),
   [`?proc_means`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md),
+  [`?proc_freq`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_freq.md),
   [`?compare_datasets`](https://ehrlinger.github.io/hvtiRutilities/reference/compare_datasets.md)
 - [Dataset Version
   Tracking](https://ehrlinger.github.io/hvtiRutilities/articles/dataset-versioning.md)

@@ -14,7 +14,7 @@
 
 ### SAS Migration
 
-- [PROC CONTENTS and PROC MEANS in
+- [PROC CONTENTS, PROC MEANS and PROC FREQ in
   R](https://ehrlinger.github.io/hvtiRutilities/articles/sas-procedures.md):
 
 ### Specialized Topics

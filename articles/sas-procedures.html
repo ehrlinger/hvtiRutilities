@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>PROC CONTENTS and PROC MEANS in R • hvtiRutilities</title>
+<title>PROC CONTENTS, PROC MEANS and PROC FREQ in R • hvtiRutilities</title>
 <script src="../lightswitch.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Outfit-0.4.10/font.css" rel="stylesheet">
@@ -14,7 +14,7 @@
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><script src="sas-procedures_files/libs/quarto-html/popper.min.js"></script><script src="sas-procedures_files/libs/quarto-html/tippy.umd.min.js"></script><link href="sas-procedures_files/libs/quarto-html/tippy.css" rel="stylesheet">
 <link href="sas-procedures_files/libs/quarto-html/light-border.css" rel="stylesheet">
-<!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="PROC CONTENTS and PROC MEANS in R">
+<!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="PROC CONTENTS, PROC MEANS and PROC FREQ in R">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -77,7 +77,7 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
 
-      <h1>PROC CONTENTS and PROC MEANS in R</h1>
+      <h1>PROC CONTENTS, PROC MEANS and PROC FREQ in R</h1>
 
       <p class="author">John Ehrlinger</p>
       <p class="date">2026-09-17</p>
@@ -104,11 +104,11 @@
 <span><span class="co">#&gt;  Type hvtiRutilities.news() to see new features, changes, and bug fixes. </span></span>
 <span><span class="co">#&gt; </span></span></code></pre></div>
 </div>
-<section class="level2"><h2 id="two-procedures-you-already-run">Two Procedures You Already Run<a class="anchor" aria-label="anchor" href="#two-procedures-you-already-run"></a>
+<section class="level2"><h2 id="three-procedures-you-already-run">Three Procedures You Already Run<a class="anchor" aria-label="anchor" href="#three-procedures-you-already-run"></a>
 </h2>
-<p>Open a new extract in SAS and you almost certainly run two things before anything else. <code>PROC CONTENTS</code> to see what arrived: how many observations, how many variables, what each one is called and how it is stored. Then <code>PROC MEANS</code> to see whether the numbers are plausible: means, ranges, how much is missing.</p>
-<p>Neither is a modelling step. They are the sanity check you do before you trust the file enough to analyse it. <code><a href="../reference/proc_contents.html">proc_contents()</a></code> and <code><a href="../reference/proc_means.html">proc_means()</a></code> are those two habits, kept intact in R.</p>
-<p>The point is not that R lacks a way to describe a data frame. It has several. The point is that you already know what these two tables should look like, and when the R version prints the same numbers in the same shape, you can tell at a glance whether the extract is right. A different summary in a different layout makes you re-learn what “normal” looks like.</p>
+<p>Open a new extract in SAS and you almost certainly run three things before anything else. <code>PROC CONTENTS</code> to see what arrived: how many observations, how many variables, what each one is called and how it is stored. <code>PROC MEANS</code> to see whether the numbers are plausible: means, ranges, how much is missing. And <code>PROC FREQ</code> to see whether the categories look right: how many died, how the cohort splits across the groups you will compare.</p>
+<p>None of them is a modelling step. They are the sanity check you do before you trust the file enough to analyse it. <code><a href="../reference/proc_contents.html">proc_contents()</a></code>, <code><a href="../reference/proc_means.html">proc_means()</a></code> and <code><a href="../reference/proc_freq.html">proc_freq()</a></code> are those three habits, kept intact in R.</p>
+<p>The point is not that R lacks a way to describe a data frame. It has several. The point is that you already know what these three tables should look like, and when the R version prints the same numbers in the same shape, you can tell at a glance whether the extract is right. A different summary in a different layout makes you re-learn what “normal” looks like.</p>
 <p>We will use the simulated cardiac surgery cohort that ships with the package, so every example here runs as written:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb2"><pre class="downlit sourceCode r">
@@ -323,12 +323,91 @@ run;</code></pre>
 <span><span class="co">#&gt;       variable        label n mean sum</span></span>
 <span><span class="co">#&gt; 1 complication complication 5  0.6   3</span></span></code></pre></div>
 </div>
+</section></section><section class="level2"><h2 id="do-the-categories-look-right-proc_freq">Do the Categories Look Right? <code>proc_freq()</code>
+<a class="anchor" aria-label="anchor" href="#do-the-categories-look-right-proc_freq"></a>
+</h2>
+<p>The SAS step</p>
+<pre class="sas"><code>proc freq data=cohort;
+  table dead / missing;
+  table sex * dead;
+run;</code></pre>
+<p>is two calls in R, one per <code>TABLES</code> statement:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/proc_freq.html">proc_freq</a></span><span class="op">(</span><span class="va">dta</span>, <span class="st">"dead"</span>, missing <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   dead Frequency Percent Cum_Frequency Cum_Percent</span></span>
+<span><span class="co">#&gt; 1    0        92      46            92          46</span></span>
+<span><span class="co">#&gt; 2    1       108      54           200         100</span></span></code></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/proc_freq.html">proc_freq</a></span><span class="op">(</span><span class="va">dta</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"sex"</span>, <span class="st">"dead"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt;      sex dead Frequency Percent Row_Percent Col_Percent</span></span>
+<span><span class="co">#&gt; 1 Female    0        34    17.0    44.15584    36.95652</span></span>
+<span><span class="co">#&gt; 2 Female    1        43    21.5    55.84416    39.81481</span></span>
+<span><span class="co">#&gt; 3   Male    0        58    29.0    47.15447    63.04348</span></span>
+<span><span class="co">#&gt; 4   Male    1        65    32.5    52.84553    60.18519</span></span></code></pre></div>
+</div>
+<p>The result is always a data frame with one row per combination of levels, so you can filter or join it. For a crosstab, <code>Row_Percent</code> and <code>Col_Percent</code> replace the cumulative columns. Add <code>list = TRUE</code> for the <code>/ LIST</code> layout:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/proc_freq.html">proc_freq</a></span><span class="op">(</span><span class="va">dta</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"sex"</span>, <span class="st">"dead"</span><span class="op">)</span>, list <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="co">#&gt;      sex dead Frequency Percent Cum_Frequency Cum_Percent</span></span>
+<span><span class="co">#&gt; 1 Female    0        34    17.0            34        17.0</span></span>
+<span><span class="co">#&gt; 2 Female    1        43    21.5            77        38.5</span></span>
+<span><span class="co">#&gt; 3   Male    0        58    29.0           135        67.5</span></span>
+<span><span class="co">#&gt; 4   Male    1        65    32.5           200       100.0</span></span></code></pre></div>
+</div>
+<section class="level3"><h3 id="missing-values">Missing Values<a class="anchor" aria-label="anchor" href="#missing-values"></a>
+</h3>
+<p>Without <code>missing = TRUE</code>, rows with a missing value in any table variable are left out of the table and out of every percentage, as in SAS. SAS prints how many it dropped as “Frequency Missing”. <code><a href="../reference/proc_freq.html">proc_freq()</a></code> keeps that count in an attribute, so it is not lost:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb23"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">dta_na</span> <span class="op">&lt;-</span> <span class="va">dta</span></span>
+<span><span class="va">dta_na</span><span class="op">$</span><span class="va">nyha_class</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">17</span>, <span class="fl">40</span><span class="op">)</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="cn">NA</span></span>
+<span></span>
+<span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/proc_freq.html">proc_freq</a></span><span class="op">(</span><span class="va">dta_na</span>, <span class="st">"nyha_class"</span><span class="op">)</span></span>
+<span><span class="va">res</span></span>
+<span><span class="co">#&gt;   nyha_class Frequency   Percent Cum_Frequency Cum_Percent</span></span>
+<span><span class="co">#&gt; 1          I        46 23.350254            46    23.35025</span></span>
+<span><span class="co">#&gt; 2         II        67 34.010152           113    57.36041</span></span>
+<span><span class="co">#&gt; 3        III        66 33.502538           179    90.86294</span></span>
+<span><span class="co">#&gt; 4         IV        18  9.137056           197   100.00000</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">res</span>, <span class="st">"frequency_missing"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 3</span></span></code></pre></div>
+</div>
+<p>With <code>missing = TRUE</code>, the missing level comes <strong>first</strong>, because SAS sorts missing below every other value. <code><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">dplyr::count()</a></code> puts <code>NA</code> last, which changes every cumulative column in a hand translation.</p>
+</section><section class="level3"><h3 id="the-denominator-trap">The Denominator Trap<a class="anchor" aria-label="anchor" href="#the-denominator-trap"></a>
+</h3>
+<p>This is the <code><a href="../reference/proc_freq.html">proc_freq()</a></code> counterpart of the quartile trap: the numbers move and nothing warns you.</p>
+<p>For two variables, <code>Percent</code> is out of the table total whichever layout you ask for. From three variables on, a SAS crosstab prints one table per level of the first variable and computes <code>Percent</code> <strong>within</strong> that table. <code>/ LIST</code> computes it out of the grand total. Four patients show it:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">d</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>site <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span>,</span>
+<span>                arm  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"x"</span>, <span class="st">"x"</span>, <span class="st">"y"</span>, <span class="st">"x"</span><span class="op">)</span>,</span>
+<span>                dead <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">0</span>, <span class="fl">0</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/proc_freq.html">proc_freq</a></span><span class="op">(</span><span class="va">d</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"site"</span>, <span class="st">"arm"</span>, <span class="st">"dead"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   site arm dead Frequency   Percent Row_Percent Col_Percent</span></span>
+<span><span class="co">#&gt; 1    1   x    0         1  33.33333          50          50</span></span>
+<span><span class="co">#&gt; 2    1   x    1         1  33.33333          50         100</span></span>
+<span><span class="co">#&gt; 3    1   y    0         1  33.33333         100          50</span></span>
+<span><span class="co">#&gt; 4    2   x    0         1 100.00000         100         100</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/proc_freq.html">proc_freq</a></span><span class="op">(</span><span class="va">d</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"site"</span>, <span class="st">"arm"</span>, <span class="st">"dead"</span><span class="op">)</span>, list <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   site arm dead Frequency Percent Cum_Frequency Cum_Percent</span></span>
+<span><span class="co">#&gt; 1    1   x    0         1      25             1          25</span></span>
+<span><span class="co">#&gt; 2    1   x    1         1      25             2          50</span></span>
+<span><span class="co">#&gt; 3    1   y    0         1      25             3          75</span></span>
+<span><span class="co">#&gt; 4    2   x    0         1      25             4         100</span></span></code></pre></div>
+</div>
+<p>The same site 2 patient is 100 percent of the crosstab and 25 percent of the list. Both are what SAS prints; they answer different questions. Match the option in the SAS step you are reproducing.</p>
 </section></section><section class="level2"><h2 id="did-the-extract-change-compare_datasets">Did the Extract Change? <code>compare_datasets()</code>
 <a class="anchor" aria-label="anchor" href="#did-the-extract-change-compare_datasets"></a>
 </h2>
 <p><code>PROC CONTENTS</code> on the old file, <code>PROC CONTENTS</code> on the new one, then read the two listings side by side looking for what moved. <code><a href="../reference/compare_datasets.html">compare_datasets()</a></code> does the reading for you:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">v1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/generate_survival_data.html">generate_survival_data</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">100</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
 <span><span class="va">v2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/generate_survival_data.html">generate_survival_data</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">120</span>, seed <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
 <span></span>
@@ -345,7 +424,7 @@ run;</code></pre>
 <p>It reports four kinds of drift: row count, columns added or dropped, class changes on shared columns, and label changes on shared columns. The last one matters more than it sounds. A label that changes from “Baseline eGFR” to “eGFR at discharge” is the same column name measuring a different thing, and nothing but the label will tell you.</p>
 <p>The full result is a list, so you can act on any piece programmatically:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb20"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">diff</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/compare_datasets.html">compare_datasets</a></span><span class="op">(</span><span class="va">v1</span>, <span class="va">v2</span><span class="op">)</span></span>
 <span><span class="va">diff</span><span class="op">$</span><span class="va">cols_added</span></span>
 <span><span class="co">#&gt; [1] "creatinine"</span></span>
@@ -400,6 +479,56 @@ run;</code></pre>
 </tr>
 <tr class="even">
 <td>
+<code>PROC FREQ</code> missing values</td>
+<td>Dropped unless <code>MISSING</code>; count printed</td>
+<td>Dropped unless <code>missing = TRUE</code>; count in <code>attr(, "frequency_missing")</code>
+</td>
+</tr>
+<tr class="odd">
+<td>
+<code>PROC FREQ</code> level order</td>
+<td>
+<code>ORDER=INTERNAL</code>, missing first</td>
+<td>Same, missing first</td>
+</tr>
+<tr class="even">
+<td>
+<code>PROC FREQ</code> percentages</td>
+<td>Rounded for display</td>
+<td>Unrounded</td>
+</tr>
+<tr class="odd">
+<td>
+<code>PROC FREQ</code> blank character values</td>
+<td>Missing</td>
+<td>Missing</td>
+</tr>
+<tr class="even">
+<td>
+<code>PROC FREQ</code> codes sharing a value label</td>
+<td>One row</td>
+<td>One row, at the smallest code</td>
+</tr>
+<tr class="odd">
+<td>
+<code>PROC FREQ</code> unlabelled doubles</td>
+<td>Grouped on the printed value</td>
+<td>Grouped on the exact value</td>
+</tr>
+<tr class="even">
+<td>
+<code>PROC FREQ</code> non-positive weights</td>
+<td>Zero dropped, negative ignored</td>
+<td>Error</td>
+</tr>
+<tr class="odd">
+<td>
+<code>PROC FREQ</code> tests (<code>CHISQ</code>, <code>FISHER</code>, …)</td>
+<td>Available</td>
+<td>Not ported</td>
+</tr>
+<tr class="even">
+<td>
 <code>PROC CONTENTS</code> sort</td>
 <td>Alphabetic by default</td>
 <td>
@@ -444,12 +573,14 @@ run;</code></pre>
 <li><label><input type="checkbox">Read <code>type</code> and <code>class</code> together; <code>type</code> alone cannot distinguish a date from a number.</label></li>
 <li><label><input type="checkbox">Use <code><a href="../reference/proc_means.html">proc_means()</a></code> quartiles rather than a bare <code><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">quantile()</a></code> call, and pass <code>type = 2</code> anywhere else you compute one.</label></li>
 <li><label><input type="checkbox">Declare ordered clinical scales as ordered factors so <code>class</code> output keeps its clinical sequence.</label></li>
+<li><label><input type="checkbox">Set <code>list</code> to match the SAS step you are reproducing; from three variables on it changes <code>Percent</code>, not just the layout.</label></li>
+<li><label><input type="checkbox">Read <code>attr(, "frequency_missing")</code> when you leave <code>missing = FALSE</code>.</label></li>
 <li><label><input type="checkbox">Run <code><a href="../reference/compare_datasets.html">compare_datasets()</a></code> on every re-pull, and check <code>label_changes</code>, not just the column counts.</label></li>
 </ul></section><section class="level2"><h2 id="see-also">See Also<a class="anchor" aria-label="anchor" href="#see-also"></a>
 </h2>
 <ul>
 <li>
-<code><a href="../reference/proc_contents.html">?proc_contents</a></code>, <code><a href="../reference/proc_means.html">?proc_means</a></code>, <code><a href="../reference/compare_datasets.html">?compare_datasets</a></code>
+<code><a href="../reference/proc_contents.html">?proc_contents</a></code>, <code><a href="../reference/proc_means.html">?proc_means</a></code>, <code><a href="../reference/proc_freq.html">?proc_freq</a></code>, <code><a href="../reference/compare_datasets.html">?compare_datasets</a></code>
 </li>
 <li>
 <a href="dataset-versioning.html">Dataset Version Tracking</a> for the manifest system that pairs with <code><a href="../reference/compare_datasets.html">compare_datasets()</a></code>
