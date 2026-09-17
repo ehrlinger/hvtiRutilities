@@ -476,7 +476,7 @@ sessionInfo()
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] vctrs_0.7.3      cli_3.6.6        knitr_1.52       rlang_1.3.0     
-#>  [5] xfun_0.60        otel_0.2.0       forcats_1.0.1    haven_2.5.5     
+#>  [5] xfun_0.61        otel_0.2.0       forcats_1.0.1    haven_2.5.5     
 #>  [9] generics_0.1.4   jsonlite_2.0.0   glue_1.8.1       htmltools_0.5.9 
 #> [13] hms_1.1.4        rmarkdown_2.32   evaluate_1.0.5   tibble_3.3.1    
 #> [17] fastmap_1.2.0    yaml_2.3.12      lifecycle_1.0.5  compiler_4.6.1  
