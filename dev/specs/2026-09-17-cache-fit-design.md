@@ -169,8 +169,13 @@ file exists, differs  -> refit ? compute and overwrite (message) : stop(stale)
 file exists, no key   -> refit ? compute and overwrite           : stop(unkeyed)
 ```
 
-**Global RNG detection.** When `seed` is `NULL`, `cache_fit()` records
-`.Random.seed` before and after the computation. If it changed, the result is
+**Global RNG detection.** When `seed` is `NULL`, `cache_fit()` reads
+`.Random.seed` from the global environment before and after the computation
+with `get0(..., inherits = FALSE)`, which returns `NULL` when the binding does
+not exist yet, as in a fresh session. Absent and present are therefore
+distinct states and neither errors: a computation that draws no random numbers
+compares `NULL` with `NULL`, and one that draws them compares `NULL` with a
+seed vector. If it changed, the result is
 still saved (it was expensive), a warning names the job and advises `seed =`,
 and the key and provenance record `reproducible: false`. randomForestSRC's
 `seed =` argument is part of the code and so already in the key; TemporalHazard,
@@ -189,7 +194,11 @@ Recompute with refit = TRUE, or restore the inputs it was built from.
 ```
 
 **Writes.** `saveRDS()` to a temporary file in `dir`, then provenance, then
-`file.rename()` to promote it. An interrupted render never leaves a partial
+`file.rename()` to promote it. On Windows R's `file.rename()` replaces an
+existing target (`MoveFileEx` with `MOVEFILE_REPLACE_EXISTING`), which the
+`refit = TRUE` tests exercise on every platform CI runs; if the Windows job
+ever shows otherwise, the fallback is `unlink()` then rename, which trades
+atomicity for replacement and must say so. An interrupted render never leaves a partial
 `.rds` that later loads as valid. A failing computation writes nothing and its
 condition propagates unchanged.
 
@@ -201,6 +210,15 @@ nothing cached, so a cached `.rds` never exists without its sidecar. The
 failure stays loud, and the message says the computed result was not kept.
 Provenance is attempted only when `dir` lies inside a study, and the study is
 read leniently (`require_data = FALSE`), matching how the study is detected.
+
+**One writer per cache file.** Promotion is atomic for readers: a reader sees
+either the old file or the new one, never a partial one, and the key stored is
+always the key of the object stored. It does **not** serialise writers. Two
+processes computing the same `name` at once both compute, and the later rename
+wins, so a slower job started with older inputs can end up on disk. That
+result is not silently trusted: its key is its own, so the next call compares
+it against the current inputs and stops as stale. Locking is out of scope; the
+contract is one writer per cache file, which is what a study render is.
 
 **Errors on arguments.** Missing `dir` stops (it is not created silently);
 `name` with a path separator stops; `refit` and `seed` are type-checked.
