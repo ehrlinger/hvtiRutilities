@@ -1,10 +1,10 @@
 ---
-title: "PROC CONTENTS, PROC MEANS and PROC FREQ in R"
+title: "PROC CONTENTS, MEANS, FREQ and UNIVARIATE in R"
 author: "John Ehrlinger"
 date: today
 format: html
 vignette: >
-  %\VignetteIndexEntry{PROC CONTENTS, PROC MEANS and PROC FREQ in R}
+  %\VignetteIndexEntry{PROC CONTENTS, MEANS, FREQ and UNIVARIATE in R}
   %\VignetteEngine{quarto::html}
   %\VignetteEncoding{UTF-8}
 ---
@@ -24,7 +24,7 @@ if (requireNamespace("hvtiRutilities", quietly = TRUE)) {
 }
 ```
 
-## Three Procedures You Already Run
+## Four Procedures You Already Run
 
 Open a new extract in SAS and you almost certainly run three things before
 anything else. `PROC CONTENTS` to see what arrived: how many observations, how
@@ -36,6 +36,10 @@ cohort splits across the groups you will compare.
 None of them is a modelling step. They are the sanity check you do before you
 trust the file enough to analyse it. `proc_contents()`, `proc_means()` and
 `proc_freq()` are those three habits, kept intact in R.
+
+The fourth comes a little later. When a summary needs weights, a percentile
+such as the 2.5th, or a test against a null value, you reach for
+`PROC UNIVARIATE`, and `proc_univariate()` gives you its output data set.
 
 The point is not that R lacks a way to describe a data frame. It has several.
 The point is that you already know what these three tables should look like, and
@@ -350,6 +354,98 @@ The same site 2 patient is 100 percent of the crosstab and 25 percent of the
 list. Both are what SAS prints; they answer different questions. Match the
 option in the SAS step you are reproducing.
 
+## Weighted Percentiles and Tests: `proc_univariate()`
+
+Most `PROC UNIVARIATE` steps in our SAS programs are not after the printed
+report. They write an `OUTPUT` data set with percentiles that `PROC MEANS`
+cannot give: weighted ones, and decimal points such as the 2.5th and 97.5th
+for a bootstrap interval.
+
+```sas
+proc univariate data=cohort noprint;
+  var age;
+  weight wt;
+  output out=pct pctlpts=2.5 16 50 84 97.5 pctlpre=p_;
+run;
+```
+
+In R, `pctlpts` and `pctlpre` are arguments, and each point becomes a column
+named the way SAS names it, with the decimal point turned into an underscore:
+
+```{r univ-pctl}
+wdta <- dta
+wdta$wt <- ifelse(wdta$sex == "Female", 2, 1)
+
+proc_univariate(wdta, vars = "age", stats = c("n", "sumwgt"),
+                weights = "wt", pctlpts = c(2.5, 16, 50, 84, 97.5),
+                pctlpre = "p_")
+```
+
+### Weighted Quantiles Follow a Different Rule
+
+With `weights`, `proc_univariate()` weights `median`, `q1`, `q3`, `qrange`,
+`pNN` and every `pctlpts` column. `proc_means()` does not, because
+`PROC MEANS` does not. The same call can therefore give two medians:
+
+```{r univ-weighted}
+w4 <- data.frame(x = c(1, 2, 3, 4), wt = c(1, 3, 1, 1))
+
+proc_means(w4, vars = "x", stats = "median", weights = "wt")
+
+proc_univariate(w4, vars = "x", stats = "median", weights = "wt")
+```
+
+The weighted rule is not `QNTLDEF=5` with weights added. SAS sorts the values,
+accumulates the weights, and takes the first value whose running weight passes
+the target, here half of the total weight of 6. The running weights are 1, 4,
+5 and 6, so the median is 2. When a running weight lands exactly on the target,
+SAS averages that value and the next one. `PCTLDEF=` has no effect under
+`WEIGHT`, and `proc_univariate()` has no argument for it.
+
+### `VARDEF` Changes More Than the Variance
+
+`vardef` is SAS `VARDEF=`, the divisor of the variance: `"df"` for the
+number of observations minus one, the default; `"n"` for the number of
+observations; `"wdf"` for the sum of the weights minus one; and `"weight"` for
+the sum of the weights. Several of our weighted steps use `VARDEF=WDF`. It
+changes `var`, `std` and `cv`, and it also changes what SAS is willing to
+compute. `t`, `probt` and `stdmean` are missing unless the divisor
+is `DF`, and `skewness` and `kurtosis` are missing under `WDF` and `WEIGHT`.
+`proc_univariate()` returns `NA` in the same places:
+
+```{r univ-vardef}
+proc_univariate(wdta, vars = "age", weights = "wt",
+                stats = c("std", "stdmean", "skewness"), vardef = "wdf")
+
+proc_univariate(wdta, vars = "age", weights = "wt",
+                stats = c("std", "stdmean", "skewness"))
+```
+
+Under weights, `stdmean` divides the standard deviation by the square root of
+the sum of the weights, not of the number of observations.
+
+### Tests for Location and Normality
+
+`mu0` is SAS `MU0=`, the null value for the three location tests:
+
+```{r univ-tests}
+proc_univariate(dta, vars = "bmi", mu0 = 25,
+                stats = c("mean", "t", "probt", "msign", "probm",
+                          "signrank", "probs", "normal", "probn"))
+```
+
+`t` is Student's t, `msign` the sign test and `signrank` the Wilcoxon signed
+rank test, with an exact p-value when 20 or fewer values differ from `mu0`.
+`normal` is the Shapiro-Wilk statistic.
+
+Three limits come from SAS. Under `weights`, SAS computes only the t test, so
+the sign, signed rank and normality columns are `NA`. Above 2000 observations
+SAS replaces Shapiro-Wilk with a Kolmogorov D test, which is not ported, so
+`normal` and `probn` are `NA` there and the call warns once. And R's
+`shapiro.test()` implements a later revision of the algorithm than SAS does:
+`normal` agrees with SAS to about eight decimal places, and `probn` slightly
+less closely.
+
 ## Did the Extract Change? `compare_datasets()`
 
 `PROC CONTENTS` on the old file, `PROC CONTENTS` on the new one, then read the
@@ -407,6 +503,12 @@ can check the list rather than discover an entry mid-analysis.
 | `PROC FREQ` unlabelled doubles | Grouped on the printed value | Grouped on the exact value |
 | `PROC FREQ` non-positive weights | Zero dropped, negative ignored | Error |
 | `PROC FREQ` tests (`CHISQ`, `FISHER`, ...) | Available | Not ported |
+| `PROC UNIVARIATE` quantiles under `WEIGHT` | Weighted, `PCTLDEF=` ignored | Weighted, same rule |
+| `PROC UNIVARIATE` `PCTLDEF=` | 1 to 5 | 5 only |
+| `PROC UNIVARIATE` non-positive weights | Negative treated as zero, observation still counted | Error |
+| `PROC UNIVARIATE` normality above 2000 observations | Kolmogorov D | `NA`, with a warning |
+| `PROC UNIVARIATE` Shapiro-Wilk | Royston (1992) | Royston (1995), through `shapiro.test()` |
+| `PROC UNIVARIATE` plots, printed tables, confidence limits, robust estimators | Available | Not ported |
 | `PROC CONTENTS` sort | Alphabetic by default | `order = "alpha"` by default |
 | `Len`, `Pos`, `Informat` | Reported | Omitted, not recoverable through `haven` |
 | Created / modified timestamps | Reported | Omitted, not recoverable through `haven` |
@@ -428,12 +530,19 @@ can check the list rather than discover an entry mid-analysis.
 - [ ] Set `list` to match the SAS step you are reproducing; from three
       variables on it changes `Percent`, not just the layout.
 - [ ] Read `attr(, "frequency_missing")` when you leave `missing = FALSE`.
+- [ ] Use `proc_univariate()`, not `proc_means()`, for percentiles from a
+      weighted step; `proc_means()` quantiles ignore the weights.
+- [ ] Carry `VARDEF=` across as `vardef`, and expect `NA` where SAS leaves a
+      statistic missing under it.
+- [ ] Read an `NA` in `normal` above 2000 observations as "not computed", not
+      as a test result.
 - [ ] Run `compare_datasets()` on every re-pull, and check `label_changes`,
       not just the column counts.
 
 ## See Also
 
-- `?proc_contents`, `?proc_means`, `?proc_freq`, `?compare_datasets`
+- `?proc_contents`, `?proc_means`, `?proc_freq`, `?proc_univariate`,
+  `?compare_datasets`
 - [Dataset Version Tracking](dataset-versioning.html) for the manifest system
   that pairs with `compare_datasets()`
 - [Data Label Handling Best Practices](data-labels.html) for the labels these

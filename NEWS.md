@@ -2,6 +2,16 @@
 
 ## New features
 
+* **`proc_univariate()` ports the SAS `PROC UNIVARIATE` output statistics.**
+  Weighted and decimal percentiles (`pctlpts`, `pctlpre`), `vardef`, `mu0`,
+  `stdmean`, and the tests for location (`t`, `msign`, `signrank`) and
+  normality (Shapiro-Wilk), checked against SAS 9.4 output. With `weights`
+  the quantiles are weighted, unlike `proc_means()`. Statistics SAS leaves
+  missing are `NA`. Normality above 2000 observations is `NA` with a warning,
+  because SAS switches to a Kolmogorov D test there, which is not ported.
+  Non-positive weights are an error. `proc_means()` now shares its statistic
+  engine with `proc_univariate()`; its results are unchanged.
+
 * **`proc_freq()` ports SAS `PROC FREQ` frequency tables.** One-way and n-way
   tables with the `MISSING` and `LIST` options, cell, row and column
   percentages, cumulative columns, and `WEIGHT`. Missing values sort first and
