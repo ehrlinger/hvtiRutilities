@@ -379,7 +379,10 @@ run;
   quit;
 
   filename _old "&root/out/&scenario..csv";
-  %if %sysfunc(fexist(_old)) %then %let _rc = %sysfunc(fdelete(_old));
+  %if %sysfunc(fexist(_old)) %then %do;
+    %let _rc = %sysfunc(fdelete(_old));
+    %if &_rc ne 0 %then %put ERROR: could not delete stale &scenario..csv.;
+  %end;
   filename _old clear;
 
   data work.fx;
