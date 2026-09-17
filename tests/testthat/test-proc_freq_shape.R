@@ -74,3 +74,14 @@ test_that("a labelled variable's value without a label stays its own row", {
   expect_equal(res$v_label, c("A", NA))
   expect_equal(res$Frequency, c(2L, 1L))
 })
+
+test_that("a variable with variable and value labels keeps both in a crosstab", {
+  d <- data.frame(status = haven::labelled(c(2, 1, 1, 2),
+                                           labels = c(Alive = 1, Dead = 2)),
+                  arm = c("a", "a", "b", "b"))
+  labelled::var_label(d$status) <- "Vital status"
+  res <- proc_freq(d, c("status", "arm"))
+  expect_equal(labelled::var_label(res$status), "Vital status")
+  expect_named(res, c("status", "status_label", "arm", "Frequency",
+                      "Percent", "Row_Percent", "Col_Percent"))
+})

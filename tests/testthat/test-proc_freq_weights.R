@@ -36,3 +36,21 @@ test_that("a non-positive weight is an error naming the row", {
   d <- data.frame(g = c("a", "b"), wt = c(1, 0))
   expect_error(proc_freq(d, "g", weights = "wt"), "row\\(s\\): 2")
 })
+
+test_that("missing = TRUE with weights sums weights of the missing level", {
+  d <- data.frame(g = c("a", NA, "a", NA), wt = c(1, 2, 1, 1))
+  res <- proc_freq(d, "g", weights = "wt", missing = TRUE)
+  expect_equal(res$g, c(NA, "a"))
+  expect_equal(res$Frequency, c(3, 2))
+  expect_equal(res$Percent, c(60, 40))
+  expect_identical(attr(res, "frequency_missing"), 0)
+})
+
+test_that("every weight missing gives zero rows, not an error", {
+  d <- data.frame(g = c("a", "b"), wt = c(NA_real_, NA_real_))
+  res <- proc_freq(d, "g", weights = "wt")
+  expect_equal(nrow(res), 0L)
+  expect_named(res, c("g", "Frequency", "Percent", "Cum_Frequency",
+                      "Cum_Percent"))
+  expect_identical(attr(res, "frequency_missing"), 0)
+})
