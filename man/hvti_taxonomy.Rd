@@ -74,6 +74,44 @@ artifact kind rather than a job type: it holds serialized fits and cached
 results written by one job and read by a later one in the same set, and no
 analysis produces it directly. That row's \code{prefix} is \code{NA}, not a
 string, because there is no prefix to assign it.
+
+\strong{The random forest family splits on the OUTCOME axis, not the
+package axis.} \code{rfs}, \code{rfc} and \code{rfr} name the survival,
+classification and regression outcomes, which is the split
+\code{bh}/\code{bl}/\code{bc}/\code{bn}/\code{bq}/\code{br} and
+\code{pm}/\code{rm}/\code{cm} already use. It is a rename of a distinction
+the corpus draws already, not a new one imposed: the jobs carry the outcome
+in field two today, as \code{tp.rfsrc.survival.R} and its siblings.
+
+\strong{\code{rf} and \code{rfsrc} are retained as legacy umbrella rows.}
+They named the same set as each other, on the package axis, and neither is
+templated. They stay in the table so a census can still resolve the corpus
+that uses them, which is not small: \code{rfsrc} measures 131 studies and
+2,295 jobs, more than \code{rf} (47), \code{rfs} (25) and \code{rfc} (19)
+combined, twice over. Deleting the rows was rejected on two grounds.
+\code{\link{hvti_prefix_folds}} cannot express the demotion, because a fold
+is one-to-one and \code{rfsrc} spans all three outcomes, so there is no
+single prefix to fold it into. And an absent prefix reads to the census as
+one nobody documented, which is the opposite of what a superseded name
+means. Demoted here means \emph{never templated}, and the two rows keep
+distinct descriptions so a census hit on a legacy job can still say which
+spelling it used.
+
+\strong{Do not read the job catalog's \code{disposition: retire} as the
+demotion marker.} \code{rfr} carries it too, and \code{rfr} is templated.
+That field says the legacy SAS and R job is superseded by the \code{gg_*}
+functions, which is true of every row in this family except \code{sid} and
+\code{vt}; it says nothing about whether a template is owed.
+
+\strong{\code{sid} and \code{vt} are filed under \code{analyses} with the
+rest of the family}, and compose on the \code{rf*} jobs rather than
+replacing them. The \code{rfc}/\code{rfs} folder contradiction is
+deliberately NOT settled here: the taxonomy says \code{analyses} while the
+SAS library files them under \code{graphs} and \code{documents}, and the
+2026-08-27 census found the same contradiction corpus-wide for
+\code{ac}/\code{hz}. It is a systemic open question with its own spec owed,
+and the ML batch is not blocked waiting on it. See
+\code{hvtiRtemplates:dev/specs/2026-09-17-ml-family-roadmap-design.md}.
 }
 \examples{
 head(hvti_taxonomy())

@@ -2,6 +2,23 @@
 
 ## New features
 
+* **`hvti_taxonomy()` gains `rfr`, `sid` and `vt`, and the random forest
+  family splits on the outcome axis.** `rfs`, `rfc` and `rfr` name the
+  survival, classification and regression outcomes, matching the split
+  `bh`/`bl`/`bc`/`bn`/`bq`/`br` and `pm`/`rm`/`cm` already use; `rfc` and
+  `rfs` no longer describe themselves as "reporting", which tangled the
+  fit-versus-report axis into a family that splits on outcome. `sid` names
+  unsupervised sidClustering with PAM over K, and `vt` names virtual twins.
+  `rf` and `rfsrc` are **demoted to legacy umbrella rows**: they described the
+  same set as each other on the package axis, no template is written for
+  either, and they stay in the table so a census can still resolve the corpus
+  that uses them, which is 131 studies and 2,295 jobs for `rfsrc` alone. They
+  are deliberately not added to `hvti_prefix_folds()`, because a fold is
+  one-to-one and `rfsrc` spans all three outcomes. The `rfc`/`rfs` folder
+  contradiction is untouched and still owed its own spec. This unblocks the
+  `rf*` template batch in `hvtiRtemplates`, whose job catalog rows for the
+  three new prefixes were waiting on this change.
+
 * **`cache_fit()` caches expensive computations strictly.** A random forest,
   varPro fit, imputation, hazard model or partial dependence grid runs once and
   is reloaded on later renders only while its code, every outside value it
