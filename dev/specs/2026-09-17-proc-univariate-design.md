@@ -164,30 +164,47 @@ All errors use `call. = FALSE` and name the offending input.
 
 `dev/oracle/proc_univariate/` (under `dev/`, so excluded from the build):
 
-- `make_fixtures.R` writes small synthetic CSV fixtures (no PHI), each aimed at
-  one behaviour: ties and values equal to `mu0`; n = 20 and n = 21 (the exact
-  to approximate switch); weights with an exact `S_i = pW` hit and with equal
-  weights; each `vardef`; n = 3, 4 and 2001; a constant column; an all-missing
-  column; class levels.
-- `oracle.sas` reads each fixture and runs
-  `PROC UNIVARIATE NORMAL MU0= VARDEF=` with `WEIGHT` where the scenario needs
-  it, an `OUTPUT OUT=` naming every keyword, and `PCTLPTS= PCTLPRE=`. It
-  writes one CSV per scenario with numeric values formatted `BEST32.` so no
-  precision is lost in transit.
-- The maintainer runs `oracle.sas` and commits the outputs to
-  `tests/testthat/fixtures/proc_univariate/` with a `README.md` recording the
-  SAS version and run date.
+- `make_fixtures.R` writes `fixtures/*.csv` (small synthetic CSVs, no PHI) and
+  `scenarios.csv`, the manifest: one row per SAS run, giving `WEIGHT`,
+  `VARDEF=`, `MU0=`, `CLASS`, and which tests are requested. The fixtures:
+  `basic` (ties and values equal to `mu0`), `basic_w2` (equal weights),
+  `wt_frac` (fractional weights), `wt_exact` (cumulative weights that hit
+  `S_i = pW` exactly), `n1`, `n2` (minimum n), `n3`, `n4` (minimum n for
+  skewness and kurtosis), `n20`, `n21` (either side of the exact
+  signed-rank limit), `const` (a constant column), `allmiss` (an
+  all-missing column), `skewed50`, `n2000`, `n2001` (bracket the
+  Shapiro-Wilk limit), `class3` (three class levels plus a missing class
+  value).
+- `oracle.sas` reads `scenarios.csv` and generates one `PROC UNIVARIATE`
+  run per row with `CALL EXECUTE`, requesting every keyword SAS is
+  expected to compute for that scenario (`NORMAL` and the rank tests off
+  under `WEIGHT`; `T` off under `VARDEF=` other than `DF`), an `OUTPUT
+  OUT=` naming every keyword, and `PCTLPTS= PCTLPRE=`. Two scenarios are
+  optional: they deliberately request statistics the design expects SAS to
+  refuse. It writes one CSV per scenario with numeric values formatted
+  `BEST32.` so no precision is lost in transit.
+- `check_oracle.R` gates the output: every required scenario present with
+  the expected columns and row count, `sas_version.txt` present and
+  non-empty, and a missing optional scenario or column reported as a note,
+  not a failure.
+- The maintainer runs `oracle.sas` on SAS 9.4, runs `check_oracle.R`, and
+  commits `out/` (per-scenario CSVs, `sas_version.txt` with the SAS version
+  and run date, `oracle.log`) to `dev/oracle/proc_univariate/out/`, on
+  `spec/proc-univariate` if PR A is still open, otherwise on a follow-up
+  branch. PR B copies the outputs and fixtures into
+  `tests/testthat/fixtures/proc_univariate/`.
 
 ## Testing
 
 Files by theme: `test-proc_univariate_shape.R`, `_quantiles.R`,
 `_location.R`, `_normality.R`, `_vardef.R`, `_errors.R`, `_parity.R`.
 
-- **Parity.** `_parity.R` reads each SAS output CSV, runs the matching
-  `proc_univariate()` call on the same fixture, and compares every value with
-  `expect_equal(tolerance = 1e-10)`. A looser tolerance for a statistic is
-  allowed only with a written reason in the test (the Shapiro-Wilk p-value is
-  the expected candidate).
+- **Parity.** `_parity.R` reads each committed SAS output CSV (wherever it
+  sits at PR B time, `tests/testthat/fixtures/proc_univariate/`), runs the
+  matching `proc_univariate()` call on the same fixture, and compares every
+  value with `expect_equal(tolerance = 1e-10)`. A looser tolerance for a
+  statistic is allowed only with a written reason in the test (the
+  Shapiro-Wilk p-value is the expected candidate).
 - **Hand-computed literals** pin each formula independently of SAS: weighted
   percentile at and between `S_i = pW`; sign test with values equal to `mu0`;
   signed rank with ties at n <= 20; each `vardef` divisor.
@@ -199,7 +216,9 @@ Files by theme: `test-proc_univariate_shape.R`, `_quantiles.R`,
 ## Delivery
 
 1. **PR A: this spec and the oracle kit.** Ships nothing (`dev/` only), so no
-   NEWS entry. The maintainer runs `oracle.sas` from the branch.
+   NEWS entry. The maintainer runs `oracle.sas` from the branch, gates the
+   output with `check_oracle.R`, and commits `out/` on `spec/proc-univariate`
+   if PR A is still open, otherwise on a follow-up branch.
 2. **Oracle review.** Contradictions with the definitions table are corrected
    in this spec, and only then is PR B's implementation plan written.
 3. **PR B: implementation.** Engine move as its first commit; then
