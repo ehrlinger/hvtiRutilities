@@ -25,6 +25,7 @@ data _null_;
   file "&root/out/sas_version.txt";
   put "&sysvlong";
   put "&sysscp &sysscpl";
+  put "&sysdate9 &systime";
 run;
 
 %macro uni(scenario=, fixture=, weight=0, vardef=DF, mu0=0, class=0,

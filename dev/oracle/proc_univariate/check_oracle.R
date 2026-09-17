@@ -23,8 +23,9 @@ problems <- character()
 notes <- character()
 n_absent <- 0L
 
-if (!file.exists(file.path(out_dir, "sas_version.txt"))) {
-  problems <- c(problems, "out/sas_version.txt is missing")
+version_path <- file.path(out_dir, "sas_version.txt")
+if (!file.exists(version_path) || file.size(version_path) == 0) {
+  problems <- c(problems, "out/sas_version.txt is missing or empty")
 }
 
 for (i in seq_len(nrow(scenarios))) {
@@ -47,8 +48,13 @@ for (i in seq_len(nrow(scenarios))) {
                 if (sc$ranktests == 1L) rank_cols)
   absent <- setdiff(expected, names(res))
   if (length(absent) > 0L) {
-    problems <- c(problems, paste0(sc$scenario, ": missing column(s) ",
-                                   paste(absent, collapse = ", ")))
+    msg <- paste0(sc$scenario, ": missing column(s) ",
+                  paste(absent, collapse = ", "))
+    if (sc$optional == 1L) {
+      notes <- c(notes, paste0(msg, " (optional: SAS refused them)"))
+    } else {
+      problems <- c(problems, msg)
+    }
   }
   want_rows <- if (sc$class == 1L) 3L else 1L
   if (nrow(res) != want_rows) {

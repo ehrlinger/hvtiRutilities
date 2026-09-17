@@ -33,6 +33,8 @@ fixtures <- list(
                         3, 3.5, 4, 4, 5, 6, 7, 7, 8, 10)),
   n21       = fixture(c(-4, -2, -2, -1, 0.5, 1, 1, 2, 2, 2,
                         3, 3.5, 4, 4, 5, 6, 7, 7, 8, 10, 12)),
+  n1        = fixture(3),
+  n2        = fixture(c(1, 4)),
   n3        = fixture(c(1, 2, 4)),
   n4        = fixture(c(1, 2, 4, 8)),
   const     = fixture(rep(5, 6)),
@@ -50,31 +52,73 @@ for (nm in names(fixtures)) {
                    row.names = FALSE, na = "")
 }
 
-## One row per SAS run.
+## One row per SAS run, in the order listed below.
 ## - `ttest`: request T and PROBT. Off under VARDEF other than DF, which SAS
 ##   requires for the t test.
 ## - `ranktests`: request MSIGN, PROBM, SIGNRANK, PROBS and the NORMAL option
 ##   with NORMAL and PROBN. Off under WEIGHT: SAS computes only the t test.
 ## - `optional`: runs that deliberately request what the design expects SAS
 ##   to refuse. A missing output file for them is itself an oracle result.
+## - `n1`/`n2` exercise the minimum n the engine accepts.
+## - `n21_mu0` reuses `n21` with `mu0 = 3`, the fixture's only value equal to
+##   3: it leaves 20 nonzero differences, which settles whether SAS's exact
+##   signed-rank cutoff (n <= 20) counts the dropped zero difference or not.
+## - `wt_exact_mu0` is a weighted t test with `mu0 != 0`.
 scenarios <- data.frame(
   scenario = c("basic", "basic_mu0", "n20", "n21", "n3", "n4", "const",
                "allmiss", "skewed50", "n2000", "n2001", "class3",
                "wt_exact", "wt_equal", "wt_frac",
                "vardef_n", "vardef_n_w", "vardef_wdf_w", "vardef_weight_w",
+               "n1", "n2", "n21_mu0", "wt_exact_mu0",
                "wt_frac_alltests", "vardef_n_alltests"),
   fixture  = c("basic", "basic", "n20", "n21", "n3", "n4", "const",
                "allmiss", "skewed50", "n2000", "n2001", "class3",
                "wt_exact", "basic_w2", "wt_frac",
                "basic", "wt_frac", "wt_frac", "wt_frac",
+               "n1", "n2", "n21", "wt_exact",
                "wt_frac", "basic"),
-  weight    = c(rep(0L, 12), 1L, 1L, 1L, 0L, 1L, 1L, 1L, 1L, 0L),
-  vardef    = c(rep("DF", 15), "N", "N", "WDF", "WEIGHT", "DF", "N"),
-  mu0       = c(0, 2, rep(0, 19)),
-  class     = c(rep(0L, 11), 1L, rep(0L, 9)),
-  ttest     = c(rep(1L, 15), 0L, 0L, 0L, 0L, 1L, 1L),
-  ranktests = c(rep(1L, 12), 0L, 0L, 0L, 1L, 0L, 0L, 0L, 1L, 1L),
-  optional  = c(rep(0L, 19), 1L, 1L),
+  weight    = c(0L, 0L, 0L, 0L, 0L, 0L, 0L,
+                0L, 0L, 0L, 0L, 0L,
+                1L, 1L, 1L,
+                0L, 1L, 1L, 1L,
+                0L, 0L, 0L, 1L,
+                1L, 0L),
+  vardef    = c("DF", "DF", "DF", "DF", "DF", "DF", "DF",
+                "DF", "DF", "DF", "DF", "DF",
+                "DF", "DF", "DF",
+                "N", "N", "WDF", "WEIGHT",
+                "DF", "DF", "DF", "DF",
+                "DF", "N"),
+  mu0       = c(0, 2, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0,
+                0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 3, 4,
+                0, 0),
+  class     = c(0L, 0L, 0L, 0L, 0L, 0L, 0L,
+                0L, 0L, 0L, 0L, 1L,
+                0L, 0L, 0L,
+                0L, 0L, 0L, 0L,
+                0L, 0L, 0L, 0L,
+                0L, 0L),
+  ttest     = c(1L, 1L, 1L, 1L, 1L, 1L, 1L,
+                1L, 1L, 1L, 1L, 1L,
+                1L, 1L, 1L,
+                0L, 0L, 0L, 0L,
+                1L, 1L, 1L, 1L,
+                1L, 1L),
+  ranktests = c(1L, 1L, 1L, 1L, 1L, 1L, 1L,
+                1L, 1L, 1L, 1L, 1L,
+                0L, 0L, 0L,
+                1L, 0L, 0L, 0L,
+                1L, 1L, 1L, 0L,
+                1L, 1L),
+  optional  = c(0L, 0L, 0L, 0L, 0L, 0L, 0L,
+                0L, 0L, 0L, 0L, 0L,
+                0L, 0L, 0L,
+                0L, 0L, 0L, 0L,
+                0L, 0L, 0L, 0L,
+                1L, 1L),
   stringsAsFactors = FALSE
 )
 utils::write.csv(scenarios, file.path(kit, "scenarios.csv"),

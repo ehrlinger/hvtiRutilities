@@ -20,7 +20,8 @@ Real SAS output that `proc_univariate()` is tested against. Design:
    Commit the regenerated files; never edit them by hand.
 2. In SAS, set `%let root =` at the top of `oracle.sas` to this directory and
    submit the whole file. It writes `out/<scenario>.csv`,
-   `out/sas_version.txt` and `out/oracle.log`.
+   `out/sas_version.txt` and `out/oracle.log`. To re-run, delete `out/`
+   first.
 3. Copy `out/` back into this directory if SAS ran elsewhere, then from the
    package root run:
    `Rscript dev/oracle/proc_univariate/check_oracle.R`.
