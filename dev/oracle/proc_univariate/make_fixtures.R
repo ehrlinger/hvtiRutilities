@@ -27,7 +27,7 @@ fixtures <- list(
   basic     = fixture(basic_x),
   basic_w2  = fixture(basic_x, w = 2),
   wt_frac   = fixture(basic_x,
-                      w = c(0.5, 1.5, 2, 1, 0.25, 3, 1, 1, 2.5, 0.75, 1, 2)),
+                      w = c(0.5, 1.5, 2, 3, 0.25, 1, 1, 1, 2.5, 0.75, 1, 2)),
   wt_exact  = fixture(1:8, w = c(1, 1, 3, 1, 1, 1, 1, 1)),
   n20       = fixture(c(-4, -2, -2, -1, 0.5, 1, 1, 2, 2, 2,
                         3, 3.5, 4, 4, 5, 6, 7, 7, 8, 10)),
@@ -40,9 +40,9 @@ fixtures <- list(
   skewed50  = fixture(skewed(50)),
   n2000     = fixture(skewed(2000)),
   n2001     = fixture(skewed(2001)),
-  class3    = fixture(c(1, 2, 3, 4, 2, 2, 5, 9, 7, 3, 6),
-                      g = c("A", "A", "A", "A", "B", "B", "B", "C", "C", "C",
-                            NA))
+  class3    = fixture(c(1, 2, 3, 4, 2, 2, 5, 8, 9, 7, 3, 4, 6),
+                      g = c("A", "A", "A", "A", "B", "B", "B", "B",
+                            "C", "C", "C", "C", NA))
 )
 
 for (nm in names(fixtures)) {

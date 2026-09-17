@@ -79,7 +79,7 @@ fixtures <- list(
   basic     = fixture(basic_x),
   basic_w2  = fixture(basic_x, w = 2),
   wt_frac   = fixture(basic_x,
-                      w = c(0.5, 1.5, 2, 1, 0.25, 3, 1, 1, 2.5, 0.75, 1, 2)),
+                      w = c(0.5, 1.5, 2, 3, 0.25, 1, 1, 1, 2.5, 0.75, 1, 2)),
   wt_exact  = fixture(1:8, w = c(1, 1, 3, 1, 1, 1, 1, 1)),
   n20       = fixture(c(-4, -2, -2, -1, 0.5, 1, 1, 2, 2, 2,
                         3, 3.5, 4, 4, 5, 6, 7, 7, 8, 10)),
@@ -92,9 +92,9 @@ fixtures <- list(
   skewed50  = fixture(skewed(50)),
   n2000     = fixture(skewed(2000)),
   n2001     = fixture(skewed(2001)),
-  class3    = fixture(c(1, 2, 3, 4, 2, 2, 5, 9, 7, 3, 6),
-                      g = c("A", "A", "A", "A", "B", "B", "B", "C", "C", "C",
-                            NA))
+  class3    = fixture(c(1, 2, 3, 4, 2, 2, 5, 8, 9, 7, 3, 4, 6),
+                      g = c("A", "A", "A", "A", "B", "B", "B", "B",
+                            "C", "C", "C", "C", NA))
 )
 
 for (nm in names(fixtures)) {
@@ -136,7 +136,7 @@ message("Wrote ", length(fixtures), " fixtures and ", nrow(scenarios),
         " scenarios to ", kit)
 ```
 
-Fixture intent (for reviewers): `basic` has ties and two values equal to 0 (default `mu0`); `basic_mu0` reuses it with `mu0 = 2` so three values equal `mu0`; `n20`/`n21` sit either side of the exact signed-rank limit and include tied absolute differences; `wt_exact` has cumulative weights `1,2,5,6,7,8,9,10`, so `pW` is hit exactly at p = 0.1, 0.5 and 0.9 and missed at 0.25; `basic_w2` gives equal weights; `n3`/`n4` are the minimum n for skewness and kurtosis; `n2000`/`n2001` bracket the Shapiro-Wilk limit; `class3` has three levels plus a missing class value.
+Fixture intent (for reviewers): `basic` has ties and two values equal to 0 (default `mu0`); `basic_mu0` reuses it with `mu0 = 2` so three values equal `mu0`; `n20`/`n21` sit either side of the exact signed-rank limit and include tied absolute differences; `wt_exact` has cumulative weights `1,2,5,6,7,8,9,10`, so `pW` is hit exactly at p = 0.1, 0.5 and 0.9 and missed at 0.25; `basic_w2` gives equal weights; `n3`/`n4` are the minimum n for skewness and kurtosis; `n2000`/`n2001` bracket the Shapiro-Wilk limit; `class3` has three levels of four observations each (enough for kurtosis) plus a missing class value; `wt_frac` weights the two zeros (total 5) above the three 2s (total 3), so a weighted `mode` (0) differs from the unweighted one (2).
 
 - [ ] **Step 2: Run it**
 
