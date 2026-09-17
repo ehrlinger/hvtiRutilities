@@ -1,7 +1,7 @@
 # A strict, call-keyed cache for expensive fits: `cache_fit()`
 
 **Date:** 2026-09-17
-**Status:** Approved design; pending implementation plan
+**Status:** Approved design; implemented on `feat/cache-fit` (plan: `2026-09-17-cache-fit-plan.md`); revised 2026-09-17 after review
 **Package:** `hvtiRutilities`
 **Related:** `hvtiRtemplates/dev/specs/2026-08-29-template-conversion-roadmap-design.md`
 (§3.4, the ML family: `rfs`/`rfc`/`rfr`/`sid`/`vt`)
@@ -67,7 +67,7 @@ cache_fit(name, code, seed = NULL, dir = study_dir("estimates"), refit = FALSE)
 
 | Argument | Meaning |
 |---|---|
-| `name` | Character(1). File stem; the object is stored at `file.path(dir, paste0(name, ".rds"))`. Must be a valid file stem (no path separators). |
+| `name` | Character(1). File stem; the object is stored at `file.path(dir, paste0(name, ".rds"))`. Must be a valid file stem: a single non-empty string containing neither `/` nor `\\`, so a name checked on one platform cannot escape `dir` on another. |
 | `code` | The computation, in one of two forms (below). Not evaluated unless the cache misses. |
 | `seed` | `NULL` or integer(1). If given, `code` runs inside `withr::with_seed(seed, ...)` and the seed is part of the key. |
 | `dir` | Existing directory. Defaults to the study's estimates folder. |
@@ -130,20 +130,32 @@ A named list, built without evaluating `code`:
 | Field | Content |
 |---|---|
 | `code` | `deparse()` of the code with whitespace normalised, so reformatting does not invalidate. |
-| `inputs` | For each free variable (`all.vars()` of the code, minus names assigned inside it), resolved in the caller's environment with `get()`: `digest::digest(value, algo = "xxhash64")`. Covers data frames, parent models, config values. Names that do not resolve (column names used in non-standard evaluation) are skipped. Function objects are skipped; they are covered by `packages`. |
-| `packages` | Versions of every package named with `pkg::` in the code, plus the versions of attached packages (for bare function names). |
+| `inputs` | For each free variable of the code, resolved in the caller's environment with `get()` and digested with `digest::digest(value, algo = "xxhash64", serializeVersion = 2L)`. Free variables are found lexically: a name bound by an assignment, a `function` formal or a `for` index is local only within that binding's scope, so a name that is also read free elsewhere still counts. Covers data frames, parent models, config values. Names that do not resolve (column names used in non-standard evaluation) are skipped. A value that is itself a `cache_fit()` result (it carries `hvtiRutilities_cache_key`) is digested by its key's compared fields rather than by the object, which is stable across sessions and makes chains transitive. A function defined by the user in the global environment is digested by its own deparsed body; package functions are skipped and covered by `packages`. |
+| `packages` | Versions of every package named with `pkg::` in the code, plus, for each bare function name called, the package whose namespace defines it. Base-priority packages are excluded. |
 | `seed` | The `seed` argument, or `NULL`. |
 | `reproducible` | `TRUE` unless the computation used the global RNG without a `seed` (see below). |
 | `r_version` | `R.version.string`. |
 
-Keys compare field by field, excluding `reproducible` and `r_version` (a
-patch R upgrade must not force a 5,000-tree refit; the version is still
-recorded in provenance).
+Keys compare field by field, excluding `reproducible` and `r_version`. **Any**
+R upgrade, not only a patch one, leaves a cache valid: serialized results stay
+readable across R versions, every result is rebuilt anyway once its inputs
+change, and `renv.lock` plus the provenance sidecar are where the runtime is
+pinned and recorded. Comparing the R version would invalidate every cached
+forest on a minor upgrade, which is the refit this exclusion exists to
+prevent.
 
-⚠️ **Known limit:** variables read indirectly (inside a called user function's
-body, or through `get()` / `eval()` in the code) are not seen by `all.vars()`.
-Documented; the remedy is to pass such values as explicit arguments in the
-code.
+⚠️ **Known limits**, all documented on the function:
+
+- Values read indirectly (inside a called function's body, or through `get()`
+  or `eval()`) are not seen. Pass them as explicit arguments in the code.
+- A global helper contributes its own body, but not the bodies of further
+  helpers it calls.
+- A cached result edited in place keeps its key attribute, so the edit is
+  invisible downstream.
+- The key short circuit applies to a cached object passed directly. One
+  wrapped in a list, or a model fitted outside `cache_fit()`, is digested
+  whole, and such objects can digest differently between sessions. That shows
+  up as a loud stale error, never as a wrong result.
 
 ## Behaviour
 
@@ -176,12 +188,19 @@ Cached object 'biv-rfs' is stale (estimates/biv-rfs.rds):
 Recompute with refit = TRUE, or restore the inputs it was built from.
 ```
 
-**Writes.** `saveRDS()` to a temporary file in `dir`, then `file.rename()`, so
-an interrupted render never leaves a partial `.rds` that later loads as valid.
-A failing computation writes nothing and its condition propagates unchanged.
+**Writes.** `saveRDS()` to a temporary file in `dir`, then provenance, then
+`file.rename()` to promote it. An interrupted render never leaves a partial
+`.rds` that later loads as valid. A failing computation writes nothing and its
+condition propagates unchanged.
 
-**Provenance.** After a write, `record_provenance(path, extra =
-list(cache_key = key))`, so the sidecar format is the package's existing one.
+**Provenance.** `record_provenance(path, extra = list(cache_key = key))`, so
+the sidecar format is the package's existing one. It runs **after the
+temporary file is written and before the rename**, which makes the pair
+transactional in the direction that matters: a provenance failure leaves
+nothing cached, so a cached `.rds` never exists without its sidecar. The
+failure stays loud, and the message says the computed result was not kept.
+Provenance is attempted only when `dir` lies inside a study, and the study is
+read leniently (`require_data = FALSE`), matching how the study is detected.
 
 **Errors on arguments.** Missing `dir` stops (it is not created silently);
 `name` with a path separator stops; `refit` and `seed` are type-checked.
@@ -194,8 +213,12 @@ list(cache_key = key))`, so the sidecar format is the package's existing one.
 
 ## Testing
 
-All tests run in `withr::local_tempdir()` with a temporary `_study.yml` root;
-forests use `ntree <= 50`; target suite time under 30 s.
+All tests run in `withr::local_tempdir()`. Tests that exercise provenance use
+the package's own study fixture, which writes `_study.yml` **and** the built
+dataset, because `record_provenance()` requires a cohort contract and a built
+manifest; a bare `_study.yml` would make the first cache miss fail after
+computing. Forests use `ntree <= 50`;
+target suite time under 30 s.
 
 | Area | Cases |
 |---|---|
