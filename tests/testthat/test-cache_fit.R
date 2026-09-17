@@ -60,6 +60,15 @@ test_that("a changed input stops with a classed error naming it", {
   expect_match(conditionMessage(err), "refit = TRUE")
 })
 
+test_that("changed code stops with a classed error naming the code as changed", {
+  dir <- withr::local_tempdir()
+  d <- 1:10
+  cache_fit("s", sum(d), dir = dir)
+  err <- expect_error(cache_fit("s", sum(d) + 1, dir = dir),
+                      class = "hvtiRutilities_stale_cache")
+  expect_match(conditionMessage(err), "code  (changed)", fixed = TRUE)
+})
+
 test_that("refit = TRUE recomputes a stale object; the new one is then a hit", {
   dir <- withr::local_tempdir()
   d <- 1:10
@@ -333,6 +342,58 @@ test_that("a multiple imputation round-trips with a seed", {
     "loaded"
   )
   expect_equal(mice::complete(again), mice::complete(imp))
+})
+
+test_that("`code` naming an object that does not exist is a clear error", {
+  dir <- withr::local_tempdir()
+  expect_error(cache_fit("m", cache_test_no_such_object, dir = dir),
+               "does not exist")
+  expect_length(list.files(dir, all.files = TRUE, no.. = TRUE), 0L)
+})
+
+test_that("a variable holding a length-1 expression() is the same as inline code", {
+  dir <- withr::local_tempdir()
+  d <- 1:10
+  ex1 <- expression(sum(d))
+  out <- cache_fit("e1", ex1, dir = dir)
+  expect_equal(out, 55L, ignore_attr = TRUE)
+  q1 <- quote(sum(d))
+  expect_message(cache_fit("e1", q1, dir = dir), "loaded")
+})
+
+test_that("a variable holding a length>1 expression() is treated as a block", {
+  dir <- withr::local_tempdir()
+  ex2 <- expression(inner <- 5, inner * 2)
+  out <- cache_fit("e2", ex2, dir = dir)
+  expect_equal(out, 10, ignore_attr = TRUE)
+  expect_false(exists("inner", inherits = FALSE))
+})
+
+test_that("a file.rename() failure at write time is reported, not silently ignored", {
+  dir <- withr::local_tempdir()
+  target <- file.path(dir, "x.rds")
+  dir.create(target)
+
+  # Sanity-check that this platform actually refuses to rename a file onto
+  # an existing directory before relying on it; skip rather than fake the
+  # function if it does not.
+  probe_tmp <- tempfile(tmpdir = dir, fileext = ".probe")
+  writeLines("probe", probe_tmp)
+  probe_target <- file.path(dir, "probe-target")
+  dir.create(probe_target)
+  can_arrange <- !suppressWarnings(file.rename(probe_tmp, probe_target))
+  unlink(probe_tmp)
+  unlink(probe_target, recursive = TRUE)
+  skip_if_not(can_arrange,
+              "this platform allows renaming a file onto an existing directory")
+
+  err <- expect_error(
+    suppressWarnings(suppressMessages(
+      cache_fit("x", sum(1:3), dir = dir, refit = TRUE)
+    )),
+    "could not move"
+  )
+  expect_true(dir.exists(target))
 })
 
 test_that("a seed that cannot become an integer is refused", {

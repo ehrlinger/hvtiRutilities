@@ -380,3 +380,117 @@ test_that("the diff names each changed input/package, ignoring r_version", {
   expect_match(diff, "packages\\$randomForestSRC +3.4.5 +-> +3.5.0",
                all = FALSE)
 })
+
+test_that("the diff reports a changed code body, not its full text", {
+  old <- list(code = "sum(d)", inputs = list(), packages = list(),
+              seed = NULL)
+  new <- old
+  new$code <- "sum(d) + 1"
+  diff <- hvtiRutilities:::.cache_key_diff(old, new)
+  expect_identical(diff, "  code  (changed)")
+})
+
+test_that("an empty argument (as in d[, 1]) is skipped by the free-variable and head walks", {
+  env <- new.env()
+  env$d <- data.frame(x = 1, y = 2)
+  code <- quote(d[, 1])
+  expect_identical(hvtiRutilities:::.cache_free_vars(code), "d")
+  inputs <- hvtiRutilities:::.cache_inputs(code, env)
+  expect_identical(names(inputs), "d")
+  heads <- hvtiRutilities:::.cache_heads(code)
+  expect_identical(heads$bare, "[")
+})
+
+test_that("a call-valued head with an empty argument is walked without erroring", {
+  # g(1)(x, ) : the head "g(1)" is itself a call, and the second argument to
+  # the outer call is empty, exercising both the call-valued-head branch and
+  # the empty-argument skip inside it, for both the variable and head walks.
+  env <- new.env()
+  env$g <- function(a) function(x, y) x
+  env$x <- 5
+  code <- quote(g(1)(x, ))
+  # "g" names the call head of g(1), not a data read, so .cache_free_vars()
+  # excludes it (mirroring all.vars()); .cache_free_heads() is what picks up
+  # a bare call head like this one, for the global-helper/package checks.
+  expect_identical(hvtiRutilities:::.cache_free_vars(code), "x")
+  expect_identical(hvtiRutilities:::.cache_free_heads(code), "g")
+})
+
+test_that("a call-valued statement contributes nothing to what a block binds afterward", {
+  stmt <- quote((function(z) z)(1))
+  expect_identical(hvtiRutilities:::.cache_bound_after(stmt), character(0))
+})
+
+test_that("a nested block's assignment is bound for what follows it in the enclosing block", {
+  env <- new.env()
+  env$a <- 999
+  code <- quote({
+    { a <- 1 }
+    a
+  })
+  inputs <- hvtiRutilities:::.cache_inputs(code, env)
+  expect_length(inputs, 0L)
+})
+
+test_that("a factory closure's captures are skipped, not fabricated, when none resolve to data", {
+  # All of a closure's free variables can fail to contribute a capture: one
+  # names another function (skipped, not digested, to avoid recursing into a
+  # further closure), and one does not resolve at all. Either way the key
+  # falls back to the closure's body text alone, still by way of the
+  # non-globalenv() branch (fn_env is a factory call frame, not globalenv()
+  # itself).
+  eval(quote(cache_test_make_fnonly <- function() {
+    helper <- function(z) z * 2
+    function(x) if (FALSE) helper else x
+  }), envir = globalenv())
+  on.exit(rm("cache_test_make_fnonly", envir = globalenv()), add = TRUE)
+  h1 <- eval(quote(cache_test_make_fnonly()), envir = globalenv())
+  expect_false(identical(environment(h1), globalenv()))
+  txt1 <- hvtiRutilities:::.cache_global_closure_text(h1)
+  # No capture line was appended: the text is exactly the deparsed closure,
+  # a single "function (x) \n..." value with no extra "name=digest" line.
+  expect_identical(lengths(regmatches(txt1, gregexpr("\n", txt1))), 1L)
+  expect_false(grepl("helper=", txt1, fixed = TRUE))
+
+  eval(quote(cache_test_make_unresolved <- function() {
+    function(x) if (FALSE) totallyUndefinedVar123 else x
+  }), envir = globalenv())
+  on.exit(rm("cache_test_make_unresolved", envir = globalenv()), add = TRUE)
+  h2 <- eval(quote(cache_test_make_unresolved()), envir = globalenv())
+  txt2 <- hvtiRutilities:::.cache_global_closure_text(h2)
+  expect_identical(lengths(regmatches(txt2, gregexpr("\n", txt2))), 1L)
+  expect_false(grepl("totallyUndefinedVar123=", txt2, fixed = TRUE))
+})
+
+test_that("a global function referenced as a value (not called) is keyed by its body", {
+  eval(quote(cache_test_asvalue <- function(z) z * 3), envir = globalenv())
+  on.exit(rm("cache_test_asvalue", envir = globalenv()), add = TRUE)
+  env <- new.env()
+  code <- quote({
+    picked <- cache_test_asvalue
+    picked
+  })
+  inputs <- hvtiRutilities:::.cache_inputs(code, env)
+  expect_identical(
+    inputs$cache_test_asvalue,
+    hvtiRutilities:::.cache_digest(
+      hvtiRutilities:::.cache_global_closure_text(get("cache_test_asvalue",
+                                                       envir = globalenv())))
+  )
+})
+
+test_that("a bare call head bound to a non-function value contributes nothing", {
+  env <- new.env()
+  env$x <- 5
+  inputs <- hvtiRutilities:::.cache_inputs(quote(x(1)), env)
+  expect_length(inputs, 0L)
+})
+
+test_that(".cache_show truncates a long value to 60 characters", {
+  short <- hvtiRutilities:::.cache_show("abc")
+  expect_identical(short, "abc")
+  long <- paste(rep("a", 80), collapse = "")
+  shown <- hvtiRutilities:::.cache_show(long)
+  expect_identical(nchar(shown), 60L)
+  expect_identical(shown, paste0(strrep("a", 57L), "..."))
+})
