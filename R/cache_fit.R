@@ -261,19 +261,40 @@ cache_fit <- function(name, code, seed = NULL, dir = study_dir("estimates"),
   invisible(path)
 }
 
+# Re-raises `e` as the same condition, classes included, with the message
+# prefixed so the failure is traceable to cache_fit() rather than discarded as
+# an unattributed study_root()/study_config()/record_provenance() error.
+.cache_provenance_rethrow <- function(e, path) {
+  cnd <- e
+  cnd$message <- paste0(
+    "cache_fit(): provenance could not be recorded for '",
+    basename(path), "'; the computed result was NOT kept.\n",
+    conditionMessage(e)
+  )
+  stop(cnd)
+}
+
 # Records provenance when `dir` lies inside a study. Only "no _study.yml
-# found" means "not a study"; every other failure, from study_root(),
-# study_config(), or record_provenance() alike, propagates as an error naming
+# found" FROM study_root() means "not a study"; every other failure -
+# including a study_config() or record_provenance() error whose message
+# happens to contain that same phrase - propagates as an error naming
 # cache_fit(), and because this runs before the rename, a failure leaves
-# nothing cached. All three calls share one tryCatch so a malformed
-# _study.yml cannot escape as a raw study_config()/study_root() error that
-# never mentions cache_fit() or that the operation's result was discarded.
-# The text match on "no _study.yml found" is a coupling to study_config()'s
-# own stop() in R/study_config.R (it raises a plain, unclassed condition);
-# replace it if that ever gains a class.
+# nothing cached. The escape is scoped to the study_root() call alone so a
+# later, genuine failure in study_config()/record_provenance() can never be
+# mistaken for "not a study" and silently swallowed. The text match on "no
+# _study.yml found" is a coupling to study_config()'s own stop() in
+# R/study_config.R, which study_root() calls internally (it raises a plain,
+# unclassed condition); replace it if that ever gains a class.
 .cache_provenance <- function(path, key, dir) {
+  root <- tryCatch(study_root(dir), error = function(e) {
+    if (grepl("no _study.yml found", conditionMessage(e), fixed = TRUE)) {
+      return(NULL)
+    }
+    .cache_provenance_rethrow(e, path)
+  })
+  if (is.null(root)) return(invisible(NULL))
+
   tryCatch({
-    root <- study_root(dir)
     # require_data = FALSE matches the leniency of study_root()'s own
     # detection above; study_config()'s default (require_data = TRUE) would
     # otherwise apply a stricter read here than what "is this a study" just
@@ -281,19 +302,5 @@ cache_fit <- function(name, code, seed = NULL, dir = study_dir("estimates"),
     cfg <- study_config(root, require_data = FALSE)
     record_provenance(path, extra = list(cache_key = key), cfg = cfg)
     invisible(NULL)
-  }, error = function(e) {
-    if (grepl("no _study.yml found", conditionMessage(e), fixed = TRUE)) {
-      return(invisible(NULL))
-    }
-    # Re-raise as the same condition, classes included, with the message
-    # prefixed so the failure is traceable to cache_fit() rather than
-    # discarded as an unattributed study_config()/record_provenance() error.
-    cnd <- e
-    cnd$message <- paste0(
-      "cache_fit(): provenance could not be recorded for '",
-      basename(path), "'; the computed result was NOT kept.\n",
-      conditionMessage(e)
-    )
-    stop(cnd)
-  })
+  }, error = function(e) .cache_provenance_rethrow(e, path))
 }

@@ -273,6 +273,24 @@ test_that("a corrupted _study.yml mentions cache_fit() and leaves nothing cached
                            no.. = TRUE), 0L)
 })
 
+test_that("a record_provenance() failure is raised even if its message contains the not-a-study phrase", {
+  root <- make_study_fixture(withr::local_tempdir())
+  dir.create(file.path(root, "estimates"))
+  local_mocked_bindings(
+    record_provenance = function(...) {
+      stop("no _study.yml found (coincidentally, from record_provenance())")
+    },
+    .package = "hvtiRutilities"
+  )
+  err <- expect_error(
+    cache_fit("s", sum(1:3), dir = file.path(root, "estimates"))
+  )
+  expect_match(conditionMessage(err), "cache_fit", fixed = TRUE)
+  expect_match(conditionMessage(err), "NOT kept")
+  expect_length(list.files(file.path(root, "estimates"), all.files = TRUE,
+                           no.. = TRUE), 0L)
+})
+
 test_that("a survival forest round-trips and records its package version", {
   skip_if_not_installed("randomForestSRC")
   withr::local_options(rf.cores = 1L, mc.cores = 1L)
