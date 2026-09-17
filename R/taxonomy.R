@@ -62,6 +62,37 @@
 #' analysis produces it directly. That row's \code{prefix} is \code{NA}, not a
 #' string, because there is no prefix to assign it.
 #'
+#' \strong{The random forest family splits on the OUTCOME axis, not the
+#' package axis.} \code{rfs}, \code{rfc} and \code{rfr} name the survival,
+#' classification and regression outcomes, which is the split
+#' \code{bh}/\code{bl}/\code{bc}/\code{bn}/\code{bq}/\code{br} and
+#' \code{pm}/\code{rm}/\code{cm} already use. It is a rename of a distinction
+#' the corpus draws already, not a new one imposed: the jobs carry the outcome
+#' in field two today, as \code{tp.rfsrc.survival.R} and its siblings.
+#'
+#' \strong{\code{rf} and \code{rfsrc} are retained as legacy umbrella rows.}
+#' They named the same set as each other, on the package axis, and neither is
+#' templated. They stay in the table so a census can still resolve the corpus
+#' that uses them, which is not small: \code{rfsrc} measures 131 studies and
+#' 2,295 jobs, more than \code{rf} (47), \code{rfs} (25) and \code{rfc} (19)
+#' combined, twice over. Deleting the rows was rejected on two grounds.
+#' \code{\link{hvti_prefix_folds}} cannot express the demotion, because a fold
+#' is one-to-one and \code{rfsrc} spans all three outcomes, so there is no
+#' single prefix to fold it into. And an absent prefix reads to the census as
+#' one nobody documented, which is the opposite of what a superseded name
+#' means. Demoted here means \emph{never templated}, matching the
+#' \code{disposition: retire} their job catalog rows already carry.
+#'
+#' \strong{\code{sid} and \code{vt} are filed under \code{analyses} with the
+#' rest of the family}, and compose on the \code{rf*} jobs rather than
+#' replacing them. The \code{rfc}/\code{rfs} folder contradiction is
+#' deliberately NOT settled here: the taxonomy says \code{analyses} while the
+#' SAS library files them under \code{graphs} and \code{documents}, and the
+#' 2026-08-27 census found the same contradiction corpus-wide for
+#' \code{ac}/\code{hz}. It is a systemic open question with its own spec owed,
+#' and the ML batch is not blocked waiting on it. See
+#' \code{hvtiRtemplates:dev/specs/2026-09-17-ml-family-roadmap-design.md}.
+#'
 #' @return A data frame with columns \code{prefix}, \code{name}, \code{folder},
 #'   \code{description}. \code{prefix} is \code{NA} for the one row that names
 #'   an artifact kind rather than an analysis type.
@@ -93,7 +124,7 @@ hvti_taxonomy <- function() {
     c("bq",    "Bootstrap quantile",        "analyses",      "quantile regression with bagging"),
     c("br",    "Bootstrap regression",      "analyses",      "linear regression with bagging"),
     c("nm",    "Non-linear model",          "analyses",      "non-linear regression models"),
-    c("rf",    "Random forest",             "analyses",      "random forest and randomForestSRC models"),
+    c("rf",    "Random forest (umbrella)",  "analyses",      "legacy umbrella superseded by the rfs/rfc/rfr outcome axis; not templated"),
     c("rm",    "Regression model",          "analyses",      "linear regression with balancing score"),
     c("cm",    "Cox matching",              "analyses",      "Cox PH with propensity matching / IPTW"),
     c("ls",    "Life table / STS",          "analyses",      "STS observed-versus-predicted analyses"),
@@ -110,9 +141,12 @@ hvti_taxonomy <- function() {
     c("ce",    "Competing events",          "graphs",        "competing risks / multistate figures"),
     c("rp",    "Regression plot",           "graphs",        "regression and balance figures"),
     c("ar",    "Analysis report",           "documents",     "the written analysis report"),
-    c("rfsrc", "Random forest (SRC)",       "analyses",      "randomForestSRC survival, regression and classification models"),
-    c("rfc",   "Random forest classifier",  "analyses",      "random forest classification reporting"),
-    c("rfs",   "Random forest survival",    "analyses",      "random forest survival analysis reporting"),
+    c("rfsrc", "Random forest (SRC)",       "analyses",      "legacy umbrella superseded by the rfs/rfc/rfr outcome axis; not templated"),
+    c("rfc",   "Random forest classifier",  "analyses",      "random forest, classification outcome"),
+    c("rfs",   "Random forest survival",    "analyses",      "random forest, survival outcome"),
+    c("rfr",   "Random forest regression",  "analyses",      "random forest, regression outcome"),
+    c("sid",   "Random forest clustering",  "analyses",      "unsupervised sidClustering forest with PAM over K"),
+    c("vt",    "Virtual twins",             "analyses",      "per-arm forests, swapped-arm prediction, RMST difference"),
     c("nb",    "Boosting",                  "analyses",      "boosting models (Boostmtree, BoostMLR)"),
     stringsAsFactors = FALSE
   )

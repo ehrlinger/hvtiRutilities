@@ -113,3 +113,56 @@ test_that("the datasets folder holds the prefixes it is expected to", {
   expect_setequal(tx$prefix[tx$folder == "datasets"],
                   c("bd", "vars", "dt", "si", "mi"))
 })
+
+test_that("the random forest family is the three outcome rows plus sid and vt", {
+  # The family splits on the OUTCOME axis. Pinning the set catches the two
+  # ways it can regress: a fourth outcome row appearing without a spec, and
+  # `rfr`, `sid` or `vt` being dropped back out while the job catalog still
+  # carries rows for them -- which would fail hvtiRtemplates' direction-one
+  # guard in a different repository, far from the edit that caused it.
+  tx <- hvti_taxonomy()
+  forest <- tx$prefix[grepl("^(rf|sid|vt)", tx$prefix) & !is.na(tx$prefix)]
+  expect_setequal(forest, c("rf", "rfsrc", "rfs", "rfc", "rfr", "sid", "vt"))
+  expect_true(all(tx$folder[match(c("rfs", "rfc", "rfr", "sid", "vt"),
+                                  tx$prefix)] == "analyses"))
+})
+
+test_that("the outcome rows name their outcome and the umbrellas say so", {
+  # `rfc` and `rfs` described themselves as "reporting" until 2026-09-17,
+  # which tangled the fit-versus-report axis into a family that splits on
+  # outcome. `rf` and `rfsrc` described the same set as each other on the
+  # package axis. Both are pinned because the shape checks above pass either
+  # way, and a revert to the package axis is exactly the regression the
+  # outcome split exists to prevent.
+  tx <- hvti_taxonomy()
+  want <- list(
+    rfs = c("Random forest survival", "random forest, survival outcome"),
+    rfc = c("Random forest classifier", "random forest, classification outcome"),
+    rfr = c("Random forest regression", "random forest, regression outcome"),
+    sid = c("Random forest clustering",
+            "unsupervised sidClustering forest with PAM over K"),
+    vt = c("Virtual twins",
+           "per-arm forests, swapped-arm prediction, RMST difference")
+  )
+  for (p in names(want)) {
+    row <- tx[match(p, tx$prefix), ]
+    expect_equal(row$name, want[[p]][[1]], label = p)
+    expect_equal(row$description, want[[p]][[2]], label = p)
+  }
+
+  umbrella <- tx$description[match(c("rf", "rfsrc"), tx$prefix)]
+  expect_true(all(grepl("legacy umbrella", umbrella, fixed = TRUE)))
+  expect_true(all(grepl("not templated", umbrella, fixed = TRUE)))
+})
+
+test_that("the umbrella prefixes stay in the table and out of the fold map", {
+  # Demotion means "never templated", not "deleted". The rows stay so a census
+  # can resolve the corpus that uses them -- rfsrc alone is 131 studies. And
+  # they must NOT be folded: a fold is one-to-one, rfsrc spans all three
+  # outcomes, so any fold added here would silently pick one and miscount the
+  # other two.
+  tx <- hvti_taxonomy()
+  expect_true(all(c("rf", "rfsrc") %in% tx$prefix))
+  expect_false(any(c("rf", "rfsrc") %in% names(hvti_prefix_folds())))
+  expect_false(any(c("rf", "rfsrc") %in% hvti_non_prefixes()))
+})
