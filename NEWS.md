@@ -1,5 +1,17 @@
 # hvtiRutilities (unreleased)
 
+## New features
+
+* **`proc_freq()` ports SAS `PROC FREQ` frequency tables.** One-way and n-way
+  tables with the `MISSING` and `LIST` options, cell, row and column
+  percentages, cumulative columns, and `WEIGHT`. Missing values sort first and
+  character levels by byte value, as in SAS. From three variables on, a
+  crosstab computes `Percent` within stratum and a list table out of the grand
+  total, so `list` changes the numbers, not only the layout. Excluded missing
+  rows are counted in `attr(, "frequency_missing")`. Tests of association are
+  not ported. Blank character values and `NaN` count as missing, SAS special
+  missing values stay distinct, and codes sharing a value label form one row.
+
 * `study_setup()` writes `<study>.Rproj` when the root has no R project, so
   opening the project, `here::here()` and `study_root()` name the same
   directory. An existing project is left alone.

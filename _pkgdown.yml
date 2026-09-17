@@ -95,6 +95,7 @@ reference:
   - dataset_schema
   - proc_contents
   - proc_means
+  - proc_freq
   - compare_datasets
 
 - title: Dataset Versioning

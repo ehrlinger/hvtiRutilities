@@ -26,6 +26,8 @@ condenses it; `plan` files carry none.
 
 | date | note | status |
 |---|---|---|
+| 2026-09-16 | [Porting SAS `PROC FREQ` to `proc_freq()`](2026-09-16-proc-freq-design.md) | implemented; revised after final review |
+| 2026-09-16 | [`proc_freq()` — plan](2026-09-16-proc-freq-plan.md) | plan for the design above |
 | 2026-09-15 | [Study setup and adoption][study-setup] | approved; implementation planned across four repositories/worktrees |
 | 2026-09-15 | [Study contract implementation][study-contract-plan] | implementation plan for `hvtiRutilities` |
 | 2026-09-15 | [`add_job()` and numbered layouts][add-job-plan] | implementation plan for `hvtiRtemplates` |
