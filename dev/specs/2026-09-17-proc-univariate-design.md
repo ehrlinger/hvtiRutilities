@@ -56,7 +56,7 @@ proc_univariate(data, vars = NULL, class = NULL,
 
 | argument | meaning |
 |---|---|
-| `data`, `vars`, `class` | as `proc_means()`: `vars = NULL` analyses all numeric columns; `class` rows drop missing class values and follow `ORDER=INTERNAL` |
+| `data`, `vars`, `class` | as `proc_means()`: `vars = NULL` analyses all numeric columns; `class` rows drop missing class values and follow `ORDER=INTERNAL`. One difference: a class level whose every observation has a missing weight is **dropped**, as SAS `PROC UNIVARIATE` does, where `proc_means()` keeps it with `n` of 0 as `PROC MEANS` does (SAS 9.4 M8, 2026-09-17; evidence in `dev/oracle/proc_means/` on #119) |
 | `stats` | SAS keywords, output in the order given. Default is `unistats`' default |
 | `weights` | `NULL` or one numeric column name, SAS `WEIGHT` |
 | `pctlpts` | `NULL` or numeric percentile points in `[0, 100]`, decimals allowed, SAS `PCTLPTS=` |
