@@ -101,7 +101,8 @@ the observation; this is a deliberate, documented difference.
 - `t`, `probt`, `skewness`, `kurtosis`, `normal`, `probn` when every value is
   equal (standard deviation 0). `cv` is `0` there, not `NA`, because the mean
   is not zero;
-- `mode` when no value repeats (a constant column's mode is its value).
+- `mode` when no value repeats and n > 1 (at n = 1 the mode is the value;
+  a constant column's mode is its value).
 
 ## Statistic definitions
 
@@ -122,8 +123,8 @@ weights), `xbar` the weighted mean, `CSS = sum(w * (x - xbar)^2)`.
 | `t`, `probt` | `(xbar - mu0) / (std / sqrt(W))`; two-sided p from t with `n - 1` df | exact match, weighted and unweighted, `mu0` 0 and non-zero |
 | `msign`, `probm` | drop `x == mu0`; `M = (n_plus - n_minus) / 2`; `p = min(1, 2 * pbinom(min(n_plus, n_minus), n_plus + n_minus, 0.5))` | exact match |
 | `signrank`, `probs` | `d = x - mu0`, drop `d == 0`, `n` = count of non-zero `d`; average ranks `r` of `abs(d)`; `S = sum(sign(d) * r) / 2`. n <= 20: exact two-sided p, the probability that the absolute sign-rank sum is at least `abs(S)` over all `2^n` equally likely sign assignments of `r`. n > 20: `V = n(n+1)(2n+1)/24 - sum(t^3 - t)/48` over tie groups of size `t`; `T = S * sqrt((n - 1) / (n * V - S^2))`; two-sided p from t with `n - 1` df | exact match; the n <= 20 cutoff counts non-zero differences only (`n21_mu0`) |
-| `normal`, `probn` | Shapiro-Wilk via `stats::shapiro.test()` for 3 <= n <= 2000; **`W = 1`, `p = 1` at n = 2**; `NA` at n = 1 | agrees to about 1e-8 (R Royston 1995, SAS Royston 1992); n = 2 observed |
-| `mode` | as `proc_means()`, **unweighted even under `weights`** | observed (`wt_frac`: 2, not the weighted 0) |
+| `normal`, `probn` | Shapiro-Wilk via `stats::shapiro.test()` for 3 <= n <= 2000; **`W = 1`, `p = 1` at n = 2**; `NA` at n = 1 | `W` agrees within 1e-7 and `probn` within 1e-6 relative (4.5e-7 at n = 12; R Royston 1995, SAS Royston 1992); n = 2 observed |
+| `mode` | most frequent value, smallest among ties, **unweighted even under `weights`**; `NA` when no value repeats, **except at n = 1, where it is the value** | observed (`wt_frac`: 2, not the weighted 0; `n1`: 3; `n2`, `n3`: missing) |
 | `nobs` under `weights` | `N + NMISS` plus rows excluded for a missing or non-positive weight; `proc_means()` does the same from #119 | documented |
 
 Implementation note: enumerating `2^20` sign assignments as a matrix needs
@@ -218,8 +219,8 @@ Files by theme: `test-proc_univariate_shape.R`, `_quantiles.R`,
 - **Parity.** `_parity.R` reads each committed SAS output CSV (wherever it
   sits at PR B time, `tests/testthat/fixtures/proc_univariate/`), runs the
   matching `proc_univariate()` call on the same fixture, and compares every
-  value with `expect_equal(tolerance = 1e-10)`, except `normal` and `probn`
-  at `1e-7` (see the definitions table). A looser tolerance for a
+  value with `expect_equal(tolerance = 1e-10)`, except `normal` at `1e-7`
+  and `probn` at `1e-6` (see the definitions table). A looser tolerance for a
   statistic is allowed only with a written reason in the test (the
   Shapiro-Wilk p-value is the expected candidate).
 - **Hand-computed literals** pin each formula independently of SAS: weighted
