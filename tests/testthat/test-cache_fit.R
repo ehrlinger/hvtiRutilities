@@ -262,6 +262,17 @@ test_that("a provenance failure inside a study leaves nothing cached", {
                            no.. = TRUE), 0L)
 })
 
+test_that("a corrupted _study.yml mentions cache_fit() and leaves nothing cached", {
+  root <- make_study_fixture(withr::local_tempdir(), omit = "study")
+  dir.create(file.path(root, "estimates"))
+  err <- expect_error(
+    cache_fit("s", sum(1:3), dir = file.path(root, "estimates"))
+  )
+  expect_match(conditionMessage(err), "cache_fit", fixed = TRUE)
+  expect_length(list.files(file.path(root, "estimates"), all.files = TRUE,
+                           no.. = TRUE), 0L)
+})
+
 test_that("a survival forest round-trips and records its package version", {
   skip_if_not_installed("randomForestSRC")
   withr::local_options(rf.cores = 1L, mc.cores = 1L)
