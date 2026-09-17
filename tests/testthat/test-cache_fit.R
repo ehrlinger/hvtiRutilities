@@ -135,3 +135,40 @@ test_that("arguments are checked", {
   expect_error(cache_fit("a", sum(1), dir = file.path(dir, "nope")),
                "does not exist")
 })
+
+test_that("a seed reproduces the result and leaves the global stream alone", {
+  dir <- withr::local_tempdir()
+  withr::local_seed(1)
+  n <- 5
+  before <- get(".Random.seed", envir = globalenv())
+  a <- cache_fit("r1", stats::runif(n), seed = 42, dir = dir)
+  expect_identical(get(".Random.seed", envir = globalenv()), before)
+  b <- cache_fit("r2", stats::runif(n), seed = 42, dir = dir)
+  expect_identical(as.vector(a), as.vector(b))
+  expect_true(attr(a, "hvtiRutilities_cache_key")$reproducible)
+})
+
+test_that("RNG use without a seed warns and is recorded as not reproducible", {
+  dir <- withr::local_tempdir()
+  withr::local_seed(1)
+  n <- 5
+  expect_warning(x <- cache_fit("r3", stats::runif(n), dir = dir),
+                 class = "hvtiRutilities_nonreproducible_fit")
+  expect_false(attr(x, "hvtiRutilities_cache_key")$reproducible)
+  expect_false(readRDS(file.path(dir, "r3.rds"))$key$reproducible)
+})
+
+test_that("a computation that draws no random numbers does not warn", {
+  dir <- withr::local_tempdir()
+  withr::local_seed(1)
+  expect_no_warning(cache_fit("r4", sum(1:3), dir = dir))
+})
+
+test_that("changing the seed makes the cache stale", {
+  dir <- withr::local_tempdir()
+  n <- 5
+  cache_fit("r5", stats::runif(n), seed = 1, dir = dir)
+  err <- expect_error(cache_fit("r5", stats::runif(n), seed = 2, dir = dir),
+                      class = "hvtiRutilities_stale_cache")
+  expect_match(conditionMessage(err), "seed")
+})

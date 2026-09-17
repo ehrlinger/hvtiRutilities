@@ -161,11 +161,20 @@ cache_fit <- function(name, code, seed = NULL, dir = study_dir("estimates"),
   value
 }
 
-# Runs the code in a child scope of the caller. Task 3 adds the seed and RNG
-# detection; until then every run reports reproducible = TRUE.
+# Runs the code in a child scope of the caller. With a seed, inside
+# withr::with_seed(), which restores the global stream afterwards. Without
+# one, compares .Random.seed before and after to detect random number use
+# anywhere in the computation, including inside compiled package code.
 .cache_run <- function(code, env, seed) {
   scope <- new.env(parent = env)
-  list(value = eval(code, envir = scope), reproducible = TRUE)
+  if (!is.null(seed)) {
+    value <- withr::with_seed(seed, eval(code, envir = scope))
+    return(list(value = value, reproducible = TRUE))
+  }
+  before <- get0(".Random.seed", envir = globalenv(), inherits = FALSE)
+  value  <- eval(code, envir = scope)
+  after  <- get0(".Random.seed", envir = globalenv(), inherits = FALSE)
+  list(value = value, reproducible = identical(before, after))
 }
 
 .cache_abort <- function(kind, name, path, diff = character(0)) {
