@@ -93,8 +93,15 @@ combined, twice over. Deleting the rows was rejected on two grounds.
 is one-to-one and \code{rfsrc} spans all three outcomes, so there is no
 single prefix to fold it into. And an absent prefix reads to the census as
 one nobody documented, which is the opposite of what a superseded name
-means. Demoted here means \emph{never templated}, matching the
-\code{disposition: retire} their job catalog rows already carry.
+means. Demoted here means \emph{never templated}, and the two rows keep
+distinct descriptions so a census hit on a legacy job can still say which
+spelling it used.
+
+\strong{Do not read the job catalog's \code{disposition: retire} as the
+demotion marker.} \code{rfr} carries it too, and \code{rfr} is templated.
+That field says the legacy SAS and R job is superseded by the \code{gg_*}
+functions, which is true of every row in this family except \code{sid} and
+\code{vt}; it says nothing about whether a template is owed.
 
 \strong{\code{sid} and \code{vt} are filed under \code{analyses} with the
 rest of the family}, and compose on the \code{rf*} jobs rather than

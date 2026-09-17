@@ -80,8 +80,15 @@
 #' is one-to-one and \code{rfsrc} spans all three outcomes, so there is no
 #' single prefix to fold it into. And an absent prefix reads to the census as
 #' one nobody documented, which is the opposite of what a superseded name
-#' means. Demoted here means \emph{never templated}, matching the
-#' \code{disposition: retire} their job catalog rows already carry.
+#' means. Demoted here means \emph{never templated}, and the two rows keep
+#' distinct descriptions so a census hit on a legacy job can still say which
+#' spelling it used.
+#'
+#' \strong{Do not read the job catalog's \code{disposition: retire} as the
+#' demotion marker.} \code{rfr} carries it too, and \code{rfr} is templated.
+#' That field says the legacy SAS and R job is superseded by the \code{gg_*}
+#' functions, which is true of every row in this family except \code{sid} and
+#' \code{vt}; it says nothing about whether a template is owed.
 #'
 #' \strong{\code{sid} and \code{vt} are filed under \code{analyses} with the
 #' rest of the family}, and compose on the \code{rf*} jobs rather than
@@ -124,7 +131,7 @@ hvti_taxonomy <- function() {
     c("bq",    "Bootstrap quantile",        "analyses",      "quantile regression with bagging"),
     c("br",    "Bootstrap regression",      "analyses",      "linear regression with bagging"),
     c("nm",    "Non-linear model",          "analyses",      "non-linear regression models"),
-    c("rf",    "Random forest (umbrella)",  "analyses",      "legacy umbrella superseded by the rfs/rfc/rfr outcome axis; not templated"),
+    c("rf",    "Random forest (umbrella)",  "analyses",      "legacy umbrella, generic spelling; superseded by rfs/rfc/rfr"),
     c("rm",    "Regression model",          "analyses",      "linear regression with balancing score"),
     c("cm",    "Cox matching",              "analyses",      "Cox PH with propensity matching / IPTW"),
     c("ls",    "Life table / STS",          "analyses",      "STS observed-versus-predicted analyses"),
@@ -141,7 +148,7 @@ hvti_taxonomy <- function() {
     c("ce",    "Competing events",          "graphs",        "competing risks / multistate figures"),
     c("rp",    "Regression plot",           "graphs",        "regression and balance figures"),
     c("ar",    "Analysis report",           "documents",     "the written analysis report"),
-    c("rfsrc", "Random forest (SRC)",       "analyses",      "legacy umbrella superseded by the rfs/rfc/rfr outcome axis; not templated"),
+    c("rfsrc", "randomForestSRC (umbrella)", "analyses",     "legacy umbrella, package spelling; superseded by rfs/rfc/rfr"),
     c("rfc",   "Random forest classifier",  "analyses",      "random forest, classification outcome"),
     c("rfs",   "Random forest survival",    "analyses",      "random forest, survival outcome"),
     c("rfr",   "Random forest regression",  "analyses",      "random forest, regression outcome"),

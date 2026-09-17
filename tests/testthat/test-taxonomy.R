@@ -150,9 +150,19 @@ test_that("the outcome rows name their outcome and the umbrellas say so", {
     expect_equal(row$description, want[[p]][[2]], label = p)
   }
 
-  umbrella <- tx$description[match(c("rf", "rfsrc"), tx$prefix)]
-  expect_true(all(grepl("legacy umbrella", umbrella, fixed = TRUE)))
-  expect_true(all(grepl("not templated", umbrella, fixed = TRUE)))
+  # Both umbrella rows must SAY they are umbrellas, in the name as well as the
+  # description. Marking only `rf` left `rfsrc` reading as an ordinary
+  # analysis row, and `rfsrc` is the larger legacy corpus of the two.
+  umbrella <- tx[match(c("rf", "rfsrc"), tx$prefix), ]
+  expect_true(all(grepl("(umbrella)", umbrella$name, fixed = TRUE)))
+  expect_true(all(grepl("legacy umbrella", umbrella$description, fixed = TRUE)))
+
+  # And they must stay DISTINGUISHABLE. Identical descriptions would discard
+  # the one thing the table still records about them: which spelling a legacy
+  # job used. `rf` is the generic name, `rfsrc` the package's.
+  expect_false(umbrella$description[1] == umbrella$description[2])
+  expect_match(umbrella$description[1], "generic spelling")
+  expect_match(umbrella$description[2], "package spelling")
 })
 
 test_that("the umbrella prefixes stay in the table and out of the fold map", {
