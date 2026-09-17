@@ -9,7 +9,8 @@
   crosstab computes `Percent` within stratum and a list table out of the grand
   total, so `list` changes the numbers, not only the layout. Excluded missing
   rows are counted in `attr(, "frequency_missing")`. Tests of association are
-  not ported.
+  not ported. Blank character values and `NaN` count as missing, SAS special
+  missing values stay distinct, and codes sharing a value label form one row.
 
 # hvtiRutilities 1.1.12
 

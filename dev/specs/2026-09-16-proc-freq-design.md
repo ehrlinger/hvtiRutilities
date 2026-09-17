@@ -92,6 +92,13 @@ tolerance.
   nothing was missing, never absent.
 - `missing = TRUE`: NA is a level and contributes to every denominator.
   `frequency_missing` is `0`.
+- **What is missing.** As in SAS, a blank or whitespace-only character value
+  is missing (`haven` gives it as `""`), and `NaN` is recoded to plain NA so
+  the two form one level. Factors are not recoded.
+- **Special missing values.** `haven::tagged_na()` values (SAS `.A` to `.Z`,
+  `._`) are separate levels under `missing = TRUE`, ordered `._`, `.`, `.A`
+  ... `.Z`, all before non-missing values, and the result keeps the tag.
+  Under `missing = FALSE` they are excluded and counted like any NA.
 
 ### Weights
 
@@ -114,11 +121,14 @@ right:
 
 ## Labels
 
-- **Value labels.** A `haven_labelled` variable is grouped and ordered on its
-  stored value, as SAS groups on the internal value and prints the formatted
-  one. A `<var>_label` character column, holding the value label (NA where a
-  value has none), follows that variable's column. Variables without value
-  labels get no extra column.
+- **Value labels.** SAS forms levels from formatted values, so a
+  `haven_labelled` variable is grouped on its value label: stored codes
+  sharing a label form one row, shown and ordered as the smallest of those
+  codes. A value with no label keeps its own value and row. A `<var>_label`
+  character column, holding the value label (NA where a value has none),
+  follows that variable's column. Variables without value labels get no extra
+  column. A `tables` name that equals an output column (a statistic, or the
+  `<var>_label` of a value-labelled variable) is an error.
 - **Variable labels.** The result's leading columns carry the source
   variables' `var_label`. Row subsetting strips the `label` attribute, which
   once silently dropped every label in weighted `proc_means()` calls; labels
@@ -176,6 +186,18 @@ Test files split by theme, following the `proc_means` tests:
   the PR.
 - Branch `feat/proc-freq`. Done means `devtools::document()`,
   `devtools::test()` and `devtools::check()` at 0/0/0, then a PR.
+
+## Revisions after final review (2026-09-16)
+
+- **F1.** A `tables` name clashing with an output column is an error; it
+  previously overwrote the key column silently.
+- **F2.** Blank character values are missing, as in SAS.
+- **F3.** `NaN` is recoded to NA; tagged NAs are separate missing levels in
+  SAS order and keep their tags in the result.
+- **F4.** Value-labelled variables group on the label (codes sharing a label
+  form one row, at the smallest code), not on the stored value. Unlabelled
+  doubles stay grouped on exact values, a stated divergence from SAS's
+  printed-value grouping.
 
 ## Follow-up
 

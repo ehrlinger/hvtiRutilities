@@ -15,7 +15,8 @@ table.}
 \item{missing}{Logical. \code{FALSE} (the SAS default) excludes rows with a
 missing value in any \code{tables} variable from the table and from every
 denominator, and reports their count in the \code{frequency_missing}
-attribute. \code{TRUE}, SAS \code{/ MISSING}, treats missing as a level.}
+attribute. \code{TRUE}, SAS \code{/ MISSING}, treats missing as a level,
+with each SAS special missing value a level of its own.}
 
 \item{list}{Logical. \code{TRUE}, SAS \code{/ LIST}, gives cumulative
 columns and percentages of the grand total for an n-way table. It has no
@@ -68,10 +69,24 @@ numbers by value, character values by byte value (the C locale, so
 \code{"B"} sorts before \code{"a"}). Unused factor levels are omitted, as
 SAS omits zero-count levels without \code{SPARSE}.
 
-A \code{haven_labelled} variable is grouped on its stored value, and a
-\code{<var>_label} column holding the value label follows it, as SAS groups
-on the internal value and prints the formatted one. Variable labels on the
-\code{tables} columns are kept.
+A \code{haven_labelled} variable is grouped on its value label, as SAS
+forms levels from formatted values: stored codes sharing a label form one
+row, shown as the smallest of those codes, and a \code{<var>_label} column
+holding the label follows it. A value with no label is its own row.
+Variable labels on the \code{tables} columns are kept.
+
+\strong{What counts as missing.} As in SAS, a blank or whitespace-only
+character value is missing, and so is \code{NaN}. SAS special missing
+values, read by \code{haven} as \code{\link[haven]{tagged_na}}, are
+separate missing levels in SAS order: \code{._}, then \code{.}, then
+\code{.A} to \code{.Z}.
+
+\strong{Where this differs from SAS.} Unlabelled doubles are grouped on
+their exact values, whereas SAS groups on the printed (\code{BEST12.})
+value, so values that differ past about 12 significant digits stay separate
+rows here. Non-positive weights are an error, whereas SAS drops zero
+weights and ignores negative ones; \code{\link{proc_means}} makes the same
+deliberate choice.
 
 Percentages are not rounded. SAS rounds only for display, and a rounded
 result would fail \code{\link{compare_parity}} against SAS output.

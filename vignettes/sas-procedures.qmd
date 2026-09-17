@@ -30,8 +30,8 @@ Open a new extract in SAS and you almost certainly run three things before
 anything else. `PROC CONTENTS` to see what arrived: how many observations, how
 many variables, what each one is called and how it is stored. `PROC MEANS` to
 see whether the numbers are plausible: means, ranges, how much is missing. And
-`PROC FREQ` to see whether the categories are: how many died, how the cohort
-splits across the groups you will compare.
+`PROC FREQ` to see whether the categories look right: how many died, how the
+cohort splits across the groups you will compare.
 
 None of them is a modelling step. They are the sanity check you do before you
 trust the file enough to analyse it. `proc_contents()`, `proc_means()` and
@@ -402,6 +402,10 @@ can check the list rather than discover an entry mid-analysis.
 | `PROC FREQ` missing values | Dropped unless `MISSING`; count printed | Dropped unless `missing = TRUE`; count in `attr(, "frequency_missing")` |
 | `PROC FREQ` level order | `ORDER=INTERNAL`, missing first | Same, missing first |
 | `PROC FREQ` percentages | Rounded for display | Unrounded |
+| `PROC FREQ` blank character values | Missing | Missing |
+| `PROC FREQ` codes sharing a value label | One row | One row, at the smallest code |
+| `PROC FREQ` unlabelled doubles | Grouped on the printed value | Grouped on the exact value |
+| `PROC FREQ` non-positive weights | Zero dropped, negative ignored | Error |
 | `PROC FREQ` tests (`CHISQ`, `FISHER`, ...) | Available | Not ported |
 | `PROC CONTENTS` sort | Alphabetic by default | `order = "alpha"` by default |
 | `Len`, `Pos`, `Informat` | Reported | Omitted, not recoverable through `haven` |
