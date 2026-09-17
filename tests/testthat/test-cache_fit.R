@@ -23,7 +23,7 @@ test_that("a hit loads without running the computation", {
   expect_identical(first, second)
 })
 
-test_that("a variable holding a quoted call is the same computation as inline code", {
+test_that("a variable holding a quoted call is the same as inline code", {
   dir <- withr::local_tempdir()
   d <- 1:10
   cache_fit("s", sum(d), dir = dir)
@@ -60,7 +60,7 @@ test_that("a changed input stops with a classed error naming it", {
   expect_match(conditionMessage(err), "refit = TRUE")
 })
 
-test_that("refit = TRUE recomputes a stale object and the new one is then a hit", {
+test_that("refit = TRUE recomputes a stale object; the new one is then a hit", {
   dir <- withr::local_tempdir()
   d <- 1:10
   cache_fit("s", sum(d), dir = dir)
@@ -126,6 +126,36 @@ test_that("refitting an upstream object makes a downstream cache stale", {
                class = "hvtiRutilities_stale_cache")
 })
 
+test_that("an upstream cache HIT (not just a refit) leaves downstream a hit", {
+  dir <- withr::local_tempdir()
+  dta <- data.frame(y = c(1, 2, 3, 4, 6), x = c(1, 2, 3, 5, 7))
+  up <- cache_fit("up", lm(y ~ x, data = dta), dir = dir)
+  cache_fit("down", stats::predict(up), dir = dir)
+
+  # "up" is unchanged, so this call is itself a cache HIT and returns a value
+  # loaded via readRDS() -- its $terms environment is detached, unlike the
+  # live fit above that "down" was originally cached against. Rebinding to
+  # the same name "up" keeps the code text of the "down" call identical.
+  up <- suppressMessages(cache_fit("up", lm(y ~ x, data = dta), dir = dir))
+  expect_message(cache_fit("down", stats::predict(up), dir = dir),
+                 "loaded 'down' from cache")
+})
+
+test_that("a chained cache survives across processes", {
+  skip_if_not_installed("callr")
+  skip_if_not_installed("pkgload")
+  dir <- withr::local_tempdir()
+  pkg_path <- pkgload::pkg_path()
+  job <- function(dir, pkg_path) {
+    pkgload::load_all(pkg_path, quiet = TRUE)
+    dta <- data.frame(y = c(1, 2, 3, 4, 6), x = c(1, 2, 3, 5, 7))
+    up <- cache_fit("up", lm(y ~ x, data = dta), dir = dir)
+    cache_fit("down", stats::predict(up), dir = dir)
+  }
+  callr::r(job, args = list(dir = dir, pkg_path = pkg_path))
+  expect_no_error(callr::r(job, args = list(dir = dir, pkg_path = pkg_path)))
+})
+
 test_that("arguments are checked", {
   dir <- withr::local_tempdir()
   expect_error(cache_fit("a/b", sum(1), dir = dir), "file stem")
@@ -134,6 +164,13 @@ test_that("arguments are checked", {
   expect_error(cache_fit("a", sum(1), dir = dir, seed = "x"), "seed")
   expect_error(cache_fit("a", sum(1), dir = file.path(dir, "nope")),
                "does not exist")
+})
+
+test_that("a non-scalar-character dir gives a clear `dir` error", {
+  dir <- withr::local_tempdir()
+  expect_error(cache_fit("a", sum(1), dir = c(dir, dir)), "`dir`")
+  expect_error(cache_fit("a", sum(1), dir = 1), "`dir`")
+  expect_error(cache_fit("a", sum(1), dir = NA_character_), "`dir`")
 })
 
 test_that("a seed reproduces the result and leaves the global stream alone", {
@@ -173,7 +210,7 @@ test_that("changing the seed makes the cache stale", {
   expect_match(conditionMessage(err), "seed")
 })
 
-test_that("inside a study the default dir is used and provenance carries the key", {
+test_that("inside a study the default dir is used; provenance keeps key", {
   root <- make_study_fixture(withr::local_tempdir())
   dir.create(file.path(root, "estimates"))
   withr::local_dir(root)
@@ -196,7 +233,11 @@ test_that("outside a study no sidecar is written", {
 test_that("a provenance failure inside a study leaves nothing cached", {
   root <- make_study_fixture(withr::local_tempdir(), write_data = FALSE)
   dir.create(file.path(root, "estimates"))
-  expect_error(cache_fit("s", sum(1:3), dir = file.path(root, "estimates")))
+  err <- expect_error(
+    cache_fit("s", sum(1:3), dir = file.path(root, "estimates"))
+  )
+  expect_match(conditionMessage(err), "cache_fit", fixed = TRUE)
+  expect_match(conditionMessage(err), "NOT kept")
   expect_length(list.files(file.path(root, "estimates"), all.files = TRUE,
                            no.. = TRUE), 0L)
 })
@@ -225,7 +266,8 @@ test_that("a survival forest round-trips and records its package version", {
     "loaded"
   )
   expect_equal(again$predicted.oob, fit$predicted.oob)
-  expect_identical(attr(fit, "hvtiRutilities_cache_key")$packages$randomForestSRC,
+  key_pkgs <- attr(fit, "hvtiRutilities_cache_key")$packages
+  expect_identical(key_pkgs$randomForestSRC,
                    as.character(utils::packageVersion("randomForestSRC")))
 })
 

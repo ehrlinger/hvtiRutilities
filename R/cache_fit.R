@@ -29,7 +29,13 @@
 #' The key digests each free variable of the code: each name it reads, less
 #' names it assigns. Values read indirectly (inside the body of a function it
 #' calls, or through \code{get()}) are not seen; pass such values into the code
-#' as arguments.
+#' as arguments. The exception is a function defined in the global environment
+#' (as in a shared \code{_common.R}): its own body is part of the key, so
+#' editing it invalidates a cache that calls it, even though values it in turn
+#' reads indirectly are still not seen.
+#'
+#' The computation must return a value; a result of \code{NULL} is an error,
+#' because there would be nothing to cache.
 #'
 #' When \code{seed} is given, the code runs inside
 #' \code{\link[withr]{with_seed}}, which leaves the global random number stream
@@ -55,8 +61,9 @@
 #' @param seed \code{NULL} or a single whole number.
 #' @param dir Character(1). An existing directory. Defaults to the study's
 #'   estimates folder.
-#' @param refit Logical(1). \code{TRUE} recomputes and overwrites a stale or
-#'   unkeyed file.
+#' @param refit Logical(1). \code{TRUE} recomputes and overwrites the file only
+#'   when it is stale or unkeyed; a valid cache is still loaded, not
+#'   recomputed, regardless of \code{refit}.
 #'
 #' @return The result of \code{code}, computed or loaded, with its key attached
 #'   as attribute \code{hvtiRutilities_cache_key}.
@@ -77,7 +84,7 @@ cache_fit <- function(name, code, seed = NULL, dir = study_dir("estimates"),
                       refit = FALSE) {
   expr <- substitute(code)
   env  <- parent.frame()
-  .cache_check_args(name, seed, refit)
+  .cache_check_args(name, seed, refit, dir)
   if (!is.null(seed)) seed <- as.integer(seed)
   code <- .cache_resolve(expr, env)
 
@@ -115,7 +122,7 @@ cache_fit <- function(name, code, seed = NULL, dir = study_dir("estimates"),
   .cache_attach(run$value, key)
 }
 
-.cache_check_args <- function(name, seed, refit) {
+.cache_check_args <- function(name, seed, refit, dir) {
   if (!is.character(name) || length(name) != 1L || is.na(name) ||
         !nzchar(name) || grepl("[/\\\\]", name)) {
     stop("cache_fit(): `name` must be a single file stem with no path ",
@@ -128,6 +135,10 @@ cache_fit <- function(name, code, seed = NULL, dir = study_dir("estimates"),
   }
   if (!is.logical(refit) || length(refit) != 1L || is.na(refit)) {
     stop("cache_fit(): `refit` must be TRUE or FALSE.", call. = FALSE)
+  }
+  if (!is.character(dir) || length(dir) != 1L || is.na(dir)) {
+    stop("cache_fit(): `dir` must be a single, non-NA character string.",
+         call. = FALSE)
   }
 }
 
@@ -224,7 +235,10 @@ cache_fit <- function(name, code, seed = NULL, dir = study_dir("estimates"),
 
 # Records provenance when `dir` lies inside a study. Only "no _study.yml
 # found" means "not a study"; every other failure propagates, and because this
-# runs before the rename, a failure leaves nothing cached.
+# runs before the rename, a failure leaves nothing cached. The text match on
+# that message is a coupling to study_config()'s own stop() in R/study_config.R
+# (it raises a plain, unclassed condition); replace it if that ever gains a
+# class.
 .cache_provenance <- function(path, key, dir) {
   root <- tryCatch(
     study_root(dir),
@@ -236,6 +250,16 @@ cache_fit <- function(name, code, seed = NULL, dir = study_dir("estimates"),
     }
   )
   if (is.null(root)) return(invisible(NULL))
-  record_provenance(path, extra = list(cache_key = key),
-                    cfg = study_config(root))
+  # require_data = FALSE matches the leniency of study_root()'s own detection
+  # above; study_config()'s default (require_data = TRUE) would otherwise
+  # apply a stricter read here than what "is this a study" just decided.
+  cfg <- study_config(root, require_data = FALSE)
+  tryCatch(
+    record_provenance(path, extra = list(cache_key = key), cfg = cfg),
+    error = function(e) {
+      stop("cache_fit(): provenance could not be recorded for '",
+           basename(path), "'; the computed result was NOT kept.\n",
+           conditionMessage(e), call. = FALSE)
+    }
+  )
 }

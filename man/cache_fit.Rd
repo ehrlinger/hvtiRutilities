@@ -18,8 +18,9 @@ variable holding a quoted call.}
 \item{dir}{Character(1). An existing directory. Defaults to the study's
 estimates folder.}
 
-\item{refit}{Logical(1). \code{TRUE} recomputes and overwrites a stale or
-unkeyed file.}
+\item{refit}{Logical(1). \code{TRUE} recomputes and overwrites the file only
+when it is stale or unkeyed; a valid cache is still loaded, not
+recomputed, regardless of \code{refit}.}
 }
 \value{
 The result of \code{code}, computed or loaded, with its key attached
@@ -55,7 +56,13 @@ assigned inside a block do not appear in the caller.
 The key digests each free variable of the code: each name it reads, less
 names it assigns. Values read indirectly (inside the body of a function it
 calls, or through \code{get()}) are not seen; pass such values into the code
-as arguments.
+as arguments. The exception is a function defined in the global environment
+(as in a shared \code{_common.R}): its own body is part of the key, so
+editing it invalidates a cache that calls it, even though values it in turn
+reads indirectly are still not seen.
+
+The computation must return a value; a result of \code{NULL} is an error,
+because there would be nothing to cache.
 
 When \code{seed} is given, the code runs inside
 \code{\link[withr]{with_seed}}, which leaves the global random number stream
