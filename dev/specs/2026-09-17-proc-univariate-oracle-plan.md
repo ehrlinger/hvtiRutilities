@@ -597,7 +597,7 @@ In `dev/specs/README.md`, insert directly below the row that begins `| 2026-09-1
 - [ ] **Step 5: Commit**
 
 ```bash
-git add dev/oracle/proc_univariate/oracle.sas dev/oracle/proc_univariate/README.md dev/specs/README.md
+git add dev/oracle/proc_univariate/oracle.sas dev/oracle/proc_univariate/README.md dev/specs/README.md .gitattributes .Rbuildignore
 git commit -m "feat(oracle): SAS program and README for the proc_univariate() oracle kit
 
 Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
@@ -612,7 +612,7 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 - [ ] **Step 1: Nothing ships**
 
 Run: `git diff --name-only main...HEAD`
-Expected: only paths under `dev/`.
+Expected: only paths under `dev/`, plus `.gitattributes` and `.Rbuildignore`.
 
 Run: `Rscript -e 'cat(devtools::build(path = tempdir(), quiet = TRUE))' | xargs tar -tzf | grep -c "dev/oracle" || true`
 Expected: `0`.

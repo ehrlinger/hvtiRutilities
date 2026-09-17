@@ -106,7 +106,7 @@ written.
 | keyword | definition | confidence |
 |---|---|---|
 | unweighted quantiles | `stats::quantile(type = 2)`, SAS `PCTLDEF=5`, as `proc_means()` | documented behaviour; digits by oracle |
-| weighted quantiles | Sort `x` ascending with weights `w`; `S_i` = cumulative weight, `W` = total. For fraction `p`: if `S_i = pW` for some `i`, the result is `(x_i + x_{i+1}) / 2`; otherwise `x_{i+1}` where `S_i < pW < S_{i+1}`. Equal weights reduce to `type = 2`. `PCTLDEF=` does not apply. | rule documented, formula text not retrieved: **oracle** |
+| weighted quantiles | Sort `x` ascending with weights `w`; `S_i` = cumulative weight, `W` = total. For fraction `p`: if `S_i = pW` for some `i`, the result is `(x_i + x_{i+1}) / 2`; otherwise `x_{i+1}` where `S_i < pW < S_{i+1}`. Endpoints: `p = 0` gives the minimum and `p = 1` the maximum (the equality branch at `i = n` has no `x_{n+1}`). Equal weights reduce to `type = 2`. `PCTLDEF=` does not apply. | rule documented, formula text not retrieved: **oracle** (endpoints: `pp_0`, `pp_100` in every weighted scenario) |
 | `var`, `std`, `stderr`, `stdmean`, `cv` | CSS divided by `n - 1` (`df`), `n` (`n`), `sum(w) - 1` (`wdf`), `sum(w)` (`weight`); `stderr = std / sqrt(n)` under `df`, using the same divisor otherwise | divisors documented; `stderr`/`cv` under non-DF: **oracle** |
 | `skewness`, `kurtosis` | as `proc_means()` (DF forms) regardless of `vardef` until the oracle shows otherwise | **oracle** |
 | `t`, `probt` | `(xbar - mu0) / (s / sqrt(n))`; two-sided p from t with `n - 1` df. Weighted: weighted mean and weighted `s` | documented |
@@ -114,6 +114,7 @@ written.
 | `signrank`, `probs` | `d = x - mu0`, drop `d == 0`; ranks of `abs(d)` with average ranks for ties; `S = sum(sign(d) * rank) / 2`. n <= 20: exact two-sided p by enumerating all `2^n` sign assignments of the observed ranks. n > 20: t approximation with `n - 1` df using SAS's tie-corrected variance | rule documented; tie variance and exact-tail convention: **oracle** |
 | `normal`, `probn` | Shapiro-Wilk W and p for 3 <= n <= 2000 via `stats::shapiro.test()` | documented; R implements Royston (1995), SAS cites Royston (1992): digits by **oracle** |
 | `mode` | as `proc_means()`, unweighted | weighted behaviour: **oracle** |
+| `nobs` under `weights` | SAS counts every observation read: `N + NMISS` plus those excluded for a missing or non-positive weight. `proc_means()` currently drops missing-weight rows before counting, so it reports fewer; `proc_univariate()` follows SAS, and the same fix to `proc_means()` is a follow-up | documented |
 
 The exact signed-rank p-value is computed by enumeration, not
 `stats::wilcox.test()`, which reports V rather than S and falls back to a
