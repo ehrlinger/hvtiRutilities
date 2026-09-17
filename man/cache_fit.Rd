@@ -59,7 +59,32 @@ calls, or through \code{get()}) are not seen; pass such values into the code
 as arguments. The exception is a function defined in the global environment
 (as in a shared \code{_common.R}): its own body is part of the key, so
 editing it invalidates a cache that calls it, even though values it in turn
-reads indirectly are still not seen.
+reads indirectly are still not seen. This reaches only one level deep: a
+global helper is part of the key only through its own body, not through the
+bodies of further helpers it in turn calls, so editing a callee of a helper
+does not invalidate a cache that calls the helper. For example, if
+\code{hA <- function(z) hB(z)} is defined globally and \code{hB}'s body is
+later edited, the key computed for code that calls \code{hA} is unchanged.
+
+The result is returned with its key attached as an attribute, and that
+attached key, not the object's own content, is what a downstream
+\code{cache_fit()} digests when this result is passed to it as an input.
+Mutating the returned object afterwards, for example
+\code{fit$coefficients <- ...}, is invisible to that downstream cache,
+because the attached key does not change to reflect the mutation. If a
+cached object is modified in place, strip its
+\code{hvtiRutilities_cache_key} attribute or re-wrap the result so a
+downstream cache is not fooled into treating it as unchanged.
+
+The attached-key short cut above applies only to a cached object passed
+directly as an input. A cached object wrapped inside a list, or a model
+object built outside \code{cache_fit()}, carries no such key and is
+digested whole instead; such objects can digest differently across
+sessions or platforms even when nothing meaningful about them changed.
+This shows up as a loud, classed \code{hvtiRutilities_stale_cache} error
+rather than a silently wrong cache hit, which is the safer failure mode,
+but is worth knowing about when a downstream cache goes stale for no
+apparent reason.
 
 The computation must return a value; a result of \code{NULL} is an error,
 because there would be nothing to cache.
