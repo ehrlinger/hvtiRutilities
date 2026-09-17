@@ -334,3 +334,14 @@ test_that("a multiple imputation round-trips with a seed", {
   )
   expect_equal(mice::complete(again), mice::complete(imp))
 })
+
+test_that("a seed that cannot become an integer is refused", {
+  dir <- withr::local_tempdir()
+  for (bad in list(Inf, -Inf, NaN, 2^40, 1.5)) {
+    expect_error(cache_fit("s", stats::runif(2), seed = bad, dir = dir),
+                 "whole number")
+  }
+  expect_length(list.files(dir, all.files = TRUE, no.. = TRUE), 0L)
+  out <- cache_fit("s", stats::runif(2), seed = -1024L, dir = dir)
+  expect_length(out, 2L)
+})

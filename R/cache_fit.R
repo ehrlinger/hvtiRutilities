@@ -156,9 +156,16 @@ cache_fit <- function(name, code, seed = NULL, dir = study_dir("estimates"),
     stop("cache_fit(): `name` must be a single file stem with no path ",
          "separators.", call. = FALSE)
   }
+  # is.finite() rules out Inf and NaN, which satisfy `seed == round(seed)`,
+  # and the range test rules out whole numbers that as.integer() would turn
+  # into NA. Either would reach withr::with_seed() as NA, which is not the
+  # seed the caller asked for.
   if (!is.null(seed) && (!is.numeric(seed) || length(seed) != 1L ||
-                           is.na(seed) || seed != round(seed))) {
-    stop("cache_fit(): `seed` must be NULL or a single whole number.",
+                           is.na(seed) || !is.finite(seed) ||
+                           seed != round(seed) ||
+                           abs(seed) > .Machine$integer.max)) {
+    stop("cache_fit(): `seed` must be NULL or a single whole number no ",
+         "larger than ", .Machine$integer.max, " in absolute value.",
          call. = FALSE)
   }
   if (!is.logical(refit) || length(refit) != 1L || is.na(refit)) {
