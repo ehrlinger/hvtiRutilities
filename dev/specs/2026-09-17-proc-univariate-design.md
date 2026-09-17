@@ -178,8 +178,8 @@ All errors use `call. = FALSE` and name the offending input.
 - `oracle.sas` reads `scenarios.csv` and generates one `PROC UNIVARIATE`
   run per row with `CALL EXECUTE`, requesting every keyword SAS is
   expected to compute for that scenario (`NORMAL` and the rank tests off
-  under `WEIGHT`; `T` off under `VARDEF=` other than `DF`), an `OUTPUT
-  OUT=` naming every keyword, and `PCTLPTS= PCTLPRE=`. Two scenarios are
+  under `WEIGHT`; `T` off under `VARDEF=` other than `DF`) in its `OUTPUT
+  OUT=` statement, with `PCTLPTS= PCTLPRE=`. Two scenarios are
   optional: they deliberately request statistics the design expects SAS to
   refuse. It writes one CSV per scenario with numeric values formatted
   `BEST32.` so no precision is lost in transit.
