@@ -6,7 +6,8 @@
 .cache_key_fields <- c("code", "inputs", "packages", "seed")
 
 # Deparsed code. Deparsing the parsed call normalises whitespace; leaving out
-# "showAttributes" drops srcrefs, so comments and layout never reach the key.
+# "useSource" (and "showAttributes") means srcrefs are not used, so comments and
+# layout never reach the key.
 .cache_code_text <- function(code) {
   paste(deparse(code, width.cutoff = 500L,
                 control = c("keepNA", "keepInteger", "niceNames")),
@@ -44,14 +45,19 @@
   out <- list(ns = character(0), ns_fn = character(0), bare = character(0))
   if (!is.call(code)) return(out)
   head <- code[[1L]]
+  handled_ns_call <- FALSE
   if (is.call(head) && is.symbol(head[[1L]]) &&
         as.character(head[[1L]]) %in% c("::", ":::")) {
     out$ns    <- as.character(head[[2L]])
     out$ns_fn <- as.character(head[[3L]])
+    handled_ns_call <- TRUE
   } else if (is.symbol(head)) {
     out$bare <- as.character(head)
   }
-  for (i in seq_along(code)) {
+  # Recurse into arguments. If head was a :: call, skip index 1 (don't recurse
+  # into it again); for other call-valued heads like f(x)(y), recurse into index 1.
+  indices <- if (handled_ns_call) seq_along(code)[-1L] else seq_along(code)
+  for (i in indices) {
     if (.cache_is_empty_arg(code, i)) next
     sub <- .cache_heads(code[[i]])
     out$ns    <- c(out$ns, sub$ns)

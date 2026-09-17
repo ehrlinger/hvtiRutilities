@@ -20,7 +20,8 @@ test_that("call heads separate namespaced and bare functions", {
   heads <- hvtiRutilities:::.cache_heads(quote(randomForestSRC::rfsrc(f(x), data = d)))
   expect_identical(heads$ns, "randomForestSRC")
   expect_identical(heads$ns_fn, "rfsrc")
-  expect_true("f" %in% heads$bare)
+  expect_setequal(heads$bare, "f")
+  expect_identical(hvtiRutilities:::.cache_heads(quote(pkg::fn(x)))$bare, character(0))
 })
 
 test_that("inputs digest free variables and skip locals, functions and unknown names", {
