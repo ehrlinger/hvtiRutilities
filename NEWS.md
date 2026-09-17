@@ -16,6 +16,14 @@
   opening the project, `here::here()` and `study_root()` name the same
   directory. An existing project is left alone.
 
+## Bug fixes
+
+* **`proc_means()` now counts missing-weight rows in `nobs`, as SAS does.**
+  With `weights`, SAS `PROC MEANS` and `PROC UNIVARIATE` compute `NOBS` as
+  `N + NMISS` plus the observations excluded for a missing weight.
+  `proc_means()` dropped those rows before counting, so `nobs` was too low.
+  Every other statistic is unchanged.
+
 # hvtiRutilities 1.1.12
 
 ## New features
