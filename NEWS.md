@@ -16,6 +16,13 @@
   opening the project, `here::here()` and `study_root()` name the same
   directory. An existing project is left alone.
 
+## Bug fixes
+
+* `proc_freq()` no longer returns `NA` frequencies and percentages when
+  integer weights sum past `.Machine$integer.max`. Weights are summed as
+  doubles, so a weighted `frequency_missing` is double for integer weights
+  too.
+
 # hvtiRutilities 1.1.12
 
 ## New features

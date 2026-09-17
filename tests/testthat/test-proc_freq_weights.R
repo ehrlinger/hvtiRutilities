@@ -64,3 +64,13 @@ test_that("tagged NAs with weights are separate levels in SAS order", {
   expect_equal(res$Frequency, c(4, 3, 7, 1))
   expect_equal(haven::na_tag(res$v), c("_", NA, "a", NA))
 })
+
+test_that("integer weights summing past integer max stay exact", {
+  d <- data.frame(g = c("a", "a", "b", NA),
+                  wt = c(rep(1500000000L, 3), 2L))
+  res <- proc_freq(d, "g", weights = "wt")
+  expect_type(res$Frequency, "double")
+  expect_equal(res$Frequency, c(3e9, 1.5e9))
+  expect_equal(res$Percent, c(200 / 3, 100 / 3))
+  expect_identical(attr(res, "frequency_missing"), 2)
+})
