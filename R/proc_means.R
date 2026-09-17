@@ -223,7 +223,7 @@ proc_means <- function(data, vars = NULL, class = NULL,
   if (length(rows) == 0L) {
     warning("All rows dropped: every value of the class variable(s) is missing; ",
             "returning a zero-row result.", call. = FALSE)
-    return(.empty_means(class, stats))
+    return(.empty_means(class, stats, col_names))
   }
 
   out <- do.call(rbind, rows)
