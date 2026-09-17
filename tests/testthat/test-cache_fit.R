@@ -143,11 +143,31 @@ test_that("an upstream cache HIT (not just a refit) leaves downstream a hit", {
 
 test_that("a chained cache survives across processes", {
   skip_if_not_installed("callr")
-  skip_if_not_installed("pkgload")
+  # A fresh subprocess can get a copy of hvtiRutilities two ways: an
+  # installed copy that actually has cache_fit() -- R CMD check runs tests
+  # against exactly this, where pkgload::pkg_path() has no source
+  # DESCRIPTION to walk up to -- or, in a dev session (devtools::test()),
+  # by pkgload::load_all()-ing the source tree. Checking for cache_fit()
+  # itself (not just the package name) matters because an *older* installed
+  # copy without it can otherwise shadow the source tree in .libPaths().
+  has_installed_fn <- function() {
+    requireNamespace("hvtiRutilities", quietly = TRUE) &&
+      exists("cache_fit", where = asNamespace("hvtiRutilities"),
+             inherits = FALSE)
+  }
+  pkg_path <- tryCatch(pkgload::pkg_path(), error = function(e) NULL)
+  if (!has_installed_fn() && is.null(pkg_path)) {
+    skip("hvtiRutilities is not resolvable from a fresh subprocess")
+  }
   dir <- withr::local_tempdir()
-  pkg_path <- pkgload::pkg_path()
   job <- function(dir, pkg_path) {
-    pkgload::load_all(pkg_path, quiet = TRUE)
+    if (requireNamespace("hvtiRutilities", quietly = TRUE) &&
+          exists("cache_fit", where = asNamespace("hvtiRutilities"),
+                 inherits = FALSE)) {
+      library(hvtiRutilities)
+    } else {
+      pkgload::load_all(pkg_path, quiet = TRUE)
+    }
     dta <- data.frame(y = c(1, 2, 3, 4, 6), x = c(1, 2, 3, 5, 7))
     up <- cache_fit("up", lm(y ~ x, data = dta), dir = dir)
     cache_fit("down", stats::predict(up), dir = dir)
