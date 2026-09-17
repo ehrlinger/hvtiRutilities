@@ -105,3 +105,20 @@ test_that("a representative code absent from the data is its own row", {
   expect_equal(res$v_label, c("Yes", "Unknown"))
   expect_equal(res$Frequency, c(1L, 2L))
 })
+
+test_that("a label on a tagged NA does not label other missing values", {
+  v <- haven::labelled(c(1, haven::tagged_na("a"), NA, 1),
+                       labels = c(Yes = 1, Refused = haven::tagged_na("a")))
+  res <- proc_freq(data.frame(v = v), "v", missing = TRUE)
+  expect_equal(haven::na_tag(res$v), c(NA, "a", NA))
+  expect_equal(res$v_label, c(NA, "Refused", "Yes"))
+  expect_equal(res$Frequency, c(1L, 1L, 2L))
+})
+
+test_that("a label on a plain NA labels only the plain missing level", {
+  v <- haven::labelled(c(1, NA, haven::tagged_na("b")),
+                       labels = c(Yes = 1, Missing = NA))
+  res <- proc_freq(data.frame(v = v), "v", missing = TRUE)
+  expect_equal(haven::na_tag(res$v), c(NA, "b", NA))
+  expect_equal(res$v_label, c("Missing", NA, "Yes"))
+})

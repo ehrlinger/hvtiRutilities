@@ -259,7 +259,7 @@ proc_freq <- function(data, tables, missing = FALSE, list = FALSE,
     return(x)
   }
   labs <- labs[order(unname(labs), method = "radix")]
-  lab <- names(labs)[match(x, unname(labs))]
+  lab <- .label_lookup(x, labs)
   hit <- !is.na(x) & !is.na(lab)
   x[hit] <- unname(labs)[match(lab[hit], names(labs))]
   x
@@ -317,12 +317,38 @@ proc_freq <- function(data, tables, missing = FALSE, list = FALSE,
     if (is.null(labs)) {
       next
     }
-    lab_col <- names(labs)[match(out[[v]], unname(labs))]
+    lab_col <- .label_lookup(out[[v]], labs)
     pos <- match(v, names(out))
     out <- cbind(out[seq_len(pos)],
                  stats::setNames(data.frame(lab_col, stringsAsFactors = FALSE),
                                  paste0(v, "_label")),
                  out[-seq_len(pos)])
+  }
+  out
+}
+
+## Internal: the value label for each element of x (NA when none). match()
+## treats every NA as equal, so missing values are matched on their haven
+## tag instead: a label on tagged_na("a") labels only that special missing
+## value, and a label on a plain NA only the plain missing value.
+.label_lookup <- function(x, labs) {
+  vals <- unname(labs)
+  out <- rep(NA_character_, length(x))
+  ok <- !is.na(x)
+  out[ok] <- names(labs)[match(x[ok], vals)]
+  if (any(!ok)) {
+    miss <- which(is.na(vals))
+    tag_x <- if (is.double(x)) {
+      haven::na_tag(x[!ok])
+    } else {
+      rep(NA_character_, sum(!ok))
+    }
+    tag_l <- if (is.double(vals)) {
+      haven::na_tag(vals[miss])
+    } else {
+      rep(NA_character_, length(miss))
+    }
+    out[!ok] <- names(labs)[miss][match(tag_x, tag_l)]
   }
   out
 }
