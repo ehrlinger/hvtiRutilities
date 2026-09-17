@@ -349,7 +349,7 @@ Rscript -e 'devtools::test(filter = "stat_engine")'
 
 ## Internal: weighted mean, or the plain mean when w is NULL
 .wmean <- function(v, w) {
-  if (is.null(w)) mean(v) else sum(w * v) / sum(w)
+  if (is.null(w)) mean(v) else sum(w * v) / sum(as.numeric(w))
 }
 
 ## Internal: weighted corrected sum of squares
