@@ -125,7 +125,9 @@ test_that("the replaced study_init API is unavailable", {
 test_that("study_setup writes an R project named for the study directory", {
   root <- file.path(tempfile("rproj-"), "bio_example")
   on.exit(unlink(dirname(root), recursive = TRUE), add = TRUE)
-  suppressMessages(study_setup(root, study = "Rproj test", study_tracker_id = 1L))
+  suppressMessages(
+    study_setup(root, study = "Rproj test", study_tracker_id = 1L)
+  )
 
   proj <- file.path(root, "bio_example.Rproj")
   expect_true(file.exists(proj))
@@ -135,12 +137,24 @@ test_that("study_setup writes an R project named for the study directory", {
 test_that("study_setup leaves an existing R project alone", {
   root <- tempfile("rproj-existing-")
   on.exit(unlink(root, recursive = TRUE), add = TRUE)
-  suppressMessages(study_setup(root, study = "Rproj adopt", study_tracker_id = 2L))
+  suppressMessages(
+    study_setup(root, study = "Rproj adopt", study_tracker_id = 2L)
+  )
   unlink(list.files(root, "[.]Rproj$", full.names = TRUE))
-  writeLines("Version: 1.0\n\nRestoreWorkspace: Yes", file.path(root, "mine.Rproj"))
+  writeLines(
+    "Version: 1.0\n\nRestoreWorkspace: Yes",
+    file.path(root, "mine.Rproj")
+  )
 
-  suppressMessages(study_setup(root, study = "Rproj adopt", study_tracker_id = 2L, adopt = TRUE))
+  suppressMessages(
+    study_setup(
+      root, study = "Rproj adopt", study_tracker_id = 2L, adopt = TRUE
+    )
+  )
 
   expect_identical(list.files(root, "[.]Rproj$"), "mine.Rproj")
-  expect_identical(readLines(file.path(root, "mine.Rproj"))[[3L]], "RestoreWorkspace: Yes")
+  expect_identical(
+    readLines(file.path(root, "mine.Rproj"))[[3L]],
+    "RestoreWorkspace: Yes"
+  )
 })
