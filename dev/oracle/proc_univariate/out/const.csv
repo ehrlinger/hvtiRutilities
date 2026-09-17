@@ -1,0 +1,2 @@
+n,mean,std,skewness,uss,cv,sumwgt,sum,var,kurtosis,css,stdmean,nmiss,nobs,max,p99,p95,p90,q3,median,q1,p10,p5,p1,min,range,qrange,mode,t,msign,signrank,probt,probm,probs,normal,probn,pp_0,pp_2_5,pp_16,pp_50,pp_84,pp_97_5,pp_100
+6,5,0,,150,0,6,30,0,,0,0,0,6,5,5,5,5,5,5,5,5,5,5,5,0,0,5,,3,10.5,,0.03125,0.03125,,,5,5,5,5,5,5,5

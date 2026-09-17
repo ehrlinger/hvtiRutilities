@@ -32,7 +32,8 @@ dropped, matching SAS's default.}
 
 \item{weights}{Character or \code{NULL}. Name of a single numeric column of
 \code{data} to use as an observation weight, mirroring the SAS
-\code{WEIGHT} statement. Observations whose weight is missing are excluded.
+\code{WEIGHT} statement. Observations whose weight is missing are excluded
+from every statistic except \code{nobs}, which counts them, as SAS does.
 A zero or negative weight is an error naming the offending rows: SAS's own
 handling of non-positive weights varies across procedures and versions, so
 this fails loudly rather than encode a guess.}
@@ -80,7 +81,10 @@ quantiles at all; that is \code{PROC UNIVARIATE}. So
 \emph{unweighted} median.
 
 \code{mode} returns the smallest value among tied modes, and \code{NA} when
-no value repeats, both matching SAS. \code{skewness} and \code{kurtosis} are
+no value repeats, except that a single observation is its own mode; all
+three match SAS. Weighted \code{stderr} divides the weighted standard
+deviation by the square root of the sum of the weights, as SAS does, not by
+the square root of the count. \code{skewness} and \code{kurtosis} are
 the adjusted Fisher-Pearson forms SAS uses, not R's naive moment ratios, and
 are \code{NA} for a constant column rather than \code{NaN}.
 

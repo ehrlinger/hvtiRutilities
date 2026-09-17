@@ -36,7 +36,10 @@
 #' \emph{unweighted} median.
 #'
 #' \code{mode} returns the smallest value among tied modes, and \code{NA} when
-#' no value repeats, both matching SAS. \code{skewness} and \code{kurtosis} are
+#' no value repeats, except that a single observation is its own mode; all
+#' three match SAS. Weighted \code{stderr} divides the weighted standard
+#' deviation by the square root of the sum of the weights, as SAS does, not by
+#' the square root of the count. \code{skewness} and \code{kurtosis} are
 #' the adjusted Fisher-Pearson forms SAS uses, not R's naive moment ratios, and
 #' are \code{NA} for a constant column rather than \code{NaN}.
 #'
@@ -64,7 +67,8 @@
 #'   \code{"css"}. Shape: \code{"skewness"}, \code{"kurtosis"}.
 #' @param weights Character or \code{NULL}. Name of a single numeric column of
 #'   \code{data} to use as an observation weight, mirroring the SAS
-#'   \code{WEIGHT} statement. Observations whose weight is missing are excluded.
+#'   \code{WEIGHT} statement. Observations whose weight is missing are excluded
+#'   from every statistic except \code{nobs}, which counts them, as SAS does.
 #'   A zero or negative weight is an error naming the offending rows: SAS's own
 #'   handling of non-positive weights varies across procedures and versions, so
 #'   this fails loudly rather than encode a guess.
@@ -106,8 +110,11 @@ proc_means <- function(data, vars = NULL, class = NULL,
   labels <- labelled::var_label(data, unlist = TRUE, null_action = "fill")
 
   wvec <- .validate_weights(weights, data)
+  # Rows dropped for a missing weight still count toward nobs, as in SAS.
+  excluded <- data[0, , drop = FALSE]
   if (!is.null(wvec)) {
     keep_w <- !is.na(wvec)
+    excluded <- data[!keep_w, , drop = FALSE]
     data <- data[keep_w, , drop = FALSE]
     wvec <- wvec[keep_w]
   }
@@ -149,7 +156,12 @@ proc_means <- function(data, vars = NULL, class = NULL,
     if (!is.null(wvec)) {
       wvec <- wvec[keep]
     }
-    groups <- unique(data[, class, drop = FALSE])
+    # Levels come from every row with a complete class value, including rows
+    # dropped for a missing weight: SAS PROC MEANS still prints a level whose
+    # every weight is missing (N = 0, with its rows counted in nobs).
+    excl_cls <- excluded[, class, drop = FALSE]
+    excl_cls <- excl_cls[stats::complete.cases(excl_cls), , drop = FALSE]
+    groups <- unique(rbind(data[, class, drop = FALSE], excl_cls))
     groups <- groups[do.call(base::order,
                              c(unname(as.list(groups)),
                                list(method = "radix"))), ,
@@ -163,19 +175,28 @@ proc_means <- function(data, vars = NULL, class = NULL,
       }
       which(ok)
     })
+    grp_excluded <- vapply(seq_len(nrow(groups)), function(i) {
+      ok <- rep(TRUE, nrow(excluded))
+      for (k in class) {
+        ok <- ok & !is.na(excluded[[k]]) & excluded[[k]] == groups[[k]][i]
+      }
+      sum(ok)
+    }, integer(1))
   }
 
   rows <- list()
   for (v in vars) {
     if (is.null(groups)) {
       rows[[length(rows) + 1L]] <-
-        .means_row(data[[v]], v, unname(labels[v]), stats, wvec)
+        .means_row(data[[v]], v, unname(labels[v]), stats, wvec,
+                   n_excluded = nrow(excluded))
     } else {
       for (i in seq_len(nrow(groups))) {
         rows[[length(rows) + 1L]] <- cbind(
           groups[i, , drop = FALSE],
           .means_row(data[[v]][grp_idx[[i]]], v, unname(labels[v]), stats,
-                     if (is.null(wvec)) NULL else wvec[grp_idx[[i]]]),
+                     if (is.null(wvec)) NULL else wvec[grp_idx[[i]]],
+                     n_excluded = grp_excluded[i]),
           stringsAsFactors = FALSE
         )
       }
@@ -235,7 +256,7 @@ proc_means <- function(data, vars = NULL, class = NULL,
 
 ## Internal: weighted mean, or the plain mean when w is NULL
 .wmean <- function(v, w) {
-  if (is.null(w)) mean(v) else sum(w * v) / sum(w)
+  if (is.null(w)) mean(v) else sum(w * v) / sum(as.numeric(w))
 }
 
 ## Internal: weighted variance at SAS VARDEF=DF -- the divisor is the count of
@@ -350,7 +371,10 @@ proc_means <- function(data, vars = NULL, class = NULL,
     weighted = FALSE, integer = FALSE
   ),
   stderr = list(
-    fun = function(x, v, w) sqrt(.wvar(v, w) / length(v)),
+    # SAS divides by sqrt(sum(w)), which is sqrt(n) when unweighted.
+    fun = function(x, v, w) {
+      sqrt(.wvar(v, w) / if (is.null(w)) length(v) else sum(as.numeric(w)))
+    },
     weighted = TRUE, integer = FALSE
   ),
   cv = list(
@@ -408,6 +432,9 @@ proc_means <- function(data, vars = NULL, class = NULL,
     fun = function(x, v, w) {
       if (length(v) == 0L) {
         return(NA_real_)
+      }
+      if (length(v) == 1L) {
+        return(v)                 # SAS: a single observation is its own mode
       }
       u <- unique(v)
       counts <- tabulate(match(v, u))
@@ -478,9 +505,13 @@ proc_means <- function(data, vars = NULL, class = NULL,
 }
 
 ## Internal: one output row for one variable
-.means_row <- function(x, variable, label, stats, w = NULL) {
+.means_row <- function(x, variable, label, stats, w = NULL,
+                       n_excluded = 0L) {
   vals <- lapply(stats, function(s) .compute_stat(x, s, w))
   names(vals) <- stats
+  if ("nobs" %in% stats) {
+    vals$nobs <- vals$nobs + as.integer(n_excluded)
+  }
   cbind(
     data.frame(variable = variable, label = label, stringsAsFactors = FALSE),
     as.data.frame(vals, stringsAsFactors = FALSE)

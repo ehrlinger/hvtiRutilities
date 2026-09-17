@@ -18,6 +18,22 @@
 
 ## Bug fixes
 
+* **`proc_means()` now counts missing-weight rows in `nobs`, as SAS does.**
+  With `weights`, SAS `PROC MEANS` and `PROC UNIVARIATE` compute `NOBS` as
+  `N + NMISS` plus the observations excluded for a missing weight.
+  `proc_means()` dropped those rows before counting, so `nobs` was too low.
+  A class level whose every weight is missing now keeps its row, with `n` of
+  0, as SAS `PROC MEANS` prints it. Every other statistic is unchanged.
+
+* **`proc_means()` weighted `stderr` now divides by the square root of the
+  sum of the weights, as SAS does.** It divided by the square root of the
+  count, so every weighted `stderr` was wrong unless the weights summed to the
+  count. Confirmed against SAS 9.4 `PROC MEANS` and `PROC UNIVARIATE`.
+
+* **`proc_means()` returns a single observation as its own `mode`.** It
+  returned `NA`, as for any sample with no repeated value; SAS reports the
+  value.
+
 * `proc_freq()` no longer returns `NA` frequencies and percentages when
   integer weights sum past `.Machine$integer.max`. Weights are summed as
   doubles, so a weighted `frequency_missing` is double for integer weights
