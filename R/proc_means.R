@@ -106,7 +106,17 @@ proc_means <- function(data, vars = NULL, class = NULL,
     stop("'data' must be a data frame.", call. = FALSE)
   }
   .validate_stats(stats)
+  .summary_table(data, vars, class, stats, weights, .stat_ctx("means"))
+}
 
+## Internal: the driver shared by proc_means() and proc_univariate().
+##
+## Validates vars, class and weights; drops rows with a missing weight (they
+## still count toward nobs, per class level); groups by class; and assembles
+## one row per analysis variable per class level. `stats` are engine keywords
+## and `col_names` the output column names, one per keyword.
+.summary_table <- function(data, vars, class, stats, weights, ctx,
+                           col_names = stats) {
   labels <- labelled::var_label(data, unlist = TRUE, null_action = "fill")
 
   wvec <- .validate_weights(weights, data)
@@ -145,7 +155,7 @@ proc_means <- function(data, vars = NULL, class = NULL,
   if (length(vars) == 0L) {
     warning("No numeric columns to analyse; returning a zero-row result.",
             call. = FALSE)
-    return(.empty_means(class, stats))
+    return(.empty_means(class, stats, col_names))
   }
 
   groups <- NULL
@@ -156,12 +166,17 @@ proc_means <- function(data, vars = NULL, class = NULL,
     if (!is.null(wvec)) {
       wvec <- wvec[keep]
     }
-    # Levels come from every row with a complete class value, including rows
-    # dropped for a missing weight: SAS PROC MEANS still prints a level whose
-    # every weight is missing (N = 0, with its rows counted in nobs).
-    excl_cls <- excluded[, class, drop = FALSE]
-    excl_cls <- excl_cls[stats::complete.cases(excl_cls), , drop = FALSE]
-    groups <- unique(rbind(data[, class, drop = FALSE], excl_cls))
+    # Levels come from every row with a complete class value. Under
+    # proc_means() that includes rows dropped for a missing weight: SAS PROC
+    # MEANS still prints a level whose every weight is missing (N = 0, with
+    # its rows counted in nobs). SAS PROC UNIVARIATE drops such a level.
+    groups <- data[, class, drop = FALSE]
+    if (ctx$procedure == "means") {
+      excl_cls <- excluded[, class, drop = FALSE]
+      excl_cls <- excl_cls[stats::complete.cases(excl_cls), , drop = FALSE]
+      groups <- rbind(groups, excl_cls)
+    }
+    groups <- unique(groups)
     groups <- groups[do.call(base::order,
                              c(unname(as.list(groups)),
                                list(method = "radix"))), ,
@@ -189,14 +204,16 @@ proc_means <- function(data, vars = NULL, class = NULL,
     if (is.null(groups)) {
       rows[[length(rows) + 1L]] <-
         .means_row(data[[v]], v, unname(labels[v]), stats, wvec,
-                   n_excluded = nrow(excluded))
+                   n_excluded = nrow(excluded), ctx = ctx,
+                   col_names = col_names)
     } else {
       for (i in seq_len(nrow(groups))) {
         rows[[length(rows) + 1L]] <- cbind(
           groups[i, , drop = FALSE],
           .means_row(data[[v]][grp_idx[[i]]], v, unname(labels[v]), stats,
                      if (is.null(wvec)) NULL else wvec[grp_idx[[i]]],
-                     n_excluded = grp_excluded[i]),
+                     n_excluded = grp_excluded[i], ctx = ctx,
+                     col_names = col_names),
           stringsAsFactors = FALSE
         )
       }
@@ -256,9 +273,10 @@ proc_means <- function(data, vars = NULL, class = NULL,
 
 ## Internal: one output row for one variable
 .means_row <- function(x, variable, label, stats, w = NULL,
-                       n_excluded = 0L) {
-  vals <- lapply(stats, function(s) .compute_stat(x, s, w))
-  names(vals) <- stats
+                       n_excluded = 0L, ctx = .stat_ctx(),
+                       col_names = stats) {
+  vals <- lapply(stats, function(s) .compute_stat(x, s, w, ctx))
+  names(vals) <- col_names
   if ("nobs" %in% stats) {
     vals$nobs <- vals$nobs + as.integer(n_excluded)
   }
@@ -269,12 +287,12 @@ proc_means <- function(data, vars = NULL, class = NULL,
 }
 
 ## Internal: zero-row result with the correct columns
-.empty_means <- function(class, stats) {
+.empty_means <- function(class, stats, col_names = stats) {
   out <- data.frame(variable = character(), label = character(),
                     stringsAsFactors = FALSE)
-  for (s in stats) {
-    entry <- .STATS[[s]]
-    out[[s]] <- if (isTRUE(entry$integer)) integer() else numeric()
+  for (i in seq_along(stats)) {
+    entry <- .stat_registry[[stats[i]]]
+    out[[col_names[i]]] <- if (isTRUE(entry$integer)) integer() else numeric()
   }
   if (!is.null(class) && length(class) > 0L) {
     pre <- as.data.frame(
