@@ -106,7 +106,8 @@ dropped, matching SAS's default.</p></dd>
 <dt id="arg-weights">weights<a class="anchor" aria-label="anchor" href="#arg-weights"></a></dt>
 <dd><p>Character or <code>NULL</code>. Name of a single numeric column of
 <code>data</code> to use as an observation weight, mirroring the SAS
-<code>WEIGHT</code> statement. Observations whose weight is missing are excluded.
+<code>WEIGHT</code> statement. Observations whose weight is missing are excluded
+from every statistic except <code>nobs</code>, which counts them, as SAS does.
 A zero or negative weight is an error naming the offending rows: SAS's own
 handling of non-positive weights varies across procedures and versions, so
 this fails loudly rather than encode a guess.</p></dd>

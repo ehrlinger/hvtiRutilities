@@ -45,7 +45,8 @@ proc_means(
 
   Character or `NULL`. Name of a single numeric column of `data` to use
   as an observation weight, mirroring the SAS `WEIGHT` statement.
-  Observations whose weight is missing are excluded. A zero or negative
+  Observations whose weight is missing are excluded from every statistic
+  except `nobs`, which counts them, as SAS does. A zero or negative
   weight is an error naming the offending rows: SAS's own handling of
   non-positive weights varies across procedures and versions, so this
   fails loudly rather than encode a guess.
