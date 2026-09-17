@@ -157,6 +157,14 @@ Record what produced a filed result, in a JSON sidecar beside it
 - [`provenance_path()`](https://ehrlinger.github.io/hvtiRutilities/reference/provenance_path.md)
   : Name the provenance sidecar for an output
 
+## Caching
+
+Compute expensive results once and reload them only while their inputs
+are unchanged
+
+- [`cache_fit()`](https://ehrlinger.github.io/hvtiRutilities/reference/cache_fit.md)
+  : Cache an expensive computation, strictly
+
 ## Analysis Taxonomy
 
 The two-letter prefix system inherited from the CORR analysis binder

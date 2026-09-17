@@ -39,17 +39,17 @@ would otherwise get a second `R` row reporting it as not found.
 
 ``` r
 preflight_report()
-#>         component found version
-#> 1               R  TRUE   4.6.1
-#> 2  TemporalHazard FALSE        
-#> 3  hvtiRutilities  TRUE   1.2.0
-#> 4           haven  TRUE   2.5.5
-#> 5        survival  TRUE   3.8.6
-#> 6       hvtiPlotR FALSE        
-#> 7        testthat  TRUE   3.3.2
-#> 8          quarto  TRUE   1.5.1
-#> 9         ggplot2  TRUE   4.0.3
-#> 10       numDeriv FALSE        
+#>         component found    version
+#> 1               R  TRUE      4.6.1
+#> 2  TemporalHazard FALSE           
+#> 3  hvtiRutilities  TRUE      1.2.0
+#> 4           haven  TRUE      2.5.5
+#> 5        survival  TRUE      3.8.6
+#> 6       hvtiPlotR FALSE           
+#> 7        testthat  TRUE      3.3.2
+#> 8          quarto  TRUE      1.5.1
+#> 9         ggplot2  TRUE      4.0.3
+#> 10       numDeriv  TRUE 2016.8.1.1
 #>                                                                                                                      notes
 #> 1                                                                                                                         
 #> 2                                                                                                                         
