@@ -89,3 +89,8 @@ test_that("weighted stderr does not overflow with large integer weights", {
   expect_false(is.na(res))
   expect_equal(res, sqrt(cs(c(1, 2, 4), "var", big) / 4.5e9))
 })
+
+test_that("weighted mean does not overflow with large integer weights", {
+  big <- rep(1500000000L, 3)
+  expect_equal(cs(c(1, 2, 4), "mean", big), 7 / 3)
+})

@@ -238,7 +238,7 @@ proc_means <- function(data, vars = NULL, class = NULL,
 
 ## Internal: weighted mean, or the plain mean when w is NULL
 .wmean <- function(v, w) {
-  if (is.null(w)) mean(v) else sum(w * v) / sum(w)
+  if (is.null(w)) mean(v) else sum(w * v) / sum(as.numeric(w))
 }
 
 ## Internal: weighted variance at SAS VARDEF=DF -- the divisor is the count of
