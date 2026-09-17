@@ -118,6 +118,8 @@ proc_freq <- function(data, tables, missing = FALSE, list = FALSE,
   .check_flag(list, "list")
 
   wvec <- .validate_weights(weights, data)
+  ## Double, so integer weights cannot overflow rowsum() or sum().
+  if (!is.null(wvec)) wvec <- as.numeric(wvec)
   if (!is.null(weights) && weights %in% tables) {
     stop("Weight column '", weights, "' is also named in 'tables'. A column ",
          "cannot be both a weight and a table variable.", call. = FALSE)
