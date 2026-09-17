@@ -186,11 +186,15 @@
 ## ported; that last case sets ctx$flags$normal_n2000 for the caller to warn.
 .normal_stat <- function(v, w, ctx, what) {
   n <- length(v)
-  if (!is.null(w) || n < 2L || all(v == v[1L])) {
+  if (!is.null(w) || n < 2L) {
     return(NA_real_)
   }
+  # Size first, so a constant column above 2000 values still warns.
   if (n > 2000L) {
     assign("normal_n2000", TRUE, envir = ctx$flags)
+    return(NA_real_)
+  }
+  if (all(v == v[1L])) {
     return(NA_real_)
   }
   if (n == 2L) {

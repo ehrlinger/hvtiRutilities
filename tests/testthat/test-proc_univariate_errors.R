@@ -89,6 +89,14 @@ test_that("normality above 2000 observations is NA with one warning", {
   expect_equal(warnings_seen, 1L)
 })
 
+test_that("a constant column above 2000 observations also warns", {
+  expect_warning(
+    res <- proc_univariate(data.frame(x = rep(5, 2001)), stats = "normal"),
+    "Kolmogorov D"
+  )
+  expect_true(is.na(res$normal))
+})
+
 test_that("no warning at 2000 observations or without a normality keyword", {
   expect_no_warning(
     proc_univariate(data.frame(x = sin(seq_len(2000))), stats = "normal")
