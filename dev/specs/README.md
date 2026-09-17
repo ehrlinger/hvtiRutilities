@@ -26,6 +26,7 @@ condenses it; `plan` files carry none.
 
 | date | note | status |
 |---|---|---|
+| 2026-09-17 | [A strict, call-keyed cache for expensive fits: `cache_fit()`](2026-09-17-cache-fit-design.md) | approved design; pending implementation plan |
 | 2026-09-17 | [Porting SAS `PROC UNIVARIATE` to `proc_univariate()`](2026-09-17-proc-univariate-design.md) | approved; awaiting SAS oracle run |
 | 2026-09-17 | [`proc_univariate()` SAS oracle kit plan](2026-09-17-proc-univariate-oracle-plan.md) | plan for PR A of the design above |
 | 2026-09-17 | [`proc_univariate()` implementation plan](2026-09-17-proc-univariate-plan.md) | plan for PR B of the design above; runs after #118, #119, #120 merge |
