@@ -107,6 +107,98 @@
   .wvar(v, w) / (if (use_w) sum(as.numeric(w)) else length(v))
 }
 
+## Internal: Student's t for H0: mean = mu0, and its two-sided p-value
+.t_test_stat <- function(v, w, ctx, what) {
+  n <- length(v)
+  if (ctx$vardef != "df" || n < 2L) {
+    return(NA_real_)
+  }
+  s <- sqrt(.wvar(v, w))
+  if (s == 0) {
+    return(NA_real_)
+  }
+  big_w <- if (is.null(w)) n else sum(as.numeric(w))
+  t <- (.wmean(v, w) - ctx$mu0) / (s / sqrt(big_w))
+  if (what == "t") t else 2 * stats::pt(-abs(t), n - 1)
+}
+
+## Internal: the sign test. NA under weights (SAS computes only the t test
+## there) and when no value differs from mu0 (SAS behaviour unobserved).
+.sign_test_stat <- function(v, w, ctx, what) {
+  if (!is.null(w)) {
+    return(NA_real_)
+  }
+  d <- v - ctx$mu0
+  n_plus <- sum(d > 0)
+  n_minus <- sum(d < 0)
+  if (n_plus + n_minus == 0L) {
+    return(NA_real_)
+  }
+  if (what == "msign") {
+    return((n_plus - n_minus) / 2)
+  }
+  min(1, 2 * stats::pbinom(min(n_plus, n_minus), n_plus + n_minus, 0.5))
+}
+
+## Internal: the Wilcoxon signed rank test. NA under weights and when no value
+## differs from mu0. At 20 or fewer non-zero differences the p-value is exact,
+## from the null distribution of the signed rank sum computed by dynamic
+## programming over doubled ranks (average ranks are integers once doubled);
+## above 20 it is SAS's tie-corrected t approximation.
+.signrank_stat <- function(v, w, ctx, what) {
+  if (!is.null(w)) {
+    return(NA_real_)
+  }
+  d <- v - ctx$mu0
+  d <- d[d != 0]
+  n <- length(d)
+  if (n == 0L) {
+    return(NA_real_)
+  }
+  r <- rank(abs(d))
+  s <- sum(sign(d) * r) / 2
+  if (what == "signrank") {
+    return(s)
+  }
+  if (n <= 20L) {
+    r2 <- as.integer(round(2 * r))
+    total <- sum(r2)
+    # Entry k + 1 counts the sign assignments whose positive doubled ranks
+    # sum to k.
+    counts <- c(1, numeric(total))
+    for (ri in r2) {
+      counts <- counts + c(numeric(ri), counts[seq_len(total + 1L - ri)])
+    }
+    pos <- 0:total
+    obs <- as.integer(round(4 * s))     # sum(sign * doubled ranks)
+    return(sum(counts[abs(2L * pos - total) >= abs(obs)]) / 2^n)
+  }
+  ties <- table(r)
+  v_s <- n * (n + 1) * (2 * n + 1) / 24 - sum(ties^3 - ties) / 48
+  t <- s * sqrt((n - 1) / (n * v_s - s^2))
+  2 * stats::pt(-abs(t), n - 1)
+}
+
+## Internal: the Shapiro-Wilk test. W = 1, p = 1 at n = 2, as SAS reports. NA
+## under weights, below two observations, for a constant column, and above
+## 2000 observations, where SAS switches to a Kolmogorov D test that is not
+## ported; that last case sets ctx$flags$normal_n2000 for the caller to warn.
+.normal_stat <- function(v, w, ctx, what) {
+  n <- length(v)
+  if (!is.null(w) || n < 2L || all(v == v[1L])) {
+    return(NA_real_)
+  }
+  if (n > 2000L) {
+    assign("normal_n2000", TRUE, envir = ctx$flags)
+    return(NA_real_)
+  }
+  if (n == 2L) {
+    return(1)
+  }
+  sw <- stats::shapiro.test(v)
+  if (what == "normal") unname(sw$statistic) else sw$p.value
+}
+
 ## Internal: build one registry entry. `weighted` is a single logical, or a
 ## named logical giving the flag per procedure.
 .stat <- function(fun, weighted, integer = FALSE,
@@ -259,6 +351,42 @@
   q3 = .stat(
     function(x, v, w, ctx) .quantile_stat(v, "q3", w),
     .quantile_weighted
+  ),
+  stdmean = .stat(
+    function(x, v, w, ctx) sqrt(.stderr_stat(v, w, ctx)),
+    TRUE, procedures = "univariate"
+  ),
+  t = .stat(
+    function(x, v, w, ctx) .t_test_stat(v, w, ctx, "t"),
+    TRUE, procedures = "univariate"
+  ),
+  probt = .stat(
+    function(x, v, w, ctx) .t_test_stat(v, w, ctx, "probt"),
+    TRUE, procedures = "univariate"
+  ),
+  msign = .stat(
+    function(x, v, w, ctx) .sign_test_stat(v, w, ctx, "msign"),
+    TRUE, procedures = "univariate"
+  ),
+  probm = .stat(
+    function(x, v, w, ctx) .sign_test_stat(v, w, ctx, "probm"),
+    TRUE, procedures = "univariate"
+  ),
+  signrank = .stat(
+    function(x, v, w, ctx) .signrank_stat(v, w, ctx, "signrank"),
+    TRUE, procedures = "univariate"
+  ),
+  probs = .stat(
+    function(x, v, w, ctx) .signrank_stat(v, w, ctx, "probs"),
+    TRUE, procedures = "univariate"
+  ),
+  normal = .stat(
+    function(x, v, w, ctx) .normal_stat(v, w, ctx, "normal"),
+    TRUE, procedures = "univariate"
+  ),
+  probn = .stat(
+    function(x, v, w, ctx) .normal_stat(v, w, ctx, "probn"),
+    TRUE, procedures = "univariate"
   )
 )
 
