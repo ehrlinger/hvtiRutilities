@@ -19,8 +19,9 @@
 }
 
 ## Internal: does stderr divide by sqrt(sum of weights) rather than sqrt(n)?
-## Kept per procedure so each follows its own SAS oracle. PROC UNIVARIATE
-## divides by sqrt(W) (oracle, 2026-09-17), and so does PROC MEANS.
+## SAS PROC MEANS and PROC UNIVARIATE both divide by sqrt(W) (oracle,
+## 2026-09-17). Kept per procedure as a hook, should a procedure's oracle
+## ever differ.
 .stderr_sqrt_w <- c(means = TRUE, univariate = TRUE)
 
 ## Internal: weighted mean, or the plain mean when w is NULL
@@ -400,7 +401,8 @@
   })
 }
 
-## Internal: proc_means()'s view of the registry
+## Internal: proc_means()'s resolved registry, kept for the registry tests;
+## .validate_stats() uses .stats_for() directly.
 .STATS <- .stats_for("means")
 
 ## Internal: reject unknown statistic keywords

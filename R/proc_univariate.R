@@ -40,12 +40,12 @@
 #'   \item \code{normal} and \code{probn} above 2000 observations, with one
 #'     warning per call: SAS switches to a Kolmogorov D test there, which is
 #'     not ported;
-#'   \item \code{std}, \code{var}, \code{cv}, \code{stdmean}, \code{t},
-#'     \code{probt} at one observation, \code{skewness} below three and
-#'     \code{kurtosis} below four;
+#'   \item \code{std}, \code{var}, \code{cv}, \code{stderr}, \code{stdmean},
+#'     \code{t}, \code{probt} at one observation, \code{skewness} below three
+#'     and \code{kurtosis} below four;
 #'   \item \code{t}, \code{probt}, \code{skewness}, \code{kurtosis},
 #'     \code{normal}, \code{probn} when every value is equal (\code{cv} is
-#'     then \code{0});
+#'     then \code{0} unless the mean is zero, where it is \code{NA});
 #'   \item \code{msign}, \code{probm}, \code{signrank}, \code{probs} when no
 #'     value differs from \code{mu0};
 #'   \item \code{mode} when no value repeats among two or more values.

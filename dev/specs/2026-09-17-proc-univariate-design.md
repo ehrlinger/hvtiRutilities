@@ -99,8 +99,8 @@ the observation; this is a deliberate, documented difference.
 - `std`, `var`, `cv`, `stdmean`, `t`, `probt` at n = 1; `skewness` at n < 3;
   `kurtosis` at n < 4;
 - `t`, `probt`, `skewness`, `kurtosis`, `normal`, `probn` when every value is
-  equal (standard deviation 0). `cv` is `0` there, not `NA`, because the mean
-  is not zero;
+  equal (standard deviation 0). `cv` is `0` there unless the mean is zero,
+  where it is `NA`;
 - `mode` when no value repeats and n > 1 (at n = 1 the mode is the value;
   a constant column's mode is its value).
 
@@ -252,3 +252,5 @@ Files by theme: `test-proc_univariate_shape.R`, `_quantiles.R`,
   (awaiting a SAS oracle since 2026-08-14) and to `proc_freq()`'s fixtures.
 - `PCTLDEF=` 1 to 4, `CIBASIC`, robust estimators, and the Kolmogorov D test
   above n = 2000, if a job needs them.
+- Oracle rows for `vardef` other than `df` at n = 1 and for `wdf` with total
+  weight at most 1 (R returns `NA`; SAS unobserved).
