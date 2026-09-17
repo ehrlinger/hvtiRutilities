@@ -150,6 +150,13 @@
 
 # hvtiRutilities 1.1.9
 
+This set was judged minor-worthy when it landed (2026-09-03): it adds two
+exported functions, `apply_value_labels()` and `type_conversion_report()`, and
+changes `label_map()`'s return to four columns. It shipped as a patch anyway,
+and the 1.2.0 name went to the SAS descriptive-procedure ports four versions
+later. Recorded here because the version number alone understates what this
+release contains.
+
 ## New features
 
 - **`read_clinical_data()` can read a SAS format catalog.** A `.sas7bdat`
