@@ -329,10 +329,10 @@ The manifest now tracks all three files independently.
 ``` r
 
 m <- yaml::read_yaml(manifest_path)
-do.call(rbind, lapply(m$datasets, function(e)
+do.call(rbind, lapply(m$datasets, function(e) {
   data.frame(file = e$file, extract_date = e$extract_date,
              n_rows = e$n_rows, stringsAsFactors = FALSE)
-))
+}))
 #>                  file extract_date n_rows
 #> 1 cohort_20240115.csv   2024-01-15    200
 #> 2   labs_20240115.csv   2024-01-15    200

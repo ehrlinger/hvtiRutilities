@@ -253,7 +253,7 @@ names.
 
 # Drop admin columns to match a typical model_data setup
 model_data <- model_data[, !names(model_data) %in% c("ccfid", "reop", "iv_reop",
-  "origin_year", "iv_opyrs")]
+                                                     "origin_year", "iv_opyrs")]
 
 # Outcome variable breakdown
 table(model_data$dead)
