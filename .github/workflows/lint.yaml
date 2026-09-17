@@ -27,9 +27,33 @@ jobs:
           # internals and reports every call to one as an undefined global.
           extra-packages: any::lintr@3.4.0, local::.
 
+      # `LINTR_ERROR_ON_LINT` is what makes this step a gate. `lint_package()`
+      # returns a `lints` object and *prints* it; printing is not failing, so
+      # without this the step exited 0 while reporting lints and the job went
+      # green no matter what. Measured 2026-09-17 on `main`: 290 lints, exit
+      # code 0, `gh run list --workflow=lint.yaml` all `success`. The variable
+      # makes `print.lints` call `quit("no", 31L, FALSE)` on a non-empty
+      # result, so the step exits 31 and the job fails. Verified both ways
+      # locally before merging: exit 0 without it, exit 31 with it.
+      #
+      # It has to be an env var. `lint_package()` takes no `error_on_lint`
+      # argument -- the setting defaults FALSE and lintr reads it from
+      # `LINTR_ERROR_ON_LINT` through its own settings mechanism -- so there is
+      # no way to express this in the `run:` line.
+      #
+      # Do not replace it with a hand-rolled wrapper. Besides losing lintr's
+      # formatted output, the obvious `quit(status = length(l))` overflows the
+      # single-byte exit status: 256 lints would exit 0, which is the bug this
+      # whole change exists to remove. lintr's fixed 31 has no such edge.
+      #
+      # Keep `print.lints` in the path, too: it detects GitHub Actions and
+      # emits each lint as a workflow annotation, so lints land on the diff
+      # rather than only in the log.
       - name: Lint
         run: lintr::lint_package()
         shell: Rscript {0}
+        env:
+          LINTR_ERROR_ON_LINT: true
 
   # Catches generated documentation drifting from its roxygen sources, on the
   # PR rather than after the merge. Replaces a `devtools::document()` step that

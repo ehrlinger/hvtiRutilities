@@ -60,9 +60,9 @@ test_that("the report is attached whether or not value labels are used", {
   dta <- data.frame(a = c(1, 2, 3, 1))
 
   expect_s3_class(type_conversion_report(
-    r_data_types(dta, use_value_labels = FALSE)), "data.frame")
+                                         r_data_types(dta, use_value_labels = FALSE)), "data.frame")
   expect_s3_class(type_conversion_report(
-    r_data_types(dta, use_value_labels = TRUE)), "data.frame")
+                                         r_data_types(dta, use_value_labels = TRUE)), "data.frame")
 })
 
 test_that("a zero-column frame yields a zero-row report with the same columns", {

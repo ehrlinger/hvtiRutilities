@@ -134,8 +134,8 @@ print.dataset_comparison <- function(x, ...) {
     }
   }
   if (length(x$cols_added) == 0L && length(x$cols_dropped) == 0L &&
-      nrow(x$type_changes) == 0L && nrow(x$label_changes) == 0L &&
-      x$rows_old == x$rows_new) {
+        nrow(x$type_changes) == 0L && nrow(x$label_changes) == 0L &&
+        x$rows_old == x$rows_new) {
     cat("  No differences detected.\n")
   }
   invisible(x)

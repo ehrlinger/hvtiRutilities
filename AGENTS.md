@@ -29,7 +29,7 @@ Six workflows. Know what each one fails on before you push:
 |---|---|
 | `R-CMD-check.yaml` | `R CMD check` on Linux (release, devel, oldrel-1), macOS, Windows |
 | `check-manual.yaml` | the PDF manual build — catches raw Unicode in `.Rd` that `--no-manual` skips |
-| `lint.yaml` | `lintr::lint_package()`, plus a **docs-current** job that runs `roxygenise()` and then `git diff --exit-code man/ NAMESPACE DESCRIPTION` |
+| `lint.yaml` | `lintr::lint_package()` under `LINTR_ERROR_ON_LINT`, which is what makes it **fail** rather than merely report — see the 80/135 bullet below. Plus a **docs-current** job that runs `roxygenise()` and then `git diff --exit-code man/ NAMESPACE DESCRIPTION` |
 | `pkgdown.yaml` | the site build, including a topic missing from the reference index |
 | `house-style.yaml` | composes `.house-style-tools/compose-house-style.R` against `repos.yml`; it asserts the registry still contains this repo's path rather than failing later with a misleading cause |
 | `test-coverage.yaml` | coverage upload |
@@ -52,8 +52,30 @@ forgotten `document()` fails the PR rather than landing quietly.
   a topic that is missing from it. The site build is a required check.
   ⚠️ Its sibling `hvtiRtemplates` deliberately does the **opposite** and has no `reference:`
   section so pkgdown auto-indexes. Do not carry a habit across.
-- **Lines are 80 characters.** `lintr` enforces it. The package is not lint-clean overall,
-  so a green lint is not the bar — do not *add* lints.
+- **Lines are 135 characters, and the package IS lint-clean.** Both halves of this bullet
+  changed on 2026-09-17, and the previous version was wrong about the more important one.
+  ⚠️ **`lintr` did NOT enforce anything until then.** There was no `.lintr` file at all, so
+  lintr fell back to its defaults, and `lint_package()` *prints* its result rather than
+  failing on it — the step exited 0 while reporting **290 lints** on `main`, and every
+  `lint.yaml` run in the repo's history had concluded `success`. The job could not have gone
+  red. This is the same failure shape as a green `R-CMD-check` hiding a skipped test: read
+  what a step *does*, never what its name or its check mark implies.
+  The repair was three parts. `lint.yaml` now sets `LINTR_ERROR_ON_LINT`, so lintr's print
+  method calls `quit("no", 31L, FALSE)` on a non-empty result. A `.lintr` sets the width to
+  135, because `hvti_taxonomy()` is a data table written as code whose column alignment is
+  the only thing making it readable, and it alone accounts for 45 of the 196 line-length
+  lints; the widest line in the package is 132, the same measurement hvtiRtemplates records
+  for the same table. Of the 69 lints left after that, **67 were fixed** in the source; the
+  other two are a standalone nested block that `brace_linter` cannot express, covered by
+  `allow_single_line = TRUE` rather than by touching the test.
+  ⚠️ So **a green lint IS now the bar**, and the old advice to merely not *add* lints is
+  withdrawn. `.lintr` grants exactly two exemptions, `commented_code_linter` and
+  `object_name_linter`, each with its reasoning recorded in the file, and **no path
+  exclusions at all**. Keep it that way: a path key is invisible in a passing run, and
+  renaming nine files in hvtiRtemplates took its lint count from 0 to 86 in one step.
+  ⚠️ `.lintr` is **DCF**, not R. `read.dcf()` parses it, so an indented `#` inside the
+  `linters:` value terminates the record and the file fails to load. Comments go at column 0,
+  above the key.
 - **`testthat` edition 3.** `DESCRIPTION` sets `Config/testthat/edition: 3`.
 - **`.Rbuildignore` excludes the session-tooling directories** — `.claude`, `.superpowers`,
   `.remember`, `.vscode`, `dev`. Add new tooling directories there when they appear;
@@ -77,6 +99,16 @@ forgotten `document()` fails the PR rather than landing quietly.
   function calling another function added in the same uncommitted change lints as "no visible
   global function definition" until the package is installed. That warning is an artifact,
   not a defect; `R CMD check` does its own codetools pass and is the real test.
+  ⚠️ **This also means a local lint run overstates the count unless you install first.**
+  `lint.yaml` passes `local::.` to `setup-r-dependencies` for exactly this reason, so CI does
+  install. Measured 2026-09-17: `.cache_key` and `.cache_key_diff` reported as undefined from
+  a bare working tree and resolved once the package was installed. Run
+  `R CMD INSTALL --no-docs .` before trusting a number you intend to act on.
+  ⚠️ It inspects **closures only**, which is why bare `skip_if_not_installed()` passes 39
+  times in `tests/` and yet flags twice. A call inside `test_that("...", { ... })` sits in an
+  unevaluated expression, not a function, so codetools never sees it; the two that flagged
+  were the suite's only top-level helper *function definitions*. Qualify `testthat::` in a
+  helper closure rather than reaching for an exclusion.
 - **`utils::` is used in several files while `utils` is not in `Imports`.** This is tolerated
   because `utils` is base-priority and attached by default. Do not "fix" it as drive-by work,
   and do not take it as licence to call an undeclared non-base package.

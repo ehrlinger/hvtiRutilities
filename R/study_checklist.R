@@ -36,12 +36,12 @@ study_checklist <- function(status, path = NULL) {
     seq_len(nrow(status$checks)),
     function(i) {
       paste0(if (identical(status$checks$status[i], "OK")) {
-               "- [x] "
-             } else {
-               "- [ ] "
-             },
-             "**", status$checks$item[i], "** \u2014 ",
-             status$checks$detail[i])
+        "- [x] "
+      } else {
+        "- [ ] "
+      },
+      "**", status$checks$item[i], "** \u2014 ",
+      status$checks$detail[i])
     },
     character(1)
   )
@@ -70,8 +70,8 @@ study_checklist <- function(status, path = NULL) {
   # warning is muffled and the error is the single reported failure.
   written <- tryCatch({
     withCallingHandlers(
-      writeLines(lines, path),
-      warning = function(w) invokeRestart("muffleWarning"))
+                        writeLines(lines, path),
+                        warning = function(w) invokeRestart("muffleWarning"))
     TRUE
   }, error = function(e) conditionMessage(e))
 

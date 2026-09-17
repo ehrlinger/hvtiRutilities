@@ -12,7 +12,7 @@ test_that("compare_datasets returns correct structure", {
   expect_type(result, "list")
   expect_s3_class(result, "dataset_comparison")
   expect_named(result, c("rows_old", "rows_new", "cols_added",
-                          "cols_dropped", "type_changes", "label_changes"))
+                         "cols_dropped", "type_changes", "label_changes"))
 })
 
 test_that("compare_datasets detects row count changes", {
@@ -62,7 +62,7 @@ test_that("compare_datasets detects both added and dropped", {
 test_that("compare_datasets detects type changes", {
   v1 <- data.frame(a = 1:3, b = c("x", "y", "z"), stringsAsFactors = FALSE)
   v2 <- data.frame(a = c("1", "2", "3"), b = c("x", "y", "z"),
-                    stringsAsFactors = FALSE)
+                   stringsAsFactors = FALSE)
 
   result <- compare_datasets(v1, v2)
 
@@ -150,7 +150,7 @@ test_that("compare_datasets rejects non-data-frames", {
 test_that("print.dataset_comparison produces output", {
   v1 <- data.frame(a = 1:3, old = 4:6)
   v2 <- data.frame(a = c("x", "y", "z"), new = 1:3,
-                    stringsAsFactors = FALSE)
+                   stringsAsFactors = FALSE)
 
   result <- compare_datasets(v1, v2)
   output <- capture.output(print(result))

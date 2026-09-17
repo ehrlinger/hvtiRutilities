@@ -61,7 +61,7 @@
     "<column names/order>"
   } else {
     hit <- Filter(function(nm) !identical(written[[nm]], back[[nm]]),
-                   names(written))
+                  names(written))
     if (length(hit)) hit[[1]] else NULL
   }
 
@@ -145,7 +145,7 @@
   current_mtime  <- as.numeric(info$mtime)
   recorded_mtime <- as.numeric(as.POSIXct(entry$source_mtime, tz = "UTC"))
 
-  # .MTIME_ROUNDTRIP_TOLERANCE_SECONDS is the manifest's own string
+  # .MTIME_ROUNDTRIP_TOL_SECONDS is the manifest's own string
   # round-trip precision limit, not a filesystem assumption: source_mtime is
   # stored as a %OS6-formatted string (microsecond precision), and
   # re-parsing it can land a fraction of a microsecond away from the raw
@@ -155,8 +155,8 @@
   # would require a rewrite landing within a hundred microseconds of the
   # original write, which is a different event than what this tolerance
   # exists to absorb.
-  .MTIME_ROUNDTRIP_TOLERANCE_SECONDS <- 1e-4
-  if (abs(current_mtime - recorded_mtime) >= .MTIME_ROUNDTRIP_TOLERANCE_SECONDS) {
+  .MTIME_ROUNDTRIP_TOL_SECONDS <- 1e-4
+  if (abs(current_mtime - recorded_mtime) >= .MTIME_ROUNDTRIP_TOL_SECONDS) {
     return(FALSE)
   }
 
@@ -206,7 +206,7 @@
     # from outside this package -- must not be permanently fatal for a
     # role: "source" entry: the source is still there to regenerate it from.
     hit <- tryCatch(as.data.frame(arrow::read_parquet(derived$parquet)),
-                     error = function(e) e)
+                    error = function(e) e)
     if (!inherits(hit, "error")) return(hit)
 
     if (promoted) {
@@ -236,7 +236,7 @@
   # correspond to any single state of the file.
   post <- file.info(path)
   if (!identical(as.numeric(info$size), as.numeric(post$size)) ||
-      !identical(as.numeric(info$mtime), as.numeric(post$mtime))) {
+        !identical(as.numeric(info$mtime), as.numeric(post$mtime))) {
     stop("read_built(): ", basename(path), " changed while it was being ",
          "read -- the frame may be torn. Nothing was written; try the ",
          "read again.", call. = FALSE)
@@ -255,8 +255,8 @@
     .write_parquet_atomic(d, derived$parquet)
     .verify_parquet_roundtrip(d, derived$parquet)
     .update_promoted_entry(manifest, path, derived$parquet,
-                            n_rows = nrow(d), n_cols = ncol(d),
-                            reader = reader_prov)
+                           n_rows = nrow(d), n_cols = ncol(d),
+                           reader = reader_prov)
     return(d)
   }
 
@@ -303,7 +303,7 @@
 # can legitimately change and leaves every promotion field exactly as it
 # was.
 .update_promoted_entry <- function(manifest_path, file, parquet, n_rows,
-                                    n_cols, reader) {
+                                   n_cols, reader) {
   m <- yaml::read_yaml(manifest_path)
   m$datasets <- lapply(m$datasets, function(e) {
     if (identical(e$file, basename(file))) {

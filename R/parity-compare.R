@@ -41,7 +41,7 @@ compare_parity <- function(quantity, r, sas, class, source = "lst",
   tol <- parity_tolerance(class)
   if (class == "printed") {
     if (length(digits) != 1L || !is.numeric(digits) || is.na(digits) ||
-        digits < 0 || digits != trunc(digits)) {
+          digits < 0 || digits != trunc(digits)) {
       stop("compare_parity(): class 'printed' needs `digits`, a single ",
            "non-negative whole number -- the decimal places '", quantity,
            "' was printed to.", call. = FALSE)

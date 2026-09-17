@@ -40,9 +40,9 @@ dataset_schema <- function(data) {
 
   if (ncol(data) == 0L) {
     return(data.frame(num = integer(0), variable = character(0),
-                       class = character(0), type = character(0),
-                       format = character(0), label = character(0),
-                       stringsAsFactors = FALSE))
+                      class = character(0), type = character(0),
+                      format = character(0), label = character(0),
+                      stringsAsFactors = FALSE))
   }
 
   # Attributes are read directly rather than through labelled::var_label(),

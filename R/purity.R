@@ -50,8 +50,8 @@ r_dir_impurities <- function(dir) {
       # rejecting constants would fail every correctly documented package.
       if (is.call(e) && !.is_assignment(e)) {
         out <- c(out, paste0(
-          basename(f), ": top-level expression is not an assignment: ",
-          paste(deparse(e), collapse = " ")))
+                             basename(f), ": top-level expression is not an assignment: ",
+                             paste(deparse(e), collapse = " ")))
       }
     }
   }

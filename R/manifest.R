@@ -451,17 +451,17 @@ verify_manifest <- function(manifest_path = "manifest.yaml",
       side <- resolve_entry(basename(.derived_paths(entry$file)$schema))
       if (!file.exists(side)) {
         return(data.frame(
-          file = entry$file, status = "FAIL",
-          message = paste0("Schema sidecar not found: ", side),
-          row_count_checked = FALSE, stringsAsFactors = FALSE))
+                          file = entry$file, status = "FAIL",
+                          message = paste0("Schema sidecar not found: ", side),
+                          row_count_checked = FALSE, stringsAsFactors = FALSE))
       }
       side_sha <- digest::digest(side, algo = "sha256", file = TRUE)
       if (!identical(side_sha, entry$schema_sha256)) {
         return(data.frame(
-          file = entry$file, status = "FAIL",
-          message = paste0("Schema sidecar SHA-256 mismatch\n  expected: ",
-                           entry$schema_sha256, "\n  actual:   ", side_sha),
-          row_count_checked = FALSE, stringsAsFactors = FALSE))
+                          file = entry$file, status = "FAIL",
+                          message = paste0("Schema sidecar SHA-256 mismatch\n  expected: ",
+                                           entry$schema_sha256, "\n  actual:   ", side_sha),
+                          row_count_checked = FALSE, stringsAsFactors = FALSE))
       }
     }
 
@@ -519,7 +519,7 @@ verify_manifest <- function(manifest_path = "manifest.yaml",
         rowcount_checked <- TRUE
         actual_rows      <- actual_rows_result
         if (!is.na(actual_rows) &&
-            !identical(actual_rows, as.integer(entry$n_rows))) {
+              !identical(actual_rows, as.integer(entry$n_rows))) {
           return(data.frame(
             file    = entry$file,
             status  = "FAIL",
@@ -584,13 +584,16 @@ verify_manifest <- function(manifest_path = "manifest.yaml",
       file.exists(resolve_entry(paste0(s, ".parquet"))) ||
         file.exists(resolve_entry(paste0(s, ".schema.csv")))
     }, clash)
-    collisions <- lapply(real_clash, function(s) data.frame(
-      file    = s,
-      status  = "FAIL",
-      message = paste0("Entries ", paste(files[stems == s], collapse = ", "),
-                       " share the derived path stem '", s,
-                       "' and would claim the same .parquet and .schema.csv."),
-      row_count_checked = FALSE, stringsAsFactors = FALSE))
+    collisions <- lapply(real_clash, function(s) {
+      data.frame(
+        file    = s,
+        status  = "FAIL",
+        message = paste0("Entries ", paste(files[stems == s], collapse = ", "),
+                         " share the derived path stem '", s,
+                         "' and would claim the same .parquet and .schema.csv."),
+        row_count_checked = FALSE, stringsAsFactors = FALSE
+      )
+    })
     results <- c(results, collisions)
   }
 

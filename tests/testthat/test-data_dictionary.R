@@ -9,7 +9,7 @@ test_that("data_dictionary returns correct structure", {
 
   expect_s3_class(dict, "data.frame")
   expect_named(dict, c("variable", "label", "class", "n_unique",
-                        "pct_missing", "summary"))
+                       "pct_missing", "summary"))
   expect_equal(nrow(dict), ncol(dta))
 })
 
@@ -95,7 +95,7 @@ test_that("data_dictionary handles empty data frame", {
   expect_s3_class(dict, "data.frame")
   expect_equal(nrow(dict), 0)
   expect_named(dict, c("variable", "label", "class", "n_unique",
-                        "pct_missing", "summary"))
+                       "pct_missing", "summary"))
 })
 
 test_that("data_dictionary handles single-column data frame", {
