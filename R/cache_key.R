@@ -22,7 +22,13 @@
 }
 
 # Names assigned inside the code. They are derived from the free variables,
-# which are digested, so they are not digested themselves.
+# which are digested, so they are not digested themselves. Also treated as
+# locally bound: anonymous-function formals (function(x) ...) and `for` loop
+# indices, neither of which is an outside input even though all.vars() sees
+# them as ordinary names. A formal's default expression is still walked (for
+# any names it in turn binds, e.g. a nested function or for loop); the free
+# variables of that expression are not bound here and so still flow through
+# to .cache_inputs() as inputs.
 .cache_assigned <- function(code) {
   if (!is.call(code)) return(character(0))
   head <- code[[1L]]
@@ -30,6 +36,23 @@
   if (is.symbol(head) && as.character(head) %in% c("<-", "=", "<<-") &&
         length(code) >= 2L && is.symbol(code[[2L]])) {
     here <- as.character(code[[2L]])
+  }
+  if (is.symbol(head) && identical(as.character(head), "for") &&
+        length(code) >= 2L && is.symbol(code[[2L]])) {
+    here <- c(here, as.character(code[[2L]]))
+  }
+  if (is.symbol(head) && identical(as.character(head), "function") &&
+        length(code) >= 2L) {
+    fmls <- code[[2L]]
+    here <- c(here, names(fmls))
+    # A formal with no default is R's missing-argument marker: binding it to
+    # an ordinary variable and passing that on triggers "argument is missing,
+    # with no default" the moment it is read, so it is tested and indexed in
+    # place (fmls[[i]]), never assigned to a bare name first.
+    for (i in seq_along(fmls)) {
+      if (.cache_is_empty_arg(fmls, i)) next
+      if (is.language(fmls[[i]])) here <- c(here, .cache_assigned(fmls[[i]]))
+    }
   }
   kids <- character(0)
   for (i in seq_along(code)[-1L]) {
@@ -70,19 +93,39 @@
 
 # Digest of one input. A formula carries its environment, which does not
 # serialise stably, so formulas and other language objects are digested from
-# their text.
+# their text. serializeVersion is pinned so a session-level `serializeVersion`
+# option (digest:::.getSerializeVersion() consults it) cannot change every key.
 .cache_digest <- function(value) {
   if (inherits(value, "formula") || is.language(value)) {
     attributes(value) <- NULL
     value <- .cache_code_text(value)
   }
-  digest::digest(value, algo = "xxhash64")
+  digest::digest(value, algo = "xxhash64", serializeVersion = 2L)
+}
+
+# Deparsed body+formals of a closure defined in the global environment (the
+# _common.R shape), attributes (incl. srcref) stripped so layout and comments
+# do not reach the key. NULL for a package function, which .cache_packages()
+# already covers by version.
+.cache_global_closure_text <- function(fn) {
+  if (!identical(environmentName(topenv(environment(fn))), "R_GlobalEnv")) {
+    return(NULL)
+  }
+  attributes(fn) <- NULL
+  paste(deparse(fn, width.cutoff = 500L,
+                control = c("keepNA", "keepInteger", "niceNames")),
+        collapse = "\n")
 }
 
 # Digests of the free variables: every name the code reads, less names it
 # assigns and names that are part of pkg::fn. Names that do not resolve
-# (column names under non-standard evaluation) and functions (covered by
-# .cache_packages) are skipped.
+# (column names under non-standard evaluation) are skipped. A value carrying
+# a cache key (attribute "hvtiRutilities_cache_key", attached by cache_fit())
+# is digested by that key instead of itself: the key is stable by
+# construction, so a downstream key does not go stale between a live upstream
+# object and the detached copy readRDS() returns on a later cache hit. A
+# function is digested by its body when it is user-defined (global); a
+# package function is skipped here and covered by .cache_packages() instead.
 .cache_inputs <- function(code, env) {
   heads <- .cache_heads(code)
   vars  <- setdiff(all.vars(code),
@@ -91,8 +134,27 @@
   for (v in sort(vars)) {
     if (!exists(v, envir = env, inherits = TRUE)) next
     value <- get(v, envir = env, inherits = TRUE)
-    if (is.function(value)) next
-    out[[v]] <- .cache_digest(value)
+    if (is.function(value)) {
+      txt <- .cache_global_closure_text(value)
+      if (!is.null(txt)) out[[v]] <- .cache_digest(txt)
+      next
+    }
+    cache_key <- attr(value, "hvtiRutilities_cache_key")
+    out[[v]] <- if (!is.null(cache_key)) {
+      .cache_digest(cache_key)
+    } else {
+      .cache_digest(value)
+    }
+  }
+  # Bare call heads (e.g. prep(z)) never appear in all.vars(), which excludes
+  # function names in call position; a global helper called this way would
+  # otherwise never be seen at all, by this function or by .cache_packages().
+  for (fn in setdiff(heads$bare, c(.cache_assigned(code), names(out)))) {
+    if (!exists(fn, envir = env, inherits = TRUE)) next
+    f <- get0(fn, envir = env, mode = "function", inherits = TRUE)
+    if (is.null(f)) next
+    txt <- .cache_global_closure_text(f)
+    if (!is.null(txt)) out[[fn]] <- .cache_digest(txt)
   }
   out
 }
