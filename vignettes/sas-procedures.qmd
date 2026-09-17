@@ -38,7 +38,7 @@ trust the file enough to analyse it. `proc_contents()`, `proc_means()` and
 `proc_freq()` are those three habits, kept intact in R.
 
 The point is not that R lacks a way to describe a data frame. It has several.
-The point is that you already know what these two tables should look like, and
+The point is that you already know what these three tables should look like, and
 when the R version prints the same numbers in the same shape, you can tell at a
 glance whether the extract is right. A different summary in a different layout
 makes you re-learn what "normal" looks like.

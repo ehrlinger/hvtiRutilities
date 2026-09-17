@@ -1,7 +1,7 @@
 # Porting SAS `PROC FREQ` to `proc_freq()`
 
 **Date:** 2026-09-16
-**Status:** Approved design, pending implementation plan
+**Status:** Implemented; revised after final review
 **Package:** `hvtiRutilities`
 **Predecessors:** `dev/specs/2026-08-05-proc-contents-means-design.md`,
 `dev/specs/2026-08-14-proc-means-unistats-design.md`
