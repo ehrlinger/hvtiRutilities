@@ -104,8 +104,11 @@ tolerance.
 
 With `weights`, `Frequency` is the sum of weights rather than a row count, and
 every percentage uses weighted denominators. Weights are validated by the
-existing `.validate_weights()`, so non-positive and NA weights are an error,
-consistent with `proc_means()`. A `weights` column that also appears in
+existing `.validate_weights()`, so non-positive weights are an error, and a
+row with a missing weight is excluded entirely (from the table and from
+`frequency_missing`), consistent with `proc_means()`. SAS instead drops zero
+weights and ignores negative ones; this is a deliberate difference. A
+`weights` column that also appears in
 `tables` is an error.
 
 ## Row order
