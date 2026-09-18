@@ -89,7 +89,8 @@
 #' means the work is a function that already exists, so no template is owed;
 #' \code{hvtiR::jobs()} documents it. Since 2026-09-18 exactly \code{rf} and
 #' \code{rfsrc} carry it, because \code{rfs}, \code{rfc} and \code{rfr} moved
-#' to \code{scaffold}, their templates owed in \code{hvtiRtemplates}. The
+#' to \code{scaffold}, their templates owed in \code{hvtiRtemplates}
+#' (\code{ehrlinger/hvtiR} PR #88, John's decision of 2026-09-18). The
 #' demotion itself is recorded here, in this table. The two agree today by
 #' decision, not by construction, so check both rather than inferring one.
 #'
