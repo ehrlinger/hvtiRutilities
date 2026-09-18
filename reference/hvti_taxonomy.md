@@ -100,10 +100,12 @@ is the opposite of what a superseded name means. Demoted here means
 census hit on a legacy job can still say which spelling it used.
 
 **Do not read the job catalog's `disposition: retire` as the demotion
-marker.** `rfr` carries it too, and `rfr` is templated. That field says
-the legacy SAS and R job is superseded by the `gg_*` functions, which is
-true of every row in this family except `sid` and `vt`; it says nothing
-about whether a template is owed.
+marker.** `rfs`, `rfc` and `rfr` carry it too, and none of them is
+demoted. In that catalog `retire` means the work is a function that
+already exists, so no template is owed; `hvtiR::jobs()` documents it.
+The ML family roadmap proposes `rfs`, `rfc` and `rfr` templates
+regardless, and reconciling the two is ML sub-project 2's decision, not
+this table's.
 
 **`sid` and `vt` are filed under `analyses` with the rest of the
 family**, and compose on the `rf*` jobs rather than replacing them. The
