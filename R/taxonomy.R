@@ -84,13 +84,15 @@
 #' distinct descriptions so a census hit on a legacy job can still say which
 #' spelling it used.
 #'
-#' \strong{Do not read the job catalog's \code{disposition: retire} as the
-#' demotion marker.} \code{rfs}, \code{rfc} and \code{rfr} carry it too, and
-#' none of them is demoted. In that catalog \code{retire} means the work is a
-#' function that already exists, so no template is owed; \code{hvtiR::jobs()}
-#' documents it. The ML family roadmap proposes \code{rfs}, \code{rfc} and
-#' \code{rfr} templates regardless, and reconciling the two is ML sub-project
-#' 2's decision, not this table's.
+#' \strong{The job catalog's \code{disposition: retire} is not the demotion
+#' marker, though it now coincides with it.} In that catalog \code{retire}
+#' means the work is a function that already exists, so no template is owed;
+#' \code{hvtiR::jobs()} documents it. Since 2026-09-18 exactly \code{rf} and
+#' \code{rfsrc} carry it, because \code{rfs}, \code{rfc} and \code{rfr} moved
+#' to \code{scaffold}, their templates owed in \code{hvtiRtemplates}
+#' (\code{ehrlinger/hvtiR} PR #88, John's decision of 2026-09-18). The
+#' demotion itself is recorded here, in this table. The two agree today by
+#' decision, not by construction, so check both rather than inferring one.
 #'
 #' \strong{\code{sid} and \code{vt} are filed under \code{analyses} with the
 #' rest of the family}, and compose on the \code{rf*} jobs rather than
