@@ -99,13 +99,15 @@ is the opposite of what a superseded name means. Demoted here means
 *never templated*, and the two rows keep distinct descriptions so a
 census hit on a legacy job can still say which spelling it used.
 
-**Do not read the job catalog's `disposition: retire` as the demotion
-marker.** `rfs`, `rfc` and `rfr` carry it too, and none of them is
-demoted. In that catalog `retire` means the work is a function that
-already exists, so no template is owed; `hvtiR::jobs()` documents it.
-The ML family roadmap proposes `rfs`, `rfc` and `rfr` templates
-regardless, and reconciling the two is ML sub-project 2's decision, not
-this table's.
+**The job catalog's `disposition: retire` is not the demotion marker,
+though it now coincides with it.** In that catalog `retire` means the
+work is a function that already exists, so no template is owed;
+`hvtiR::jobs()` documents it. Since 2026-09-18 exactly `rf` and `rfsrc`
+carry it, because `rfs`, `rfc` and `rfr` moved to `scaffold`, their
+templates owed in `hvtiRtemplates` (`ehrlinger/hvtiR` PR \#88, John's
+decision of 2026-09-18). The demotion itself is recorded here, in this
+table. The two agree today by decision, not by construction, so check
+both rather than inferring one.
 
 **`sid` and `vt` are filed under `analyses` with the rest of the
 family**, and compose on the `rf*` jobs rather than replacing them. The

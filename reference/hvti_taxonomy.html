@@ -146,13 +146,15 @@ one nobody documented, which is the opposite of what a superseded name
 means. Demoted here means <em>never templated</em>, and the two rows keep
 distinct descriptions so a census hit on a legacy job can still say which
 spelling it used.</p>
-<p><strong>Do not read the job catalog's <code>disposition: retire</code> as the
-demotion marker.</strong> <code>rfs</code>, <code>rfc</code> and <code>rfr</code> carry it too, and
-none of them is demoted. In that catalog <code>retire</code> means the work is a
-function that already exists, so no template is owed; <code>hvtiR::jobs()</code>
-documents it. The ML family roadmap proposes <code>rfs</code>, <code>rfc</code> and
-<code>rfr</code> templates regardless, and reconciling the two is ML sub-project
-2's decision, not this table's.</p>
+<p><strong>The job catalog's <code>disposition: retire</code> is not the demotion
+marker, though it now coincides with it.</strong> In that catalog <code>retire</code>
+means the work is a function that already exists, so no template is owed;
+<code>hvtiR::jobs()</code> documents it. Since 2026-09-18 exactly <code>rf</code> and
+<code>rfsrc</code> carry it, because <code>rfs</code>, <code>rfc</code> and <code>rfr</code> moved
+to <code>scaffold</code>, their templates owed in <code>hvtiRtemplates</code>
+(<code>ehrlinger/hvtiR</code> PR #88, John's decision of 2026-09-18). The
+demotion itself is recorded here, in this table. The two agree today by
+decision, not by construction, so check both rather than inferring one.</p>
 <p><strong><code>sid</code> and <code>vt</code> are filed under <code>analyses</code> with the
 rest of the family</strong>, and compose on the <code>rf*</code> jobs rather than
 replacing them. The <code>rfc</code>/<code>rfs</code> folder contradiction is
