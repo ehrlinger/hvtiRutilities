@@ -70,6 +70,13 @@
 
 ## Documentation
 
+* `hvti_taxonomy()`'s note on the job catalog's `disposition: retire` is
+  brought up to date. It said `retire` could not mark the demoted `rf` and
+  `rfsrc` because `rfs`, `rfc` and `rfr` carried it too; those three moved
+  to `scaffold` in hvtiR's catalog, so `retire` now holds exactly the two
+  demoted rows. The note says they coincide by decision, not by
+  construction.
+
 * `hvti_taxonomy()`'s documentation no longer says the job catalog's
   `disposition: retire` "says nothing about whether a template is owed", nor
   that `rfr` is templated. `hvtiR::jobs()` defines `retire` as a function
