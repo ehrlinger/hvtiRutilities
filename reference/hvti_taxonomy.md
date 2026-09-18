@@ -12,9 +12,11 @@ hvti_taxonomy()
 
 ## Value
 
-A data frame with columns `prefix`, `name`, `folder`, `description`.
-`prefix` is `NA` for the one row that names an artifact kind rather than
-an analysis type.
+A data frame with columns `prefix`, `name`, `folder`, `description` and
+`umbrella`. `prefix` is `NA` for the one row that names an artifact kind
+rather than an analysis type. `umbrella` is logical: `TRUE` for the
+legacy umbrella prefixes `rf` and `rfsrc`, for which no template is
+owed; `FALSE` for every other prefix; `NA` for the artifact row.
 
 ## Details
 
@@ -96,8 +98,11 @@ cannot express the demotion, because a fold is one-to-one and `rfsrc`
 spans all three outcomes, so there is no single prefix to fold it into.
 And an absent prefix reads to the census as one nobody documented, which
 is the opposite of what a superseded name means. Demoted here means
-*never templated*, and the two rows keep distinct descriptions so a
-census hit on a legacy job can still say which spelling it used.
+*never templated*, and since 2026-09-18 it is machine-readable as well
+as worded: the `umbrella` column is `TRUE` on exactly these two rows, so
+a consumer can exempt them without hard-coding a list. The two rows keep
+distinct descriptions so a census hit on a legacy job can still say
+which spelling it used.
 
 **The job catalog's `disposition: retire` is not the demotion marker,
 though it now coincides with it.** In that catalog `retire` means the
@@ -129,11 +134,11 @@ head(hvti_taxonomy())
 #> 4     si   Single imputation    datasets
 #> 5     mi Multiple imputation    datasets
 #> 6     dc         Descriptive descriptive
-#>                                                           description
-#> 1                     assembles raw sources into the analytic dataset
-#> 2 macro enhancing the dataset with temp vars, imputations, propensity
-#> 3                                     initial QC of the build dataset
-#> 4        mean imputation of missing covariates; one completed dataset
-#> 5       m completed datasets for pooled analysis; not a variant of si
-#> 6                       Table 1s, covariate summaries, balance tables
+#>                                                           description umbrella
+#> 1                     assembles raw sources into the analytic dataset    FALSE
+#> 2 macro enhancing the dataset with temp vars, imputations, propensity    FALSE
+#> 3                                     initial QC of the build dataset    FALSE
+#> 4        mean imputation of missing covariates; one completed dataset    FALSE
+#> 5       m completed datasets for pooled analysis; not a variant of si    FALSE
+#> 6                       Table 1s, covariate summaries, balance tables    FALSE
 ```

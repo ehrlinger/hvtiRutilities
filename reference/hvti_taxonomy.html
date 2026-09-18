@@ -71,8 +71,11 @@ prefix encodes both the type of analysis and the folder the job belongs in.</p>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A data frame with columns <code>prefix</code>, <code>name</code>, <code>folder</code>,
-  <code>description</code>. <code>prefix</code> is <code>NA</code> for the one row that names
-  an artifact kind rather than an analysis type.</p>
+  <code>description</code> and <code>umbrella</code>. <code>prefix</code> is <code>NA</code> for the
+  one row that names an artifact kind rather than an analysis type.
+  <code>umbrella</code> is logical: <code>TRUE</code> for the legacy umbrella prefixes
+  <code>rf</code> and <code>rfsrc</code>, for which no template is owed; <code>FALSE</code> for
+  every other prefix; <code>NA</code> for the artifact row.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -143,7 +146,10 @@ combined, twice over. Deleting the rows was rejected on two grounds.
 is one-to-one and <code>rfsrc</code> spans all three outcomes, so there is no
 single prefix to fold it into. And an absent prefix reads to the census as
 one nobody documented, which is the opposite of what a superseded name
-means. Demoted here means <em>never templated</em>, and the two rows keep
+means. Demoted here means <em>never templated</em>, and since 2026-09-18 it is
+machine-readable as well as worded: the <code>umbrella</code> column is <code>TRUE</code>
+on exactly these two rows, so a consumer can exempt them without
+hard-coding a list. The two rows keep
 distinct descriptions so a census hit on a legacy job can still say which
 spelling it used.</p>
 <p><strong>The job catalog's <code>disposition: retire</code> is not the demotion
@@ -176,13 +182,13 @@ and the ML batch is not blocked waiting on it. See
 <span class="r-out co"><span class="r-pr">#&gt;</span> 4     si   Single imputation    datasets</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 5     mi Multiple imputation    datasets</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 6     dc         Descriptive descriptive</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                                                           description</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1                     assembles raw sources into the analytic dataset</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2 macro enhancing the dataset with temp vars, imputations, propensity</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3                                     initial QC of the build dataset</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4        mean imputation of missing covariates; one completed dataset</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5       m completed datasets for pooled analysis; not a variant of si</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6                       Table 1s, covariate summaries, balance tables</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                                           description umbrella</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1                     assembles raw sources into the analytic dataset    FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2 macro enhancing the dataset with temp vars, imputations, propensity    FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3                                     initial QC of the build dataset    FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4        mean imputation of missing covariates; one completed dataset    FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5       m completed datasets for pooled analysis; not a variant of si    FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6                       Table 1s, covariate summaries, balance tables    FALSE</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
