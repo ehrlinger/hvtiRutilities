@@ -1,5 +1,108 @@
 # Changelog
 
+## hvtiRutilities 1.2.1
+
+### New features
+
+- **[`hvti_taxonomy()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_taxonomy.md)
+  gains `rfr`, `sid` and `vt`, and the random forest family splits on
+  the outcome axis.** `rfs`, `rfc` and `rfr` name the survival,
+  classification and regression outcomes, matching the split
+  `bh`/`bl`/`bc`/`bn`/`bq`/`br` and `pm`/`rm`/`cm` already use; `rfc`
+  and `rfs` no longer describe themselves as “reporting”, which tangled
+  the fit-versus-report axis into a family that splits on outcome. `sid`
+  names unsupervised sidClustering with PAM over K, and `vt` names
+  virtual twins. `rf` and `rfsrc` are **demoted to legacy umbrella
+  rows**: they described the same set as each other on the package axis,
+  no template is written for either, and they stay in the table so a
+  census can still resolve the corpus that uses them, which is 131
+  studies and 2,295 jobs for `rfsrc` alone. They are deliberately not
+  added to
+  [`hvti_prefix_folds()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_prefix_folds.md),
+  because a fold is one-to-one and `rfsrc` spans all three outcomes. The
+  `rfc`/`rfs` folder contradiction is untouched and still owed its own
+  spec. This unblocks the `rf*` template batch in `hvtiRtemplates`,
+  whose job catalog rows for the three new prefixes were waiting on this
+  change.
+
+- **[`cache_fit()`](https://ehrlinger.github.io/hvtiRutilities/reference/cache_fit.md)
+  caches expensive computations strictly.** A random forest, varPro fit,
+  imputation, hazard model or partial dependence grid runs once and is
+  reloaded on later renders only while its code, every outside value it
+  reads, its packages’ versions and its seed are unchanged. Anything
+  else stops with an error of class `hvtiRutilities_stale_cache` that
+  lists what changed; `refit = TRUE` recomputes. Code is written inline,
+  as a [`{}`](https://rdrr.io/r/base/Paren.html) block, or passed as a
+  quoted call. `seed =` runs the computation under
+  [`withr::with_seed()`](https://withr.r-lib.org/reference/with_seed.html);
+  random number use without a seed is cached with a warning and recorded
+  as not reproducible. Writes are atomic, and inside a study a
+  provenance sidecar carries the key. `withr` moves from Suggests to
+  Imports.
+
+### Bug fixes
+
+- **The `lint` CI job could not fail, and now can.**
+  [`lintr::lint_package()`](https://lintr.r-lib.org/reference/lint.html)
+  returns a lints object and *prints* it, which is not the same as
+  failing on it, so the step exited 0 while reporting lints and every
+  `lint.yaml` run in the repo’s history concluded `success`. The package
+  also had no `.lintr`, so lintr fell back to its 80-character default
+  and reported 290 lints against a green check. `lint.yaml` now sets
+  `LINTR_ERROR_ON_LINT`, which makes lintr exit 31 on a non-empty
+  result.
+
+- **A `.lintr` records the line width as a decision rather than a
+  default.** 135 characters, because
+  [`hvti_taxonomy()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_taxonomy.md)
+  is a data table written as code whose column alignment is the only
+  thing making 45 of its rows readable, and the widest line in the
+  package is 132. Two linters are switched off with their reasoning in
+  the file: `commented_code_linter`, which reads `# WBC (K/uL)` as a
+  call and the expected-value arithmetic in the weighted `proc_means`
+  tests as commented-out code, and `object_name_linter`, which cannot be
+  satisfied for the exported
+  [`hvtiRutilities.news()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvtiRutilities.news.md)
+  or for R’s own `.Random.seed`. There are no path exclusions.
+
+- **67 of the remaining 69 lints were fixed rather than excluded**, so
+  the gate is green on its merits. 48 were indentation, and the rest
+  were small: braces around two multi-line function bodies and an
+  `if`/`else` with one bare branch, spaces after commas and around
+  named-argument `=`, one trailing space, and `testthat::` qualified in
+  the two test helper closures that `object_usage_linter` inspects. The
+  only name change is the function-local
+  `.MTIME_ROUNDTRIP_TOLERANCE_SECONDS`, shortened to
+  `.MTIME_ROUNDTRIP_TOL_SECONDS` to fit the 30-character limit. No
+  exported object, signature or behaviour changed.
+
+- **`brace_linter` gains `allow_single_line = TRUE`**, which accounts
+  for the last two lints. `test-cache_key.R` tests that a standalone
+  `{ a <- 1 }` nested in another block binds `a` for what follows, so
+  the block is the subject of the test; the linter’s default requires an
+  opening brace never to start a line, which a standalone block cannot
+  do in any layout. Measured: 2 lints single-line, 1 multi-line, 0 only
+  with this option. Every other brace rule stays in force and the test
+  is unchanged.
+
+### Documentation
+
+- [`hvti_taxonomy()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_taxonomy.md)’s
+  note on the job catalog’s `disposition: retire` is brought up to date.
+  It said `retire` could not mark the demoted `rf` and `rfsrc` because
+  `rfs`, `rfc` and `rfr` carried it too; those three moved to `scaffold`
+  in hvtiR’s catalog, so `retire` now holds exactly the two demoted
+  rows. The note says they coincide by decision, not by construction.
+
+- [`hvti_taxonomy()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_taxonomy.md)’s
+  documentation no longer says the job catalog’s `disposition: retire`
+  “says nothing about whether a template is owed”, nor that `rfr` is
+  templated. `hvtiR::jobs()` defines `retire` as a function that already
+  exists with no template owed, and whether `rfs`, `rfc` and `rfr` get
+  templates is still open. The point that stands is narrower: `retire`
+  does not mark the demoted `rf` and `rfsrc`, because the three outcome
+  rows carry it too.
+
 ## hvtiRutilities 1.2.0
 
 ### New features
