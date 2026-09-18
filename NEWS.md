@@ -19,14 +19,6 @@
   `rf*` template batch in `hvtiRtemplates`, whose job catalog rows for the
   three new prefixes were waiting on this change.
 
-* `hvti_taxonomy()`'s documentation no longer says the job catalog's
-  `disposition: retire` "says nothing about whether a template is owed", nor
-  that `rfr` is templated. `hvtiR::jobs()` defines `retire` as a function
-  that already exists with no template owed, and whether `rfs`, `rfc` and
-  `rfr` get templates is still open. The point that stands is narrower:
-  `retire` does not mark the demoted `rf` and `rfsrc`, because the three
-  outcome rows carry it too.
-
 * **`cache_fit()` caches expensive computations strictly.** A random forest,
   varPro fit, imputation, hazard model or partial dependence grid runs once and
   is reloaded on later renders only while its code, every outside value it
@@ -75,6 +67,16 @@
   start a line, which a standalone block cannot do in any layout. Measured:
   2 lints single-line, 1 multi-line, 0 only with this option. Every other
   brace rule stays in force and the test is unchanged.
+
+## Documentation
+
+* `hvti_taxonomy()`'s documentation no longer says the job catalog's
+  `disposition: retire` "says nothing about whether a template is owed", nor
+  that `rfr` is templated. `hvtiR::jobs()` defines `retire` as a function
+  that already exists with no template owed, and whether `rfs`, `rfc` and
+  `rfr` get templates is still open. The point that stands is narrower:
+  `retire` does not mark the demoted `rf` and `rfsrc`, because the three
+  outcome rows carry it too.
 
 # hvtiRutilities 1.2.0
 
