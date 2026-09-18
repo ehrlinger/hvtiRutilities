@@ -3,8 +3,14 @@
 on:
   push:
     branches: [main]
+  # No branch filter on pull_request, deliberately. With `branches: [main]` a
+  # PR stacked on another branch ran neither `lint` nor `docs-current`, and
+  # retargeting it to `main` after its parent merged is not an event the
+  # default trigger types fire on. Both are required checks, so the PR then
+  # sat blocked on statuses that would never report, and its author got no
+  # lint or docs feedback while stacking. hvtiRtemplates already runs this
+  # unfiltered.
   pull_request:
-    branches: [main]
 
 name: lint
 
