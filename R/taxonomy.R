@@ -85,10 +85,12 @@
 #' spelling it used.
 #'
 #' \strong{Do not read the job catalog's \code{disposition: retire} as the
-#' demotion marker.} \code{rfr} carries it too, and \code{rfr} is templated.
-#' That field says the legacy SAS and R job is superseded by the \code{gg_*}
-#' functions, which is true of every row in this family except \code{sid} and
-#' \code{vt}; it says nothing about whether a template is owed.
+#' demotion marker.} \code{rfs}, \code{rfc} and \code{rfr} carry it too, and
+#' none of them is demoted. In that catalog \code{retire} means the work is a
+#' function that already exists, so no template is owed; \code{hvtiR::jobs()}
+#' documents it. The ML family roadmap proposes \code{rfs}, \code{rfc} and
+#' \code{rfr} templates regardless, and reconciling the two is ML sub-project
+#' 2's decision, not this table's.
 #'
 #' \strong{\code{sid} and \code{vt} are filed under \code{analyses} with the
 #' rest of the family}, and compose on the \code{rf*} jobs rather than
