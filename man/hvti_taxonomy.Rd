@@ -8,8 +8,11 @@ hvti_taxonomy()
 }
 \value{
 A data frame with columns \code{prefix}, \code{name}, \code{folder},
-  \code{description}. \code{prefix} is \code{NA} for the one row that names
-  an artifact kind rather than an analysis type.
+  \code{description} and \code{umbrella}. \code{prefix} is \code{NA} for the
+  one row that names an artifact kind rather than an analysis type.
+  \code{umbrella} is logical: \code{TRUE} for the legacy umbrella prefixes
+  \code{rf} and \code{rfsrc}, for which no template is owed; \code{FALSE} for
+  every other prefix; \code{NA} for the artifact row.
 }
 \description{
 The prefix system inherited from the original CORR analysis binder. The
@@ -93,7 +96,10 @@ combined, twice over. Deleting the rows was rejected on two grounds.
 is one-to-one and \code{rfsrc} spans all three outcomes, so there is no
 single prefix to fold it into. And an absent prefix reads to the census as
 one nobody documented, which is the opposite of what a superseded name
-means. Demoted here means \emph{never templated}, and the two rows keep
+means. Demoted here means \emph{never templated}, and since 2026-09-18 it is
+machine-readable as well as worded: the \code{umbrella} column is \code{TRUE}
+on exactly these two rows, so a consumer can exempt them without
+hard-coding a list. The two rows keep
 distinct descriptions so a census hit on a legacy job can still say which
 spelling it used.
 

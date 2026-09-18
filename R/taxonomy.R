@@ -80,7 +80,10 @@
 #' is one-to-one and \code{rfsrc} spans all three outcomes, so there is no
 #' single prefix to fold it into. And an absent prefix reads to the census as
 #' one nobody documented, which is the opposite of what a superseded name
-#' means. Demoted here means \emph{never templated}, and the two rows keep
+#' means. Demoted here means \emph{never templated}, and since 2026-09-18 it is
+#' machine-readable as well as worded: the \code{umbrella} column is \code{TRUE}
+#' on exactly these two rows, so a consumer can exempt them without
+#' hard-coding a list. The two rows keep
 #' distinct descriptions so a census hit on a legacy job can still say which
 #' spelling it used.
 #'
@@ -105,8 +108,11 @@
 #' \code{hvtiRtemplates:dev/specs/2026-09-17-ml-family-roadmap-design.md}.
 #'
 #' @return A data frame with columns \code{prefix}, \code{name}, \code{folder},
-#'   \code{description}. \code{prefix} is \code{NA} for the one row that names
-#'   an artifact kind rather than an analysis type.
+#'   \code{description} and \code{umbrella}. \code{prefix} is \code{NA} for the
+#'   one row that names an artifact kind rather than an analysis type.
+#'   \code{umbrella} is logical: \code{TRUE} for the legacy umbrella prefixes
+#'   \code{rf} and \code{rfsrc}, for which no template is owed; \code{FALSE} for
+#'   every other prefix; \code{NA} for the artifact row.
 #' @export
 #' @examples
 #' head(hvti_taxonomy())
@@ -162,6 +168,11 @@ hvti_taxonomy <- function() {
     stringsAsFactors = FALSE
   )
   names(tx) <- c("prefix", "name", "folder", "description")
+  # `umbrella` is derived here rather than written as a fifth field in every
+  # row above: it is TRUE on exactly two rows, and widening all the aligned
+  # rows to carry it would bury the two that matter. NA for the artifact row,
+  # which has no prefix to demote.
+  tx$umbrella <- ifelse(is.na(tx$prefix), NA, tx$prefix %in% c("rf", "rfsrc"))
   tx
 }
 

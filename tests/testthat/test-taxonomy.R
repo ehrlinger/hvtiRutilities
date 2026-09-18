@@ -4,7 +4,7 @@ library(hvtiRutilities)
 test_that("hvti_taxonomy() has the expected shape", {
   tx <- hvti_taxonomy()
   expect_s3_class(tx, "data.frame")
-  expect_named(tx, c("prefix", "name", "folder", "description"))
+  expect_named(tx, c("prefix", "name", "folder", "description", "umbrella"))
   expect_gt(nrow(tx), 25)
   expect_false(any(duplicated(tx$prefix)))
   expect_true(all(nzchar(tx$description)))
@@ -176,4 +176,22 @@ test_that("the umbrella prefixes stay in the table and out of the fold map", {
   expect_true(all(c("rf", "rfsrc") %in% tx$prefix))
   expect_false(any(c("rf", "rfsrc") %in% names(hvti_prefix_folds())))
   expect_false(any(c("rf", "rfsrc") %in% hvti_non_prefixes()))
+})
+
+test_that("`umbrella` marks exactly the demoted rows, and agrees with their wording", {
+  # The template catalog in hvtiRtemplates drops rf and rfsrc, since no
+  # template is owed for either, and its "every taxonomy prefix has a catalog
+  # row" guard exempts them by reading this column rather than a hard-coded
+  # list. So the column must be exact: TRUE on the two umbrellas, FALSE on
+  # every other prefix, NA only where there is no prefix at all.
+  tx <- hvti_taxonomy()
+  expect_type(tx$umbrella, "logical")
+  expect_setequal(tx$prefix[tx$umbrella %in% TRUE], c("rf", "rfsrc"))
+  expect_identical(is.na(tx$umbrella), is.na(tx$prefix))
+  expect_false(any(tx$umbrella[!is.na(tx$prefix) & !(tx$prefix %in% c("rf", "rfsrc"))]))
+
+  # The column and the wording record the same fact twice; pin that they
+  # agree, so one cannot be edited without the other.
+  worded <- !is.na(tx$prefix) & grepl("legacy umbrella", tx$description, fixed = TRUE)
+  expect_identical(worded, tx$umbrella %in% TRUE)
 })
