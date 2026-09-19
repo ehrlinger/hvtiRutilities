@@ -24,10 +24,11 @@
 #' nothing downstream.
 #'
 #' \emph{Adding or renaming} a folder is not free on the study side.
-#' \code{\link{study_dir}} knows only the folders in its own layout map, and no
+#' \code{\link{study_dir}} knows only the folders in its own layout map, and a
 #' test compares that map's names with \code{unique(hvti_taxonomy()$folder)},
-#' so a folder added here and not there is one \code{study_dir()} refuses as
-#' unknown.
+#' so a folder added here and not there turns this package's CI red rather
+#' than becoming one \code{study_dir()} refuses as unknown. The test compares
+#' names only; the new folder's digits still have to be assigned in the map.
 #'
 #' Templates carry no ordinal. They were once named \code{<NN>.<MM>-<prefix>},
 #' with \code{NN} taken from this table's folder order through a hardcoded map
