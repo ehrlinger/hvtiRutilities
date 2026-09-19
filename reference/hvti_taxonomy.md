@@ -24,28 +24,46 @@ This is data rather than documentation on purpose. The same table lived
 in a README and drifted from the files it described; as a function it is
 checked by the test suite against the templates actually present.
 
-**Folder order is load-bearing. Row order within a folder is not, as of
-2026-08-31.**
+**Folder names are load-bearing. Row order is not, folder order
+included, as of 2026-09-03.**
 
-A template's ordinal takes its major from a hardcoded `FOLDER_ORDINAL`
-map in `hvtiRtemplates`, whose authority is this table's folder order.
-Adding or reordering a folder therefore renumbers template majors. That
-is now *checked* rather than merely documented: since `hvtiRtemplates`
-v1.0.16 its `test-roadmap.R` parses that map out of the Python source
-and compares it against `unique(hvti_taxonomy()$folder)`, so a folder
-change here turns its CI red naming the drift, instead of silently
-validating every ordinal's major against the wrong folder.
+A template directory and a numbered study directory are both spelled
+`<NN>_<folder>`, as in `20_distributions`; a legacy study keeps the bare
+name, as in `distributions`, and
+[`study_dir`](https://ehrlinger.github.io/hvtiRutilities/reference/study_dir.md)
+resolves either. The name after the digits, or the bare name, must be a
+`folder` in this table. `hvtiRtemplates` tests that every template
+directory names one, so renaming or removing a folder that holds a
+template turns its CI red. The digits are *assigned*, not derived from
+this table. They are hardcoded in
+[`study_dir`](https://ehrlinger.github.io/hvtiRutilities/reference/study_dir.md)'s
+layout map here and in the template directory names there, and
+`estimates` is `90` though it is the table's fifth folder, because it
+holds saved output rather than jobs. Reordering rows, or folders,
+changes nothing downstream.
 
-Row order within a folder is free. An ordinal is assigned once and
-recorded in `hvtiRtemplates`'s template ledger, never recomputed from
-position, and the test that asserted alignment with row order was
-retired in v1.0.16.
+*Adding or renaming* a folder is not free on the study side.
+[`study_dir`](https://ehrlinger.github.io/hvtiRutilities/reference/study_dir.md)
+knows only the folders in its own layout map, and no test compares that
+map's names with `unique(hvti_taxonomy()$folder)`, so a folder added
+here and not there is one
+[`study_dir()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_dir.md)
+refuses as unknown.
 
-Both guards exist because the coupling failed here first. Moving `hs`
-out of `analyses` in 1.1.6 shifted `bh` from sixth to fifth while its
+Templates carry no ordinal. They were once named `<NN>.<MM>-<prefix>`,
+with `NN` taken from this table's folder order through a hardcoded map
+in `hvtiRtemplates`; the ordinal and that map were both retired on
+2026-09-03
+(`hvtiRtemplates:dev/specs/2026-09-03-template-identity-design.md`). A
+template is now `<prefix>[-<qualifier>].qmd`, and the catalog that lists
+them is `hvtiRtemplates`' own `inst/extdata/templates.json`.
+
+History, kept because it is why the digits are assigned: moving `hs` out
+of `analyses` in 1.1.6 shifted `bh` from sixth to fifth while its
 shipped filename stayed `04.06`, and nothing caught it. `bh` was
-renumbered to `04.05` and `04.06` retired rather than freed, because it
-had shipped. An ordinal is an identity, not a position.
+renumbered `04.05`. Identity derived from a row position breaks when an
+upstream row moves. A job named `04.06-bh`, from `hvtiRtemplates` before
+its 1.1.0, is the same template as `04.05-bh`.
 
 **`hs` is filed under `graphs`, which reads oddly for a job named
 "setup".** It was moved there from `analyses` on 2026-08-29 on the
