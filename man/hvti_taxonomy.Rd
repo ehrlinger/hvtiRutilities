@@ -26,9 +26,11 @@ by the test suite against the templates actually present.
 \strong{Folder names are load-bearing. Row order is not, folder order
 included, as of 2026-09-03.}
 
-A study directory and a template directory are both spelled
-\code{<NN>_<folder>}, as in \code{20_distributions}. The name after the
-digits must be a \code{folder} in this table. \code{hvtiRtemplates} tests
+A template directory and a numbered study directory are both spelled
+\code{<NN>_<folder>}, as in \code{20_distributions}; a legacy study keeps
+the bare name, as in \code{distributions}, and \code{\link{study_dir}}
+resolves either. The name after the digits, or the bare name, must be a
+\code{folder} in this table. \code{hvtiRtemplates} tests
 that every template directory names one, so renaming or removing a folder
 that holds a template turns its CI red. The digits are \emph{assigned}, not
 derived from this table. They are hardcoded in \code{\link{study_dir}}'s
@@ -37,9 +39,11 @@ layout map here and in the template directory names there, and
 it holds saved output rather than jobs. Reordering rows, or folders, changes
 nothing downstream.
 
-\emph{Adding or renaming} a folder is not free, and nothing checks it:
-\code{\link{study_dir}} knows only the folders in its own map, so a folder
-added here and not there is one \code{study_dir()} refuses as unknown.
+\emph{Adding or renaming} a folder is not free on the study side.
+\code{\link{study_dir}} knows only the folders in its own layout map, and no
+test compares that map's names with \code{unique(hvti_taxonomy()$folder)},
+so a folder added here and not there is one \code{study_dir()} refuses as
+unknown.
 
 Templates carry no ordinal. They were once named \code{<NN>.<MM>-<prefix>},
 with \code{NN} taken from this table's folder order through a hardcoded map
