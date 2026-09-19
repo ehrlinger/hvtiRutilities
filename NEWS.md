@@ -15,6 +15,19 @@
   order are free, because the directory digits are assigned rather than
   derived from position.
 
+## Tests
+
+* A test now compares the folder names in `study_dir()`'s layout map with
+  `unique(hvti_taxonomy()$folder)`. Drift in either direction used to pass
+  unnoticed and now fails the test suite. A folder added to the taxonomy and
+  not to the map is one `study_dir()` and `hvtiRtemplates::add_job()` refuse
+  as unknown. A folder added to the map and not to the taxonomy is the
+  reverse: `study_dir()` resolves it, but it names no taxonomy folder, so the
+  job census reports a job filed there as unplaced. The test compares names
+  only, because the directory digits are
+  assigned rather than derived from row order. `hvti_taxonomy()`'s
+  documentation, which said no such test existed, is updated to match.
+
 # hvtiRutilities 1.3.0
 
 ## New features
