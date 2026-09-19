@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.2.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,6 +55,14 @@
       <small>Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.3.0" id="hvtirutilities-130">hvtiRutilities 1.3.0<a class="anchor" aria-label="anchor" href="#hvtirutilities-130"></a></h2>
+<div class="section level3">
+<h3 id="new-features-1-3-0">New features<a class="anchor" aria-label="anchor" href="#new-features-1-3-0"></a></h3>
+<ul><li>
+<strong><code><a href="../reference/hvti_taxonomy.html">hvti_taxonomy()</a></code> gains a logical <code>umbrella</code> column.</strong> It is <code>TRUE</code> for <code>rf</code> and <code>rfsrc</code>, the legacy umbrella prefixes no template is owed for, <code>FALSE</code> for every other prefix, and <code>NA</code> for the artifact row that has no prefix. The demotion was recorded only in those rows’ wording; a consumer can now exempt them without hard-coding a list. ⚠️ This changes the function’s output shape: code that asserts its exact column set, or indexes columns by position, needs updating. The template catalog in <code>hvtiRtemplates</code> reads it (<code>hvtiRtemplates:dev/specs/2026-09-18-template-catalog-design.md</code>).</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.2.1" id="hvtirutilities-121">hvtiRutilities 1.2.1<a class="anchor" aria-label="anchor" href="#hvtirutilities-121"></a></h2>
 <div class="section level3">

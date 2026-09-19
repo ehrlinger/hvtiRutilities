@@ -1,5 +1,20 @@
 # Changelog
 
+## hvtiRutilities 1.3.0
+
+### New features
+
+- **[`hvti_taxonomy()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_taxonomy.md)
+  gains a logical `umbrella` column.** It is `TRUE` for `rf` and
+  `rfsrc`, the legacy umbrella prefixes no template is owed for, `FALSE`
+  for every other prefix, and `NA` for the artifact row that has no
+  prefix. The demotion was recorded only in those rows’ wording; a
+  consumer can now exempt them without hard-coding a list. ⚠️ This
+  changes the function’s output shape: code that asserts its exact
+  column set, or indexes columns by position, needs updating. The
+  template catalog in `hvtiRtemplates` reads it
+  (`hvtiRtemplates:dev/specs/2026-09-18-template-catalog-design.md`).
+
 ## hvtiRutilities 1.2.1
 
 ### New features
