@@ -97,10 +97,11 @@ layout map here and in the template directory names there, and
 it holds saved output rather than jobs. Reordering rows, or folders, changes
 nothing downstream.</p>
 <p><em>Adding or renaming</em> a folder is not free on the study side.
-<code><a href="study_dir.html">study_dir</a></code> knows only the folders in its own layout map, and no
+<code><a href="study_dir.html">study_dir</a></code> knows only the folders in its own layout map, and a
 test compares that map's names with <code>unique(hvti_taxonomy()$folder)</code>,
-so a folder added here and not there is one <code><a href="study_dir.html">study_dir()</a></code> refuses as
-unknown.</p>
+so a folder added here and not there turns this package's CI red rather
+than becoming one <code><a href="study_dir.html">study_dir()</a></code> refuses as unknown. The test compares
+names only; the new folder's digits still have to be assigned in the map.</p>
 <p>Templates carry no ordinal. They were once named <code>&lt;NN&gt;.&lt;MM&gt;-&lt;prefix&gt;</code>,
 with <code>NN</code> taken from this table's folder order through a hardcoded map
 in <code>hvtiRtemplates</code>; the ordinal and that map were both retired on

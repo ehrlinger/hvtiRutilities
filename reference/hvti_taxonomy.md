@@ -44,11 +44,12 @@ changes nothing downstream.
 
 *Adding or renaming* a folder is not free on the study side.
 [`study_dir`](https://ehrlinger.github.io/hvtiRutilities/reference/study_dir.md)
-knows only the folders in its own layout map, and no test compares that
+knows only the folders in its own layout map, and a test compares that
 map's names with `unique(hvti_taxonomy()$folder)`, so a folder added
-here and not there is one
+here and not there turns this package's CI red rather than becoming one
 [`study_dir()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_dir.md)
-refuses as unknown.
+refuses as unknown. The test compares names only; the new folder's
+digits still have to be assigned in the map.
 
 Templates carry no ordinal. They were once named `<NN>.<MM>-<prefix>`,
 with `NN` taken from this table's folder order through a hardcoded map
