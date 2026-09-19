@@ -152,15 +152,16 @@ on exactly these two rows, so a consumer can exempt them without
 hard-coding a list. The two rows keep
 distinct descriptions so a census hit on a legacy job can still say which
 spelling it used.</p>
-<p><strong>The job catalog's <code>disposition: retire</code> is not the demotion
-marker, though it now coincides with it.</strong> In that catalog <code>retire</code>
-means the work is a function that already exists, so no template is owed;
-<code>hvtiR::jobs()</code> documents it. Since 2026-09-18 exactly <code>rf</code> and
-<code>rfsrc</code> carry it, because <code>rfs</code>, <code>rfc</code> and <code>rfr</code> moved
-to <code>scaffold</code>, their templates owed in <code>hvtiRtemplates</code>
-(<code>ehrlinger/hvtiR</code> PR #88, John's decision of 2026-09-18). The
-demotion itself is recorded here, in this table. The two agree today by
-decision, not by construction, so check both rather than inferring one.</p>
+<p><strong>The demotion is recorded here, and only here.</strong> Until 2026-09-19
+<code>hvtiR</code>'s job catalog also marked <code>rf</code> and <code>rfsrc</code> with a
+<code>retire</code> disposition, which coincided with this demotion by decision.
+That catalog has moved to <code>hvtiRtemplates</code> as its template catalog,
+read by <code>hvtiRtemplates::template_catalog()</code>, where every row is a
+template owed in that package. It has no <code>retire</code> disposition, and
+<code>rf</code> and <code>rfsrc</code> have no row at all; its guard that every
+taxonomy prefix has a catalog row exempts them by reading the
+<code>umbrella</code> column above. <code>hvtiR::jobs()</code> was removed in
+<code>hvtiR</code> 1.2.0.</p>
 <p><strong><code>sid</code> and <code>vt</code> are filed under <code>analyses</code> with the
 rest of the family</strong>, and compose on the <code>rf*</code> jobs rather than
 replacing them. The <code>rfc</code>/<code>rfs</code> folder contradiction is

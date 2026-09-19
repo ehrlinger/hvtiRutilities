@@ -104,15 +104,15 @@ a consumer can exempt them without hard-coding a list. The two rows keep
 distinct descriptions so a census hit on a legacy job can still say
 which spelling it used.
 
-**The job catalog's `disposition: retire` is not the demotion marker,
-though it now coincides with it.** In that catalog `retire` means the
-work is a function that already exists, so no template is owed;
-`hvtiR::jobs()` documents it. Since 2026-09-18 exactly `rf` and `rfsrc`
-carry it, because `rfs`, `rfc` and `rfr` moved to `scaffold`, their
-templates owed in `hvtiRtemplates` (`ehrlinger/hvtiR` PR \#88, John's
-decision of 2026-09-18). The demotion itself is recorded here, in this
-table. The two agree today by decision, not by construction, so check
-both rather than inferring one.
+**The demotion is recorded here, and only here.** Until 2026-09-19
+`hvtiR`'s job catalog also marked `rf` and `rfsrc` with a `retire`
+disposition, which coincided with this demotion by decision. That
+catalog has moved to `hvtiRtemplates` as its template catalog, read by
+`hvtiRtemplates::template_catalog()`, where every row is a template owed
+in that package. It has no `retire` disposition, and `rf` and `rfsrc`
+have no row at all; its guard that every taxonomy prefix has a catalog
+row exempts them by reading the `umbrella` column above. `hvtiR::jobs()`
+was removed in `hvtiR` 1.2.0.
 
 **`sid` and `vt` are filed under `analyses` with the rest of the
 family**, and compose on the `rf*` jobs rather than replacing them. The
