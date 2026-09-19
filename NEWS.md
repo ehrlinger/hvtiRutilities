@@ -8,6 +8,13 @@
   `hvtiR::jobs()` was removed in `hvtiR` 1.2.0. The demotion of `rf` and
   `rfsrc` is now recorded only in this table, through the `umbrella` column.
 
+* `hvti_taxonomy()`'s documentation no longer describes the template ordinal
+  and the `FOLDER_ORDINAL` guard, both retired in `hvtiRtemplates` on
+  2026-09-03. It now says what does depend on this table: the folder names,
+  which every numbered study and template directory must use. Row and folder
+  order are free, because the directory digits are assigned rather than
+  derived from position.
+
 # hvtiRutilities 1.3.0
 
 ## New features
