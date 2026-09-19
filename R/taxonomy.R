@@ -87,15 +87,16 @@
 #' distinct descriptions so a census hit on a legacy job can still say which
 #' spelling it used.
 #'
-#' \strong{The job catalog's \code{disposition: retire} is not the demotion
-#' marker, though it now coincides with it.} In that catalog \code{retire}
-#' means the work is a function that already exists, so no template is owed;
-#' \code{hvtiR::jobs()} documents it. Since 2026-09-18 exactly \code{rf} and
-#' \code{rfsrc} carry it, because \code{rfs}, \code{rfc} and \code{rfr} moved
-#' to \code{scaffold}, their templates owed in \code{hvtiRtemplates}
-#' (\code{ehrlinger/hvtiR} PR #88, John's decision of 2026-09-18). The
-#' demotion itself is recorded here, in this table. The two agree today by
-#' decision, not by construction, so check both rather than inferring one.
+#' \strong{The demotion is recorded here, and only here.} Until 2026-09-19
+#' \code{hvtiR}'s job catalog also marked \code{rf} and \code{rfsrc} with a
+#' \code{retire} disposition, which coincided with this demotion by decision.
+#' That catalog has moved to \code{hvtiRtemplates} as its template catalog,
+#' read by \code{hvtiRtemplates::template_catalog()}, where every row is a
+#' template owed in that package. It has no \code{retire} disposition, and
+#' \code{rf} and \code{rfsrc} have no row at all; its guard that every
+#' taxonomy prefix has a catalog row exempts them by reading the
+#' \code{umbrella} column above. \code{hvtiR::jobs()} was removed in
+#' \code{hvtiR} 1.2.0.
 #'
 #' \strong{\code{sid} and \code{vt} are filed under \code{analyses} with the
 #' rest of the family}, and compose on the \code{rf*} jobs rather than
