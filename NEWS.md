@@ -1,3 +1,14 @@
+# hvtiRutilities (unreleased)
+
+## Documentation
+
+* `hvti_taxonomy()`'s documentation no longer describes the template ordinal
+  and the `FOLDER_ORDINAL` guard, both retired in `hvtiRtemplates` on
+  2026-09-03. It now says what does depend on this table: the folder names,
+  which every numbered study and template directory must use. Row and folder
+  order are free, because the directory digits are assigned rather than
+  derived from position.
+
 # hvtiRutilities 1.3.0
 
 ## New features
