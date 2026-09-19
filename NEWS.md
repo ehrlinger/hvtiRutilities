@@ -2,6 +2,12 @@
 
 ## Documentation
 
+* `hvti_taxonomy()`'s note on the job catalog is brought up to date. The
+  catalog left `hvtiR` for `hvtiRtemplates` (`template_catalog()`), where it
+  has no `retire` disposition and no rows for `rf` or `rfsrc`, and
+  `hvtiR::jobs()` was removed in `hvtiR` 1.2.0. The demotion of `rf` and
+  `rfsrc` is now recorded only in this table, through the `umbrella` column.
+
 * `hvti_taxonomy()`'s documentation no longer describes the template ordinal
   and the `FOLDER_ORDINAL` guard, both retired in `hvtiRtemplates` on
   2026-09-03. It now says what does depend on this table: the folder names,
