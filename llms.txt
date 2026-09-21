@@ -343,6 +343,12 @@ reconcile its built dataset
   : Resolve a directory in the study layout
 - [`read_built()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_built.md)
   : Read the study's built dataset
+- [`check_data_updates()`](https://ehrlinger.github.io/hvtiRutilities/reference/check_data_updates.md)
+  : Check a study for published dataset updates
+- [`review_data_update()`](https://ehrlinger.github.io/hvtiRutilities/reference/review_data_update.md)
+  : Review one published dataset release
+- [`adopt_data_update()`](https://ehrlinger.github.io/hvtiRutilities/reference/adopt_data_update.md)
+  : Adopt one published dataset release
 - [`cohort_counts()`](https://ehrlinger.github.io/hvtiRutilities/reference/cohort_counts.md)
   : Count the analysable cohort
 - [`assert_cohort()`](https://ehrlinger.github.io/hvtiRutilities/reference/assert_cohort.md)

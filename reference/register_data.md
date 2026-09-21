@@ -17,7 +17,9 @@ register_data(
   role = c("study", "named"),
   population = NULL,
   source = NULL,
-  extract_date = NULL
+  extract_date = NULL,
+  catalog_dataset = NULL,
+  release_id = NULL
 )
 ```
 
@@ -58,6 +60,12 @@ register_data(
 
   Character, `Date`, or `NULL`. Extraction date. The file modification
   date is used when omitted.
+
+- catalog_dataset, release_id:
+
+  Character(1) or `NULL`. Producer catalog dataset ID and exact
+  published release ID. Supply both to make the study contract
+  release-aware, or neither for a legacy registration.
 
 ## Value
 

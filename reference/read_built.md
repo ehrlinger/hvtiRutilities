@@ -3,6 +3,14 @@
 Reads the dataset named in `_study.yml` and normalises its types so that
 both available read paths deliver the same frame.
 
+For a release-aware contract, the pinned release is verified before
+cache access. A later valid release emits a message of class
+`hvtiRutilities_update_available`; an unavailable catalog or invalid
+candidate emits `hvtiRutilities_update_status_unknown` and the pinned
+data are still read. A changed pinned release errors with class
+`hvtiRutilities_release_integrity`. A withdrawn pin errors with class
+`hvtiRutilities_withdrawn_release` unless `allow_withdrawn` is `TRUE`.
+
 The normalisation is not cosmetic.
 [`read_clinical_data`](https://ehrlinger.github.io/hvtiRutilities/reference/read_clinical_data.md)
 converts SAS 0/1 numerics to logical while
@@ -16,7 +24,12 @@ attribute because listings print labels rather than names.
 ## Usage
 
 ``` r
-read_built(cfg = study_config(), refresh = FALSE, dataset = "study")
+read_built(
+  cfg = study_config(),
+  refresh = FALSE,
+  dataset = "study",
+  allow_withdrawn = FALSE
+)
 ```
 
 ## Arguments
@@ -39,6 +52,11 @@ read_built(cfg = study_config(), refresh = FALSE, dataset = "study")
 - dataset:
 
   Character(1). Logical dataset name. Defaults to `"study"`.
+
+- allow_withdrawn:
+
+  Logical. If `TRUE`, allow a deliberately pinned withdrawn release to
+  be read for revision work. The default is `FALSE`.
 
 ## Value
 

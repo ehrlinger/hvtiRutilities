@@ -80,7 +80,9 @@ files have been prepared successfully.</p>
 <span>  role <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"study"</span>, <span class="st">"named"</span><span class="op">)</span>,</span>
 <span>  population <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  source <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  extract_date <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  extract_date <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  catalog_dataset <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  release_id <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -122,6 +124,12 @@ reserved for the default.</p></dd>
 <dt id="arg-extract-date">extract_date<a class="anchor" aria-label="anchor" href="#arg-extract-date"></a></dt>
 <dd><p>Character, <code>Date</code>, or <code>NULL</code>. Extraction
 date. The file modification date is used when omitted.</p></dd>
+
+
+<dt id="arg-catalog-dataset-release-id">catalog_dataset, release_id<a class="anchor" aria-label="anchor" href="#arg-catalog-dataset-release-id"></a></dt>
+<dd><p>Character(1) or <code>NULL</code>. Producer
+catalog dataset ID and exact published release ID. Supply both to make
+the study contract release-aware, or neither for a legacy registration.</p></dd>
 
 </dl></div>
     <div class="section level2">

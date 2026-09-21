@@ -15,12 +15,14 @@
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/index.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/news/index.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/add_labels.html</loc></url>
+<url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/adopt_data_update.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/apply_label_overrides.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/apply_value_labels.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/assert_cohort.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/built_manifest.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/built_path.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/cache_fit.html</loc></url>
+<url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/check_data_updates.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/clean_labels.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/cohort_counts.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/compare_datasets.html</loc></url>
@@ -62,6 +64,7 @@
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/read_clinical_data.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/record_provenance.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/register_data.html</loc></url>
+<url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/review_data_update.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/sample_data.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/sas_macro_defs.html</loc></url>
 <url><loc>https://ehrlinger.github.io/hvtiRutilities/reference/sas_macro_signature.html</loc></url>
