@@ -11,7 +11,10 @@
   replaces `_study.yml` and `manifest.yaml` as a recoverable pair and leaves
   the old dated file in place. Legacy study contracts keep their existing read
   and status behavior. A published file changed in place now stops before a
-  cache refresh can record the changed bytes.
+  cache refresh can record the changed bytes, including when the producer
+  catalog is missing or malformed. Review, adoption, and registration
+  reconcile the release catalog with the study manifest, and same-day catalog
+  revisions must be contiguous.
 
 ## Documentation
 

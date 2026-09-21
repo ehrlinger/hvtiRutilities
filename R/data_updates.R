@@ -20,14 +20,14 @@
 }
 
 .signal_update_notice <- function(cfg, dataset, status, candidate, message,
-                                  class) {
+                                  class, report) {
   key <- .update_notice_key(cfg, dataset, status, candidate)
   if (exists(key, envir = .update_notices, inherits = FALSE)) {
     return(invisible(FALSE))
   }
   assign(key, TRUE, envir = .update_notices)
   condition <- structure(
-    list(message = message, call = NULL),
+    list(message = message, call = NULL, report = report),
     class = c(class, "message", "condition")
   )
   base::message(condition)
@@ -100,10 +100,67 @@
     is.list(x) && identical(x$file, contract$built)
   }, logical(1))
   if (sum(hit) != 1L) {
-    stop("manifest.yaml must contain exactly one entry for ",
+    stop("manifest.yaml must contain exactly one manifest entry for ",
          contract$built, call. = FALSE)
   }
   entries[[which(hit)]]
+}
+
+.release_integrity_abort <- function(message) {
+  stop(structure(
+    list(message = message, call = NULL),
+    class = c("hvtiRutilities_release_integrity", "error", "condition")
+  ))
+}
+
+.verify_pinned_release <- function(cfg, contract, release = NULL,
+                                   verified = NULL) {
+  if (is.null(verified)) {
+    entry <- tryCatch(
+      .release_manifest_entry(cfg, contract),
+      error = function(e) .release_integrity_abort(conditionMessage(e))
+    )
+    valid_sha <- is.character(entry$sha256) && length(entry$sha256) == 1L &&
+      !is.na(entry$sha256) && grepl("^[0-9a-f]{64}$", entry$sha256)
+    if (!valid_sha) {
+      .release_integrity_abort(
+        paste0("manifest.yaml has an invalid checksum for ", contract$built)
+      )
+    }
+    path <- file.path(study_dir("datasets", cfg$root), contract$built)
+    actual <- if (file.exists(path)) {
+      digest::digest(path, algo = "sha256", file = TRUE)
+    } else {
+      NA_character_
+    }
+    if (is.na(actual)) {
+      .release_integrity_abort(paste0("pinned release is missing: ", path))
+    }
+    if (!identical(actual, entry$sha256)) {
+      .release_integrity_abort(paste0(
+        "pinned release changed in place relative to manifest.yaml: ",
+        contract$built,
+        "\n  expected: ", entry$sha256,
+        "\n  actual:   ", actual
+      ))
+    }
+    verified <- list(entry = entry, path = path, sha256 = actual)
+  }
+
+  if (!is.null(release)) {
+    if (!identical(contract$built, release$file)) {
+      .release_integrity_abort(paste0(
+        "_study.yml names ", contract$built, " but release ",
+        release$release_id, " names ", release$file
+      ))
+    }
+    if (!identical(verified$entry$sha256, release$sha256)) {
+      .release_integrity_abort(paste0(
+        "manifest.yaml checksum does not match release ", release$release_id
+      ))
+    }
+  }
+  verified
 }
 
 .check_one_data_update <- function(cfg, dataset) {
@@ -112,6 +169,20 @@
   if (is.null(release_contract)) return(list())
 
   pinned_id <- release_contract$release_id
+  verified <- tryCatch(
+    .verify_pinned_release(cfg, contract),
+    error = function(e) e
+  )
+  if (inherits(verified, "error")) {
+    return(list(.update_row(
+      dataset = dataset,
+      scope = "pinned",
+      pinned_release_id = pinned_id,
+      status = "FAIL",
+      detail = conditionMessage(verified)
+    )))
+  }
+
   catalog_path <- .catalog_path(cfg)
   if (!file.exists(catalog_path)) {
     return(list(.update_row(
@@ -143,17 +214,7 @@
       release_contract$dataset_id,
       pinned_id
     )
-    if (!identical(contract$built, release$file)) {
-      stop("_study.yml names ", contract$built, " but release ", pinned_id,
-           " names ", release$file, call. = FALSE)
-    }
-    entry <- .release_manifest_entry(cfg, contract)
-    if (!is.character(entry$sha256) || length(entry$sha256) != 1L ||
-          !identical(entry$sha256, release$sha256)) {
-      stop("manifest.yaml checksum does not match release ", pinned_id,
-           call. = FALSE)
-    }
-    .verify_catalog_file(release, study_dir("datasets", cfg$root))
+    .verify_pinned_release(cfg, contract, release, verified)
     release
   }, error = function(e) e)
   if (inherits(pinned, "error")) {
@@ -315,7 +376,8 @@ check_data_updates <- function(cfg = study_config(), dataset = NULL) {
         "Dataset update available for '", dataset, "': ",
         row$candidate_release_id, ". The pinned release remains in use."
       ),
-      "hvtiRutilities_update_available"
+      "hvtiRutilities_update_available",
+      report
     )
   }
 
@@ -341,7 +403,8 @@ check_data_updates <- function(cfg = study_config(), dataset = NULL) {
         paste(rows$detail, collapse = "; "),
         ". The pinned release remains in use."
       ),
-      "hvtiRutilities_update_status_unknown"
+      "hvtiRutilities_update_status_unknown",
+      report
     )
   }
 
@@ -402,6 +465,12 @@ check_data_updates <- function(cfg = study_config(), dataset = NULL) {
 #' }
 review_data_update <- function(cfg = study_config(), dataset = "study",
                                release_id) {
+  if (identical(release_id, "latest")) {
+    stop(
+      "review_data_update(): supply an exact release ID; 'latest' is not accepted",
+      call. = FALSE
+    )
+  }
   contract <- .study_dataset(cfg, dataset)
   if (is.null(contract$release)) {
     stop(
@@ -418,6 +487,7 @@ review_data_update <- function(cfg = study_config(), dataset = "study",
     dataset_id,
     contract$release$release_id
   )
+  .verify_pinned_release(cfg, contract, pinned)
   candidate <- .catalog_release(catalog, dataset_id, release_id)
   if (candidate$sequence <= pinned$sequence) {
     stop(
@@ -538,7 +608,7 @@ print.data_update_review <- function(x, ...) {
 adopt_data_update <- function(cfg = study_config(), dataset = "study",
                               release_id) {
   review <- review_data_update(cfg, dataset, release_id)
-  current_cfg <- study_config(cfg$root)
+  current_cfg <- study_config(cfg$root, require_data = FALSE)
   original_contract <- .study_dataset(cfg, dataset)
   contract <- .study_dataset(current_cfg, dataset)
   same_pin <- !is.null(contract$release) &&
@@ -574,10 +644,8 @@ adopt_data_update <- function(cfg = study_config(), dataset = "study",
     )
   }
 
-  release <- list(
-    dataset_id = contract$release$dataset_id,
-    release_id = review$candidate$release_id
-  )
+  release <- contract$release
+  release$release_id <- review$candidate$release_id
   if (identical(dataset, "study")) {
     raw$built <- review$candidate$file
     raw$cohort <- cohort

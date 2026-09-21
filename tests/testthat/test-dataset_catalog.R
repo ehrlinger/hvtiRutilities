@@ -127,6 +127,14 @@ test_that("catalog rejects malformed release fields and collections", {
       }
     ),
     list(
+      name = "reserved release ID",
+      pattern = "release_id",
+      change = function(x) {
+        x$datasets$surgery_cohort$releases[[2L]]$release_id <- "latest"
+        x
+      }
+    ),
+    list(
       name = "sequences",
       pattern = "sequence",
       change = function(x) {
@@ -174,6 +182,31 @@ test_that("catalog rejects malformed release fields and collections", {
       .read_dataset_catalog(fx$catalog_path),
       case$pattern,
       info = case$name
+    )
+  }
+})
+
+test_that("catalog revisions are contiguous within each extract date", {
+  cases <- list(
+    initial = c(2L, 3L),
+    duplicate = c(1L, 1L),
+    descending = c(2L, 1L),
+    skipped = c(1L, 3L)
+  )
+  for (case in names(cases)) {
+    fx <- write_release_fixture(withr::local_tempdir())
+    catalog <- yaml::read_yaml(fx$catalog_path)
+    releases <- catalog$datasets$surgery_cohort$releases
+    releases[[2L]]$extract_date <- releases[[1L]]$extract_date
+    releases[[1L]]$revision <- cases[[case]][[1L]]
+    releases[[2L]]$revision <- cases[[case]][[2L]]
+    catalog$datasets$surgery_cohort$releases <- releases
+    yaml::write_yaml(catalog, fx$catalog_path)
+
+    expect_error(
+      .read_dataset_catalog(fx$catalog_path),
+      "revision",
+      info = case
     )
   }
 })

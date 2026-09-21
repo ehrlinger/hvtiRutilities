@@ -34,7 +34,7 @@
 }
 
 .catalog_valid_release_id <- function(x) {
-  grepl("^[a-z0-9][a-z0-9_-]*$", x)
+  grepl("^[a-z0-9][a-z0-9_-]*$", x) && !identical(x, "latest")
 }
 
 .catalog_valid_file <- function(x) {
@@ -218,6 +218,21 @@
     if (length(sequences) > 1L && any(diff(sequences) <= 0L)) {
       .catalog_abort(paste0("datasets.", dataset_id,
                             ".releases sequence must be strictly increasing"))
+    }
+    extract_dates <- vapply(releases, function(x) x$extract_date, character(1))
+    for (extract_date in unique(extract_dates)) {
+      revisions <- vapply(
+        releases[extract_dates == extract_date],
+        function(x) x$revision,
+        integer(1)
+      )
+      if (!identical(revisions, seq_along(revisions))) {
+        .catalog_abort(paste0(
+          "datasets.", dataset_id,
+          ".releases revision must start at 1 and increase by 1 for ",
+          "extract_date ", extract_date
+        ))
+      }
     }
     replacements <- vapply(releases, function(x) {
       if (is.null(x$replacement_release_id)) "" else x$replacement_release_id

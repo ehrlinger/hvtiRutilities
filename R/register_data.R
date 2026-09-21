@@ -194,6 +194,24 @@ register_data <- function(root = getwd(), built, event = NULL, time = NULL,
   }
   migrating <- !is.null(release_id) && !is.null(existing) &&
     is.null(existing$release) && identical(existing$built, built)
+  if (migrating) {
+    old_columns <- if (is.null(existing$cohort)) {
+      NULL
+    } else {
+      existing$cohort[c("event", "time")]
+    }
+    new_columns <- if (is.null(event)) {
+      NULL
+    } else {
+      list(event = event, time = time)
+    }
+    if (!identical(old_columns, new_columns)) {
+      stop(
+        "register_data(): migration must preserve the existing cohort columns",
+        call. = FALSE
+      )
+    }
+  }
   if (role == "study" && !is.null(raw$built) && !migrating) {
     stop("register_data(): the default dataset is already registered",
          call. = FALSE)
@@ -237,6 +255,9 @@ register_data <- function(root = getwd(), built, event = NULL, time = NULL,
     source <- release$source
   }
   data <- .read_registration_data(path)
+  if (!is.null(release)) {
+    .verify_catalog_file(release, study_dir("datasets", cfg$root))
+  }
   if (!is.null(release) &&
         (!identical(nrow(data), release$n_rows) ||
            !identical(ncol(data), release$n_cols))) {
@@ -301,6 +322,15 @@ register_data <- function(root = getwd(), built, event = NULL, time = NULL,
     extract_date,
     source
   )
+  if (!is.null(release) &&
+        (!identical(entry$sha256, release$sha256) ||
+           !identical(entry$n_rows, release$n_rows) ||
+           !identical(entry$n_cols, release$n_cols))) {
+    stop(
+      "register_data(): prepared manifest entry disagrees with the catalog",
+      call. = FALSE
+    )
+  }
   manifest_path <- file.path(cfg$root, "manifest.yaml")
   manifest <- if (file.exists(manifest_path)) {
     yaml::read_yaml(manifest_path)

@@ -250,8 +250,9 @@ statistical programmer builds and validates it. Publishing is the boundary:
 dimensions, release ID, and sequence to `dataset-catalog.yml`.
 
 A correction published on the same day gets a revision suffix such as `_r2`
-and a larger sequence. Date order and filename order are not enough when two
-releases share a date, so consumers follow the catalog sequence.
+and a larger sequence. Revisions start at 1 for each extract date and increase
+without gaps in catalog order. Date order and filename order are not enough
+when two releases share a date, so consumers follow the catalog sequence.
 
 The rest of this vignette still needs its original temporary file. This reset
 is safe only because the fixture is disposable; it is not a recovery method
@@ -268,6 +269,10 @@ publishes `surgery_cohort-20260921-r1`. The study keeps reading the old release.
 `study_status()` reports an `UPDATE AVAILABLE` row, and `read_built()` emits an
 update message once in the R session. Neither one silently advances the study.
 A revision run continues to read the release recorded by its Git revision.
+The pinned file is still checked against `manifest.yaml` when the producer
+catalog is missing or malformed; loss of update discovery never weakens the
+study's local integrity check. Review and adoption require a literal release
+ID. `latest` is reserved and is never a release ID or an alias.
 
 The update has five steps:
 

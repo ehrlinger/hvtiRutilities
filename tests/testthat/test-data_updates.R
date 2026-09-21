@@ -1,3 +1,10 @@
+release_contract_bytes <- function(root) {
+  paths <- file.path(root, c("_study.yml", "manifest.yaml"))
+  lapply(paths, function(path) {
+    readBin(path, "raw", n = file.info(path)$size)
+  })
+}
+
 test_that("check_data_updates reports current and every later release", {
   fx <- make_release_aware_study(
     withr::local_tempdir(),
@@ -147,6 +154,25 @@ test_that("read_built reports the latest available release once", {
   expect_no_message(read_built(cfg))
 })
 
+test_that("release notices carry the complete update report", {
+  withr::local_options(hvtiRutilities.disable_parquet_cache = TRUE)
+  fx <- make_release_aware_study(withr::local_tempdir())
+  cfg <- study_config(fx$root)
+  .reset_update_notices()
+  notice <- NULL
+
+  withCallingHandlers(
+    read_built(cfg),
+    hvtiRutilities_update_available = function(cnd) {
+      notice <<- cnd
+      invokeRestart("muffleMessage")
+    }
+  )
+
+  expect_s3_class(notice$report, "data_update_report")
+  expect_true(any(notice$report$status == "UPDATE AVAILABLE"))
+})
+
 test_that("read_built continues when update status is unknown", {
   withr::local_options(hvtiRutilities.disable_parquet_cache = TRUE)
   fx <- make_release_aware_study(withr::local_tempdir())
@@ -220,6 +246,35 @@ test_that("pinned integrity is checked before the cache can rewrite provenance",
   expect_identical(after, before)
 })
 
+test_that("pinned integrity is enforced when the catalog is unavailable", {
+  skip_if_not_installed("arrow")
+  cases <- c("missing", "malformed")
+  for (case in cases) {
+    fx <- make_release_aware_study(withr::local_tempdir())
+    cfg <- study_config(fx$root)
+    .reset_update_notices()
+    suppressMessages(read_built(cfg))
+    manifest_path <- file.path(fx$root, "manifest.yaml")
+    before <- readBin(manifest_path, "raw", n = file.info(manifest_path)$size)
+    writeLines("changed in place", file.path(fx$data_dir, "cohort_20260920.csv"))
+    if (identical(case, "missing")) {
+      unlink(fx$catalog_path)
+    } else {
+      catalog <- yaml::read_yaml(fx$catalog_path)
+      catalog$format_version <- 2L
+      yaml::write_yaml(catalog, fx$catalog_path)
+    }
+
+    expect_error(
+      read_built(cfg),
+      class = "hvtiRutilities_release_integrity",
+      info = case
+    )
+    after <- readBin(manifest_path, "raw", n = file.info(manifest_path)$size)
+    expect_identical(after, before, info = case)
+  }
+})
+
 test_that("withdrawn pinned releases require an explicit override", {
   withr::local_options(hvtiRutilities.disable_parquet_cache = TRUE)
   fx <- make_release_aware_study(withr::local_tempdir())
@@ -274,7 +329,7 @@ test_that("review requires a real newer release ID", {
 
   expect_error(
     review_data_update(cfg, release_id = "latest"),
-    "unknown release_id"
+    "exact release ID"
   )
   expect_error(
     review_data_update(
@@ -283,6 +338,49 @@ test_that("review requires a real newer release ID", {
     ),
     "newer"
   )
+})
+
+test_that("review rejects a catalog release literally named latest", {
+  fx <- make_release_aware_study(withr::local_tempdir())
+  catalog <- yaml::read_yaml(fx$catalog_path)
+  catalog$datasets$surgery_cohort$releases[[2L]]$release_id <- "latest"
+  yaml::write_yaml(catalog, fx$catalog_path)
+
+  expect_error(
+    review_data_update(study_config(fx$root), release_id = "latest"),
+    "exact release ID"
+  )
+})
+
+test_that("review and adoption reconcile the pin with the manifest", {
+  fx <- make_release_aware_study(withr::local_tempdir())
+  pinned_path <- file.path(fx$data_dir, "cohort_20260920.csv")
+  changed <- data.frame(id = 1:5, dead = c(1L, 1L, 0L, 0L, 0L), iv_dead = 1:5)
+  write.csv(changed, pinned_path, row.names = FALSE)
+  catalog <- yaml::read_yaml(fx$catalog_path)
+  pinned <- catalog$datasets$surgery_cohort$releases[[1L]]
+  pinned$sha256 <- digest::digest(pinned_path, algo = "sha256", file = TRUE)
+  pinned$n_rows <- nrow(changed)
+  pinned$n_cols <- ncol(changed)
+  catalog$datasets$surgery_cohort$releases[[1L]] <- pinned
+  yaml::write_yaml(catalog, fx$catalog_path)
+  before <- release_contract_bytes(fx$root)
+
+  expect_error(
+    review_data_update(
+      study_config(fx$root),
+      release_id = "surgery_cohort-20260921-r1"
+    ),
+    class = "hvtiRutilities_release_integrity"
+  )
+  expect_error(
+    adopt_data_update(
+      study_config(fx$root),
+      release_id = "surgery_cohort-20260921-r1"
+    ),
+    class = "hvtiRutilities_release_integrity"
+  )
+  expect_identical(release_contract_bytes(fx$root), before)
 })
 
 test_that("review rejects withdrawn candidates", {
@@ -380,13 +478,6 @@ test_that("review fails when candidate cohort columns are absent", {
   )
 })
 
-release_contract_bytes <- function(root) {
-  paths <- file.path(root, c("_study.yml", "manifest.yaml"))
-  lapply(paths, function(path) {
-    readBin(path, "raw", n = file.info(path)$size)
-  })
-}
-
 test_that("adoption advances the default contract and manifest entry", {
   fx <- make_release_aware_study(withr::local_tempdir(), pinned_sequence = 1L)
 
@@ -443,6 +534,64 @@ test_that("adoption advances only the selected named contract", {
     drop = FALSE
   ]
   expect_identical(update$status, "CURRENT")
+})
+
+test_that("a named release can be adopted before the default is registered", {
+  root <- file.path(withr::local_tempdir(), "study")
+  study_setup(root, "Named release fixture", 42L)
+  fx <- write_release_fixture(root)
+  register_data(
+    root,
+    "cohort_20260920.csv",
+    "dead",
+    "iv_dead",
+    dataset = "named_data",
+    role = "named",
+    catalog_dataset = "surgery_cohort",
+    release_id = "surgery_cohort-20260920-r1"
+  )
+
+  adopt_data_update(
+    study_config(root, require_data = FALSE),
+    dataset = "named_data",
+    release_id = "surgery_cohort-20260921-r1"
+  )
+
+  cfg <- study_config(root, require_data = FALSE)
+  expect_null(cfg$built)
+  expect_identical(
+    cfg$additional_datasets$named_data$release$release_id,
+    "surgery_cohort-20260921-r1"
+  )
+  expect_true(file.exists(fx$catalog_path))
+})
+
+test_that("adoption retains additive release metadata", {
+  for (named in c(FALSE, TRUE)) {
+    fx <- make_release_aware_study(withr::local_tempdir(), named = named)
+    path <- file.path(fx$root, "_study.yml")
+    raw <- yaml::read_yaml(path)
+    if (named) {
+      raw$additional_datasets$named_data$release$future_field <- "keep me"
+    } else {
+      raw$release$future_field <- "keep me"
+    }
+    yaml::write_yaml(raw, path)
+
+    adopt_data_update(
+      study_config(fx$root),
+      dataset = if (named) "named_data" else "study",
+      release_id = "surgery_cohort-20260921-r1"
+    )
+
+    after <- yaml::read_yaml(path)
+    release <- if (named) {
+      after$additional_datasets$named_data$release
+    } else {
+      after$release
+    }
+    expect_identical(release$future_field, "keep me", info = as.character(named))
+  }
 })
 
 test_that("adoption revalidates bytes changed after review", {

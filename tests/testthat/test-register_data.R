@@ -436,6 +436,44 @@ test_that("release registration reconciles catalog provenance", {
   ))
 })
 
+test_that("release registration brackets the data read with integrity checks", {
+  root <- registration_study()
+  fx <- write_release_fixture(root)
+  before <- readBin(
+    file.path(root, "_study.yml"),
+    "raw",
+    n = file.info(file.path(root, "_study.yml"))$size
+  )
+  reader <- .read_registration_data
+  local_mocked_bindings(
+    .read_registration_data = function(path) {
+      data <- reader(path)
+      writeLines("changed during read", path)
+      data
+    }
+  )
+
+  expect_error(
+    register_data(
+      root,
+      "cohort_20260920.csv",
+      "dead",
+      "iv_dead",
+      catalog_dataset = "surgery_cohort",
+      release_id = "surgery_cohort-20260920-r1"
+    ),
+    class = "hvtiRutilities_release_integrity"
+  )
+  after <- readBin(
+    file.path(root, "_study.yml"),
+    "raw",
+    n = file.info(file.path(root, "_study.yml"))$size
+  )
+  expect_identical(after, before)
+  expect_false(file.exists(file.path(root, "manifest.yaml")))
+  expect_true(file.exists(fx$catalog_path))
+})
+
 test_that("register_data attaches a release to a legacy registration once", {
   root <- registration_study()
   write_release_fixture(root)
@@ -475,4 +513,34 @@ test_that("register_data attaches a release to a legacy registration once", {
     ),
     "already registered"
   )
+})
+
+test_that("release migration preserves the established cohort columns", {
+  for (role in c("study", "named")) {
+    root <- registration_study()
+    write_release_fixture(root)
+    args <- list(
+      root = root,
+      built = "cohort_20260920.csv",
+      event = "dead",
+      time = "iv_dead"
+    )
+    if (identical(role, "named")) {
+      args$dataset <- "named_data"
+      args$role <- "named"
+    }
+    do.call(register_data, args)
+    before <- study_manifest_bytes(root)
+    args$event <- "iv_dead"
+    args$time <- "dead"
+    args$catalog_dataset <- "surgery_cohort"
+    args$release_id <- "surgery_cohort-20260920-r1"
+
+    expect_error(
+      do.call(register_data, args),
+      "existing cohort columns",
+      info = role
+    )
+    expect_identical(study_manifest_bytes(root), before, info = role)
+  }
 })
