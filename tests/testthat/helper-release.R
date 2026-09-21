@@ -84,3 +84,32 @@ make_release_aware_study <- function(dir, pinned_sequence = 1L,
   }
   fx
 }
+
+append_release_fixture <- function(fx, release_id, sequence, file,
+                                   extract_date, revision) {
+  catalog <- yaml::read_yaml(fx$catalog_path)
+  n <- as.integer(sequence) + 2L
+  data <- data.frame(
+    id = seq_len(n),
+    dead = as.integer(seq_len(n) <= floor(n / 2)),
+    iv_dead = seq_len(n)
+  )
+  path <- file.path(fx$data_dir, file)
+  write.csv(data, path, row.names = FALSE)
+  release <- list(
+    release_id = release_id,
+    sequence = as.integer(sequence),
+    file = file,
+    extract_date = extract_date,
+    revision = as.integer(revision),
+    published_at = paste0(extract_date, "T12:00:00-04:00"),
+    sha256 = digest::digest(path, algo = "sha256", file = TRUE),
+    n_rows = nrow(data),
+    n_cols = ncol(data),
+    status = "published"
+  )
+  releases <- catalog$datasets$surgery_cohort$releases
+  catalog$datasets$surgery_cohort$releases <- c(releases, list(release))
+  yaml::write_yaml(catalog, fx$catalog_path)
+  invisible(release)
+}
