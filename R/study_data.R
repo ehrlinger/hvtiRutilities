@@ -42,6 +42,9 @@
 #' @param cfg List. A study manifest from \code{\link{study_config}}.
 #' @param dataset Character(1). Logical dataset name. Defaults to
 #'   \code{"study"}.
+#' @param allow_withdrawn Logical. If \code{TRUE}, allow a deliberately pinned
+#'   withdrawn release to be read for revision work. The default is
+#'   \code{FALSE}.
 #'
 #' @return Character(1). The path to the built dataset.
 #'
@@ -192,7 +195,15 @@ built_manifest <- function(cfg = study_config(), dataset = "study") {
 #' names(read_built(study_config(root)))
 #' unlink(root, recursive = TRUE)
 read_built <- function(cfg = study_config(), refresh = FALSE,
-                       dataset = "study") {
+                       dataset = "study", allow_withdrawn = FALSE) {
+  if (!is.logical(allow_withdrawn) || length(allow_withdrawn) != 1L ||
+        is.na(allow_withdrawn)) {
+    stop("allow_withdrawn must be TRUE or FALSE", call. = FALSE)
+  }
+  contract <- .study_dataset(cfg, dataset)
+  if (!is.null(contract$release)) {
+    .enforce_release_read(cfg, dataset, allow_withdrawn)
+  }
   p <- built_path(cfg, dataset)
   manifest_path <- file.path(cfg$root, "manifest.yaml")
 

@@ -130,3 +130,112 @@ test_that("pinned identity disagreement fails the pin", {
   expect_identical(report$status, "FAIL")
   expect_match(report$detail, "manifest")
 })
+
+test_that("read_built reports the latest available release once", {
+  withr::local_options(hvtiRutilities.disable_parquet_cache = TRUE)
+  fx <- make_release_aware_study(withr::local_tempdir())
+  cfg <- study_config(fx$root)
+  .reset_update_notices()
+
+  data <- NULL
+  expect_message(
+    data <- read_built(cfg),
+    "surgery_cohort-20260921-r1",
+    class = "hvtiRutilities_update_available"
+  )
+  expect_equal(nrow(data), 3L)
+  expect_no_message(read_built(cfg))
+})
+
+test_that("read_built continues when update status is unknown", {
+  withr::local_options(hvtiRutilities.disable_parquet_cache = TRUE)
+  fx <- make_release_aware_study(withr::local_tempdir())
+  cfg <- study_config(fx$root)
+  .reset_update_notices()
+  unlink(fx$catalog_path)
+
+  data <- NULL
+  expect_message(
+    data <- read_built(cfg),
+    "status unknown",
+    class = "hvtiRutilities_update_status_unknown"
+  )
+  expect_equal(nrow(data), 3L)
+})
+
+test_that("read_built continues when a candidate cannot be verified", {
+  withr::local_options(hvtiRutilities.disable_parquet_cache = TRUE)
+  fx <- make_release_aware_study(withr::local_tempdir())
+  cfg <- study_config(fx$root)
+  .reset_update_notices()
+  writeLines("changed", file.path(fx$data_dir, "cohort_20260921.csv"))
+
+  data <- NULL
+  expect_message(
+    data <- read_built(cfg),
+    "candidate.*status unknown",
+    class = "hvtiRutilities_update_status_unknown"
+  )
+  expect_equal(nrow(data), 3L)
+})
+
+test_that("a newly published release produces a new notice in one session", {
+  withr::local_options(hvtiRutilities.disable_parquet_cache = TRUE)
+  fx <- make_release_aware_study(withr::local_tempdir())
+  cfg <- study_config(fx$root)
+  .reset_update_notices()
+  expect_message(read_built(cfg), "surgery_cohort-20260921-r1")
+
+  append_release_fixture(
+    fx,
+    release_id = "surgery_cohort-20260921-r2",
+    sequence = 3L,
+    file = "cohort_20260921_r2.csv",
+    extract_date = "2026-09-21",
+    revision = 2L
+  )
+
+  expect_message(
+    read_built(cfg),
+    "surgery_cohort-20260921-r2",
+    class = "hvtiRutilities_update_available"
+  )
+})
+
+test_that("pinned integrity is checked before the cache can rewrite provenance", {
+  skip_if_not_installed("arrow")
+  fx <- make_release_aware_study(withr::local_tempdir())
+  cfg <- study_config(fx$root)
+  .reset_update_notices()
+  suppressMessages(read_built(cfg))
+  manifest_path <- file.path(fx$root, "manifest.yaml")
+  before <- readBin(manifest_path, "raw", n = file.info(manifest_path)$size)
+  writeLines("changed in place", file.path(fx$data_dir, "cohort_20260920.csv"))
+
+  expect_error(
+    read_built(cfg),
+    class = "hvtiRutilities_release_integrity"
+  )
+  after <- readBin(manifest_path, "raw", n = file.info(manifest_path)$size)
+  expect_identical(after, before)
+})
+
+test_that("withdrawn pinned releases require an explicit override", {
+  withr::local_options(hvtiRutilities.disable_parquet_cache = TRUE)
+  fx <- make_release_aware_study(withr::local_tempdir())
+  cfg <- study_config(fx$root)
+  withdraw_fixture_release(
+    fx,
+    "surgery_cohort-20260920-r1",
+    "Incorrect cohort",
+    replacement_release_id = "surgery_cohort-20260921-r1"
+  )
+
+  condition <- expect_error(
+    read_built(cfg),
+    "Incorrect cohort",
+    class = "hvtiRutilities_withdrawn_release"
+  )
+  expect_match(conditionMessage(condition), "surgery_cohort-20260921-r1")
+  expect_equal(nrow(suppressMessages(read_built(cfg, allow_withdrawn = TRUE))), 3L)
+})

@@ -113,3 +113,22 @@ append_release_fixture <- function(fx, release_id, sequence, file,
   yaml::write_yaml(catalog, fx$catalog_path)
   invisible(release)
 }
+
+withdraw_fixture_release <- function(fx, release_id, reason,
+                                     replacement_release_id = NULL) {
+  catalog <- yaml::read_yaml(fx$catalog_path)
+  releases <- catalog$datasets$surgery_cohort$releases
+  hit <- vapply(releases, function(x) {
+    identical(x$release_id, release_id)
+  }, logical(1))
+  if (sum(hit) != 1L) stop("fixture has no requested release")
+  index <- which(hit)
+  releases[[index]]$status <- "withdrawn"
+  releases[[index]]$withdrawal_reason <- reason
+  if (!is.null(replacement_release_id)) {
+    releases[[index]]$replacement_release_id <- replacement_release_id
+  }
+  catalog$datasets$surgery_cohort$releases <- releases
+  yaml::write_yaml(catalog, fx$catalog_path)
+  invisible(releases[[index]])
+}
