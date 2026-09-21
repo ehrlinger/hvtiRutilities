@@ -1,5 +1,68 @@
 # Changelog
 
+## hvtiRutilities 1.3.1
+
+### New features
+
+- [`check_data_updates()`](https://ehrlinger.github.io/hvtiRutilities/reference/check_data_updates.md),
+  [`review_data_update()`](https://ehrlinger.github.io/hvtiRutilities/reference/review_data_update.md)
+  and
+  [`adopt_data_update()`](https://ehrlinger.github.io/hvtiRutilities/reference/adopt_data_update.md)
+  add the consumer side of immutable dataset releases. A release-aware
+  [`read_built()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_built.md)
+  verifies the pinned bytes before cache access, reports a later
+  candidate without advancing the study, and stops on a changed or
+  withdrawn pin; `allow_withdrawn = TRUE` permits a deliberate
+  historical revision run.
+  [`study_status()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md)
+  adds one update row per release-aware dataset. Adoption replaces
+  `_study.yml` and `manifest.yaml` as a recoverable pair and leaves the
+  old dated file in place. Legacy study contracts keep their existing
+  read and status behavior. A published file changed in place now stops
+  before a cache refresh can record the changed bytes, including when
+  the producer catalog is missing or malformed. Review, adoption, and
+  registration reconcile the release catalog with the study manifest,
+  and same-day catalog revisions must be contiguous. Promoted
+  `role: primary` datasets verify their authoritative Parquet while
+  retaining the catalog’s source checksum, and release review
+  re-verifies both files after reading them.
+
+### Documentation
+
+- [`hvti_taxonomy()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_taxonomy.md)’s
+  note on the job catalog is brought up to date. The catalog left
+  `hvtiR` for `hvtiRtemplates` (`template_catalog()`), where it has no
+  `retire` disposition and no rows for `rf` or `rfsrc`, and
+  `hvtiR::jobs()` was removed in `hvtiR` 1.2.0. The demotion of `rf` and
+  `rfsrc` is now recorded only in this table, through the `umbrella`
+  column.
+
+- [`hvti_taxonomy()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_taxonomy.md)’s
+  documentation no longer describes the template ordinal and the
+  `FOLDER_ORDINAL` guard, both retired in `hvtiRtemplates` on
+  2026-09-03. It now says what does depend on this table: the folder
+  names, which every numbered study and template directory must use. Row
+  and folder order are free, because the directory digits are assigned
+  rather than derived from position.
+
+### Tests
+
+- A test now compares the folder names in
+  [`study_dir()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_dir.md)’s
+  layout map with `unique(hvti_taxonomy()$folder)`. Drift in either
+  direction used to pass unnoticed and now fails the test suite. A
+  folder added to the taxonomy and not to the map is one
+  [`study_dir()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_dir.md)
+  and `hvtiRtemplates::add_job()` refuse as unknown. A folder added to
+  the map and not to the taxonomy is the reverse:
+  [`study_dir()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_dir.md)
+  resolves it, but it names no taxonomy folder, so the job census
+  reports a job filed there as unplaced. The test compares names only,
+  because the directory digits are assigned rather than derived from row
+  order.
+  [`hvti_taxonomy()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_taxonomy.md)’s
+  documentation, which said no such test existed, is updated to match.
+
 ## hvtiRutilities 1.3.0
 
 ### New features
