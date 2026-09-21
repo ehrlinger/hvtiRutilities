@@ -27,6 +27,14 @@
 #' d <- data.frame(dead = c(1, 1, 0, 0, 0), iv_dead = 1:5)
 #' cohort_counts(d, event = "dead", time = "iv_dead")
 cohort_counts <- function(d, event, time) {
+  if (!is.character(event)) {
+    stop("cohort_counts(): event must be a non-missing, non-empty character scalar",
+         call. = FALSE)
+  }
+  if (!is.character(time)) {
+    stop("cohort_counts(): time must be a non-missing, non-empty character scalar",
+         call. = FALSE)
+  }
   event <- .study_scalar(event, "event", required = TRUE, caller = "cohort_counts")
   time <- .study_scalar(time, "time", required = TRUE, caller = "cohort_counts")
   missing_cols <- setdiff(c(event, time), names(d))
@@ -97,10 +105,11 @@ assert_cohort <- function(d, expected, event, time) {
     )
   }
 
-  want <- lapply(expected[keys], as.integer)
-  if (want$n != want$n_events + want$n_censored) {
+  if (as.double(expected$n) !=
+      as.double(expected$n_events) + as.double(expected$n_censored)) {
     stop("assert_cohort(): expected counts are inconsistent", call. = FALSE)
   }
+  want <- lapply(expected[keys], as.integer)
   observed <- cohort_counts(d, event, time)
   if (!identical(observed, want)) {
     stop(

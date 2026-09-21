@@ -75,3 +75,29 @@ arguments. The focused cohort tests remained green.
 The full suite cannot be green until the parallel endpoint-neutral contract
 work updates its remaining internal callers and fixture helpers. Those changes
 are outside this task's scope.
+
+## Fix Round 1
+
+Changed files:
+
+- `R/study_cohort.R`: require character event/time column names and perform
+  expected-count consistency arithmetic in doubles before integer conversion.
+- `tests/testthat/test-study_cohort.R`: add numeric/`NA` column-name rejection
+  tests and an integer-boundary inconsistency regression test.
+- Removed this task's generated `man/cohort_counts.Rd` and
+  `man/assert_cohort.Rd` changes; Task 5 owns those files.
+
+Exact command:
+
+```text
+Rscript -e 'devtools::test(filter = "study_cohort")'
+```
+
+Output:
+
+```text
+[ FAIL 0 | WARN 0 | SKIP 0 | PASS 17 ]
+```
+
+Concern: the unrelated generated-man changes from the parallel worktree
+remain unstaged; they were preserved rather than reverted.

@@ -62,6 +62,15 @@ test_that("cohort_counts errors when a named column is absent", {
   )
 })
 
+test_that("cohort_counts rejects non-character column names", {
+  d <- data.frame(dead = c(1, 0), iv_dead = 1:2)
+
+  expect_error(cohort_counts(d, event = 1, time = "iv_dead"), "character")
+  expect_error(cohort_counts(d, event = NA_character_, time = "iv_dead"), "event")
+  expect_error(cohort_counts(d, event = "dead", time = 1), "character")
+  expect_error(cohort_counts(d, event = "dead", time = NA_character_), "time")
+})
+
 test_that("assert_cohort uses only the supplied expectation", {
   d <- data.frame(dead = c(1, 0, 0), iv_dead = 1:3)
   expected <- list(n = 3L, n_events = 1L, n_censored = 2L)
@@ -89,5 +98,21 @@ test_that("assert_cohort reports expected and observed counts", {
   expect_error(
     assert_cohort(d, expected, "dead", "iv_dead"),
     "events=3"
+  )
+})
+
+test_that("assert_cohort checks count consistency without integer overflow", {
+  d <- data.frame(dead = 0, iv_dead = 1)
+  expected <- list(
+    n = .Machine$integer.max,
+    n_events = .Machine$integer.max,
+    n_censored = 1
+  )
+
+  expect_no_warning(
+    expect_error(
+      assert_cohort(d, expected, "dead", "iv_dead"),
+      "inconsistent"
+    )
   )
 })
