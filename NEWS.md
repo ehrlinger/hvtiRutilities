@@ -1,3 +1,12 @@
+# hvtiRutilities (unreleased)
+
+## Breaking changes
+
+* `register_data()` no longer accepts event or time columns. Registered dataset
+  contracts now record the file and its provenance without choosing an
+  analysis endpoint; legacy cohort fields remain additive YAML metadata but
+  are not returned by `.study_dataset()`.
+
 # hvtiRutilities 1.3.1
 
 ## New features

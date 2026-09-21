@@ -1,17 +1,12 @@
 library(testthat)
 library(hvtiRutilities)
 
-test_that("study_config finds the manifest in the starting directory", {
+test_that("study_config requires a registered file but not a cohort", {
   root <- make_study_fixture(withr::local_tempdir())
-  cfg  <- study_config(root)
+  cfg <- study_config(root)
 
-  expect_equal(normalizePath(cfg$root), normalizePath(root))
-  expect_equal(cfg$built, "built_test.sas7bdat")
-  expect_equal(cfg$cohort$n, 20L)
-  expect_equal(cfg$cohort$n_events, 8L)
-  expect_equal(cfg$cohort$n_censored, 12L)
-  expect_equal(cfg$cohort$event, "dead")
-  expect_equal(cfg$cohort$time, "iv_dead")
+  expect_identical(cfg$built, "built_test.sas7bdat")
+  expect_null(cfg$cohort)
 })
 
 test_that("study_config walks up from a nested subdirectory", {
@@ -30,12 +25,9 @@ test_that("study_config errors when no manifest exists, naming what it walked", 
   expect_error(study_config(bare), "study-setup --recover")
 })
 
-test_that("study_config errors on a missing required key, naming the key", {
+test_that("study_config errors on a missing required built key", {
   root <- make_study_fixture(withr::local_tempdir(), omit = "built")
   expect_error(study_config(root), "built")
-
-  root2 <- make_study_fixture(withr::local_tempdir(), omit = "cohort.n_events")
-  expect_error(study_config(root2), "cohort:n_events")
 })
 
 test_that("study_config errors when built has no file extension", {
@@ -44,23 +36,45 @@ test_that("study_config errors when built has no file extension", {
   expect_error(study_config(root), "extension")
 })
 
-test_that("study_config returns integer cohort counts, not doubles", {
+test_that("legacy cohort fields are additive but not dataset contracts", {
   root <- make_study_fixture(withr::local_tempdir())
-  cfg  <- study_config(root)
+  raw <- yaml::read_yaml(file.path(root, "_study.yml"))
+  raw$cohort <- list(
+    n = 20L,
+    n_events = 8L,
+    n_censored = 12L,
+    event = "dead",
+    time = "iv_dead"
+  )
+  yaml::write_yaml(raw, file.path(root, "_study.yml"))
 
-  expect_type(cfg$cohort$n, "integer")
-  expect_type(cfg$cohort$n_events, "integer")
-  expect_type(cfg$cohort$n_censored, "integer")
+  cfg <- study_config(root)
+
+  expect_identical(cfg$cohort, raw$cohort)
+  expect_false("cohort" %in% names(hvtiRutilities:::.study_dataset(cfg)))
 })
 
-test_that("study_config errors when the cohort counts are inconsistent", {
-  root <- withr::local_tempdir()
-  make_study_fixture(root, write_data = FALSE)
-  cfg <- yaml::read_yaml(file.path(root, "_study.yml"))
-  cfg$cohort$n_censored <- 999L
-  yaml::write_yaml(cfg, file.path(root, "_study.yml"))
+test_that("legacy named cohort fields are not dataset contracts", {
+  root <- make_study_fixture(withr::local_tempdir())
+  raw <- yaml::read_yaml(file.path(root, "_study.yml"))
+  raw$additional_datasets <- list(
+    imaging = list(
+      built = "imaging.csv",
+      cohort = list(
+        n = 2L,
+        n_events = 1L,
+        n_censored = 1L,
+        event = "finding",
+        time = "scan_day"
+      )
+    )
+  )
+  yaml::write_yaml(raw, file.path(root, "_study.yml"))
 
-  expect_error(study_config(root), "n_censored")
+  contract <- hvtiRutilities:::.study_dataset(study_config(root), "imaging")
+
+  expect_named(contract, c("dataset", "built", "population", "release"))
+  expect_false("cohort" %in% names(contract))
 })
 
 test_that("study_config can read identity before data registration", {
@@ -71,8 +85,7 @@ test_that("study_config can read identity before data registration", {
       study_tracker_id = 42L,
       population = NULL,
       built = NULL,
-      citation = NULL,
-      cohort = NULL
+      citation = NULL
     ),
     file.path(root, "_study.yml")
   )
@@ -93,8 +106,7 @@ test_that("study_config preserves additive identity fields", {
       study = "Identity-only study",
       study_tracker_id = 42L,
       future_identity = "preserve",
-      built = NULL,
-      cohort = NULL
+      built = NULL
     ),
     file.path(root, "_study.yml")
   )

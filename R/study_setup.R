@@ -179,8 +179,7 @@ study_setup <- function(root, study, study_tracker_id,
     study_creation_date = study_creation_date,
     population = NULL,
     built = NULL,
-    citation = NULL,
-    cohort = NULL
+    citation = NULL
   )
   if (!identity_exists) {
     .study_write_atomic(identity, yml)

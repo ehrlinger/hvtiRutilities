@@ -92,15 +92,13 @@
 #'
 #' @description
 #' Completes the default study data contract or adds one distinctly named
-#' dataset. The function derives row and cohort counts from the file and
+#' dataset. The function derives row and column counts from the file and
 #' replaces \code{_study.yml} and \code{manifest.yaml} only after both updated
 #' files have been prepared successfully.
 #'
 #' @param root Character. Study root or a directory beneath it.
 #' @param built Character(1). Dataset filename within the logical
 #'   \code{datasets} directory, including its extension.
-#' @param event,time Character(1) or \code{NULL}. Event and follow-up columns.
-#'   Supply both or neither. The default study dataset requires both.
 #' @param dataset Character(1). Logical dataset name. \code{"study"} is
 #'   reserved for the default.
 #' @param role Character. Either \code{"study"} or \code{"named"}.
@@ -118,8 +116,7 @@
 #'   \code{\link{update_manifest}}
 #'
 #' @export
-register_data <- function(root = getwd(), built, event = NULL, time = NULL,
-                          dataset = "study",
+register_data <- function(root = getwd(), built, dataset = "study",
                           role = c("study", "named"),
                           population = NULL, source = NULL,
                           extract_date = NULL,
@@ -152,23 +149,10 @@ register_data <- function(root = getwd(), built, event = NULL, time = NULL,
     stop("register_data(): built must be one filename with its extension",
          call. = FALSE)
   }
-  if (xor(is.null(event), is.null(time))) {
-    stop("register_data(): event and time must be supplied together",
-         call. = FALSE)
-  }
-  if (!is.null(event)) {
-    event <- tolower(scalar(event, "event", required = TRUE))
-    time <- tolower(scalar(time, "time", required = TRUE))
-  }
-
   if (role == "study") {
     if (!identical(dataset, "study")) {
       stop("register_data(): role = 'study' requires dataset = 'study'",
            call. = FALSE)
-    }
-    if (is.null(event)) {
-      stop("register_data(): the default study dataset requires event and ",
-           "time", call. = FALSE)
     }
   } else {
     if (identical(dataset, "study") ||
@@ -184,7 +168,6 @@ register_data <- function(root = getwd(), built, event = NULL, time = NULL,
     list(
       built = raw$built,
       population = raw$population,
-      cohort = raw$cohort,
       release = raw$release
     )
   } else if (role == "named") {
@@ -194,24 +177,6 @@ register_data <- function(root = getwd(), built, event = NULL, time = NULL,
   }
   migrating <- !is.null(release_id) && !is.null(existing) &&
     is.null(existing$release) && identical(existing$built, built)
-  if (migrating) {
-    old_columns <- if (is.null(existing$cohort)) {
-      NULL
-    } else {
-      existing$cohort[c("event", "time")]
-    }
-    new_columns <- if (is.null(event)) {
-      NULL
-    } else {
-      list(event = event, time = time)
-    }
-    if (!identical(old_columns, new_columns)) {
-      stop(
-        "register_data(): migration must preserve the existing cohort columns",
-        call. = FALSE
-      )
-    }
-  }
   if (role == "study" && !is.null(raw$built) && !migrating) {
     stop("register_data(): the default dataset is already registered",
          call. = FALSE)
@@ -265,16 +230,6 @@ register_data <- function(root = getwd(), built, event = NULL, time = NULL,
          nrow(data), " x ", ncol(data), " versus ", release$n_rows, " x ",
          release$n_cols, call. = FALSE)
   }
-  cohort <- if (is.null(event)) {
-    NULL
-  } else {
-    counts <- cohort_counts(
-      data,
-      list(cohort = list(event = event, time = time))
-    )
-    c(counts, list(event = event, time = time))
-  }
-
   if (role == "study") {
     raw$built <- built
     if (!is.null(population)) {
@@ -282,7 +237,6 @@ register_data <- function(root = getwd(), built, event = NULL, time = NULL,
     } else if (migrating) {
       raw$population <- existing$population
     }
-    raw$cohort <- cohort
     if (!is.null(release)) {
       raw$release <- list(
         dataset_id = catalog_dataset,
@@ -303,8 +257,7 @@ register_data <- function(root = getwd(), built, event = NULL, time = NULL,
         existing$population
       } else {
         population
-      },
-      cohort = cohort
+      }
     )
     if (!is.null(release)) {
       contract$release <- list(

@@ -18,7 +18,6 @@
       dataset = dataset,
       built = cfg$built,
       population = cfg$population,
-      cohort = cfg$cohort,
       release = cfg$release
     ))
   }
@@ -29,8 +28,12 @@
     stop("unknown dataset '", dataset, "'; registered: ",
          paste(choices, collapse = ", "), call. = FALSE)
   }
-  out$dataset <- dataset
-  out
+  list(
+    dataset = dataset,
+    built = out$built,
+    population = out$population,
+    release = out$release
+  )
 }
 
 #' Path to the study's built dataset
@@ -54,9 +57,7 @@
 #' dir.create(file.path(root, "datasets"), recursive = TRUE,
 #'            showWarnings = FALSE)
 #' yaml::write_yaml(
-#'   list(study = "Example", built = "example.sas7bdat",
-#'        cohort = list(n = 10L, n_events = 4L, n_censored = 6L,
-#'                      event = "dead", time = "iv_dead")),
+#'   list(study = "Example", built = "example.sas7bdat"),
 #'   file.path(root, "_study.yml")
 #' )
 #' built_path(study_config(root))
@@ -93,9 +94,7 @@ built_path <- function(cfg = study_config(), dataset = "study") {
 #' dir.create(file.path(root, "datasets"), recursive = TRUE,
 #'            showWarnings = FALSE)
 #' yaml::write_yaml(
-#'   list(study = "Example", built = "example.csv",
-#'        cohort = list(n = 3L, n_events = 1L, n_censored = 2L,
-#'                      event = "dead", time = "iv_dead")),
+#'   list(study = "Example", built = "example.csv"),
 #'   file.path(root, "_study.yml")
 #' )
 #' write.csv(data.frame(dead = c(1, 0, 0), iv_dead = 1:3),
@@ -194,9 +193,7 @@ built_manifest <- function(cfg = study_config(), dataset = "study") {
 #' dir.create(file.path(root, "datasets"), recursive = TRUE,
 #'            showWarnings = FALSE)
 #' yaml::write_yaml(
-#'   list(study = "Example", built = "example.csv",
-#'        cohort = list(n = 3L, n_events = 1L, n_censored = 2L,
-#'                      event = "dead", time = "iv_dead")),
+#'   list(study = "Example", built = "example.csv"),
 #'   file.path(root, "_study.yml")
 #' )
 #' write.csv(data.frame(DEAD = c(1, 0, 0), IV_DEAD = 1:3),

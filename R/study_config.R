@@ -8,19 +8,9 @@
 # directory walk itself; study_root() is a thin accessor over it, not the other
 # way round.
 
-# Required keys, in the order they are reported. Nested keys are dotted.
 .study_required <- function(require_data = TRUE) {
   if (!require_data) return("study")
-
-  c(
-    "study",
-    "built",
-    "cohort.n",
-    "cohort.n_events",
-    "cohort.n_censored",
-    "cohort.event",
-    "cohort.time"
-  )
+  c("study", "built")
 }
 
 .study_pluck <- function(cfg, key) {
@@ -82,7 +72,10 @@
       !is.na(contract$built) && nzchar(contract$built) &&
       identical(basename(contract$built), contract$built) &&
       nzchar(tools::file_ext(contract$built))
-    if (!valid_name || !valid_file) {
+    valid_population <- is.null(contract$population) ||
+      (is.character(contract$population) && length(contract$population) == 1L &&
+         !is.na(contract$population) && nzchar(contract$population))
+    if (!valid_name || !valid_file || !valid_population) {
       stop(
         "study_config(): ", found,
         " has an invalid additional dataset contract for '", name, "'.",
@@ -94,50 +87,6 @@
       found,
       name
     )
-    cohort <- contract$cohort
-    if (!is.null(cohort)) {
-      required <- c("n", "n_events", "n_censored", "event", "time")
-      if (!is.list(cohort) || any(vapply(
-        required,
-        function(key) is.null(cohort[[key]]),
-        logical(1)
-      ))) {
-        stop(
-          "study_config(): ", found,
-          " has an incomplete cohort for dataset '", name, "'.",
-          call. = FALSE
-        )
-      }
-      raw_counts <- unlist(
-        cohort[c("n", "n_events", "n_censored")],
-        use.names = FALSE
-      )
-      valid_text <- vapply(
-        cohort[c("event", "time")],
-        function(x) {
-          is.character(x) && length(x) == 1L && !is.na(x) && nzchar(x)
-        },
-        logical(1)
-      )
-      counts <- if (is.numeric(raw_counts)) {
-        as.integer(raw_counts)
-      } else {
-        integer(0)
-      }
-      if (!is.numeric(raw_counts) || length(counts) != 3L ||
-            anyNA(counts) || any(counts < 0L) ||
-            any(as.numeric(counts) != raw_counts) || !all(valid_text) ||
-            counts[[1L]] != counts[[2L]] + counts[[3L]]) {
-        stop(
-          "study_config(): ", found,
-          " has an inconsistent cohort for dataset '", name, "'.",
-          call. = FALSE
-        )
-      }
-      value[[name]]$cohort$n <- counts[[1L]]
-      value[[name]]$cohort$n_events <- counts[[2L]]
-      value[[name]]$cohort$n_censored <- counts[[3L]]
-    }
   }
   value
 }
@@ -155,15 +104,13 @@
 #' outside the study tree.
 #'
 #' Study identity always requires \code{study}. With
-#' \code{require_data = TRUE}, \code{built} and a \code{cohort} block holding
-#' \code{n}, \code{n_events}, \code{n_censored}, \code{event} and \code{time}
-#' are also required. \code{built} must carry its file extension, because the
-#' reader dispatches on it.
+#' \code{require_data = TRUE}, \code{built} is also required. It must carry
+#' its file extension, because the reader dispatches on the extension.
 #'
 #' @param start Character. Directory to start the upward walk from. Defaults
 #'   to \code{getwd()}.
 #' @param require_data Logical. If \code{TRUE}, require the default dataset and
-#'   cohort contract. Use \code{FALSE} when only study identity is needed.
+#'   registered file. Use \code{FALSE} when only study identity is needed.
 #'
 #' @return The manifest as a list, with \code{root} and \code{file} attached.
 #'   Additive identity and named-dataset fields are retained.
@@ -176,9 +123,7 @@
 #' root <- file.path(tempdir(), "study-example")
 #' dir.create(root, showWarnings = FALSE)
 #' yaml::write_yaml(
-#'   list(study = "Example", built = "example.sas7bdat",
-#'        cohort = list(n = 10L, n_events = 4L, n_censored = 6L,
-#'                      event = "dead", time = "iv_dead")),
+#'   list(study = "Example", built = "example.sas7bdat"),
 #'   file.path(root, "_study.yml")
 #' )
 #' cfg <- study_config(root)
@@ -241,27 +186,6 @@ study_config <- function(start = getwd(), require_data = TRUE) {
          "Give the dataset filename in full (for example ",
          "'built080426.sas7bdat'); the reader dispatches on the extension.",
          call. = FALSE)
-  }
-
-  if (!is.null(raw$cohort)) {
-    raw$cohort$n <- as.integer(raw$cohort$n)
-    raw$cohort$n_events <- as.integer(raw$cohort$n_events)
-    raw$cohort$n_censored <- as.integer(raw$cohort$n_censored)
-  }
-
-  # An internally inconsistent cohort block would make assert_cohort() a
-  # gate that can never pass, and the error it raised would point at the
-  # data rather than at the manifest that is actually wrong.
-  if (!is.null(raw$cohort)) {
-    n <- raw$cohort$n
-    ev <- raw$cohort$n_events
-    cen <- raw$cohort$n_censored
-    if (!identical(n, ev + cen)) {
-      stop("study_config(): ", found, " cohort is inconsistent: n = ", n,
-           " but n_events + n_censored = ", ev + cen,
-           " (n_events = ", ev, ", n_censored = ", cen, ").",
-           call. = FALSE)
-    }
   }
 
   out <- c(list(root = dir, file = found), raw)
