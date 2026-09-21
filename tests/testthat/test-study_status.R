@@ -19,12 +19,12 @@ test_that("study_status on a bare directory reports MISSING, not an error", {
   expect_equal(check_for(st, "manifest.yaml")$status, "MISSING")
 })
 
-test_that("study_status returns the six checks in a fixed order", {
+test_that("study_status returns the five checks in a fixed order", {
   st <- study_status(withr::local_tempdir())
 
   expect_equal(st$checks$item,
                c("_study.yml", "renv.lock", "manifest.yaml",
-                 "dataset", "cohort", "provenance"))
+                 "dataset", "provenance"))
   expect_type(st$checks$item, "character")
   expect_type(st$checks$status, "character")
   expect_type(st$checks$detail, "character")
@@ -37,7 +37,7 @@ test_that("study_status reports OK for a valid manifest and its dataset", {
 
   expect_equal(check_for(st, "_study.yml")$status, "OK")
   expect_equal(check_for(st, "dataset")$status, "OK")
-  expect_equal(check_for(st, "cohort")$status, "OK")
+  expect_false(any(grepl("^cohort(?::|$)", st$checks$item)))
 })
 
 test_that("study_status verifies data in a numbered datasets directory", {
@@ -65,7 +65,6 @@ test_that("study_status reports a mixed default-data layout without stopping", {
   status <- expect_no_error(study_status(root))
 
   expect_equal(check_for(status, "dataset")$status, "FAIL")
-  expect_equal(check_for(status, "cohort")$status, "MISSING")
 })
 
 test_that("study_status reports FAIL when _study.yml is present but invalid", {
@@ -79,41 +78,23 @@ test_that("study_status reports FAIL when _study.yml is present but invalid", {
 })
 
 test_that("study_status reports MISSING, not FAIL, for checks it cannot run", {
-  # dataset and cohort both need a valid _study.yml. A check that could not
-  # run is not a check that failed.
+  # A dataset check that needs a valid _study.yml but cannot run is not a
+  # check that failed.
   bare <- withr::local_tempdir()
   st   <- study_status(bare)
 
   expect_equal(check_for(st, "dataset")$status, "MISSING")
-  expect_equal(check_for(st, "cohort")$status, "MISSING")
   expect_match(check_for(st, "dataset")$detail, "_study.yml")
 })
 
-test_that("study_status reports a missing default cohort contract", {
+test_that("study_status does not report a missing default cohort contract", {
   skip_if_not_installed("haven")
   root <- make_study_fixture(withr::local_tempdir(), omit = "cohort")
 
   status <- study_status(root)
 
   expect_equal(check_for(status, "dataset")$status, "OK")
-  expect_equal(check_for(status, "cohort")$status, "MISSING")
-})
-
-test_that("study_status reports FAIL when the cohort no longer matches", {
-  skip_if_not_installed("haven")
-  root <- withr::local_tempdir()
-  make_study_fixture(root, n = 20L, n_events = 8L)
-  # Rewrite the data with a different event count, leaving the manifest alone.
-  make_study_fixture(root, n = 20L, n_events = 9L)
-  # make_study_fixture rewrote _study.yml too, so restore the original counts.
-  cfg <- yaml::read_yaml(file.path(root, "_study.yml"))
-  cfg$cohort$n_events   <- 8L
-  cfg$cohort$n_censored <- 12L
-  yaml::write_yaml(cfg, file.path(root, "_study.yml"))
-
-  row <- check_for(study_status(root), "cohort")
-  expect_equal(row$status, "FAIL")
-  expect_match(row$detail, "events=8")
+  expect_false(any(grepl("^cohort(?::|$)", status$checks$item)))
 })
 
 test_that("study_status verifies manifest.yaml and reports drift as FAIL", {
@@ -156,14 +137,13 @@ test_that("study_status reports renv.lock when present", {
   expect_equal(check_for(study_status(root), "renv.lock")$status, "OK")
 })
 
-test_that("study_status reports each named dataset and cohort", {
+test_that("study_status reports each named dataset without cohort rows", {
   root <- make_registered_study(withr::local_tempdir(), ancillary = TRUE)
   status <- study_status(root)
 
   expect_equal(check_for(status, "dataset:complete_cases")$status, "OK")
-  expect_equal(check_for(status, "cohort:complete_cases")$status, "OK")
   expect_equal(check_for(status, "dataset:imaging")$status, "OK")
-  expect_equal(check_for(status, "cohort:imaging")$status, "MISSING")
+  expect_false(any(grepl("^cohort(?::|$)", status$checks$item)))
 })
 
 test_that("study_status summarizes release update state", {
@@ -200,7 +180,7 @@ test_that("study_status places named release state after its dataset rows", {
   expect_equal(check_for(status, "update:named_data")$status,
                "UPDATE AVAILABLE")
   expect_gt(match("update:named_data", status$checks$item),
-            match("cohort:named_data", status$checks$item))
+            match("dataset:named_data", status$checks$item))
 })
 
 test_that("study_status does not create caches or rewrite the manifest", {
@@ -254,7 +234,7 @@ test_that("study_status reports an unnamed additional dataset sequence", {
   expect_match(check_for(status, "_study.yml")$detail, "named mapping")
 })
 
-test_that("study_status fails an unreadable ancillary dataset", {
+test_that("study_status does not read an existing ancillary dataset", {
   root <- make_registered_study(withr::local_tempdir())
   bad <- file.path(study_dir("datasets", root), "bad.rds")
   writeLines("not an RDS file", bad)
@@ -268,8 +248,8 @@ test_that("study_status fails an unreadable ancillary dataset", {
 
   status <- study_status(root)
 
-  expect_equal(check_for(status, "dataset:bad")$status, "FAIL")
-  expect_equal(check_for(status, "cohort:bad")$status, "MISSING")
+  expect_equal(check_for(status, "dataset:bad")$status, "OK")
+  expect_false(any(grepl("^cohort(?::|$)", status$checks$item)))
 })
 
 test_that("missing study status includes both recovery forms", {

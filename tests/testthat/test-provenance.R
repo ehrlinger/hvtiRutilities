@@ -48,10 +48,42 @@ test_that("the sidecar carries every required key with the right type", {
   expect_match(j$study$sha256, "^[0-9a-f]{64}$")
   expect_equal(j$r$version, paste(R.version$major, R.version$minor, sep = "."))
   expect_true(length(j$packages) > 0)
-  expect_equal(j$cohort$n, 20L)
-  expect_equal(j$cohort$n_events, 8L)
   expect_equal(j$data[[1]]$file, "built_test.sas7bdat")
   expect_match(j$data[[1]]$sha256, "^[0-9a-f]{64}$")
+})
+
+test_that("record_provenance does not require a cohort", {
+  skip_if_not_installed("haven")
+  root <- make_study_fixture(withr::local_tempdir())
+  out <- make_output(root)
+
+  record_provenance(out, cfg = study_config(root))
+  record <- jsonlite::fromJSON(provenance_path(out), simplifyVector = FALSE)
+
+  expect_false("cohort" %in% names(record))
+  expect_equal(record$data[[1L]]$file, "built_test.sas7bdat")
+})
+
+test_that("a job may add its own cohort provenance", {
+  skip_if_not_installed("haven")
+  root <- make_study_fixture(withr::local_tempdir())
+  out <- make_output(root)
+  observed <- list(n = 20L, n_events = 8L, n_censored = 12L)
+
+  record_provenance(
+    out,
+    cfg = study_config(root),
+    extra = list(
+      subject = "death",
+      analysis = list(event = "dead", time = "iv_dead"),
+      cohort = observed
+    )
+  )
+  record <- jsonlite::fromJSON(provenance_path(out), simplifyVector = FALSE)
+
+  expect_equal(record$subject, "death")
+  expect_equal(record$analysis$event, "dead")
+  expect_equal(record$cohort$n_events, 8L)
 })
 
 test_that("renv_lock is present as null when the study has no lock", {
@@ -146,5 +178,4 @@ test_that("record_provenance records the selected named dataset", {
 
   expect_identical(record$data[[1L]]$dataset, "complete_cases")
   expect_identical(record$data[[1L]]$file, "complete.csv")
-  expect_identical(record$cohort$n, 2L)
 })

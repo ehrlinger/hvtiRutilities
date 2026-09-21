@@ -18,8 +18,7 @@
     r         = "list",
     packages  = "list",
     renv_lock = "list",
-    data      = "list",
-    cohort    = "list")
+    data      = "list")
 }
 
 # Every loaded namespace, sorted, with the source recorded where the
@@ -74,7 +73,8 @@ provenance_path <- function(path) {
 #' Writes \code{<output>.provenance.json} beside a rendered result, recording
 #' what produced it: the study manifest and its checksum, the R version and
 #' platform, every loaded package and its version, the \code{renv.lock}
-#' checksum if there is one, the built dataset's checksum, and the cohort.
+#' checksum if there is one, and the built dataset's checksum. A job can add
+#' its own analysis metadata through \code{extra}.
 #'
 #' This closes a loop that is otherwise impossible. Revisiting a study becomes:
 #' read the sidecar off the filed output, \code{renv::restore()} to that lock,
@@ -86,7 +86,7 @@ provenance_path <- function(path) {
 #' @param path Character(1). Path to the rendered output the record belongs to.
 #'   The file itself need not exist; only its name and directory are used.
 #' @param extra List. Additional named fields merged into the record - for
-#'   example a \code{template} block naming the template and its version.
+#'   example an \code{analysis} block or a job-specific \code{cohort} block.
 #'   Required keys cannot be displaced.
 #' @param cfg List. A study manifest from \code{\link{study_config}}.
 #' @param dataset Character(1). Logical dataset name. Defaults to
@@ -104,17 +104,19 @@ provenance_path <- function(path) {
 #' dir.create(file.path(root, "datasets"), recursive = TRUE,
 #'            showWarnings = FALSE)
 #' yaml::write_yaml(
-#'   list(study = "Example", built = "example.csv",
-#'        cohort = list(n = 3L, n_events = 1L, n_censored = 2L,
-#'                      event = "dead", time = "iv_dead")),
+#'   list(study = "Example", built = "example.csv"),
 #'   file.path(root, "_study.yml")
 #' )
 #' write.csv(data.frame(dead = c(1, 0, 0), iv_dead = 1:3),
 #'           file.path(root, "datasets", "example.csv"), row.names = FALSE)
 #' out <- file.path(root, "example.html")
 #' writeLines("<html></html>", out)
-#' rec <- record_provenance(out, cfg = study_config(root))
-#' rec$job
+#' rec <- record_provenance(
+#'   out,
+#'   cfg = study_config(root),
+#'   extra = list(analysis = list(event = "dead", time = "iv_dead"))
+#' )
+#' rec$analysis$event
 #' unlink(root, recursive = TRUE)
 record_provenance <- function(path, extra = list(), cfg = study_config(),
                               dataset = "study") {
@@ -128,11 +130,6 @@ record_provenance <- function(path, extra = list(), cfg = study_config(),
     NULL
   }
 
-  contract <- .study_dataset(cfg, dataset)
-  if (is.null(contract$cohort)) {
-    stop("record_provenance(): dataset '", dataset,
-         "' has no cohort contract", call. = FALSE)
-  }
   bm <- built_manifest(cfg, dataset)
 
   record <- list(
@@ -158,12 +155,7 @@ record_provenance <- function(path, extra = list(), cfg = study_config(),
       bytes  = bm$size_bytes,
       mtime  = bm$mtime,
       sha256 = bm$sha256
-    )),
-    cohort = list(
-      n          = contract$cohort$n,
-      n_events   = contract$cohort$n_events,
-      n_censored = contract$cohort$n_censored
-    )
+    ))
   )
 
   # Extra fields are appended, never allowed to displace a required key.
