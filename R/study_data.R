@@ -18,7 +18,8 @@
       dataset = dataset,
       built = cfg$built,
       population = cfg$population,
-      cohort = cfg$cohort
+      cohort = cfg$cohort,
+      release = cfg$release
     ))
   }
 
@@ -150,6 +151,15 @@ built_manifest <- function(cfg = study_config(), dataset = "study") {
 #' Reads the dataset named in \code{_study.yml} and normalises its types so
 #' that both available read paths deliver the same frame.
 #'
+#' For a release-aware contract, the pinned release is verified before cache
+#' access. A later valid release emits a message of class
+#' \code{hvtiRutilities_update_available}; an unavailable catalog or invalid
+#' candidate emits \code{hvtiRutilities_update_status_unknown} and the pinned
+#' data are still read. A changed pinned release errors with class
+#' \code{hvtiRutilities_release_integrity}. A withdrawn pin errors with class
+#' \code{hvtiRutilities_withdrawn_release} unless \code{allow_withdrawn} is
+#' \code{TRUE}.
+#'
 #' The normalisation is not cosmetic. \code{\link{read_clinical_data}} converts
 #' SAS 0/1 numerics to logical while \code{haven::read_sas()} leaves them
 #' numeric, and downstream modelling code rejects a logical status vector
@@ -168,6 +178,9 @@ built_manifest <- function(cfg = study_config(), dataset = "study") {
 #'   the parquet is authoritative, so there is nothing to refresh from.
 #' @param dataset Character(1). Logical dataset name. Defaults to
 #'   \code{"study"}.
+#' @param allow_withdrawn Logical. If \code{TRUE}, allow a deliberately pinned
+#'   withdrawn release to be read for revision work. The default is
+#'   \code{FALSE}.
 #'
 #' @return A data frame with lower-cased names, no logical columns and no
 #'   \code{haven_labelled} columns.
@@ -191,7 +204,15 @@ built_manifest <- function(cfg = study_config(), dataset = "study") {
 #' names(read_built(study_config(root)))
 #' unlink(root, recursive = TRUE)
 read_built <- function(cfg = study_config(), refresh = FALSE,
-                       dataset = "study") {
+                       dataset = "study", allow_withdrawn = FALSE) {
+  if (!is.logical(allow_withdrawn) || length(allow_withdrawn) != 1L ||
+        is.na(allow_withdrawn)) {
+    stop("allow_withdrawn must be TRUE or FALSE", call. = FALSE)
+  }
+  contract <- .study_dataset(cfg, dataset)
+  if (!is.null(contract$release)) {
+    .enforce_release_read(cfg, dataset, allow_withdrawn)
+  }
   p <- built_path(cfg, dataset)
   manifest_path <- file.path(cfg$root, "manifest.yaml")
 

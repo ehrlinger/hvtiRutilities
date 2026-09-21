@@ -166,6 +166,43 @@ test_that("study_status reports each named dataset and cohort", {
   expect_equal(check_for(status, "cohort:imaging")$status, "MISSING")
 })
 
+test_that("study_status summarizes release update state", {
+  available <- make_release_aware_study(withr::local_tempdir())
+  available_status <- study_status(available$root)
+  expect_equal(check_for(available_status, "update:study")$status,
+               "UPDATE AVAILABLE")
+  expect_output(print(available_status), "[~] update:study", fixed = TRUE)
+
+  current <- make_release_aware_study(
+    withr::local_tempdir(),
+    pinned_sequence = 2L
+  )
+  expect_equal(check_for(study_status(current$root), "update:study")$status,
+               "CURRENT")
+
+  unknown <- make_release_aware_study(withr::local_tempdir())
+  unlink(unknown$catalog_path)
+  unknown_status <- study_status(unknown$root)
+  expect_equal(check_for(unknown_status, "update:study")$status,
+               "UPDATE STATUS UNKNOWN")
+  expect_output(print(unknown_status), "[?] update:study", fixed = TRUE)
+
+  failed <- make_release_aware_study(withr::local_tempdir())
+  writeLines("changed", file.path(failed$data_dir, "cohort_20260920.csv"))
+  expect_equal(check_for(study_status(failed$root), "update:study")$status,
+               "FAIL")
+})
+
+test_that("study_status places named release state after its dataset rows", {
+  fx <- make_release_aware_study(withr::local_tempdir(), named = TRUE)
+  status <- study_status(fx$root)
+
+  expect_equal(check_for(status, "update:named_data")$status,
+               "UPDATE AVAILABLE")
+  expect_gt(match("update:named_data", status$checks$item),
+            match("cohort:named_data", status$checks$item))
+})
+
 test_that("study_status does not create caches or rewrite the manifest", {
   skip_if_not_installed("arrow")
   option <- "hvtiRutilities.disable_parquet_cache"

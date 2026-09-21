@@ -33,6 +33,50 @@
              stringsAsFactors = FALSE)
 }
 
+.status_update <- function(cfg, dataset) {
+  contract <- tryCatch(.study_dataset(cfg, dataset), error = function(e) e)
+  if (inherits(contract, "error") || is.null(contract$release)) return(NULL)
+
+  report <- check_data_updates(cfg, dataset)
+  pinned_bad <- report$scope == "pinned" &
+    report$status %in% c("FAIL", "WITHDRAWN")
+  if (any(pinned_bad)) {
+    rows <- report[pinned_bad, , drop = FALSE]
+    return(.status_row(
+      paste0("update:", dataset),
+      "FAIL",
+      paste(rows$detail, collapse = "; ")
+    ))
+  }
+
+  available <- report$status == "UPDATE AVAILABLE"
+  if (any(available)) {
+    rows <- report[available, , drop = FALSE]
+    latest <- rows[which.max(rows$sequence), , drop = FALSE]
+    return(.status_row(
+      paste0("update:", dataset),
+      "UPDATE AVAILABLE",
+      latest$detail
+    ))
+  }
+
+  uncertain <- report$status %in% c("FAIL", "UPDATE STATUS UNKNOWN")
+  if (any(uncertain)) {
+    rows <- report[uncertain, , drop = FALSE]
+    return(.status_row(
+      paste0("update:", dataset),
+      "UPDATE STATUS UNKNOWN",
+      paste(rows$detail, collapse = "; ")
+    ))
+  }
+
+  .status_row(
+    paste0("update:", dataset),
+    "CURRENT",
+    report$detail[report$scope == "pinned"]
+  )
+}
+
 .status_named_dataset <- function(cfg, dataset) {
   data_item <- paste0("dataset:", dataset)
   cohort_item <- paste0("cohort:", dataset)
@@ -221,6 +265,11 @@
 #' is not a check that failed, and conflating the two makes the audit
 #' unreadable on exactly the legacy studies it is most needed for.
 #'
+#' Release-aware datasets add an \code{update:<dataset>} row with status
+#' \code{"CURRENT"}, \code{"UPDATE AVAILABLE"},
+#' \code{"UPDATE STATUS UNKNOWN"}, or \code{"FAIL"}. Legacy studies retain
+#' the six base rows and their existing dataset and cohort rows.
+#'
 #' Unlike \code{\link{study_config}}, this function does \strong{not} walk up
 #' the directory tree. It asks whether \code{root} itself is a study root, so
 #' that a subdirectory of a study is never mistaken for one.
@@ -236,9 +285,11 @@
 #'
 #' @return An object of class \code{"study_status"}: a list with \code{root},
 #'   \code{checks} (a data frame of \code{item}, \code{status} --
-#'   \code{"OK"}, \code{"MISSING"} or \code{"FAIL"} -- and \code{detail}).
-#'   The six base rows are followed by dataset and cohort rows for each named
-#'   dataset. \code{counts} lists \code{r_files}, \code{qmd},
+#'   \code{"OK"}, \code{"MISSING"}, \code{"FAIL"}, \code{"CURRENT"},
+#'   \code{"UPDATE AVAILABLE"}, or \code{"UPDATE STATUS UNKNOWN"} -- and
+#'   \code{detail}). The six base rows are followed by release-aware update
+#'   rows and by dataset, cohort, and update rows for each named dataset.
+#'   \code{counts} lists \code{r_files}, \code{qmd},
 #'   \code{sas_jobs} and \code{sidecars}.
 #'
 #' @seealso \code{\link{study_setup}}, \code{\link{study_checklist}}
@@ -339,10 +390,13 @@ study_status <- function(root = getwd()) {
     }
   }
 
-  named_rows <- lapply(
-    names(cfg$additional_datasets),
-    function(dataset) .status_named_dataset(cfg, dataset)
-  )
+  default_update <- .status_update(cfg, "study")
+  named_rows <- lapply(names(cfg$additional_datasets), function(dataset) {
+    rbind(
+      .status_named_dataset(cfg, dataset),
+      .status_update(cfg, dataset)
+    )
+  })
   if (length(named_rows)) {
     named_rows <- do.call(rbind, named_rows)
   } else {
@@ -352,6 +406,7 @@ study_status <- function(root = getwd()) {
   out <- list(
     root   = root,
     checks = rbind(row_yml, row_lock, row_man, row_data, row_cohort,
+                   default_update,
                    named_rows,
                    .status_provenance(root)),
     counts = list(
@@ -367,7 +422,14 @@ study_status <- function(root = getwd()) {
 
 #' @export
 print.study_status <- function(x, ...) {
-  mark <- c(OK = "[x]", MISSING = "[ ]", FAIL = "[!]")
+  mark <- c(
+    OK = "[x]",
+    MISSING = "[ ]",
+    FAIL = "[!]",
+    CURRENT = "[x]",
+    "UPDATE AVAILABLE" = "[~]",
+    "UPDATE STATUS UNKNOWN" = "[?]"
+  )
   cat("Study: ", x$root, "\n\n", sep = "")
   for (i in seq_len(nrow(x$checks))) {
     cat(mark[[x$checks$status[i]]], " ", x$checks$item[i],

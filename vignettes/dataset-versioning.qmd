@@ -25,22 +25,27 @@ pull it again tomorrow — even when no one intentionally changed anything.
 Backfilled lab results, corrected ICD codes, and updated patient status all
 mean that re-running an extraction silently changes the underlying numbers.
 
-The standard defence is a three-step protocol:
+The standard defence starts with three habits:
 
-1. **Name every dataset by its extract date** — `cohort_20240115.csv`,
-   `labs_20240801.sas7bdat`.  Never overwrite an existing dated file; a new
+1. **Name every dataset by its extract date**, such as `cohort_20240115.csv`
+   or `labs_20240801.sas7bdat`. Never overwrite an existing dated file; a new
    pull gets a new filename.
 2. **Record a SHA-256 checksum** the moment a file lands on disk.  A single
    changed byte produces a completely different hash.
 3. **Verify the checksums before every analysis run** so that any drift is
    caught immediately, before results are generated.
 
-`hvtiRutilities` provides two functions that implement this protocol:
+For an ordinary file manifest, two functions implement those habits:
 
 | Function | Purpose |
 |---|---|
 | `update_manifest()` | Register a dataset (or update its entry) in `manifest.yaml` |
 | `verify_manifest()` | Check every registered dataset before an analysis runs |
+
+A registered study needs one more piece: a producer-owned release catalog.
+The catalog distinguishes a mutable draft from a published dated release and
+lets a study discover a later release without changing the release it already
+uses. We return to that workflow after the checksum example.
 
 ## Setup
 
@@ -235,27 +240,73 @@ report <- verify_manifest(
 report[report$status == "FAIL", c("file", "message")]
 ```
 
-### Updating the manifest after a legitimate re-pull
+### Publishing a legitimate correction
 
-If a new extract is intentional — a corrected pull, an updated query — call
-`update_manifest()` again with the same filename.  The existing entry is
-replaced in place and the new checksum is recorded.
+A changed checksum tells you that the bytes moved. It does not tell you which
+bytes were correct, and an already overwritten file cannot be reconstructed
+from its checksum. Keep the mutable work under a draft name while the
+statistical programmer builds and validates it. Publishing is the boundary:
+`hvtiRdatabuild` writes an immutable dated file and adds its checksum,
+dimensions, release ID, and sequence to `dataset-catalog.yml`.
+
+A correction published on the same day gets a revision suffix such as `_r2`
+and a larger sequence. Revisions start at 1 for each extract date and increase
+without gaps in catalog order. Date order and filename order are not enough
+when two releases share a date, so consumers follow the catalog sequence.
+
+The rest of this vignette still needs its original temporary file. This reset
+is safe only because the fixture is disposable; it is not a recovery method
+for a study whose published file was overwritten.
 
 ```{r}
-# Re-register after the legitimate change
-update_manifest(
-  file          = cohort_file,
-  manifest_path = manifest_path,
-  extract_date  = "2024-01-15",
-  source        = "Epic EMR, query v4.2, ICD mapping v3.2 — corrected age for pt 1"
+write.csv(cohort, cohort_file, row.names = FALSE)
+```
+
+## From Published Release to Study Update
+
+Suppose a study is pinned to `surgery_cohort-20260920-r1` and the producer
+publishes `surgery_cohort-20260921-r1`. The study keeps reading the old release.
+`study_status()` reports an `UPDATE AVAILABLE` row, and `read_built()` emits an
+update message once in the R session. Neither one silently advances the study.
+A revision run continues to read the release recorded by its Git revision.
+The pinned file is still checked against `manifest.yaml` when the producer
+catalog is missing or malformed; loss of update discovery never weakens the
+study's local integrity check. Review and adoption require a literal release
+ID. `latest` is reserved and is never a release ID or an alias.
+
+The update has five steps:
+
+1. Build and validate a mutable draft in `hvtiRdatabuild`.
+2. Publish an immutable dated release through `hvtiRdatabuild`.
+3. Let `study_status()` or `read_built()` report the candidate.
+4. Review that exact release ID with `review_data_update()`.
+5. Adopt the same ID with `adopt_data_update()` after the review is accepted.
+
+```{r eval=FALSE}
+cfg <- study_config()
+
+check_data_updates(cfg)
+
+review_data_update(
+  cfg,
+  release_id = "surgery_cohort-20260921-r1"
 )
 
-# Verification now passes again
-verify_manifest(
-  manifest_path = manifest_path,
-  data_dir      = datasets_dir
+adopt_data_update(
+  cfg,
+  release_id = "surgery_cohort-20260921-r1"
 )
 ```
+
+Both review and adoption require an exact ID; `"latest"` is not an alias.
+Review verifies both files and shows row, column, type, label, and cohort-count
+changes. Adoption repeats those checks, then replaces `_study.yml` and
+`manifest.yaml` together. It leaves the old dated file in place.
+
+A producer may withdraw a release without deleting it. A study pinned to that
+release stops by default and reports the withdrawal reason. For a deliberate
+historical reproduction, `read_built(allow_withdrawn = TRUE)` reads the pinned
+bytes after their checksum passes. A withdrawn candidate cannot be adopted.
 
 ## A New Pull for a Different Project
 
@@ -350,22 +401,13 @@ an extract once you know it moved.
 
 | Stage | Action |
 |---|---|
-| **On every data pull** | Run `update_manifest()` immediately and commit `manifest.yaml` to git |
+| **While building a release** | Validate a mutable draft; do not register it as a published study release |
+| **When the build is accepted** | Publish an immutable dated release through `hvtiRdatabuild` |
+| **When a study sees an update** | Review and adopt one exact release ID; commit the changed study contracts |
 | **Top of every analysis script** | Call `verify_manifest()` — before loading any data |
 | **At manuscript submission** | Tag the git commit; freeze `manifest.yaml`; do not re-pull data |
-| **For a new project or re-pull** | Use a new date-stamped filename; add a new `update_manifest()` entry |
+| **For an unregistered legacy file** | Use `update_manifest()` to record its current bytes; a checksum cannot recover an overwritten version |
 | **`.gitignore`** | Add `datasets/` — commit the manifest, not the data |
-
-## Summary
-
-- `update_manifest()` records the SHA-256 checksum, row count, extract date,
-  and optional provenance fields for CSV, SAS, Excel, or any file type.
-- `verify_manifest()` checks every registered dataset before results are
-  produced; one changed byte triggers an immediate, informative error.
-- `compare_datasets()` reports what moved between two pulls: row counts,
-  added and dropped columns, type changes, and label changes.
-- The combination makes dataset drift **detectable** and the audit trail
-  **reproducible** from first pull to manuscript submission.
 
 ## Session Information
 

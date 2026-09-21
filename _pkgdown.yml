@@ -146,6 +146,9 @@ reference:
   - built_manifest
   - study_dir
   - read_built
+  - check_data_updates
+  - review_data_update
+  - adopt_data_update
   - cohort_counts
   - assert_cohort
 

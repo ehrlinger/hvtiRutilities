@@ -108,6 +108,9 @@
 #' @param source Character(1) or \code{NULL}. Data-source description.
 #' @param extract_date Character, \code{Date}, or \code{NULL}. Extraction
 #'   date. The file modification date is used when omitted.
+#' @param catalog_dataset,release_id Character(1) or \code{NULL}. Producer
+#'   catalog dataset ID and exact published release ID. Supply both to make
+#'   the study contract release-aware, or neither for a legacy registration.
 #'
 #' @return An object of class \code{"study_status"}, returned visibly.
 #'
@@ -119,7 +122,8 @@ register_data <- function(root = getwd(), built, event = NULL, time = NULL,
                           dataset = "study",
                           role = c("study", "named"),
                           population = NULL, source = NULL,
-                          extract_date = NULL) {
+                          extract_date = NULL,
+                          catalog_dataset = NULL, release_id = NULL) {
   role <- match.arg(role)
   scalar <- function(x, name, required = FALSE) {
     .study_scalar(x, name, required, caller = "register_data")
@@ -128,6 +132,20 @@ register_data <- function(root = getwd(), built, event = NULL, time = NULL,
   dataset <- scalar(dataset, "dataset", required = TRUE)
   population <- scalar(population, "population")
   source <- scalar(source, "source")
+  catalog_dataset <- scalar(catalog_dataset, "catalog_dataset")
+  release_id <- scalar(release_id, "release_id")
+
+  if (xor(is.null(catalog_dataset), is.null(release_id))) {
+    stop("register_data(): catalog_dataset and release_id must be supplied ",
+         "together", call. = FALSE)
+  }
+  if (!is.null(catalog_dataset) &&
+        !.catalog_valid_dataset_id(catalog_dataset)) {
+    stop("register_data(): catalog_dataset is invalid", call. = FALSE)
+  }
+  if (!is.null(release_id) && !.catalog_valid_release_id(release_id)) {
+    stop("register_data(): release_id is invalid", call. = FALSE)
+  }
 
   if (!identical(basename(built), built) ||
         !nzchar(tools::file_ext(built))) {
@@ -162,12 +180,44 @@ register_data <- function(root = getwd(), built, event = NULL, time = NULL,
 
   cfg <- study_config(root, require_data = FALSE)
   raw <- yaml::read_yaml(cfg$file)
-  if (role == "study" && !is.null(raw$built)) {
+  existing <- if (role == "study" && !is.null(raw$built)) {
+    list(
+      built = raw$built,
+      population = raw$population,
+      cohort = raw$cohort,
+      release = raw$release
+    )
+  } else if (role == "named") {
+    raw$additional_datasets[[dataset]]
+  } else {
+    NULL
+  }
+  migrating <- !is.null(release_id) && !is.null(existing) &&
+    is.null(existing$release) && identical(existing$built, built)
+  if (migrating) {
+    old_columns <- if (is.null(existing$cohort)) {
+      NULL
+    } else {
+      existing$cohort[c("event", "time")]
+    }
+    new_columns <- if (is.null(event)) {
+      NULL
+    } else {
+      list(event = event, time = time)
+    }
+    if (!identical(old_columns, new_columns)) {
+      stop(
+        "register_data(): migration must preserve the existing cohort columns",
+        call. = FALSE
+      )
+    }
+  }
+  if (role == "study" && !is.null(raw$built) && !migrating) {
     stop("register_data(): the default dataset is already registered",
          call. = FALSE)
   }
   if (role == "named" &&
-        !is.null(raw$additional_datasets[[dataset]])) {
+        !is.null(raw$additional_datasets[[dataset]]) && !migrating) {
     stop("register_data(): dataset '", dataset, "' is already registered",
          call. = FALSE)
   }
@@ -176,7 +226,45 @@ register_data <- function(root = getwd(), built, event = NULL, time = NULL,
   if (!file.exists(path)) {
     stop("register_data(): dataset is missing: ", path, call. = FALSE)
   }
+  release <- NULL
+  if (!is.null(release_id)) {
+    catalog <- .read_dataset_catalog(.catalog_path(cfg))
+    release <- .catalog_release(catalog, catalog_dataset, release_id)
+    if (!identical(release$status, "published")) {
+      stop("register_data(): release is withdrawn: ", release_id,
+           call. = FALSE)
+    }
+    if (!identical(release$file, built)) {
+      stop("register_data(): release ", release_id, " does not name ", built,
+           call. = FALSE)
+    }
+    .verify_catalog_file(release, study_dir("datasets", cfg$root))
+
+    if (!is.null(extract_date)) {
+      supplied_date <- format(as.Date(extract_date), "%Y-%m-%d")
+      if (!identical(supplied_date, release$extract_date)) {
+        stop("register_data(): extract_date disagrees with the catalog",
+             call. = FALSE)
+      }
+    }
+    if (!is.null(source) && !identical(source, release$source)) {
+      stop("register_data(): source disagrees with the catalog",
+           call. = FALSE)
+    }
+    extract_date <- release$extract_date
+    source <- release$source
+  }
   data <- .read_registration_data(path)
+  if (!is.null(release)) {
+    .verify_catalog_file(release, study_dir("datasets", cfg$root))
+  }
+  if (!is.null(release) &&
+        (!identical(nrow(data), release$n_rows) ||
+           !identical(ncol(data), release$n_cols))) {
+    stop("register_data(): observed dimensions disagree with the catalog: ",
+         nrow(data), " x ", ncol(data), " versus ", release$n_rows, " x ",
+         release$n_cols, call. = FALSE)
+  }
   cohort <- if (is.null(event)) {
     NULL
   } else {
@@ -189,8 +277,18 @@ register_data <- function(root = getwd(), built, event = NULL, time = NULL,
 
   if (role == "study") {
     raw$built <- built
-    if (!is.null(population)) raw$population <- population
+    if (!is.null(population)) {
+      raw$population <- population
+    } else if (migrating) {
+      raw$population <- existing$population
+    }
     raw$cohort <- cohort
+    if (!is.null(release)) {
+      raw$release <- list(
+        dataset_id = catalog_dataset,
+        release_id = release_id
+      )
+    }
   } else {
     if (is.null(raw$additional_datasets)) {
       raw$additional_datasets <- list()
@@ -199,11 +297,22 @@ register_data <- function(root = getwd(), built, event = NULL, time = NULL,
       stop("register_data(): additional_datasets must be a mapping",
            call. = FALSE)
     }
-    raw$additional_datasets[[dataset]] <- list(
+    contract <- list(
       built = built,
-      population = population,
+      population = if (is.null(population) && migrating) {
+        existing$population
+      } else {
+        population
+      },
       cohort = cohort
     )
+    if (!is.null(release)) {
+      contract$release <- list(
+        dataset_id = catalog_dataset,
+        release_id = release_id
+      )
+    }
+    raw$additional_datasets[[dataset]] <- contract
   }
 
   if (is.null(extract_date)) extract_date <- as.Date(file.info(path)$mtime)
@@ -213,6 +322,15 @@ register_data <- function(root = getwd(), built, event = NULL, time = NULL,
     extract_date,
     source
   )
+  if (!is.null(release) &&
+        (!identical(entry$sha256, release$sha256) ||
+           !identical(entry$n_rows, release$n_rows) ||
+           !identical(entry$n_cols, release$n_cols))) {
+    stop(
+      "register_data(): prepared manifest entry disagrees with the catalog",
+      call. = FALSE
+    )
+  }
   manifest_path <- file.path(cfg$root, "manifest.yaml")
   manifest <- if (file.exists(manifest_path)) {
     yaml::read_yaml(manifest_path)
@@ -243,21 +361,30 @@ register_data <- function(root = getwd(), built, event = NULL, time = NULL,
     function(item) identical(item$file, built),
     logical(1)
   )
-  if (any(listed)) {
+  if (migrating && sum(listed) != 1L) {
+    stop("register_data(): migration requires exactly one manifest entry for ",
+         built, call. = FALSE)
+  }
+  if (any(listed) && !migrating) {
     stop("register_data(): ", built, " is already listed in manifest.yaml",
          call. = FALSE)
   }
   stem <- tools::file_path_sans_ext(built)
   existing_stems <- tools::file_path_sans_ext(files)
-  if (stem %in% existing_stems) {
-    conflict <- files[[match(stem, existing_stems)]]
+  other <- !listed
+  if (stem %in% existing_stems[other]) {
+    conflict <- files[other][[match(stem, existing_stems[other])]]
     stop(
       "register_data(): ", built, " and ", conflict,
       " share the derived path stem '", stem, "'",
       call. = FALSE
     )
   }
-  manifest$datasets <- c(manifest$datasets, list(entry))
+  if (migrating) {
+    manifest$datasets[[which(listed)]] <- entry
+  } else {
+    manifest$datasets <- c(manifest$datasets, list(entry))
+  }
 
   targets <- c(cfg$file, manifest_path)
   prepared <- c(

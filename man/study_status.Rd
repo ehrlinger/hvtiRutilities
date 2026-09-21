@@ -12,9 +12,11 @@ study_status(root = getwd())
 \value{
 An object of class \code{"study_status"}: a list with \code{root},
   \code{checks} (a data frame of \code{item}, \code{status} --
-  \code{"OK"}, \code{"MISSING"} or \code{"FAIL"} -- and \code{detail}).
-  The six base rows are followed by dataset and cohort rows for each named
-  dataset. \code{counts} lists \code{r_files}, \code{qmd},
+  \code{"OK"}, \code{"MISSING"}, \code{"FAIL"}, \code{"CURRENT"},
+  \code{"UPDATE AVAILABLE"}, or \code{"UPDATE STATUS UNKNOWN"} -- and
+  \code{detail}). The six base rows are followed by release-aware update
+  rows and by dataset, cohort, and update rows for each named dataset.
+  \code{counts} lists \code{r_files}, \code{qmd},
   \code{sas_jobs} and \code{sidecars}.
 }
 \description{
@@ -29,6 +31,11 @@ not error on one. Checks that cannot run because an earlier one failed are
 reported \code{"MISSING"}, never \code{"FAIL"} -- a check that could not run
 is not a check that failed, and conflating the two makes the audit
 unreadable on exactly the legacy studies it is most needed for.
+
+Release-aware datasets add an \code{update:<dataset>} row with status
+\code{"CURRENT"}, \code{"UPDATE AVAILABLE"},
+\code{"UPDATE STATUS UNKNOWN"}, or \code{"FAIL"}. Legacy studies retain
+the six base rows and their existing dataset and cohort rows.
 
 Unlike \code{\link{study_config}}, this function does \strong{not} walk up
 the directory tree. It asks whether \code{root} itself is a study root, so

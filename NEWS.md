@@ -1,5 +1,23 @@
 # hvtiRutilities (unreleased)
 
+## New features
+
+* `check_data_updates()`, `review_data_update()` and `adopt_data_update()` add
+  the consumer side of immutable dataset releases. A release-aware
+  `read_built()` verifies the pinned bytes before cache access, reports a later
+  candidate without advancing the study, and stops on a changed or withdrawn
+  pin; `allow_withdrawn = TRUE` permits a deliberate historical revision run.
+  `study_status()` adds one update row per release-aware dataset. Adoption
+  replaces `_study.yml` and `manifest.yaml` as a recoverable pair and leaves
+  the old dated file in place. Legacy study contracts keep their existing read
+  and status behavior. A published file changed in place now stops before a
+  cache refresh can record the changed bytes, including when the producer
+  catalog is missing or malformed. Review, adoption, and registration
+  reconcile the release catalog with the study manifest, and same-day catalog
+  revisions must be contiguous. Promoted `role: primary` datasets verify their
+  authoritative Parquet while retaining the catalog's source checksum, and
+  release review re-verifies both files after reading them.
+
 ## Documentation
 
 * `hvti_taxonomy()`'s note on the job catalog is brought up to date. The
