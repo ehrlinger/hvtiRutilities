@@ -379,3 +379,188 @@ test_that("review fails when candidate cohort columns are absent", {
     "no column named dead"
   )
 })
+
+release_contract_bytes <- function(root) {
+  paths <- file.path(root, c("_study.yml", "manifest.yaml"))
+  lapply(paths, function(path) {
+    readBin(path, "raw", n = file.info(path)$size)
+  })
+}
+
+test_that("adoption advances the default contract and manifest entry", {
+  fx <- make_release_aware_study(withr::local_tempdir(), pinned_sequence = 1L)
+
+  status <- adopt_data_update(
+    study_config(fx$root),
+    release_id = "surgery_cohort-20260921-r1"
+  )
+
+  expect_s3_class(status, "study_status")
+  cfg <- study_config(fx$root)
+  expect_identical(cfg$built, "cohort_20260921.csv")
+  expect_identical(cfg$release$release_id,
+                   "surgery_cohort-20260921-r1")
+  expect_identical(cfg$cohort$n, 4L)
+  manifest <- yaml::read_yaml(file.path(fx$root, "manifest.yaml"))
+  files <- vapply(manifest$datasets, function(x) x$file, character(1))
+  expect_false("cohort_20260920.csv" %in% files)
+  expect_true("cohort_20260921.csv" %in% files)
+  expect_true(file.exists(file.path(fx$data_dir, "cohort_20260920.csv")))
+  update <- status$checks[status$checks$item == "update:study", , drop = FALSE]
+  expect_identical(update$status, "CURRENT")
+})
+
+test_that("adoption advances only the selected named contract", {
+  fx <- make_release_aware_study(
+    withr::local_tempdir(),
+    pinned_sequence = 1L,
+    named = TRUE
+  )
+  before <- yaml::read_yaml(file.path(fx$root, "_study.yml"))
+
+  status <- adopt_data_update(
+    study_config(fx$root),
+    dataset = "named_data",
+    release_id = "surgery_cohort-20260921-r1"
+  )
+
+  after <- yaml::read_yaml(file.path(fx$root, "_study.yml"))
+  expect_identical(after$built, before$built)
+  expect_identical(after$cohort, before$cohort)
+  expect_identical(after$release, before$release)
+  expect_identical(
+    after$additional_datasets$named_data$built,
+    "cohort_20260921.csv"
+  )
+  expect_identical(
+    after$additional_datasets$named_data$release$release_id,
+    "surgery_cohort-20260921-r1"
+  )
+  expect_identical(after$additional_datasets$named_data$cohort$n, 4L)
+  update <- status$checks[
+    status$checks$item == "update:named_data",
+    ,
+    drop = FALSE
+  ]
+  expect_identical(update$status, "CURRENT")
+})
+
+test_that("adoption revalidates bytes changed after review", {
+  fx <- make_release_aware_study(withr::local_tempdir(), pinned_sequence = 1L)
+  cfg <- study_config(fx$root)
+  review_data_update(
+    cfg,
+    release_id = "surgery_cohort-20260921-r1"
+  )
+  before <- release_contract_bytes(fx$root)
+  writeLines(
+    "changed after review",
+    file.path(fx$data_dir, "cohort_20260921.csv")
+  )
+
+  expect_error(
+    adopt_data_update(
+      cfg,
+      release_id = "surgery_cohort-20260921-r1"
+    ),
+    class = "hvtiRutilities_release_integrity"
+  )
+  expect_identical(release_contract_bytes(fx$root), before)
+})
+
+test_that("adoption rolls back both contracts when pair replacement fails", {
+  fx <- make_release_aware_study(withr::local_tempdir(), pinned_sequence = 1L)
+  before <- release_contract_bytes(fx$root)
+  local_mocked_bindings(
+    .registration_rename = function(from, to) {
+      if (grepl("^[.]manifest-", basename(from))) return(FALSE)
+      file.rename(from, to)
+    }
+  )
+
+  expect_error(
+    adopt_data_update(
+      study_config(fx$root),
+      release_id = "surgery_cohort-20260921-r1"
+    ),
+    "prepared manifest"
+  )
+  expect_identical(release_contract_bytes(fx$root), before)
+})
+
+test_that("adoption requires exactly one old manifest entry", {
+  missing <- make_release_aware_study(withr::local_tempdir())
+  missing_path <- file.path(missing$root, "manifest.yaml")
+  manifest <- yaml::read_yaml(missing_path)
+  manifest$datasets[[1L]]$file <- "other.csv"
+  yaml::write_yaml(manifest, missing_path)
+  before <- release_contract_bytes(missing$root)
+  expect_error(
+    adopt_data_update(
+      study_config(missing$root),
+      release_id = "surgery_cohort-20260921-r1"
+    ),
+    "exactly one manifest entry"
+  )
+  expect_identical(release_contract_bytes(missing$root), before)
+
+  duplicate <- make_release_aware_study(withr::local_tempdir())
+  duplicate_path <- file.path(duplicate$root, "manifest.yaml")
+  manifest <- yaml::read_yaml(duplicate_path)
+  manifest$datasets <- c(manifest$datasets, manifest$datasets)
+  yaml::write_yaml(manifest, duplicate_path)
+  before <- release_contract_bytes(duplicate$root)
+  expect_error(
+    adopt_data_update(
+      study_config(duplicate$root),
+      release_id = "surgery_cohort-20260921-r1"
+    ),
+    "exactly one manifest entry"
+  )
+  expect_identical(release_contract_bytes(duplicate$root), before)
+})
+
+test_that("adoption rejects a candidate stem collision", {
+  fx <- make_release_aware_study(withr::local_tempdir())
+  manifest_path <- file.path(fx$root, "manifest.yaml")
+  manifest <- yaml::read_yaml(manifest_path)
+  conflict <- manifest$datasets[[1L]]
+  conflict$file <- "cohort_20260921.rds"
+  manifest$datasets <- c(manifest$datasets, list(conflict))
+  yaml::write_yaml(manifest, manifest_path)
+  before <- release_contract_bytes(fx$root)
+
+  expect_error(
+    adopt_data_update(
+      study_config(fx$root),
+      release_id = "surgery_cohort-20260921-r1"
+    ),
+    "derived path stem"
+  )
+  expect_identical(release_contract_bytes(fx$root), before)
+})
+
+test_that("adoption rejects withdrawn and non-newer candidates", {
+  withdrawn <- make_release_aware_study(withr::local_tempdir())
+  withdraw_fixture_release(
+    withdrawn,
+    "surgery_cohort-20260921-r1",
+    "Candidate withdrawn"
+  )
+  expect_error(
+    adopt_data_update(
+      study_config(withdrawn$root),
+      release_id = "surgery_cohort-20260921-r1"
+    ),
+    "published"
+  )
+
+  old <- make_release_aware_study(withr::local_tempdir())
+  expect_error(
+    adopt_data_update(
+      study_config(old$root),
+      release_id = "surgery_cohort-20260920-r1"
+    ),
+    "newer"
+  )
+})

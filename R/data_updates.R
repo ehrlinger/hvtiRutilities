@@ -415,3 +415,124 @@ print.data_update_review <- function(x, ...) {
   }
   invisible(x)
 }
+
+.adoption_manifest_files <- function(manifest) {
+  if (!is.list(manifest) || !is.list(manifest$datasets)) {
+    stop(
+      "adopt_data_update(): manifest.yaml has an invalid datasets field",
+      call. = FALSE
+    )
+  }
+  vapply(manifest$datasets, function(entry) {
+    file <- entry$file
+    if (!is.character(file) || length(file) != 1L || is.na(file) ||
+          !nzchar(file)) {
+      stop(
+        "adopt_data_update(): manifest.yaml has an invalid dataset entry",
+        call. = FALSE
+      )
+    }
+    file
+  }, character(1))
+}
+
+adopt_data_update <- function(cfg = study_config(), dataset = "study",
+                              release_id) {
+  review <- review_data_update(cfg, dataset, release_id)
+  current_cfg <- study_config(cfg$root)
+  original_contract <- .study_dataset(cfg, dataset)
+  contract <- .study_dataset(current_cfg, dataset)
+  same_pin <- !is.null(contract$release) &&
+    identical(contract$built, review$pinned$file) &&
+    identical(contract$release$dataset_id,
+              original_contract$release$dataset_id) &&
+    identical(contract$release$release_id, review$pinned$release_id)
+  if (!same_pin) {
+    stop(
+      "adopt_data_update(): the study contract changed after review; review the candidate again",
+      call. = FALSE
+    )
+  }
+
+  raw <- yaml::read_yaml(current_cfg$file)
+  manifest_path <- file.path(current_cfg$root, "manifest.yaml")
+  if (!file.exists(manifest_path)) {
+    stop("adopt_data_update(): manifest.yaml is missing", call. = FALSE)
+  }
+  manifest <- yaml::read_yaml(manifest_path)
+
+  data_dir <- study_dir("datasets", current_cfg$root)
+  candidate_path <- .verify_catalog_file(review$candidate, data_dir)
+  candidate_data <- .read_registration_data(candidate_path)
+  .verify_catalog_file(review$candidate, data_dir)
+  .assert_catalog_dimensions(candidate_data, review$candidate)
+  cohort <- if (is.null(contract$cohort)) {
+    NULL
+  } else {
+    c(
+      cohort_counts(candidate_data, current_cfg, dataset),
+      contract$cohort[c("event", "time")]
+    )
+  }
+
+  release <- list(
+    dataset_id = contract$release$dataset_id,
+    release_id = review$candidate$release_id
+  )
+  if (identical(dataset, "study")) {
+    raw$built <- review$candidate$file
+    raw$cohort <- cohort
+    raw$release <- release
+  } else {
+    raw$additional_datasets[[dataset]]$built <- review$candidate$file
+    raw$additional_datasets[[dataset]]$cohort <- cohort
+    raw$additional_datasets[[dataset]]$release <- release
+  }
+
+  files <- .adoption_manifest_files(manifest)
+  old <- files == contract$built
+  if (sum(old) != 1L) {
+    stop(
+      "adopt_data_update(): adoption requires exactly one manifest entry for ",
+      contract$built,
+      call. = FALSE
+    )
+  }
+  candidate_stem <- tools::file_path_sans_ext(review$candidate$file)
+  other_stems <- tools::file_path_sans_ext(files[!old])
+  if (candidate_stem %in% other_stems) {
+    conflict <- files[!old][[match(candidate_stem, other_stems)]]
+    stop(
+      "adopt_data_update(): ", review$candidate$file, " and ", conflict,
+      " share the derived path stem '", candidate_stem, "'",
+      call. = FALSE
+    )
+  }
+
+  entry <- .registration_manifest_entry(
+    candidate_path,
+    candidate_data,
+    review$candidate$extract_date,
+    review$candidate$source
+  )
+  if (!identical(entry$sha256, review$candidate$sha256) ||
+        !identical(entry$n_rows, review$candidate$n_rows) ||
+        !identical(entry$n_cols, review$candidate$n_cols)) {
+    stop(
+      "adopt_data_update(): prepared manifest entry disagrees with the catalog",
+      call. = FALSE
+    )
+  }
+  manifest$datasets[[which(old)]] <- entry
+
+  targets <- c(current_cfg$file, manifest_path)
+  prepared <- c(
+    tempfile(pattern = "._study-", tmpdir = current_cfg$root),
+    tempfile(pattern = ".manifest-", tmpdir = current_cfg$root)
+  )
+  on.exit(unlink(prepared[file.exists(prepared)]), add = TRUE)
+  yaml::write_yaml(raw, prepared[[1L]])
+  yaml::write_yaml(manifest, prepared[[2L]])
+  .replace_study_pair(prepared, targets)
+  study_status(current_cfg$root)
+}
