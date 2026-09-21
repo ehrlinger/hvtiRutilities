@@ -59,7 +59,9 @@ root <- file.path(tempdir(), "read-built-example")
 dir.create(file.path(root, "datasets"), recursive = TRUE,
            showWarnings = FALSE)
 yaml::write_yaml(
-  list(study = "Example", built = "example.csv"),
+  list(study = "Example", built = "example.csv",
+       cohort = list(n = 3L, n_events = 1L, n_censored = 2L,
+                     event = "dead", time = "iv_dead")),
   file.path(root, "_study.yml")
 )
 write.csv(data.frame(DEAD = c(1, 0, 0), IV_DEAD = 1:3),

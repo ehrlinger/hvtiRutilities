@@ -7,6 +7,8 @@
 register_data(
   root = getwd(),
   built,
+  event = NULL,
+  time = NULL,
   dataset = "study",
   role = c("study", "named"),
   population = NULL,
@@ -21,6 +23,9 @@ register_data(
 
 \item{built}{Character(1). Dataset filename within the logical
 \code{datasets} directory, including its extension.}
+
+\item{event, time}{Character(1) or \code{NULL}. Event and follow-up columns.
+Supply both or neither. The default study dataset requires both.}
 
 \item{dataset}{Character(1). Logical dataset name. \code{"study"} is
 reserved for the default.}
@@ -43,7 +48,7 @@ An object of class \code{"study_status"}, returned visibly.
 }
 \description{
 Completes the default study data contract or adds one distinctly named
-dataset. The function derives row and column counts from the file and
+dataset. The function derives row and cohort counts from the file and
 replaces \code{_study.yml} and \code{manifest.yaml} only after both updated
 files have been prepared successfully.
 }

@@ -26,7 +26,9 @@ root <- file.path(tempdir(), "built-manifest-example")
 dir.create(file.path(root, "datasets"), recursive = TRUE,
            showWarnings = FALSE)
 yaml::write_yaml(
-  list(study = "Example", built = "example.csv"),
+  list(study = "Example", built = "example.csv",
+       cohort = list(n = 3L, n_events = 1L, n_censored = 2L,
+                     event = "dead", time = "iv_dead")),
   file.path(root, "_study.yml")
 )
 write.csv(data.frame(dead = c(1, 0, 0), iv_dead = 1:3),
