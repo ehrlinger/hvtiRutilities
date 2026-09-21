@@ -43,3 +43,44 @@ write_release_fixture <- function(root, releases = NULL,
     data_dir = data_dir
   )
 }
+
+make_release_aware_study <- function(dir, pinned_sequence = 1L,
+                                     named = FALSE) {
+  root <- file.path(dir, "study")
+  study_setup(root, "Release-aware fixture", 42L)
+  fx <- write_release_fixture(root)
+  releases <- fx$catalog$datasets$surgery_cohort$releases
+  hit <- vapply(releases, function(x) {
+    identical(x$sequence, as.integer(pinned_sequence))
+  }, logical(1))
+  if (sum(hit) != 1L) stop("fixture has no requested pinned sequence")
+  release <- releases[[which(hit)]]
+
+  if (named) {
+    default <- data.frame(dead = c(1L, 0L), iv_dead = 1:2)
+    write.csv(default, file.path(fx$data_dir, "default.csv"), row.names = FALSE)
+    register_data(root, "default.csv", "dead", "iv_dead")
+    register_data(
+      root,
+      release$file,
+      "dead",
+      "iv_dead",
+      dataset = "named_data",
+      role = "named",
+      catalog_dataset = "surgery_cohort",
+      release_id = release$release_id
+    )
+    fx$study_dataset <- "named_data"
+  } else {
+    register_data(
+      root,
+      release$file,
+      "dead",
+      "iv_dead",
+      catalog_dataset = "surgery_cohort",
+      release_id = release$release_id
+    )
+    fx$study_dataset <- "study"
+  }
+  fx
+}

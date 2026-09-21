@@ -33,6 +33,33 @@
   out
 }
 
+.study_validate_release <- function(value, found, dataset) {
+  if (is.null(value)) return(NULL)
+  if (!is.list(value)) {
+    stop("study_config(): ", found, " release for dataset '", dataset,
+         "' must be a mapping.", call. = FALSE)
+  }
+  required <- c("dataset_id", "release_id")
+  for (key in required) {
+    field <- value[[key]]
+    valid <- is.character(field) && length(field) == 1L &&
+      !is.na(field) && nzchar(field)
+    if (!valid) {
+      stop("study_config(): ", found, " release for dataset '", dataset,
+           "' has an invalid ", key, ".", call. = FALSE)
+    }
+  }
+  if (!.catalog_valid_dataset_id(value$dataset_id)) {
+    stop("study_config(): ", found, " release for dataset '", dataset,
+         "' has an invalid dataset_id.", call. = FALSE)
+  }
+  if (!.catalog_valid_release_id(value$release_id)) {
+    stop("study_config(): ", found, " release for dataset '", dataset,
+         "' has an invalid release_id.", call. = FALSE)
+  }
+  value
+}
+
 .study_validate_additional <- function(value, found) {
   if (is.null(value)) return(value)
   has_names <- !is.null(names(value)) &&
@@ -62,6 +89,11 @@
         call. = FALSE
       )
     }
+    value[[name]]$release <- .study_validate_release(
+      contract$release,
+      found,
+      name
+    )
     cohort <- contract$cohort
     if (!is.null(cohort)) {
       required <- c("n", "n_events", "n_censored", "event", "time")
@@ -183,6 +215,7 @@ study_config <- function(start = getwd(), require_data = TRUE) {
   }
 
   raw <- yaml::read_yaml(found)
+  raw$release <- .study_validate_release(raw$release, found, "study")
   raw$additional_datasets <- .study_validate_additional(
     raw$additional_datasets,
     found

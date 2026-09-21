@@ -283,3 +283,196 @@ test_that("register_data refuses an absent or extensionless file", {
   expect_identical(readLines(file.path(root, "_study.yml")), before)
   expect_false(file.exists(file.path(root, "manifest.yaml")))
 })
+
+test_that("register_data attaches a verified published release", {
+  root <- registration_study()
+  fx <- write_release_fixture(root)
+
+  register_data(
+    root,
+    "cohort_20260920.csv",
+    "dead",
+    "iv_dead",
+    catalog_dataset = "surgery_cohort",
+    release_id = "surgery_cohort-20260920-r1"
+  )
+
+  cfg <- study_config(root)
+  expect_identical(cfg$release, list(
+    dataset_id = "surgery_cohort",
+    release_id = "surgery_cohort-20260920-r1"
+  ))
+  manifest <- yaml::read_yaml(file.path(root, "manifest.yaml"))
+  expect_identical(
+    manifest$datasets[[1L]]$sha256,
+    fx$catalog$datasets$surgery_cohort$releases[[1L]]$sha256
+  )
+})
+
+test_that("release registration refuses a filename mismatch without writes", {
+  root <- registration_study()
+  write_release_fixture(root)
+  before <- readLines(file.path(root, "_study.yml"))
+
+  expect_error(
+    register_data(
+      root,
+      "cohort_20260921.csv",
+      "dead",
+      "iv_dead",
+      catalog_dataset = "surgery_cohort",
+      release_id = "surgery_cohort-20260920-r1"
+    ),
+    "does not name"
+  )
+  expect_identical(readLines(file.path(root, "_study.yml")), before)
+  expect_false(file.exists(file.path(root, "manifest.yaml")))
+})
+
+test_that("release registration requires both catalog identifiers", {
+  root <- registration_study()
+  write_release_fixture(root)
+
+  expect_error(
+    register_data(
+      root,
+      "cohort_20260920.csv",
+      "dead",
+      "iv_dead",
+      catalog_dataset = "surgery_cohort"
+    ),
+    "supplied together"
+  )
+  expect_error(
+    register_data(
+      root,
+      "cohort_20260920.csv",
+      "dead",
+      "iv_dead",
+      release_id = "surgery_cohort-20260920-r1"
+    ),
+    "supplied together"
+  )
+})
+
+test_that("release registration rejects withdrawn or changed releases", {
+  withdrawn_root <- registration_study()
+  withdrawn <- write_release_fixture(withdrawn_root)
+  catalog <- yaml::read_yaml(withdrawn$catalog_path)
+  catalog$datasets$surgery_cohort$releases[[1L]]$status <- "withdrawn"
+  catalog$datasets$surgery_cohort$releases[[1L]]$withdrawal_reason <-
+    "Incorrect cohort"
+  yaml::write_yaml(catalog, withdrawn$catalog_path)
+
+  expect_error(
+    register_data(
+      withdrawn_root,
+      "cohort_20260920.csv",
+      "dead",
+      "iv_dead",
+      catalog_dataset = "surgery_cohort",
+      release_id = "surgery_cohort-20260920-r1"
+    ),
+    "withdrawn"
+  )
+
+  changed_root <- registration_study()
+  changed <- write_release_fixture(changed_root)
+  writeLines("changed", file.path(changed$data_dir, "cohort_20260920.csv"))
+  expect_error(
+    register_data(
+      changed_root,
+      "cohort_20260920.csv",
+      "dead",
+      "iv_dead",
+      catalog_dataset = "surgery_cohort",
+      release_id = "surgery_cohort-20260920-r1"
+    ),
+    class = "hvtiRutilities_release_integrity"
+  )
+})
+
+test_that("release registration reconciles catalog provenance", {
+  root <- registration_study()
+  fx <- write_release_fixture(root)
+  catalog <- yaml::read_yaml(fx$catalog_path)
+  catalog$datasets$surgery_cohort$releases[[1L]]$source <- "Synthetic registry"
+  yaml::write_yaml(catalog, fx$catalog_path)
+
+  expect_error(
+    register_data(
+      root,
+      "cohort_20260920.csv",
+      "dead",
+      "iv_dead",
+      source = "Different source",
+      catalog_dataset = "surgery_cohort",
+      release_id = "surgery_cohort-20260920-r1"
+    ),
+    "source disagrees"
+  )
+  expect_error(
+    register_data(
+      root,
+      "cohort_20260920.csv",
+      "dead",
+      "iv_dead",
+      extract_date = "2026-09-19",
+      catalog_dataset = "surgery_cohort",
+      release_id = "surgery_cohort-20260920-r1"
+    ),
+    "extract_date disagrees"
+  )
+
+  expect_no_error(register_data(
+    root,
+    "cohort_20260920.csv",
+    "dead",
+    "iv_dead",
+    source = "Synthetic registry",
+    extract_date = "2026-09-20",
+    catalog_dataset = "surgery_cohort",
+    release_id = "surgery_cohort-20260920-r1"
+  ))
+})
+
+test_that("register_data attaches a release to a legacy registration once", {
+  root <- registration_study()
+  write_release_fixture(root)
+  register_data(
+    root,
+    "cohort_20260920.csv",
+    "dead",
+    "iv_dead",
+    population = "Synthetic cohort"
+  )
+
+  register_data(
+    root,
+    "cohort_20260920.csv",
+    "dead",
+    "iv_dead",
+    catalog_dataset = "surgery_cohort",
+    release_id = "surgery_cohort-20260920-r1"
+  )
+
+  cfg <- study_config(root)
+  expect_identical(cfg$population, "Synthetic cohort")
+  expect_identical(cfg$release$release_id,
+                   "surgery_cohort-20260920-r1")
+  manifest <- yaml::read_yaml(file.path(root, "manifest.yaml"))
+  files <- vapply(manifest$datasets, function(x) x$file, character(1))
+  expect_identical(sum(files == "cohort_20260920.csv"), 1L)
+
+  expect_error(
+    register_data(
+      root,
+      "cohort_20260920.csv",
+      "dead",
+      "iv_dead",
+      catalog_dataset = "surgery_cohort",
+      release_id = "surgery_cohort-20260920-r1"
+    ),
+    "already registered"
+  )
+})

@@ -103,3 +103,64 @@ test_that("study_config preserves additive identity fields", {
 
   expect_identical(cfg$future_identity, "preserve")
 })
+
+test_that("study_config preserves a valid default release block", {
+  root <- make_study_fixture(withr::local_tempdir())
+  raw <- yaml::read_yaml(file.path(root, "_study.yml"))
+  raw$release <- list(
+    dataset_id = "surgery_cohort",
+    release_id = "surgery_cohort-20260920-r1"
+  )
+  yaml::write_yaml(raw, file.path(root, "_study.yml"))
+
+  cfg <- study_config(root)
+
+  expect_identical(cfg$release, raw$release)
+  expect_identical(.study_dataset(cfg)$release, raw$release)
+})
+
+test_that("study_config rejects incomplete named release metadata", {
+  root <- make_registered_study(withr::local_tempdir())
+  raw <- yaml::read_yaml(file.path(root, "_study.yml"))
+  raw$additional_datasets$complete_cases$release <- list(
+    dataset_id = "complete_cases"
+  )
+  yaml::write_yaml(raw, file.path(root, "_study.yml"))
+
+  expect_error(study_config(root), "release_id")
+})
+
+test_that("study_config validates release metadata", {
+  cases <- list(
+    list(value = "not a mapping", pattern = "mapping"),
+    list(
+      value = list(dataset_id = "", release_id = "cohort-1"),
+      pattern = "dataset_id"
+    ),
+    list(
+      value = list(dataset_id = "Surgery Cohort", release_id = "cohort-1"),
+      pattern = "dataset_id"
+    ),
+    list(
+      value = list(dataset_id = "surgery_cohort", release_id = "../cohort"),
+      pattern = "release_id"
+    )
+  )
+
+  for (case in cases) {
+    root <- make_study_fixture(withr::local_tempdir())
+    raw <- yaml::read_yaml(file.path(root, "_study.yml"))
+    raw$release <- case$value
+    yaml::write_yaml(raw, file.path(root, "_study.yml"))
+
+    expect_error(study_config(root), case$pattern)
+  }
+})
+
+test_that("legacy study contracts remain release-unaware", {
+  root <- make_study_fixture(withr::local_tempdir())
+  cfg <- study_config(root)
+
+  expect_null(cfg$release)
+  expect_null(.study_dataset(cfg)$release)
+})

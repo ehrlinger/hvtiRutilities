@@ -18,7 +18,8 @@
       dataset = dataset,
       built = cfg$built,
       population = cfg$population,
-      cohort = cfg$cohort
+      cohort = cfg$cohort,
+      release = cfg$release
     ))
   }
 
