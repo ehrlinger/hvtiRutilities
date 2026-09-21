@@ -231,6 +231,36 @@
   rows
 }
 
+#' Check a study for published dataset updates
+#'
+#' @description
+#' Compares each release-aware dataset contract with its producer-owned
+#' catalog. The check verifies the pinned release and every later published
+#' candidate without changing \code{_study.yml}, \code{manifest.yaml}, or any
+#' cache file. Legacy dataset contracts have no update rows.
+#'
+#' @param cfg List. A study manifest from \code{\link{study_config}}.
+#' @param dataset Character(1) or \code{NULL}. Logical dataset name. When
+#'   omitted, check every release-aware dataset in the study.
+#'
+#' @return An object of class \code{"data_update_report"}: a data frame with
+#'   columns \code{dataset}, \code{scope}, \code{pinned_release_id},
+#'   \code{candidate_release_id}, \code{sequence}, \code{file}, \code{status},
+#'   \code{is_latest}, and \code{detail}. Status is one of \code{"CURRENT"},
+#'   \code{"UPDATE AVAILABLE"}, \code{"UPDATE STATUS UNKNOWN"},
+#'   \code{"WITHDRAWN"}, or \code{"FAIL"}.
+#'
+#' @seealso \code{\link{review_data_update}},
+#'   \code{\link{adopt_data_update}}, \code{\link{read_built}}
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' cfg <- study_config()
+#' check_data_updates(cfg)
+#' check_data_updates(cfg, dataset = "complete_cases")
+#' }
 check_data_updates <- function(cfg = study_config(), dataset = NULL) {
   datasets <- if (is.null(dataset)) {
     c("study", names(cfg$additional_datasets))
@@ -334,6 +364,42 @@ check_data_updates <- function(cfg = study_config(), dataset = NULL) {
   invisible(TRUE)
 }
 
+#' Review one published dataset release
+#'
+#' @description
+#' Verifies the pinned release and one exact, newer candidate, then compares
+#' their structure and cohort counts. Review reads the source files directly;
+#' it does not write caches or change either study manifest. It describes data
+#' drift, but it does not certify that a candidate is analytically or
+#' clinically correct.
+#'
+#' @param cfg List. A study manifest from \code{\link{study_config}}.
+#' @param dataset Character(1). Logical dataset name. Defaults to
+#'   \code{"study"}.
+#' @param release_id Character(1). Exact candidate release ID. The value
+#'   \code{"latest"} is not accepted as an alias.
+#'
+#' @return An object of class \code{"data_update_review"} with
+#'   \describe{
+#'     \item{dataset}{The logical study dataset name.}
+#'     \item{pinned,candidate}{The catalog records for both releases.}
+#'     \item{comparison}{A \code{\link{compare_datasets}} result.}
+#'     \item{cohort_old,cohort_new}{Cohort counts, or \code{NULL} when the
+#'       selected dataset has no cohort contract.}
+#'   }
+#'
+#' @seealso \code{\link{check_data_updates}},
+#'   \code{\link{adopt_data_update}}
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' review_data_update(
+#'   study_config(),
+#'   release_id = "surgery_cohort-20260921-r1"
+#' )
+#' }
 review_data_update <- function(cfg = study_config(), dataset = "study",
                                release_id) {
   contract <- .study_dataset(cfg, dataset)
@@ -394,6 +460,7 @@ review_data_update <- function(cfg = study_config(), dataset = "study",
   out
 }
 
+#' @export
 print.data_update_review <- function(x, ...) {
   cat(
     "Dataset update review: ", x$dataset, "\n",
@@ -436,6 +503,38 @@ print.data_update_review <- function(x, ...) {
   }, character(1))
 }
 
+#' Adopt one published dataset release
+#'
+#' @description
+#' Repeats the candidate review, derives its cohort counts, and replaces
+#' \code{_study.yml} and \code{manifest.yaml} as one recoverable pair. The old
+#' dated release and its cache files remain on disk. Adoption does not make a
+#' Git commit.
+#'
+#' The candidate must be named by its exact release ID. The value
+#' \code{"latest"} is never accepted, because the reviewed release and the
+#' adopted release must be the same object.
+#'
+#' @param cfg List. A study manifest from \code{\link{study_config}}.
+#' @param dataset Character(1). Logical dataset name. Defaults to
+#'   \code{"study"}.
+#' @param release_id Character(1). Exact, newer, published candidate release
+#'   ID.
+#'
+#' @return The updated \code{\link{study_status}} object, returned visibly.
+#'
+#' @seealso \code{\link{check_data_updates}},
+#'   \code{\link{review_data_update}}, \code{\link{register_data}}
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' adopt_data_update(
+#'   study_config(),
+#'   release_id = "surgery_cohort-20260921-r1"
+#' )
+#' }
 adopt_data_update <- function(cfg = study_config(), dataset = "study",
                               release_id) {
   review <- review_data_update(cfg, dataset, release_id)

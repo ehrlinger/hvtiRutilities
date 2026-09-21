@@ -4,7 +4,12 @@
 \alias{read_built}
 \title{Read the study's built dataset}
 \usage{
-read_built(cfg = study_config(), refresh = FALSE, dataset = "study")
+read_built(
+  cfg = study_config(),
+  refresh = FALSE,
+  dataset = "study",
+  allow_withdrawn = FALSE
+)
 }
 \arguments{
 \item{cfg}{List. A study manifest from \code{\link{study_config}}.}
@@ -19,6 +24,10 @@ the parquet is authoritative, so there is nothing to refresh from.}
 
 \item{dataset}{Character(1). Logical dataset name. Defaults to
 \code{"study"}.}
+
+\item{allow_withdrawn}{Logical. If \code{TRUE}, allow a deliberately pinned
+withdrawn release to be read for revision work. The default is
+\code{FALSE}.}
 }
 \value{
 A data frame with lower-cased names, no logical columns and no
@@ -27,6 +36,15 @@ A data frame with lower-cased names, no logical columns and no
 \description{
 Reads the dataset named in \code{_study.yml} and normalises its types so
 that both available read paths deliver the same frame.
+
+For a release-aware contract, the pinned release is verified before cache
+access. A later valid release emits a message of class
+\code{hvtiRutilities_update_available}; an unavailable catalog or invalid
+candidate emits \code{hvtiRutilities_update_status_unknown} and the pinned
+data are still read. A changed pinned release errors with class
+\code{hvtiRutilities_release_integrity}. A withdrawn pin errors with class
+\code{hvtiRutilities_withdrawn_release} unless \code{allow_withdrawn} is
+\code{TRUE}.
 
 The normalisation is not cosmetic. \code{\link{read_clinical_data}} converts
 SAS 0/1 numerics to logical while \code{haven::read_sas()} leaves them

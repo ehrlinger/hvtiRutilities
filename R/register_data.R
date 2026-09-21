@@ -108,6 +108,9 @@
 #' @param source Character(1) or \code{NULL}. Data-source description.
 #' @param extract_date Character, \code{Date}, or \code{NULL}. Extraction
 #'   date. The file modification date is used when omitted.
+#' @param catalog_dataset,release_id Character(1) or \code{NULL}. Producer
+#'   catalog dataset ID and exact published release ID. Supply both to make
+#'   the study contract release-aware, or neither for a legacy registration.
 #'
 #' @return An object of class \code{"study_status"}, returned visibly.
 #'
@@ -236,7 +239,7 @@ register_data <- function(root = getwd(), built, event = NULL, time = NULL,
   data <- .read_registration_data(path)
   if (!is.null(release) &&
         (!identical(nrow(data), release$n_rows) ||
-         !identical(ncol(data), release$n_cols))) {
+           !identical(ncol(data), release$n_cols))) {
     stop("register_data(): observed dimensions disagree with the catalog: ",
          nrow(data), " x ", ncol(data), " versus ", release$n_rows, " x ",
          release$n_cols, call. = FALSE)
