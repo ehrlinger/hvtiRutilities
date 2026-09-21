@@ -59,12 +59,10 @@ make_release_aware_study <- function(dir, pinned_sequence = 1L,
   if (named) {
     default <- data.frame(dead = c(1L, 0L), iv_dead = 1:2)
     write.csv(default, file.path(fx$data_dir, "default.csv"), row.names = FALSE)
-    register_data(root, "default.csv", "dead", "iv_dead")
+    register_data(root, "default.csv")
     register_data(
       root,
       release$file,
-      "dead",
-      "iv_dead",
       dataset = "named_data",
       role = "named",
       catalog_dataset = "surgery_cohort",
@@ -75,8 +73,6 @@ make_release_aware_study <- function(dir, pinned_sequence = 1L,
     register_data(
       root,
       release$file,
-      "dead",
-      "iv_dead",
       catalog_dataset = "surgery_cohort",
       release_id = release$release_id
     )
