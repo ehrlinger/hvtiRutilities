@@ -239,3 +239,143 @@ test_that("withdrawn pinned releases require an explicit override", {
   expect_match(conditionMessage(condition), "surgery_cohort-20260921-r1")
   expect_equal(nrow(suppressMessages(read_built(cfg, allow_withdrawn = TRUE))), 3L)
 })
+
+test_that("review_data_update compares an explicit valid candidate", {
+  fx <- make_release_aware_study(withr::local_tempdir(), pinned_sequence = 1L)
+  manifest_path <- file.path(fx$root, "manifest.yaml")
+  before <- readBin(manifest_path, "raw", n = file.info(manifest_path)$size)
+
+  review <- review_data_update(
+    study_config(fx$root),
+    release_id = "surgery_cohort-20260921-r1"
+  )
+
+  expect_s3_class(review, "data_update_review")
+  expect_identical(review$pinned$release_id,
+                   "surgery_cohort-20260920-r1")
+  expect_identical(review$candidate$release_id,
+                   "surgery_cohort-20260921-r1")
+  expect_s3_class(review$comparison, "dataset_comparison")
+  expect_identical(review$cohort_old$n, 3L)
+  expect_identical(review$cohort_new$n, 4L)
+  expect_output(print(review), "Rows: 3 -> 4", fixed = TRUE)
+  expect_invisible(print(review))
+  after <- readBin(manifest_path, "raw", n = file.info(manifest_path)$size)
+  expect_identical(after, before)
+  expect_false(any(file.exists(file.path(
+    fx$data_dir,
+    c("cohort_20260920.parquet", "cohort_20260921.parquet")
+  ))))
+})
+
+test_that("review requires a real newer release ID", {
+  fx <- make_release_aware_study(withr::local_tempdir(), pinned_sequence = 1L)
+  cfg <- study_config(fx$root)
+
+  expect_error(
+    review_data_update(cfg, release_id = "latest"),
+    "unknown release_id"
+  )
+  expect_error(
+    review_data_update(
+      cfg,
+      release_id = "surgery_cohort-20260920-r1"
+    ),
+    "newer"
+  )
+})
+
+test_that("review rejects withdrawn candidates", {
+  fx <- make_release_aware_study(withr::local_tempdir())
+  withdraw_fixture_release(
+    fx,
+    "surgery_cohort-20260921-r1",
+    "Candidate withdrawn"
+  )
+
+  expect_error(
+    review_data_update(
+      study_config(fx$root),
+      release_id = "surgery_cohort-20260921-r1"
+    ),
+    "published"
+  )
+})
+
+test_that("review rejects missing and changed candidate bytes", {
+  missing <- make_release_aware_study(withr::local_tempdir())
+  unlink(file.path(missing$data_dir, "cohort_20260921.csv"))
+  expect_error(
+    review_data_update(
+      study_config(missing$root),
+      release_id = "surgery_cohort-20260921-r1"
+    ),
+    "missing",
+    class = "hvtiRutilities_release_integrity"
+  )
+
+  changed <- make_release_aware_study(withr::local_tempdir())
+  writeLines("changed", file.path(changed$data_dir, "cohort_20260921.csv"))
+  expect_error(
+    review_data_update(
+      study_config(changed$root),
+      release_id = "surgery_cohort-20260921-r1"
+    ),
+    "changed in place",
+    class = "hvtiRutilities_release_integrity"
+  )
+})
+
+test_that("review checks observed dimensions against the catalog", {
+  fx <- make_release_aware_study(withr::local_tempdir())
+  catalog <- yaml::read_yaml(fx$catalog_path)
+  catalog$datasets$surgery_cohort$releases[[2L]]$n_rows <- 999L
+  yaml::write_yaml(catalog, fx$catalog_path)
+
+  expect_error(
+    review_data_update(
+      study_config(fx$root),
+      release_id = "surgery_cohort-20260921-r1"
+    ),
+    "dimensions.*999"
+  )
+})
+
+test_that("review omits cohort comparison when the contract has none", {
+  fx <- make_release_aware_study(withr::local_tempdir(), named = TRUE)
+  study_path <- file.path(fx$root, "_study.yml")
+  study <- yaml::read_yaml(study_path)
+  study$additional_datasets$named_data$cohort <- NULL
+  yaml::write_yaml(study, study_path)
+
+  review <- review_data_update(
+    study_config(fx$root),
+    dataset = "named_data",
+    release_id = "surgery_cohort-20260921-r1"
+  )
+
+  expect_null(review$cohort_old)
+  expect_null(review$cohort_new)
+})
+
+test_that("review fails when candidate cohort columns are absent", {
+  fx <- make_release_aware_study(withr::local_tempdir())
+  candidate_path <- file.path(fx$data_dir, "cohort_20260921.csv")
+  candidate <- read.csv(candidate_path)
+  candidate$dead <- NULL
+  write.csv(candidate, candidate_path, row.names = FALSE)
+  catalog <- yaml::read_yaml(fx$catalog_path)
+  release <- catalog$datasets$surgery_cohort$releases[[2L]]
+  release$sha256 <- digest::digest(candidate_path, algo = "sha256", file = TRUE)
+  release$n_cols <- ncol(candidate)
+  catalog$datasets$surgery_cohort$releases[[2L]] <- release
+  yaml::write_yaml(catalog, fx$catalog_path)
+
+  expect_error(
+    review_data_update(
+      study_config(fx$root),
+      release_id = "surgery_cohort-20260921-r1"
+    ),
+    "no column named dead"
+  )
+})

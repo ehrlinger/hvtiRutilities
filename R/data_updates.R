@@ -317,3 +317,101 @@ check_data_updates <- function(cfg = study_config(), dataset = NULL) {
 
   invisible(report)
 }
+
+.assert_catalog_dimensions <- function(data, release) {
+  actual <- c(n_rows = nrow(data), n_cols = ncol(data))
+  expected <- c(n_rows = release$n_rows, n_cols = release$n_cols)
+  if (!identical(as.integer(actual), as.integer(expected))) {
+    stop(
+      "review_data_update(): observed dimensions for ",
+      release$release_id,
+      " are ", actual[["n_rows"]], " rows x ", actual[["n_cols"]],
+      " columns; catalog dimensions are ", expected[["n_rows"]],
+      " rows x ", expected[["n_cols"]], " columns",
+      call. = FALSE
+    )
+  }
+  invisible(TRUE)
+}
+
+review_data_update <- function(cfg = study_config(), dataset = "study",
+                               release_id) {
+  contract <- .study_dataset(cfg, dataset)
+  if (is.null(contract$release)) {
+    stop(
+      "review_data_update(): dataset '", dataset,
+      "' is not registered to a catalog release",
+      call. = FALSE
+    )
+  }
+
+  catalog <- .read_dataset_catalog(.catalog_path(cfg))
+  dataset_id <- contract$release$dataset_id
+  pinned <- .catalog_release(
+    catalog,
+    dataset_id,
+    contract$release$release_id
+  )
+  candidate <- .catalog_release(catalog, dataset_id, release_id)
+  if (candidate$sequence <= pinned$sequence) {
+    stop(
+      "review_data_update(): candidate release must be newer than the pinned release",
+      call. = FALSE
+    )
+  }
+  if (!identical(candidate$status, "published")) {
+    stop(
+      "review_data_update(): candidate release must have status published",
+      call. = FALSE
+    )
+  }
+  if (!identical(contract$built, pinned$file)) {
+    stop(
+      "review_data_update(): _study.yml does not name the pinned release file",
+      call. = FALSE
+    )
+  }
+
+  data_dir <- study_dir("datasets", cfg$root)
+  pinned_path <- .verify_catalog_file(pinned, data_dir)
+  candidate_path <- .verify_catalog_file(candidate, data_dir)
+  old <- .read_registration_data(pinned_path)
+  new <- .read_registration_data(candidate_path)
+  .assert_catalog_dimensions(old, pinned)
+  .assert_catalog_dimensions(new, candidate)
+
+  out <- list(
+    dataset = dataset,
+    pinned = pinned,
+    candidate = candidate,
+    comparison = compare_datasets(old, new),
+    cohort_old = if (is.null(contract$cohort)) NULL else
+      cohort_counts(old, cfg, dataset),
+    cohort_new = if (is.null(contract$cohort)) NULL else
+      cohort_counts(new, cfg, dataset)
+  )
+  class(out) <- "data_update_review"
+  out
+}
+
+print.data_update_review <- function(x, ...) {
+  cat(
+    "Dataset update review: ", x$dataset, "\n",
+    "  Pinned:    ", x$pinned$release_id, " (", x$pinned$file, ")\n",
+    "  Candidate: ", x$candidate$release_id, " (", x$candidate$file, ")\n",
+    sep = ""
+  )
+  print(x$comparison)
+  if (!is.null(x$cohort_old) && !is.null(x$cohort_new)) {
+    cat(
+      "Cohort\n",
+      "  N: ", x$cohort_old$n, " -> ", x$cohort_new$n, "\n",
+      "  Events: ", x$cohort_old$n_events, " -> ",
+      x$cohort_new$n_events, "\n",
+      "  Censored: ", x$cohort_old$n_censored, " -> ",
+      x$cohort_new$n_censored, "\n",
+      sep = ""
+    )
+  }
+  invisible(x)
+}
