@@ -14,7 +14,9 @@
   cache refresh can record the changed bytes, including when the producer
   catalog is missing or malformed. Review, adoption, and registration
   reconcile the release catalog with the study manifest, and same-day catalog
-  revisions must be contiguous.
+  revisions must be contiguous. Promoted `role: primary` datasets verify their
+  authoritative Parquet while retaining the catalog's source checksum, and
+  release review re-verifies both files after reading them.
 
 ## Documentation
 

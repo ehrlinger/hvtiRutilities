@@ -120,14 +120,27 @@
       .release_manifest_entry(cfg, contract),
       error = function(e) .release_integrity_abort(conditionMessage(e))
     )
-    valid_sha <- is.character(entry$sha256) && length(entry$sha256) == 1L &&
-      !is.na(entry$sha256) && grepl("^[0-9a-f]{64}$", entry$sha256)
-    if (!valid_sha) {
+    valid_hash <- function(x) {
+      is.character(x) && length(x) == 1L && !is.na(x) &&
+        grepl("^[0-9a-f]{64}$", x)
+    }
+    if (!valid_hash(entry$sha256)) {
       .release_integrity_abort(
         paste0("manifest.yaml has an invalid checksum for ", contract$built)
       )
     }
-    path <- file.path(study_dir("datasets", cfg$root), contract$built)
+    source_path <- file.path(
+      study_dir("datasets", cfg$root),
+      contract$built
+    )
+    promoted <- identical(entry$role, "primary")
+    path <- if (promoted) .derived_paths(source_path)$parquet else source_path
+    catalog_sha256 <- if (promoted) entry$source_sha256 else entry$sha256
+    if (!valid_hash(catalog_sha256)) {
+      .release_integrity_abort(paste0(
+        "manifest.yaml has an invalid source checksum for ", contract$built
+      ))
+    }
     actual <- if (file.exists(path)) {
       digest::digest(path, algo = "sha256", file = TRUE)
     } else {
@@ -139,12 +152,17 @@
     if (!identical(actual, entry$sha256)) {
       .release_integrity_abort(paste0(
         "pinned release changed in place relative to manifest.yaml: ",
-        contract$built,
+        basename(path),
         "\n  expected: ", entry$sha256,
         "\n  actual:   ", actual
       ))
     }
-    verified <- list(entry = entry, path = path, sha256 = actual)
+    verified <- list(
+      entry = entry,
+      path = path,
+      sha256 = actual,
+      catalog_sha256 = catalog_sha256
+    )
   }
 
   if (!is.null(release)) {
@@ -154,9 +172,10 @@
         release$release_id, " names ", release$file
       ))
     }
-    if (!identical(verified$entry$sha256, release$sha256)) {
+    if (!identical(verified$catalog_sha256, release$sha256)) {
       .release_integrity_abort(paste0(
-        "manifest.yaml checksum does not match release ", release$release_id
+        "manifest.yaml source checksum does not match release ",
+        release$release_id
       ))
     }
   }
@@ -512,7 +531,9 @@ review_data_update <- function(cfg = study_config(), dataset = "study",
   pinned_path <- .verify_catalog_file(pinned, data_dir)
   candidate_path <- .verify_catalog_file(candidate, data_dir)
   old <- .read_registration_data(pinned_path)
+  .verify_pinned_release(cfg, contract, pinned)
   new <- .read_registration_data(candidate_path)
+  .verify_catalog_file(candidate, data_dir)
   .assert_catalog_dimensions(old, pinned)
   .assert_catalog_dimensions(new, candidate)
 

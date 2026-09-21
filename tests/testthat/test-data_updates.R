@@ -275,6 +275,29 @@ test_that("pinned integrity is enforced when the catalog is unavailable", {
   }
 })
 
+test_that("a release-aware promoted pin is verified through its parquet", {
+  skip_if_not_installed("arrow")
+  fx <- make_release_aware_study(withr::local_tempdir())
+  cfg <- study_config(fx$root)
+  .reset_update_notices()
+  suppressMessages(read_built(cfg))
+
+  manifest_path <- file.path(fx$root, "manifest.yaml")
+  manifest <- yaml::read_yaml(manifest_path)
+  entry <- manifest$datasets[[1L]]
+  parquet <- file.path(fx$data_dir, "cohort_20260920.parquet")
+  entry$role <- "primary"
+  entry$source_sha256 <- entry$sha256
+  entry$sha256 <- digest::digest(parquet, algo = "sha256", file = TRUE)
+  manifest$datasets[[1L]] <- entry
+  yaml::write_yaml(manifest, manifest_path)
+  unlink(file.path(fx$data_dir, "cohort_20260920.csv"))
+
+  verified <- verify_manifest(manifest_path, stop_on_error = FALSE)
+  expect_identical(verified$status, "OK")
+  expect_equal(nrow(suppressMessages(read_built(cfg))), 3L)
+})
+
 test_that("withdrawn pinned releases require an explicit override", {
   withr::local_options(hvtiRutilities.disable_parquet_cache = TRUE)
   fx <- make_release_aware_study(withr::local_tempdir())
@@ -422,6 +445,34 @@ test_that("review rejects missing and changed candidate bytes", {
     "changed in place",
     class = "hvtiRutilities_release_integrity"
   )
+})
+
+test_that("review re-verifies each release after its direct read", {
+  run_case <- function(target) {
+    fx <- make_release_aware_study(withr::local_tempdir())
+    reader <- .read_registration_data
+    local_mocked_bindings(
+      .read_registration_data = function(path) {
+        data <- reader(path)
+        if (identical(basename(path), target)) {
+          writeLines("changed after read", path)
+        }
+        data
+      },
+      .package = "hvtiRutilities"
+    )
+
+    expect_error(
+      review_data_update(
+        study_config(fx$root),
+        release_id = "surgery_cohort-20260921-r1"
+      ),
+      class = "hvtiRutilities_release_integrity",
+      info = target
+    )
+  }
+  run_case("cohort_20260920.csv")
+  run_case("cohort_20260921.csv")
 })
 
 test_that("review checks observed dimensions against the catalog", {
