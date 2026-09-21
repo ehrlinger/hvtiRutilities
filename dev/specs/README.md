@@ -26,7 +26,8 @@ condenses it; `plan` files carry none.
 
 | date | note | status |
 |---|---|---|
-| 2026-09-21 | [Dataset release and study adoption contract](2026-09-21-dataset-release-contract-design.md) | approved design; awaiting written review |
+| 2026-09-21 | [`hvtiRutilities` dataset release consumer plan](2026-09-21-dataset-release-consumer-plan.md) | consumer plan for the contract below |
+| 2026-09-21 | [Dataset release and study adoption contract](2026-09-21-dataset-release-contract-design.md) | approved; consumer implementation planned |
 | 2026-09-17 | [`cache_fit()` implementation plan](2026-09-17-cache-fit-plan.md) | plan for the design below |
 | 2026-09-17 | [A strict, call-keyed cache for expensive fits: `cache_fit()`](2026-09-17-cache-fit-design.md) | approved design; pending implementation plan |
 | 2026-09-17 | [Porting SAS `PROC UNIVARIATE` to `proc_univariate()`](2026-09-17-proc-univariate-design.md) | approved; awaiting SAS oracle run |

@@ -1,6 +1,6 @@
 # Dataset Release and Study Adoption Contract
 
-**Status:** Approved design for review
+**Status:** Approved; consumer implementation plan written
 **Date:** 2026-09-21
 
 ## Purpose
