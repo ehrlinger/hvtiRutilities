@@ -106,7 +106,7 @@ assert_cohort <- function(d, expected, event, time) {
   }
 
   if (as.double(expected$n) !=
-      as.double(expected$n_events) + as.double(expected$n_censored)) {
+        as.double(expected$n_events) + as.double(expected$n_censored)) {
     stop("assert_cohort(): expected counts are inconsistent", call. = FALSE)
   }
   want <- lapply(expected[keys], as.integer)

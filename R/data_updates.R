@@ -450,10 +450,9 @@ check_data_updates <- function(cfg = study_config(), dataset = NULL) {
 #'
 #' @description
 #' Verifies the pinned release and one exact, newer candidate, then compares
-#' their structure and cohort counts. Review reads the source files directly;
-#' it does not write caches or change either study manifest. It describes data
-#' drift, but it does not certify that a candidate is analytically or
-#' clinically correct.
+#' their structure. Review reads the source files directly; it does not write
+#' caches or change either study manifest. It describes data drift, but it
+#' does not certify that a candidate is analytically or clinically correct.
 #'
 #' @param cfg List. A study manifest from \code{\link{study_config}}.
 #' @param dataset Character(1). Logical dataset name. Defaults to
@@ -466,8 +465,6 @@ check_data_updates <- function(cfg = study_config(), dataset = NULL) {
 #'     \item{dataset}{The logical study dataset name.}
 #'     \item{pinned,candidate}{The catalog records for both releases.}
 #'     \item{comparison}{A \code{\link{compare_datasets}} result.}
-#'     \item{cohort_old,cohort_new}{Cohort counts, or \code{NULL} when the
-#'       selected dataset has no cohort contract.}
 #'   }
 #'
 #' @seealso \code{\link{check_data_updates}},
@@ -582,10 +579,9 @@ print.data_update_review <- function(x, ...) {
 #' Adopt one published dataset release
 #'
 #' @description
-#' Repeats the candidate review, derives its cohort counts, and replaces
-#' \code{_study.yml} and \code{manifest.yaml} as one recoverable pair. The old
-#' dated release and its cache files remain on disk. Adoption does not make a
-#' Git commit.
+#' Repeats the candidate review and replaces \code{_study.yml} and
+#' \code{manifest.yaml} as one recoverable pair. The old dated release and its
+#' cache files remain on disk. Adoption does not make a Git commit.
 #'
 #' The candidate must be named by its exact release ID. The value
 #' \code{"latest"} is never accepted, because the reviewed release and the

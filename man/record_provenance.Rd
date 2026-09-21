@@ -16,7 +16,7 @@ record_provenance(
 The file itself need not exist; only its name and directory are used.}
 
 \item{extra}{List. Additional named fields merged into the record - for
-example a \code{template} block naming the template and its version.
+example an \code{analysis} block or a job-specific \code{cohort} block.
 Required keys cannot be displaced.}
 
 \item{cfg}{List. A study manifest from \code{\link{study_config}}.}
@@ -31,7 +31,8 @@ Invisibly, the record that was written, as a list.
 Writes \code{<output>.provenance.json} beside a rendered result, recording
 what produced it: the study manifest and its checksum, the R version and
 platform, every loaded package and its version, the \code{renv.lock}
-checksum if there is one, the built dataset's checksum, and the cohort.
+checksum if there is one, and the built dataset's checksum. A job can add
+its own analysis metadata through \code{extra}.
 
 This closes a loop that is otherwise impossible. Revisiting a study becomes:
 read the sidecar off the filed output, \code{renv::restore()} to that lock,
@@ -45,17 +46,19 @@ root <- file.path(tempdir(), "provenance-example")
 dir.create(file.path(root, "datasets"), recursive = TRUE,
            showWarnings = FALSE)
 yaml::write_yaml(
-  list(study = "Example", built = "example.csv",
-       cohort = list(n = 3L, n_events = 1L, n_censored = 2L,
-                     event = "dead", time = "iv_dead")),
+  list(study = "Example", built = "example.csv"),
   file.path(root, "_study.yml")
 )
 write.csv(data.frame(dead = c(1, 0, 0), iv_dead = 1:3),
           file.path(root, "datasets", "example.csv"), row.names = FALSE)
 out <- file.path(root, "example.html")
 writeLines("<html></html>", out)
-rec <- record_provenance(out, cfg = study_config(root))
-rec$job
+rec <- record_provenance(
+  out,
+  cfg = study_config(root),
+  extra = list(analysis = list(event = "dead", time = "iv_dead"))
+)
+rec$analysis$event
 unlink(root, recursive = TRUE)
 }
 \seealso{

@@ -2,10 +2,9 @@
 
 ## Breaking changes
 
-* `register_data()` no longer accepts event or time columns. Registered dataset
-  contracts now record the file and its provenance without choosing an
-  analysis endpoint; legacy cohort fields remain additive YAML metadata but
-  are not returned by `.study_dataset()`.
+* Registration is endpoint-neutral. Jobs supply cohort definitions explicitly,
+  and status, provenance, and release adoption no longer require a study-wide
+  cohort.
 
 # hvtiRutilities 1.3.1
 

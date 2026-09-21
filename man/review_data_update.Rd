@@ -21,16 +21,13 @@ An object of class \code{"data_update_review"} with
     \item{dataset}{The logical study dataset name.}
     \item{pinned,candidate}{The catalog records for both releases.}
     \item{comparison}{A \code{\link{compare_datasets}} result.}
-    \item{cohort_old,cohort_new}{Cohort counts, or \code{NULL} when the
-      selected dataset has no cohort contract.}
   }
 }
 \description{
 Verifies the pinned release and one exact, newer candidate, then compares
-their structure and cohort counts. Review reads the source files directly;
-it does not write caches or change either study manifest. It describes data
-drift, but it does not certify that a candidate is analytically or
-clinically correct.
+their structure. Review reads the source files directly; it does not write
+caches or change either study manifest. It describes data drift, but it
+does not certify that a candidate is analytically or clinically correct.
 }
 \examples{
 \dontrun{
