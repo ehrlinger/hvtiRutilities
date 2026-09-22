@@ -1,188 +1,330 @@
 library(testthat)
 library(hvtiRutilities)
 
-# A rendered output to sit beside. record_provenance() does not require the
-# output to exist -- it names the sidecar from the path -- but the realistic
-# case has it there.
-make_output <- function(root, name = "01.hz.dead_JR.html") {
+make_output <- function(root, name = "death-hz-ac.html") {
   dir.create(file.path(root, "_output"), recursive = TRUE,
              showWarnings = FALSE)
-  p <- file.path(root, "_output", name)
-  writeLines("<html></html>", p)
-  p
+  path <- file.path(root, "_output", name)
+  writeLines("<html></html>", path)
+  path
+}
+
+make_artifact <- function(root, name = "estimates/death-hz-fit.rds") {
+  path <- file.path(root, name)
+  dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
+  saveRDS(list(fit = 1L), path)
+  path
+}
+
+expect_file_record <- function(record, path, role) {
+  expect_identical(record$path, path)
+  expect_identical(record$role, role)
+  expect_true(is.numeric(record$bytes) && length(record$bytes) == 1L)
+  expect_match(record$mtime,
+               "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:]{8}(\\.[0-9]+)?Z$")
+  expect_match(record$sha256, "^[0-9a-f]{64}$")
 }
 
 test_that("provenance_path swaps the extension for .provenance.json", {
-  expect_equal(basename(provenance_path("a/b/01.hz.dead_JR.html")),
-               "01.hz.dead_JR.provenance.json")
-  expect_equal(basename(provenance_path("a/b/01.hz.dead_JR.qmd")),
-               "01.hz.dead_JR.provenance.json")
+  expect_equal(basename(provenance_path("a/b/death-hz-ac.html")),
+               "death-hz-ac.provenance.json")
+  expect_equal(basename(provenance_path("a/b/death-hz-ac.qmd")),
+               "death-hz-ac.provenance.json")
 })
 
-test_that("record_provenance writes a sidecar next to the output", {
-  skip_if_not_installed("haven")
-  root <- make_study_fixture(withr::local_tempdir())
-  out  <- make_output(root)
+test_that("provenance_data snapshots a registered file with an explicit role", {
+  root <- make_registered_study(withr::local_tempdir())
+  cfg <- study_config(root)
 
-  record_provenance(out, cfg = study_config(root))
+  study <- provenance_data(cfg = cfg)
+  named <- provenance_data("complete_cases", cfg, role = "validation")
 
-  expect_true(file.exists(provenance_path(out)))
-})
-
-test_that("the sidecar carries every required key with the right type", {
-  skip_if_not_installed("haven")
-  root <- make_study_fixture(withr::local_tempdir())
-  out  <- make_output(root)
-
-  record_provenance(out, cfg = study_config(root))
-  j <- jsonlite::fromJSON(provenance_path(out), simplifyVector = FALSE)
-
-  req <- hvtiRutilities:::.provenance_required()
-  for (key in names(req)) {
-    expect_true(key %in% names(j), info = paste("missing key:", key))
-  }
-
-  expect_equal(j$job, "01.hz.dead_JR")
-  expect_match(j$rendered, "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:]{8}Z$")
-  expect_equal(j$study$file, "_study.yml")
-  expect_match(j$study$sha256, "^[0-9a-f]{64}$")
-  expect_equal(j$r$version, paste(R.version$major, R.version$minor, sep = "."))
-  expect_true(length(j$packages) > 0)
-  expect_equal(j$data[[1]]$file, "built_test.sas7bdat")
-  expect_match(j$data[[1]]$sha256, "^[0-9a-f]{64}$")
-})
-
-test_that("record_provenance does not require a cohort", {
-  skip_if_not_installed("haven")
-  root <- make_study_fixture(withr::local_tempdir())
-  out <- make_output(root)
-
-  record_provenance(out, cfg = study_config(root))
-  record <- jsonlite::fromJSON(provenance_path(out), simplifyVector = FALSE)
-
-  expect_false("cohort" %in% names(record))
-  expect_equal(record$data[[1L]]$file, "built_test.sas7bdat")
-})
-
-test_that("a job may add its own cohort provenance", {
-  skip_if_not_installed("haven")
-  root <- make_study_fixture(withr::local_tempdir())
-  out <- make_output(root)
-  observed <- list(n = 20L, n_events = 8L, n_censored = 12L)
-
-  record_provenance(
-    out,
-    cfg = study_config(root),
-    extra = list(
-      subject = "death",
-      analysis = list(event = "dead", time = "iv_dead"),
-      cohort = observed
-    )
+  expect_identical(study$dataset, "study")
+  expect_file_record(study, "00_datasets/built.csv", "analysis")
+  expect_identical(named$dataset, "complete_cases")
+  expect_file_record(named, "00_datasets/complete.csv", "validation")
+  expect_identical(
+    study$sha256,
+    digest::digest(file.path(root, study$path), algo = "sha256", file = TRUE)
   )
-  record <- jsonlite::fromJSON(provenance_path(out), simplifyVector = FALSE)
-
-  expect_equal(record$subject, "death")
-  expect_equal(record$analysis$event, "dead")
-  expect_equal(record$cohort$n_events, 8L)
 })
 
-test_that("renv_lock is present as null when the study has no lock", {
-  skip_if_not_installed("haven")
-  root <- make_study_fixture(withr::local_tempdir())
-  out  <- make_output(root)
+test_that("provenance_artifact snapshots canonical study-relative bytes", {
+  root <- make_registered_study(withr::local_tempdir())
+  cfg <- study_config(root)
+  path <- make_artifact(root)
 
-  record_provenance(out, cfg = study_config(root))
-  txt <- paste(readLines(provenance_path(out)), collapse = "\n")
+  relative <- provenance_artifact("estimates/death-hz-fit.rds", cfg = cfg)
+  absolute <- provenance_artifact(path, "forest", cfg)
 
-  expect_match(txt, "renv_lock")
-  expect_null(jsonlite::fromJSON(provenance_path(out),
-                                 simplifyVector = FALSE)$renv_lock)
+  expect_file_record(relative, "estimates/death-hz-fit.rds", "input")
+  expect_file_record(absolute, "estimates/death-hz-fit.rds", "forest")
+  expect_identical(relative[names(relative) != "role"],
+                   absolute[names(absolute) != "role"])
 })
 
-test_that("renv_lock records path and sha256 when a lock exists", {
-  skip_if_not_installed("haven")
-  root <- make_study_fixture(withr::local_tempdir())
+test_that("snapshot helpers reject missing files and invalid roles", {
+  root <- make_registered_study(withr::local_tempdir())
+  cfg <- study_config(root)
+  unlink(built_path(cfg))
+
+  expect_error(provenance_data(cfg = cfg), "missing")
+  expect_error(provenance_artifact("estimates/no-fit.rds", cfg = cfg),
+               "missing")
+  expect_error(provenance_artifact(make_output(root), role = "", cfg = cfg),
+               "role")
+})
+
+test_that("snapshot helpers reject files outside the study root", {
+  root <- make_registered_study(withr::local_tempdir())
+  cfg <- study_config(root)
+  outside <- tempfile(fileext = ".rds")
+  withr::defer(unlink(outside))
+  saveRDS(1L, outside)
+
+  expect_error(provenance_artifact(outside, cfg = cfg), "outside")
+  expect_error(provenance_artifact("../escape.rds", cfg = cfg), "outside")
+})
+
+test_that("capture requires explicit well-formed record lists", {
+  root <- make_registered_study(withr::local_tempdir())
+  cfg <- study_config(root)
+  data <- provenance_data(cfg = cfg)
+  artifact <- provenance_artifact(make_artifact(root), cfg = cfg)
+
+  expect_error(capture_provenance("death-hz-ac", cfg = cfg), "data")
+  expect_error(capture_provenance("death-hz-ac", list(data), artifact,
+                                  cfg = cfg),
+               "artifact")
+  expect_error(capture_provenance("death-hz-ac", list(data[-1L]), cfg = cfg),
+               "data record")
+  bad <- artifact
+  bad$bytes <- -1
+  expect_error(capture_provenance("death-hz-ac", list(data), list(bad),
+                                  cfg = cfg),
+               "artifact record")
+  bad <- data
+  bad$path <- "../built.csv"
+  expect_error(capture_provenance("death-hz-ac", list(bad), cfg = cfg),
+               "canonical study-relative")
+})
+
+test_that("capture accepts an intentional empty data list", {
+  root <- make_registered_study(withr::local_tempdir())
+  record <- capture_provenance(
+    "cohort-eda-dc-tables",
+    data = list(),
+    cfg = study_config(root, require_data = FALSE)
+  )
+
+  expect_identical(record$data, list())
+  expect_identical(record$artifacts, list())
+})
+
+test_that("capture uses explicit records and never resolves current data", {
+  root <- make_registered_study(withr::local_tempdir())
+  cfg <- study_config(root)
+  frozen <- provenance_data(cfg = cfg)
+
+  local_mocked_bindings(
+    built_manifest = function(...) stop("registry was read"),
+    built_path = function(...) stop("registry was read"),
+    .package = "hvtiRutilities"
+  )
+  record <- capture_provenance("death-hz-ac", list(frozen), cfg = cfg)
+
+  expect_identical(record$data, list(frozen))
+})
+
+test_that("capture orders explicit lineage records deterministically", {
+  root <- make_registered_study(withr::local_tempdir(), ancillary = TRUE)
+  cfg <- study_config(root)
+  a <- provenance_data("imaging", cfg, role = "validation")
+  b <- provenance_data("study", cfg, role = "training")
+  z <- provenance_artifact(make_artifact(root, "estimates/z.rds"), cfg = cfg)
+  c <- provenance_artifact(make_artifact(root, "estimates/c.rds"), cfg = cfg)
+
+  record <- capture_provenance(
+    "death-hz-ac",
+    data = list(a, b),
+    artifacts = list(z, c),
+    cfg = cfg
+  )
+
+  expect_identical(vapply(record$data, `[[`, "", "path"),
+                   sort(c(a$path, b$path)))
+  expect_identical(vapply(record$artifacts, `[[`, "", "path"),
+                   sort(c(z$path, c$path)))
+})
+
+test_that("capture records the complete session snapshot", {
+  root <- make_registered_study(withr::local_tempdir())
+  cfg <- study_config(root)
   writeLines('{"R": {"Version": "4.5.1"}}', file.path(root, "renv.lock"))
-  out <- make_output(root)
-
-  record_provenance(out, cfg = study_config(root))
-  j <- jsonlite::fromJSON(provenance_path(out), simplifyVector = FALSE)
-
-  expect_equal(j$renv_lock$path, "renv.lock")
-  expect_match(j$renv_lock$sha256, "^[0-9a-f]{64}$")
-})
-
-test_that("two runs differ only in the rendered timestamp", {
-  skip_if_not_installed("haven")
-  root <- make_study_fixture(withr::local_tempdir())
-  out  <- make_output(root)
-
-  record_provenance(out, cfg = study_config(root))
-  first <- readLines(provenance_path(out))
-
-  record_provenance(out, cfg = study_config(root))
-  second <- readLines(provenance_path(out))
-
-  drop_rendered <- function(x) x[!grepl('"rendered"', x)]
-  expect_equal(drop_rendered(first), drop_rendered(second))
-})
-
-test_that("extra fields are merged without displacing required keys", {
-  skip_if_not_installed("haven")
-  root <- make_study_fixture(withr::local_tempdir())
-  out <- make_output(root)
-
-  record_provenance(
-    out,
-    extra = list(
-      job = "spoofed-job",
-      data = list(list(dataset = "spoofed-data")),
-      template = list(name = "hz", version = "1.0.0")
-    ),
-    cfg = study_config(root)
+  record <- capture_provenance(
+    "death-hz-ac",
+    data = list(provenance_data(cfg = cfg)),
+    artifacts = list(),
+    cfg = cfg
   )
-  record <- jsonlite::fromJSON(provenance_path(out), simplifyVector = FALSE)
 
-  expect_equal(record$template$name, "hz")
-  expect_equal(record$job, "01.hz.dead_JR")
-  expect_equal(record$data[[1L]]$dataset, "study")
+  required <- hvtiRutilities:::.provenance_required()
+  expect_identical(names(record)[seq_along(required)], names(required))
+  expect_match(record$rendered, "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:]{8}Z$")
+  expect_identical(record$study$name, cfg$study)
+  expect_identical(record$study$file, "_study.yml")
+  expect_match(record$study$sha256, "^[0-9a-f]{64}$")
+  expect_identical(record$r$version,
+                   paste(R.version$major, R.version$minor, sep = "."))
+  expect_identical(record$r$platform, R.version$platform)
+  expect_true(length(record$packages) > 0L)
+  expect_identical(record$renv_lock$path, "renv.lock")
+  expect_match(record$renv_lock$sha256, "^[0-9a-f]{64}$")
 })
 
-test_that("an unwritable sidecar location is an error, not a warning", {
-  skip_if_not_installed("haven")
-  skip_on_os("windows")
-  root <- make_study_fixture(withr::local_tempdir())
-  out  <- file.path(root, "_output", "nope", "01.hz.dead_JR.html")
+test_that("capture extras cannot displace reserved fields", {
+  root <- make_registered_study(withr::local_tempdir())
+  cfg <- study_config(root)
+  data <- list(provenance_data(cfg = cfg))
+  record <- capture_provenance(
+    "death-hz-ac",
+    data = data,
+    extra = list(
+      job = "spoofed",
+      rendered = "spoofed",
+      data = list(),
+      artifacts = list(list(path = "spoofed")),
+      output = list(sha256 = "spoofed"),
+      subject = "death"
+    ),
+    cfg = cfg
+  )
 
-  expect_error(record_provenance(out, cfg = study_config(root)),
-               "provenance")
+  expect_identical(record$job, "death-hz-ac")
+  expect_false(identical(record$rendered, "spoofed"))
+  expect_identical(record$data, data)
+  expect_identical(record$artifacts, list())
+  expect_false("output" %in% names(record))
+  expect_identical(record$subject, "death")
 })
 
-test_that("record_provenance returns the record invisibly", {
-  skip_if_not_installed("haven")
-  root <- make_study_fixture(withr::local_tempdir())
-  out  <- make_output(root)
+test_that("publish requires an existing regular output", {
+  root <- make_registered_study(withr::local_tempdir())
+  payload <- capture_provenance("death-hz-ac", list(),
+                                cfg = study_config(root, require_data = FALSE))
+  missing <- file.path(root, "_output", "missing.html")
+  dir.create(dirname(missing), recursive = TRUE)
 
-  expect_invisible(record_provenance(out, cfg = study_config(root)))
-  rec <- record_provenance(out, cfg = study_config(root))
-  expect_type(rec, "list")
-  expect_equal(rec$job, "01.hz.dead_JR")
+  expect_error(publish_provenance(missing, payload), "existing")
+  expect_false(file.exists(provenance_path(missing)))
+  expect_error(publish_provenance(dirname(missing), payload), "regular file")
 })
 
-test_that("record_provenance records the selected named dataset", {
+test_that("publish binds the sidecar to the completed output bytes", {
   root <- make_registered_study(withr::local_tempdir())
   out <- make_output(root)
+  payload <- capture_provenance("death-hz-ac", list(),
+                                cfg = study_config(root, require_data = FALSE))
 
-  record_provenance(
-    out,
-    cfg = study_config(root),
-    dataset = "complete_cases"
+  expect_invisible(publish_provenance(out, payload))
+  record <- jsonlite::read_json(provenance_path(out), simplifyVector = FALSE)
+
+  expect_identical(record$output$file, basename(out))
+  expect_equal(record$output$bytes, unname(file.info(out)$size))
+  expect_identical(
+    record$output$sha256,
+    digest::digest(out, algo = "sha256", file = TRUE)
   )
-  record <- jsonlite::fromJSON(
-    provenance_path(out),
+  expect_identical(record$rendered, payload$rendered)
+  expect_identical(record$r, payload$r)
+  expect_identical(
+    vapply(record$packages, `[[`, "", "version"),
+    vapply(payload$packages, `[[`, "", "version")
+  )
+})
+
+test_that("publish accepts a captured payload after a JSON round trip", {
+  root <- make_registered_study(withr::local_tempdir())
+  cfg <- study_config(root)
+  out <- make_output(root)
+  payload <- capture_provenance(
+    "death-hz-ac",
+    data = list(provenance_data(cfg = cfg)),
+    artifacts = list(provenance_artifact(make_artifact(root), cfg = cfg)),
+    cfg = cfg
+  )
+  transported <- jsonlite::fromJSON(
+    jsonlite::toJSON(payload, auto_unbox = TRUE, null = "null", digits = NA),
     simplifyVector = FALSE
   )
 
-  expect_identical(record$data[[1L]]$dataset, "complete_cases")
-  expect_identical(record$data[[1L]]$file, "complete.csv")
+  expect_invisible(publish_provenance(out, transported))
+  expect_true(file.exists(provenance_path(out)))
+})
+
+test_that("publish rejects malformed payloads", {
+  root <- make_registered_study(withr::local_tempdir())
+  out <- make_output(root)
+  payload <- capture_provenance("death-hz-ac", list(),
+                                cfg = study_config(root, require_data = FALSE))
+
+  expect_error(publish_provenance(out, payload[-1L]), "payload")
+  payload$output <- list(sha256 = "spoofed")
+  expect_error(publish_provenance(out, payload), "output")
+})
+
+test_that("publication failure preserves the previous sidecar atomically", {
+  root <- make_registered_study(withr::local_tempdir())
+  out <- make_output(root)
+  sidecar <- provenance_path(out)
+  writeLines("previous sidecar", sidecar)
+  payload <- capture_provenance("death-hz-ac", list(),
+                                cfg = study_config(root, require_data = FALSE))
+  local_mocked_bindings(
+    .provenance_rename = function(...) FALSE,
+    .package = "hvtiRutilities"
+  )
+
+  expect_error(publish_provenance(out, payload), "publish")
+  expect_identical(readLines(sidecar), "previous sidecar")
+  expect_identical(list.files(dirname(out), pattern = "[.]tmp$"), character())
+})
+
+test_that("a JSON write failure preserves the previous sidecar", {
+  root <- make_registered_study(withr::local_tempdir())
+  out <- make_output(root)
+  sidecar <- provenance_path(out)
+  writeLines("previous sidecar", sidecar)
+  payload <- capture_provenance("death-hz-ac", list(),
+                                cfg = study_config(root, require_data = FALSE))
+  local_mocked_bindings(
+    .provenance_write_json = function(...) stop("disk full"),
+    .package = "hvtiRutilities"
+  )
+
+  expect_error(publish_provenance(out, payload), "disk full")
+  expect_identical(readLines(sidecar), "previous sidecar")
+})
+
+test_that("record_provenance is an existing-output convenience", {
+  root <- make_registered_study(withr::local_tempdir())
+  cfg <- study_config(root)
+  out <- make_output(root)
+  data <- list(provenance_data(cfg = cfg))
+  artifact <- list(provenance_artifact(make_artifact(root), cfg = cfg))
+
+  expect_invisible(record_provenance(
+    out,
+    data = data,
+    artifacts = artifact,
+    extra = list(subject = "death"),
+    cfg = cfg
+  ))
+  record <- jsonlite::read_json(provenance_path(out), simplifyVector = FALSE)
+
+  expect_identical(record$job, "death-hz-ac")
+  expect_equal(record$data, data)
+  expect_equal(record$artifacts, artifact)
+  expect_identical(record$subject, "death")
+  expect_match(record$output$sha256, "^[0-9a-f]{64}$")
 })

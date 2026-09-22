@@ -17,8 +17,9 @@ Returns the path of the sidecar belonging to a rendered output: the output
 path with its extension replaced by \code{.provenance.json}.
 }
 \examples{
-provenance_path("_output/01.hz.dead_JR.html")
+provenance_path("_output/death-hz-ac.html")
 }
 \seealso{
-\code{\link{record_provenance}}
+\code{\link{publish_provenance}},
+  \code{\link{record_provenance}}
 }

@@ -7,6 +7,14 @@
   cohort. `study_config()` now identifies the malformed `population` field and
   its named dataset directly.
 
+* Provenance capture now requires explicit data records. `provenance_data()`
+  and `provenance_artifact()` freeze the files a job actually reads;
+  `capture_provenance()` freezes those records and the executing R session;
+  and `publish_provenance()` binds that payload to an existing completed
+  output through an atomic sidecar replacement. `record_provenance()` remains
+  an existing-output convenience, but no longer accepts `dataset=` or infers
+  the currently registered data.
+
 # hvtiRutilities 1.3.1
 
 ## New features

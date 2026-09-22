@@ -251,6 +251,12 @@ test_that("inside a study the default dir is used; provenance keeps key", {
   rec <- jsonlite::read_json(side)
   expect_identical(rec$cache_key$inputs$d,
                    attr(out, "hvtiRutilities_cache_key")$inputs$d)
+  expect_identical(rec$data, list())
+  expect_identical(
+    rec$output$sha256,
+    digest::digest(file.path(root, "estimates", "s.rds"),
+                   algo = "sha256", file = TRUE)
+  )
 })
 
 test_that("outside a study no sidecar is written", {
@@ -259,16 +265,15 @@ test_that("outside a study no sidecar is written", {
   expect_identical(list.files(dir, all.files = TRUE, no.. = TRUE), "s.rds")
 })
 
-test_that("a provenance failure inside a study leaves nothing cached", {
+test_that("cache provenance deliberately records no implicit current data", {
   root <- make_study_fixture(withr::local_tempdir(), write_data = FALSE)
   dir.create(file.path(root, "estimates"))
-  err <- expect_error(
-    cache_fit("s", sum(1:3), dir = file.path(root, "estimates"))
+  cache_fit("s", sum(1:3), dir = file.path(root, "estimates"))
+  record <- jsonlite::read_json(
+    file.path(root, "estimates", "s.provenance.json"),
+    simplifyVector = FALSE
   )
-  expect_match(conditionMessage(err), "cache_fit", fixed = TRUE)
-  expect_match(conditionMessage(err), "NOT kept")
-  expect_length(list.files(file.path(root, "estimates"), all.files = TRUE,
-                           no.. = TRUE), 0L)
+  expect_identical(record$data, list())
 })
 
 test_that("a corrupted _study.yml mentions cache_fit() and leaves nothing cached", {
@@ -282,12 +287,12 @@ test_that("a corrupted _study.yml mentions cache_fit() and leaves nothing cached
                            no.. = TRUE), 0L)
 })
 
-test_that("a record_provenance() failure is raised even if its message contains the not-a-study phrase", {
+test_that("a publication failure is raised even if its message contains the not-a-study phrase", {
   root <- make_study_fixture(withr::local_tempdir())
   dir.create(file.path(root, "estimates"))
   local_mocked_bindings(
-    record_provenance = function(...) {
-      stop("no _study.yml found (coincidentally, from record_provenance())")
+    publish_provenance = function(...) {
+      stop("no _study.yml found (coincidentally, from publish_provenance())")
     },
     .package = "hvtiRutilities"
   )

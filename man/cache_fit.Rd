@@ -106,8 +106,11 @@ with \code{refit = TRUE}.
 
 The result is written to a temporary file and renamed into place, so an
 interrupted run never leaves a partial file. When \code{dir} lies inside a
-study, a provenance sidecar carrying the key is written with
-\code{\link{record_provenance}}.
+study, a provenance sidecar carrying the key and the completed cache file's
+hash is published with \code{\link{capture_provenance}} and
+\code{\link{publish_provenance}}. The cache records an explicit empty data
+list rather than inferring that the currently registered dataset was an
+input to the computation.
 }
 \examples{
 dir <- file.path(tempdir(), "cache-fit-example")
@@ -119,5 +122,6 @@ identical(first, again)
 unlink(dir, recursive = TRUE)
 }
 \seealso{
-\code{\link{record_provenance}}, \code{\link{study_dir}}
+\code{\link{capture_provenance}},
+  \code{\link{publish_provenance}}, \code{\link{study_dir}}
 }

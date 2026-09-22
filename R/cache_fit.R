@@ -79,8 +79,11 @@
 #'
 #' The result is written to a temporary file and renamed into place, so an
 #' interrupted run never leaves a partial file. When \code{dir} lies inside a
-#' study, a provenance sidecar carrying the key is written with
-#' \code{\link{record_provenance}}.
+#' study, a provenance sidecar carrying the key and the completed cache file's
+#' hash is published with \code{\link{capture_provenance}} and
+#' \code{\link{publish_provenance}}. The cache records an explicit empty data
+#' list rather than inferring that the currently registered dataset was an
+#' input to the computation.
 #'
 #' @param name Character(1). File stem; the result is stored at
 #'   \code{file.path(dir, paste0(name, ".rds"))}.
@@ -96,7 +99,8 @@
 #' @return The result of \code{code}, computed or loaded, with its key attached
 #'   as attribute \code{hvtiRutilities_cache_key}.
 #'
-#' @seealso \code{\link{record_provenance}}, \code{\link{study_dir}}
+#' @seealso \code{\link{capture_provenance}},
+#'   \code{\link{publish_provenance}}, \code{\link{study_dir}}
 #'
 #' @export
 #'
@@ -251,8 +255,9 @@ cache_fit <- function(name, code, seed = NULL, dir = study_dir("estimates"),
   ))
 }
 
-# Save to a temporary file beside the target, record provenance, then rename.
-# A failure at any step leaves no file at `path`.
+# Save beside the target, capture provenance, move the completed cache into
+# place, then publish the sidecar against those exact bytes. A failed
+# publication restores an existing cache or removes a newly created one.
 .cache_write <- function(record, path, key, dir) {
   tmp <- tempfile(
     pattern = paste0(".", tools::file_path_sans_ext(basename(path)), "-"),
@@ -260,17 +265,47 @@ cache_fit <- function(name, code, seed = NULL, dir = study_dir("estimates"),
   )
   on.exit(if (file.exists(tmp)) unlink(tmp), add = TRUE)
   saveRDS(record, tmp)
-  .cache_provenance(path, key, dir)
+  payload <- .cache_provenance(path, key, dir)
+
+  backup <- NULL
+  if (file.exists(path) && !dir.exists(path)) {
+    backup <- tempfile(
+      pattern = paste0(".", basename(path), "-backup-"),
+      tmpdir = dirname(path), fileext = ".tmp"
+    )
+    if (!file.rename(path, backup)) {
+      stop("cache_fit(): could not preserve the existing cached object at ",
+           path, call. = FALSE)
+    }
+  }
   if (!file.rename(tmp, path)) {
+    if (!is.null(backup)) {
+      file.rename(backup, path)
+    }
     stop("cache_fit(): could not move the cached object into place at ",
          path, call. = FALSE)
+  }
+
+  tryCatch({
+    if (!is.null(payload)) {
+      publish_provenance(path, payload)
+    }
+  }, error = function(e) {
+    unlink(path)
+    if (!is.null(backup)) {
+      file.rename(backup, path)
+    }
+    .cache_provenance_rethrow(e, path)
+  })
+  if (!is.null(backup)) {
+    unlink(backup)
   }
   invisible(path)
 }
 
 # Re-raises `e` as the same condition, classes included, with the message
 # prefixed so the failure is traceable to cache_fit() rather than discarded as
-# an unattributed study_root()/study_config()/record_provenance() error.
+# an unattributed study_root()/study_config()/provenance error.
 .cache_provenance_rethrow <- function(e, path) {
   cnd <- e
   cnd$message <- paste0(
@@ -281,13 +316,13 @@ cache_fit <- function(name, code, seed = NULL, dir = study_dir("estimates"),
   stop(cnd)
 }
 
-# Records provenance when `dir` lies inside a study. Only "no _study.yml
+# Captures provenance when `dir` lies inside a study. Only "no _study.yml
 # found" FROM study_root() means "not a study"; every other failure -
-# including a study_config() or record_provenance() error whose message
+# including a study_config() or capture_provenance() error whose message
 # happens to contain that same phrase - propagates as an error naming
 # cache_fit(), and because this runs before the rename, a failure leaves
 # nothing cached. The escape is scoped to the study_root() call alone so a
-# later, genuine failure in study_config()/record_provenance() can never be
+# later, genuine failure in study_config()/capture_provenance() can never be
 # mistaken for "not a study" and silently swallowed. The text match on "no
 # _study.yml found" is a coupling to study_config()'s own stop() in
 # R/study_config.R, which study_root() calls internally (it raises a plain,
@@ -307,7 +342,11 @@ cache_fit <- function(name, code, seed = NULL, dir = study_dir("estimates"),
     # otherwise apply a stricter read here than what "is this a study" just
     # decided.
     cfg <- study_config(root, require_data = FALSE)
-    record_provenance(path, extra = list(cache_key = key), cfg = cfg)
-    invisible(NULL)
+    capture_provenance(
+      job = tools::file_path_sans_ext(basename(path)),
+      data = list(),
+      extra = list(cache_key = key),
+      cfg = cfg
+    )
   }, error = function(e) .cache_provenance_rethrow(e, path))
 }
