@@ -258,9 +258,13 @@ cache_fit <- function(name, code, seed = NULL, dir = study_dir("estimates"),
 # Restore with a copy fallback so a platform-specific rename failure does not
 # discard the only preserved bytes. If both operations fail, leave the backup
 # in place rather than deleting the recoverable copy.
+.cache_rename <- function(from, to) {
+  file.rename(from, to)
+}
+
 .cache_restore_backup <- function(backup, target) {
   if (is.null(backup) || !file.exists(backup)) return(invisible(TRUE))
-  restored <- suppressWarnings(file.rename(backup, target))
+  restored <- suppressWarnings(.cache_rename(backup, target))
   if (!isTRUE(restored)) {
     restored <- suppressWarnings(file.copy(backup, target, overwrite = TRUE))
     if (isTRUE(restored)) unlink(backup)
@@ -290,18 +294,23 @@ cache_fit <- function(name, code, seed = NULL, dir = study_dir("estimates"),
 
   backup <- NULL
   sidecar_backup <- NULL
+  cache_moved <- FALSE
+  sidecar_moved <- FALSE
+  cache_replaced <- FALSE
+  sidecar_replacement_started <- FALSE
   committed <- FALSE
   on.exit({
     if (!committed) {
-      if (file.exists(path) && !dir.exists(path)) unlink(path)
-      if (!is.null(sidecar) && file.exists(sidecar) && !dir.exists(sidecar)) {
+      if (cache_replaced && file.exists(path) && !dir.exists(path)) unlink(path)
+      if (sidecar_replacement_started && file.exists(sidecar) &&
+            !dir.exists(sidecar)) {
         unlink(sidecar)
       }
-      .cache_restore_backup(backup, path)
-      .cache_restore_backup(sidecar_backup, sidecar)
+      if (cache_moved) .cache_restore_backup(backup, path)
+      if (sidecar_moved) .cache_restore_backup(sidecar_backup, sidecar)
     } else {
-      if (!is.null(backup) && file.exists(backup)) unlink(backup)
-      if (!is.null(sidecar_backup) && file.exists(sidecar_backup)) {
+      if (cache_moved && file.exists(backup)) unlink(backup)
+      if (sidecar_moved && file.exists(sidecar_backup)) {
         unlink(sidecar_backup)
       }
     }
@@ -312,7 +321,8 @@ cache_fit <- function(name, code, seed = NULL, dir = study_dir("estimates"),
       pattern = paste0(".", basename(sidecar), "-backup-"),
       tmpdir = dirname(sidecar), fileext = ".tmp"
     )
-    if (!file.rename(sidecar, sidecar_backup)) {
+    sidecar_moved <- isTRUE(.cache_rename(sidecar, sidecar_backup))
+    if (!sidecar_moved) {
       stop("cache_fit(): could not preserve the existing provenance sidecar at ",
            sidecar, call. = FALSE)
     }
@@ -322,18 +332,21 @@ cache_fit <- function(name, code, seed = NULL, dir = study_dir("estimates"),
       pattern = paste0(".", basename(path), "-backup-"),
       tmpdir = dirname(path), fileext = ".tmp"
     )
-    if (!file.rename(path, backup)) {
+    cache_moved <- isTRUE(.cache_rename(path, backup))
+    if (!cache_moved) {
       stop("cache_fit(): could not preserve the existing cached object at ",
            path, call. = FALSE)
     }
   }
-  if (!file.rename(tmp, path)) {
+  cache_replaced <- isTRUE(.cache_rename(tmp, path))
+  if (!cache_replaced) {
     stop("cache_fit(): could not move the cached object into place at ",
          path, call. = FALSE)
   }
 
   tryCatch({
     if (!is.null(payload)) {
+      sidecar_replacement_started <- TRUE
       publish_provenance(path, payload)
     }
   }, error = function(e) {

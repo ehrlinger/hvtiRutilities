@@ -349,6 +349,83 @@ test_that("an interrupt during publication restores the cache pair without backu
   )
 })
 
+test_that("a failed initial sidecar backup preserves both original files", {
+  root <- make_study_fixture(withr::local_tempdir())
+  estimates <- file.path(root, "estimates")
+  dir.create(estimates)
+  d <- 1:10
+  cache_fit("s", sum(d), dir = estimates)
+  cache <- file.path(estimates, "s.rds")
+  sidecar <- provenance_path(cache)
+  old_cache <- readBin(cache, "raw", n = file.info(cache)$size)
+  old_sidecar <- readBin(sidecar, "raw", n = file.info(sidecar)$size)
+
+  local_mocked_bindings(
+    .cache_rename = function(from, to) {
+      if (identical(from, sidecar)) return(FALSE)
+      base::file.rename(from, to)
+    },
+    .package = "hvtiRutilities"
+  )
+  d <- 1:11
+  expect_error(
+    suppressMessages(cache_fit("s", sum(d), dir = estimates, refit = TRUE)),
+    "preserve the existing provenance sidecar"
+  )
+
+  cache_after <- if (file.exists(cache)) {
+    readBin(cache, "raw", n = file.info(cache)$size)
+  }
+  sidecar_after <- if (file.exists(sidecar)) {
+    readBin(sidecar, "raw", n = file.info(sidecar)$size)
+  }
+  expect_identical(cache_after, old_cache)
+  expect_identical(sidecar_after, old_sidecar)
+  expect_setequal(
+    list.files(estimates, all.files = TRUE, no.. = TRUE),
+    c("s.rds", "s.provenance.json")
+  )
+})
+
+test_that("a failed cache backup restores an already moved sidecar", {
+  root <- make_study_fixture(withr::local_tempdir())
+  estimates <- file.path(root, "estimates")
+  dir.create(estimates)
+  d <- 1:10
+  cache_fit("s", sum(d), dir = estimates)
+  cache <- file.path(estimates, "s.rds")
+  sidecar <- provenance_path(cache)
+  old_cache <- readBin(cache, "raw", n = file.info(cache)$size)
+  old_sidecar <- readBin(sidecar, "raw", n = file.info(sidecar)$size)
+
+  local_mocked_bindings(
+    .cache_rename = function(from, to) {
+      cache_backup <- identical(from, cache) && grepl("-backup-", to)
+      if (cache_backup) return(FALSE)
+      base::file.rename(from, to)
+    },
+    .package = "hvtiRutilities"
+  )
+  d <- 1:11
+  expect_error(
+    suppressMessages(cache_fit("s", sum(d), dir = estimates, refit = TRUE)),
+    "preserve the existing cached object"
+  )
+
+  cache_after <- if (file.exists(cache)) {
+    readBin(cache, "raw", n = file.info(cache)$size)
+  }
+  sidecar_after <- if (file.exists(sidecar)) {
+    readBin(sidecar, "raw", n = file.info(sidecar)$size)
+  }
+  expect_identical(cache_after, old_cache)
+  expect_identical(sidecar_after, old_sidecar)
+  expect_setequal(
+    list.files(estimates, all.files = TRUE, no.. = TRUE),
+    c("s.rds", "s.provenance.json")
+  )
+})
+
 test_that("a survival forest round-trips and records its package version", {
   skip_if_not_installed("randomForestSRC")
   withr::local_options(rf.cores = 1L, mc.cores = 1L)
