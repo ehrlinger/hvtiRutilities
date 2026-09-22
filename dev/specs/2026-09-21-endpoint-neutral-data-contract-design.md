@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-21
 
-**Status:** Core design approved; written job-provenance amendment awaiting review
+**Status:** Approved; 2026-09-22 adversarial-review amendment incorporated
 
 **Packages:** `hvtiRutilities`, followed by `hvtiRtemplates`
 
@@ -181,9 +181,10 @@ default `built` file. It does not require `cohort.n`, `cohort.n_events`,
 `.study_dataset()` returns dataset identity, population, and release metadata.
 It does not expose a dataset-level cohort contract.
 
-Existing `cohort` keys may parse as additive YAML fields during the cutover,
-but no package function reads them or treats them as authoritative. New writes
-do not produce them.
+This is a new process. There is no legacy contract migration, cohort-preservation
+requirement, compatibility alias, or deprecation path. A release update preserves
+valid additive metadata in the current contract; obsolete cohort fields are not
+part of that contract and must not motivate compatibility code or fixtures.
 
 ### Cohort helpers
 
@@ -225,15 +226,32 @@ value changes that a reviewer can inspect before adoption.
 
 ### Provenance
 
-`record_provenance()` always records the exact registered dataset, its hash,
-the study manifest, R and package versions, and the lockfile state. It no
-longer refuses to run when a dataset has no cohort contract and no longer
-creates a required top-level cohort block from `_study.yml`.
+Capture and publication are separate. `provenance_data(dataset, cfg)` snapshots
+the exact registered data file when the job reads it. `provenance_artifact(path,
+role)` snapshots the actual artifact bytes, including SHA-256. These return
+plain immutable-by-convention records that can travel with saved model objects.
 
-A template adds job-specific metadata through the existing `extra` mechanism.
-The required top-level keys remain `job`, `rendered`, `study`, `r`, `packages`,
-`renv_lock`, and `data`. `extra` may append `subject`, `type`, `analysis`, or
-`cohort`, but it cannot replace a required key.
+`capture_provenance(job, data, artifacts, extra, cfg)` requires an explicit list
+of data records. It never silently resolves the current registered dataset.
+An explicit empty list means the job has no known direct data inputs; it must
+not be used to conceal missing lineage that the job requires. Capture records
+the study configuration, execution time, R, loaded package versions, and
+lockfile state in the executing R session. The publication process must not
+recapture them from its different R session.
+
+`publish_provenance(path, payload)` requires an existing completed HTML file,
+adds its byte count and SHA-256, and publishes the sidecar through a temporary
+file in the destination directory followed by rename. `record_provenance()`
+is only an existing-output convenience around capture and publication, with
+explicit data inputs; templates do not call it during execution.
+
+The required captured keys are `job`, `rendered`, `study`, `r`, `packages`,
+`renv_lock`, `data`, and `artifacts`. Published records also require `output`.
+Template records include `source`, the canonical study-relative `.qmd` path,
+to identify their authored input independently of output-directory or filename
+settings. `extra` may append `subject`, `type`, `analysis`, and `cohort` but may
+not replace any reserved capture or publication key. The HTML carries the
+captured payload; the sidecar adds the hash of that completed HTML.
 
 ## `hvtiRtemplates` Changes
 
@@ -260,11 +278,12 @@ analysis families merely to create a uniform appearance.
 
 ### Rendered job provenance
 
-Every shipped template ends with a `provenance` chunk that calls
-`hvtiRutilities::record_provenance()` directly. Keeping the call in the
-template gives the Render button, `quarto render`, and `render_job()` the same
-behavior. A successful render therefore produces an HTML result and a JSON
-sidecar with the same stem in the same directory:
+Every one of the 28 shipped templates ends with one `provenance` chunk that
+embeds its captured runtime payload in an HTML JSON script element. It does not
+write a published sidecar. Study-level Quarto pre-render and post-render hooks
+installed by job scaffolding give the Render button, `quarto render`, and
+`render_job()` the same behavior. A successful render produces an HTML result
+and a JSON sidecar with the same stem in the actual output directory:
 
 ```text
 death-hz-hz.qmd
@@ -272,21 +291,34 @@ death-hz-hz.html
 death-hz-hz.provenance.json
 ```
 
-The setup chunk already recovers the current input as an absolute path in
-`.in`. During a Quarto render that path may name the intermediate
-`.rmarkdown` file, but its directory and extensionless basename are the source
-job's directory and stem. The final chunk derives the eventual HTML path from
-that recovered stem:
+The setup helper resolves `.in` to the canonical authored `.qmd` input, including
+Quarto's intermediate `.rmarkdown` name, and rejects a missing or ambiguous
+input. It also verifies that the study hooks are installed. It does not guess
+an input from `getwd()`. Scaffolding preserves existing Quarto configuration
+and hooks, installs its hooks idempotently, and refuses malformed configuration.
+Direct standalone rendering outside the configured study fails with an actionable
+setup message; there is no unsafe fallback.
 
-```r
-.job_stem <- tools::file_path_sans_ext(basename(.in))
-.output <- file.path(dirname(.in), paste0(.job_stem, ".html"))
-```
+The pre-render hook receives `QUARTO_PROJECT_INPUT_FILES` and invalidates the
+published sidecars whose recorded source is being rendered. It leaves unrelated
+jobs alone. The post-render hook reads only `QUARTO_PROJECT_OUTPUT_FILES`, extracts
+the embedded payload from each completed HTML, and publishes beside that actual
+output. It respects Quarto output directories and renamed output files without
+reimplementing their filename rules. Hooks also support Quarto's file-backed
+input/output lists. A copied external output folder is outside this contract.
 
-It does not use `getwd()` as a provenance fallback. If no render input is
-available, the chunk stops instead of writing a sidecar for a guessed job.
-`record_provenance()` does not require the HTML file to exist yet, so the chunk
-can run at the end of document execution before Quarto writes the final HTML.
+JSON is encoded so `<`, `>`, and `&` cannot terminate or inject HTML script
+markup. Exactly one payload element is allowed. Missing, duplicate, or malformed
+payloads on managed outputs fail publication. Unmanaged project documents with no
+payload are left alone. Frozen managed documents retain their embedded payload;
+their original execution facts are not replaced with a new runtime snapshot.
+
+A failed rerender may leave the previous HTML without a current sidecar. A
+post-render publication failure also fails the render and leaves no misleading
+current sidecar. This is failure-closed publication, not a claim that two files
+can be updated in one filesystem transaction. Consumers must verify the recorded
+HTML hash when associating a sidecar with an output. An output file changed by a
+later user hook is detectable by that checksum; our publisher is installed last.
 
 Every job records its declared `SUBJECT` and `TYPE` as top-level extra fields.
 An endpoint-free job records no `analysis` or `cohort` field unless that job
@@ -341,9 +373,40 @@ when it has already computed them, or can read them from the fitted object
 without reproducing the filtering logic. It does not substitute registered
 dataset dimensions or expected reference counts for observed job counts. A
 template with no local outcome or analysable-cohort definition records neither.
-The dataset argument follows the data route the job used: a template with a
-local `DATASET` choice passes it, while a job that reads the default registered
-dataset keeps `dataset = "study"`.
+The explicit data records follow actual reads. Capture each registered file's
+record at its read, before fitting or analysis, and verify that its bytes did not
+change across the read. Later registration updates cannot alter an already
+captured record.
+
+### Artifact lineage and all logistic templates
+
+Producer templates preserve `attr(object, "hvti_provenance")` before saving an
+RDS handoff. This attribute carries frozen `data`, input `artifacts`, `analysis`,
+and observed `cohort` records without changing the fitted object's public class
+or shape. Consumers require frozen lineage and instruct the user to rebuild a
+package-produced artifact whose attribute is missing. External bootstrap inputs
+use the explicit-lineage route described below. No legacy artifact adapter is
+introduced. Consumers record a hash of every artifact actually read and retain
+its original data records even after a new dataset is registered.
+
+RF explain jobs use the forest's frozen data. Logistic validation records both
+the source model's training-data lineage and the validation dataset actually
+read, with roles that distinguish them. Bootstrap reports preserve available
+bootstrap lineage and record every input chunk's hash; an external bootstrap
+producer must supply explicit original data records if its artifact does not
+contain them. Reports cannot relabel an unidentified bootstrap as the current
+study data. Hazard model and graph consumers record their actual upstream
+artifacts as well as any direct data reads. Saved downstream objects retain the
+combined lineage for the next consumer.
+
+All eight logistic-family templates record their available runtime facts:
+`lm-binary`, `lm-nominal`, `lm-ordinal`, `lm-propensity_binary`,
+`lm-propensity_nominal`, `lm-propensity_ordinal`, `lm-balancing_count`, and
+`lm-checkpred`. Outcome or treatment variable, accepted/observed levels,
+event/reference level when applicable, model formula/family, and observed fit
+or validation counts come from declarations and the fitted object's actual
+state. Stacked-imputation row counts and unique-person counts are explicitly
+distinguished. No logistic template is asserted to be identity-only.
 
 ### Documentation language
 
@@ -367,8 +430,10 @@ Failures stay at the layer that can explain them:
 - `assert_cohort()` errors when explicit expected counts disagree with the
   observed job cohort.
 - Endpoint-free jobs do not warn or fail merely because no endpoint exists.
-- A provenance-sidecar warning or error stops the render. The template does not
-  return a successful result whose provenance could not be written.
+- A provenance capture, HTML embedding, or post-render publication error stops
+  the render. A failed rerender cannot pair stale HTML with new provenance.
+- Missing mandatory artifact lineage fails with a rebuild or explicit-lineage
+  instruction; it never falls back to the current registered dataset.
 
 ## Direct Cutover
 
@@ -443,6 +508,9 @@ Tests must cover:
 - configuration and data reads without a cohort block;
 - status with no cohort rows or missing-cohort findings;
 - provenance for endpoint-free and endpoint-driven jobs;
+- explicit immutable data records and artifact hashes, with no implicit data lookup;
+- capture-time session facts retained across publication in another session;
+- existing-output validation, output hash binding, and failure-closed publication;
 - release review and adoption without cohort recalculation;
 - explicit `cohort_counts()` and `assert_cohort()` calls;
 - rejection of categorical or otherwise nonbinary event values; and
@@ -470,6 +538,15 @@ Tests must cover:
   coding and the observed job-cohort counts available to that template;
 - protection of required keys when template extras are merged, and render
   failure when the sidecar cannot be written;
+- all eight logistic templates' actual outcome/coding/model/count metadata;
+- fitted artifact lineage unchanged after replacing the registered dataset;
+- validation with distinct training and validation data roles;
+- bootstrap chunk, hazard artifact, and graph input hashes;
+- editor-equivalent direct Quarto, CLI, and wrapper render entry points;
+- successful render followed by Pandoc failure, and post-render write failure;
+- renamed outputs, output directories, multi-job renders, frozen execution,
+  missing/duplicate/malformed payloads, HTML-sensitive text, and unrelated outputs;
+- idempotent hook installation preserving other configuration and hooks;
 - migration and open-job paths; and
 - the complete template catalog and render checks.
 
@@ -479,8 +556,8 @@ pkgdown, and template-specific validation gates after installing the updated
 
 ## Delivery Order
 
-1. Implement and verify the endpoint-neutral data contract and explicit cohort
-   helpers in `hvtiRutilities`.
+1. Implement and verify the endpoint-neutral data contract, explicit cohort
+   helpers, and capture/publication provenance APIs in `hvtiRutilities`.
 2. Install that version locally for downstream validation.
 3. Implement and verify subject-based job identity in `hvtiRtemplates`.
 4. Review the combined diff for any remaining use of `endpoint` as the generic
