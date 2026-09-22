@@ -81,10 +81,12 @@ forgotten `document()` fails the PR rather than landing quietly.
   `.remember`, `.vscode`, `dev`. Add new tooling directories there when they appear;
   otherwise they land in the tarball as a NOTE. `ROADMAP.md` is listed for the same
   reason: it sits at the root but is not one of the files `R CMD check` expects there.
-- **`_study.yml` records registered datasets, not a study-wide cohort.** Each job supplies
-  its own event, time and expected counts to `cohort_counts()` and `assert_cohort()`, so the
-  gate checks that job's analysis cohort. A job analysing a filtered subset must derive its
-  expected counts from its own reference.
+- **`_study.yml` records registered datasets, not a study-wide cohort.**
+  `cohort_counts(d, event, time)` observes that job's cohort counts;
+  `assert_cohort(d, expected, event, time)` compares them with that job's reference. Reusing
+  whole-dataset expected counts for a filtered job can pass when the three totals match even
+  though the actual analysis cohort was never checked. Derive expected counts from the job's
+  own reference.
 - **`compare_parity()`'s `digits` is DECIMAL PLACES.** SAS commonly prints *significant
   figures*, so a flat `digits = 7` asserts a tolerance up to two orders of magnitude too
   tight for a value below 1 and reports agreeing references as a disagreement. Derive it per
