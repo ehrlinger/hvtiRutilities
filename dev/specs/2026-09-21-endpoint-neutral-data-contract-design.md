@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-21
 
-**Status:** Approved in conversation; awaiting review of this written specification
+**Status:** Approved in conversation; job-provenance amendment approved; awaiting implementation
 
 **Packages:** `hvtiRutilities`, followed by `hvtiRtemplates`
 
@@ -230,11 +230,10 @@ the study manifest, R and package versions, and the lockfile state. It no
 longer refuses to run when a dataset has no cohort contract and no longer
 creates a required top-level cohort block from `_study.yml`.
 
-A template may add job-specific analysis metadata and observed counts through
-the existing `extra` mechanism. Endpoint-driven templates should record the
-variables and coding they actually used. Endpoint-free templates should record
-their subject and type without a cohort block. Required provenance keys remain
-protected from displacement by `extra`.
+A template adds job-specific metadata through the existing `extra` mechanism.
+The required top-level keys remain `job`, `rendered`, `study`, `r`, `packages`,
+`renv_lock`, and `data`. `extra` may append `subject`, `type`, `analysis`, or
+`cohort`, but it cannot replace a required key.
 
 ## `hvtiRtemplates` Changes
 
@@ -259,6 +258,93 @@ Outcome-specific declarations remain local to the templates that require them.
 The `EVENT`, `TIME`, or `OUTCOME` names are not standardized across unrelated
 analysis families merely to create a uniform appearance.
 
+### Rendered job provenance
+
+Every shipped template ends with a `provenance` chunk that calls
+`hvtiRutilities::record_provenance()` directly. Keeping the call in the
+template gives the Render button, `quarto render`, and `render_job()` the same
+behavior. A successful render therefore produces an HTML result and a JSON
+sidecar with the same stem in the same directory:
+
+```text
+death-hz-hz.qmd
+death-hz-hz.html
+death-hz-hz.provenance.json
+```
+
+The setup chunk already recovers the current input as an absolute path in
+`.in`. During a Quarto render that path may name the intermediate
+`.rmarkdown` file, but its directory and extensionless basename are the source
+job's directory and stem. The final chunk derives the eventual HTML path from
+that recovered stem:
+
+```r
+.job_stem <- tools::file_path_sans_ext(basename(.in))
+.output <- file.path(dirname(.in), paste0(.job_stem, ".html"))
+```
+
+It does not use `getwd()` as a provenance fallback. If no render input is
+available, the chunk stops instead of writing a sidecar for a guessed job.
+`record_provenance()` does not require the HTML file to exist yet, so the chunk
+can run at the end of document execution before Quarto writes the final HTML.
+
+Every job records its declared `SUBJECT` and `TYPE` as top-level extra fields.
+An endpoint-free job records no `analysis` or `cohort` field unless that job
+actually defines and observes one:
+
+```r
+extra <- list(
+  subject = SUBJECT,
+  type = TYPE
+)
+```
+
+An endpoint-driven job records the local declarations and coding used by that
+template. For a survival job whose local names are `TIME` and `STATUS`, and
+whose cohort chunk has already produced `cc`, the shape is:
+
+```r
+extra <- list(
+  subject = SUBJECT,
+  type = TYPE,
+  analysis = list(
+    time = list(variable = TIME),
+    event = list(variable = STATUS, event = 1L, censored = 0L)
+  ),
+  cohort = cc
+)
+```
+
+The template uses its own declarations rather than renaming them to fit this
+example. A classification job may instead record its response variable,
+observed levels, and selected target level:
+
+```r
+analysis <- list(
+  outcome = list(
+    variable = RESPONSE,
+    kind = "classification",
+    observed_levels = levels(d[[RESPONSE]]),
+    target_level = ROC_CLASS
+  )
+)
+```
+
+A job that explains or plots a stored fit takes outcome details from the fit or
+its handoff metadata. It never derives them from `SUBJECT`. If the artifact does
+not carry enough information to name the variables or coding, implementation
+must preserve that information in the artifact or declare it in the consuming
+job. It must not guess.
+
+Counts describe the rows the job actually analysed. A template records them
+when it has already computed them, or can read them from the fitted object
+without reproducing the filtering logic. It does not substitute registered
+dataset dimensions or expected reference counts for observed job counts. A
+template with no local outcome or analysable-cohort definition records neither.
+The dataset argument follows the data route the job used: a template with a
+local `DATASET` choice passes it, while a job that reads the default registered
+dataset keeps `dataset = "study"`.
+
 ### Documentation language
 
 Documentation describes the leading field as the subject that groups a job
@@ -281,6 +367,8 @@ Failures stay at the layer that can explain them:
 - `assert_cohort()` errors when explicit expected counts disagree with the
   observed job cohort.
 - Endpoint-free jobs do not warn or fail merely because no endpoint exists.
+- A provenance-sidecar warning or error stops the render. The template does not
+  return a successful result whose provenance could not be written.
 
 ## Direct Cutover
 
@@ -293,6 +381,9 @@ jobs can be renamed and have `ENDPOINT` changed to `SUBJECT` as part of the
 coordinated repository update. Historical corpus parsing remains a separate
 concern: parsers that describe legacy names may continue to use historically
 accurate terminology where changing it would misdescribe the source format.
+The updated catalog gives newly scaffolded jobs the provenance chunk; it does
+not rewrite existing job files or add a compatibility path for jobs that omit
+the chunk.
 
 ## Alternatives Rejected
 
@@ -315,6 +406,28 @@ outside the model.
 The existing behavior already stretches `endpoint` to mean `cohort` for EDA.
 Keeping the name would preserve a semantic lie and encourage templates to
 assume every subject is an outcome.
+
+### Parse template source for provenance metadata
+
+Parsing assignments from the `.qmd` would create a second interpretation of
+the job. It would miss derived coding, filters, observed factor levels, and
+counts that exist only after execution. The final chunk can record the objects
+the analysis used, so it does not need to reconstruct them from source text.
+
+### Infer provenance in `render_job()`
+
+`render_job()` sees a path and the final-render flag, not the job's executed
+objects. More importantly, authors also render from the editor and the Quarto
+command line. Wrapper-only inference would omit provenance for those supported
+paths and make identical jobs behave differently according to how they were
+started.
+
+### Keep job metadata in a separate registry
+
+A registry would repeat `SUBJECT`, `TYPE`, outcome coding, and cohort facts
+already declared in each job. The registry and the executable job could drift,
+leaving the sidecar to describe metadata the render did not use. The job stays
+the authority and records its runtime values directly.
 
 ## Verification
 
@@ -349,6 +462,14 @@ Tests must cover:
 - `SUBJECT`/`TYPE` marker substitution and filename consistency;
 - endpoint-driven templates with local outcome declarations;
 - endpoint-free templates without fake outcome declarations;
+- exactly one final provenance chunk in every shipped template;
+- an endpoint-free render whose sidecar has the rendered job stem, required
+  provenance keys, `subject`, and `type`, with no invented `analysis` or
+  `cohort` block;
+- an endpoint-driven render whose sidecar has the local event/time or outcome
+  coding and the observed job-cohort counts available to that template;
+- protection of required keys when template extras are merged, and render
+  failure when the sidecar cannot be written;
 - migration and open-job paths; and
 - the complete template catalog and render checks.
 
