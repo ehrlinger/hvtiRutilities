@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-21
 
-**Status:** Approved in conversation; job-provenance amendment approved; awaiting implementation
+**Status:** Core design approved; written job-provenance amendment awaiting review
 
 **Packages:** `hvtiRutilities`, followed by `hvtiRtemplates`
 
