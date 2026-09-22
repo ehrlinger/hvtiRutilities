@@ -487,3 +487,41 @@ test_that("release migration keeps the same logical dataset and file", {
     expect_s3_class(do.call(register_data, args), "study_status")
   }
 })
+
+test_that("named release migration preserves additive contract fields", {
+  root <- registration_study()
+  write_release_fixture(root)
+  register_data(
+    root,
+    "cohort_20260920.csv",
+    dataset = "named_data",
+    role = "named"
+  )
+  path <- file.path(root, "_study.yml")
+  raw <- yaml::read_yaml(path)
+  raw$additional_datasets$named_data$analysis_context <- list(
+    owner = "outcomes",
+    purpose = "sensitivity analysis"
+  )
+  yaml::write_yaml(raw, path)
+
+  expect_no_error(study_config(root, require_data = FALSE))
+  register_data(
+    root,
+    "cohort_20260920.csv",
+    dataset = "named_data",
+    role = "named",
+    catalog_dataset = "surgery_cohort",
+    release_id = "surgery_cohort-20260920-r1"
+  )
+
+  migrated <- yaml::read_yaml(path)$additional_datasets$named_data
+  expect_identical(migrated$analysis_context, list(
+    owner = "outcomes",
+    purpose = "sensitivity analysis"
+  ))
+  expect_identical(migrated$release, list(
+    dataset_id = "surgery_cohort",
+    release_id = "surgery_cohort-20260920-r1"
+  ))
+})

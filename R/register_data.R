@@ -251,14 +251,12 @@ register_data <- function(root = getwd(), built, dataset = "study",
       stop("register_data(): additional_datasets must be a mapping",
            call. = FALSE)
     }
-    contract <- list(
-      built = built,
-      population = if (is.null(population) && migrating) {
-        existing$population
-      } else {
-        population
-      }
-    )
+    contract <- existing
+    if (is.null(contract)) {
+      contract <- list(built = built, population = population)
+    } else if (!is.null(population)) {
+      contract$population <- population
+    }
     if (!is.null(release)) {
       contract$release <- list(
         dataset_id = catalog_dataset,
