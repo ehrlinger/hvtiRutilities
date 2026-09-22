@@ -649,6 +649,69 @@ test_that("adoption retains additive release metadata", {
   }
 })
 
+test_that("adoption preserves additive study and dataset fields", {
+  for (named in c(FALSE, TRUE)) {
+    fx <- make_release_aware_study(withr::local_tempdir(), named = named)
+    path <- file.path(fx$root, "_study.yml")
+    raw <- yaml::read_yaml(path)
+    raw$future_identity <- list(owner = "keep me")
+    raw$future_contract <- "keep default"
+    if (!named) {
+      raw$additional_datasets <- list(
+        named_data = list(
+          built = "named.csv",
+          future_contract = "keep named",
+          release = list(
+            dataset_id = "named_cohort",
+            release_id = "named_cohort-20260920-r1"
+          )
+        )
+      )
+    } else {
+      raw$release <- list(
+        dataset_id = "default_cohort",
+        release_id = "default_cohort-20260920-r1"
+      )
+    }
+    raw$additional_datasets$named_data$future_contract <- "keep named"
+    raw$cohort <- list(
+      n = 3L,
+      n_events = 1L,
+      n_censored = 2L,
+      event = "dead",
+      time = "iv_dead"
+    )
+    raw$additional_datasets$named_data$cohort <- list(
+      n = 2L,
+      n_events = 1L,
+      n_censored = 1L,
+      event = "stroke",
+      time = "iv_stroke"
+    )
+    before <- raw
+    yaml::write_yaml(raw, path)
+
+    adopt_data_update(
+      study_config(fx$root),
+      dataset = if (named) "named_data" else "study",
+      release_id = "surgery_cohort-20260921-r1"
+    )
+
+    after <- yaml::read_yaml(path)
+    expect_identical(after$future_identity, list(owner = "keep me"), info = as.character(named))
+    expect_identical(after$future_contract, "keep default", info = as.character(named))
+    expect_identical(after$additional_datasets$named_data$future_contract, "keep named",
+                     info = as.character(named))
+    expect_identical(after$cohort, before$cohort, info = as.character(named))
+    expect_identical(after$additional_datasets$named_data$cohort,
+                     before$additional_datasets$named_data$cohort,
+                     info = as.character(named))
+    sibling <- if (named) after$release else after$additional_datasets$named_data$release
+    sibling_before <- if (named) before$release else before$additional_datasets$named_data$release
+    expect_identical(sibling, sibling_before, info = as.character(named))
+  }
+})
+
 test_that("adoption revalidates bytes changed after review", {
   fx <- make_release_aware_study(withr::local_tempdir(), pinned_sequence = 1L)
   cfg <- study_config(fx$root)

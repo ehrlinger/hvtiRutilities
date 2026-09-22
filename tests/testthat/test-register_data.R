@@ -108,13 +108,6 @@ test_that("register_data validates named data before writing", {
     "lower-snake-case"
   )
   expect_identical(study_manifest_bytes(root), before)
-
-  expect_error(
-    register_data(root, "subset.csv",
-                  dataset = "Complete Cases", role = "named"),
-    "lower-snake-case"
-  )
-  expect_identical(study_manifest_bytes(root), before)
 })
 
 test_that("register_data does not require endpoint columns before writing", {

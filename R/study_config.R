@@ -72,9 +72,18 @@
       !is.na(contract$built) && nzchar(contract$built) &&
       identical(basename(contract$built), contract$built) &&
       nzchar(tools::file_ext(contract$built))
-    valid_population <- is.null(contract$population) ||
-      (is.character(contract$population) && length(contract$population) == 1L &&
-         !is.na(contract$population) && nzchar(contract$population))
+    valid_population <- is.list(contract) && (
+      is.null(contract$population) ||
+        (is.character(contract$population) && length(contract$population) == 1L &&
+           !is.na(contract$population) && nzchar(contract$population))
+    )
+    if (is.list(contract) && !valid_population) {
+      stop(
+        "study_config(): ", found, " population for additional dataset '",
+        name, "' must be a non-empty character scalar or null.",
+        call. = FALSE
+      )
+    }
     if (!valid_name || !valid_file || !valid_population) {
       stop(
         "study_config(): ", found,

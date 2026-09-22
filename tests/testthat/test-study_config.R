@@ -142,6 +142,20 @@ test_that("study_config rejects incomplete named release metadata", {
   expect_error(study_config(root), "release_id")
 })
 
+test_that("study_config identifies an invalid named-dataset population", {
+  root <- make_study_fixture(withr::local_tempdir())
+  raw <- yaml::read_yaml(file.path(root, "_study.yml"))
+  raw$additional_datasets <- list(
+    imaging = list(built = "imaging.csv", population = "")
+  )
+  yaml::write_yaml(raw, file.path(root, "_study.yml"))
+
+  expect_error(
+    study_config(root),
+    "population.*imaging.*non-empty character scalar or null"
+  )
+})
+
 test_that("study_config validates release metadata", {
   cases <- list(
     list(value = "not a mapping", pattern = "mapping"),

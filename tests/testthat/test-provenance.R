@@ -127,18 +127,25 @@ test_that("two runs differ only in the rendered timestamp", {
   expect_equal(drop_rendered(first), drop_rendered(second))
 })
 
-test_that("extra fields are merged in and do not displace required keys", {
+test_that("extra fields are merged without displacing required keys", {
   skip_if_not_installed("haven")
   root <- make_study_fixture(withr::local_tempdir())
-  out  <- make_output(root)
+  out <- make_output(root)
 
-  record_provenance(out, extra = list(template = list(name = "hz",
-                                                      version = "1.0.0")),
-                    cfg = study_config(root))
-  j <- jsonlite::fromJSON(provenance_path(out), simplifyVector = FALSE)
+  record_provenance(
+    out,
+    extra = list(
+      job = "spoofed-job",
+      data = list(list(dataset = "spoofed-data")),
+      template = list(name = "hz", version = "1.0.0")
+    ),
+    cfg = study_config(root)
+  )
+  record <- jsonlite::fromJSON(provenance_path(out), simplifyVector = FALSE)
 
-  expect_equal(j$template$name, "hz")
-  expect_equal(j$job, "01.hz.dead_JR")
+  expect_equal(record$template$name, "hz")
+  expect_equal(record$job, "01.hz.dead_JR")
+  expect_equal(record$data[[1L]]$dataset, "study")
 })
 
 test_that("an unwritable sidecar location is an error, not a warning", {

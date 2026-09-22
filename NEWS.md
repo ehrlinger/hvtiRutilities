@@ -4,7 +4,8 @@
 
 * Registration is endpoint-neutral. Jobs supply cohort definitions explicitly,
   and status, provenance, and release adoption no longer require a study-wide
-  cohort.
+  cohort. `study_config()` now identifies the malformed `population` field and
+  its named dataset directly.
 
 # hvtiRutilities 1.3.1
 
