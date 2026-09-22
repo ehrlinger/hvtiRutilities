@@ -305,6 +305,50 @@ test_that("a publication failure is raised even if its message contains the not-
                            no.. = TRUE), 0L)
 })
 
+test_that("an interrupt during publication restores the cache pair without backups", {
+  root <- make_study_fixture(withr::local_tempdir())
+  estimates <- file.path(root, "estimates")
+  dir.create(estimates)
+  d <- 1:10
+  cache_fit("s", sum(d), dir = estimates)
+  cache <- file.path(estimates, "s.rds")
+  sidecar <- provenance_path(cache)
+  old_cache <- readBin(cache, "raw", n = file.info(cache)$size)
+  old_sidecar <- readBin(sidecar, "raw", n = file.info(sidecar)$size)
+  observed <- new.env(parent = emptyenv())
+
+  local_mocked_bindings(
+    publish_provenance = function(path, payload) {
+      observed$new_cache_visible <- !identical(
+        readBin(path, "raw", n = file.info(path)$size),
+        old_cache
+      )
+      observed$stale_sidecar_visible <- file.exists(provenance_path(path))
+      stop(structure(
+        list(message = "interrupted publication", call = NULL),
+        class = c("interrupt", "condition")
+      ))
+    },
+    .package = "hvtiRutilities"
+  )
+  d <- 1:11
+  interrupted <- tryCatch(
+    suppressMessages(cache_fit("s", sum(d), dir = estimates, refit = TRUE)),
+    interrupt = function(e) e
+  )
+
+  expect_s3_class(interrupted, "interrupt")
+  expect_true(observed$new_cache_visible)
+  expect_false(observed$stale_sidecar_visible)
+  expect_identical(readBin(cache, "raw", n = file.info(cache)$size), old_cache)
+  expect_identical(readBin(sidecar, "raw", n = file.info(sidecar)$size),
+                   old_sidecar)
+  expect_setequal(
+    list.files(estimates, all.files = TRUE, no.. = TRUE),
+    c("s.rds", "s.provenance.json")
+  )
+})
+
 test_that("a survival forest round-trips and records its package version", {
   skip_if_not_installed("randomForestSRC")
   withr::local_options(rf.cores = 1L, mc.cores = 1L)

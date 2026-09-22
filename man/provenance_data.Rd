@@ -17,9 +17,11 @@ provenance_data(dataset = "study", cfg = study_config(), role = "analysis")
 A plain list containing one immutable-by-convention data record.
 }
 \description{
-Records the exact registered file selected by \code{dataset}. The returned
-plain list contains the logical dataset name, a canonical study-relative
-path, its role, byte count, modification time, and SHA-256 hash.
+Records the authoritative physical file selected by \code{dataset}. For a
+manifest entry with \code{role: "primary"}, this is the promoted Parquet
+file rather than the retired source. The returned plain list contains the
+logical dataset name, a canonical study-relative path, its role, byte count,
+modification time, and SHA-256 hash.
 }
 \seealso{
 \code{\link{provenance_artifact}},

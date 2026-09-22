@@ -13,7 +13,10 @@
   and `publish_provenance()` binds that payload to an existing completed
   output through an atomic sidecar replacement. `record_provenance()` remains
   an existing-output convenience, but no longer accepts `dataset=` or infers
-  the currently registered data.
+  the currently registered data. Promoted `role: primary` datasets snapshot
+  their authoritative Parquet file, publication deeply validates transported
+  capture payloads, and interrupted cache replacement restores the prior cache
+  and sidecar as one pair.
 
 # hvtiRutilities 1.3.1
 

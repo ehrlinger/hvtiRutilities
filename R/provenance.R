@@ -135,50 +135,82 @@
     !grepl("//|/$", path)
 }
 
-.provenance_validate_record <- function(record, kind, index) {
+.provenance_named_shape <- function(value, fields) {
+  is.list(value) && !is.null(names(value)) &&
+    !anyDuplicated(names(value)) && setequal(names(value), fields)
+}
+
+.provenance_hash_valid <- function(value) {
+  is.character(value) && length(value) == 1L && !is.na(value) &&
+    grepl("^[0-9a-f]{64}$", value)
+}
+
+.provenance_timestamp_valid <- function(value, fractional = FALSE) {
+  if (!is.character(value) || length(value) != 1L || is.na(value)) {
+    return(FALSE)
+  }
+  pattern <- if (fractional) {
+    "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z$"
+  } else {
+    "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+  }
+  if (!grepl(pattern, value)) return(FALSE)
+  whole_seconds <- sub("\\.[0-9]+Z$", "Z", value)
+  parsed <- as.POSIXct(
+    whole_seconds,
+    format = "%Y-%m-%dT%H:%M:%SZ",
+    tz = "UTC"
+  )
+  !is.na(parsed) && identical(
+    format(parsed, "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"),
+    whole_seconds
+  )
+}
+
+.provenance_validate_record <- function(record, kind, index,
+                                        caller = "capture_provenance") {
   fields <- if (identical(kind, "data")) {
     c("dataset", "path", "role", "bytes", "mtime", "sha256")
   } else {
     c("path", "role", "bytes", "mtime", "sha256")
   }
   label <- paste(kind, "record", index)
-  named <- is.list(record) && !is.null(names(record)) &&
-    !anyDuplicated(names(record)) && setequal(names(record), fields)
+  named <- .provenance_named_shape(record, fields)
   valid_role <- named && is.character(record$role) &&
     length(record$role) == 1L && !is.na(record$role) && nzchar(record$role)
   valid_bytes <- named && is.numeric(record$bytes) &&
     length(record$bytes) == 1L && !is.na(record$bytes) &&
     is.finite(record$bytes) && record$bytes >= 0 &&
     record$bytes == floor(record$bytes)
-  valid_mtime <- named && is.character(record$mtime) &&
-    length(record$mtime) == 1L && !is.na(record$mtime) &&
-    grepl("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:]{8}(\\.[0-9]+)?Z$", record$mtime)
-  valid_hash <- named && is.character(record$sha256) &&
-    length(record$sha256) == 1L && !is.na(record$sha256) &&
-    grepl("^[0-9a-f]{64}$", record$sha256)
+  valid_mtime <- named && .provenance_timestamp_valid(
+    record$mtime,
+    fractional = TRUE
+  )
+  valid_hash <- named && .provenance_hash_valid(record$sha256)
   valid_dataset <- identical(kind, "artifact") ||
     (named && is.character(record$dataset) && length(record$dataset) == 1L &&
        !is.na(record$dataset) && nzchar(record$dataset))
 
   if (!named || !valid_role || !valid_bytes || !valid_mtime ||
         !valid_hash || !valid_dataset) {
-    stop("capture_provenance(): malformed ", label, ".", call. = FALSE)
+    stop(caller, "(): malformed ", label, ".", call. = FALSE)
   }
   if (!.provenance_record_path_valid(record$path)) {
-    stop("capture_provenance(): ", label,
+    stop(caller, "(): ", label,
          " path must be a canonical study-relative path.", call. = FALSE)
   }
   record[fields]
 }
 
-.provenance_validate_records <- function(records, kind) {
+.provenance_validate_records <- function(records, kind,
+                                         caller = "capture_provenance") {
   if (!is.list(records)) {
-    stop("capture_provenance(): `", kind,
+    stop(caller, "(): `", kind,
          "` must be a list of explicit records.", call. = FALSE)
   }
   if (length(records) == 0L) return(list())
   validated <- lapply(seq_along(records), function(index) {
-    .provenance_validate_record(records[[index]], kind, index)
+    .provenance_validate_record(records[[index]], kind, index, caller)
   })
   paths <- vapply(validated, `[[`, "", "path")
   roles <- vapply(validated, `[[`, "", "role")
@@ -212,19 +244,57 @@
     stop("publish_provenance(): captured payload must not contain `output`.",
          call. = FALSE)
   }
-  scalar_fields <- c("job", "rendered")
-  valid_scalars <- all(vapply(payload[scalar_fields], function(value) {
-    is.character(value) && length(value) == 1L && !is.na(value) && nzchar(value)
-  }, logical(1)))
-  valid_lists <- all(vapply(payload[c("study", "r", "packages")], is.list,
-                            logical(1))) &&
-    (is.null(payload$renv_lock) || is.list(payload$renv_lock))
-  if (!valid_scalars || !valid_lists) {
+  scalar <- function(value) {
+    is.character(value) && length(value) == 1L &&
+      !is.na(value) && nzchar(value)
+  }
+  study_valid <- .provenance_named_shape(
+    payload$study,
+    c("name", "file", "sha256")
+  ) && scalar(payload$study$name) &&
+    identical(payload$study$file, "_study.yml") &&
+    .provenance_hash_valid(payload$study$sha256)
+  r_valid <- .provenance_named_shape(
+    payload$r,
+    c("version", "platform")
+  ) && scalar(payload$r$version) && scalar(payload$r$platform)
+  lock_valid <- is.null(payload$renv_lock) || (
+    .provenance_named_shape(payload$renv_lock, c("path", "sha256")) &&
+      identical(payload$renv_lock$path, "renv.lock") &&
+      .provenance_hash_valid(payload$renv_lock$sha256)
+  )
+  package_valid <- function(entry) {
+    named <- .provenance_named_shape(
+      entry,
+      c("package", "version", "source")
+    )
+    source_valid <- named && (
+      is.null(entry$source) ||
+        (is.character(entry$source) && length(entry$source) == 1L &&
+           (is.na(entry$source) || nzchar(entry$source)))
+    )
+    named && scalar(entry$package) && scalar(entry$version) && source_valid
+  }
+  packages_valid <- is.list(payload$packages) && length(payload$packages) > 0L &&
+    all(vapply(payload$packages, package_valid, logical(1)))
+  if (packages_valid) {
+    package_names <- vapply(payload$packages, `[[`, "", "package")
+    packages_valid <- !anyDuplicated(package_names)
+  }
+  valid <- scalar(payload$job) &&
+    .provenance_timestamp_valid(payload$rendered) && study_valid && r_valid &&
+    lock_valid && packages_valid
+  if (!valid) {
     stop("publish_provenance(): malformed captured payload.", call. = FALSE)
   }
-  payload$data <- .provenance_validate_records(payload$data, "data")
+  payload$data <- .provenance_validate_records(
+    payload$data,
+    "data",
+    "publish_provenance"
+  )
   payload$artifacts <- .provenance_validate_records(payload$artifacts,
-                                                    "artifact")
+                                                    "artifact",
+                                                    "publish_provenance")
   payload
 }
 
@@ -270,9 +340,11 @@ provenance_path <- function(path) {
 #' Snapshot a registered data file for provenance
 #'
 #' @description
-#' Records the exact registered file selected by \code{dataset}. The returned
-#' plain list contains the logical dataset name, a canonical study-relative
-#' path, its role, byte count, modification time, and SHA-256 hash.
+#' Records the authoritative physical file selected by \code{dataset}. For a
+#' manifest entry with \code{role: "primary"}, this is the promoted Parquet
+#' file rather than the retired source. The returned plain list contains the
+#' logical dataset name, a canonical study-relative path, its role, byte count,
+#' modification time, and SHA-256 hash.
 #'
 #' @param dataset Character(1). Logical registered dataset name.
 #' @param cfg List. A study manifest from \code{\link{study_config}}.
@@ -288,8 +360,15 @@ provenance_data <- function(dataset = "study", cfg = study_config(),
                             role = "analysis") {
   .provenance_role(role, "provenance_data")
   .study_dataset(cfg, dataset)
+  source <- built_path(cfg, dataset)
+  entry <- .manifest_entry(file.path(cfg$root, "manifest.yaml"), source)
+  authoritative <- if (identical(entry$role, "primary")) {
+    .derived_paths(source)$parquet
+  } else {
+    source
+  }
   resolved <- .provenance_relative_path(
-    built_path(cfg, dataset),
+    authoritative,
     cfg,
     "provenance_data"
   )

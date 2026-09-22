@@ -49,6 +49,29 @@ test_that("provenance_data snapshots a registered file with an explicit role", {
   )
 })
 
+test_that("provenance_data snapshots the authoritative file for a promoted dataset", {
+  skip_if_not_installed("arrow")
+  root <- make_study_fixture(withr::local_tempdir())
+  cfg <- study_config(root)
+  read_built(cfg)
+
+  manifest_path <- file.path(root, "manifest.yaml")
+  manifest <- yaml::read_yaml(manifest_path)
+  manifest$datasets[[1]]$role <- "primary"
+  yaml::write_yaml(manifest, manifest_path)
+  source <- built_path(cfg)
+  parquet <- hvtiRutilities:::.derived_paths(source)$parquet
+  unlink(source)
+
+  record <- provenance_data(cfg = cfg)
+
+  expect_file_record(record, "datasets/built_test.parquet", "analysis")
+  expect_identical(
+    record$sha256,
+    digest::digest(parquet, algo = "sha256", file = TRUE)
+  )
+})
+
 test_that("provenance_artifact snapshots canonical study-relative bytes", {
   root <- make_registered_study(withr::local_tempdir())
   cfg <- study_config(root)
@@ -271,6 +294,46 @@ test_that("publish rejects malformed payloads", {
   expect_error(publish_provenance(out, payload[-1L]), "payload")
   payload$output <- list(sha256 = "spoofed")
   expect_error(publish_provenance(out, payload), "output")
+})
+
+test_that("publish deeply validates a round-tripped captured payload", {
+  root <- make_registered_study(withr::local_tempdir())
+  cfg <- study_config(root)
+  out <- make_output(root)
+  writeLines('{"R": {"Version": "4.5.1"}}', file.path(root, "renv.lock"))
+  payload <- capture_provenance(
+    "death-hz-ac",
+    data = list(provenance_data(cfg = cfg)),
+    artifacts = list(provenance_artifact(make_artifact(root), cfg = cfg)),
+    cfg = cfg
+  )
+  payload <- jsonlite::fromJSON(
+    jsonlite::toJSON(payload, auto_unbox = TRUE, null = "null", digits = NA),
+    simplifyVector = FALSE
+  )
+
+  malformed <- list(
+    rendered_value = within(payload, rendered <- "2026-99-99T25:61:61Z"),
+    study_shape = within(payload, study$unexpected <- "field"),
+    study_scalar = within(payload, study$name <- character()),
+    study_hash = within(payload, study$sha256 <- "not-a-hash"),
+    r_shape = within(payload, r$platform <- NULL),
+    r_scalar = within(payload, r$version <- list("4.5.1")),
+    lock_shape = within(payload, renv_lock$unexpected <- "field"),
+    lock_path = within(payload, renv_lock$path <- "../renv.lock"),
+    lock_hash = within(payload, renv_lock$sha256 <- "not-a-hash"),
+    package_shape = within(payload, packages[[1]]$unexpected <- "field"),
+    package_scalar = within(payload, packages[[1]]$version <- character()),
+    package_source = within(payload, packages[[1]]$source <- list("CRAN")),
+    package_list = within(payload, packages <- list()),
+    data_record = within(payload, data[[1]]$mtime <- "2026-99-99T25:61:61Z"),
+    artifact_record = within(payload, artifacts[[1]]$sha256 <- "not-a-hash")
+  )
+
+  for (case in malformed) {
+    expect_error(publish_provenance(out, case), "malformed")
+  }
+  expect_false(file.exists(provenance_path(out)))
 })
 
 test_that("publication failure preserves the previous sidecar atomically", {
