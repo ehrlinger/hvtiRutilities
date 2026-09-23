@@ -1,3 +1,16 @@
+# hvtiRutilities (unreleased)
+
+## Bug fixes
+
+* `r_data_types()` no longer corrupts a 2-distinct-value numeric column coded
+  something other than 0/1 -- a SAS-style 1/2 sex code, say -- into a single
+  logical value. `as.logical()` maps every nonzero code to `TRUE`, so both
+  categories silently became `TRUE` and one was lost outright, with no error
+  or warning. Only a column whose two values are actually 0 and 1 converts to
+  logical (or a 2-level factor when `binary_factor = TRUE`); any other
+  2-distinct-value coding now becomes a factor unconditionally, preserving
+  both categories.
+
 # hvtiRutilities 1.3.1
 
 ## New features

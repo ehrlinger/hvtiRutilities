@@ -63,6 +63,33 @@ test_that("binary_factor=FALSE keeps default logical conversion", {
   expect_type(result$binary, "logical")
 })
 
+test_that("a 2-distinct-value numeric column coded 1/2 becomes a factor, not a corrupted logical", {
+  # as.logical(c(1, 2)) is c(TRUE, TRUE): a SAS-style 1/2 code collapses to a
+  # single value under the old rule, silently merging both categories into
+  # "TRUE". This must become a 2-level factor instead, preserving both codes.
+  dta <- data.frame(sex = c(1, 2, 1, 2, 1), stringsAsFactors = FALSE)
+  result <- r_data_types(dta)
+
+  expect_s3_class(result$sex, "factor")
+  expect_equal(levels(result$sex), c("1", "2"))
+  expect_equal(as.character(result$sex), as.character(dta$sex))
+})
+
+test_that("binary_factor has no effect on a non-0/1 binary code -- it is always a factor", {
+  dta <- data.frame(sex = c(1, 2, 1, 2), stringsAsFactors = FALSE)
+  result <- r_data_types(dta, binary_factor = FALSE)
+
+  expect_s3_class(result$sex, "factor")
+})
+
+test_that("0/1 coding still converts to logical, order of values does not matter", {
+  dta <- data.frame(flag = c(1, 0, 0, 1), stringsAsFactors = FALSE)
+  result <- r_data_types(dta)
+
+  expect_type(result$flag, "logical")
+  expect_equal(as.logical(result$flag), as.logical(dta$flag))
+})
+
 # Factor size parameter tests ----
 
 test_that("factor_size controls numeric to factor conversion", {

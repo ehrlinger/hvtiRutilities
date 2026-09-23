@@ -59,11 +59,21 @@
   # rule that changes nothing would have to report itself as "unchanged" --
   # which the report defines as no rule matching at all.
   if (!is.factor(x) && !is.character(x) && !is.logical(x) && n == 2L) {
-    x <- as.logical(x)
-    if (binary_factor) {
-      return(out(factor(x, exclude = NA), "binary_factor", "inference"))
+    vals <- sort(unique(x[!is.na(x)]))
+    if (isTRUE(all.equal(vals, c(0, 1)))) {
+      x <- as.logical(x)
+      if (binary_factor) {
+        return(out(factor(x, exclude = NA), "binary_factor", "inference"))
+      }
+      return(out(x, "binary_logical"))
     }
-    return(out(x, "binary_logical"))
+
+    # Two distinct values that are not {0, 1} -- a SAS-style 1/2 code, say.
+    # as.logical() maps every nonzero code to TRUE, so BOTH categories would
+    # become TRUE and the column would silently lose one of them entirely.
+    # A factor keeps the two values distinct instead of guessing which one
+    # means "false".
+    return(out(factor(x, exclude = NA), "n_distinct_factor", "inference"))
   }
 
   if (is.character(x)) {
@@ -99,7 +109,12 @@
 #'     values.
 #'   \item Character strings "NA", "na", "Na" and "nA" become \code{NA}.
 #'   \item Numeric or integer columns with exactly 2 distinct values become
-#'     logical, or factors when \code{binary_factor = TRUE}.
+#'     logical, or factors when \code{binary_factor = TRUE} -- but only when
+#'     the two values are 0 and 1. Any other 2-distinct-value coding (a
+#'     SAS-style 1/2, say) becomes a factor outright, regardless of
+#'     \code{binary_factor}: \code{as.logical()} maps every nonzero code to
+#'     \code{TRUE}, so a 1/2 column would otherwise become \code{TRUE} for
+#'     every row and silently lose one of its two categories.
 #'   \item Remaining character columns become factors.
 #'   \item Numeric columns with 3 to \code{factor_size} distinct values
 #'     become factors.
