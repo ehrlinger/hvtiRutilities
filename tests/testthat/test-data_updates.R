@@ -334,8 +334,12 @@ test_that("review_data_update compares an explicit valid candidate", {
   expect_identical(review$candidate$release_id,
                    "surgery_cohort-20260921-r1")
   expect_s3_class(review$comparison, "dataset_comparison")
-  expect_identical(review$cohort_old$n, 3L)
-  expect_identical(review$cohort_new$n, 4L)
+  expect_named(
+    review,
+    c("dataset", "pinned", "candidate", "comparison"),
+    ignore.order = FALSE
+  )
+  expect_false(any(c("cohort_old", "cohort_new") %in% names(review)))
   expect_output(print(review), "Rows: 3 -> 4", fixed = TRUE)
   expect_invisible(print(review))
   after <- readBin(manifest_path, "raw", n = file.info(manifest_path)$size)
@@ -490,12 +494,8 @@ test_that("review checks observed dimensions against the catalog", {
   )
 })
 
-test_that("review omits cohort comparison when the contract has none", {
+test_that("review of a named dataset has no cohort comparison", {
   fx <- make_release_aware_study(withr::local_tempdir(), named = TRUE)
-  study_path <- file.path(fx$root, "_study.yml")
-  study <- yaml::read_yaml(study_path)
-  study$additional_datasets$named_data$cohort <- NULL
-  yaml::write_yaml(study, study_path)
 
   review <- review_data_update(
     study_config(fx$root),
@@ -503,11 +503,15 @@ test_that("review omits cohort comparison when the contract has none", {
     release_id = "surgery_cohort-20260921-r1"
   )
 
-  expect_null(review$cohort_old)
-  expect_null(review$cohort_new)
+  expect_named(
+    review,
+    c("dataset", "pinned", "candidate", "comparison"),
+    ignore.order = FALSE
+  )
+  expect_false(any(c("cohort_old", "cohort_new") %in% names(review)))
 })
 
-test_that("review fails when candidate cohort columns are absent", {
+test_that("review permits a candidate without the former cohort event column", {
   fx <- make_release_aware_study(withr::local_tempdir())
   candidate_path <- file.path(fx$data_dir, "cohort_20260921.csv")
   candidate <- read.csv(candidate_path)
@@ -520,17 +524,20 @@ test_that("review fails when candidate cohort columns are absent", {
   catalog$datasets$surgery_cohort$releases[[2L]] <- release
   yaml::write_yaml(catalog, fx$catalog_path)
 
-  expect_error(
-    review_data_update(
-      study_config(fx$root),
-      release_id = "surgery_cohort-20260921-r1"
-    ),
-    "no column named dead"
+  review <- review_data_update(
+    study_config(fx$root),
+    release_id = "surgery_cohort-20260921-r1"
   )
+
+  expect_false(any(c("cohort_old", "cohort_new") %in% names(review)))
 })
 
 test_that("adoption advances the default contract and manifest entry", {
   fx <- make_release_aware_study(withr::local_tempdir(), pinned_sequence = 1L)
+  review <- review_data_update(
+    study_config(fx$root),
+    release_id = "surgery_cohort-20260921-r1"
+  )
 
   status <- adopt_data_update(
     study_config(fx$root),
@@ -538,11 +545,10 @@ test_that("adoption advances the default contract and manifest entry", {
   )
 
   expect_s3_class(status, "study_status")
-  cfg <- study_config(fx$root)
-  expect_identical(cfg$built, "cohort_20260921.csv")
-  expect_identical(cfg$release$release_id,
-                   "surgery_cohort-20260921-r1")
-  expect_identical(cfg$cohort$n, 4L)
+  after <- study_config(fx$root)
+  expect_identical(after$built, review$candidate$file)
+  expect_identical(after$release$release_id, review$candidate$release_id)
+  expect_null(after$cohort)
   manifest <- yaml::read_yaml(file.path(fx$root, "manifest.yaml"))
   files <- vapply(manifest$datasets, function(x) x$file, character(1))
   expect_false("cohort_20260920.csv" %in% files)
@@ -568,7 +574,7 @@ test_that("adoption advances only the selected named contract", {
 
   after <- yaml::read_yaml(file.path(fx$root, "_study.yml"))
   expect_identical(after$built, before$built)
-  expect_identical(after$cohort, before$cohort)
+  expect_null(after$cohort)
   expect_identical(after$release, before$release)
   expect_identical(
     after$additional_datasets$named_data$built,
@@ -578,7 +584,7 @@ test_that("adoption advances only the selected named contract", {
     after$additional_datasets$named_data$release$release_id,
     "surgery_cohort-20260921-r1"
   )
-  expect_identical(after$additional_datasets$named_data$cohort$n, 4L)
+  expect_null(after$additional_datasets$named_data$cohort)
   update <- status$checks[
     status$checks$item == "update:named_data",
     ,
@@ -594,8 +600,6 @@ test_that("a named release can be adopted before the default is registered", {
   register_data(
     root,
     "cohort_20260920.csv",
-    "dead",
-    "iv_dead",
     dataset = "named_data",
     role = "named",
     catalog_dataset = "surgery_cohort",
@@ -642,6 +646,69 @@ test_that("adoption retains additive release metadata", {
       after$release
     }
     expect_identical(release$future_field, "keep me", info = as.character(named))
+  }
+})
+
+test_that("adoption preserves additive study and dataset fields", {
+  for (named in c(FALSE, TRUE)) {
+    fx <- make_release_aware_study(withr::local_tempdir(), named = named)
+    path <- file.path(fx$root, "_study.yml")
+    raw <- yaml::read_yaml(path)
+    raw$future_identity <- list(owner = "keep me")
+    raw$future_contract <- "keep default"
+    if (!named) {
+      raw$additional_datasets <- list(
+        named_data = list(
+          built = "named.csv",
+          future_contract = "keep named",
+          release = list(
+            dataset_id = "named_cohort",
+            release_id = "named_cohort-20260920-r1"
+          )
+        )
+      )
+    } else {
+      raw$release <- list(
+        dataset_id = "default_cohort",
+        release_id = "default_cohort-20260920-r1"
+      )
+    }
+    raw$additional_datasets$named_data$future_contract <- "keep named"
+    raw$cohort <- list(
+      n = 3L,
+      n_events = 1L,
+      n_censored = 2L,
+      event = "dead",
+      time = "iv_dead"
+    )
+    raw$additional_datasets$named_data$cohort <- list(
+      n = 2L,
+      n_events = 1L,
+      n_censored = 1L,
+      event = "stroke",
+      time = "iv_stroke"
+    )
+    before <- raw
+    yaml::write_yaml(raw, path)
+
+    adopt_data_update(
+      study_config(fx$root),
+      dataset = if (named) "named_data" else "study",
+      release_id = "surgery_cohort-20260921-r1"
+    )
+
+    after <- yaml::read_yaml(path)
+    expect_identical(after$future_identity, list(owner = "keep me"), info = as.character(named))
+    expect_identical(after$future_contract, "keep default", info = as.character(named))
+    expect_identical(after$additional_datasets$named_data$future_contract, "keep named",
+                     info = as.character(named))
+    expect_identical(after$cohort, before$cohort, info = as.character(named))
+    expect_identical(after$additional_datasets$named_data$cohort,
+                     before$additional_datasets$named_data$cohort,
+                     info = as.character(named))
+    sibling <- if (named) after$release else after$additional_datasets$named_data$release
+    sibling_before <- if (named) before$release else before$additional_datasets$named_data$release
+    expect_identical(sibling, sibling_before, info = as.character(named))
   }
 })
 

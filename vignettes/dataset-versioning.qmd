@@ -299,8 +299,8 @@ adopt_data_update(
 ```
 
 Both review and adoption require an exact ID; `"latest"` is not an alias.
-Review verifies both files and shows row, column, type, label, and cohort-count
-changes. Adoption repeats those checks, then replaces `_study.yml` and
+Review verifies both files and shows row, column, type, and label changes.
+Adoption repeats those checks, then replaces `_study.yml` and
 `manifest.yaml` together. It leaves the old dated file in place.
 
 A producer may withdraw a release without deleting it. A study pinned to that

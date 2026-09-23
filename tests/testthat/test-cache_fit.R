@@ -251,6 +251,12 @@ test_that("inside a study the default dir is used; provenance keeps key", {
   rec <- jsonlite::read_json(side)
   expect_identical(rec$cache_key$inputs$d,
                    attr(out, "hvtiRutilities_cache_key")$inputs$d)
+  expect_identical(rec$data, list())
+  expect_identical(
+    rec$output$sha256,
+    digest::digest(file.path(root, "estimates", "s.rds"),
+                   algo = "sha256", file = TRUE)
+  )
 })
 
 test_that("outside a study no sidecar is written", {
@@ -259,16 +265,15 @@ test_that("outside a study no sidecar is written", {
   expect_identical(list.files(dir, all.files = TRUE, no.. = TRUE), "s.rds")
 })
 
-test_that("a provenance failure inside a study leaves nothing cached", {
+test_that("cache provenance deliberately records no implicit current data", {
   root <- make_study_fixture(withr::local_tempdir(), write_data = FALSE)
   dir.create(file.path(root, "estimates"))
-  err <- expect_error(
-    cache_fit("s", sum(1:3), dir = file.path(root, "estimates"))
+  cache_fit("s", sum(1:3), dir = file.path(root, "estimates"))
+  record <- jsonlite::read_json(
+    file.path(root, "estimates", "s.provenance.json"),
+    simplifyVector = FALSE
   )
-  expect_match(conditionMessage(err), "cache_fit", fixed = TRUE)
-  expect_match(conditionMessage(err), "NOT kept")
-  expect_length(list.files(file.path(root, "estimates"), all.files = TRUE,
-                           no.. = TRUE), 0L)
+  expect_identical(record$data, list())
 })
 
 test_that("a corrupted _study.yml mentions cache_fit() and leaves nothing cached", {
@@ -282,12 +287,12 @@ test_that("a corrupted _study.yml mentions cache_fit() and leaves nothing cached
                            no.. = TRUE), 0L)
 })
 
-test_that("a record_provenance() failure is raised even if its message contains the not-a-study phrase", {
+test_that("a publication failure is raised even if its message contains the not-a-study phrase", {
   root <- make_study_fixture(withr::local_tempdir())
   dir.create(file.path(root, "estimates"))
   local_mocked_bindings(
-    record_provenance = function(...) {
-      stop("no _study.yml found (coincidentally, from record_provenance())")
+    publish_provenance = function(...) {
+      stop("no _study.yml found (coincidentally, from publish_provenance())")
     },
     .package = "hvtiRutilities"
   )
@@ -298,6 +303,233 @@ test_that("a record_provenance() failure is raised even if its message contains 
   expect_match(conditionMessage(err), "NOT kept")
   expect_length(list.files(file.path(root, "estimates"), all.files = TRUE,
                            no.. = TRUE), 0L)
+})
+
+test_that("an interrupt during publication restores the cache pair without backups", {
+  root <- make_study_fixture(withr::local_tempdir())
+  estimates <- file.path(root, "estimates")
+  dir.create(estimates)
+  d <- 1:10
+  cache_fit("s", sum(d), dir = estimates)
+  cache <- file.path(estimates, "s.rds")
+  sidecar <- provenance_path(cache)
+  old_cache <- readBin(cache, "raw", n = file.info(cache)$size)
+  old_sidecar <- readBin(sidecar, "raw", n = file.info(sidecar)$size)
+  observed <- new.env(parent = emptyenv())
+
+  local_mocked_bindings(
+    publish_provenance = function(path, payload) {
+      observed$new_cache_visible <- !identical(
+        readBin(path, "raw", n = file.info(path)$size),
+        old_cache
+      )
+      observed$stale_sidecar_visible <- file.exists(provenance_path(path))
+      stop(structure(
+        list(message = "interrupted publication", call = NULL),
+        class = c("interrupt", "condition")
+      ))
+    },
+    .package = "hvtiRutilities"
+  )
+  d <- 1:11
+  interrupted <- tryCatch(
+    suppressMessages(cache_fit("s", sum(d), dir = estimates, refit = TRUE)),
+    interrupt = function(e) e
+  )
+
+  expect_s3_class(interrupted, "interrupt")
+  expect_true(observed$new_cache_visible)
+  expect_false(observed$stale_sidecar_visible)
+  expect_identical(readBin(cache, "raw", n = file.info(cache)$size), old_cache)
+  expect_identical(readBin(sidecar, "raw", n = file.info(sidecar)$size),
+                   old_sidecar)
+  expect_setequal(
+    list.files(estimates, all.files = TRUE, no.. = TRUE),
+    c("s.rds", "s.provenance.json")
+  )
+})
+
+test_that("failed cache-pair restores warn where each backup remains", {
+  root <- make_study_fixture(withr::local_tempdir())
+  estimates <- file.path(root, "estimates")
+  dir.create(estimates)
+  d <- 1:10
+  cache_fit("s", sum(d), dir = estimates)
+  observed <- new.env(parent = emptyenv())
+  observed$backups <- character()
+
+  local_mocked_bindings(
+    publish_provenance = function(...) stop("publication failed"),
+    .cache_restore_backup = function(backup, target) {
+      observed$backups <- c(observed$backups, backup)
+      invisible(FALSE)
+    },
+    .package = "hvtiRutilities"
+  )
+  d <- 1:11
+  warnings <- list()
+  err <- withCallingHandlers(
+    tryCatch(
+      suppressMessages(cache_fit("s", sum(d), dir = estimates,
+                                 refit = TRUE)),
+      error = identity
+    ),
+    warning = function(w) {
+      warnings[[length(warnings) + 1L]] <<- w
+      invokeRestart("muffleWarning")
+    }
+  )
+
+  expect_s3_class(err, "error")
+  expect_match(conditionMessage(err), "NOT kept")
+  expect_length(warnings, 2L)
+  for (i in seq_along(observed$backups)) {
+    expect_true(grepl(observed$backups[[i]], conditionMessage(warnings[[i]]),
+                      fixed = TRUE))
+  }
+  expect_true(all(file.exists(observed$backups)))
+})
+
+test_that("restore warnings preserve errors and interrupts when warnings are errors", {
+  run_case <- function(interrupted) {
+    root <- make_study_fixture(withr::local_tempdir())
+    estimates <- file.path(root, "estimates")
+    dir.create(estimates)
+    d <- 1:10
+    cache_fit("s", sum(d), dir = estimates)
+    observed <- new.env(parent = emptyenv())
+    observed$backups <- character()
+    observed$attempt_counts <- integer()
+    observed$warn_options <- integer()
+    withr::local_options(warn = 2L)
+
+    local_mocked_bindings(
+      publish_provenance = function(...) {
+        if (interrupted) {
+          stop(structure(
+            list(message = "interrupted publication", call = NULL),
+            class = c("interrupt", "condition")
+          ))
+        }
+        stop("publication failed")
+      },
+      .cache_restore_backup = function(backup, target) {
+        observed$backups <- c(observed$backups, backup)
+        invisible(FALSE)
+      },
+      .package = "hvtiRutilities",
+      .env = environment()
+    )
+    d <- 1:11
+    result <- withCallingHandlers(
+      tryCatch(
+        suppressMessages(cache_fit("s", sum(d), dir = estimates,
+                                   refit = TRUE)),
+        error = identity,
+        interrupt = identity
+      ),
+      warning = function(w) {
+        observed$attempt_counts <- c(
+          observed$attempt_counts,
+          length(observed$backups)
+        )
+        observed$warn_options <- c(observed$warn_options, getOption("warn"))
+        invokeRestart("muffleWarning")
+      }
+    )
+    list(result = result, observed = observed)
+  }
+
+  failed <- run_case(FALSE)
+  expect_s3_class(failed$result, "simpleError")
+  expect_match(conditionMessage(failed$result), "NOT kept")
+  expect_match(conditionMessage(failed$result), "publication failed")
+  expect_identical(failed$observed$attempt_counts, c(2L, 2L))
+  expect_identical(failed$observed$warn_options, c(1L, 1L))
+
+  interrupted <- run_case(TRUE)
+  expect_s3_class(interrupted$result, "interrupt")
+  expect_identical(conditionMessage(interrupted$result),
+                   "interrupted publication")
+  expect_identical(interrupted$observed$attempt_counts, c(2L, 2L))
+  expect_identical(interrupted$observed$warn_options, c(1L, 1L))
+})
+
+test_that("a failed initial sidecar backup preserves both original files", {
+  root <- make_study_fixture(withr::local_tempdir())
+  estimates <- file.path(root, "estimates")
+  dir.create(estimates)
+  d <- 1:10
+  cache_fit("s", sum(d), dir = estimates)
+  cache <- file.path(estimates, "s.rds")
+  sidecar <- provenance_path(cache)
+  old_cache <- readBin(cache, "raw", n = file.info(cache)$size)
+  old_sidecar <- readBin(sidecar, "raw", n = file.info(sidecar)$size)
+
+  local_mocked_bindings(
+    .cache_rename = function(from, to) {
+      if (identical(from, sidecar)) return(FALSE)
+      base::file.rename(from, to)
+    },
+    .package = "hvtiRutilities"
+  )
+  d <- 1:11
+  expect_error(
+    suppressMessages(cache_fit("s", sum(d), dir = estimates, refit = TRUE)),
+    "preserve the existing provenance sidecar"
+  )
+
+  cache_after <- if (file.exists(cache)) {
+    readBin(cache, "raw", n = file.info(cache)$size)
+  }
+  sidecar_after <- if (file.exists(sidecar)) {
+    readBin(sidecar, "raw", n = file.info(sidecar)$size)
+  }
+  expect_identical(cache_after, old_cache)
+  expect_identical(sidecar_after, old_sidecar)
+  expect_setequal(
+    list.files(estimates, all.files = TRUE, no.. = TRUE),
+    c("s.rds", "s.provenance.json")
+  )
+})
+
+test_that("a failed cache backup restores an already moved sidecar", {
+  root <- make_study_fixture(withr::local_tempdir())
+  estimates <- file.path(root, "estimates")
+  dir.create(estimates)
+  d <- 1:10
+  cache_fit("s", sum(d), dir = estimates)
+  cache <- file.path(estimates, "s.rds")
+  sidecar <- provenance_path(cache)
+  old_cache <- readBin(cache, "raw", n = file.info(cache)$size)
+  old_sidecar <- readBin(sidecar, "raw", n = file.info(sidecar)$size)
+
+  local_mocked_bindings(
+    .cache_rename = function(from, to) {
+      cache_backup <- identical(from, cache) && grepl("-backup-", to)
+      if (cache_backup) return(FALSE)
+      base::file.rename(from, to)
+    },
+    .package = "hvtiRutilities"
+  )
+  d <- 1:11
+  expect_error(
+    suppressMessages(cache_fit("s", sum(d), dir = estimates, refit = TRUE)),
+    "preserve the existing cached object"
+  )
+
+  cache_after <- if (file.exists(cache)) {
+    readBin(cache, "raw", n = file.info(cache)$size)
+  }
+  sidecar_after <- if (file.exists(sidecar)) {
+    readBin(sidecar, "raw", n = file.info(sidecar)$size)
+  }
+  expect_identical(cache_after, old_cache)
+  expect_identical(sidecar_after, old_sidecar)
+  expect_setequal(
+    list.files(estimates, all.files = TRUE, no.. = TRUE),
+    c("s.rds", "s.provenance.json")
+  )
 })
 
 test_that("a survival forest round-trips and records its package version", {

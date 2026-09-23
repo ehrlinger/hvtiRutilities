@@ -11,7 +11,7 @@ study_config(start = getwd(), require_data = TRUE)
 to \code{getwd()}.}
 
 \item{require_data}{Logical. If \code{TRUE}, require the default dataset and
-cohort contract. Use \code{FALSE} when only study identity is needed.}
+registered file. Use \code{FALSE} when only study identity is needed.}
 }
 \value{
 The manifest as a list, with \code{root} and \code{file} attached.
@@ -28,18 +28,14 @@ walked are named in the error, because the usual cause is starting from
 outside the study tree.
 
 Study identity always requires \code{study}. With
-\code{require_data = TRUE}, \code{built} and a \code{cohort} block holding
-\code{n}, \code{n_events}, \code{n_censored}, \code{event} and \code{time}
-are also required. \code{built} must carry its file extension, because the
-reader dispatches on it.
+\code{require_data = TRUE}, \code{built} is also required. It must carry
+its file extension, because the reader dispatches on the extension.
 }
 \examples{
 root <- file.path(tempdir(), "study-example")
 dir.create(root, showWarnings = FALSE)
 yaml::write_yaml(
-  list(study = "Example", built = "example.sas7bdat",
-       cohort = list(n = 10L, n_events = 4L, n_censored = 6L,
-                     event = "dead", time = "iv_dead")),
+  list(study = "Example", built = "example.sas7bdat"),
   file.path(root, "_study.yml")
 )
 cfg <- study_config(root)

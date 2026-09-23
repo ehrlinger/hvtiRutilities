@@ -1,5 +1,24 @@
 # hvtiRutilities (unreleased)
 
+## Breaking changes
+
+* Registration is endpoint-neutral. Jobs supply cohort definitions explicitly,
+  and status, provenance, and release adoption no longer require a study-wide
+  cohort. `study_config()` now identifies the malformed `population` field and
+  its named dataset directly.
+
+* Provenance capture now requires explicit data records. `provenance_data()`
+  and `provenance_artifact()` freeze the files a job actually reads;
+  `capture_provenance()` freezes those records and the executing R session;
+  and `publish_provenance()` binds that payload to an existing completed
+  output through an atomic sidecar replacement. `record_provenance()` remains
+  an existing-output convenience, but no longer accepts `dataset=` or infers
+  the currently registered data. Promoted `role: primary` datasets snapshot
+  their authoritative Parquet file, publication deeply validates transported
+  capture payloads, and failed or interrupted cache replacement attempts to
+  restore the prior cache and sidecar as one pair, warning with the path of
+  any backup that cannot be restored.
+
 ## Bug fixes
 
 * `r_data_types()` no longer corrupts a 2-distinct-value numeric column coded
