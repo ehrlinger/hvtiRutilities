@@ -1,5 +1,70 @@
 # Changelog
 
+## hvtiRutilities 1.4.0
+
+### Breaking changes
+
+- Registration is endpoint-neutral. Jobs supply cohort definitions
+  explicitly, and status, provenance, and release adoption no longer
+  require a study-wide cohort.
+  [`study_config()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md)
+  now identifies the malformed `population` field and its named dataset
+  directly.
+
+- Provenance capture now requires explicit data records.
+  [`provenance_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/provenance_data.md)
+  and
+  [`provenance_artifact()`](https://ehrlinger.github.io/hvtiRutilities/reference/provenance_artifact.md)
+  freeze the files a job actually reads;
+  [`capture_provenance()`](https://ehrlinger.github.io/hvtiRutilities/reference/capture_provenance.md)
+  freezes those records and the executing R session; and
+  [`publish_provenance()`](https://ehrlinger.github.io/hvtiRutilities/reference/publish_provenance.md)
+  binds that payload to an existing completed output through an atomic
+  sidecar replacement.
+  [`record_provenance()`](https://ehrlinger.github.io/hvtiRutilities/reference/record_provenance.md)
+  remains an existing-output convenience, but no longer accepts
+  `dataset=` or infers the currently registered data. Promoted
+  `role: primary` datasets snapshot their authoritative Parquet file,
+  publication deeply validates transported capture payloads, and failed
+  or interrupted cache replacement attempts to restore the prior cache
+  and sidecar as one pair, warning with the path of any backup that
+  cannot be restored.
+
+### Bug fixes
+
+- [`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
+  no longer corrupts a 2-distinct-value numeric column coded something
+  other than 0/1 – a SAS-style 1/2 sex code, say – into a single logical
+  value. [`as.logical()`](https://rdrr.io/r/base/logical.html) maps
+  every nonzero code to `TRUE`, so both categories silently became
+  `TRUE` and one was lost outright, with no error or warning. Only a
+  column whose two values are actually 0 and 1 converts to logical (or a
+  2-level factor when `binary_factor = TRUE`); any other
+  2-distinct-value coding now becomes a factor unconditionally,
+  preserving both categories. The 0/1 check is exact, not
+  [`all.equal()`](https://rdrr.io/r/base/all.equal.html)-with-tolerance,
+  which read a value merely close to 0 (`1e-9`, say) as 0 and would
+  still have collapsed two distinct categories.
+
+- [`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
+  no longer turns `NaN` into a nonmissing `"NaN"` factor level.
+  [`is.na()`](https://rdrr.io/r/base/NA.html) already treats `NaN` as
+  missing, but [`factor()`](https://rdrr.io/r/base/factor.html)’s own
+  `exclude` matching does not recognise it as equal to `NA`, so a raw
+  `NaN` survived as its own category instead of being dropped like the
+  `NA` next to it.
+
+- [`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
+  no longer merges two distinct numeric values into one factor level
+  when they happen to print identically (adjacent representable doubles
+  differing by a few ULPs, say).
+  [`factor()`](https://rdrr.io/r/base/factor.html)’s default numeric
+  handling formats levels via
+  [`as.character()`](https://rdrr.io/r/base/character.html) and only
+  then deduplicates; real SAS-coded categories are small whole numbers
+  this never touches, so ordinary labels are kept for that case, with a
+  higher-precision fallback only where a collision is actually detected.
+
 ## hvtiRutilities 1.3.1
 
 ### New features

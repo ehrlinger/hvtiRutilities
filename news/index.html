@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.3.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,6 +55,20 @@
       <small>Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.4.0" id="hvtirutilities-140">hvtiRutilities 1.4.0<a class="anchor" aria-label="anchor" href="#hvtirutilities-140"></a></h2>
+<div class="section level3">
+<h3 id="breaking-changes-1-4-0">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-1-4-0"></a></h3>
+<ul><li><p>Registration is endpoint-neutral. Jobs supply cohort definitions explicitly, and status, provenance, and release adoption no longer require a study-wide cohort. <code><a href="../reference/study_config.html">study_config()</a></code> now identifies the malformed <code>population</code> field and its named dataset directly.</p></li>
+<li><p>Provenance capture now requires explicit data records. <code><a href="../reference/provenance_data.html">provenance_data()</a></code> and <code><a href="../reference/provenance_artifact.html">provenance_artifact()</a></code> freeze the files a job actually reads; <code><a href="../reference/capture_provenance.html">capture_provenance()</a></code> freezes those records and the executing R session; and <code><a href="../reference/publish_provenance.html">publish_provenance()</a></code> binds that payload to an existing completed output through an atomic sidecar replacement. <code><a href="../reference/record_provenance.html">record_provenance()</a></code> remains an existing-output convenience, but no longer accepts <code>dataset=</code> or infers the currently registered data. Promoted <code>role: primary</code> datasets snapshot their authoritative Parquet file, publication deeply validates transported capture payloads, and failed or interrupted cache replacement attempts to restore the prior cache and sidecar as one pair, warning with the path of any backup that cannot be restored.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-1-4-0">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-4-0"></a></h3>
+<ul><li><p><code><a href="../reference/r_data_types.html">r_data_types()</a></code> no longer corrupts a 2-distinct-value numeric column coded something other than 0/1 – a SAS-style 1/2 sex code, say – into a single logical value. <code><a href="https://rdrr.io/r/base/logical.html" class="external-link">as.logical()</a></code> maps every nonzero code to <code>TRUE</code>, so both categories silently became <code>TRUE</code> and one was lost outright, with no error or warning. Only a column whose two values are actually 0 and 1 converts to logical (or a 2-level factor when <code>binary_factor = TRUE</code>); any other 2-distinct-value coding now becomes a factor unconditionally, preserving both categories. The 0/1 check is exact, not <code><a href="https://rdrr.io/r/base/all.equal.html" class="external-link">all.equal()</a></code>-with-tolerance, which read a value merely close to 0 (<code>1e-9</code>, say) as 0 and would still have collapsed two distinct categories.</p></li>
+<li><p><code><a href="../reference/r_data_types.html">r_data_types()</a></code> no longer turns <code>NaN</code> into a nonmissing <code>"NaN"</code> factor level. <code><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na()</a></code> already treats <code>NaN</code> as missing, but <code><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor()</a></code>’s own <code>exclude</code> matching does not recognise it as equal to <code>NA</code>, so a raw <code>NaN</code> survived as its own category instead of being dropped like the <code>NA</code> next to it.</p></li>
+<li><p><code><a href="../reference/r_data_types.html">r_data_types()</a></code> no longer merges two distinct numeric values into one factor level when they happen to print identically (adjacent representable doubles differing by a few ULPs, say). <code><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor()</a></code>’s default numeric handling formats levels via <code><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character()</a></code> and only then deduplicates; real SAS-coded categories are small whole numbers this never touches, so ordinary labels are kept for that case, with a higher-precision fallback only where a collision is actually detected.</p></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.3.1" id="hvtirutilities-131">hvtiRutilities 1.3.1<a class="anchor" aria-label="anchor" href="#hvtirutilities-131"></a></h2>
 <div class="section level3">
