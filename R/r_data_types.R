@@ -2,6 +2,24 @@
 # clinical data. Held here so the dispatcher and its tests agree on the list.
 .na_strings <- c("NA", "na", "Na", "nA")
 
+# factor()'s default numeric handling formats each level via as.character()
+# and only then deduplicates, so two distinct numeric values that happen to
+# print identically -- adjacent representable doubles differing by a few
+# ULPs, say -- silently collapse into one level. Real SAS-coded categories
+# are small whole numbers this never touches, so the ordinary numeric-sorted
+# "1", "2", "3" labels are kept for that overwhelmingly common case; the
+# higher-precision fallback only replaces the label text on an actual
+# collision, which is the one case where the plain labels can no longer be
+# trusted anyway.
+.safe_numeric_factor <- function(x) {
+  f <- factor(x, exclude = NA)
+  n_distinct_x <- length(unique(x[!is.na(x)]))
+  if (nlevels(f) < n_distinct_x) {
+    f <- factor(sprintf("%.17g", x), exclude = NA)
+  }
+  f
+}
+
 # Convert one column and say why.
 #
 # This is the only place a conversion decision is made. Returning the rule
@@ -52,6 +70,12 @@
     }
   }
 
+  # is.na() already treats NaN as missing, but factor()'s own `exclude`
+  # matching does not recognise NaN as equal to NA -- they are different bit
+  # patterns for a double -- so a raw NaN would otherwise survive as its own
+  # nonmissing "NaN" level in every branch below that builds a factor.
+  # Normalized once, here, before any of them run.
+  if (is.numeric(x)) x[is.nan(x)] <- NA
   n <- dplyr::n_distinct(x, na.rm = TRUE)
 
   # A column that is already logical is excluded rather than passed through
@@ -60,7 +84,11 @@
   # which the report defines as no rule matching at all.
   if (!is.factor(x) && !is.character(x) && !is.logical(x) && n == 2L) {
     vals <- sort(unique(x[!is.na(x)]))
-    if (isTRUE(all.equal(vals, c(0, 1)))) {
+    # Exact equality, not all.equal(): all.equal()'s default tolerance
+    # (~1.5e-8) accepts values merely close to 0 and 1 -- c(1e-9, 1) reads as
+    # "equal to c(0, 1)" under it -- which would still silently collapse two
+    # genuinely distinct categories through as.logical() below.
+    if (isTRUE(vals[1] == 0) && isTRUE(vals[2] == 1)) {
       x <- as.logical(x)
       if (binary_factor) {
         return(out(factor(x, exclude = NA), "binary_factor", "inference"))
@@ -73,7 +101,7 @@
     # become TRUE and the column would silently lose one of them entirely.
     # A factor keeps the two values distinct instead of guessing which one
     # means "false".
-    return(out(factor(x, exclude = NA), "n_distinct_factor", "inference"))
+    return(out(.safe_numeric_factor(x), "n_distinct_factor", "inference"))
   }
 
   if (is.character(x)) {
@@ -81,7 +109,7 @@
   }
 
   if (n < factor_size && n > 2L && !is.factor(x) && is.numeric(x)) {
-    return(out(factor(x, exclude = NA), "n_distinct_factor", "inference"))
+    return(out(.safe_numeric_factor(x), "n_distinct_factor", "inference"))
   }
 
   # A column that was already logical and did not take the binary branch --

@@ -90,6 +90,35 @@ test_that("0/1 coding still converts to logical, order of values does not matter
   expect_equal(as.logical(result$flag), as.logical(dta$flag))
 })
 
+test_that("a value merely close to 0 is not treated as 0 -- exact equality only", {
+  # all.equal()'s default tolerance (~1.5e-8) reads 1e-9 as "equal to 0",
+  # which would still collapse this into a corrupted single-value logical.
+  dta <- data.frame(code = c(1e-9, 1, 1e-9, 1), stringsAsFactors = FALSE)
+  result <- r_data_types(dta)
+
+  expect_s3_class(result$code, "factor")
+  expect_equal(nlevels(result$code), 2L)
+})
+
+test_that("NaN is missing, not a nonmissing factor level", {
+  dta <- data.frame(code = c(1, 2, NA, NaN), stringsAsFactors = FALSE)
+  result <- r_data_types(dta)
+
+  expect_s3_class(result$code, "factor")
+  expect_equal(levels(result$code), c("1", "2"))
+  expect_true(is.na(result$code[3]))
+  expect_true(is.na(result$code[4]))
+})
+
+test_that("adjacent representable doubles are not merged into one factor level", {
+  x <- c(2, 2 + 2 * .Machine$double.eps, 2, 2 + 2 * .Machine$double.eps)
+  dta <- data.frame(code = x, stringsAsFactors = FALSE)
+  result <- r_data_types(dta)
+
+  expect_s3_class(result$code, "factor")
+  expect_equal(nlevels(result$code), 2L)
+})
+
 # Factor size parameter tests ----
 
 test_that("factor_size controls numeric to factor conversion", {
