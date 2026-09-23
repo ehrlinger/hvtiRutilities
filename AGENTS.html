@@ -140,24 +140,29 @@
 <h2 id="git-and-versioning">Git and versioning<a class="anchor" aria-label="anchor" href="#git-and-versioning"></a></h2>
 <ul><li><p><strong>Never push to <code>main</code>.</strong> Branch, then open a PR and let the maintainer merge. A push rejected with “Changes must be made through a pull request” means branch — never force-push around it.</p></li>
 <li>
-<p><strong><code>main</code> is protected by a GitHub ruleset, and nothing in this repo records that.</strong> A clone shows no trace of it, so it is stated here. The ruleset is named <code>protect main</code> and enforces four rules on the default branch: no deletion, no force-push, pull-request-only, and an <strong>automatic Copilot code review</strong> on every PR. The rejection above comes from the server, not a local hook.</p>
-<p>Because the file is the only record, it is the one thing here with no way to detect its own drift. <strong>Verified against the live ruleset on 2026-09-02</strong>; re-verify with</p>
+<p><strong><code>main</code> is protected by a GitHub ruleset, and nothing in this repo records that.</strong> A clone shows no trace of it, so it is stated here. The ruleset is named <code>protect main</code> and enforces five rules on the default branch: no deletion, no force-push, pull-request-only, an <strong>automatic Copilot code review</strong> on every PR, and <strong>required status checks</strong>. The rejection above comes from the server, not a local hook.</p>
+<p>Because the file is the only record, it is the one thing here with no way to detect its own drift. <strong>Verified against the live ruleset on 2026-09-23</strong>; re-verify with</p>
 <pre><code>gh api repos/ehrlinger/hvtiRutilities/rules/branches/main \
   --jq '.[] | {type, params: .parameters}'</code></pre>
-<p>⚠️ <strong>A PR needs one approving review, and the author cannot supply it.</strong> <code>required_approving_review_count</code> is <strong>1</strong>, so a PR sits at <code>REVIEW_REQUIRED</code> / <code>mergeStateStatus=BLOCKED</code> until somebody else approves. GitHub refuses self-approval, so an agent — or a solo maintainer — cannot open a PR and merge it unassisted. Plan for the wait rather than discovering it at merge time. <code>require_extra_approval_for_unattributed_changes</code> is <strong>true</strong>, which can ask for a second approval on commits GitHub cannot attribute to a verified author.</p>
+<p><strong>A PR needs zero approving reviews.</strong> <code>required_approving_review_count</code> is <strong>0</strong>, so a PR reaches <code>mergeStateStatus=CLEAN</code> once its required checks pass, with no approval at all. It was <strong>1</strong> until at least 2026-09-02; the change applies across the family (see the table below). ⚠️ So <code>CLEAN</code> means the checks passed, <strong>not</strong> that anyone reviewed the change. An agent must still not merge its own PR: the maintainer merges, per the bullet above. <code>require_extra_approval_for_unattributed_changes</code> is <strong>true</strong>, which can still ask for an approval on commits GitHub cannot attribute to a verified author.</p>
+<p>The required status checks are the ten CI jobs <code>docs-current</code>, <code>house-style</code>, <code>lint</code>, <code>pkgdown</code>, <code>test-coverage</code> and the five <code>R CMD check</code> platforms. ⚠️ <code>check-manual</code> is <strong>not</strong> among them, so a PDF-manual failure does not block a merge. Read its result yourself.</p>
 <p><code>require_code_owner_review</code> is <strong>false</strong> here. Adding a <code>CODEOWNERS</code> file would not by itself change anything until that flag is turned on; doing both changes who can approve what.</p>
 <p><strong>Copilot reviews on open and does not re-review when you push.</strong> <code>copilot_code_review.review_on_push</code> is <code>false</code>, so a review posted when the PR opened stays as posted after you fix what it found — pushing does not clear it, and re-requesting the reviewer through the API does not reliably re-trigger it. Say in the PR what you changed and why instead of waiting for a second pass. In the other direction, <code>dismiss_stale_reviews_on_push</code> and <code>require_last_push_approval</code> are both <code>false</code>, so a human approval <strong>survives</strong> later pushes to the branch. Nothing re-gates after an approval lands.</p>
-<p>⚠️ <strong>The family is not uniform — do not carry these facts to a sibling repo unchecked.</strong> All twelve <code>hvti*</code> repositories were checked on 2026-09-02:</p>
+<p>⚠️ <strong>The family is not uniform. Do not carry these facts to a sibling repo unchecked.</strong> All fourteen <code>hvti*</code> repositories were checked on 2026-09-23 (approval count and code-owner flag only; the other rules were read for this repo alone):</p>
 <table class="table"><colgroup><col width="50%"><col width="50%"></colgroup><thead><tr><th>repos</th>
 <th>state</th>
-</tr></thead><tbody><tr><td>10 of 12</td>
+</tr></thead><tbody><tr><td>11 active repos</td>
 <td>
-<code>protect main</code>, active, exactly as described above</td>
-</tr><tr><td><code>hvtiGraphics</code></td>
+<code>protect main</code>, active, <strong>zero</strong> approvals, <code>require_code_owner_review: false</code>. <code>hvtiGraphics</code>, the odd one out on 2026-09-02, now matches</td>
+</tr><tr><td><code>hvtiBoostmtree</code></td>
 <td>
-<code>protect main</code>, active, but <strong>zero</strong> approvals and <code>require_code_owner_review: true</code> — the only repo the previous version of this bullet actually described</td>
+<strong>archived</strong>; <code>protect main</code> still active with <strong>one</strong> approval</td>
 </tr><tr><td><code>hvtiEDAreports</code></td>
-<td>ruleset named <code>main</code>, <strong><code>enforcement: disabled</code></strong>, and no classic branch protection, so nothing gates <code>main</code> there. Not tested by pushing — read from the API</td>
+<td>
+<strong>archived</strong>; ruleset named <code>main</code>, <strong><code>enforcement: disabled</code></strong>
+</td>
+</tr><tr><td><code>hvtiRforests</code></td>
+<td>empty repository: no branches and no ruleset</td>
 </tr></tbody></table></li>
 <li><p>Versions are <strong>straight three digits</strong> (<code>1.0.11</code>). Never a <code>.9000</code> suffix or a fourth digit.</p></li>
 <li><p><strong>Patch-digit bumps only</strong>, as fixes land. The minor and major digits are the maintainer’s decision, taken when a feature set is consolidated into a release. Do not roll them.</p></li>
