@@ -19,6 +19,33 @@
   restore the prior cache and sidecar as one pair, warning with the path of
   any backup that cannot be restored.
 
+## Bug fixes
+
+* `r_data_types()` no longer corrupts a 2-distinct-value numeric column coded
+  something other than 0/1 -- a SAS-style 1/2 sex code, say -- into a single
+  logical value. `as.logical()` maps every nonzero code to `TRUE`, so both
+  categories silently became `TRUE` and one was lost outright, with no error
+  or warning. Only a column whose two values are actually 0 and 1 converts to
+  logical (or a 2-level factor when `binary_factor = TRUE`); any other
+  2-distinct-value coding now becomes a factor unconditionally, preserving
+  both categories. The 0/1 check is exact, not `all.equal()`-with-tolerance,
+  which read a value merely close to 0 (`1e-9`, say) as 0 and would still
+  have collapsed two distinct categories.
+
+* `r_data_types()` no longer turns `NaN` into a nonmissing `"NaN"` factor
+  level. `is.na()` already treats `NaN` as missing, but `factor()`'s own
+  `exclude` matching does not recognise it as equal to `NA`, so a raw `NaN`
+  survived as its own category instead of being dropped like the `NA` next
+  to it.
+
+* `r_data_types()` no longer merges two distinct numeric values into one
+  factor level when they happen to print identically (adjacent representable
+  doubles differing by a few ULPs, say). `factor()`'s default numeric
+  handling formats levels via `as.character()` and only then deduplicates;
+  real SAS-coded categories are small whole numbers this never touches, so
+  ordinary labels are kept for that case, with a higher-precision fallback
+  only where a collision is actually detected.
+
 # hvtiRutilities 1.3.1
 
 ## New features

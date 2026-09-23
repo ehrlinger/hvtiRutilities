@@ -52,7 +52,12 @@ Each column is converted by the first rule that matches, in this order:
     values.
   \item Character strings "NA", "na", "Na" and "nA" become \code{NA}.
   \item Numeric or integer columns with exactly 2 distinct values become
-    logical, or factors when \code{binary_factor = TRUE}.
+    logical, or factors when \code{binary_factor = TRUE} -- but only when
+    the two values are 0 and 1. Any other 2-distinct-value coding (a
+    SAS-style 1/2, say) becomes a factor outright, regardless of
+    \code{binary_factor}: \code{as.logical()} maps every nonzero code to
+    \code{TRUE}, so a 1/2 column would otherwise become \code{TRUE} for
+    every row and silently lose one of its two categories.
   \item Remaining character columns become factors.
   \item Numeric columns with 3 to \code{factor_size} distinct values
     become factors.

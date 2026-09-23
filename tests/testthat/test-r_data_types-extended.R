@@ -373,14 +373,17 @@ test_that("handles data with many column types", {
 
 test_that("handles variables at exact thresholds", {
   dta <- data.frame(
-    two_values = c(1, 2, 1, 2, 1),  # Exactly 2 unique
+    two_values = c(1, 2, 1, 2, 1),  # Exactly 2 unique, coded 1/2 not 0/1
     three_values = c(1, 2, 3, 1, 2),  # Exactly 3 unique
     ten_values = 1:10  # Exactly 10 unique (default factor_size)
   )
 
   result <- r_data_types(dta)
 
-  expect_type(result$two_values, "logical")  # Binary → logical
+  # 1/2-coded, not 0/1 -> factor, not logical: as.logical() would map both
+  # codes to TRUE and merge the two categories into one.
+  expect_s3_class(result$two_values, "factor")
+  expect_equal(levels(result$two_values), c("1", "2"))
   expect_s3_class(result$three_values, "factor")  # 3 < 10
   expect_type(result$ten_values, "integer")  # 10 not < 10
 })

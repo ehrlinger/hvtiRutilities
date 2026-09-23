@@ -85,7 +85,12 @@ test_that("skip_vars maintains label mapping consistency", {
 })
 
 test_that("binary_factor workflow maintains consistency", {
+  # sample_data()$boolean is coded 1/2, not 0/1 (see its own docs: "Integer
+  # 1/2"), so it now always becomes a factor -- binary_factor only chooses
+  # between logical and factor for a 0/1-coded column. Use one here instead
+  # so this test still exercises the distinction it is named for.
   dta <- sample_data(n = 40)
+  dta$zero_one <- as.integer(dta$boolean == 1)
 
   # Convert with binary_factor = TRUE
   converted_factor <- r_data_types(dta, binary_factor = TRUE)
@@ -94,11 +99,16 @@ test_that("binary_factor workflow maintains consistency", {
   converted_logical <- r_data_types(dta, binary_factor = FALSE)
 
   # Different types
-  expect_s3_class(converted_factor$boolean, "factor")
-  expect_type(converted_logical$boolean, "logical")
+  expect_s3_class(converted_factor$zero_one, "factor")
+  expect_type(converted_logical$zero_one, "logical")
 
   # But same number of rows/columns
   expect_equal(dim(converted_factor), dim(converted_logical))
+
+  # A non-0/1 binary code is a factor either way, since as.logical() would
+  # otherwise merge its two categories into one.
+  expect_s3_class(converted_factor$boolean, "factor")
+  expect_s3_class(converted_logical$boolean, "factor")
 })
 
 test_that("multiple sequential conversions are idempotent", {
