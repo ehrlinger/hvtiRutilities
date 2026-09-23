@@ -349,6 +349,112 @@ test_that("an interrupt during publication restores the cache pair without backu
   )
 })
 
+test_that("failed cache-pair restores warn where each backup remains", {
+  root <- make_study_fixture(withr::local_tempdir())
+  estimates <- file.path(root, "estimates")
+  dir.create(estimates)
+  d <- 1:10
+  cache_fit("s", sum(d), dir = estimates)
+  observed <- new.env(parent = emptyenv())
+  observed$backups <- character()
+
+  local_mocked_bindings(
+    publish_provenance = function(...) stop("publication failed"),
+    .cache_restore_backup = function(backup, target) {
+      observed$backups <- c(observed$backups, backup)
+      invisible(FALSE)
+    },
+    .package = "hvtiRutilities"
+  )
+  d <- 1:11
+  warnings <- list()
+  err <- withCallingHandlers(
+    tryCatch(
+      suppressMessages(cache_fit("s", sum(d), dir = estimates,
+                                 refit = TRUE)),
+      error = identity
+    ),
+    warning = function(w) {
+      warnings[[length(warnings) + 1L]] <<- w
+      invokeRestart("muffleWarning")
+    }
+  )
+
+  expect_s3_class(err, "error")
+  expect_match(conditionMessage(err), "NOT kept")
+  expect_length(warnings, 2L)
+  for (i in seq_along(observed$backups)) {
+    expect_true(grepl(observed$backups[[i]], conditionMessage(warnings[[i]]),
+                      fixed = TRUE))
+  }
+  expect_true(all(file.exists(observed$backups)))
+})
+
+test_that("restore warnings preserve errors and interrupts when warnings are errors", {
+  run_case <- function(interrupted) {
+    root <- make_study_fixture(withr::local_tempdir())
+    estimates <- file.path(root, "estimates")
+    dir.create(estimates)
+    d <- 1:10
+    cache_fit("s", sum(d), dir = estimates)
+    observed <- new.env(parent = emptyenv())
+    observed$backups <- character()
+    observed$attempt_counts <- integer()
+    observed$warn_options <- integer()
+    withr::local_options(warn = 2L)
+
+    local_mocked_bindings(
+      publish_provenance = function(...) {
+        if (interrupted) {
+          stop(structure(
+            list(message = "interrupted publication", call = NULL),
+            class = c("interrupt", "condition")
+          ))
+        }
+        stop("publication failed")
+      },
+      .cache_restore_backup = function(backup, target) {
+        observed$backups <- c(observed$backups, backup)
+        invisible(FALSE)
+      },
+      .package = "hvtiRutilities",
+      .env = environment()
+    )
+    d <- 1:11
+    result <- withCallingHandlers(
+      tryCatch(
+        suppressMessages(cache_fit("s", sum(d), dir = estimates,
+                                   refit = TRUE)),
+        error = identity,
+        interrupt = identity
+      ),
+      warning = function(w) {
+        observed$attempt_counts <- c(
+          observed$attempt_counts,
+          length(observed$backups)
+        )
+        observed$warn_options <- c(observed$warn_options, getOption("warn"))
+        invokeRestart("muffleWarning")
+      }
+    )
+    list(result = result, observed = observed)
+  }
+
+  failed <- run_case(FALSE)
+  expect_s3_class(failed$result, "simpleError")
+  expect_match(conditionMessage(failed$result), "NOT kept")
+  expect_match(conditionMessage(failed$result), "publication failed")
+  expect_identical(failed$observed$attempt_counts, c(2L, 2L))
+  expect_identical(failed$observed$warn_options, c(1L, 1L))
+
+  interrupted <- run_case(TRUE)
+  expect_s3_class(interrupted$result, "interrupt")
+  expect_identical(conditionMessage(interrupted$result),
+                   "interrupted publication")
+  expect_identical(interrupted$observed$attempt_counts, c(2L, 2L))
+  expect_identical(interrupted$observed$warn_options, c(1L, 1L))
+})
+
 test_that("a failed initial sidecar backup preserves both original files", {
   root <- make_study_fixture(withr::local_tempdir())
   estimates <- file.path(root, "estimates")

@@ -266,6 +266,33 @@ test_that("publish binds the sidecar to the completed output bytes", {
   )
 })
 
+test_that("record_provenance replaces an existing sidecar", {
+  root <- make_registered_study(withr::local_tempdir())
+  cfg <- study_config(root, require_data = FALSE)
+  out <- make_output(root)
+
+  record_provenance(out, data = list(), extra = list(generation = "first"),
+                    cfg = cfg)
+  sidecar <- provenance_path(out)
+  first <- readBin(sidecar, "raw", n = file.info(sidecar)$size)
+
+  expect_invisible(record_provenance(
+    out,
+    data = list(),
+    extra = list(generation = "second"),
+    cfg = cfg
+  ))
+  second <- readBin(sidecar, "raw", n = file.info(sidecar)$size)
+  record <- jsonlite::read_json(sidecar, simplifyVector = FALSE)
+
+  expect_false(identical(second, first))
+  expect_identical(record$generation, "second")
+  expect_identical(
+    record$output$sha256,
+    digest::digest(out, algo = "sha256", file = TRUE)
+  )
+})
+
 test_that("publish accepts a captured payload after a JSON round trip", {
   root <- make_registered_study(withr::local_tempdir())
   cfg <- study_config(root)

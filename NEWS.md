@@ -15,8 +15,9 @@
   an existing-output convenience, but no longer accepts `dataset=` or infers
   the currently registered data. Promoted `role: primary` datasets snapshot
   their authoritative Parquet file, publication deeply validates transported
-  capture payloads, and failed or interrupted cache replacement restores the
-  prior cache and sidecar as one pair.
+  capture payloads, and failed or interrupted cache replacement attempts to
+  restore the prior cache and sidecar as one pair, warning with the path of
+  any backup that cannot be restored.
 
 # hvtiRutilities 1.3.1
 

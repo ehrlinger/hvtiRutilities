@@ -272,11 +272,23 @@ cache_fit <- function(name, code, seed = NULL, dir = study_dir("estimates"),
   invisible(isTRUE(restored))
 }
 
+.cache_warn_restore_failure <- function(backup, target) {
+  warn <- getOption("warn")
+  if (is.numeric(warn) && length(warn) == 1L && !is.na(warn) && warn >= 2L) {
+    old <- options(warn = 1L)
+    on.exit(options(old), add = TRUE)
+  }
+  warning("cache_fit(): could not restore ", target,
+          "; the recoverable backup remains at ", backup, ".",
+          call. = FALSE)
+}
+
 # Save beside the target, capture provenance, preserve the existing cache pair,
 # move the completed cache into place, then publish the sidecar against those
 # exact bytes. The prior sidecar is hidden before the new cache becomes visible
 # so no observer can pair the new cache with stale provenance. An unwind for any
-# reason restores the pair; this includes interrupts, not only errors.
+# reason attempts to restore the pair and warns where it retains any backup;
+# this includes interrupts, not only errors.
 .cache_write <- function(record, path, key, dir) {
   tmp <- tempfile(
     pattern = paste0(".", tools::file_path_sans_ext(basename(path)), "-"),
@@ -301,13 +313,28 @@ cache_fit <- function(name, code, seed = NULL, dir = study_dir("estimates"),
   committed <- FALSE
   on.exit({
     if (!committed) {
+      restore_failures <- list()
       if (cache_replaced && file.exists(path) && !dir.exists(path)) unlink(path)
       if (sidecar_replacement_started && file.exists(sidecar) &&
             !dir.exists(sidecar)) {
         unlink(sidecar)
       }
-      if (cache_moved) .cache_restore_backup(backup, path)
-      if (sidecar_moved) .cache_restore_backup(sidecar_backup, sidecar)
+      if (cache_moved && !isTRUE(.cache_restore_backup(backup, path))) {
+        restore_failures[[length(restore_failures) + 1L]] <- list(
+          backup = backup,
+          target = path
+        )
+      }
+      if (sidecar_moved &&
+            !isTRUE(.cache_restore_backup(sidecar_backup, sidecar))) {
+        restore_failures[[length(restore_failures) + 1L]] <- list(
+          backup = sidecar_backup,
+          target = sidecar
+        )
+      }
+      for (failure in restore_failures) {
+        .cache_warn_restore_failure(failure$backup, failure$target)
+      }
     } else {
       if (cache_moved && file.exists(backup)) unlink(backup)
       if (sidecar_moved && file.exists(sidecar_backup)) {
