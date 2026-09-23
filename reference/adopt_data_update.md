@@ -1,9 +1,8 @@
 # Adopt one published dataset release
 
-Repeats the candidate review, derives its cohort counts, and replaces
-`_study.yml` and `manifest.yaml` as one recoverable pair. The old dated
-release and its cache files remain on disk. Adoption does not make a Git
-commit.
+Repeats the candidate review and replaces `_study.yml` and
+`manifest.yaml` as one recoverable pair. The old dated release and its
+cache files remain on disk. Adoption does not make a Git commit.
 
 The candidate must be named by its exact release ID. The value
 `"latest"` is never accepted, because the reviewed release and the

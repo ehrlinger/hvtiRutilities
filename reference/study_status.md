@@ -14,8 +14,8 @@ unreadable on exactly the legacy studies it is most needed for.
 
 Release-aware datasets add an `update:<dataset>` row with status
 `"CURRENT"`, `"UPDATE AVAILABLE"`, `"UPDATE STATUS UNKNOWN"`, or
-`"FAIL"`. Legacy studies retain the six base rows and their existing
-dataset and cohort rows.
+`"FAIL"`. Legacy studies retain the five base rows and their existing
+dataset rows.
 
 Unlike
 [`study_config`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md),
@@ -49,9 +49,9 @@ study_status(root = getwd())
 An object of class `"study_status"`: a list with `root`, `checks` (a
 data frame of `item`, `status` – `"OK"`, `"MISSING"`, `"FAIL"`,
 `"CURRENT"`, `"UPDATE AVAILABLE"`, or `"UPDATE STATUS UNKNOWN"` – and
-`detail`). The six base rows are followed by release-aware update rows
-and by dataset, cohort, and update rows for each named dataset. `counts`
-lists `r_files`, `qmd`, `sas_jobs` and `sidecars`.
+`detail`). The five base rows are followed by release-aware update rows
+and by dataset and update rows for each named dataset. `counts` lists
+`r_files`, `qmd`, `sas_jobs` and `sidecars`.
 
 ## See also
 
@@ -64,13 +64,12 @@ lists `r_files`, `qmd`, `sas_jobs` and `sidecars`.
 root <- file.path(tempdir(), "study-status-example")
 dir.create(root, showWarnings = FALSE)
 study_status(root)
-#> Study: /tmp/RtmpH6elhD/study-status-example
+#> Study: /tmp/RtmpAEmeNz/study-status-example
 #> 
 #> [ ] _study.yml — no _study.yml at this root; recovery may be available with study-setup --recover; if its Tracker ID cannot be inferred, run study-setup 42 --recover
 #> [ ] renv.lock — no renv.lock; run renv::init() in the study project
 #> [ ] manifest.yaml — no manifest.yaml; register_data() creates it
 #> [ ] dataset — requires a valid _study.yml
-#> [ ] cohort — requires a valid _study.yml
 #> [ ] provenance — no .qmd/.Rmd sources found; 0 sidecars
 #> 
 #> 0 .R  |  0 .qmd/.Rmd  |  0 .sas  |  0 provenance sidecars

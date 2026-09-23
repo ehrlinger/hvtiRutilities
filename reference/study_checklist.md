@@ -44,7 +44,7 @@ dir.create(root, showWarnings = FALSE)
 cat(study_checklist(study_status(root)), sep = "\n")
 #> # Study readiness
 #> 
-#> Study root: `/tmp/RtmpH6elhD/study-checklist-example`
+#> Study root: `/tmp/RtmpAEmeNz/study-checklist-example`
 #> 
 #> ## Checks
 #> 
@@ -52,7 +52,6 @@ cat(study_checklist(study_status(root)), sep = "\n")
 #> - [ ] **renv.lock** — no renv.lock; run renv::init() in the study project
 #> - [ ] **manifest.yaml** — no manifest.yaml; register_data() creates it
 #> - [ ] **dataset** — requires a valid _study.yml
-#> - [ ] **cohort** — requires a valid _study.yml
 #> - [ ] **provenance** — no .qmd/.Rmd sources found; 0 sidecars
 #> 
 #> ## Counts

@@ -352,14 +352,22 @@ reconcile its built dataset
 - [`cohort_counts()`](https://ehrlinger.github.io/hvtiRutilities/reference/cohort_counts.md)
   : Count the analysable cohort
 - [`assert_cohort()`](https://ehrlinger.github.io/hvtiRutilities/reference/assert_cohort.md)
-  : Assert the cohort matches the study manifest
+  : Assert the cohort matches a job-level expectation
 
 ## Provenance
 
 Record what produced a filed result, in a JSON sidecar beside it
 
+- [`provenance_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/provenance_data.md)
+  : Snapshot a registered data file for provenance
+- [`provenance_artifact()`](https://ehrlinger.github.io/hvtiRutilities/reference/provenance_artifact.md)
+  : Snapshot an input artifact for provenance
+- [`capture_provenance()`](https://ehrlinger.github.io/hvtiRutilities/reference/capture_provenance.md)
+  : Capture an explicit job provenance payload
+- [`publish_provenance()`](https://ehrlinger.github.io/hvtiRutilities/reference/publish_provenance.md)
+  : Publish captured provenance beside a completed output
 - [`record_provenance()`](https://ehrlinger.github.io/hvtiRutilities/reference/record_provenance.md)
-  : Write the provenance record for a rendered output
+  : Capture and publish provenance for an existing output
 - [`provenance_path()`](https://ehrlinger.github.io/hvtiRutilities/reference/provenance_path.md)
   : Name the provenance sidecar for an output
 

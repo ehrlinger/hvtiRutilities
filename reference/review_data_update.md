@@ -1,10 +1,10 @@
 # Review one published dataset release
 
 Verifies the pinned release and one exact, newer candidate, then
-compares their structure and cohort counts. Review reads the source
-files directly; it does not write caches or change either study
-manifest. It describes data drift, but it does not certify that a
-candidate is analytically or clinically correct.
+compares their structure. Review reads the source files directly; it
+does not write caches or change either study manifest. It describes data
+drift, but it does not certify that a candidate is analytically or
+clinically correct.
 
 ## Usage
 
@@ -45,11 +45,6 @@ An object of class `"data_update_review"` with
   A
   [`compare_datasets`](https://ehrlinger.github.io/hvtiRutilities/reference/compare_datasets.md)
   result.
-
-- cohort_old,cohort_new:
-
-  Cohort counts, or `NULL` when the selected dataset has no cohort
-  contract.
 
 ## See also
 

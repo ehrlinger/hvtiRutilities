@@ -120,12 +120,18 @@ a file not written by `cache_fit()` stops with class
 
 The result is written to a temporary file and renamed into place, so an
 interrupted run never leaves a partial file. When `dir` lies inside a
-study, a provenance sidecar carrying the key is written with
-[`record_provenance`](https://ehrlinger.github.io/hvtiRutilities/reference/record_provenance.md).
+study, a provenance sidecar carrying the key and the completed cache
+file's hash is published with
+[`capture_provenance`](https://ehrlinger.github.io/hvtiRutilities/reference/capture_provenance.md)
+and
+[`publish_provenance`](https://ehrlinger.github.io/hvtiRutilities/reference/publish_provenance.md).
+The cache records an explicit empty data list rather than inferring that
+the currently registered dataset was an input to the computation.
 
 ## See also
 
-[`record_provenance`](https://ehrlinger.github.io/hvtiRutilities/reference/record_provenance.md),
+[`capture_provenance`](https://ehrlinger.github.io/hvtiRutilities/reference/capture_provenance.md),
+[`publish_provenance`](https://ehrlinger.github.io/hvtiRutilities/reference/publish_provenance.md),
 [`study_dir`](https://ehrlinger.github.io/hvtiRutilities/reference/study_dir.md)
 
 ## Examples

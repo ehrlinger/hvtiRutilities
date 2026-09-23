@@ -21,11 +21,12 @@ Character(1). The sidecar path.
 
 ## See also
 
+[`publish_provenance`](https://ehrlinger.github.io/hvtiRutilities/reference/publish_provenance.md),
 [`record_provenance`](https://ehrlinger.github.io/hvtiRutilities/reference/record_provenance.md)
 
 ## Examples
 
 ``` r
-provenance_path("_output/01.hz.dead_JR.html")
-#> [1] "_output/01.hz.dead_JR.provenance.json"
+provenance_path("_output/death-hz-ac.html")
+#> [1] "_output/death-hz-ac.provenance.json"
 ```

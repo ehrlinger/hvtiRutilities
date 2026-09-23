@@ -10,9 +10,8 @@ in the error, because the usual cause is starting from outside the study
 tree.
 
 Study identity always requires `study`. With `require_data = TRUE`,
-`built` and a `cohort` block holding `n`, `n_events`, `n_censored`,
-`event` and `time` are also required. `built` must carry its file
-extension, because the reader dispatches on it.
+`built` is also required. It must carry its file extension, because the
+reader dispatches on the extension.
 
 ## Usage
 
@@ -29,7 +28,7 @@ study_config(start = getwd(), require_data = TRUE)
 
 - require_data:
 
-  Logical. If `TRUE`, require the default dataset and cohort contract.
+  Logical. If `TRUE`, require the default dataset and registered file.
   Use `FALSE` when only study identity is needed.
 
 ## Value
@@ -48,9 +47,7 @@ identity and named-dataset fields are retained.
 root <- file.path(tempdir(), "study-example")
 dir.create(root, showWarnings = FALSE)
 yaml::write_yaml(
-  list(study = "Example", built = "example.sas7bdat",
-       cohort = list(n = 10L, n_events = 4L, n_censored = 6L,
-                     event = "dead", time = "iv_dead")),
+  list(study = "Example", built = "example.sas7bdat"),
   file.path(root, "_study.yml")
 )
 cfg <- study_config(root)

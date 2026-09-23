@@ -36,12 +36,10 @@ root <- file.path(tempdir(), "built-path-example")
 dir.create(file.path(root, "datasets"), recursive = TRUE,
            showWarnings = FALSE)
 yaml::write_yaml(
-  list(study = "Example", built = "example.sas7bdat",
-       cohort = list(n = 10L, n_events = 4L, n_censored = 6L,
-                     event = "dead", time = "iv_dead")),
+  list(study = "Example", built = "example.sas7bdat"),
   file.path(root, "_study.yml")
 )
 built_path(study_config(root))
-#> [1] "/tmp/RtmpH6elhD/built-path-example/datasets/example.sas7bdat"
+#> [1] "/tmp/RtmpAEmeNz/built-path-example/datasets/example.sas7bdat"
 unlink(root, recursive = TRUE)
 ```

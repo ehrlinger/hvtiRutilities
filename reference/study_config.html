@@ -7,10 +7,8 @@ _study.yml is an error rather than a set of defaults. The directories
 walked are named in the error, because the usual cause is starting from
 outside the study tree.
 Study identity always requires study. With
-require_data = TRUE, built and a cohort block holding
-n, n_events, n_censored, event and time
-are also required. built must carry its file extension, because the
-reader dispatches on it."><meta property="og:description" content="Walks up from start until a _study.yml is found, parses it,
+require_data = TRUE, built is also required. It must carry
+its file extension, because the reader dispatches on the extension."><meta property="og:description" content="Walks up from start until a _study.yml is found, parses it,
 validates the requested identity or data contract, and returns the result
 with the study root attached.
 A study without a manifest must not render, so an absent
@@ -18,10 +16,8 @@ _study.yml is an error rather than a set of defaults. The directories
 walked are named in the error, because the usual cause is starting from
 outside the study tree.
 Study identity always requires study. With
-require_data = TRUE, built and a cohort block holding
-n, n_events, n_censored, event and time
-are also required. built must carry its file extension, because the
-reader dispatches on it."></head><body>
+require_data = TRUE, built is also required. It must carry
+its file extension, because the reader dispatches on the extension."></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -87,10 +83,8 @@ with the study root attached.</p>
 walked are named in the error, because the usual cause is starting from
 outside the study tree.</p>
 <p>Study identity always requires <code>study</code>. With
-<code>require_data = TRUE</code>, <code>built</code> and a <code>cohort</code> block holding
-<code>n</code>, <code>n_events</code>, <code>n_censored</code>, <code>event</code> and <code>time</code>
-are also required. <code>built</code> must carry its file extension, because the
-reader dispatches on it.</p>
+<code>require_data = TRUE</code>, <code>built</code> is also required. It must carry
+its file extension, because the reader dispatches on the extension.</p>
     </div>
 
     <div class="section level2">
@@ -109,7 +103,7 @@ to <code><a href="https://rdrr.io/r/base/getwd.html" class="external-link">getwd
 
 <dt id="arg-require-data">require_data<a class="anchor" aria-label="anchor" href="#arg-require-data"></a></dt>
 <dd><p>Logical. If <code>TRUE</code>, require the default dataset and
-cohort contract. Use <code>FALSE</code> when only study identity is needed.</p></dd>
+registered file. Use <code>FALSE</code> when only study identity is needed.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -127,9 +121,7 @@ cohort contract. Use <code>FALSE</code> when only study identity is needed.</p><
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">root</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"study-example"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="va">root</span>, showWarnings <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">yaml</span><span class="fu">::</span><span class="fu"><a href="https://yaml.r-lib.org/reference/write_yaml.html" class="external-link">write_yaml</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>study <span class="op">=</span> <span class="st">"Example"</span>, built <span class="op">=</span> <span class="st">"example.sas7bdat"</span>,</span></span>
-<span class="r-in"><span>       cohort <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">10L</span>, n_events <span class="op">=</span> <span class="fl">4L</span>, n_censored <span class="op">=</span> <span class="fl">6L</span>,</span></span>
-<span class="r-in"><span>                     event <span class="op">=</span> <span class="st">"dead"</span>, time <span class="op">=</span> <span class="st">"iv_dead"</span><span class="op">)</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>study <span class="op">=</span> <span class="st">"Example"</span>, built <span class="op">=</span> <span class="st">"example.sas7bdat"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">root</span>, <span class="st">"_study.yml"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">cfg</span> <span class="op">&lt;-</span> <span class="fu">study_config</span><span class="op">(</span><span class="va">root</span><span class="op">)</span></span></span>

@@ -180,12 +180,16 @@ stops with class <code>hvtiRutilities_unkeyed_cache</code>. Both are recomputed
 with <code>refit = TRUE</code>.</p>
 <p>The result is written to a temporary file and renamed into place, so an
 interrupted run never leaves a partial file. When <code>dir</code> lies inside a
-study, a provenance sidecar carrying the key is written with
-<code><a href="record_provenance.html">record_provenance</a></code>.</p>
+study, a provenance sidecar carrying the key and the completed cache file's
+hash is published with <code><a href="capture_provenance.html">capture_provenance</a></code> and
+<code><a href="publish_provenance.html">publish_provenance</a></code>. The cache records an explicit empty data
+list rather than inferring that the currently registered dataset was an
+input to the computation.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="record_provenance.html">record_provenance</a></code>, <code><a href="study_dir.html">study_dir</a></code></p></div>
+    <div class="dont-index"><p><code><a href="capture_provenance.html">capture_provenance</a></code>,
+  <code><a href="publish_provenance.html">publish_provenance</a></code>, <code><a href="study_dir.html">study_dir</a></code></p></div>
     </div>
 
     <div class="section level2">

@@ -1,7 +1,7 @@
 # Register a study dataset
 
 Completes the default study data contract or adds one distinctly named
-dataset. The function derives row and cohort counts from the file and
+dataset. The function derives row and column counts from the file and
 replaces `_study.yml` and `manifest.yaml` only after both updated files
 have been prepared successfully.
 
@@ -11,8 +11,6 @@ have been prepared successfully.
 register_data(
   root = getwd(),
   built,
-  event = NULL,
-  time = NULL,
   dataset = "study",
   role = c("study", "named"),
   population = NULL,
@@ -33,11 +31,6 @@ register_data(
 
   Character(1). Dataset filename within the logical `datasets`
   directory, including its extension.
-
-- event, time:
-
-  Character(1) or `NULL`. Event and follow-up columns. Supply both or
-  neither. The default study dataset requires both.
 
 - dataset:
 

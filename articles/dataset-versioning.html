@@ -80,7 +80,7 @@
       <h1>Dataset Version Tracking with manifest.yaml</h1>
 
       <p class="author">John Ehrlinger</p>
-      <p class="date">2026-09-21</p>
+      <p class="date">2026-09-23</p>
 
       <small class="dont-index">Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/vignettes/dataset-versioning.qmd" class="external-link"><code>vignettes/dataset-versioning.qmd</code></a></small>
       <div class="d-none name"><code></code></div>
@@ -359,7 +359,7 @@
 <span>  release_id <span class="op">=</span> <span class="st">"surgery_cohort-20260921-r1"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
-<p>Both review and adoption require an exact ID; <code>"latest"</code> is not an alias. Review verifies both files and shows row, column, type, label, and cohort-count changes. Adoption repeats those checks, then replaces <code>_study.yml</code> and <code>manifest.yaml</code> together. It leaves the old dated file in place.</p>
+<p>Both review and adoption require an exact ID; <code>"latest"</code> is not an alias. Review verifies both files and shows row, column, type, and label changes. Adoption repeats those checks, then replaces <code>_study.yml</code> and <code>manifest.yaml</code> together. It leaves the old dated file in place.</p>
 <p>A producer may withdraw a release without deleting it. A study pinned to that release stops by default and reports the withdrawal reason. For a deliberate historical reproduction, <code>read_built(allow_withdrawn = TRUE)</code> reads the pinned bytes after their checksum passes. A withdrawn candidate cannot be adopted.</p>
 </section><section class="level2"><h2 id="a-new-pull-for-a-different-project">A New Pull for a Different Project<a class="anchor" aria-label="anchor" href="#a-new-pull-for-a-different-project"></a>
 </h2>
