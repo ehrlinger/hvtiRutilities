@@ -125,7 +125,12 @@ default becomes TRUE in a later release.</p></dd>
     values.</p></li>
 <li><p>Character strings "NA", "na", "Na" and "nA" become <code>NA</code>.</p></li>
 <li><p>Numeric or integer columns with exactly 2 distinct values become
-    logical, or factors when <code>binary_factor = TRUE</code>.</p></li>
+    logical, or factors when <code>binary_factor = TRUE</code> – but only when
+    the two values are 0 and 1. Any other 2-distinct-value coding (a
+    SAS-style 1/2, say) becomes a factor outright, regardless of
+    <code>binary_factor</code>: <code><a href="https://rdrr.io/r/base/logical.html" class="external-link">as.logical()</a></code> maps every nonzero code to
+    <code>TRUE</code>, so a 1/2 column would otherwise become <code>TRUE</code> for
+    every row and silently lose one of its two categories.</p></li>
 <li><p>Remaining character columns become factors.</p></li>
 <li><p>Numeric columns with 3 to <code>factor_size</code> distinct values
     become factors.</p></li>
@@ -165,7 +170,7 @@ with <code><a href="type_conversion_report.html">type_conversion_report</a></cod
 <span class="r-out co"><span class="r-pr">#&gt;</span> 'data.frame':	100 obs. of  7 variables:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  $ id     : int  1 2 3 4 5 6 7 8 9 10 ...</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   ..- attr(*, "label")= chr "Patient Identifier"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  $ boolean: logi  TRUE TRUE TRUE TRUE TRUE TRUE ...</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  $ boolean: Factor w/ 2 levels "1","2": 2 1 1 1 1 2 1 1 2 2 ...</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   ..- attr(*, "label")= chr "Binary Indicator"</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  $ logical: Factor w/ 2 levels "F","T": 2 1 1 1 1 2 1 1 2 2 ...</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   ..- attr(*, "label")= chr "Logical Status"</span>
@@ -180,10 +185,10 @@ with <code><a href="type_conversion_report.html">type_conversion_report</a></cod
 <span class="r-out co"><span class="r-pr">#&gt;</span>  - attr(*, "hvti_type_conversion")='data.frame':	7 obs. of  6 variables:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   ..$ variable    : chr [1:7] "id" "boolean" "logical" "f_real" ...</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   ..$ storage_in  : chr [1:7] "integer" "integer" "character" "numeric" ...</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   ..$ rule        : chr [1:7] "unchanged" "binary_logical" "character_factor" "n_distinct_factor" ...</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   ..$ level_source: chr [1:7] NA NA "inference" "inference" ...</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   ..$ n_levels    : int [1:7] NA NA 2 9 NA 2 5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   ..$ storage_out : chr [1:7] "integer" "logical" "factor" "factor" ...</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   ..$ rule        : chr [1:7] "unchanged" "n_distinct_factor" "character_factor" "n_distinct_factor" ...</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   ..$ level_source: chr [1:7] NA "inference" "inference" "inference" ...</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   ..$ n_levels    : int [1:7] NA 2 2 9 NA 2 5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   ..$ storage_out : chr [1:7] "integer" "factor" "factor" "factor" ...</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Real data example with mtcars</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="fu">datasets</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/r/datasets/mtcars.html" class="external-link">mtcars</a></span><span class="op">$</span><span class="va">vs</span><span class="op">)</span>  <span class="co"># numeric (0/1)</span></span></span>
