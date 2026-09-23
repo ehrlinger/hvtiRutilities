@@ -142,25 +142,30 @@ forgotten `document()` fails the PR rather than landing quietly.
   force-push around it.
 - **`main` is protected by a GitHub ruleset, and nothing in this repo records that.** A clone
   shows no trace of it, so it is stated here. The ruleset is named `protect main` and enforces
-  four rules on the default branch: no deletion, no force-push, pull-request-only, and an
-  **automatic Copilot code review** on every PR. The rejection above comes from the server,
-  not a local hook.
+  five rules on the default branch: no deletion, no force-push, pull-request-only, an
+  **automatic Copilot code review** on every PR, and **required status checks**. The rejection
+  above comes from the server, not a local hook.
 
   Because the file is the only record, it is the one thing here with no way to detect its own
-  drift. **Verified against the live ruleset on 2026-09-02**; re-verify with
+  drift. **Verified against the live ruleset on 2026-09-23**; re-verify with
 
   ```
   gh api repos/ehrlinger/hvtiRutilities/rules/branches/main \
     --jq '.[] | {type, params: .parameters}'
   ```
 
-  ⚠️ **A PR needs one approving review, and the author cannot supply it.**
-  `required_approving_review_count` is **1**, so a PR sits at `REVIEW_REQUIRED` /
-  `mergeStateStatus=BLOCKED` until somebody else approves. GitHub refuses self-approval, so an
-  agent — or a solo maintainer — cannot open a PR and merge it unassisted. Plan for the wait
-  rather than discovering it at merge time.
-  `require_extra_approval_for_unattributed_changes` is **true**, which can ask for a second
+  **A PR needs zero approving reviews.** `required_approving_review_count` is **0**, so a PR
+  reaches `mergeStateStatus=CLEAN` once its required checks pass, with no approval at all. It
+  was **1** until at least 2026-09-02; the change applies across the family (see the table
+  below). ⚠️ So `CLEAN` means the checks passed, **not** that anyone reviewed the change. An
+  agent must still not merge its own PR: the maintainer merges, per the bullet above.
+  `require_extra_approval_for_unattributed_changes` is **true**, which can still ask for an
   approval on commits GitHub cannot attribute to a verified author.
+
+  The required status checks are the ten CI jobs `docs-current`, `house-style`, `lint`,
+  `pkgdown`, `test-coverage` and the five `R CMD check` platforms. ⚠️ `check-manual` is
+  **not** among them, so a PDF-manual failure does not block a merge. Read its result
+  yourself.
 
   `require_code_owner_review` is **false** here. Adding a `CODEOWNERS` file would not by itself
   change anything until that flag is turned on; doing both changes who can approve what.
@@ -173,14 +178,16 @@ forgotten `document()` fails the PR rather than landing quietly.
   `dismiss_stale_reviews_on_push` and `require_last_push_approval` are both `false`, so a human
   approval **survives** later pushes to the branch. Nothing re-gates after an approval lands.
 
-  ⚠️ **The family is not uniform — do not carry these facts to a sibling repo unchecked.**
-  All twelve `hvti*` repositories were checked on 2026-09-02:
+  ⚠️ **The family is not uniform. Do not carry these facts to a sibling repo unchecked.**
+  All fourteen `hvti*` repositories were checked on 2026-09-23 (approval count and code-owner
+  flag only; the other rules were read for this repo alone):
 
   | repos | state |
   |---|---|
-  | 10 of 12 | `protect main`, active, exactly as described above |
-  | `hvtiGraphics` | `protect main`, active, but **zero** approvals and `require_code_owner_review: true` — the only repo the previous version of this bullet actually described |
-  | `hvtiEDAreports` | ruleset named `main`, **`enforcement: disabled`**, and no classic branch protection, so nothing gates `main` there. Not tested by pushing — read from the API |
+  | 11 active repos | `protect main`, active, **zero** approvals, `require_code_owner_review: false`. `hvtiGraphics`, the odd one out on 2026-09-02, now matches |
+  | `hvtiBoostmtree` | **archived**; `protect main` still active with **one** approval |
+  | `hvtiEDAreports` | **archived**; ruleset named `main`, **`enforcement: disabled`** |
+  | `hvtiRforests` | empty repository: no branches and no ruleset |
 - Versions are **straight three digits** (`1.0.11`). Never a `.9000` suffix or a fourth
   digit.
 - **Patch-digit bumps only**, as fixes land. The minor and major digits are the maintainer's

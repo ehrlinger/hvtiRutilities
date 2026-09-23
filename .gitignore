@@ -43,3 +43,6 @@ docs
 .claude/*
 !.claude/house-style.md
 /.worktrees/
+
+# Local findings/test reports; may quote PHI-adjacent content, never commit
+reports/
