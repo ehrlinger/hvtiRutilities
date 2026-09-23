@@ -2,31 +2,32 @@
 % Please edit documentation in R/study_cohort.R
 \name{assert_cohort}
 \alias{assert_cohort}
-\title{Assert the cohort matches the study manifest}
+\title{Assert the cohort matches a job-level expectation}
 \usage{
-assert_cohort(d, cfg = study_config(), dataset = "study")
+assert_cohort(d, expected, event, time)
 }
 \arguments{
-\item{d}{A data frame, typically from \code{\link{read_built}}.}
+\item{d}{A data frame.}
 
-\item{cfg}{List. A study manifest from \code{\link{study_config}}.}
+\item{expected}{List containing nonnegative integer \code{n},
+\code{n_events} and \code{n_censored}.}
 
-\item{dataset}{Character(1). Logical dataset name. Defaults to
-\code{"study"}.}
+\item{event}{Character scalar naming the binary event column.}
+
+\item{time}{Character scalar naming the time column.}
 }
 \value{
 \code{invisible(TRUE)} on success; otherwise an error.
 }
 \description{
-Compares \code{\link{cohort_counts}} against the \code{cohort} block of
-\code{_study.yml} and errors on any disagreement. Call it before any
-analysis that would otherwise run happily on an unreconciled cohort.
+Compares \code{\link{cohort_counts}} against explicitly supplied expected
+counts and errors on any disagreement. Call it before any analysis that
+would otherwise run happily on an unreconciled cohort.
 }
 \examples{
-cfg <- list(cohort = list(n = 5L, n_events = 2L, n_censored = 3L,
-                          event = "dead", time = "iv_dead"))
 d <- data.frame(dead = c(1, 1, 0, 0, 0), iv_dead = 1:5)
-assert_cohort(d, cfg)
+expected <- list(n = 5L, n_events = 2L, n_censored = 3L)
+assert_cohort(d, expected, event = "dead", time = "iv_dead")
 }
 \seealso{
 \code{\link{cohort_counts}}

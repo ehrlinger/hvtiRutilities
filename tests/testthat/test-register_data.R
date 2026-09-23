@@ -25,35 +25,31 @@ study_manifest_bytes <- function(root) {
   )
 }
 
-test_that("register_data derives the default cohort", {
+test_that("register_data registers the default dataset without an endpoint", {
   root <- registration_study()
   write_registration_csv(root, "built.csv", n = 5L, n_events = 2L)
 
-  status <- register_data(root, "built.csv", "dead", "iv_dead")
+  status <- register_data(root, "built.csv")
 
   expect_s3_class(status, "study_status")
   cfg <- study_config(root)
   expect_identical(cfg$built, "built.csv")
-  expect_identical(
-    cfg$cohort[c("n", "n_events", "n_censored")],
-    list(n = 5L, n_events = 2L, n_censored = 3L)
-  )
+  expect_null(cfg$cohort)
   manifest <- yaml::read_yaml(file.path(root, "manifest.yaml"))
   expect_identical(manifest$datasets[[1L]]$n_rows, 5L)
+  expect_identical(manifest$datasets[[1L]]$n_cols, 3L)
 })
 
-test_that("register_data adds a named cohort without changing the default", {
+test_that("register_data adds a named dataset without changing the default", {
   root <- registration_study()
   write_registration_csv(root, "built.csv")
-  register_data(root, "built.csv", "dead", "iv_dead")
+  register_data(root, "built.csv")
   before <- study_config(root)
   write_registration_csv(root, "subset.csv", n = 3L, n_events = 1L)
 
   register_data(
     root,
     "subset.csv",
-    "dead",
-    "iv_dead",
     dataset = "complete_cases",
     role = "named",
     population = "Complete cases"
@@ -61,11 +57,7 @@ test_that("register_data adds a named cohort without changing the default", {
 
   after <- study_config(root)
   expect_identical(after$built, before$built)
-  expect_identical(after$cohort, before$cohort)
-  expect_identical(
-    after$additional_datasets$complete_cases$cohort$n,
-    3L
-  )
+  expect_null(after$additional_datasets$complete_cases$cohort)
   expect_identical(
     after$additional_datasets$complete_cases$population,
     "Complete cases"
@@ -92,11 +84,11 @@ test_that("register_data permits ancillary data before the default", {
 test_that("register_data refuses duplicate registrations without changes", {
   root <- registration_study()
   write_registration_csv(root, "built.csv")
-  register_data(root, "built.csv", "dead", "iv_dead")
+  register_data(root, "built.csv")
   before <- study_manifest_bytes(root)
 
   expect_error(
-    register_data(root, "built.csv", "dead", "iv_dead"),
+    register_data(root, "built.csv"),
     "already registered"
   )
 
@@ -106,43 +98,32 @@ test_that("register_data refuses duplicate registrations without changes", {
 test_that("register_data validates named data before writing", {
   root <- registration_study()
   write_registration_csv(root, "built.csv")
-  register_data(root, "built.csv", "dead", "iv_dead")
+  register_data(root, "built.csv")
   write_registration_csv(root, "subset.csv")
   before <- study_manifest_bytes(root)
 
   expect_error(
-    register_data(root, "subset.csv", "dead",
-                  dataset = "Complete Cases", role = "named"),
-    "together"
-  )
-  expect_identical(study_manifest_bytes(root), before)
-
-  expect_error(
-    register_data(root, "subset.csv", "dead", "iv_dead",
+    register_data(root, "subset.csv",
                   dataset = "Complete Cases", role = "named"),
     "lower-snake-case"
   )
   expect_identical(study_manifest_bytes(root), before)
 })
 
-test_that("register_data rejects missing cohort columns before writing", {
+test_that("register_data does not require endpoint columns before writing", {
   root <- registration_study()
   write_registration_csv(root, "built.csv")
 
-  expect_error(
-    register_data(root, "built.csv", "dead", "missing_time"),
-    "missing_time"
-  )
+  register_data(root, "built.csv")
 
-  cfg <- study_config(root, require_data = FALSE)
-  expect_null(cfg$built)
-  expect_false(file.exists(file.path(root, "manifest.yaml")))
+  expect_identical(study_config(root)$built, "built.csv")
+  expect_true(file.exists(file.path(root, "manifest.yaml")))
 })
 
 test_that("register_data identifies itself in argument errors", {
   root <- registration_study()
 
-  expect_error(register_data(root, "", "dead", "iv_dead"),
+  expect_error(register_data(root, ""),
                "register_data[(][)]")
 })
 
@@ -153,8 +134,6 @@ test_that("register_data records source and the requested extract date", {
   register_data(
     root,
     "built.csv",
-    "dead",
-    "iv_dead",
     source = "Synthetic fixture",
     extract_date = "2006-05-03"
   )
@@ -169,7 +148,7 @@ test_that("register_data defaults extract date to the dataset mtime", {
   path <- write_registration_csv(root, "built.csv")
   Sys.setFileTime(path, as.POSIXct("2006-05-03 14:03:00", tz = "UTC"))
 
-  register_data(root, "built.csv", "dead", "iv_dead")
+  register_data(root, "built.csv")
 
   manifest <- yaml::read_yaml(file.path(root, "manifest.yaml"))
   expect_identical(manifest$datasets[[1L]]$extract_date, "2006-05-03")
@@ -178,7 +157,7 @@ test_that("register_data defaults extract date to the dataset mtime", {
 test_that("register_data creates a verifiable manifest entry", {
   root <- registration_study()
   write_registration_csv(root, "built.csv")
-  register_data(root, "built.csv", "dead", "iv_dead")
+  register_data(root, "built.csv")
 
   report <- verify_manifest(
     file.path(root, "manifest.yaml"),
@@ -192,7 +171,7 @@ test_that("register_data creates a verifiable manifest entry", {
 test_that("verify_manifest refuses a mixed study layout by default", {
   root <- registration_study()
   write_registration_csv(root, "built.csv")
-  register_data(root, "built.csv", "dead", "iv_dead")
+  register_data(root, "built.csv")
   dir.create(file.path(root, "datasets"))
 
   expect_error(
@@ -204,7 +183,7 @@ test_that("verify_manifest refuses a mixed study layout by default", {
 test_that("register_data refuses files that share derived output paths", {
   root <- registration_study()
   write_registration_csv(root, "built.csv")
-  register_data(root, "built.csv", "dead", "iv_dead")
+  register_data(root, "built.csv")
   before <- study_manifest_bytes(root)
   d <- data.frame(id = 1:2, dead = c(0L, 1L), iv_dead = 1:2)
   saveRDS(d, file.path(study_dir("datasets", root), "built.rds"))
@@ -272,11 +251,11 @@ test_that("register_data refuses an absent or extensionless file", {
   before <- readLines(file.path(root, "_study.yml"))
 
   expect_error(
-    register_data(root, "missing.csv", "dead", "iv_dead"),
+    register_data(root, "missing.csv"),
     "missing"
   )
   expect_error(
-    register_data(root, "missing", "dead", "iv_dead"),
+    register_data(root, "missing"),
     "extension"
   )
 
@@ -291,8 +270,6 @@ test_that("register_data attaches a verified published release", {
   register_data(
     root,
     "cohort_20260920.csv",
-    "dead",
-    "iv_dead",
     catalog_dataset = "surgery_cohort",
     release_id = "surgery_cohort-20260920-r1"
   )
@@ -318,8 +295,6 @@ test_that("release registration refuses a filename mismatch without writes", {
     register_data(
       root,
       "cohort_20260921.csv",
-      "dead",
-      "iv_dead",
       catalog_dataset = "surgery_cohort",
       release_id = "surgery_cohort-20260920-r1"
     ),
@@ -337,8 +312,6 @@ test_that("release registration requires both catalog identifiers", {
     register_data(
       root,
       "cohort_20260920.csv",
-      "dead",
-      "iv_dead",
       catalog_dataset = "surgery_cohort"
     ),
     "supplied together"
@@ -347,8 +320,6 @@ test_that("release registration requires both catalog identifiers", {
     register_data(
       root,
       "cohort_20260920.csv",
-      "dead",
-      "iv_dead",
       release_id = "surgery_cohort-20260920-r1"
     ),
     "supplied together"
@@ -368,8 +339,6 @@ test_that("release registration rejects withdrawn or changed releases", {
     register_data(
       withdrawn_root,
       "cohort_20260920.csv",
-      "dead",
-      "iv_dead",
       catalog_dataset = "surgery_cohort",
       release_id = "surgery_cohort-20260920-r1"
     ),
@@ -383,8 +352,6 @@ test_that("release registration rejects withdrawn or changed releases", {
     register_data(
       changed_root,
       "cohort_20260920.csv",
-      "dead",
-      "iv_dead",
       catalog_dataset = "surgery_cohort",
       release_id = "surgery_cohort-20260920-r1"
     ),
@@ -403,8 +370,6 @@ test_that("release registration reconciles catalog provenance", {
     register_data(
       root,
       "cohort_20260920.csv",
-      "dead",
-      "iv_dead",
       source = "Different source",
       catalog_dataset = "surgery_cohort",
       release_id = "surgery_cohort-20260920-r1"
@@ -415,8 +380,6 @@ test_that("release registration reconciles catalog provenance", {
     register_data(
       root,
       "cohort_20260920.csv",
-      "dead",
-      "iv_dead",
       extract_date = "2026-09-19",
       catalog_dataset = "surgery_cohort",
       release_id = "surgery_cohort-20260920-r1"
@@ -427,8 +390,6 @@ test_that("release registration reconciles catalog provenance", {
   expect_no_error(register_data(
     root,
     "cohort_20260920.csv",
-    "dead",
-    "iv_dead",
     source = "Synthetic registry",
     extract_date = "2026-09-20",
     catalog_dataset = "surgery_cohort",
@@ -457,8 +418,6 @@ test_that("release registration brackets the data read with integrity checks", {
     register_data(
       root,
       "cohort_20260920.csv",
-      "dead",
-      "iv_dead",
       catalog_dataset = "surgery_cohort",
       release_id = "surgery_cohort-20260920-r1"
     ),
@@ -480,16 +439,12 @@ test_that("register_data attaches a release to a legacy registration once", {
   register_data(
     root,
     "cohort_20260920.csv",
-    "dead",
-    "iv_dead",
     population = "Synthetic cohort"
   )
 
   register_data(
     root,
     "cohort_20260920.csv",
-    "dead",
-    "iv_dead",
     catalog_dataset = "surgery_cohort",
     release_id = "surgery_cohort-20260920-r1"
   )
@@ -506,8 +461,6 @@ test_that("register_data attaches a release to a legacy registration once", {
     register_data(
       root,
       "cohort_20260920.csv",
-      "dead",
-      "iv_dead",
       catalog_dataset = "surgery_cohort",
       release_id = "surgery_cohort-20260920-r1"
     ),
@@ -515,32 +468,60 @@ test_that("register_data attaches a release to a legacy registration once", {
   )
 })
 
-test_that("release migration preserves the established cohort columns", {
+test_that("release migration keeps the same logical dataset and file", {
   for (role in c("study", "named")) {
     root <- registration_study()
     write_release_fixture(root)
     args <- list(
       root = root,
-      built = "cohort_20260920.csv",
-      event = "dead",
-      time = "iv_dead"
+      built = "cohort_20260920.csv"
     )
     if (identical(role, "named")) {
       args$dataset <- "named_data"
       args$role <- "named"
     }
     do.call(register_data, args)
-    before <- study_manifest_bytes(root)
-    args$event <- "iv_dead"
-    args$time <- "dead"
     args$catalog_dataset <- "surgery_cohort"
     args$release_id <- "surgery_cohort-20260920-r1"
 
-    expect_error(
-      do.call(register_data, args),
-      "existing cohort columns",
-      info = role
-    )
-    expect_identical(study_manifest_bytes(root), before, info = role)
+    expect_s3_class(do.call(register_data, args), "study_status")
   }
+})
+
+test_that("named release migration preserves additive contract fields", {
+  root <- registration_study()
+  write_release_fixture(root)
+  register_data(
+    root,
+    "cohort_20260920.csv",
+    dataset = "named_data",
+    role = "named"
+  )
+  path <- file.path(root, "_study.yml")
+  raw <- yaml::read_yaml(path)
+  raw$additional_datasets$named_data$analysis_context <- list(
+    owner = "outcomes",
+    purpose = "sensitivity analysis"
+  )
+  yaml::write_yaml(raw, path)
+
+  expect_no_error(study_config(root, require_data = FALSE))
+  register_data(
+    root,
+    "cohort_20260920.csv",
+    dataset = "named_data",
+    role = "named",
+    catalog_dataset = "surgery_cohort",
+    release_id = "surgery_cohort-20260920-r1"
+  )
+
+  migrated <- yaml::read_yaml(path)$additional_datasets$named_data
+  expect_identical(migrated$analysis_context, list(
+    owner = "outcomes",
+    purpose = "sensitivity analysis"
+  ))
+  expect_identical(migrated$release, list(
+    dataset_id = "surgery_cohort",
+    release_id = "surgery_cohort-20260920-r1"
+  ))
 })

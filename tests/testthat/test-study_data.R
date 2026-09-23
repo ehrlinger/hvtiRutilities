@@ -87,9 +87,7 @@ test_that("read_built errors when lowercasing collides rather than duplicating a
 
   yaml::write_yaml(
     list(study = "Collision fixture", population = "n=2",
-         built = "built_test.csv", citation = "Fixture.",
-         cohort = list(n = 2L, n_events = 1L, n_censored = 1L,
-                       event = "dead", time = "iv_dead")),
+         built = "built_test.csv", citation = "Fixture."),
     file.path(dir, "_study.yml")
   )
 

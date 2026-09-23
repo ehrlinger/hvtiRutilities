@@ -155,6 +155,10 @@ reference:
 - title: Provenance
   desc: Record what produced a filed result, in a JSON sidecar beside it
   contents:
+  - provenance_data
+  - provenance_artifact
+  - capture_provenance
+  - publish_provenance
   - record_provenance
   - provenance_path
 

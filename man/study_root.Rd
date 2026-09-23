@@ -22,9 +22,7 @@ directories walked.
 root <- file.path(tempdir(), "study-root-example")
 dir.create(root, showWarnings = FALSE)
 yaml::write_yaml(
-  list(study = "Example", built = "example.sas7bdat",
-       cohort = list(n = 10L, n_events = 4L, n_censored = 6L,
-                     event = "dead", time = "iv_dead")),
+  list(study = "Example", built = "example.sas7bdat"),
   file.path(root, "_study.yml")
 )
 study_root(root)

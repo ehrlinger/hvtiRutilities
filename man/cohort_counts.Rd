@@ -4,40 +4,30 @@
 \alias{cohort_counts}
 \title{Count the analysable cohort}
 \usage{
-cohort_counts(d, cfg = study_config(), dataset = "study")
+cohort_counts(d, event, time)
 }
 \arguments{
-\item{d}{A data frame, typically from \code{\link{read_built}}.}
+\item{d}{A data frame.}
 
-\item{cfg}{List. A study manifest from \code{\link{study_config}}; supplies
-\code{cohort$event} and \code{cohort$time}.}
+\item{event}{Character scalar naming the binary event column.}
 
-\item{dataset}{Character(1). Logical dataset name. Defaults to
-\code{"study"}.}
+\item{time}{Character scalar naming the time column.}
 }
 \value{
 A list with integer elements \code{n}, \code{n_events} and
   \code{n_censored}.
 }
 \description{
-Counts rows for which both the event and the time column declared in
-\code{_study.yml} are present, and the events among them.
+Counts rows for which both explicitly supplied event and time columns are
+present, and the events among them.
 
-\strong{The missingness filter may be vacuous on a given study.} Where the
-upstream build has already filtered the cohort, both columns have no missing
-values and this reduces to \code{nrow(d)} and the event total. The filter is
-kept because it is the correct definition of analysable and it stops a
-future dataset with genuine missingness from being miscounted - but a
-passing cohort gate is not evidence that the filtering works.
-
-The event column may arrive logical or numeric depending on the read path,
-so the comparison is against \code{1}, which is correct for both. Do not
-simplify it to \code{sum(d[[event]])}.
+The event column must be logical or numeric binary coding: \code{FALSE}/\code{TRUE}
+or \code{0}/\code{1}. Rows missing either column are excluded from the
+analysable cohort.
 }
 \examples{
-cfg <- list(cohort = list(event = "dead", time = "iv_dead"))
 d <- data.frame(dead = c(1, 1, 0, 0, 0), iv_dead = 1:5)
-cohort_counts(d, cfg)
+cohort_counts(d, event = "dead", time = "iv_dead")
 }
 \seealso{
 \code{\link{assert_cohort}}

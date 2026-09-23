@@ -2,63 +2,37 @@
 % Please edit documentation in R/provenance.R
 \name{record_provenance}
 \alias{record_provenance}
-\title{Write the provenance record for a rendered output}
+\title{Capture and publish provenance for an existing output}
 \usage{
 record_provenance(
   path,
+  data,
+  artifacts = list(),
   extra = list(),
-  cfg = study_config(),
-  dataset = "study"
+  cfg = study_config()
 )
 }
 \arguments{
-\item{path}{Character(1). Path to the rendered output the record belongs to.
-The file itself need not exist; only its name and directory are used.}
+\item{path}{Character(1). Existing completed output path.}
 
-\item{extra}{List. Additional named fields merged into the record - for
-example a \code{template} block naming the template and its version.
-Required keys cannot be displaced.}
+\item{data}{List of records returned by \code{\link{provenance_data}}.}
+
+\item{artifacts}{List of records returned by
+\code{\link{provenance_artifact}}.}
+
+\item{extra}{Named list of job-specific fields. Reserved fields cannot be
+displaced.}
 
 \item{cfg}{List. A study manifest from \code{\link{study_config}}.}
-
-\item{dataset}{Character(1). Logical dataset name. Defaults to
-\code{"study"}.}
 }
 \value{
-Invisibly, the record that was written, as a list.
+Invisibly, the published record as a list.
 }
 \description{
-Writes \code{<output>.provenance.json} beside a rendered result, recording
-what produced it: the study manifest and its checksum, the R version and
-platform, every loaded package and its version, the \code{renv.lock}
-checksum if there is one, the built dataset's checksum, and the cohort.
-
-This closes a loop that is otherwise impossible. Revisiting a study becomes:
-read the sidecar off the filed output, \code{renv::restore()} to that lock,
-re-render, confirm the filed numbers reproduce, and only then wind forward.
-
-Failure to write the sidecar is an error rather than a warning. Every other
-failure in this design is recoverable; a silently unrecorded result is not.
-}
-\examples{
-root <- file.path(tempdir(), "provenance-example")
-dir.create(file.path(root, "datasets"), recursive = TRUE,
-           showWarnings = FALSE)
-yaml::write_yaml(
-  list(study = "Example", built = "example.csv",
-       cohort = list(n = 3L, n_events = 1L, n_censored = 2L,
-                     event = "dead", time = "iv_dead")),
-  file.path(root, "_study.yml")
-)
-write.csv(data.frame(dead = c(1, 0, 0), iv_dead = 1:3),
-          file.path(root, "datasets", "example.csv"), row.names = FALSE)
-out <- file.path(root, "example.html")
-writeLines("<html></html>", out)
-rec <- record_provenance(out, cfg = study_config(root))
-rec$job
-unlink(root, recursive = TRUE)
+Convenience wrapper for an output that already exists. It captures an
+explicit provenance payload and immediately publishes it beside the output.
 }
 \seealso{
-\code{\link{provenance_path}}, \code{\link{study_config}},
-  \code{\link{built_manifest}}
+\code{\link{capture_provenance}},
+  \code{\link{publish_provenance}}, \code{\link{provenance_path}}
 }

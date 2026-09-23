@@ -5,25 +5,16 @@
 #' Count the analysable cohort
 #'
 #' @description
-#' Counts rows for which both the event and the time column declared in
-#' \code{_study.yml} are present, and the events among them.
+#' Counts rows for which both explicitly supplied event and time columns are
+#' present, and the events among them.
 #'
-#' \strong{The missingness filter may be vacuous on a given study.} Where the
-#' upstream build has already filtered the cohort, both columns have no missing
-#' values and this reduces to \code{nrow(d)} and the event total. The filter is
-#' kept because it is the correct definition of analysable and it stops a
-#' future dataset with genuine missingness from being miscounted - but a
-#' passing cohort gate is not evidence that the filtering works.
+#' The event column must be logical or numeric binary coding: \code{FALSE}/\code{TRUE}
+#' or \code{0}/\code{1}. Rows missing either column are excluded from the
+#' analysable cohort.
 #'
-#' The event column may arrive logical or numeric depending on the read path,
-#' so the comparison is against \code{1}, which is correct for both. Do not
-#' simplify it to \code{sum(d[[event]])}.
-#'
-#' @param d A data frame, typically from \code{\link{read_built}}.
-#' @param cfg List. A study manifest from \code{\link{study_config}}; supplies
-#'   \code{cohort$event} and \code{cohort$time}.
-#' @param dataset Character(1). Logical dataset name. Defaults to
-#'   \code{"study"}.
+#' @param d A data frame.
+#' @param event Character scalar naming the binary event column.
+#' @param time Character scalar naming the time column.
 #'
 #' @return A list with integer elements \code{n}, \code{n_events} and
 #'   \code{n_censored}.
@@ -33,46 +24,61 @@
 #' @export
 #'
 #' @examples
-#' cfg <- list(cohort = list(event = "dead", time = "iv_dead"))
 #' d <- data.frame(dead = c(1, 1, 0, 0, 0), iv_dead = 1:5)
-#' cohort_counts(d, cfg)
-cohort_counts <- function(d, cfg = study_config(), dataset = "study") {
-  contract <- .study_dataset(cfg, dataset)
-  if (is.null(contract$cohort)) {
-    stop("cohort_counts(): dataset '", dataset,
-         "' has no cohort contract", call. = FALSE)
+#' cohort_counts(d, event = "dead", time = "iv_dead")
+cohort_counts <- function(d, event, time) {
+  if (!is.character(event)) {
+    stop("cohort_counts(): event must be a non-missing, non-empty character scalar",
+         call. = FALSE)
   }
-  event <- contract$cohort$event
-  time  <- contract$cohort$time
-
+  if (!is.character(time)) {
+    stop("cohort_counts(): time must be a non-missing, non-empty character scalar",
+         call. = FALSE)
+  }
+  event <- .study_scalar(event, "event", required = TRUE, caller = "cohort_counts")
+  time <- .study_scalar(time, "time", required = TRUE, caller = "cohort_counts")
   missing_cols <- setdiff(c(event, time), names(d))
   if (length(missing_cols)) {
-    stop("cohort_counts(): data has no column",
-         if (length(missing_cols) > 1) "s" else "", " named ",
-         paste(missing_cols, collapse = ", "),
-         ". The cohort columns are declared in _study.yml.", call. = FALSE)
+    stop(
+      "cohort_counts(): data has no column",
+      if (length(missing_cols) > 1L) "s" else "",
+      " named ", paste(missing_cols, collapse = ", "),
+      call. = FALSE
+    )
   }
 
   ok <- !is.na(d[[time]]) & !is.na(d[[event]])
-  n  <- sum(ok)
-  ev <- sum(d[[event]][ok] == 1)
+  observed <- d[[event]][ok]
+  binary <- !length(observed) || is.logical(observed) ||
+    (is.numeric(observed) && all(observed %in% c(0, 1)))
+  if (!binary) {
+    stop(
+      "cohort_counts(): event column must be binary 0/1 or FALSE/TRUE",
+      call. = FALSE
+    )
+  }
 
-  list(n          = as.integer(n),
-       n_events   = as.integer(ev),
-       n_censored = as.integer(n - ev))
+  n <- sum(ok)
+  n_events <- sum(observed == 1)
+  list(
+    n = as.integer(n),
+    n_events = as.integer(n_events),
+    n_censored = as.integer(n - n_events)
+  )
 }
 
-#' Assert the cohort matches the study manifest
+#' Assert the cohort matches a job-level expectation
 #'
 #' @description
-#' Compares \code{\link{cohort_counts}} against the \code{cohort} block of
-#' \code{_study.yml} and errors on any disagreement. Call it before any
-#' analysis that would otherwise run happily on an unreconciled cohort.
+#' Compares \code{\link{cohort_counts}} against explicitly supplied expected
+#' counts and errors on any disagreement. Call it before any analysis that
+#' would otherwise run happily on an unreconciled cohort.
 #'
-#' @param d A data frame, typically from \code{\link{read_built}}.
-#' @param cfg List. A study manifest from \code{\link{study_config}}.
-#' @param dataset Character(1). Logical dataset name. Defaults to
-#'   \code{"study"}.
+#' @param d A data frame.
+#' @param expected List containing nonnegative integer \code{n},
+#'   \code{n_events} and \code{n_censored}.
+#' @param event Character scalar naming the binary event column.
+#' @param time Character scalar naming the time column.
 #'
 #' @return \code{invisible(TRUE)} on success; otherwise an error.
 #'
@@ -81,27 +87,41 @@ cohort_counts <- function(d, cfg = study_config(), dataset = "study") {
 #' @export
 #'
 #' @examples
-#' cfg <- list(cohort = list(n = 5L, n_events = 2L, n_censored = 3L,
-#'                           event = "dead", time = "iv_dead"))
 #' d <- data.frame(dead = c(1, 1, 0, 0, 0), iv_dead = 1:5)
-#' assert_cohort(d, cfg)
-assert_cohort <- function(d, cfg = study_config(), dataset = "study") {
-  contract <- .study_dataset(cfg, dataset)
-  if (is.null(contract$cohort)) {
-    stop("assert_cohort(): dataset '", dataset,
-         "' has no cohort contract", call. = FALSE)
+#' expected <- list(n = 5L, n_events = 2L, n_censored = 3L)
+#' assert_cohort(d, expected, event = "dead", time = "iv_dead")
+assert_cohort <- function(d, expected, event, time) {
+  keys <- c("n", "n_events", "n_censored")
+  valid <- is.list(expected) && all(keys %in% names(expected)) &&
+    all(vapply(expected[keys], function(x) {
+      is.numeric(x) && length(x) == 1L && !is.na(x) && is.finite(x) &&
+        x >= 0 && x <= .Machine$integer.max && x == floor(x)
+    }, logical(1)))
+  if (!valid) {
+    stop(
+      "assert_cohort(): expected must contain nonnegative integer n, ",
+      "n_events and n_censored",
+      call. = FALSE
+    )
   }
-  cc <- cohort_counts(d, cfg, dataset)
-  want <- list(n = as.integer(contract$cohort$n),
-               n_events = as.integer(contract$cohort$n_events),
-               n_censored = as.integer(contract$cohort$n_censored))
 
-  if (!identical(cc, want)) {
-    stop("cohort gate: expected N=", want$n, " / events=", want$n_events,
-         " / censored=", want$n_censored,
-         ", got N=", cc$n, " / events=", cc$n_events,
-         " / censored=", cc$n_censored,
-         ". Analysis must not run on an unreconciled cohort.", call. = FALSE)
+  if (as.double(expected$n) !=
+        as.double(expected$n_events) + as.double(expected$n_censored)) {
+    stop("assert_cohort(): expected counts are inconsistent", call. = FALSE)
+  }
+  want <- lapply(expected[keys], as.integer)
+  observed <- cohort_counts(d, event, time)
+  if (!identical(observed, want)) {
+    stop(
+      "cohort gate: expected N=", want$n,
+      " / events=", want$n_events,
+      " / censored=", want$n_censored,
+      ", got N=", observed$n,
+      " / events=", observed$n_events,
+      " / censored=", observed$n_censored,
+      ". Analysis must not run on an unreconciled cohort.",
+      call. = FALSE
+    )
   }
   invisible(TRUE)
 }

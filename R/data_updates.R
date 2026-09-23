@@ -450,10 +450,9 @@ check_data_updates <- function(cfg = study_config(), dataset = NULL) {
 #'
 #' @description
 #' Verifies the pinned release and one exact, newer candidate, then compares
-#' their structure and cohort counts. Review reads the source files directly;
-#' it does not write caches or change either study manifest. It describes data
-#' drift, but it does not certify that a candidate is analytically or
-#' clinically correct.
+#' their structure. Review reads the source files directly; it does not write
+#' caches or change either study manifest. It describes data drift, but it
+#' does not certify that a candidate is analytically or clinically correct.
 #'
 #' @param cfg List. A study manifest from \code{\link{study_config}}.
 #' @param dataset Character(1). Logical dataset name. Defaults to
@@ -466,8 +465,6 @@ check_data_updates <- function(cfg = study_config(), dataset = NULL) {
 #'     \item{dataset}{The logical study dataset name.}
 #'     \item{pinned,candidate}{The catalog records for both releases.}
 #'     \item{comparison}{A \code{\link{compare_datasets}} result.}
-#'     \item{cohort_old,cohort_new}{Cohort counts, or \code{NULL} when the
-#'       selected dataset has no cohort contract.}
 #'   }
 #'
 #' @seealso \code{\link{check_data_updates}},
@@ -541,11 +538,7 @@ review_data_update <- function(cfg = study_config(), dataset = "study",
     dataset = dataset,
     pinned = pinned,
     candidate = candidate,
-    comparison = compare_datasets(old, new),
-    cohort_old = if (is.null(contract$cohort)) NULL else
-      cohort_counts(old, cfg, dataset),
-    cohort_new = if (is.null(contract$cohort)) NULL else
-      cohort_counts(new, cfg, dataset)
+    comparison = compare_datasets(old, new)
   )
   class(out) <- "data_update_review"
   out
@@ -560,17 +553,6 @@ print.data_update_review <- function(x, ...) {
     sep = ""
   )
   print(x$comparison)
-  if (!is.null(x$cohort_old) && !is.null(x$cohort_new)) {
-    cat(
-      "Cohort\n",
-      "  N: ", x$cohort_old$n, " -> ", x$cohort_new$n, "\n",
-      "  Events: ", x$cohort_old$n_events, " -> ",
-      x$cohort_new$n_events, "\n",
-      "  Censored: ", x$cohort_old$n_censored, " -> ",
-      x$cohort_new$n_censored, "\n",
-      sep = ""
-    )
-  }
   invisible(x)
 }
 
@@ -597,10 +579,9 @@ print.data_update_review <- function(x, ...) {
 #' Adopt one published dataset release
 #'
 #' @description
-#' Repeats the candidate review, derives its cohort counts, and replaces
-#' \code{_study.yml} and \code{manifest.yaml} as one recoverable pair. The old
-#' dated release and its cache files remain on disk. Adoption does not make a
-#' Git commit.
+#' Repeats the candidate review and replaces \code{_study.yml} and
+#' \code{manifest.yaml} as one recoverable pair. The old dated release and its
+#' cache files remain on disk. Adoption does not make a Git commit.
 #'
 #' The candidate must be named by its exact release ID. The value
 #' \code{"latest"} is never accepted, because the reviewed release and the
@@ -656,24 +637,14 @@ adopt_data_update <- function(cfg = study_config(), dataset = "study",
   candidate_data <- .read_registration_data(candidate_path)
   .verify_catalog_file(review$candidate, data_dir)
   .assert_catalog_dimensions(candidate_data, review$candidate)
-  cohort <- if (is.null(contract$cohort)) {
-    NULL
-  } else {
-    c(
-      cohort_counts(candidate_data, current_cfg, dataset),
-      contract$cohort[c("event", "time")]
-    )
-  }
 
   release <- contract$release
   release$release_id <- review$candidate$release_id
   if (identical(dataset, "study")) {
     raw$built <- review$candidate$file
-    raw$cohort <- cohort
     raw$release <- release
   } else {
     raw$additional_datasets[[dataset]]$built <- review$candidate$file
-    raw$additional_datasets[[dataset]]$cohort <- cohort
     raw$additional_datasets[[dataset]]$release <- release
   }
 

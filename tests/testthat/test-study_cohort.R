@@ -1,88 +1,118 @@
 library(testthat)
 library(hvtiRutilities)
 
-test_that("cohort_counts counts rows and events from the manifest columns", {
-  cfg <- list(cohort = list(event = "dead", time = "iv_dead"))
-  d   <- data.frame(dead = c(1, 1, 0, 0, 0), iv_dead = 1:5)
+test_that("cohort_counts uses explicit job columns", {
+  d <- data.frame(dead = c(1, 1, 0, 0, 0), iv_dead = 1:5)
 
-  expect_equal(cohort_counts(d, cfg),
-               list(n = 5L, n_events = 2L, n_censored = 3L))
+  expect_identical(
+    cohort_counts(d, event = "dead", time = "iv_dead"),
+    list(n = 5L, n_events = 2L, n_censored = 3L)
+  )
+})
+
+test_that("cohort_counts rejects competing-event codes", {
+  d <- data.frame(status = c(0L, 1L, 2L), followup = 1:3)
+
+  expect_error(
+    cohort_counts(d, event = "status", time = "followup"),
+    "binary"
+  )
+})
+
+test_that("cohort_counts permits an empty complete cohort", {
+  d <- data.frame(
+    dead = c(NA_integer_, NA_integer_),
+    iv_dead = c(NA_real_, NA_real_)
+  )
+
+  expect_identical(
+    cohort_counts(d, event = "dead", time = "iv_dead"),
+    list(n = 0L, n_events = 0L, n_censored = 0L)
+  )
 })
 
 test_that("cohort_counts excludes rows missing either the event or the time", {
-  cfg <- list(cohort = list(event = "dead", time = "iv_dead"))
-  d   <- data.frame(dead    = c(1, 1, 0, NA, 0),
-                    iv_dead = c(1, 2, NA, 4, 5))
+  d <- data.frame(
+    dead = c(1, 1, 0, NA, 0),
+    iv_dead = c(1, 2, NA, 4, 5)
+  )
 
-  expect_equal(cohort_counts(d, cfg),
-               list(n = 3L, n_events = 2L, n_censored = 1L))
+  expect_identical(
+    cohort_counts(d, event = "dead", time = "iv_dead"),
+    list(n = 3L, n_events = 2L, n_censored = 1L)
+  )
 })
 
 test_that("cohort_counts treats logical and numeric event columns alike", {
-  cfg <- list(cohort = list(event = "dead", time = "iv_dead"))
   num <- data.frame(dead = c(1, 0, 1), iv_dead = 1:3)
   log <- data.frame(dead = c(TRUE, FALSE, TRUE), iv_dead = 1:3)
 
-  expect_equal(cohort_counts(num, cfg), cohort_counts(log, cfg))
+  expect_identical(
+    cohort_counts(num, event = "dead", time = "iv_dead"),
+    cohort_counts(log, event = "dead", time = "iv_dead")
+  )
 })
 
 test_that("cohort_counts errors when a named column is absent", {
-  cfg <- list(cohort = list(event = "dead", time = "iv_dead"))
-  d   <- data.frame(dead = c(1, 0))
-
-  expect_error(cohort_counts(d, cfg), "iv_dead")
-})
-
-test_that("assert_cohort passes when the data matches the manifest", {
-  cfg <- list(cohort = list(n = 5L, n_events = 2L, n_censored = 3L,
-                            event = "dead", time = "iv_dead"))
-  d   <- data.frame(dead = c(1, 1, 0, 0, 0), iv_dead = 1:5)
-
-  expect_true(assert_cohort(d, cfg))
-})
-
-test_that("assert_cohort errors and reports both expected and observed", {
-  cfg <- list(cohort = list(n = 5L, n_events = 2L, n_censored = 3L,
-                            event = "dead", time = "iv_dead"))
-  d   <- data.frame(dead = c(1, 1, 1, 0, 0), iv_dead = 1:5)
-
-  expect_error(assert_cohort(d, cfg), "expected")
-  expect_error(assert_cohort(d, cfg), "events=2")
-  expect_error(assert_cohort(d, cfg), "events=3")
-})
-
-test_that("assert_cohort fails on a fixture whose data no longer matches", {
-  skip_if_not_installed("haven")
-  root <- withr::local_tempdir()
-  make_study_fixture(root, n = 20L, n_events = 8L)
-  cfg  <- study_config(root)
-
-  # Rewrite the data with a different event count, leaving the manifest alone.
-  make_study_fixture(root, n = 20L, n_events = 9L)
-  d <- read_built(cfg)
-
-  expect_error(assert_cohort(d, cfg), "events=8")
-})
-
-test_that("cohort helpers select a named cohort contract", {
-  root <- make_registered_study(withr::local_tempdir())
-  cfg <- study_config(root)
-  data <- read_built(cfg, dataset = "complete_cases")
-
-  expect_identical(
-    cohort_counts(data, cfg, dataset = "complete_cases"),
-    list(n = 2L, n_events = 1L, n_censored = 1L)
-  )
-  expect_true(assert_cohort(data, cfg, dataset = "complete_cases"))
-})
-
-test_that("assert_cohort rejects an ancillary dataset without a contract", {
-  root <- make_registered_study(withr::local_tempdir(), ancillary = TRUE)
-  cfg <- study_config(root)
-  data <- read_built(cfg, dataset = "imaging")
+  d <- data.frame(dead = c(1, 0))
 
   expect_error(
-    assert_cohort(data, cfg, dataset = "imaging"),
-    "no cohort contract"
+    cohort_counts(d, event = "dead", time = "iv_dead"),
+    "iv_dead"
+  )
+})
+
+test_that("cohort_counts rejects non-character column names", {
+  d <- data.frame(dead = c(1, 0), iv_dead = 1:2)
+
+  expect_error(cohort_counts(d, event = 1, time = "iv_dead"), "character")
+  expect_error(cohort_counts(d, event = NA_character_, time = "iv_dead"), "event")
+  expect_error(cohort_counts(d, event = "dead", time = 1), "character")
+  expect_error(cohort_counts(d, event = "dead", time = NA_character_), "time")
+})
+
+test_that("assert_cohort uses only the supplied expectation", {
+  d <- data.frame(dead = c(1, 0, 0), iv_dead = 1:3)
+  expected <- list(n = 3L, n_events = 1L, n_censored = 2L)
+
+  expect_true(assert_cohort(d, expected, "dead", "iv_dead"))
+  expected$n_events <- 2L
+  expect_error(
+    assert_cohort(d, expected, "dead", "iv_dead"),
+    "expected"
+  )
+})
+
+test_that("assert_cohort reports expected and observed counts", {
+  d <- data.frame(dead = c(1, 1, 1, 0, 0), iv_dead = 1:5)
+  expected <- list(n = 5L, n_events = 2L, n_censored = 3L)
+
+  expect_error(
+    assert_cohort(d, expected, "dead", "iv_dead"),
+    "expected"
+  )
+  expect_error(
+    assert_cohort(d, expected, "dead", "iv_dead"),
+    "events=2"
+  )
+  expect_error(
+    assert_cohort(d, expected, "dead", "iv_dead"),
+    "events=3"
+  )
+})
+
+test_that("assert_cohort checks count consistency without integer overflow", {
+  d <- data.frame(dead = 0, iv_dead = 1)
+  expected <- list(
+    n = .Machine$integer.max,
+    n_events = .Machine$integer.max,
+    n_censored = 1
+  )
+
+  expect_no_warning(
+    expect_error(
+      assert_cohort(d, expected, "dead", "iv_dead"),
+      "inconsistent"
+    )
   )
 })
