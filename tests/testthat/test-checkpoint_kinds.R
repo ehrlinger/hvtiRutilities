@@ -27,3 +27,24 @@ test_that("the live cache adds kinds and overrides base rows", {
   expect_equal(nrow(.cp_kind_check(kinds, "adhoc", "f")), 1L)
   expect_error(.cp_kind_check(kinds, "abstract_accepted", "f"), "is retired")
 })
+
+test_that("a live row overrides only the fields it names", {
+  root <- withr::local_tempdir()
+  dir.create(file.path(root, ".checkpoint"))
+  yaml::write_yaml(
+    list(list(kind = "data_received", label = "X"),
+         list(kind = "workspace_created", retired = FALSE),
+         list(kind = "adhoc")),
+    file.path(root, ".checkpoint", "kinds.yml")
+  )
+  kinds <- .cp_kinds(root)
+  expect_equal(nrow(kinds), 13L)
+  expect_equal(kinds$trigger[kinds$kind == "data_received"], "auto")
+  expect_true(kinds$numbered[kinds$kind == "data_received"])
+  expect_false(kinds$numbered[kinds$kind == "workspace_created"])
+  expect_false(kinds$retired[kinds$kind == "workspace_created"])
+  adhoc <- kinds[kinds$kind == "adhoc", ]
+  expect_equal(adhoc$trigger, "manual")
+  expect_true(adhoc$numbered)
+  expect_false(adhoc$retired)
+})
