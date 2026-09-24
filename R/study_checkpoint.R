@@ -229,7 +229,9 @@ study_checkpoint <- function(kind, note = NULL, attributes = NULL,
     kind
   }
   snap <- .cp_snapshot(root, study, tag_fn, entry, "study_checkpoint")
-  invisible(.cp_result(snap$entry, snap))
+  .cp_deliver(root, study)
+  final <- .cp_or(.cp_log_find(root, entry$checkpoint_id), snap$entry)
+  invisible(.cp_result(final, snap))
 }
 
 #' @export
@@ -242,4 +244,35 @@ print.study_checkpoint <- function(x, ...) {
       "\n", sep = "")
   cat("  ST:       ", x$delivery$st, "\n", sep = "")
   invisible(x)
+}
+
+#' Push pending study checkpoints
+#'
+#' @description
+#' Retries delivery of every checkpoint, closure and reopening in
+#' \code{.checkpoint/log.yml} that has not reached the remote yet.
+#' \code{\link{study_checkpoint}} does this on every call; use this function
+#' after a network outage, or once \code{study-setup --verify} has verified a
+#' manually entered identity.
+#'
+#' @details
+#' An entry that a crash left half-written is settled first: completed when
+#' its tag exists, otherwise marked \code{abandoned}. Abandoned entries are
+#' never pushed.
+#'
+#' @param root Character. Study root. Defaults to \code{study_root()}.
+#'
+#' @return A data frame, returned invisibly, with one row per logged event and
+#'   columns \code{type}, \code{tag}, \code{state}, \code{git}, \code{st} and
+#'   \code{reason}.
+#'
+#' @seealso \code{\link{study_checkpoint}}
+#'
+#' @export
+study_checkpoint_push <- function(root = study_root()) {
+  .cp_require_git("study_checkpoint_push")
+  root <- normalizePath(root, mustWork = TRUE)
+  .cp_reconcile(root)
+  study <- .cp_study(root, "study_checkpoint_push")
+  invisible(.cp_log_frame(.cp_deliver(root, study)))
 }
