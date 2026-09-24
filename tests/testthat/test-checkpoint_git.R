@@ -93,3 +93,32 @@ test_that("init continues from an existing remote's history and tags", {
   expect_equal(.cp_next_tag(repo2, "k"), "k-2")
   expect_true(file.exists(file.path(repo2, "a.R")))
 })
+
+test_that("a failed reset warns and suggests .git/index.lock", {
+  skip_if_no_git()
+  local_git_env()
+  root <- withr::local_tempdir()
+  plant_files(root, "a.R")
+  repo <- .cp_repo_init(root)
+  .cp_sync_tree(repo, root, "a.R")
+  first <- .cp_commit_tag(repo, "x-1", "first")
+  .cp_commit_tag(repo, "x-2", "second")
+  # Lock the index to force reset to fail
+  lock_file <- file.path(repo, ".git", "index.lock")
+  writeLines("", lock_file)
+  expect_warning(.cp_rollback(repo, first, "x-2"),
+                 "rollback did not complete")
+  # Clean up the lock file
+  unlink(lock_file)
+})
+
+test_that("rolling back a tag that was never created does not warn", {
+  skip_if_no_git()
+  local_git_env()
+  root <- withr::local_tempdir()
+  plant_files(root, "a.R")
+  repo <- .cp_repo_init(root)
+  .cp_sync_tree(repo, root, "a.R")
+  head_before <- .cp_head(repo)
+  expect_no_warning(.cp_rollback(repo, head_before, "never-made"))
+})

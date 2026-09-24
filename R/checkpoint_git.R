@@ -140,11 +140,40 @@
 # Undo a partial checkpoint: drop the tag and put main back where it was. An
 # NA head means the repository had no commits before.
 .cp_rollback <- function(repo, head_before, tag) {
-  if (!is.null(tag)) .cp_git(repo, c("tag", "-d", tag))
+  if (!is.null(tag)) {
+    .cp_git(repo, c("tag", "-d", tag))
+    # Check if the tag still exists (e.g. tag never existed in the first place)
+    verify <- .cp_git(repo, c("rev-parse", "-q", "--verify",
+                              paste0("refs/tags/", tag)))
+    if (verify$ok) {
+      last_line <- if (length(verify$out)) verify$out[length(verify$out)]
+                   else "git output unavailable"
+      warning("checkpoint rollback did not complete: removing tag ", tag,
+              " in ", repo, "\n", last_line,
+              "\nCheck for a stale .git/index.lock in the checkpoint.",
+              call. = FALSE)
+    }
+  }
   if (is.na(head_before)) {
-    .cp_git(repo, c("update-ref", "-d", "refs/heads/main"))
+    res <- .cp_git(repo, c("update-ref", "-d", "refs/heads/main"))
+    if (!res$ok) {
+      last_line <- if (length(res$out)) res$out[length(res$out)]
+                   else "git output unavailable"
+      warning("checkpoint rollback did not complete: remove main in ", repo,
+              "\n", last_line,
+              "\nCheck for a stale .git/index.lock in the checkpoint.",
+              call. = FALSE)
+    }
   } else {
-    .cp_git(repo, c("reset", "-q", "--hard", head_before))
+    res <- .cp_git(repo, c("reset", "-q", "--hard", head_before))
+    if (!res$ok) {
+      last_line <- if (length(res$out)) res$out[length(res$out)]
+                   else "git output unavailable"
+      warning("checkpoint rollback did not complete: reset main to ",
+              head_before, " in ", repo, "\n", last_line,
+              "\nCheck for a stale .git/index.lock in the checkpoint.",
+              call. = FALSE)
+    }
   }
   invisible(NULL)
 }
