@@ -196,6 +196,41 @@
   }
 }
 
+# Checkpoint and closure rows. Absent for a study that has never been
+# checkpointed, so the audit of a plain study is unchanged. Abandoned entries
+# (a checkpoint that never committed) are not events and are not counted.
+.status_checkpoints <- function(root) {
+  if (!dir.exists(file.path(root, ".checkpoint"))) return(NULL)
+  log <- Filter(function(e) !identical(e$state, "abandoned"),
+                .cp_log_read(root))
+  git_pending <- sum(vapply(log, function(e) {
+    identical(e$state, "committed") && identical(e$delivery$git, "pending")
+  }, logical(1)))
+  st_pending <- sum(vapply(log, function(e) identical(e$delivery$st, "pending"),
+                           logical(1)))
+  last <- if (length(log)) log[[length(log)]] else NULL
+  when <- .cp_or(last$occurred_at,
+                 .cp_or(last$closed_at, last$reopened_at))
+  detail <- paste0(
+    length(log), " recorded",
+    if (!is.null(last$tag)) paste0(" (last ", last$tag, ", ", when, ")"),
+    if (git_pending) paste0("; ", git_pending, " not pushed"),
+    if (st_pending) paste0("; ", st_pending, " not in ST")
+  )
+  rows <- .status_row("checkpoints",
+                      if (git_pending) "PENDING" else "OK",
+                      detail)
+  closed <- tryCatch(.cp_is_closed(root), error = function(e) FALSE)
+  closures <- Filter(function(e) identical(e$type, "closure"), log)
+  if (closed && length(closures)) {
+    lc <- closures[[length(closures)]]
+    rows <- rbind(rows, .status_row("closure", "CLOSED",
+                                    paste0(lc$outcome, " (", lc$closed_at,
+                                           ")")))
+  }
+  rows
+}
+
 #' Audit a study's reproducibility readiness
 #'
 #' @description
@@ -334,7 +369,8 @@ study_status <- function(root = getwd()) {
     checks = rbind(row_yml, row_lock, row_man, row_data,
                    default_update,
                    named_rows,
-                   .status_provenance(root)),
+                   .status_provenance(root),
+                   .status_checkpoints(root)),
     counts = list(
       r_files  = length(.status_files(root, "[.]R$")),
       qmd      = length(.status_files(root, "[.](qmd|Rmd)$")),
@@ -354,7 +390,9 @@ print.study_status <- function(x, ...) {
     FAIL = "[!]",
     CURRENT = "[x]",
     "UPDATE AVAILABLE" = "[~]",
-    "UPDATE STATUS UNKNOWN" = "[?]"
+    "UPDATE STATUS UNKNOWN" = "[?]",
+    PENDING = "[~]",
+    CLOSED = "[x]"
   )
   cat("Study: ", x$root, "\n\n", sep = "")
   for (i in seq_len(nrow(x$checks))) {
