@@ -36,6 +36,7 @@ requests, no review step.
 | D4 | **One repo per study** | Per-study access, clean tags, one place for `study-setup --recover` to look. |
 | D5 | **Users push as themselves** on the LRI server | Git Credential Manager with Entra ID holds each user's token; the commit author is the analyst. No PATs (standard since the 2026-05-19 incident). |
 | D6 | **Repo created at `study-setup`**, including `--adopt` | Every study with a `_study.yml` has a repo, so recovery is reliable. The first commit carries `_study.yml` and the scaffolding, tagged `workspace_created`. |
+| D6a | **An unverified identity is committed locally but never pushed** | The manual-identity spec (qhsprograms ADO PR 89763, rule 5) forbids pushing an unverified identity to `CORR_STUDIES` or the API. When `_study.yml` has `identity_verified: false`, every delivery stays `pending` with the reason `identity unverified` until `study-setup --verify` succeeds; D10 and rule 5 then both hold. |
 | D7 | **Core in hvtiRutilities, institution specifics in `qhsprograms`** | The public package stays institution-neutral and testable against a local bare repo; ADO REST calls, the CCF URL and ST delivery stay in the ADO repo. |
 | D8 | **Allow-list plus a hard deny that no configuration can override** | Per-study `include:` patterns for unusual script types, without letting any YAML admit data. |
 | D9 | **`50_documents/` admitted, folder-scoped** | Manuscripts belong in the checkpoint: the tag then binds the claim to the code, data hashes and package versions behind it. |
@@ -57,6 +58,18 @@ The two layers share exactly two things:
    remote still checkpoints locally.
 2. **The outbox log**, `.checkpoint/log.yml`, append-only. The core writes each
    entry and marks git delivery; the institution layer marks ST delivery.
+
+### 3.0 The `.checkpoint/` directory
+
+```
+.checkpoint/
+  repo/       the git clone; its working tree holds only selected files
+  log.yml     the outbox (section 7)
+  kinds.yml   the live vocabulary cache, written by qhsprograms (optional)
+```
+
+The log and the cache sit beside the clone, not in it, so they are never
+committed.
 
 ### 3.1 User surface
 
@@ -81,7 +94,7 @@ renamed folder does not rename the repo.
 - **Kinds are the ST Workspace API's `lk_checkpoint_kinds`** (API spec §3.6,
   §6). The package ships the initial §6 rows as its base vocabulary, since they
   are generic. `qhsprograms` fetches the live table from the API when it can
-  and caches it in the study; the live table overrides the base.
+  and caches it in `.checkpoint/kinds.yml`; the live table overrides the base.
 - **Tags are the kind verbatim plus a sequence number**: `manuscript_submitted-1`,
   `revision_submitted-2`. `workspace_created` is unnumbered: it happens once.
 - **The sequence number is derived from the tags**, `max(existing <kind>-n) + 1`,
@@ -105,9 +118,10 @@ Selection runs three passes in order. **A deny always beats an allow.**
    - by extension, anywhere: `.R .Rmd .qmd .sas .sh .py .sql`, `*.Rproj`, `_quarto.yml`
    - always: `_study.yml`, `renv.lock`, `renv/activate.R`, `.Rprofile`, `manifest.yaml`
    - per study: the `checkpoint: include:` patterns in `_study.yml`
-   - inside `50_documents/` only: `.docx .pptx .pdf .qmd .bib .png .tiff`
+   - inside `50_documents/` (legacy `documents/`) only: `.docx .pptx .pdf .qmd .bib .png .tiff`
 2. **Hard deny** (not configurable)
-   - paths: `00_datasets/`, `90_estimates/`, `.checkpoint/`, `renv/library/`, `.git/`
+   - paths: `00_datasets/` and `90_estimates/` (and their legacy spellings
+     `datasets/` and `estimates/`), `.checkpoint/`, `renv/library/`, `.git/`
    - anywhere, including `50_documents/`: `.sas7bdat .xpt .parquet .rds .RData .csv .xlsx .xls .lst .log`
      (SAS `.lst` and `.log` echo data values, so they are data)
    - outside `50_documents/`: `.html .pdf .docx .pptx .png .tiff` (there they are outputs)
@@ -153,15 +167,19 @@ Generated at the root of every snapshot:
 3. **Write `CHECKPOINT.yml`** and run the manifest check.
 4. **Commit and tag locally.** The author is the user's git identity. The tag
    is annotated; its message carries kind, note, ST number and `checkpoint_id`.
-   If nothing changed since the last checkpoint, the tag goes on the existing
-   commit and no empty commit is made.
+   Every checkpoint commits: `CHECKPOINT.yml` differs each time, so there is
+   no unchanged state to detect.
 5. **Append to `.checkpoint/log.yml`** an entry in the API Checkpoint shape
    (section 7), with `git: pending` and `st: pending`.
 6. **Deliver**, each channel independent:
    - `git push origin main --follow-tags`; success marks `git: delivered`,
      failure leaves it `pending` and warns with the tag and the reason;
-   - ST delivery runs only when `qhsprograms` supplies a delivery hook.
-     Without one, `st` stays `pending`, which is expected, not an error.
+   - the core never contacts ST. `qhsprograms` reads the log, posts pending
+     entries and marks them `st: delivered`. Without it, `st` stays `pending`,
+     which is expected, not an error;
+   - with `identity_verified: false` in `_study.yml` (D6a), no delivery is
+     attempted and both channels stay `pending` with the reason
+     `identity unverified`.
 7. **Return** a `study_checkpoint` object (tag, commit, file count, skipped
    files, delivery states) with a compact print method.
 
@@ -177,9 +195,11 @@ Generated at the root of every snapshot:
   client-generated `checkpoint_id` (API spec §4.2).
 - **Divergence.** When the remote `main` has commits the local clone lacks
   (someone checkpointed from a second copy), the push is rejected as
-  non-fast-forward. The core fetches, rebases the unpushed snapshot commits on
-  top, **moves their local tags** to the new commits (safe: they were never
-  pushed), and pushes again. If the remote already holds the same tag name,
+  non-fast-forward. The core fetches and **replays** each unpushed snapshot on
+  top of the remote `main`: a new commit with the same tree and the remote tip
+  as parent (`git commit-tree`). A snapshot's content never depends on its
+  parent, so a replay cannot conflict. Their local tags **move** to the new
+  commits (safe: they were never pushed), and the push is retried. If the remote already holds the same tag name,
   the local one is renumbered to the next free number and the log entry
   records `renumbered_from:`. A pushed tag is never moved. There is no force
   push, and ADO would refuse one.
@@ -222,7 +242,10 @@ the checkpoint lifecycle above, with these differences:
 ### 6.4 Closure state
 
 **A study is closed when its latest `closed-*` tag has no `reopened-*` tag
-after it**, the same definition as the API spec, read from tag dates. There
+after it**, the same definition as the API spec. Because closing needs an
+open study and reopening needs a closed one, the tags alternate, so the
+state is read from counts: closed when there are more `closed-*` tags than
+`reopened-*` tags. Counts, unlike tag timestamps, cannot tie. There
 is no separate state file. A checkpoint on a closed study is allowed, since
 checkpoints are never rejected for their order, but it warns that the study
 is closed.
@@ -292,13 +315,14 @@ push included, on all five platforms. Tests needing git skip with
 | `CHECKPOINT.yml` | Every committed file's sha256 matches; denied files appear only as counts. |
 | Vocabulary | Unknown kind errors with the valid list; retired kind rejected; `workspace_created` unnumbered; live table overrides base. |
 | Sequencing | Two checkpoints give `-1` and `-2`; deleting and re-cloning `.checkpoint/` continues at `-3`. |
-| No change | Tagging an unchanged state adds a tag and no commit. |
 | Offline | An unreachable remote gives a local tag, `git: pending` and a warning; once reachable, `study_checkpoint_push()` delivers; a second call is a no-op. |
 | Divergence | A second clone pushes first: rebase, retag, `renumbered_from`, no force push. |
 | Manifest | A mismatch warns and is recorded; missing `n_rows` is recorded `unchecked`. |
 | Atomicity | An error forced between copy and commit leaves no tag and no log entry. |
 | Automatic kinds | No commit, an outbox entry with `git_commit: null`. |
 | `study_status()` | The checkpoint line reports pending counts correctly. |
+| Unverified identity | With `identity_verified: false`, a checkpoint commits and tags locally, attempts no push, and records `identity unverified`; after the key flips to true, `study_checkpoint_push()` delivers. |
+| Legacy layout | `datasets/` and `estimates/` are denied and `documents/` gets the document exception, as their numbered spellings do. |
 | Close guards | `published` without a `manuscript_published` tag, or without DOI and PMID, errors before any write; `superseded` without `superseded_by` errors; `unrecorded` is rejected; closing a closed study errors. |
 | Close and reopen | Close always commits and tags `closed-<outcome>-n`; reopen tags without committing; close, reopen, close gives `closed-...-1`, `reopened-1`, `closed-...-2`; closure state follows the latest tags. |
 | Closed study | A checkpoint on a closed study succeeds and warns. |
@@ -317,8 +341,10 @@ push included, on all five platforms. Tests needing git skip with
 ## 9. Open items
 
 1. **`_study.yml` key names.** hvtiRutilities writes `study_tracker_id`; the API
-   spec §9 uses `st_id` and adds `workspace_id`. Decide the canonical keys (and
-   a reader that accepts both) before implementation.
+   spec §9 uses `st_id` and adds `workspace_id`; PR #146 adds
+   `identity_source` and `identity_verified`. Settle all of them in one rename
+   so `_study.yml` changes once. Until then the core reads `st_id`, falling
+   back to `study_tracker_id`, and treats a missing `workspace_id` as `null`.
 2. **An `adhoc` kind.** §6 of the API spec has no kind for a checkpoint that
    matches no event. Propose adding `adhoc` (no task) to `lk_checkpoint_kinds`.
 3. **ST write path.** ST access today is a read-only lookup; the API does not
