@@ -388,3 +388,27 @@ test_that("study_status reports malformed identity fields as FAIL", {
   expect_equal(row$status, "FAIL")
   expect_match(row$detail, "identity_source")
 })
+
+test_that("study_status reports an invalid identity_verified as FAIL", {
+  root <- make_study_fixture(withr::local_tempdir(), write_data = FALSE)
+  cat("identity_source: manual\nidentity_verified: maybe\n",
+      file = file.path(root, "_study.yml"), append = TRUE)
+
+  row <- check_for(study_status(root), "_study.yml")
+
+  expect_equal(row$status, "FAIL")
+  expect_match(row$detail, "identity_verified")
+})
+
+test_that("study_status reports a source that disagrees with verification", {
+  for (fields in c("identity_source: manual\nidentity_verified: true\n",
+                   "identity_source: tracker\nidentity_verified: false\n")) {
+    root <- make_study_fixture(withr::local_tempdir(), write_data = FALSE)
+    cat(fields, file = file.path(root, "_study.yml"), append = TRUE)
+
+    row <- check_for(study_status(root), "_study.yml")
+
+    expect_equal(row$status, "FAIL")
+    expect_match(row$detail, "a tracker identity is verified", fixed = TRUE)
+  }
+})

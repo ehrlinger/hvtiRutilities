@@ -102,8 +102,10 @@
 
 # identity_source and identity_verified are optional: a manifest written
 # before they existed is a Tracker identity. When present they must be the
-# values study_setup() writes, because study_status() and recovery decide
-# from them whether the identity can be trusted.
+# values study_setup() writes, and agree with each other (a Tracker identity
+# is verified, a manual one is not until verification rewrites it as a
+# Tracker identity), because study_status() and recovery decide from them
+# whether the identity can be trusted.
 .study_validate_identity <- function(raw, found) {
   source <- raw$identity_source
   if (!is.null(source) &&
@@ -117,6 +119,13 @@
         !(is.logical(verified) && length(verified) == 1L && !is.na(verified))) {
     stop("study_config(): ", found, " has an invalid identity_verified; ",
          "expected true or false", call. = FALSE)
+  }
+  if (!is.null(source) && !is.null(verified) &&
+        !identical(verified, identical(source, "tracker"))) {
+    stop("study_config(): ", found, " records identity_source: ", source,
+         " with identity_verified: ", tolower(as.character(verified)),
+         "; a tracker identity is verified and a manual one is not",
+         call. = FALSE)
   }
   invisible(raw)
 }

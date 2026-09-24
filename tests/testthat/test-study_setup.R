@@ -226,3 +226,13 @@ test_that("adoption keeps an existing identity and its source", {
   expect_identical(cfg$identity_source, "manual")
   expect_false(cfg$identity_verified)
 })
+
+test_that("study_setup rejects an abbreviated identity source", {
+  root <- file.path(withr::local_tempdir(), "new-study")
+
+  expect_error(
+    study_setup(root, "Example study", 42L, identity_source = "man"),
+    "identity_source"
+  )
+  expect_false(dir.exists(root))
+})

@@ -99,13 +99,15 @@ study_setup <- function(root, study, study_tracker_id,
                         irb_number = NULL, cvir_no = NULL,
                         study_creation_date = NULL, adopt = FALSE,
                         identity_source = c("tracker", "manual")) {
-  identity_source <- tryCatch(
-    match.arg(identity_source),
-    error = function(e) {
-      stop("study_setup(): identity_source must be \"tracker\" or ",
-           "\"manual\"", call. = FALSE)
-    }
-  )
+  # Exact values only: match.arg() would accept an abbreviation such as
+  # "man", and a provenance field should record what the caller meant.
+  sources <- c("tracker", "manual")
+  if (identical(identity_source, sources)) identity_source <- "tracker"
+  if (!is.character(identity_source) || length(identity_source) != 1L ||
+        !identity_source %in% sources) {
+    stop("study_setup(): identity_source must be \"tracker\" or ",
+         "\"manual\"", call. = FALSE)
+  }
   root <- .study_scalar(root, "root", required = TRUE)
   study <- .study_scalar(study, "study", required = TRUE)
   tracker <- suppressWarnings(as.integer(study_tracker_id))
