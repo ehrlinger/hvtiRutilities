@@ -125,3 +125,84 @@ test_that("a re-cloned .checkpoint continues the sequence", {
   expect_equal(study_checkpoint("abstract_submitted", root = root)$tag,
                "abstract_submitted-3")
 })
+
+test_that("a rejected tag push after a replay keeps the log in step", {
+  skip_if_no_git()
+  skip_on_os("windows")
+  local_git_env()
+  dir <- withr::local_tempdir()
+  fx <- diverge_study(dir)
+  hook <- file.path(fx$bare, "hooks", "pre-receive")
+  writeLines(c(
+    "#!/bin/sh",
+    paste0("marker='", file.path(dir, "rejected-once"), "'"),
+    "while read old new ref; do",
+    "  case \"$ref\" in refs/tags/*)",
+    "    if [ ! -f \"$marker\" ]; then",
+    "      touch \"$marker\"; echo 'tag update refused once' >&2; exit 1",
+    "    fi;;",
+    "  esac",
+    "done",
+    "exit 0"
+  ), hook)
+  Sys.chmod(hook, "755")
+  set_study_keys(fx$root, checkpoint = list(remote = fx$bare))
+  repo <- .cp_repo_path(fx$root)
+
+  expect_warning(study_checkpoint_push(fx$root),
+                 "data_request_submitted-2.*tag push rejected")
+  e <- .cp_log_read(fx$root)[[1]]
+  expect_equal(e$delivery$git, "pending")
+  expect_equal(e$tag, "data_request_submitted-2")
+  expect_equal(e$replayed_from, fx$local_cp$commit)
+  expect_equal(e$git_commit, git_out(repo, c("rev-parse", "main")))
+  expect_equal(git_out(repo, c("rev-parse", paste0(e$tag, "^{commit}"))),
+               e$git_commit)
+
+  study_checkpoint_push(fx$root)
+  e <- .cp_log_read(fx$root)[[1]]
+  expect_equal(e$delivery$git, "delivered")
+  expect_equal(e$tag, "data_request_submitted-2")
+  tags <- git_out(fx$bare, c("tag", "-l"))
+  expect_setequal(tags, c("data_request_submitted-1", "data_request_submitted-2"))
+  for (t in tags) {
+    commit <- git_out(fx$bare, c("rev-parse", paste0(t, "^{commit}")))
+    expect_false(identical(commit, fx$local_cp$commit))
+    res <- system2("git", shQuote(c("-C", fx$bare, "merge-base",
+                                    "--is-ancestor", commit, "main")))
+    expect_equal(res, 0L, info = t)
+  }
+  expect_equal(git_out(fx$bare, c("rev-parse", paste0(e$tag, "^{commit}"))),
+               e$git_commit)
+})
+
+test_that("a renumbered tag carries a message with its new name", {
+  skip_if_no_git()
+  local_git_env()
+  dir <- withr::local_tempdir()
+  fx <- diverge_study(dir)
+  set_study_keys(fx$root, checkpoint = list(remote = fx$bare))
+  study_checkpoint_push(fx$root)
+  msg <- git_out(fx$bare, c("tag", "-l", "--format=%(contents:subject)",
+                            "data_request_submitted-2"))
+  expect_match(msg, "data_request_submitted-2", fixed = TRUE)
+})
+
+test_that("a failed fetch after the probe leaves the entry pending", {
+  skip_if_no_git()
+  local_git_env()
+  dir <- withr::local_tempdir()
+  fx <- diverge_study(dir)
+  set_study_keys(fx$root, checkpoint = list(remote = fx$bare))
+  testthat::local_mocked_bindings(.cp_git_do = function(repo, args) {
+    if (identical(args[1], "fetch")) stop("git fetch failed: simulated")
+    res <- .cp_git(repo, args)
+    if (!res$ok) stop("git failed")
+    res$out
+  })
+  expect_warning(study_checkpoint_push(fx$root),
+                 "data_request_submitted-1.*git fetch failed")
+  e <- .cp_log_read(fx$root)[[1]]
+  expect_equal(e$delivery$git, "pending")
+  expect_match(e$delivery$reason, "git fetch failed")
+})

@@ -40,58 +40,86 @@
   paste0(prefix, "-", max(c(0L, seqs)) + 1L)
 }
 
-# Move an unpushed tag to its replayed commit, recording the old commit as
-# replayed_from, and renumber it when the remote already holds the same name
-# on a different commit.
-.cp_retarget <- function(entry, repo, map) {
-  if (is.null(entry$tag)) return(entry)
+# Point an entry at its replayed commit, recording the old one as
+# replayed_from. Pure, so it cannot fail between moving main and recording it.
+.cp_apply_map <- function(entry, map) {
   old <- entry$git_commit
-  new <- if (!is.null(old) && old %in% names(map)) map[[old]] else old
+  if (is.null(old) || !old %in% names(map)) return(entry)
+  entry$replayed_from <- old
+  entry$git_commit <- map[[old]]
+  entry
+}
+
+# The entry as it should be once its local tag matches the log: renumbered
+# when the remote holds the same name on a different commit. NULL when the
+# local tag already names the entry's commit and nothing collides.
+.cp_retag_plan <- function(entry, repo) {
+  if (is.null(entry$tag) || is.null(entry$git_commit)) return(NULL)
   remote <- .cp_commit_of(repo, paste0("refs/remote-tags/", entry$tag))
-  collides <- !is.na(remote) && !identical(remote, new)
-  if (!collides && identical(new, old)) return(entry)
-  msg <- .cp_message_file(.cp_git_do(repo, c("tag", "-l", "--format=%(contents)",
-                                             entry$tag)))
-  on.exit(unlink(msg), add = TRUE)
-  .cp_git_do(repo, c("tag", "-d", entry$tag))
+  collides <- !is.na(remote) && !identical(remote, entry$git_commit)
+  local <- .cp_commit_of(repo, paste0("refs/tags/", entry$tag))
+  if (!collides && identical(local, entry$git_commit)) return(NULL)
   if (collides) {
     entry$renumbered_from <- entry$tag
     entry$tag <- .cp_renumber(repo, entry$tag)
   }
-  .cp_git_do(repo, c("tag", "-a", entry$tag, "-F", msg, new))
-  if (!identical(new, old)) {
-    entry$replayed_from <- old
-    entry$git_commit <- new
-  }
   entry
 }
 
+# Replace the local tag `old_tag` with the entry's tag on the entry's commit,
+# with a message regenerated from the entry so a renumbered tag names itself.
+.cp_retag <- function(repo, old_tag, entry) {
+  if (!is.na(.cp_commit_of(repo, paste0("refs/tags/", old_tag)))) {
+    .cp_git_do(repo, c("tag", "-d", old_tag))
+  }
+  msg <- .cp_message_file(.cp_tag_message(entry))
+  on.exit(unlink(msg), add = TRUE)
+  .cp_git_do(repo, c("tag", "-a", entry$tag, "-F", msg, entry$git_commit))
+}
+
+# Returns the entries as they stand against the local refs on success AND on
+# failure, so the log never names a tag or commit the clone has moved away
+# from. Every failure after the probe becomes a reason, never an error: the
+# checkpoint is already saved locally.
 .cp_push <- function(repo, entries) {
   probe <- .cp_remote_probe(repo)
   if (!probe$reachable) {
-    return(list(reason = paste("remote unreachable:", .cp_last(probe$out))))
+    return(list(reason = paste("remote unreachable:", .cp_last(probe$out)),
+                entries = entries))
   }
   refspecs <- "+refs/tags/*:refs/remote-tags/*"
   if (probe$has_main) {
     refspecs <- c("+refs/heads/main:refs/remotes/origin/main", refspecs)
   }
-  .cp_git_do(repo, c("fetch", "-q", "origin", refspecs))
-  map <- if (probe$has_main) .cp_replay(repo) else character(0)
-  entries <- lapply(entries, .cp_retarget, repo = repo, map = map)
+  reason <- tryCatch({
+    .cp_git_do(repo, c("fetch", "-q", "--no-tags", "origin", refspecs))
+    map <- if (probe$has_main) .cp_replay(repo) else character(0)
+    entries <- lapply(entries, .cp_apply_map, map = map)
+    for (i in seq_along(entries)) {
+      planned <- .cp_retag_plan(entries[[i]], repo)
+      if (is.null(planned)) next
+      old_tag <- entries[[i]]$tag
+      entries[[i]] <- planned
+      .cp_retag(repo, old_tag, planned)
+    }
+    .cp_push_refs(repo, entries)
+  }, error = function(e) conditionMessage(e))
+  list(reason = reason, entries = entries)
+}
+
+.cp_push_refs <- function(repo, entries) {
   res <- .cp_git(repo, c("push", "-q", "origin", "refs/heads/main:refs/heads/main"))
-  if (!res$ok) return(list(reason = paste("push rejected:", .cp_last(res$out))))
+  if (!res$ok) return(paste("push rejected:", .cp_last(res$out)))
   tags <- unique(unlist(lapply(entries, function(e) e$tag)))
   tags <- tags[vapply(tags, function(t) {
     !identical(.cp_commit_of(repo, paste0("refs/remote-tags/", t)),
-               .cp_commit_of(repo, t))
+               .cp_commit_of(repo, paste0("refs/tags/", t)))
   }, logical(1))]
   if (length(tags)) {
     res <- .cp_git(repo, c("push", "-q", "origin", paste0("refs/tags/", tags)))
-    if (!res$ok) {
-      return(list(reason = paste("tag push rejected:", .cp_last(res$out))))
-    }
+    if (!res$ok) return(paste("tag push rejected:", .cp_last(res$out)))
   }
-  list(reason = NULL, entries = entries)
+  NULL
 }
 
 # Deliver every committed entry whose git delivery is pending. Committing and
@@ -113,9 +141,12 @@
     NULL
   }
   if (is.null(reason)) {
-    pushed <- .cp_push(.cp_repo_init(root, study$remote), log[pending])
+    pushed <- tryCatch(.cp_push(.cp_repo_init(root, study$remote), log[pending]),
+                       error = function(e) {
+                         list(reason = conditionMessage(e), entries = log[pending])
+                       })
     reason <- pushed$reason
-    if (is.null(reason)) log[pending] <- pushed$entries
+    log[pending] <- pushed$entries
   }
   for (i in pending) {
     if (is.null(reason)) log[[i]]$delivery$git <- "delivered"
@@ -127,8 +158,9 @@
             "identity unverified. Run study-setup --verify, then ",
             "study_checkpoint_push().")
   } else if (!is.null(reason) && reason != "no remote configured") {
-    warning(length(pending), " checkpoint(s) saved locally, not pushed: ",
-            reason, ". Run study_checkpoint_push() to retry.", call. = FALSE)
+    tags <- unlist(lapply(log[pending], function(e) e$tag))
+    warning(length(pending), " checkpoint(s) saved locally, not pushed (",
+            paste(tags, collapse = ", "), "): ", reason, ". Run study_checkpoint_push() to retry.", call. = FALSE)
   }
   invisible(log)
 }

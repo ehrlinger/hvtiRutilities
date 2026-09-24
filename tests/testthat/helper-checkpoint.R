@@ -56,3 +56,21 @@ git_out <- function(repo, args) {
   suppressWarnings(system2("git", shQuote(c("-C", repo, args)),
                            stdout = TRUE, stderr = TRUE))
 }
+
+# The divergence fixture: a local-only checkpoint, then another copy pushes
+# its own main and data_request_submitted-1 to the remote first.
+diverge_study <- function(dir) {
+  root <- make_checkpoint_study(dir)
+  bare <- make_bare_remote(dir)
+  local_cp <- study_checkpoint("data_request_submitted", root = root)
+  other <- file.path(dir, "other")
+  git_out(dir, c("clone", "-q", bare, other))
+  git_out(other, c("checkout", "-q", "-b", "main"))
+  plant_files(other, "other.R")
+  git_out(other, c("add", "-A"))
+  git_out(other, c("commit", "-q", "-m", "other copy"))
+  git_out(other, c("tag", "-a", "data_request_submitted-1", "-m", "other"))
+  git_out(other, c("push", "-q", "origin", "main",
+                   "refs/tags/data_request_submitted-1"))
+  list(root = root, bare = bare, local_cp = local_cp)
+}
