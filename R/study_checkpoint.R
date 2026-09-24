@@ -1,0 +1,220 @@
+# Study checkpoints: an allow-listed snapshot of the study committed and
+# tagged in .checkpoint/repo and recorded in the outbox, then delivered. The
+# outbox entry is written (state: committing) before any git change and
+# completed after it, so a tag never exists without an entry; delivery never
+# undoes a local checkpoint.
+
+.cp_tag_message <- function(entry) {
+  body <- entry[setdiff(names(entry), c("delivery", "git_commit", "tag", "state"))]
+  c(paste0(entry$type, " ", entry$tag, " (ST ", entry$st_id, ")"), "",
+    strsplit(yaml::as.yaml(body), "\n", fixed = TRUE)[[1]])
+}
+
+.cp_commit_of <- function(repo, ref) {
+  res <- .cp_git(repo, c("rev-parse", "-q", "--verify", paste0(ref, "^{commit}")))
+  if (res$ok) res$out[1] else NA_character_
+}
+
+# Spec 5.1a: free text leaves the study folder, so say so whenever any is
+# given. A message rather than a warning: study_reopen() always has a reason.
+.cp_free_text_notice <- function(...) {
+  given <- vapply(list(...), function(v) {
+    vals <- unlist(v, use.names = FALSE)
+    length(vals) > 0L && any(!is.na(vals) & nzchar(as.character(vals)))
+  }, logical(1))
+  if (any(given)) {
+    message("note/reason/attributes leave the study folder (git and ST); ",
+            "they must not contain patient information.")
+  }
+  invisible(any(given))
+}
+
+# Repair entries a crash left in state "committing". The tag message carries
+# the entry id, so a tag that names the id proves the commit happened: the
+# entry is completed from it. Otherwise the commit never happened and the
+# entry is abandoned, never to be delivered.
+.cp_reconcile <- function(root) {
+  log <- .cp_log_read(root)
+  open <- which(vapply(log, function(e) identical(e$state, "committing"),
+                       logical(1)))
+  if (!length(open)) return(invisible(log))
+  repo <- .cp_repo_path(root)
+  has_repo <- dir.exists(file.path(repo, ".git"))
+  for (i in open) {
+    e <- log[[i]]
+    sha <- NA_character_
+    if (has_repo && !is.null(e$tag)) {
+      msg <- .cp_git(repo, c("tag", "-l", "--format=%(contents)", e$tag))
+      if (msg$ok && any(grepl(.cp_entry_id(e), msg$out, fixed = TRUE))) {
+        sha <- .cp_commit_of(repo, e$tag)
+      }
+    }
+    if (is.na(sha)) {
+      log[[i]]$state <- "abandoned"
+    } else {
+      log[[i]]$state <- "committed"
+      log[[i]]$git_commit <- sha
+    }
+  }
+  .cp_log_write(root, log)
+  invisible(log)
+}
+
+# Select, copy, describe, log, commit, tag and complete the log entry.
+# `tag_fn(repo)` names the tag, so checkpoints, closures and the unnumbered
+# workspace_created share one transaction. Any failure puts the repository
+# back as it was and, once the entry exists, marks it abandoned.
+.cp_snapshot <- function(root, study, tag_fn, entry, caller) {
+  repo <- .cp_repo_init(root, study$remote)
+  tag <- tag_fn(repo)
+  sel <- .cp_select(root, study$include)
+  if (nrow(sel$skipped)) {
+    warning(caller, "(): skipped over the 50 MB cap: ",
+            paste(sel$skipped$path, collapse = ", "), call. = FALSE)
+  }
+  id <- .cp_entry_id(entry)
+  head_before <- .cp_head(repo)
+  logged <- FALSE
+  done <- FALSE
+  undo <- function() {
+    .cp_rollback(repo, head_before, tag)
+    if (logged) {
+      try(.cp_log_update(root, id, list(state = "abandoned")), silent = TRUE)
+    }
+  }
+  on.exit(if (!done) undo(), add = TRUE)
+
+  entry$tag <- tag
+  .cp_sync_tree(repo, root, sel$files)
+  .cp_write_meta(repo, root, entry, sel)
+  entry$state <- "committing"
+  entry$delivery$git <- "pending"
+  .cp_log_append(root, entry)
+  logged <- TRUE
+  sha <- .cp_commit_tag(repo, tag, .cp_tag_message(entry))
+  entry <- .cp_log_update(root, id, list(state = "committed", git_commit = sha))
+  done <- TRUE
+  list(entry = entry, selection = sel, repo = repo)
+}
+
+.cp_log_find <- function(root, id) {
+  for (e in .cp_log_read(root)) {
+    if (identical(.cp_entry_id(e), id)) return(e)
+  }
+  NULL
+}
+
+.cp_result <- function(entry, snap) {
+  structure(
+    list(type = entry$type, tag = entry$tag, commit = entry$git_commit,
+         files = if (is.null(snap)) 0L else length(snap$selection$files),
+         skipped = if (is.null(snap)) NULL else snap$selection$skipped,
+         delivery = entry$delivery, entry = entry),
+    class = "study_checkpoint"
+  )
+}
+
+#' Record a study checkpoint
+#'
+#' @description
+#' Commits an allow-listed snapshot of the study (code, identity and
+#' reproducibility files) to a private git repository in
+#' \code{.checkpoint/repo/}, tags it with the checkpoint kind and a sequence
+#' number, records it in the outbox \code{.checkpoint/log.yml}, and pushes it
+#' when \code{_study.yml} names a remote. Data never enter the snapshot:
+#' \code{00_datasets/}, \code{90_estimates/}, credentials, symbolic links and
+#' data or output file types are always excluded. Files in
+#' \code{50_documents/} other than \code{.qmd} and \code{.bib} sources are not
+#' committed; \code{CHECKPOINT.yml} records their size and checksum.
+#'
+#' @details
+#' The kind comes from the StudyTracker checkpoint vocabulary, for example
+#' \code{"abstract_submitted"} or \code{"manuscript_submitted"}. Automatic
+#' kinds such as \code{"data_received"} are logged without a snapshot.
+#' A checkpoint is committed locally before anything is pushed, so an
+#' unreachable remote never loses one; \code{\link{study_checkpoint_push}}
+#' retries later.
+#'
+#' \code{note} and \code{attributes} are written to the snapshot, the tag and
+#' the outbox, so they leave the study folder. A message says so whenever
+#' either is given: they must not contain patient information.
+#'
+#' @param kind Character(1). A checkpoint kind.
+#' @param note Optional character(1), stored with the checkpoint.
+#' @param attributes Optional named list of kind-specific details, for example
+#'   \code{list(journal = "JTCVS")}.
+#' @param occurred_at Date the event happened. Defaults to today.
+#' @param root Character. Study root. Defaults to \code{study_root()}.
+#'
+#' @return An object of class \code{"study_checkpoint"}, returned invisibly,
+#'   with the tag, commit, file count, skipped files and delivery states.
+#'
+#' @seealso \code{\link{study_checkpoint_push}}, \code{\link{study_close}},
+#'   \code{\link{study_status}}
+#'
+#' @export
+#'
+#' @examples
+#' \donttest{
+#' if (nzchar(Sys.which("git"))) {
+#'   root <- file.path(tempdir(), "checkpoint-example")
+#'   study_setup(root, "Checkpoint example", 1267L)
+#'   writeLines("x <- 1", file.path(root, "30_analyses", "fit.R"))
+#'   # A throwaway identity, so the example commits on a machine with no
+#'   # git user configured.
+#'   withr::with_envvar(c(GIT_AUTHOR_NAME = "Example",
+#'                        GIT_AUTHOR_EMAIL = "example@example.org",
+#'                        GIT_COMMITTER_NAME = "Example",
+#'                        GIT_COMMITTER_EMAIL = "example@example.org"), {
+#'     cp <- study_checkpoint("abstract_submitted", root = root)
+#'     print(cp$tag)
+#'   })
+#'   unlink(root, recursive = TRUE)
+#' }
+#' }
+study_checkpoint <- function(kind, note = NULL, attributes = NULL,
+                             occurred_at = Sys.Date(), root = study_root()) {
+  .cp_require_git("study_checkpoint")
+  root <- normalizePath(root, mustWork = TRUE)
+  .cp_reconcile(root)
+  study <- .cp_study(root, "study_checkpoint")
+  row <- .cp_kind_check(.cp_kinds(root), kind, "study_checkpoint")
+  .cp_free_text_notice(note, attributes)
+
+  entry <- list(
+    type = "checkpoint", checkpoint_id = uuid::UUIDgenerate(),
+    st_id = study$st_id, workspace_id = study$workspace_id, kind = kind,
+    occurred_at = .cp_date(occurred_at), trigger = row$trigger,
+    artifact = NULL, git_commit = NULL, note = note, attributes = attributes,
+    tag = NULL, state = NULL, delivery = list(git = "none", st = "pending")
+  )
+
+  if (!identical(row$trigger, "manual")) {
+    entry$state <- "recorded"
+    .cp_log_append(root, entry)
+    return(invisible(.cp_result(entry, NULL)))
+  }
+
+  tag_fn <- function(repo) {
+    if (row$numbered) return(.cp_next_tag(repo, kind))
+    if (length(.cp_tags(repo, paste0("^", kind, "$")))) {
+      stop("study_checkpoint(): '", kind, "' is already recorded for this ",
+           "study", call. = FALSE)
+    }
+    kind
+  }
+  snap <- .cp_snapshot(root, study, tag_fn, entry, "study_checkpoint")
+  invisible(.cp_result(snap$entry, snap))
+}
+
+#' @export
+print.study_checkpoint <- function(x, ...) {
+  cat(x$type, if (!is.null(x$tag)) paste0(" ", x$tag), "\n", sep = "")
+  cat("  commit:   ", .cp_or(x$commit, "none (no snapshot)"), "\n", sep = "")
+  cat("  files:    ", x$files, "\n", sep = "")
+  cat("  git:      ", x$delivery$git,
+      if (!is.null(x$delivery$reason)) paste0(" (", x$delivery$reason, ")"),
+      "\n", sep = "")
+  cat("  ST:       ", x$delivery$st, "\n", sep = "")
+  invisible(x)
+}

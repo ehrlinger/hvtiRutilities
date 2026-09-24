@@ -28,3 +28,18 @@
 }
 
 .cp_date <- function(x) format(as.Date(x), "%Y-%m-%d")
+
+# Set fields on the one entry with this id and rewrite the log atomically.
+# Used for the committing -> committed / abandoned transitions; a NULL in
+# `fields` would delete the key, so callers pass only values.
+.cp_log_update <- function(root, id, fields) {
+  log <- .cp_log_read(root)
+  hit <- which(vapply(log, function(e) identical(.cp_entry_id(e), id),
+                      logical(1)))
+  if (length(hit) != 1L) {
+    stop("no outbox entry with id ", id, call. = FALSE)
+  }
+  for (k in names(fields)) log[[hit]][[k]] <- fields[[k]]
+  .cp_log_write(root, log)
+  invisible(log[[hit]])
+}
