@@ -4,7 +4,7 @@
 
 **Goal:** Add `study_checkpoint()`, `study_checkpoint_push()`, `study_close()` and `study_reopen()` to hvtiRutilities: an allow-listed snapshot of a study committed and tagged in `.checkpoint/repo/`, recorded in an outbox log, and pushed to any git remote.
 
-**Architecture:** The study folder never becomes a git working tree. Each checkpoint selects files by allow-list and hard deny, copies them into a private clone at `.checkpoint/repo/`, writes `CHECKPOINT.yml`, commits and tags locally, appends an entry to `.checkpoint/log.yml`, then delivers (push) as a separate, retryable step. All git work goes through the system `git` binary so the user's own credential helper handles authentication.
+**Architecture:** The study folder never becomes a git working tree. Each checkpoint selects files by allow-list and hard deny, copies them into a private clone at `.checkpoint/repo/`, writes `CHECKPOINT.yml`, appends an entry to `.checkpoint/log.yml` in state `committing`, commits and tags locally, marks the entry `committed`, then delivers (push) as a separate, retryable step. Every core call first reconciles entries a crash left `committing`. All git work goes through the system `git` binary so the user's own credential helper handles authentication.
 
 **Tech Stack:** R (>= 4.1), system git, `yaml`, `digest`, `uuid` (new Import), `withr`, testthat edition 3.
 
@@ -28,13 +28,13 @@
 | File | Responsibility |
 |---|---|
 | `R/checkpoint_git.R` (new) | git runner, repo init, remote sync, tag sequencing, tree sync, commit/tag, rollback |
-| `R/checkpoint_kinds.R` (new) | base + live vocabulary, kind validation |
-| `R/checkpoint_select.R` (new) | allow-list, hard deny, size cap |
-| `R/checkpoint_study.R` (new) | reading identity, remote and include patterns from `_study.yml` |
-| `R/checkpoint_log.R` (new) | outbox read / append / write |
-| `R/checkpoint_meta.R` (new) | `CHECKPOINT.yml`, manifest check, package versions |
+| `R/checkpoint_kinds.R` (new) | base + live vocabulary (live rows merged field by field, Task 2a), kind validation |
+| `R/checkpoint_select.R` (new) | allow-list, hard deny (incl. credentials, symlinks), `50_documents/` list, size cap |
+| `R/checkpoint_study.R` (new) | reading identity, remote and include patterns from `_study.yml`; include-pattern validation |
+| `R/checkpoint_log.R` (new) | outbox read / append / write / update by id |
+| `R/checkpoint_meta.R` (new) | `CHECKPOINT.yml` (file and document hashes), source-study manifest check, versions |
 | `R/checkpoint_deliver.R` (new) | push, replay on divergence, retarget and renumber tags |
-| `R/study_checkpoint.R` (new) | `study_checkpoint()`, `study_checkpoint_push()`, snapshot transaction, result object |
+| `R/study_checkpoint.R` (new) | `study_checkpoint()`, `study_checkpoint_push()`, snapshot, reconcile, free-text notice, result |
 | `R/study_close.R` (new) | `study_close()`, `study_reopen()`, closure state |
 | `inst/checkpoint-kinds.yml` (new) | base vocabulary (API spec section 6 rows) |
 | `R/study_status.R` (modify) | checkpoint and closure rows, two new print marks |
@@ -366,14 +366,134 @@ git commit -m "feat: checkpoint vocabulary from the ST Workspace API kinds"
 
 ---
 
-### Task 3: File selection (allow-list, hard deny, size cap)
+### Task 2a: Live kind rows merge field by field
+
+**Files:**
+- Modify: `R/checkpoint_kinds.R` (`.cp_kinds()` and the header comment; `.cp_kind_check()` unchanged)
+- Modify: `tests/testthat/test-checkpoint_kinds.R` (append)
+
+**Interfaces:**
+- Consumes: `.cp_or()` (Task 1).
+- Produces: `.cp_kinds(root)` with the same return shape as Task 2. A live row in `.checkpoint/kinds.yml` now overrides only the
+  fields it names; the base row supplies the rest. A live kind with no base row takes the defaults `trigger = "manual"`,
+  `numbered = TRUE`, `retired = FALSE`. A field written as `null` in the live row counts as not named.
+
+- [ ] **Step 1: Write the failing test**
+
+Append to `tests/testthat/test-checkpoint_kinds.R`:
+
+```r
+test_that("a live row overrides only the fields it names", {
+  root <- withr::local_tempdir()
+  dir.create(file.path(root, ".checkpoint"))
+  yaml::write_yaml(
+    list(list(kind = "data_received", label = "X"),
+         list(kind = "workspace_created", retired = FALSE),
+         list(kind = "adhoc")),
+    file.path(root, ".checkpoint", "kinds.yml")
+  )
+  kinds <- .cp_kinds(root)
+  expect_equal(nrow(kinds), 13L)
+  expect_equal(kinds$trigger[kinds$kind == "data_received"], "auto")
+  expect_true(kinds$numbered[kinds$kind == "data_received"])
+  expect_false(kinds$numbered[kinds$kind == "workspace_created"])
+  expect_false(kinds$retired[kinds$kind == "workspace_created"])
+  adhoc <- kinds[kinds$kind == "adhoc", ]
+  expect_equal(adhoc$trigger, "manual")
+  expect_true(adhoc$numbered)
+  expect_false(adhoc$retired)
+})
+```
+
+- [ ] **Step 2: Run to verify it fails**
+
+Run: `Rscript -e 'devtools::test(filter = "checkpoint_kinds")'`
+Expected: FAIL on the new test: the whole-row replacement gives `data_received` the default trigger `"manual"`, and
+`workspace_created` the default `numbered = TRUE`.
+
+- [ ] **Step 3: Implement**
+
+Replace the whole of `R/checkpoint_kinds.R` with:
+
+```r
+# The checkpoint vocabulary. The package ships the StudyTracker Workspace
+# API's initial rows; qhsprograms caches the live, administrator-owned table
+# in .checkpoint/kinds.yml. A live row overrides only the fields it names and
+# the base row of the same kind supplies the rest; a live kind with no base
+# row takes the defaults (manual, numbered, not retired). There are no
+# study-level kinds: extension happens in the ST table.
+
+.cp_kinds <- function(root) {
+  base <- yaml::read_yaml(system.file("checkpoint-kinds.yml",
+                                      package = "hvtiRutilities",
+                                      mustWork = TRUE))
+  live_path <- file.path(root, ".checkpoint", "kinds.yml")
+  live <- if (file.exists(live_path)) yaml::read_yaml(live_path) else list()
+  rows <- list()
+  for (r in c(base, .cp_or(live, list()))) {
+    # modifyList() deletes a key whose new value is NULL; dropping the NULLs
+    # first makes a null field mean "not named" rather than "unset".
+    r <- Filter(Negate(is.null), r)
+    k <- as.character(r$kind)
+    rows[[k]] <- if (is.null(rows[[k]])) r else utils::modifyList(rows[[k]], r)
+  }
+  rows <- unname(rows)
+  data.frame(
+    kind = vapply(rows, function(r) as.character(r$kind), character(1)),
+    trigger = vapply(rows, function(r) as.character(.cp_or(r$trigger, "manual")),
+                     character(1)),
+    numbered = vapply(rows, function(r) !isFALSE(r$numbered), logical(1)),
+    retired = vapply(rows, function(r) isTRUE(r$retired), logical(1)),
+    stringsAsFactors = FALSE
+  )
+}
+
+.cp_kind_check <- function(kinds, kind, caller) {
+  if (length(kind) != 1L || is.na(kind) || !kind %in% kinds$kind) {
+    stop(caller, "(): unknown checkpoint kind '", paste(kind, collapse = ", "),
+         "'. Valid kinds: ",
+         paste(kinds$kind[!kinds$retired], collapse = ", "),
+         call. = FALSE)
+  }
+  row <- kinds[kinds$kind == kind, , drop = FALSE]
+  if (row$retired) {
+    stop(caller, "(): checkpoint kind '", kind, "' is retired and cannot ",
+         "be used for a new checkpoint", call. = FALSE)
+  }
+  row
+}
+```
+
+- [ ] **Step 4: Run to verify they pass**
+
+Run: `Rscript -e 'devtools::test(filter = "checkpoint_kinds")'`
+Expected: PASS (4 tests). The Task 2 test "the live cache adds kinds and overrides base rows" still passes: `adhoc` is new, and
+`abstract_accepted` gains `retired: true` over its base row.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add R/checkpoint_kinds.R tests/testthat/test-checkpoint_kinds.R
+git commit -m "feat: live checkpoint kinds merge field by field over the base rows"
+```
+
+---
+
+### Task 3: File selection (allow-list, hard deny, documents, size cap)
 
 **Files:**
 - Create: `R/checkpoint_select.R`
 - Create: `tests/testthat/test-checkpoint_select.R`
 
 **Interfaces:**
-- Produces: `.cp_select(root, include = character(0), max_bytes = 50 * 1024^2)` returning `list(files = character(), skipped = data.frame(path, bytes), denied = c(data_folder =, data_extension =, output_extension =))` (integer counts).
+- Produces: `.cp_select(root, include = character(0), max_bytes = 50 * 1024^2)` returning
+  `list(files = character(), documents = character(), skipped = data.frame(path, bytes),
+  denied = c(data_folder =, data_extension =, output_extension =, credential =, symlink =))` (integer counts).
+  `files` are committed; `documents` are the files under `50_documents/` (legacy `documents/`) other than `.qmd` and `.bib`,
+  which are not committed and not counted as denied (Task 7 records their checksums). Both are sorted relative paths.
+- Produces (internal): `.cp_deny_rule(rel, linked = FALSE)` returning one of `"tooling"`, `"symlink"`, `"credential"`,
+  `"data_folder"`, `"document"`, `"data_extension"`, `"output_extension"` or `NA`, checked in that order;
+  `.cp_symlinked(root, rel)` returning a logical vector; `.cp_credential(name)`.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -382,31 +502,38 @@ Create `tests/testthat/test-checkpoint_select.R`:
 ```r
 allowed <- c(
   "_study.yml", "renv.lock", "renv/activate.R", ".Rprofile", "manifest.yaml",
-  "study.Rproj", "_quarto.yml", "30_analyses/fit.R", "30_analyses/report.qmd",
-  "30_analyses/old.Rmd", "10_descriptive/desc.sas", "30_analyses/run.sh",
-  "30_analyses/q.sql", "30_analyses/x.py", "50_documents/manuscript.docx",
-  "50_documents/slides.pptx", "50_documents/submitted.pdf",
-  "50_documents/refs.bib", "50_documents/fig1.png", "50_documents/fig2.tiff",
-  "50_documents/paper.qmd"
+  ".renvignore", "README.md", "study.Rproj", "_quarto.yml",
+  "30_analyses/fit.R", "30_analyses/report.qmd", "30_analyses/old.Rmd",
+  "10_descriptive/desc.sas", "30_analyses/run.sh", "30_analyses/q.sql",
+  "30_analyses/x.py", "50_documents/refs.bib", "50_documents/paper.qmd"
+)
+documents <- c(
+  "50_documents/manuscript.docx", "50_documents/slides.pptx",
+  "50_documents/submitted.pdf", "50_documents/fig1.png",
+  "50_documents/fig2.tiff", "50_documents/supplement.xlsx",
+  "50_documents/table.csv", "50_documents/notes.txt"
 )
 denied_folder <- c("00_datasets/built.sas7bdat", "00_datasets/notes.R",
                    "90_estimates/fit.R")
 denied_data <- c("30_analyses/cohort.csv", "30_analyses/out.rds",
-                 "10_descriptive/desc.lst", "10_descriptive/desc.log",
-                 "50_documents/supplement.xlsx", "50_documents/table.csv")
+                 "10_descriptive/desc.lst", "10_descriptive/desc.log")
 denied_output <- c("30_analyses/report.html", "30_analyses/report.pdf",
                    "40_graphs/fig.png", "30_analyses/draft.docx")
 tooling <- c("renv/library/pkg/R/pkg.R", ".checkpoint/log.yml")
+unlisted <- c("30_analyses/notes.txt", "30_analyses/README.md")
 
 test_that("selection keeps exactly the allow-list and never a denied file", {
   root <- withr::local_tempdir()
-  plant_files(root, c(allowed, denied_folder, denied_data, denied_output,
-                      tooling, "30_analyses/notes.txt"))
+  plant_files(root, c(allowed, documents, denied_folder, denied_data,
+                      denied_output, tooling, unlisted))
   sel <- .cp_select(root, include = "**/*.csv")
   expect_setequal(sel$files, allowed)
+  expect_setequal(sel$documents, documents)
   expect_equal(sel$denied[["data_folder"]], 3L)
-  expect_equal(sel$denied[["data_extension"]], 6L)
+  expect_equal(sel$denied[["data_extension"]], 4L)
   expect_equal(sel$denied[["output_extension"]], 4L)
+  expect_equal(sel$denied[["credential"]], 0L)
+  expect_equal(sel$denied[["symlink"]], 0L)
 })
 
 test_that("include patterns admit extra files but cannot admit data", {
@@ -420,10 +547,40 @@ test_that("include patterns admit extra files but cannot admit data", {
 test_that("legacy folder spellings get the same rules", {
   root <- withr::local_tempdir()
   plant_files(root, c("datasets/built.csv", "estimates/fit.R",
-                      "documents/manuscript.docx", "analyses/fit.R"))
+                      "documents/manuscript.docx", "documents/paper.qmd",
+                      "analyses/fit.R"))
   sel <- .cp_select(root)
-  expect_setequal(sel$files, c("documents/manuscript.docx", "analyses/fit.R"))
+  expect_setequal(sel$files, c("documents/paper.qmd", "analyses/fit.R"))
+  expect_equal(sel$documents, "documents/manuscript.docx")
   expect_equal(sel$denied[["data_folder"]], 2L)
+})
+
+test_that("credentials are denied anywhere, even in the document folders", {
+  root <- withr::local_tempdir()
+  creds <- c(".env", ".Renviron", ".netrc", ".git-credentials",
+             "30_analyses/tracker.env", "keys/id_rsa", "keys/id_ed25519.pub",
+             "certs/server.pem", "certs/api.key", "certs/client.p12",
+             "certs/client.pfx", "50_documents/.env")
+  plant_files(root, c(creds, "30_analyses/fit.R"))
+  sel <- .cp_select(root, include = c("*.env", "*.pem", "id_*", ".*"))
+  expect_equal(sel$files, "30_analyses/fit.R")
+  expect_length(sel$documents, 0L)
+  expect_equal(sel$denied[["credential"]], 12L)
+})
+
+test_that("symbolic links are denied and never followed", {
+  testthat::skip_on_os("windows")
+  root <- withr::local_tempdir()
+  outside <- withr::local_tempdir()
+  plant_files(outside, c("secret.R", "dir/inner.R"))
+  plant_files(root, "30_analyses/fit.R")
+  file.symlink(file.path(outside, "secret.R"),
+               file.path(root, "30_analyses", "linked.R"))
+  file.symlink(file.path(outside, "dir"),
+               file.path(root, "30_analyses", "linkdir"))
+  sel <- .cp_select(root, include = "**/*.R")
+  expect_equal(sel$files, "30_analyses/fit.R")
+  expect_equal(sel$denied[["symlink"]], 2L)
 })
 
 test_that("files over the size cap are skipped and reported", {
@@ -436,6 +593,10 @@ test_that("files over the size cap are skipped and reported", {
 })
 ```
 
+The symlink test counts two links whether or not `list.files()` descends into the linked directory: descending lists
+`30_analyses/linkdir/inner.R`, whose parent is a link; not descending lists `30_analyses/linkdir` itself. Either way the
+path carries a linked prefix and is denied.
+
 - [ ] **Step 2: Run to verify they fail**
 
 Run: `Rscript -e 'devtools::test(filter = "checkpoint_select")'`
@@ -446,13 +607,15 @@ Expected: FAIL, `could not find function ".cp_select"`.
 Create `R/checkpoint_select.R`:
 
 ```r
-# Which study files a checkpoint may commit. Three passes: a hard deny that no
-# configuration can override, then the allow-list, then a size cap. Denied
-# files are counted per rule but never named, because dataset filenames can
-# carry cohort-identifying fragments.
+# Which study files a checkpoint may commit. A hard deny that no configuration
+# can override, then the allow-list, then a size cap. Denied files are counted
+# per rule but never named, because dataset filenames can carry
+# cohort-identifying fragments. Files in 50_documents/ other than .qmd and
+# .bib sources are neither committed nor denied: they are listed so that
+# CHECKPOINT.yml can record their checksums (spec D9).
 
 .cp_code_ext <- function() c("r", "rmd", "qmd", "sas", "sh", "py", "sql", "rproj")
-.cp_doc_ext  <- function() c("docx", "pptx", "pdf", "qmd", "bib", "png", "tiff")
+.cp_doc_ext  <- function() c("qmd", "bib")
 .cp_data_ext <- function() {
   c("sas7bdat", "xpt", "parquet", "rds", "rdata", "csv", "xlsx", "xls",
     "lst", "log")
@@ -460,27 +623,55 @@ Create `R/checkpoint_select.R`:
 .cp_output_ext <- function() c("html", "pdf", "docx", "pptx", "png", "tiff")
 .cp_always <- function() {
   c("_study.yml", "renv.lock", "renv/activate.R", ".Rprofile",
-    "manifest.yaml", "_quarto.yml")
+    "manifest.yaml", "_quarto.yml", ".renvignore", "README.md")
 }
 .cp_data_dirs <- function() c("00_datasets", "datasets", "90_estimates", "estimates")
 .cp_doc_dirs  <- function() c("50_documents", "documents")
+.cp_denied_levels <- function() {
+  c("data_folder", "data_extension", "output_extension", "credential", "symlink")
+}
 
-# The deny rule a relative path hits, or NA. "tooling" covers the package's
-# own and renv's directories and is not counted.
-.cp_deny_rule <- function(rel) {
+# Credentials are matched by file name wherever they sit.
+.cp_credential <- function(name) {
+  name %in% c(".env", ".Renviron", ".netrc", ".git-credentials", "tracker.env") ||
+    startsWith(name, "id_rsa") || startsWith(name, "id_ed25519") ||
+    tolower(tools::file_ext(name)) %in% c("pem", "key", "p12", "pfx")
+}
+
+# TRUE for each path whose file, or any parent directory below root, is a
+# symbolic link. list.files() follows linked directories, so every prefix is
+# checked, not just the file. On Windows Sys.readlink() returns "" and no
+# link is detected.
+.cp_symlinked <- function(root, rel) {
+  prefixes <- lapply(strsplit(rel, "/", fixed = TRUE), function(p) {
+    vapply(seq_along(p), function(i) paste(p[seq_len(i)], collapse = "/"),
+           character(1))
+  })
+  uniq <- unique(unlist(prefixes))
+  target <- Sys.readlink(file.path(root, uniq))
+  linked <- uniq[!is.na(target) & nzchar(target)]
+  vapply(prefixes, function(p) any(p %in% linked), logical(1))
+}
+
+# The rule a relative path hits, or NA. The order is the precedence: tooling,
+# symlink, credential, data_folder, document, data_extension,
+# output_extension. "tooling" and "document" are not counted as denied.
+.cp_deny_rule <- function(rel, linked = FALSE) {
   parts <- strsplit(rel, "/", fixed = TRUE)[[1]]
-  ext <- tolower(tools::file_ext(rel))
   n <- length(parts)
+  ext <- tolower(tools::file_ext(rel))
   in_renv_lib <- n >= 2L && any(parts[-n] == "renv" & parts[-1] == "library")
-  if (parts[1] %in% c(".checkpoint", ".git") || ".git" %in% parts ||
-        in_renv_lib) {
+  if (parts[1] == ".checkpoint" || ".git" %in% parts || in_renv_lib) {
     return("tooling")
   }
+  if (linked) return("symlink")
+  if (.cp_credential(parts[n])) return("credential")
   if (parts[1] %in% .cp_data_dirs()) return("data_folder")
-  if (ext %in% .cp_data_ext()) return("data_extension")
-  if (!parts[1] %in% .cp_doc_dirs() && ext %in% .cp_output_ext()) {
-    return("output_extension")
+  if (n >= 2L && parts[1] %in% .cp_doc_dirs() && !ext %in% .cp_doc_ext()) {
+    return("document")
   }
+  if (ext %in% .cp_data_ext()) return("data_extension")
+  if (ext %in% .cp_output_ext()) return("output_extension")
   NA_character_
 }
 
@@ -505,21 +696,22 @@ Create `R/checkpoint_select.R`:
 
 .cp_select <- function(root, include = character(0), max_bytes = 50 * 1024^2) {
   rel <- list.files(root, recursive = TRUE, all.files = TRUE, no.. = TRUE)
-  rules <- vapply(rel, .cp_deny_rule, character(1), USE.NAMES = FALSE)
+  linked <- .cp_symlinked(root, rel)
+  rules <- vapply(seq_along(rel), function(i) .cp_deny_rule(rel[i], linked[i]),
+                  character(1))
   ok <- vapply(rel, .cp_allowed, logical(1), include = include,
                USE.NAMES = FALSE)
   cand <- rel[is.na(rules) & ok]
   bytes <- file.size(file.path(root, cand))
-  big <- bytes > max_bytes
-  counted <- factor(rules[!is.na(rules) & rules != "tooling"],
-                    levels = c("data_folder", "data_extension",
-                               "output_extension"))
-  tab <- table(counted)
+  big <- !is.na(bytes) & bytes > max_bytes
+  levels <- .cp_denied_levels()
+  tab <- table(factor(rules[rules %in% levels], levels = levels))
   list(
     files = sort(cand[!big]),
+    documents = sort(rel[rules %in% "document"]),
     skipped = data.frame(path = cand[big], bytes = bytes[big],
                          stringsAsFactors = FALSE),
-    denied = structure(as.integer(tab), names = names(tab))
+    denied = structure(as.integer(tab), names = levels)
   )
 }
 ```
@@ -527,7 +719,7 @@ Create `R/checkpoint_select.R`:
 - [ ] **Step 4: Run to verify they pass**
 
 Run: `Rscript -e 'devtools::test(filter = "checkpoint_select")'`
-Expected: PASS (4 tests).
+Expected: PASS (6 tests; the symlink test skips on Windows only).
 
 - [ ] **Step 5: Commit**
 
@@ -546,7 +738,9 @@ git commit -m "feat: allow-list and hard deny for checkpoint snapshots"
 
 **Interfaces:**
 - Consumes: `.cp_or()`.
-- Produces: `.cp_study(root, caller)` returning `list(root, st_id = integer(1), workspace_id = chr or NULL, verified = logical(1), remote = chr or NULL, include = character())`.
+- Produces: `.cp_study(root, caller)` returning `list(root, st_id = integer(1), workspace_id = chr or NULL, verified = logical(1),
+  remote = chr or NULL, include = character())`; `.cp_check_include(include, caller)` returning `include` or raising on the
+  first pattern that is absolute (starts with `/`, `~` or a drive such as `C:`) or has a `..` path segment.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -571,7 +765,7 @@ test_that("st_id wins, and checkpoint keys and verification are read", {
     list(st_id = 42L, study_tracker_id = 1L, workspace_id = "ws-1",
          identity_verified = FALSE,
          checkpoint = list(remote = "https://example.org/r.git",
-                           include = list("*.txt"))),
+                           include = list("*.txt", "30_analyses/**/*.inc"))),
     file.path(root, "_study.yml")
   )
   s <- .cp_study(root, "f")
@@ -579,7 +773,7 @@ test_that("st_id wins, and checkpoint keys and verification are read", {
   expect_equal(s$workspace_id, "ws-1")
   expect_false(s$verified)
   expect_equal(s$remote, "https://example.org/r.git")
-  expect_equal(s$include, "*.txt")
+  expect_equal(s$include, c("*.txt", "30_analyses/**/*.inc"))
 })
 
 test_that("a missing _study.yml or ST number is an error", {
@@ -587,6 +781,17 @@ test_that("a missing _study.yml or ST number is an error", {
   expect_error(.cp_study(root, "study_checkpoint"), "no _study.yml")
   yaml::write_yaml(list(study = "S"), file.path(root, "_study.yml"))
   expect_error(.cp_study(root, "study_checkpoint"), "no valid st_id")
+})
+
+test_that("an include pattern that leaves the study root is an error", {
+  root <- withr::local_tempdir()
+  for (bad in c("../x.R", "30_analyses/../../x.R", "/etc/passwd", "~/x.R",
+                "C:/x.R", "..\\x.R")) {
+    yaml::write_yaml(list(st_id = 1L, checkpoint = list(include = list(bad))),
+                     file.path(root, "_study.yml"))
+    expect_error(.cp_study(root, "study_checkpoint"),
+                 paste0("include pattern '", bad, "'"), fixed = TRUE)
+  }
 })
 ```
 
@@ -604,6 +809,22 @@ Create `R/checkpoint_study.R`:
 # open item 1): read st_id, falling back to study_tracker_id, and treat an
 # absent workspace_id as NULL. An absent identity_verified counts as verified,
 # which is how every study written before PR #146 reads.
+
+# An include pattern is matched against study-relative paths only, so one
+# that is absolute or climbs out with ".." can only be a mistake. It is an
+# error at validation rather than a silent skip (spec section 5).
+.cp_check_include <- function(include, caller) {
+  for (p in include) {
+    absolute <- grepl("^(/|~|[A-Za-z]:)", p)
+    climbs <- ".." %in% strsplit(p, "[/\\\\]")[[1]]
+    if (absolute || climbs) {
+      stop(caller, "(): checkpoint include pattern '", p, "' must be ",
+           "relative to the study root and must not contain '..'",
+           call. = FALSE)
+    }
+  }
+  include
+}
 
 .cp_study <- function(root, caller) {
   yml <- file.path(root, "_study.yml")
@@ -624,7 +845,7 @@ Create `R/checkpoint_study.R`:
     workspace_id = raw$workspace_id,
     verified = !isFALSE(raw$identity_verified),
     remote = cp$remote,
-    include = as.character(unlist(cp$include))
+    include = .cp_check_include(as.character(unlist(cp$include)), caller)
   )
 }
 ```
@@ -632,7 +853,7 @@ Create `R/checkpoint_study.R`:
 - [ ] **Step 4: Run to verify they pass**
 
 Run: `Rscript -e 'devtools::test(filter = "checkpoint_study")'`
-Expected: PASS (3 tests).
+Expected: PASS (4 tests).
 
 - [ ] **Step 5: Commit**
 
@@ -982,33 +1203,51 @@ git commit -m "feat: local checkpoint repository, tag sequencing and rollback"
 - Create: `tests/testthat/test-checkpoint_meta.R`
 
 **Interfaces:**
-- Consumes: `.cp_select()` result shape (Task 3); `verify_manifest(manifest_path, data_dir, stop_on_error, verbose, strict)` (existing).
-- Produces: `.cp_manifest_check(root)` returning `NULL` or a named list file to `"OK"`/`"FAIL"`/`"unchecked"` (or `list(error = msg)`); `.cp_write_meta(repo, root, entry, selection)` writing `<repo>/CHECKPOINT.yml` and returning the meta list.
+- Consumes: `.cp_select()` result shape (Task 3), including `documents`; `.cp_seq_of()` (Task 6); `study_dir(folder, root)`
+  (existing, `R/study_layout.R`); `verify_manifest(manifest_path, data_dir, stop_on_error, verbose, strict)` (existing).
+- Produces: `.cp_sha(path)`; `.cp_manifest_check(root)` returning `NULL` (no `manifest.yaml`),
+  `list(datasets = <named list, file to "OK" | "FAIL" | "unchecked">, warnings = character())`, or `list(error = msg)`;
+  `.cp_write_meta(repo, root, entry, selection)` writing `<repo>/CHECKPOINT.yml` and returning the meta list invisibly.
 
 - [ ] **Step 1: Write the failing tests**
 
 Create `tests/testthat/test-checkpoint_meta.R`:
 
 ```r
-test_that("CHECKPOINT.yml hashes every copied file and names no denied file", {
+test_that("CHECKPOINT.yml hashes files, lists documents and names no denied file", {
   root <- withr::local_tempdir()
   repo <- withr::local_tempdir()
   plant_files(repo, c("a.R", "30_analyses/b.R"))
+  plant_files(root, "50_documents/manuscript.docx", text = "submitted")
   sel <- list(files = c("a.R", "30_analyses/b.R"),
+              documents = "50_documents/manuscript.docx",
               skipped = data.frame(path = "big.R", bytes = 9e7),
               denied = c(data_folder = 2L, data_extension = 1L,
-                         output_extension = 0L))
+                         output_extension = 0L, credential = 1L,
+                         symlink = 0L))
   entry <- list(type = "checkpoint", checkpoint_id = "id-1", st_id = 1267L,
-                kind = "manuscript_submitted", tag = "manuscript_submitted-1",
-                delivery = list(git = "pending"))
+                kind = "manuscript_submitted", note = NULL,
+                git_commit = NULL, tag = "manuscript_submitted-1",
+                state = "committing",
+                delivery = list(git = "pending", st = "pending"))
   .cp_write_meta(repo, root, entry, sel)
   meta <- yaml::read_yaml(file.path(repo, "CHECKPOINT.yml"))
   expect_equal(meta$tag, "manuscript_submitted-1")
+  expect_equal(meta$seq, 1L)
   expect_null(meta$delivery)
+  expect_null(meta$state)
+  expect_true("note" %in% names(meta))
   expect_equal(meta$files[["a.R"]],
                digest::digest(file.path(repo, "a.R"), algo = "sha256",
                               file = TRUE))
+  expect_equal(meta$documents[[1]]$path, "50_documents/manuscript.docx")
+  expect_equal(meta$documents[[1]]$sha256,
+               digest::digest(file.path(root, "50_documents/manuscript.docx"),
+                              algo = "sha256", file = TRUE))
+  expect_equal(meta$documents[[1]]$bytes,
+               file.size(file.path(root, "50_documents/manuscript.docx")))
   expect_equal(meta$denied$data_folder, 2L)
+  expect_equal(meta$denied$credential, 1L)
   expect_equal(meta$skipped[[1]]$path, "big.R")
   expect_false(any(grepl("datasets", names(meta$files))))
   expect_true(nzchar(meta$r_version))
@@ -1024,27 +1263,47 @@ test_that("a manifest entry without n_rows is recorded as unchecked", {
                               sha256 = sha, role = "source"))),
     file.path(root, "manifest.yaml")
   )
-  res <- suppressWarnings(.cp_manifest_check(root))
-  expect_equal(res[["built.csv"]], "unchecked")
+  res <- .cp_manifest_check(root)
+  expect_equal(res$datasets[["built.csv"]], "unchecked")
+  expect_identical(res$warnings, character(0))
 })
 
-test_that("a manifest mismatch warns and is recorded as FAIL", {
+test_that("a manifest mismatch in the source study warns and is recorded", {
   root <- withr::local_tempdir()
-  plant_files(root, "00_datasets/built.csv")
+  plant_files(root, "datasets/built.csv")
   yaml::write_yaml(
     list(datasets = list(list(file = "built.csv", extract_date = "2026-09-01",
                               n_rows = 1L, sha256 = strrep("0", 64),
                               role = "source"))),
     file.path(root, "manifest.yaml")
   )
-  expect_warning(res <- .cp_manifest_check(root))
-  expect_equal(res[["built.csv"]], "FAIL")
+  expect_warning(res <- .cp_manifest_check(root),
+                 "manifest verification failed")
+  expect_equal(res$datasets[["built.csv"]], "FAIL")
+  expect_length(res$warnings, 1L)
+  expect_match(res$warnings, "SHA-256 mismatch")
+})
+
+test_that("a manifest that cannot be verified warns and records the error", {
+  root <- withr::local_tempdir()
+  plant_files(root, c("00_datasets/a.csv", "datasets/b.csv"))
+  yaml::write_yaml(
+    list(datasets = list(list(file = "a.csv", extract_date = "2026-09-01",
+                              sha256 = strrep("0", 64), role = "source"))),
+    file.path(root, "manifest.yaml")
+  )
+  expect_warning(res <- .cp_manifest_check(root), "could not be verified")
+  expect_match(res$error, "layout is mixed")
 })
 
 test_that("no manifest gives NULL", {
   expect_null(.cp_manifest_check(withr::local_tempdir()))
 })
 ```
+
+The second and third tests plant the data under the numbered and the legacy spelling respectively, so both of
+`study_dir("datasets", root)`'s resolutions are exercised against the source study. The fourth plants both spellings, which
+`study_dir()` rejects as a mixed layout.
 
 - [ ] **Step 2: Run to verify they fail**
 
@@ -1057,8 +1316,10 @@ Create `R/checkpoint_meta.R`:
 
 ```r
 # CHECKPOINT.yml: what a snapshot contains and what produced it. It pins the
-# data by manifest hash without shipping it, and records verify_manifest()'s
-# verdict so a checkpoint taken against unverified data says so.
+# data by manifest hash without shipping it, records the checksum of every
+# document in 50_documents/ without committing it (spec D9), and records
+# verify_manifest()'s verdict so a checkpoint taken against unverified data
+# says so.
 
 .cp_sha <- function(path) {
   if (!file.exists(path)) return(NULL)
@@ -1073,30 +1334,43 @@ Create `R/checkpoint_meta.R`:
   )
 }
 
-# verify_manifest() reports an entry without n_rows as OK although it never
-# counted the rows; record those as "unchecked" instead. A mismatch warns (via
-# verify_manifest) and is recorded; it never blocks the checkpoint.
+# verify_manifest() runs against the source study: the snapshot holds no
+# data. Its warnings are recorded and still reach the caller (the calling
+# handler does not muffle them). An entry without n_rows is reported OK
+# although its rows were never counted; it is recorded as "unchecked". A
+# mismatch never blocks the checkpoint.
 .cp_manifest_check <- function(root) {
   path <- file.path(root, "manifest.yaml")
   if (!file.exists(path)) return(NULL)
+  seen <- new.env(parent = emptyenv())
+  seen$warnings <- character(0)
   report <- tryCatch(
-    verify_manifest(path, stop_on_error = FALSE),
-    error = function(e) {
-      warning("manifest could not be verified: ", conditionMessage(e),
-              call. = FALSE)
-      NULL
-    }
+    withCallingHandlers(
+      verify_manifest(path, data_dir = study_dir("datasets", root),
+                      stop_on_error = FALSE),
+      warning = function(w) {
+        seen$warnings <- c(seen$warnings, conditionMessage(w))
+      }
+    ),
+    error = function(e) e
   )
-  if (is.null(report)) return(list(error = "manifest could not be verified"))
-  status <- structure(as.list(report$status), names = report$file)
-  for (d in yaml::read_yaml(path)$datasets) {
-    if (is.null(d$n_rows) || is.na(d$n_rows)) status[[d$file]] <- "unchecked"
+  if (inherits(report, "error")) {
+    msg <- paste("manifest could not be verified:", conditionMessage(report))
+    warning(msg, call. = FALSE)
+    return(list(error = msg))
   }
-  status
+  status <- structure(as.list(report$status), names = report$file)
+  for (d in .cp_or(yaml::read_yaml(path)$datasets, list())) {
+    if (is.null(d$n_rows) && identical(status[[d$file]], "OK")) {
+      status[[d$file]] <- "unchecked"
+    }
+  }
+  list(datasets = status, warnings = seen$warnings)
 }
 
 .cp_write_meta <- function(repo, root, entry, selection) {
-  meta <- entry[setdiff(names(entry), c("delivery", "git_commit"))]
+  meta <- entry[setdiff(names(entry), c("delivery", "git_commit", "state"))]
+  if (grepl("-[0-9]+$", entry$tag)) meta$seq <- .cp_seq_of(entry$tag)
   meta$committed_at <- format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")
   meta$user <- Sys.info()[["user"]]
   meta$r_version <- R.version.string
@@ -1109,6 +1383,11 @@ Create `R/checkpoint_meta.R`:
     lapply(selection$files, function(f) .cp_sha(file.path(repo, f))),
     names = selection$files
   )
+  # Hashed from the study root: documents are never copied into the repo.
+  meta$documents <- lapply(selection$documents, function(f) {
+    p <- file.path(root, f)
+    list(path = f, bytes = file.size(p), sha256 = .cp_sha(p))
+  })
   meta$skipped <- lapply(seq_len(nrow(selection$skipped)), function(i) {
     list(path = selection$skipped$path[i], bytes = selection$skipped$bytes[i])
   })
@@ -1118,16 +1397,22 @@ Create `R/checkpoint_meta.R`:
 }
 ```
 
+Assigning `NULL` to a list element deletes it, so `manifest_check` and the two `*_sha256` keys are simply absent from
+`CHECKPOINT.yml` when the study has no manifest or lockfile, and `seq` is absent for the unnumbered `workspace_created`.
+Keys that are `NULL` in `entry` itself (such as `note`) are kept, because subsetting a list keeps `NULL` elements, and are
+written as `~`.
+
 - [ ] **Step 4: Run to verify they pass**
 
 Run: `Rscript -e 'devtools::test(filter = "checkpoint_meta")'`
-Expected: PASS (4 tests). If the "unchecked" test shows `verify_manifest()` raising rather than reporting on a missing `n_rows`, the `tryCatch` path records `list(error = ...)`; in that case change the test's expectation to the reported status and note it in the commit message, because it means the fail-open behaviour described in `AGENTS.md` has changed.
+Expected: PASS (5 tests). If the "unchecked" test shows `verify_manifest()` warning or failing on a missing `n_rows`, the
+fail-open behaviour described in `AGENTS.md` has changed: stop and report it rather than adjusting the test.
 
 - [ ] **Step 5: Commit**
 
 ```bash
 git add R/checkpoint_meta.R tests/testthat/test-checkpoint_meta.R
-git commit -m "feat: CHECKPOINT.yml with file hashes and manifest verdict"
+git commit -m "feat: CHECKPOINT.yml with file hashes, document checksums and manifest verdict"
 ```
 
 ---
@@ -1135,35 +1420,97 @@ git commit -m "feat: CHECKPOINT.yml with file hashes and manifest verdict"
 ### Task 8: `study_checkpoint()` (local)
 
 **Files:**
+- Modify: `R/checkpoint_log.R` (append `.cp_log_update()`)
+- Modify: `tests/testthat/test-checkpoint_log.R` (append)
 - Create: `R/study_checkpoint.R`
 - Create: `tests/testthat/test-study_checkpoint.R`
 
 **Interfaces:**
 - Consumes: Tasks 1 to 7.
-- Produces (exported): `study_checkpoint(kind, note = NULL, attributes = NULL, occurred_at = Sys.Date(), root = study_root())` returning, invisibly, an object of class `"study_checkpoint"`: `list(type, tag, commit, files = integer(1), skipped = data.frame, delivery = list, entry = list)`. `print.study_checkpoint()`.
-- Produces (internal, used by Tasks 9 and 10): `.cp_snapshot(root, study, tag_fn, entry, caller)` returning `list(entry, selection, repo)`; `.cp_tag_message(entry)`; `.cp_result(entry, snap)`; `.cp_log_find(root, id)`.
+- Produces (internal, `R/checkpoint_log.R`): `.cp_log_update(root, id, fields)` setting each named element of `fields` on the
+  one entry whose `.cp_entry_id()` is `id`, rewriting the log atomically and returning the updated entry invisibly; it raises
+  when no entry has that id. `fields` must not contain `NULL` values (assigning `NULL` deletes a key).
+- Produces (exported): `study_checkpoint(kind, note = NULL, attributes = NULL, occurred_at = Sys.Date(), root = study_root())`
+  returning, invisibly, an object of class `"study_checkpoint"`: `list(type, tag, commit, files = integer(1),
+  skipped = data.frame or NULL, delivery = list, entry = list)`. `print.study_checkpoint()`.
+- Produces (internal, used by Tasks 9 to 11): `.cp_snapshot(root, study, tag_fn, entry, caller)` returning
+  `list(entry, selection, repo)`; `.cp_tag_message(entry)`; `.cp_result(entry, snap)`; `.cp_log_find(root, id)`;
+  `.cp_commit_of(repo, ref)` (full SHA or `NA`); `.cp_reconcile(root)` returning the log invisibly;
+  `.cp_free_text_notice(...)` returning, invisibly, whether it printed.
+- Entry `state` values: `"committing"` (logged, git not yet done), `"committed"`, `"abandoned"` (never delivered) and
+  `"recorded"` (automatic kind, no snapshot).
+
+The lifecycle (spec 6 and 6.1): validate, select and copy, write `CHECKPOINT.yml`, append the entry with
+`state: committing`, its `tag`, `git_commit: null` and `delivery: {git: pending, st: pending}`, commit and tag, then update
+the same entry to `state: committed` with its `git_commit`. A failure before the append leaves no tag and no entry. A failure
+after it rolls git back and marks the entry `abandoned`. A crash that skips both is repaired by `.cp_reconcile()` at the start
+of the next core call.
 
 - [ ] **Step 1: Write the failing tests**
+
+Append to `tests/testthat/test-checkpoint_log.R`:
+
+```r
+test_that(".cp_log_update changes one entry by id and keeps the rest", {
+  root <- withr::local_tempdir()
+  .cp_log_append(root, list(type = "checkpoint", checkpoint_id = "a",
+                            state = "committing", git_commit = NULL,
+                            delivery = list(git = "pending")))
+  .cp_log_append(root, list(type = "closure", closure_id = "b",
+                            state = "committing", git_commit = NULL,
+                            delivery = list(git = "pending")))
+  e <- .cp_log_update(root, "b", list(state = "committed", git_commit = "abc"))
+  expect_equal(e$git_commit, "abc")
+  log <- .cp_log_read(root)
+  expect_equal(log[[1]]$state, "committing")
+  expect_null(log[[1]]$git_commit)
+  expect_equal(log[[2]]$state, "committed")
+  expect_equal(log[[2]]$delivery$git, "pending")
+  expect_error(.cp_log_update(root, "zzz", list(state = "x")),
+               "no outbox entry")
+})
+```
 
 Create `tests/testthat/test-study_checkpoint.R`:
 
 ```r
-test_that("no denied file reaches the committed tree", {
+test_that("no denied file reaches the committed tree (PHI boundary)", {
   skip_if_no_git()
   local_git_env()
-  root <- make_checkpoint_study(withr::local_tempdir())
-  set_study_keys(root, checkpoint = list(include = list("**/*.csv")))
-  plant_files(root, c("00_datasets/built.sas7bdat", "90_estimates/fit.R",
-                      "30_analyses/cohort.csv", "10_descriptive/d.log",
-                      "50_documents/table.xlsx", "30_analyses/draft.docx",
-                      "50_documents/manuscript.docx"))
+  dir <- withr::local_tempdir()
+  root <- make_checkpoint_study(dir)
+  set_study_keys(root, checkpoint = list(include = list("**/*.csv", "**/.env")))
+  in_docs <- c("50_documents/table.csv", "50_documents/cohort.sas7bdat",
+               "50_documents/supplement.xlsx", "50_documents/manuscript.docx")
+  elsewhere <- c("10_descriptive/d.log", "30_analyses/draft.docx",
+                 "00_datasets/built.sas7bdat", "00_datasets/notes.R",
+                 "90_estimates/fit.R", ".env")
+  plant_files(root, c(in_docs, elsewhere, "50_documents/paper.qmd"))
+  linked <- character(0)
+  if (.Platform$OS.type != "windows") {
+    outside <- file.path(dir, "outside.R")
+    writeLines("secret <- 1", outside)
+    file.symlink(outside, file.path(root, "30_analyses", "linked.R"))
+    linked <- "30_analyses/linked.R"
+  }
   cp <- study_checkpoint("manuscript_submitted", root = root)
-  tree <- git_out(.cp_repo_path(root),
-                  c("ls-tree", "-r", "--name-only", cp$tag))
-  expect_false(any(grepl("datasets|estimates|\\.csv$|\\.log$|\\.xlsx$|draft",
+  repo <- .cp_repo_path(root)
+  tree <- git_out(repo, c("ls-tree", "-r", "--name-only", cp$tag))
+  expect_false(any(c(in_docs, elsewhere, linked, ".Renviron") %in% tree))
+  expect_false(any(grepl(paste0("datasets|estimates|\\.csv$|\\.log$|",
+                                "\\.xlsx$|\\.sas7bdat$|\\.docx$|\\.env$"),
                          tree)))
-  expect_true(all(c("_study.yml", "30_analyses/fit.R", "CHECKPOINT.yml",
-                    "50_documents/manuscript.docx") %in% tree))
+  expect_true(all(c("_study.yml", ".renvignore", "30_analyses/fit.R",
+                    "50_documents/paper.qmd", "CHECKPOINT.yml") %in% tree))
+  shown <- git_out(repo, c("show", paste0(cp$tag, ":CHECKPOINT.yml")))
+  meta <- yaml::yaml.load(paste(shown, collapse = "\n"))
+  docs <- vapply(meta$documents, function(d) d$path, character(1))
+  expect_setequal(docs, in_docs)
+  docx <- meta$documents[[which(docs == "50_documents/manuscript.docx")]]
+  expect_equal(docx$sha256,
+               digest::digest(file.path(root, "50_documents/manuscript.docx"),
+                              algo = "sha256", file = TRUE))
+  expect_gt(meta$denied$credential, 0L)
 })
 
 test_that("tags are numbered per kind and workspace_created is not", {
@@ -1178,23 +1525,47 @@ test_that("tags are numbered per kind and workspace_created is not", {
                "abstract_submitted-1")
   expect_equal(study_checkpoint("abstract_submitted", root = root)$tag,
                "abstract_submitted-2")
+  expect_length(.cp_log_read(root), 3L)
 })
 
 test_that("the log entry has the API checkpoint shape", {
   skip_if_no_git()
   local_git_env()
   root <- make_checkpoint_study(withr::local_tempdir())
-  cp <- study_checkpoint("manuscript_submitted", note = "JTCVS",
-                         attributes = list(journal = "JTCVS"),
-                         occurred_at = as.Date("2026-10-02"), root = root)
+  expect_message(
+    cp <- study_checkpoint("manuscript_submitted", note = "JTCVS",
+                           attributes = list(journal = "JTCVS"),
+                           occurred_at = as.Date("2026-10-02"), root = root),
+    "patient information"
+  )
   e <- .cp_log_read(root)[[1]]
   expect_equal(e$type, "checkpoint")
   expect_match(e$checkpoint_id, "^[0-9a-f-]{36}$")
   expect_equal(e$st_id, 1267L)
   expect_equal(e$occurred_at, "2026-10-02")
+  expect_equal(e$state, "committed")
   expect_equal(e$git_commit, cp$commit)
+  expect_equal(e$tag, "manuscript_submitted-1")
   expect_equal(e$attributes$journal, "JTCVS")
+  expect_equal(e$delivery$git, "pending")
   expect_equal(e$delivery$st, "pending")
+  msg <- git_out(.cp_repo_path(root),
+                 c("tag", "-l", "--format=%(contents)", cp$tag))
+  expect_true(any(grepl(e$checkpoint_id, msg, fixed = TRUE)))
+})
+
+test_that("free text prompts a one-line patient-information reminder", {
+  skip_if_no_git()
+  local_git_env()
+  root <- make_checkpoint_study(withr::local_tempdir())
+  expect_message(study_checkpoint("abstract_submitted", note = "ASAIO",
+                                  root = root),
+                 "must not contain patient information")
+  expect_message(study_checkpoint("abstract_submitted",
+                                  attributes = list(meeting = "AATS"),
+                                  root = root),
+                 "must not contain patient information")
+  expect_silent(study_checkpoint("abstract_submitted", note = "", root = root))
 })
 
 test_that("an automatic kind logs an entry but makes no commit", {
@@ -1205,11 +1576,12 @@ test_that("an automatic kind logs an entry but makes no commit", {
   expect_null(cp$commit)
   e <- .cp_log_read(root)[[1]]
   expect_null(e$git_commit)
+  expect_equal(e$state, "recorded")
   expect_equal(e$delivery$git, "none")
   expect_false(dir.exists(file.path(.cp_repo_path(root), ".git")))
 })
 
-test_that("a failure before the commit leaves no tag and no log entry", {
+test_that("a failure before the log append leaves no tag and no log entry", {
   skip_if_no_git()
   local_git_env()
   root <- make_checkpoint_study(withr::local_tempdir())
@@ -1220,17 +1592,54 @@ test_that("a failure before the commit leaves no tag and no log entry", {
   expect_true(is.na(.cp_head(.cp_repo_path(root))))
 })
 
-test_that("a failure after the commit rolls the commit and tag back", {
+test_that("a failure after the log append rolls git back and abandons the entry", {
   skip_if_no_git()
   local_git_env()
   root <- make_checkpoint_study(withr::local_tempdir())
   first <- study_checkpoint("abstract_submitted", root = root)
-  local_mocked_bindings(.cp_log_append = function(...) stop("disk full"))
+  local_mocked_bindings(.cp_commit_tag = function(...) stop("git exploded"))
   expect_error(study_checkpoint("abstract_submitted", root = root),
-               "disk full")
+               "git exploded")
   repo <- .cp_repo_path(root)
   expect_equal(.cp_head(repo), first$commit)
   expect_equal(git_out(repo, c("tag", "-l")), "abstract_submitted-1")
+  log <- .cp_log_read(root)
+  expect_length(log, 2L)
+  expect_equal(log[[1]]$state, "committed")
+  expect_equal(log[[2]]$state, "abandoned")
+  expect_null(log[[2]]$git_commit)
+})
+
+test_that("a committing entry with no tag is abandoned by the next call", {
+  skip_if_no_git()
+  local_git_env()
+  root <- make_checkpoint_study(withr::local_tempdir())
+  .cp_log_append(root, list(
+    type = "checkpoint", checkpoint_id = "lost-1", st_id = 1267L,
+    kind = "abstract_submitted", git_commit = NULL,
+    tag = "abstract_submitted-1", state = "committing",
+    delivery = list(git = "pending", st = "pending")
+  ))
+  cp <- study_checkpoint("abstract_submitted", root = root)
+  log <- .cp_log_read(root)
+  expect_equal(log[[1]]$state, "abandoned")
+  expect_equal(log[[2]]$state, "committed")
+  expect_equal(cp$tag, "abstract_submitted-1")
+})
+
+test_that("a committing entry whose tag exists is completed from the tag", {
+  skip_if_no_git()
+  local_git_env()
+  root <- make_checkpoint_study(withr::local_tempdir())
+  cp <- study_checkpoint("abstract_submitted", root = root)
+  log <- .cp_log_read(root)
+  log[[1]]$state <- "committing"
+  log[[1]]["git_commit"] <- list(NULL)
+  .cp_log_write(root, log)
+  study_checkpoint("abstract_submitted", root = root)
+  e <- .cp_log_read(root)[[1]]
+  expect_equal(e$state, "committed")
+  expect_equal(e$git_commit, cp$commit)
 })
 
 test_that("an unknown kind is rejected before anything is written", {
@@ -1243,29 +1652,112 @@ test_that("an unknown kind is rejected before anything is written", {
 })
 ```
 
+Notes on the tests:
+- The PHI fixture uses the numbered layout only: `study_setup()` creates `00_datasets/`, so planting `datasets/` would make
+  the layout mixed. `test-checkpoint_select.R` covers the legacy spellings. `study_setup()` also writes `.Renviron`, which
+  is why `.Renviron` is asserted absent and the credential count is positive. The symlink part is skipped on Windows.
+- `log[[1]]["git_commit"] <- list(NULL)` sets the value to `NULL` and keeps the key; `log[[1]]$git_commit <- NULL` would
+  delete it.
+- The abandoned entry in the eighth test never had a tag, so its number is free and the new checkpoint takes
+  `abstract_submitted-1`.
+
 - [ ] **Step 2: Run to verify they fail**
 
-Run: `Rscript -e 'devtools::test(filter = "study_checkpoint")'`
-Expected: FAIL, `could not find function "study_checkpoint"`.
+Run: `Rscript -e 'devtools::test(filter = "checkpoint_log|study_checkpoint")'`
+Expected: FAIL, `could not find function ".cp_log_update"` and `could not find function "study_checkpoint"`.
 
-- [ ] **Step 3: Implement**
+- [ ] **Step 3: Implement the log update**
+
+Append to `R/checkpoint_log.R`:
+
+```r
+# Set fields on the one entry with this id and rewrite the log atomically.
+# Used for the committing -> committed / abandoned transitions; a NULL in
+# `fields` would delete the key, so callers pass only values.
+.cp_log_update <- function(root, id, fields) {
+  log <- .cp_log_read(root)
+  hit <- which(vapply(log, function(e) identical(.cp_entry_id(e), id),
+                      logical(1)))
+  if (length(hit) != 1L) {
+    stop("no outbox entry with id ", id, call. = FALSE)
+  }
+  for (k in names(fields)) log[[hit]][[k]] <- fields[[k]]
+  .cp_log_write(root, log)
+  invisible(log[[hit]])
+}
+```
+
+- [ ] **Step 4: Implement `study_checkpoint()`**
 
 Create `R/study_checkpoint.R`:
 
 ```r
 # Study checkpoints: an allow-listed snapshot of the study committed and
-# tagged in .checkpoint/repo, recorded in the outbox, then delivered. Steps up
-# to the log entry are all-or-nothing; delivery never undoes them.
+# tagged in .checkpoint/repo and recorded in the outbox, then delivered. The
+# outbox entry is written (state: committing) before any git change and
+# completed after it, so a tag never exists without an entry; delivery never
+# undoes a local checkpoint.
 
 .cp_tag_message <- function(entry) {
-  body <- entry[setdiff(names(entry), c("delivery", "git_commit", "tag"))]
+  body <- entry[setdiff(names(entry), c("delivery", "git_commit", "tag", "state"))]
   c(paste0(entry$type, " ", entry$tag, " (ST ", entry$st_id, ")"), "",
     strsplit(yaml::as.yaml(body), "\n", fixed = TRUE)[[1]])
 }
 
-# Select, copy, describe, commit, tag and log. `tag_fn(repo)` names the tag,
-# so checkpoints, closures and the unnumbered workspace_created share one
-# transaction. Any failure puts the repository back as it was.
+.cp_commit_of <- function(repo, ref) {
+  res <- .cp_git(repo, c("rev-parse", "-q", "--verify", paste0(ref, "^{commit}")))
+  if (res$ok) res$out[1] else NA_character_
+}
+
+# Spec 5.1a: free text leaves the study folder, so say so whenever any is
+# given. A message rather than a warning: study_reopen() always has a reason.
+.cp_free_text_notice <- function(...) {
+  given <- vapply(list(...), function(v) {
+    vals <- unlist(v, use.names = FALSE)
+    length(vals) > 0L && any(!is.na(vals) & nzchar(as.character(vals)))
+  }, logical(1))
+  if (any(given)) {
+    message("note/reason/attributes leave the study folder (git and ST); ",
+            "they must not contain patient information.")
+  }
+  invisible(any(given))
+}
+
+# Repair entries a crash left in state "committing". The tag message carries
+# the entry id, so a tag that names the id proves the commit happened: the
+# entry is completed from it. Otherwise the commit never happened and the
+# entry is abandoned, never to be delivered.
+.cp_reconcile <- function(root) {
+  log <- .cp_log_read(root)
+  open <- which(vapply(log, function(e) identical(e$state, "committing"),
+                       logical(1)))
+  if (!length(open)) return(invisible(log))
+  repo <- .cp_repo_path(root)
+  has_repo <- dir.exists(file.path(repo, ".git"))
+  for (i in open) {
+    e <- log[[i]]
+    sha <- NA_character_
+    if (has_repo && !is.null(e$tag)) {
+      msg <- .cp_git(repo, c("tag", "-l", "--format=%(contents)", e$tag))
+      if (msg$ok && any(grepl(.cp_entry_id(e), msg$out, fixed = TRUE))) {
+        sha <- .cp_commit_of(repo, e$tag)
+      }
+    }
+    if (is.na(sha)) {
+      log[[i]]$state <- "abandoned"
+    } else {
+      log[[i]]$state <- "committed"
+      log[[i]]$git_commit <- sha
+    }
+  }
+  .cp_log_write(root, log)
+  invisible(log)
+}
+
+# Select, copy, describe, log, commit, tag and complete the log entry.
+# `tag_fn(repo)` names the tag, so checkpoints, closures and the unnumbered
+# workspace_created share one transaction. Any failure puts the repository
+# back as it was and, once the entry exists, marks it abandoned.
 .cp_snapshot <- function(root, study, tag_fn, entry, caller) {
   repo <- .cp_repo_init(root, study$remote)
   tag <- tag_fn(repo)
@@ -1274,15 +1766,27 @@ Create `R/study_checkpoint.R`:
     warning(caller, "(): skipped over the 50 MB cap: ",
             paste(sel$skipped$path, collapse = ", "), call. = FALSE)
   }
+  id <- .cp_entry_id(entry)
   head_before <- .cp_head(repo)
+  logged <- FALSE
   done <- FALSE
-  on.exit(if (!done) .cp_rollback(repo, head_before, tag), add = TRUE)
+  undo <- function() {
+    .cp_rollback(repo, head_before, tag)
+    if (logged) {
+      try(.cp_log_update(root, id, list(state = "abandoned")), silent = TRUE)
+    }
+  }
+  on.exit(if (!done) undo(), add = TRUE)
+
   entry$tag <- tag
   .cp_sync_tree(repo, root, sel$files)
   .cp_write_meta(repo, root, entry, sel)
-  entry$git_commit <- .cp_commit_tag(repo, tag, .cp_tag_message(entry))
+  entry$state <- "committing"
   entry$delivery$git <- "pending"
   .cp_log_append(root, entry)
+  logged <- TRUE
+  sha <- .cp_commit_tag(repo, tag, .cp_tag_message(entry))
+  entry <- .cp_log_update(root, id, list(state = "committed", git_commit = sha))
   done <- TRUE
   list(entry = entry, selection = sel, repo = repo)
 }
@@ -1307,13 +1811,15 @@ Create `R/study_checkpoint.R`:
 #' Record a study checkpoint
 #'
 #' @description
-#' Commits an allow-listed snapshot of the study (code, identity,
-#' reproducibility files and the documents in \code{50_documents/}) to a
-#' private git repository in \code{.checkpoint/repo/}, tags it with the
-#' checkpoint kind and a sequence number, records it in the outbox
-#' \code{.checkpoint/log.yml}, and pushes it when \code{_study.yml} names a
-#' remote. Data never enter the snapshot: \code{00_datasets/},
-#' \code{90_estimates/} and data or output file types are always excluded.
+#' Commits an allow-listed snapshot of the study (code, identity and
+#' reproducibility files) to a private git repository in
+#' \code{.checkpoint/repo/}, tags it with the checkpoint kind and a sequence
+#' number, records it in the outbox \code{.checkpoint/log.yml}, and pushes it
+#' when \code{_study.yml} names a remote. Data never enter the snapshot:
+#' \code{00_datasets/}, \code{90_estimates/}, credentials, symbolic links and
+#' data or output file types are always excluded. Files in
+#' \code{50_documents/} other than \code{.qmd} and \code{.bib} sources are not
+#' committed; \code{CHECKPOINT.yml} records their size and checksum.
 #'
 #' @details
 #' The kind comes from the StudyTracker checkpoint vocabulary, for example
@@ -1322,6 +1828,10 @@ Create `R/study_checkpoint.R`:
 #' A checkpoint is committed locally before anything is pushed, so an
 #' unreachable remote never loses one; \code{\link{study_checkpoint_push}}
 #' retries later.
+#'
+#' \code{note} and \code{attributes} are written to the snapshot, the tag and
+#' the outbox, so they leave the study folder. A message says so whenever
+#' either is given: they must not contain patient information.
 #'
 #' @param kind Character(1). A checkpoint kind.
 #' @param note Optional character(1), stored with the checkpoint.
@@ -1360,18 +1870,21 @@ study_checkpoint <- function(kind, note = NULL, attributes = NULL,
                              occurred_at = Sys.Date(), root = study_root()) {
   .cp_require_git("study_checkpoint")
   root <- normalizePath(root, mustWork = TRUE)
+  .cp_reconcile(root)
   study <- .cp_study(root, "study_checkpoint")
   row <- .cp_kind_check(.cp_kinds(root), kind, "study_checkpoint")
+  .cp_free_text_notice(note, attributes)
 
   entry <- list(
     type = "checkpoint", checkpoint_id = uuid::UUIDgenerate(),
     st_id = study$st_id, workspace_id = study$workspace_id, kind = kind,
     occurred_at = .cp_date(occurred_at), trigger = row$trigger,
     artifact = NULL, git_commit = NULL, note = note, attributes = attributes,
-    tag = NULL, delivery = list(git = "none", st = "pending")
+    tag = NULL, state = NULL, delivery = list(git = "none", st = "pending")
   )
 
   if (!identical(row$trigger, "manual")) {
+    entry$state <- "recorded"
     .cp_log_append(root, entry)
     return(invisible(.cp_result(entry, NULL)))
   }
@@ -1401,16 +1914,27 @@ print.study_checkpoint <- function(x, ...) {
 }
 ```
 
-- [ ] **Step 4: Document and run**
+Why the pieces hold:
+- `entry$state <- "recorded"` and `entry$tag <- tag` replace elements that the `list()` call created with `NULL` values, so
+  the keys keep their place; `git_commit`, `note` and `workspace_id` stay as `NULL`-valued keys and are written as `~`.
+- `on.exit(if (!done) undo(), add = TRUE)` is registered after `tag_fn()` runs, so the "already recorded" error for
+  `workspace_created` leaves nothing to undo. `.cp_rollback()` uses the non-raising `.cp_git()`, so deleting a tag that
+  was never created is harmless. The `try()` around the abandon step matters only when the log itself is what failed; the
+  entry then stays `committing` with no tag, and the next call's `.cp_reconcile()` abandons it.
+- `.cp_reconcile()` reads the log and returns without writing when nothing is `committing`, so it creates no
+  `.checkpoint/` on a study that has none, which the unknown-kind test checks.
 
-Run: `Rscript -e 'devtools::document(); devtools::test(filter = "study_checkpoint")'`
-Expected: PASS (7 tests). No repository is created for an automatic kind, which the last assertion of that test checks.
+- [ ] **Step 5: Document and run**
 
-- [ ] **Step 5: Commit**
+Run: `Rscript -e 'devtools::document(); devtools::test(filter = "checkpoint_log|study_checkpoint")'`
+Expected: PASS (4 log tests, 10 checkpoint tests; the symlink part of the PHI test is skipped on Windows only).
+
+- [ ] **Step 6: Commit**
 
 ```bash
-git add R/study_checkpoint.R tests/testthat/test-study_checkpoint.R man/study_checkpoint.Rd NAMESPACE
-git commit -m "feat: study_checkpoint() snapshots, tags and logs locally"
+git add R/checkpoint_log.R R/study_checkpoint.R tests/testthat/test-checkpoint_log.R tests/testthat/test-study_checkpoint.R
+git add man/study_checkpoint.Rd NAMESPACE
+git commit -m "feat: study_checkpoint() logs, commits, tags and reconciles locally"
 ```
 
 ---
@@ -1423,8 +1947,15 @@ git commit -m "feat: study_checkpoint() snapshots, tags and logs locally"
 - Create: `tests/testthat/test-checkpoint_deliver.R`
 
 **Interfaces:**
-- Consumes: Tasks 1 to 8.
-- Produces: `.cp_deliver(root, study)` returning the updated log invisibly; `.cp_push(repo, entries)` returning `list(reason = NULL or chr, entries)`; `.cp_replay(repo)` returning a named character map old SHA to new SHA; `.cp_retarget(entry, repo, map)`; `.cp_renumber(repo, tag)`. Exported `study_checkpoint_push(root = study_root())` returning, invisibly, a data.frame with columns `type`, `tag`, `git`, `st`, `reason`.
+- Consumes: Tasks 1 to 8, in particular `.cp_commit_of()`, `.cp_reconcile()`, `.cp_log_find()`, `.cp_message_file()`,
+  `.cp_remote_probe()`, `.cp_seq_of()`.
+- Produces: `.cp_deliver(root, study)` returning the updated log invisibly; it delivers only entries with `state: committed`
+  and `delivery$git == "pending"`. `.cp_push(repo, entries)` returning `list(reason = NULL or chr, entries)`;
+  `.cp_replay(repo)` returning a named character map old SHA to new SHA; `.cp_retarget(entry, repo, map)`, which sets
+  `replayed_from` to the old `git_commit` whenever the commit moves and `renumbered_from` when the tag name changes;
+  `.cp_renumber(repo, tag)`; `.cp_remote_tags(repo)`; `.cp_last(out)`; `.cp_log_frame(log)`.
+  Exported `study_checkpoint_push(root = study_root())` returning, invisibly, a data.frame with columns `type`, `tag`,
+  `state`, `git`, `st`, `reason`, one row per logged event.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -1489,13 +2020,32 @@ test_that("an unverified identity is committed but never pushed", {
   expect_equal(git_out(bare, c("tag", "-l")), "abstract_submitted-1")
 })
 
+test_that("push reconciles first and never delivers an abandoned entry", {
+  skip_if_no_git()
+  local_git_env()
+  dir <- withr::local_tempdir()
+  root <- make_checkpoint_study(dir)
+  bare <- make_bare_remote(dir)
+  set_study_keys(root, checkpoint = list(remote = bare))
+  .cp_log_append(root, list(
+    type = "checkpoint", checkpoint_id = "lost-1", st_id = 1267L,
+    kind = "abstract_submitted", git_commit = NULL,
+    tag = "abstract_submitted-1", state = "committing",
+    delivery = list(git = "pending", st = "pending")
+  ))
+  res <- study_checkpoint_push(root)
+  expect_equal(res$state, "abandoned")
+  expect_equal(res$git, "pending")
+  expect_length(git_out(bare, c("tag", "-l")), 0L)
+})
+
 test_that("divergence replays, renumbers and never force-pushes", {
   skip_if_no_git()
   local_git_env()
   dir <- withr::local_tempdir()
   root <- make_checkpoint_study(dir)
   bare <- make_bare_remote(dir)
-  study_checkpoint("data_request_submitted", root = root)  # local only
+  local_cp <- study_checkpoint("data_request_submitted", root = root)  # local only
   other <- file.path(dir, "other")
   git_out(dir, c("clone", "-q", bare, other))
   git_out(other, c("checkout", "-q", "-b", "main"))
@@ -1505,15 +2055,22 @@ test_that("divergence replays, renumbers and never force-pushes", {
   git_out(other, c("tag", "-a", "data_request_submitted-1", "-m", "other"))
   git_out(other, c("push", "-q", "origin", "main",
                    "refs/tags/data_request_submitted-1"))
+  remote_head <- git_out(bare, c("rev-parse", "main"))
   set_study_keys(root, checkpoint = list(remote = bare))
   study_checkpoint_push(root)
   e <- .cp_log_read(root)[[1]]
   expect_equal(e$delivery$git, "delivered")
   expect_equal(e$tag, "data_request_submitted-2")
   expect_equal(e$renumbered_from, "data_request_submitted-1")
+  expect_false(is.null(e$replayed_from))
+  expect_equal(e$replayed_from, local_cp$commit)
+  expect_false(identical(e$git_commit, local_cp$commit))
   expect_setequal(git_out(bare, c("tag", "-l")),
                   c("data_request_submitted-1", "data_request_submitted-2"))
   expect_length(git_out(bare, c("rev-list", "main")), 2L)
+  expect_equal(git_out(bare, c("rev-parse", "main~1")), remote_head)
+  expect_equal(git_out(bare, c("rev-parse", "data_request_submitted-2^{commit}")),
+               e$git_commit)
   expect_true("30_analyses/fit.R" %in%
                 git_out(bare, c("ls-tree", "-r", "--name-only",
                                 "data_request_submitted-2")))
@@ -1533,6 +2090,9 @@ test_that("a re-cloned .checkpoint continues the sequence", {
                "abstract_submitted-3")
 })
 ```
+
+`main~1` being the other copy's commit is what "never force-pushes" means in practice: the remote history was extended,
+not replaced.
 
 - [ ] **Step 2: Run to verify they fail**
 
@@ -1586,13 +2146,9 @@ Create `R/checkpoint_deliver.R`:
   paste0(prefix, "-", max(c(0L, seqs)) + 1L)
 }
 
-.cp_commit_of <- function(repo, ref) {
-  res <- .cp_git(repo, c("rev-parse", "-q", "--verify", paste0(ref, "^{commit}")))
-  if (res$ok) res$out[1] else NA_character_
-}
-
-# Move an unpushed tag to its replayed commit, renumbering it when the remote
-# already holds the same name on a different commit.
+# Move an unpushed tag to its replayed commit, recording the old commit as
+# replayed_from, and renumber it when the remote already holds the same name
+# on a different commit.
 .cp_retarget <- function(entry, repo, map) {
   if (is.null(entry$tag)) return(entry)
   old <- entry$git_commit
@@ -1609,7 +2165,10 @@ Create `R/checkpoint_deliver.R`:
     entry$tag <- .cp_renumber(repo, entry$tag)
   }
   .cp_git_do(repo, c("tag", "-a", entry$tag, "-F", msg, new))
-  entry$git_commit <- new
+  if (!identical(new, old)) {
+    entry$replayed_from <- old
+    entry$git_commit <- new
+  }
   entry
 }
 
@@ -1641,13 +2200,16 @@ Create `R/checkpoint_deliver.R`:
   list(reason = NULL, entries = entries)
 }
 
-# Deliver every pending entry. An unverified identity is never pushed (the
+# Deliver every committed entry whose git delivery is pending. Committing and
+# abandoned entries are never pushed; .cp_reconcile() settles the first kind
+# before any delivery runs. An unverified identity is never pushed (the
 # manual-identity rule); no remote is a normal state for a study that has not
 # been given one yet.
 .cp_deliver <- function(root, study) {
   log <- .cp_log_read(root)
-  pending <- which(vapply(log, function(e) identical(e$delivery$git, "pending"),
-                          logical(1)))
+  pending <- which(vapply(log, function(e) {
+    identical(e$state, "committed") && identical(e$delivery$git, "pending")
+  }, logical(1)))
   if (!length(pending)) return(invisible(log))
   reason <- if (!study$verified) {
     "identity unverified"
@@ -1678,15 +2240,20 @@ Create `R/checkpoint_deliver.R`:
 }
 
 .cp_log_frame <- function(log) {
-  pick <- function(f) vapply(log, function(e) as.character(.cp_or(f(e), NA)),
-                             character(1))
+  pick <- function(f) {
+    vapply(log, function(e) as.character(.cp_or(f(e), NA)), character(1))
+  }
   data.frame(type = pick(function(e) e$type), tag = pick(function(e) e$tag),
+             state = pick(function(e) e$state),
              git = pick(function(e) e$delivery$git),
              st = pick(function(e) e$delivery$st),
              reason = pick(function(e) e$delivery$reason),
              stringsAsFactors = FALSE)
 }
 ```
+
+`log[[i]]$delivery$reason <- reason` with a `NULL` reason deletes the key, which is the intent: a delivered entry carries
+no reason.
 
 - [ ] **Step 4: Wire delivery into `study_checkpoint()` and add the export**
 
@@ -1708,7 +2275,7 @@ with:
 }
 ```
 
-and append:
+and append to the end of the file:
 
 ```r
 #' Push pending study checkpoints
@@ -1720,10 +2287,16 @@ and append:
 #' after a network outage, or once \code{study-setup --verify} has verified a
 #' manually entered identity.
 #'
+#' @details
+#' An entry that a crash left half-written is settled first: completed when
+#' its tag exists, otherwise marked \code{abandoned}. Abandoned entries are
+#' never pushed.
+#'
 #' @param root Character. Study root. Defaults to \code{study_root()}.
 #'
 #' @return A data frame, returned invisibly, with one row per logged event and
-#'   columns \code{type}, \code{tag}, \code{git}, \code{st} and \code{reason}.
+#'   columns \code{type}, \code{tag}, \code{state}, \code{git}, \code{st} and
+#'   \code{reason}.
 #'
 #' @seealso \code{\link{study_checkpoint}}
 #'
@@ -1731,6 +2304,7 @@ and append:
 study_checkpoint_push <- function(root = study_root()) {
   .cp_require_git("study_checkpoint_push")
   root <- normalizePath(root, mustWork = TRUE)
+  .cp_reconcile(root)
   study <- .cp_study(root, "study_checkpoint_push")
   invisible(.cp_log_frame(.cp_deliver(root, study)))
 }
@@ -1739,7 +2313,8 @@ study_checkpoint_push <- function(root = study_root()) {
 - [ ] **Step 5: Document and run**
 
 Run: `Rscript -e 'devtools::document(); devtools::test(filter = "checkpoint_deliver|study_checkpoint")'`
-Expected: PASS. The Task 8 tests still pass: with no remote, delivery is silent and stays `pending`.
+Expected: PASS (7 delivery tests, and the Task 8 tests unchanged: with no remote, delivery is silent, stays `pending` and
+records the reason `no remote configured`).
 
 - [ ] **Step 6: Commit**
 
@@ -1758,8 +2333,18 @@ git commit -m "feat: deliver checkpoints to the remote, replaying on divergence"
 - Create: `tests/testthat/test-study_close.R`
 
 **Interfaces:**
-- Consumes: `.cp_snapshot()`, `.cp_deliver()`, `.cp_result()`, `.cp_log_find()`, `.cp_tags()`, `.cp_tag_head()`, `.cp_repo_init()`.
-- Produces (exported): `study_close(outcome, reason = NULL, publication = NULL, superseded_by = NULL, closed_at = Sys.Date(), root = study_root())`; `study_reopen(reason, new_lead = NULL, reopened_at = Sys.Date(), root = study_root())`; both return a `"study_checkpoint"` object invisibly. Internal: `.cp_closure_counts(repo)` returning `c(closed =, reopened =)`; `.cp_is_closed(root)`.
+- Consumes: `.cp_reconcile()`, `.cp_free_text_notice()`, `.cp_snapshot()`, `.cp_deliver()`, `.cp_result()`, `.cp_log_find()`,
+  `.cp_log_append()`, `.cp_log_update()`, `.cp_tag_message()`, `.cp_tags()`, `.cp_seq_of()`, `.cp_tag_head()`,
+  `.cp_repo_init()`, `.cp_repo_path()`, `.cp_git()`, `.cp_git_do()`, `.cp_date()`.
+- Produces (exported): `study_close(outcome, reason = NULL, publication = NULL, superseded_by = NULL, closed_at = Sys.Date(),
+  root = study_root())`; `study_reopen(reason, new_lead = NULL, reopened_at = Sys.Date(), root = study_root())`; both return a
+  `"study_checkpoint"` object invisibly. Internal: `.cp_outcomes()`; `.cp_closure_counts(repo)` returning
+  `c(closed =, reopened =)`; `.cp_is_closed(root)`; `.cp_check_publication(repo, publication)`.
+
+Both functions follow the Task 8 lifecycle: `.cp_reconcile()` first; the closure goes through `.cp_snapshot()` (entry
+`committing`, then commit and tag, then `committed`); the reopening appends its entry as `committing`, tags the current
+head, then marks it `committed`, and on failure deletes the tag and marks the entry `abandoned`. Guards and the free-text
+message come before anything is written.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -1775,7 +2360,7 @@ test_that("close guards fail before anything is written", {
   root <- make_checkpoint_study(withr::local_tempdir())
   expect_error(study_close("published", publication = pub, root = root),
                "needs a manuscript_published checkpoint")
-  study_checkpoint("manuscript_published", root = root)
+  suppressMessages(study_checkpoint("manuscript_published", root = root))
   expect_error(study_close("published", publication = pub[1:2], root = root),
                "accepted_on, published_on")
   expect_error(study_close("published",
@@ -1783,32 +2368,75 @@ test_that("close guards fail before anything is written", {
                                                "accepted_on", "published_on")],
                            root = root),
                "doi or pmid")
-  expect_error(study_close("superseded", root = root), "superseded_by")
+  expect_error(study_close("superseded", reason = "replaced", root = root),
+               "superseded_by")
   expect_error(study_close("unrecorded", root = root), "legacy migration")
   expect_false(any(grepl("^closed-",
                          git_out(.cp_repo_path(root), c("tag", "-l")))))
+  types <- vapply(.cp_log_read(root), function(e) e$type, character(1))
+  expect_equal(types, "checkpoint")
 })
 
 test_that("close snapshots and tags; reopen tags without committing", {
   skip_if_no_git()
   local_git_env()
   root <- make_checkpoint_study(withr::local_tempdir())
-  cl <- study_close("not_published", reason = "no journal fit", root = root)
+  expect_message(cl <- study_close("not_published", reason = "no journal fit",
+                                   root = root),
+                 "must not contain patient information")
   expect_equal(cl$tag, "closed-not_published-1")
+  expect_equal(.cp_log_read(root)[[1]]$state, "committed")
   expect_true(.cp_is_closed(root))
   expect_error(study_close("abandoned", root = root), "already closed")
   repo <- .cp_repo_path(root)
   head <- .cp_head(repo)
-  ro <- study_reopen("new cohort", root = root)
+  expect_message(ro <- study_reopen("new cohort", root = root),
+                 "must not contain patient information")
   expect_equal(ro$tag, "reopened-1")
+  expect_equal(ro$commit, head)
   expect_equal(.cp_head(repo), head)
   expect_false(.cp_is_closed(root))
   expect_error(study_reopen("again", root = root), "not closed")
-  study_checkpoint("manuscript_published", root = root)
+  suppressMessages(study_checkpoint("manuscript_published", root = root))
   expect_equal(study_close("published", publication = pub, root = root)$tag,
                "closed-published-2")
-  types <- vapply(.cp_log_read(root), function(e) e$type, character(1))
-  expect_equal(types, c("closure", "reopening", "checkpoint", "closure"))
+  log <- .cp_log_read(root)
+  expect_equal(vapply(log, function(e) e$type, character(1)),
+               c("closure", "reopening", "checkpoint", "closure"))
+  expect_equal(vapply(log, function(e) e$state, character(1)),
+               rep("committed", 4L))
+  expect_equal(log[[4]]$publication$doi, pub$doi)
+})
+
+test_that("a failed reopening leaves no tag and an abandoned entry", {
+  skip_if_no_git()
+  local_git_env()
+  root <- make_checkpoint_study(withr::local_tempdir())
+  study_close("abandoned", root = root)
+  local_mocked_bindings(.cp_tag_head = function(...) stop("tag failed"))
+  expect_error(suppressMessages(study_reopen("new PI", root = root)),
+               "tag failed")
+  expect_true(.cp_is_closed(root))
+  expect_false("reopened-1" %in% git_out(.cp_repo_path(root), c("tag", "-l")))
+  log <- .cp_log_read(root)
+  expect_equal(log[[2]]$type, "reopening")
+  expect_equal(log[[2]]$state, "abandoned")
+})
+
+test_that("a reopening left committing is completed from its tag", {
+  skip_if_no_git()
+  local_git_env()
+  root <- make_checkpoint_study(withr::local_tempdir())
+  study_close("abandoned", root = root)
+  ro <- suppressMessages(study_reopen("new PI", root = root))
+  log <- .cp_log_read(root)
+  log[[2]]$state <- "committing"
+  log[[2]]["git_commit"] <- list(NULL)
+  .cp_log_write(root, log)
+  study_close("abandoned", root = root)
+  e <- .cp_log_read(root)[[2]]
+  expect_equal(e$state, "committed")
+  expect_equal(e$git_commit, ro$commit)
 })
 
 test_that("a checkpoint on a closed study succeeds and warns", {
@@ -1830,6 +2458,9 @@ test_that("manuscript_published hints at study_close", {
 })
 ```
 
+In the guards test the `superseded` call passes a `reason` on purpose: the guard fails first, so no free-text message is
+printed, which shows the message comes after validation.
+
 - [ ] **Step 2: Run to verify they fail**
 
 Run: `Rscript -e 'devtools::test(filter = "study_close")'`
@@ -1844,7 +2475,8 @@ Create `R/study_close.R`:
 # and Reopening rules. Closing always takes a final snapshot; reopening only
 # tags. A study is closed when its latest closed-* tag has no reopened-* tag
 # after it; because the two alternate, that is read from counts, which cannot
-# tie the way tag timestamps can.
+# tie the way tag timestamps can. Both write their outbox entry before any
+# git change and complete it after, as study_checkpoint() does.
 
 .cp_outcomes <- function() c("published", "not_published", "superseded", "abandoned")
 
@@ -1905,6 +2537,10 @@ Create `R/study_close.R`:
 #' These rules are checked before anything is written, so a close made
 #' offline fails at once rather than when the outbox is delivered.
 #'
+#' \code{reason} is written to the snapshot, the tag and the outbox, so it
+#' leaves the study folder. A message says so whenever it is given: it must
+#' not contain patient information.
+#'
 #' @param outcome Character(1). One of \code{"published"},
 #'   \code{"not_published"}, \code{"superseded"} or \code{"abandoned"}.
 #' @param reason Optional character(1). For \code{study_reopen()}, required.
@@ -1944,6 +2580,7 @@ study_close <- function(outcome, reason = NULL, publication = NULL,
                         root = study_root()) {
   .cp_require_git("study_close")
   root <- normalizePath(root, mustWork = TRUE)
+  .cp_reconcile(root)
   study <- .cp_study(root, "study_close")
   if (length(outcome) != 1L || is.na(outcome) || !outcome %in% .cp_outcomes()) {
     stop("study_close(): outcome must be one of ",
@@ -1969,13 +2606,14 @@ study_close <- function(outcome, reason = NULL, publication = NULL,
     }
     superseded_by <- sb
   }
+  .cp_free_text_notice(reason)
 
   entry <- list(
     type = "closure", closure_id = uuid::UUIDgenerate(), st_id = study$st_id,
     workspace_id = study$workspace_id, outcome = outcome,
     closed_at = .cp_date(closed_at), reason = reason,
     publication = publication, superseded_by = superseded_by,
-    git_commit = NULL, tag = NULL,
+    git_commit = NULL, tag = NULL, state = NULL,
     delivery = list(git = "none", st = "pending")
   )
   tag_fn <- function(repo) {
@@ -1995,6 +2633,7 @@ study_reopen <- function(reason, new_lead = NULL, reopened_at = Sys.Date(),
                          root = study_root()) {
   .cp_require_git("study_reopen")
   root <- normalizePath(root, mustWork = TRUE)
+  .cp_reconcile(root)
   study <- .cp_study(root, "study_reopen")
   if (missing(reason) || length(reason) != 1L || is.na(reason) ||
         !nzchar(reason)) {
@@ -2004,26 +2643,33 @@ study_reopen <- function(reason, new_lead = NULL, reopened_at = Sys.Date(),
   if (!.cp_is_closed(root)) {
     stop("study_reopen(): the study is not closed", call. = FALSE)
   }
+  .cp_free_text_notice(reason)
   tag <- paste0("reopened-", .cp_closure_counts(repo)[["reopened"]] + 1L)
   entry <- list(
     type = "reopening", reopening_id = uuid::UUIDgenerate(),
     st_id = study$st_id, workspace_id = study$workspace_id,
     reopened_at = .cp_date(reopened_at), reason = reason, new_lead = new_lead,
-    git_commit = NULL, tag = tag,
+    git_commit = NULL, tag = tag, state = "committing",
     delivery = list(git = "pending", st = "pending")
   )
-  done <- FALSE
-  on.exit(if (!done) .cp_git(repo, c("tag", "-d", tag)), add = TRUE)
-  entry$git_commit <- .cp_tag_head(repo, tag, .cp_tag_message(entry))
+  id <- entry$reopening_id
   .cp_log_append(root, entry)
+  done <- FALSE
+  undo <- function() {
+    .cp_git(repo, c("tag", "-d", tag))
+    try(.cp_log_update(root, id, list(state = "abandoned")), silent = TRUE)
+  }
+  on.exit(if (!done) undo(), add = TRUE)
+  sha <- .cp_tag_head(repo, tag, .cp_tag_message(entry))
+  entry <- .cp_log_update(root, id, list(state = "committed", git_commit = sha))
   done <- TRUE
   .cp_deliver(root, study)
-  invisible(.cp_result(.cp_or(.cp_log_find(root, entry$reopening_id), entry),
-                       NULL))
+  invisible(.cp_result(.cp_or(.cp_log_find(root, id), entry), NULL))
 }
 ```
 
-In `R/study_checkpoint.R`, in `study_checkpoint()`, directly after the line `row <- .cp_kind_check(.cp_kinds(root), kind, "study_checkpoint")`, add:
+In `R/study_checkpoint.R`, in `study_checkpoint()`, directly after the line
+`row <- .cp_kind_check(.cp_kinds(root), kind, "study_checkpoint")`, add:
 
 ```r
   if (.cp_is_closed(root)) {
@@ -2032,7 +2678,7 @@ In `R/study_checkpoint.R`, in `study_checkpoint()`, directly after the line `row
   }
 ```
 
-and directly before the final `invisible(.cp_result(final, snap))`, add:
+and directly before the final `invisible(.cp_result(final, snap))` (added in Task 9), add:
 
 ```r
   if (identical(kind, "manuscript_published")) {
@@ -2041,12 +2687,21 @@ and directly before the final `invisible(.cp_result(final, snap))`, add:
   }
 ```
 
-`.cp_is_closed()` returns `FALSE` when `.checkpoint/repo` does not exist, so this adds no repository to a study that has none.
+`.cp_is_closed()` returns `FALSE` when `.checkpoint/repo` does not exist, so this adds no repository to a study that has
+none, and the unknown-kind test still finds no `.checkpoint/`.
+
+Why the tests hold:
+- `.cp_tag_message()` drops `state`, `tag`, `git_commit` and `delivery` but keeps `reopening_id` and `closure_id`, so
+  `.cp_reconcile()` can match a closure or reopening tag to its entry exactly as it does a checkpoint's. In the "left
+  committing" test the second `study_close()` reconciles first, finds `reopened-1` naming the entry's id, and completes it.
+- The reopening's `git_commit` is the head the tag points at, which is the closure commit: `ro$commit` equals `head`.
+- In the failed-reopening test the mocked `.cp_tag_head()` raises before any tag exists; `undo()` deletes nothing, marks the
+  entry `abandoned`, and the closure count still shows the study closed.
 
 - [ ] **Step 4: Document and run**
 
 Run: `Rscript -e 'devtools::document(); devtools::test(filter = "study_close|study_checkpoint|checkpoint_deliver")'`
-Expected: PASS.
+Expected: PASS (6 close tests, and every Task 8 and Task 9 test).
 
 - [ ] **Step 5: Commit**
 
@@ -2064,8 +2719,11 @@ git commit -m "feat: study_close() and study_reopen() with closure tags"
 - Modify: `tests/testthat/test-study_status.R` (append)
 
 **Interfaces:**
-- Consumes: `.cp_log_read()`, `.cp_is_closed()`.
-- Produces: `.status_checkpoints(root)` returning `NULL` (no `.checkpoint/`) or a data.frame of rows `checkpoints` (status `OK` or `PENDING`) and, when closed, `closure` (status `CLOSED`).
+- Consumes: `.cp_log_read()`, `.cp_is_closed()`, `.cp_or()`, `.status_row()` (existing).
+- Produces: `.status_checkpoints(root)` returning `NULL` (no `.checkpoint/`) or a data.frame of rows `checkpoints` (status `OK`
+  or `PENDING`) and, when closed, `closure` (status `CLOSED`). Entries in state `abandoned` are not counted anywhere; "not
+  pushed" counts entries in state `committed` whose git delivery is `pending`; "not in ST" counts the remaining entries whose
+  ST delivery is `pending`. `study_status()` reads only: it does not reconcile.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -2084,10 +2742,17 @@ test_that("study_status reports checkpoints, pending pushes and closure", {
   root <- make_checkpoint_study(withr::local_tempdir())
   study_checkpoint("abstract_submitted", root = root)
   study_close("abandoned", closed_at = as.Date("2026-11-14"), root = root)
+  .cp_log_append(root, list(
+    type = "checkpoint", checkpoint_id = "lost-1", st_id = 1267L,
+    kind = "abstract_submitted", git_commit = NULL,
+    tag = "abstract_submitted-9", state = "abandoned",
+    delivery = list(git = "pending", st = "pending")
+  ))
   checks <- study_status(root)$checks
   cp <- checks[checks$item == "checkpoints", ]
   expect_equal(cp$status, "PENDING")
   expect_match(cp$detail, "2 recorded")
+  expect_match(cp$detail, "last closed-abandoned-1, 2026-11-14")
   expect_match(cp$detail, "2 not pushed")
   expect_match(cp$detail, "2 not in ST")
   cl <- checks[checks$item == "closure", ]
@@ -2096,6 +2761,9 @@ test_that("study_status reports checkpoints, pending pushes and closure", {
   expect_output(print(study_status(root)), "closure")
 })
 ```
+
+The hand-appended abandoned entry is the last in the log and still pending on both channels; the expectations show it is
+neither counted nor taken as the "last" checkpoint.
 
 - [ ] **Step 2: Run to verify they fail**
 
@@ -2108,22 +2776,23 @@ In `R/study_status.R`, add before `study_status <- function(`'s roxygen block:
 
 ```r
 # Checkpoint and closure rows. Absent for a study that has never been
-# checkpointed, so the audit of a plain study is unchanged.
+# checkpointed, so the audit of a plain study is unchanged. Abandoned entries
+# (a checkpoint that never committed) are not events and are not counted.
 .status_checkpoints <- function(root) {
   if (!dir.exists(file.path(root, ".checkpoint"))) return(NULL)
-  log <- .cp_log_read(root)
-  count <- function(channel) {
-    sum(vapply(log, function(e) identical(e$delivery[[channel]], "pending"),
-               logical(1)))
-  }
-  git_pending <- count("git")
+  log <- Filter(function(e) !identical(e$state, "abandoned"), .cp_log_read(root))
+  git_pending <- sum(vapply(log, function(e) {
+    identical(e$state, "committed") && identical(e$delivery$git, "pending")
+  }, logical(1)))
+  st_pending <- sum(vapply(log, function(e) identical(e$delivery$st, "pending"),
+                           logical(1)))
   last <- if (length(log)) log[[length(log)]] else NULL
   when <- .cp_or(last$occurred_at, .cp_or(last$closed_at, last$reopened_at))
   detail <- paste0(
     length(log), " recorded",
     if (!is.null(last$tag)) paste0(" (last ", last$tag, ", ", when, ")"),
     if (git_pending) paste0("; ", git_pending, " not pushed"),
-    if (count("st")) paste0("; ", count("st"), " not in ST")
+    if (st_pending) paste0("; ", st_pending, " not in ST")
   )
   rows <- .status_row("checkpoints", if (git_pending) "PENDING" else "OK",
                       detail)
@@ -2201,15 +2870,17 @@ At the top of `NEWS.md`, above `# hvtiRutilities 1.4.0`, add:
 
 ## New features
 
-* `study_checkpoint()` commits an allow-listed snapshot of a study (code,
-  identity, reproducibility files and the documents in `50_documents/`) to a
-  private repository in `.checkpoint/repo/`, tags it with a StudyTracker
-  checkpoint kind such as `manuscript_submitted-1`, records it in the outbox
-  `.checkpoint/log.yml`, and pushes it when `_study.yml` names a
-  `checkpoint: remote:`. Data never enter the snapshot. A checkpoint is
-  committed locally first, so an unreachable remote never loses one;
-  `study_checkpoint_push()` retries. A study whose identity is unverified is
-  committed but not pushed.
+* `study_checkpoint()` commits an allow-listed snapshot of a study (its code,
+  identity and reproducibility files) to a private repository in
+  `.checkpoint/repo/`, tags it with a StudyTracker checkpoint kind such as
+  `manuscript_submitted-1`, records it in the outbox `.checkpoint/log.yml`,
+  and pushes it when `_study.yml` names a `checkpoint: remote:`. Data,
+  credentials and symbolic links never enter the snapshot. Files in
+  `50_documents/` other than `.qmd` and `.bib` sources are not committed
+  either: `CHECKPOINT.yml` records each one's size and checksum, so a tag
+  still names the exact document that was submitted. A checkpoint is committed locally first, so an unreachable
+  remote never loses one; `study_checkpoint_push()` retries. A study whose
+  identity is unverified is committed but not pushed.
 
 * `study_close()` closes a study as published, not published, superseded or
   abandoned, with a final snapshot tagged `closed-<outcome>-<n>`;
@@ -2254,3 +2925,17 @@ git commit -m "docs: reference index and NEWS for study checkpoints"
 - **No ST delivery hook in the core.** `qhsprograms` reads the log and marks `st: delivered` itself (spec step 6 updated).
 - **Renumbered tags keep their original message,** so a tag renamed from `-1` to `-2` still names `-1` in its subject line. The log's `renumbered_from` field is the record.
 - **Warnings.** A failed push warns; an unverified identity prints a message; no remote configured is silent, since a study may not have been given a remote yet.
+- **Free text prints a message, not a warning.** Spec 5.1a says "warning"; the plan uses a one-line `message()` whenever
+  `note`, `attributes` or `reason` is non-empty, because `study_reopen()` always has a reason and a warning would fire on
+  every reopening.
+- **Live kinds merge field by field** (Task 2a). A live row in `.checkpoint/kinds.yml` overrides only the fields it names,
+  folded over the base row with `utils::modifyList()`; a live kind with no base row takes the defaults (manual, numbered, not
+  retired). A field the live row writes as `null` counts as not named, because `modifyList()` would otherwise delete it.
+- **Entry `state` values.** `committing` (logged before git runs), `committed`, `abandoned` (the commit never happened; never
+  delivered, not counted by `study_status()`) and `recorded` (an automatic kind, no snapshot). `state` is local only and is
+  left out of `CHECKPOINT.yml` and the tag message.
+- **Documents outside the deny counts.** Every file in `50_documents/` other than `.qmd` and `.bib`, data extensions
+  included, is listed in `CHECKPOINT.yml` `documents:` with its checksum rather than counted as denied; credentials and
+  symbolic links there are still denied.
+- **`study_checkpoint_push()` returns a `state` column** as well as `type`, `tag`, `git`, `st` and `reason`, so an abandoned
+  entry is not mistaken for one waiting to be pushed.
