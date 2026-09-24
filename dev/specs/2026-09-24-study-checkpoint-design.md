@@ -1,13 +1,14 @@
-# Study checkpoints to CORR_STUDIES: design
+# Study checkpoints and closure to CORR_STUDIES: design
 
 - **Date:** 2026-09-24
 - **Status:** design approved in session; awaiting written-spec review
-- **Scope:** `study_checkpoint()` in hvtiRutilities (core) and the `study-setup` /
-  `study-checkpoint` commands in the `qhsprograms` ADO repo (institution layer)
+- **Scope:** `study_checkpoint()`, `study_close()` and `study_reopen()` in
+  hvtiRutilities (core) and the `study-setup`, `study-checkpoint`,
+  `study-close` and `study-reopen` commands in the `qhsprograms` ADO repo (institution layer)
 - **Companion spec:** `Projects/StudyTracker Workspace API - Spec.md` in the
   Obsidian vault (confirmed 2026-09-22). This design supplies the `git_commit`
-  field of that spec's Checkpoint record and shares its checkpoint vocabulary
-  and outbox. Where the two disagree, the API spec wins on anything the ST
+  field of that spec's Checkpoint record, follows its Closure and Reopening
+  rules (§3.4), and shares its checkpoint vocabulary and outbox. Where the two disagree, the API spec wins on anything the ST
   server sees; this spec wins on what goes into git.
 
 ## 1. Goal
@@ -16,8 +17,10 @@ At each checkpoint in a study's life (an abstract submitted, a manuscript
 submitted, a revision), commit the study's **source code, identity,
 reproducibility files and submitted documents** to a per-study repository in
 the `CORR_STUDIES` Azure DevOps project, and tag the commit with the event.
-Users do not need to understand git: they name the event, and the tooling does
-the rest.
+When a study closes (published, not published, superseded, abandoned), take
+a final snapshot and tag it with the outcome, so the state that stands behind
+the outcome is frozen. Users do not need to understand git: they name the
+event or the outcome, and the tooling does the rest.
 
 **Non-goals.** Data, results and PHI never enter git. No commits between
 checkpoints are expected or supported by the tooling. No branching, no pull
@@ -38,6 +41,7 @@ requests, no review step.
 | D9 | **`50_documents/` admitted, folder-scoped** | Manuscripts belong in the checkpoint: the tag then binds the claim to the code, data hashes and package versions behind it. |
 | D10 | **Commit locally first, deliver second** | An unreachable ADO or ST never loses a checkpoint. |
 | D11 | **Vocabulary = the ST Workspace API's `lk_checkpoint_kinds`** | Already designed, event-shaped (distinguishes `manuscript_submitted` from `manuscript_accepted`), maps to ST task status, extensible by ST administrators, supports retirement. |
+| D12 | **Closing takes a final snapshot and a closure tag; the repo stays writable** | Code edited after the last checkpoint is still captured, and the closure tag is the study's "release". Locking the repo read-only would make every reopening an admin round-trip. |
 
 ## 3. Architecture
 
@@ -57,10 +61,14 @@ The two layers share exactly two things:
 ### 3.1 User surface
 
 - `study_checkpoint(kind, note = NULL, attributes = NULL, occurred_at = Sys.Date())`
+- `study_close(outcome, reason = NULL, publication = NULL, superseded_by = NULL, closed_at = Sys.Date())`
+- `study_reopen(reason, new_lead = NULL, reopened_at = Sys.Date())`
 - `study_checkpoint_push()`: retry every pending delivery.
 - `study_status()` gains one line, for example
   `checkpoints: 4 (last manuscript_submitted-1, 2026-09-24); 1 not pushed; 2 not in ST`.
-- Command line (`qhsprograms`): `study-checkpoint <kind> [--note ...]`.
+- `study_status()` also reports closure, for example `closed: published (2026-11-14)`.
+- Command line (`qhsprograms`): `study-checkpoint <kind> [--note ...]`,
+  `study-close <outcome> ...`, `study-reopen --reason ...`.
 
 ### 3.2 Repository naming
 
@@ -176,13 +184,58 @@ Generated at the root of every snapshot:
   records `renumbered_from:`. A pushed tag is never moved. There is no force
   push, and ADO would refuse one.
 
+### 6.2 Closing
+
+`study_close(outcome, ...)` follows the API spec's Closure rules (§3.4) and
+the checkpoint lifecycle above, with these differences:
+
+- **Outcomes:** `published`, `not_published`, `superseded`, `abandoned`.
+  `unrecorded` is rejected here: it exists for the legacy migration only
+  (API spec §10).
+- **Guards, checked locally before anything is written**, so an offline close
+  fails early instead of being rejected at delivery:
+  - `published` needs `publication` (`title`, `journal`, `accepted_on`,
+    `published_on`, and at least one of `doi` and `pmid`) **and** an existing
+    `manuscript_published-n` tag;
+  - `superseded` needs `superseded_by`, an ST number;
+  - an already closed study (section 6.4) cannot be closed again; reopen first.
+- **Always snapshots**, whatever changed.
+- **Tag:** `closed-<outcome>-<n>`, where `n` counts every closure of the study
+  regardless of outcome: `closed-not_published-1`, then after a reopening,
+  `closed-published-2`. The tag message carries the outcome, reason,
+  publication details and `superseded_by`.
+- **Outbox:** a Closure entry (section 7).
+- **Not automatic.** After `manuscript_published`, `study_checkpoint()` prints
+  a hint that `study_close("published", ...)` is now possible. It never closes
+  the study itself, because a published study may be about to spawn a
+  continuation.
+
+### 6.3 Reopening
+
+`study_reopen(reason, new_lead = NULL)`:
+
+- Needs a closed study and a `reason`.
+- **No snapshot.** It tags the current `.checkpoint/` `main` as `reopened-<n>`,
+  where `n` counts reopenings, and appends a Reopening entry to the outbox.
+- The next checkpoint or closure snapshots as usual.
+
+### 6.4 Closure state
+
+**A study is closed when its latest `closed-*` tag has no `reopened-*` tag
+after it**, the same definition as the API spec, read from tag dates. There
+is no separate state file. A checkpoint on a closed study is allowed, since
+checkpoints are never rejected for their order, but it warns that the study
+is closed.
+
 ## 7. The outbox entry
 
-One entry per checkpoint, in the API Checkpoint shape so the institution layer
-posts it unchanged:
+One entry per event, with a `type` of `checkpoint`, `closure` or `reopening`,
+in the matching API shape so the institution layer posts it unchanged. A
+checkpoint:
 
 ```yaml
-- checkpoint_id: 5b7e...        # UUID, client-generated
+- type: checkpoint
+  checkpoint_id: 5b7e...        # UUID, client-generated
   st_id: 1267
   workspace_id: 7c1e2b0a-...
   kind: manuscript_submitted
@@ -193,6 +246,31 @@ posts it unchanged:
   note: Submitted to JTCVS
   attributes: { journal: JTCVS }
   tag: manuscript_submitted-1   # local only, not sent
+  delivery:
+    git: delivered
+    st: pending
+```
+
+A closure (a reopening has the same envelope with `reopening_id`,
+`reopened_at`, `reason` and `new_lead`):
+
+```yaml
+- type: closure
+  closure_id: 9c41...
+  st_id: 1267
+  outcome: published
+  closed_at: 2026-11-14
+  reason: null
+  publication:
+    title: ...
+    journal: JTCVS
+    accepted_on: 2026-05-26
+    published_on: 2026-06-12
+    doi: 10.1016/j.jtcvs.2026.05.027
+    pmid: "42285288"
+  superseded_by: null
+  git_commit: 8d02e11           # not in the API Closure shape; see open item 6
+  tag: closed-published-1
   delivery:
     git: delivered
     st: pending
@@ -221,6 +299,9 @@ push included, on all five platforms. Tests needing git skip with
 | Atomicity | An error forced between copy and commit leaves no tag and no log entry. |
 | Automatic kinds | No commit, an outbox entry with `git_commit: null`. |
 | `study_status()` | The checkpoint line reports pending counts correctly. |
+| Close guards | `published` without a `manuscript_published` tag, or without DOI and PMID, errors before any write; `superseded` without `superseded_by` errors; `unrecorded` is rejected; closing a closed study errors. |
+| Close and reopen | Close always commits and tags `closed-<outcome>-n`; reopen tags without committing; close, reopen, close gives `closed-...-1`, `reopened-1`, `closed-...-2`; closure state follows the latest tags. |
+| Closed study | A checkpoint on a closed study succeeds and warns. |
 
 ### 8.2 Institution (`qhsprograms`)
 
@@ -250,3 +331,6 @@ push included, on all five platforms. Tests needing git skip with
 5. **Legacy estate.** `study-setup --adopt` creates a repo per adopted study.
    Confirm that the count of legacy studies adopted in the first pass (API spec
    §10) is acceptable as a repo count in `CORR_STUDIES`.
+6. **`git_commit` on Closure.** The API spec's Closure record has no
+   `git_commit` field. Propose adding it (optional), so the ST record of a
+   published study points at the frozen code behind the paper.
