@@ -26,7 +26,8 @@ study_setup(
   irb_number = NULL,
   cvir_no = NULL,
   study_creation_date = NULL,
-  adopt = FALSE
+  adopt = FALSE,
+  identity_source = c("tracker", "manual")
 )
 ```
 
@@ -55,6 +56,15 @@ study_setup(
 - adopt:
 
   Logical. Permit additive setup in an existing root.
+
+- identity_source:
+
+  Character(1). Where the identity values came from: `"tracker"` (the
+  default), for a Study Tracker record, or `"manual"`, for values typed
+  by hand while the Tracker was unavailable. A new `_study.yml` records
+  it as `identity_source`, with `identity_verified` set to `TRUE` for
+  `"tracker"` and `FALSE` for `"manual"`. An existing `_study.yml` is
+  not rewritten, so adoption keeps the recorded source.
 
 ## Value
 

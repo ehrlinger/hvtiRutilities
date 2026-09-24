@@ -12,6 +12,11 @@ are reported `"MISSING"`, never `"FAIL"` – a check that could not run is
 not a check that failed, and conflating the two makes the audit
 unreadable on exactly the legacy studies it is most needed for.
 
+A `_study.yml` whose identity was entered by hand and not yet confirmed
+against Study Tracker (`identity_verified: false`) is reported
+`"UNVERIFIED"`. A manifest without the field is a Tracker identity and
+is reported `"OK"`.
+
 Release-aware datasets add an `update:<dataset>` row with status
 `"CURRENT"`, `"UPDATE AVAILABLE"`, `"UPDATE STATUS UNKNOWN"`, or
 `"FAIL"`. Legacy studies retain the five base rows and their existing
@@ -48,10 +53,11 @@ study_status(root = getwd())
 
 An object of class `"study_status"`: a list with `root`, `checks` (a
 data frame of `item`, `status` – `"OK"`, `"MISSING"`, `"FAIL"`,
-`"CURRENT"`, `"UPDATE AVAILABLE"`, or `"UPDATE STATUS UNKNOWN"` – and
-`detail`). The five base rows are followed by release-aware update rows
-and by dataset and update rows for each named dataset. `counts` lists
-`r_files`, `qmd`, `sas_jobs` and `sidecars`.
+`"UNVERIFIED"`, `"CURRENT"`, `"UPDATE AVAILABLE"`, or
+`"UPDATE STATUS UNKNOWN"` – and `detail`). The five base rows are
+followed by release-aware update rows and by dataset and update rows for
+each named dataset. `counts` lists `r_files`, `qmd`, `sas_jobs` and
+`sidecars`.
 
 ## See also
 
@@ -64,7 +70,7 @@ and by dataset and update rows for each named dataset. `counts` lists
 root <- file.path(tempdir(), "study-status-example")
 dir.create(root, showWarnings = FALSE)
 study_status(root)
-#> Study: /tmp/RtmpinUoTN/study-status-example
+#> Study: /tmp/RtmpHg4GKZ/study-status-example
 #> 
 #> [ ] _study.yml — no _study.yml at this root; recovery may be available with study-setup --recover; if its Tracker ID cannot be inferred, run study-setup 42 --recover
 #> [ ] renv.lock — no renv.lock; run renv::init() in the study project

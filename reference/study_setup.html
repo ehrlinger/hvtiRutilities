@@ -98,7 +98,8 @@ left unchanged.</p>
 <span>  irb_number <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  cvir_no <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  study_creation_date <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  adopt <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  adopt <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  identity_source <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"tracker"</span>, <span class="st">"manual"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -128,6 +129,17 @@ left unchanged.</p>
 
 <dt id="arg-adopt">adopt<a class="anchor" aria-label="anchor" href="#arg-adopt"></a></dt>
 <dd><p>Logical. Permit additive setup in an existing root.</p></dd>
+
+
+<dt id="arg-identity-source">identity_source<a class="anchor" aria-label="anchor" href="#arg-identity-source"></a></dt>
+<dd><p>Character(1). Where the identity values came
+from: <code>"tracker"</code> (the default), for a Study Tracker record, or
+<code>"manual"</code>, for values typed by hand while the Tracker was
+unavailable. A new <code>_study.yml</code> records it as
+<code>identity_source</code>, with <code>identity_verified</code> set to
+<code>TRUE</code> for <code>"tracker"</code> and <code>FALSE</code> for
+<code>"manual"</code>. An existing <code>_study.yml</code> is not rewritten, so
+adoption keeps the recorded source.</p></dd>
 
 </dl></div>
     <div class="section level2">
