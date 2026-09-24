@@ -24,8 +24,9 @@
 
 # Credentials are matched by file name wherever they sit.
 .cp_credential <- function(name) {
-  name %in% c(".env", ".Renviron", ".netrc", ".git-credentials", "tracker.env") ||
-    startsWith(name, "id_rsa") || startsWith(name, "id_ed25519") ||
+  name_lower <- tolower(name)
+  name_lower %in% c(".env", ".renviron", ".netrc", ".git-credentials", "tracker.env") ||
+    startsWith(name_lower, "id_rsa") || startsWith(name_lower, "id_ed25519") ||
     tolower(tools::file_ext(name)) %in% c("pem", "key", "p12", "pfx")
 }
 
@@ -57,8 +58,8 @@
   }
   if (linked) return("symlink")
   if (.cp_credential(parts[n])) return("credential")
-  if (parts[1] %in% .cp_data_dirs()) return("data_folder")
-  if (n >= 2L && parts[1] %in% .cp_doc_dirs() && !ext %in% .cp_doc_ext()) {
+  if (tolower(parts[1]) %in% .cp_data_dirs()) return("data_folder")
+  if (n >= 2L && tolower(parts[1]) %in% .cp_doc_dirs() && !ext %in% .cp_doc_ext()) {
     return("document")
   }
   if (ext %in% .cp_data_ext()) return("data_extension")
@@ -81,7 +82,7 @@
   ext <- tolower(tools::file_ext(rel))
   rel %in% .cp_always() ||
     ext %in% .cp_code_ext() ||
-    (top %in% .cp_doc_dirs() && ext %in% .cp_doc_ext()) ||
+    (tolower(top) %in% .cp_doc_dirs() && ext %in% .cp_doc_ext()) ||
     .cp_included(rel, include)
 }
 

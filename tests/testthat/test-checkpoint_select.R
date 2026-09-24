@@ -89,3 +89,15 @@ test_that("files over the size cap are skipped and reported", {
   expect_equal(sel$files, "30_analyses/small.R")
   expect_equal(sel$skipped$path, "30_analyses/big.R")
 })
+
+test_that("credentials and folder names are denied case-insensitively", {
+  root <- withr::local_tempdir()
+  plant_files(root, c("keys/ID_RSA", "50_documents/.ENV", "30_analyses/Tracker.env",
+                      "00_Datasets/built.R", "Documents/paper.docx"))
+  sel <- .cp_select(root, include = c("*", ".*", "**/*"))
+  expect_false(any(c("keys/ID_RSA", "50_documents/.ENV", "30_analyses/Tracker.env",
+                     "00_Datasets/built.R") %in% sel$files))
+  expect_equal(sel$denied[["credential"]], 3L)
+  expect_equal(sel$denied[["data_folder"]], 1L)
+  expect_equal(sel$documents, "Documents/paper.docx")
+})
