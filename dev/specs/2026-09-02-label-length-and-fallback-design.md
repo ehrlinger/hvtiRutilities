@@ -195,8 +195,10 @@ Seen in a template review on 2026-09-24: several labels of the form
 part that was cut. The figure was unreadable, and nothing warned.
 
 **Invariant:** within one `label_map()` call, labels that differ in
-`label_full` differ in `label`. `label_map()` already sees every column at
-once, so it can enforce this; a property test can assert it directly.
+`label_full` differ in `label`. There is no exception: step 4 guarantees it
+by giving up the cap, never the distinction. `label_map()` already sees every
+column at once, so it can enforce this; a property test can assert it
+directly.
 
 The display label is built in four steps, and each runs only on labels the
 step before left over the cap or colliding. A label that fits and collides
@@ -218,9 +220,14 @@ with nothing is returned whole, as today.
    so the distinguishing end survives. A shared opening with no separator
    lands here rather than in step 1: initials of words that do not form a
    heading read as noise (`AA only versus ...`). Decided 2026-09-24.
-4. **Report what is left.** A collision that survives step 3 is reported,
-   not raised, following §4's precedent: a new logical column `collides`
-   marks both labels, and `subset(x, collides)` is the report.
+4. **Give up the cap, and report it.** A label still colliding after step 3
+   is shown as its whole `label_full`, over the cap. Distinct full labels are
+   distinct, so this always resolves the collision; a long label is a
+   layout problem a reader can see, and two identical labels are a wrong
+   figure nobody can. It is reported, not raised, following §4's precedent:
+   a new logical column `over_cap` marks it, and `subset(x, over_cap)` is
+   the report. `truncated` is `FALSE` for such a label, because it was not
+   cut.
 
 **An abbreviation can collide too.** `Surgical procedure` and `Systolic
 pressure` both give `SP`. Where two distinct headings give the same initials,
