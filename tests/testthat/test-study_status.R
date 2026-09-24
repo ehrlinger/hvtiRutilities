@@ -358,3 +358,33 @@ test_that("print.study_status returns its argument invisibly", {
   expect_output(print(st), "_study.yml")
   expect_invisible(print(st))
 })
+
+test_that("study_status reports a hand-entered identity as UNVERIFIED", {
+  root <- make_study_fixture(withr::local_tempdir(), write_data = FALSE)
+  cat("identity_source: manual\nidentity_verified: false\n",
+      file = file.path(root, "_study.yml"), append = TRUE)
+
+  row <- check_for(study_status(root), "_study.yml")
+
+  expect_equal(row$status, "UNVERIFIED")
+  expect_match(row$detail, "study-setup --verify", fixed = TRUE)
+})
+
+test_that("study_status reads a manifest without identity fields as verified", {
+  root <- make_study_fixture(withr::local_tempdir(), write_data = FALSE)
+
+  row <- check_for(study_status(root), "_study.yml")
+
+  expect_equal(row$status, "OK")
+})
+
+test_that("study_status reports malformed identity fields as FAIL", {
+  root <- make_study_fixture(withr::local_tempdir(), write_data = FALSE)
+  cat("identity_source: typed\nidentity_verified: maybe\n",
+      file = file.path(root, "_study.yml"), append = TRUE)
+
+  row <- check_for(study_status(root), "_study.yml")
+
+  expect_equal(row$status, "FAIL")
+  expect_match(row$detail, "identity_source")
+})
