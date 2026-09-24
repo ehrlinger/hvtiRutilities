@@ -26,6 +26,7 @@ condenses it; `plan` files carry none.
 
 | date | note | status |
 |---|---|---|
+| 2026-09-24 | [Study checkpoints and closure to `CORR_STUDIES`](2026-09-24-study-checkpoint-design.md) | design under review (PR #147) |
 | 2026-09-21 | [`hvtiRutilities` dataset release consumer plan](2026-09-21-dataset-release-consumer-plan.md) | consumer plan for the contract below |
 | 2026-09-21 | [Dataset release and study adoption contract](2026-09-21-dataset-release-contract-design.md) | approved; consumer implementation planned |
 | 2026-09-17 | [`cache_fit()` implementation plan](2026-09-17-cache-fit-plan.md) | plan for the design below |
