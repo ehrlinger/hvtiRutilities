@@ -29,6 +29,30 @@
   invisible(any(given))
 }
 
+# A crash can land the commit on main before the crash prevents the tag from
+# being written. The commit and tag share the same message file, so main's
+# HEAD names the entry id when this happened; with no tag pointing at HEAD,
+# that commit was never delivered and must not seed the next checkpoint or be
+# reachable for a later push. Move main back to HEAD's parent, or drop the
+# branch entirely when HEAD had none.
+.cp_reconcile_orphan <- function(repo, id) {
+  head <- .cp_head(repo)
+  if (is.na(head)) return(invisible(FALSE))
+  msg <- .cp_git(repo, c("log", "-1", "--format=%B", "HEAD"))
+  if (!msg$ok || !any(grepl(id, msg$out, fixed = TRUE))) {
+    return(invisible(FALSE))
+  }
+  at_head <- .cp_git(repo, c("tag", "--points-at", "HEAD"))
+  if (at_head$ok && any(nzchar(at_head$out))) return(invisible(FALSE))
+  parent <- .cp_git(repo, c("rev-parse", "-q", "--verify", "HEAD~1"))
+  if (parent$ok) {
+    .cp_git_do(repo, c("reset", "-q", "--hard", "HEAD~1"))
+  } else {
+    .cp_git_do(repo, c("update-ref", "-d", "refs/heads/main"))
+  }
+  invisible(TRUE)
+}
+
 # Repair entries a crash left in state "committing". The tag message carries
 # the entry id, so a tag that names the id proves the commit happened: the
 # entry is completed from it. Otherwise the commit never happened and the
@@ -51,6 +75,7 @@
     }
     if (is.na(sha)) {
       log[[i]]$state <- "abandoned"
+      if (has_repo) .cp_reconcile_orphan(repo, .cp_entry_id(e))
     } else {
       log[[i]]$state <- "committed"
       log[[i]]$git_commit <- sha

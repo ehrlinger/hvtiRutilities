@@ -146,8 +146,11 @@
     verify <- .cp_git(repo, c("rev-parse", "-q", "--verify",
                               paste0("refs/tags/", tag)))
     if (verify$ok) {
-      last_line <- if (length(verify$out)) verify$out[length(verify$out)]
-                   else "git output unavailable"
+      last_line <- if (length(verify$out)) {
+        verify$out[length(verify$out)]
+      } else {
+        "git output unavailable"
+      }
       warning("checkpoint rollback did not complete: removing tag ", tag,
               " in ", repo, "\n", last_line,
               "\nCheck for a stale .git/index.lock in the checkpoint.",
@@ -157,8 +160,11 @@
   if (is.na(head_before)) {
     res <- .cp_git(repo, c("update-ref", "-d", "refs/heads/main"))
     if (!res$ok) {
-      last_line <- if (length(res$out)) res$out[length(res$out)]
-                   else "git output unavailable"
+      last_line <- if (length(res$out)) {
+        res$out[length(res$out)]
+      } else {
+        "git output unavailable"
+      }
       warning("checkpoint rollback did not complete: remove main in ", repo,
               "\n", last_line,
               "\nCheck for a stale .git/index.lock in the checkpoint.",
@@ -167,8 +173,11 @@
   } else {
     res <- .cp_git(repo, c("reset", "-q", "--hard", head_before))
     if (!res$ok) {
-      last_line <- if (length(res$out)) res$out[length(res$out)]
-                   else "git output unavailable"
+      last_line <- if (length(res$out)) {
+        res$out[length(res$out)]
+      } else {
+        "git output unavailable"
+      }
       warning("checkpoint rollback did not complete: reset main to ",
               head_before, " in ", repo, "\n", last_line,
               "\nCheck for a stale .git/index.lock in the checkpoint.",

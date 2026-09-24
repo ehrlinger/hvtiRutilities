@@ -174,3 +174,51 @@ test_that("an unknown kind is rejected before anything is written", {
                "unknown checkpoint kind")
   expect_false(dir.exists(file.path(root, ".checkpoint")))
 })
+
+test_that(".cp_reconcile removes an orphan commit left by a crash", {
+  skip_if_no_git()
+  local_git_env()
+  root <- make_checkpoint_study(withr::local_tempdir())
+  first <- study_checkpoint("abstract_submitted", root = root)
+  repo <- .cp_repo_path(root)
+  fake_id <- uuid::UUIDgenerate()
+  writeLines("orphan", file.path(repo, "orphan.txt"))
+  git_out(repo, c("add", "-A"))
+  git_out(repo, c("commit", "-q", "-m", fake_id))
+  orphan_commit <- .cp_head(repo)
+  .cp_log_append(root, list(
+    type = "checkpoint", checkpoint_id = fake_id, st_id = 1267L,
+    kind = "abstract_submitted", git_commit = NULL,
+    tag = "abstract_submitted-2", state = "committing",
+    delivery = list(git = "pending", st = "pending")
+  ))
+  .cp_reconcile(root)
+  log <- .cp_log_read(root)
+  expect_equal(log[[length(log)]]$state, "abandoned")
+  expect_equal(.cp_head(repo), first$commit)
+  main_history <- git_out(repo, c("rev-list", "main"))
+  expect_false(orphan_commit %in% main_history)
+  expect_true(first$commit %in% main_history)
+})
+
+test_that("a tag succeeds but marking committed fails: rollback and abandon", {
+  skip_if_no_git()
+  local_git_env()
+  root <- make_checkpoint_study(withr::local_tempdir())
+  first <- study_checkpoint("abstract_submitted", root = root)
+  real <- .cp_log_update
+  local_mocked_bindings(.cp_log_update = function(root, id, fields, ...) {
+    if (identical(fields$state, "committed")) stop("log update exploded")
+    real(root, id, fields, ...)
+  })
+  expect_error(study_checkpoint("abstract_submitted", root = root),
+               "log update exploded")
+  repo <- .cp_repo_path(root)
+  expect_equal(.cp_head(repo), first$commit)
+  expect_equal(git_out(repo, c("tag", "-l")), "abstract_submitted-1")
+  log <- .cp_log_read(root)
+  expect_length(log, 2L)
+  expect_equal(log[[1]]$state, "committed")
+  expect_equal(log[[2]]$state, "abandoned")
+  expect_null(log[[2]]$git_commit)
+})
