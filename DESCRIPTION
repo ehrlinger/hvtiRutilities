@@ -27,6 +27,7 @@ Imports:
     readxl,
     tools,
     utils,
+    uuid,
     withr,
     yaml
 Suggests:
