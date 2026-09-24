@@ -77,11 +77,20 @@
   .cp_git_do(repo, c("tag", "-a", entry$tag, "-F", msg, entry$git_commit))
 }
 
+# TRUE unless the entry names a commit that main does not contain: a tag on
+# such a commit would carry an orphan to the remote.
+.cp_on_main <- function(repo, entry) {
+  if (is.null(entry$tag) || is.null(entry$git_commit)) return(TRUE)
+  .cp_git(repo, c("merge-base", "--is-ancestor", entry$git_commit, "HEAD"))$ok
+}
+
 # Returns the entries as they stand against the local refs on success AND on
 # failure, so the log never names a tag or commit the clone has moved away
 # from. Every failure after the probe becomes a reason, never an error: the
-# checkpoint is already saved locally.
-.cp_push <- function(repo, entries) {
+# checkpoint is already saved locally. `persist` writes the entries to the
+# log after the local ref moves and before the network push, so an
+# interrupted push cannot lose them.
+.cp_push <- function(repo, entries, persist) {
   probe <- .cp_remote_probe(repo)
   if (!probe$reachable) {
     return(list(reason = paste("remote unreachable:", .cp_last(probe$out)),
@@ -95,14 +104,25 @@
     .cp_git_do(repo, c("fetch", "-q", "--no-tags", "origin", refspecs))
     map <- if (probe$has_main) .cp_replay(repo) else character(0)
     entries <- lapply(entries, .cp_apply_map, map = map)
+    orphan <- NULL
     for (i in seq_along(entries)) {
+      if (!.cp_on_main(repo, entries[[i]])) {
+        orphan <- entries[[i]]
+        break
+      }
       planned <- .cp_retag_plan(entries[[i]], repo)
       if (is.null(planned)) next
       old_tag <- entries[[i]]$tag
       entries[[i]] <- planned
       .cp_retag(repo, old_tag, planned)
     }
-    .cp_push_refs(repo, entries)
+    persist(entries)
+    if (is.null(orphan)) {
+      .cp_push_refs(repo, entries)
+    } else {
+      paste0("commit ", orphan$git_commit, " of ", orphan$tag,
+             " is not on main")
+    }
   }, error = function(e) conditionMessage(e))
   list(reason = reason, entries = entries)
 }
@@ -141,7 +161,12 @@
     NULL
   }
   if (is.null(reason)) {
-    pushed <- tryCatch(.cp_push(.cp_repo_init(root, study$remote), log[pending]),
+    persist <- function(entries) {
+      log[pending] <- entries
+      .cp_log_write(root, log)
+    }
+    pushed <- tryCatch(.cp_push(.cp_repo_init(root, study$remote), log[pending],
+                                persist),
                        error = function(e) {
                          list(reason = conditionMessage(e), entries = log[pending])
                        })
@@ -160,7 +185,8 @@
   } else if (!is.null(reason) && reason != "no remote configured") {
     tags <- unlist(lapply(log[pending], function(e) e$tag))
     warning(length(pending), " checkpoint(s) saved locally, not pushed (",
-            paste(tags, collapse = ", "), "): ", reason, ". Run study_checkpoint_push() to retry.", call. = FALSE)
+            paste(tags, collapse = ", "), "): ", reason,
+            ". Run study_checkpoint_push() to retry.", call. = FALSE)
   }
   invisible(log)
 }

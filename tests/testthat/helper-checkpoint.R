@@ -74,3 +74,23 @@ diverge_study <- function(dir) {
                    "refs/tags/data_request_submitted-1"))
   list(root = root, bare = bare, local_cp = local_cp)
 }
+
+# A pre-receive hook on a bare remote that refuses the first push carrying a
+# tag update and accepts every later one. POSIX shell, so not for Windows.
+reject_tag_push_once <- function(bare, marker) {
+  hook <- file.path(bare, "hooks", "pre-receive")
+  writeLines(c(
+    "#!/bin/sh",
+    paste0("marker='", marker, "'"),
+    "while read old new ref; do",
+    "  case \"$ref\" in refs/tags/*)",
+    "    if [ ! -f \"$marker\" ]; then",
+    "      touch \"$marker\"; echo 'tag update refused once' >&2; exit 1",
+    "    fi;;",
+    "  esac",
+    "done",
+    "exit 0"
+  ), hook)
+  Sys.chmod(hook, "755")
+  invisible(hook)
+}

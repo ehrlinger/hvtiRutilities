@@ -128,24 +128,12 @@ test_that("a re-cloned .checkpoint continues the sequence", {
 
 test_that("a rejected tag push after a replay keeps the log in step", {
   skip_if_no_git()
+  # The hook is a shell script; the delivery logic under test is platform-independent.
   skip_on_os("windows")
   local_git_env()
   dir <- withr::local_tempdir()
   fx <- diverge_study(dir)
-  hook <- file.path(fx$bare, "hooks", "pre-receive")
-  writeLines(c(
-    "#!/bin/sh",
-    paste0("marker='", file.path(dir, "rejected-once"), "'"),
-    "while read old new ref; do",
-    "  case \"$ref\" in refs/tags/*)",
-    "    if [ ! -f \"$marker\" ]; then",
-    "      touch \"$marker\"; echo 'tag update refused once' >&2; exit 1",
-    "    fi;;",
-    "  esac",
-    "done",
-    "exit 0"
-  ), hook)
-  Sys.chmod(hook, "755")
+  reject_tag_push_once(fx$bare, file.path(dir, "rejected-once"))
   set_study_keys(fx$root, checkpoint = list(remote = fx$bare))
   repo <- .cp_repo_path(fx$root)
 
@@ -205,4 +193,49 @@ test_that("a failed fetch after the probe leaves the entry pending", {
   e <- .cp_log_read(fx$root)[[1]]
   expect_equal(e$delivery$git, "pending")
   expect_match(e$delivery$reason, "git fetch failed")
+})
+
+test_that("a log lost before its write never lets a retry push an orphan", {
+  skip_if_no_git()
+  # The hook is a shell script; the delivery logic under test is platform-independent.
+  skip_on_os("windows")
+  local_git_env()
+  dir <- withr::local_tempdir()
+  fx <- diverge_study(dir)
+  reject_tag_push_once(fx$bare, file.path(dir, "rejected-once"))
+  set_study_keys(fx$root, checkpoint = list(remote = fx$bare))
+  log_path <- .cp_log_path(fx$root)
+  before <- readLines(log_path)
+  expect_warning(study_checkpoint_push(fx$root), "tag push rejected")
+  writeLines(before, log_path)  # an interrupt before any log write
+
+  expect_warning(study_checkpoint_push(fx$root), "not on main")
+  e <- .cp_log_read(fx$root)[[1]]
+  expect_equal(e$delivery$git, "pending")
+  expect_equal(e$git_commit, fx$local_cp$commit)
+  for (t in git_out(fx$bare, c("tag", "-l"))) {
+    commit <- git_out(fx$bare, c("rev-parse", paste0(t, "^{commit}")))
+    expect_false(identical(commit, fx$local_cp$commit), info = t)
+    res <- system2("git", shQuote(c("-C", fx$bare, "merge-base",
+                                    "--is-ancestor", commit, "main")))
+    expect_equal(res, 0L, info = t)
+  }
+})
+
+test_that("retargeted entries reach the log before the network push", {
+  skip_if_no_git()
+  local_git_env()
+  dir <- withr::local_tempdir()
+  fx <- diverge_study(dir)
+  set_study_keys(fx$root, checkpoint = list(remote = fx$bare))
+  seen <- new.env()
+  testthat::local_mocked_bindings(.cp_push_refs = function(repo, entries) {
+    seen$entry <- .cp_log_read(fx$root)[[1]]
+    "simulated interrupt"
+  })
+  expect_warning(study_checkpoint_push(fx$root), "simulated interrupt")
+  expect_equal(seen$entry$tag, "data_request_submitted-2")
+  expect_equal(seen$entry$replayed_from, fx$local_cp$commit)
+  expect_equal(seen$entry$git_commit,
+               git_out(.cp_repo_path(fx$root), c("rev-parse", "main")))
 })
