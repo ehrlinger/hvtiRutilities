@@ -30,6 +30,7 @@
 
 .study_renvignore <- function() {
   c(
+    ".checkpoint/",
     "00_datasets/",
     "datasets/",
     "40_graphs/",
