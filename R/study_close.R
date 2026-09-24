@@ -146,17 +146,20 @@ study_close <- function(outcome, reason = NULL, publication = NULL,
          call. = FALSE)
   }
   if (!is.null(reason)) .cp_check_string(reason, "study_close", "reason")
-  if (.cp_is_closed(root)) {
-    stop("study_close(): the study is already closed; run study_reopen() ",
-         "first", call. = FALSE)
-  }
   if (outcome == "published") {
     publication <- .cp_check_publication(publication)
-    .cp_check_published_tag(root)
   }
   if (outcome == "superseded") {
     superseded_by <- .cp_check_superseded_by(superseded_by)
   }
+  # Spec 6.1 step 1: a fresh copy clones the remote first, so the tag guards
+  # below see closures made from other copies.
+  if (!is.null(study$remote)) .cp_repo_init(root, study$remote)
+  if (.cp_is_closed(root)) {
+    stop("study_close(): the study is already closed; run study_reopen() ",
+         "first", call. = FALSE)
+  }
+  if (outcome == "published") .cp_check_published_tag(root)
   .cp_free_text_notice(reason)
 
   entry <- list(
@@ -192,6 +195,7 @@ study_reopen <- function(reason, new_lead = NULL, reopened_at = Sys.Date(),
          call. = FALSE)
   }
   if (!is.null(new_lead)) .cp_check_string(new_lead, "study_reopen", "new_lead")
+  if (!is.null(study$remote)) .cp_repo_init(root, study$remote)
   if (!.cp_is_closed(root)) {
     stop("study_reopen(): the study is not closed", call. = FALSE)
   }

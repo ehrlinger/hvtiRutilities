@@ -52,10 +52,13 @@
 
 # TRUE when the remote holds the entry's tag on a different commit. A
 # closure number is shared by every outcome (spec 6.2), so a closed-* tag
-# also collides with any other remote closed-* tag carrying its number.
+# also collides with any other remote closed-* tag carrying its number,
+# unless the remote already holds this tag on this commit: a pushed tag is
+# never moved.
 .cp_collides <- function(repo, entry) {
   remote <- .cp_commit_of(repo, paste0("refs/remote-tags/", entry$tag))
-  if (!is.na(remote) && !identical(remote, entry$git_commit)) return(TRUE)
+  if (identical(remote, entry$git_commit)) return(FALSE)
+  if (!is.na(remote)) return(TRUE)
   if (!grepl("^closed-[a-z_]+-[0-9]+$", entry$tag)) return(FALSE)
   others <- .cp_remote_tags(repo)
   others <- others[grepl("^closed-[a-z_]+-[0-9]+$", others) &
