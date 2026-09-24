@@ -204,6 +204,10 @@ study_checkpoint <- function(kind, note = NULL, attributes = NULL,
   .cp_reconcile(root)
   study <- .cp_study(root, "study_checkpoint")
   row <- .cp_kind_check(.cp_kinds(root), kind, "study_checkpoint")
+  if (.cp_is_closed(root)) {
+    warning("study_checkpoint(): the study is closed; recording the ",
+            "checkpoint anyway", call. = FALSE)
+  }
   .cp_free_text_notice(note, attributes)
 
   entry <- list(
@@ -231,6 +235,10 @@ study_checkpoint <- function(kind, note = NULL, attributes = NULL,
   snap <- .cp_snapshot(root, study, tag_fn, entry, "study_checkpoint")
   .cp_deliver(root, study)
   final <- .cp_or(.cp_log_find(root, entry$checkpoint_id), snap$entry)
+  if (identical(kind, "manuscript_published")) {
+    message("The study can now be closed as published: ",
+            "study_close(\"published\", publication = list(...))")
+  }
   invisible(.cp_result(final, snap))
 }
 
