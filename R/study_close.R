@@ -19,25 +19,53 @@
   n[["closed"]] > n[["reopened"]]
 }
 
-.cp_check_publication <- function(repo, publication) {
-  required <- c("title", "journal", "accepted_on", "published_on")
-  have <- vapply(required, function(k) {
-    !is.null(publication[[k]]) && nzchar(as.character(publication[[k]]))
-  }, logical(1))
-  missing <- required[!have]
-  if (is.null(publication$doi) && is.null(publication$pmid)) {
-    missing <- c(missing, "doi or pmid")
+# Field checks only, so they run before anything is written. doi and pmid are
+# read with [[ ]] so a field such as doi_url cannot stand in for them.
+.cp_check_publication <- function(publication) {
+  given <- function(k) {
+    v <- publication[[k]]
+    !is.null(v) && length(v) == 1L && !is.na(v) && nzchar(as.character(v))
   }
+  required <- c("title", "journal", "accepted_on", "published_on")
+  missing <- required[!vapply(required, given, logical(1))]
+  if (!given("doi") && !given("pmid")) missing <- c(missing, "doi or pmid")
   if (length(missing)) {
     stop("study_close(): outcome 'published' needs publication fields: ",
          paste(missing, collapse = ", "), call. = FALSE)
   }
-  if (!length(.cp_tags(repo, "^manuscript_published-[0-9]+$"))) {
+  lapply(publication, function(v) if (inherits(v, "Date")) .cp_date(v) else v)
+}
+
+# Reads the tags of an existing repository; a study with none has no
+# manuscript_published checkpoint, so nothing needs creating to answer.
+.cp_check_published_tag <- function(root) {
+  repo <- .cp_repo_path(root)
+  has <- dir.exists(file.path(repo, ".git")) &&
+    length(.cp_tags(repo, "^manuscript_published-[0-9]+$")) > 0L
+  if (!has) {
     stop("study_close(): outcome 'published' needs a manuscript_published ",
          "checkpoint first; run study_checkpoint(\"manuscript_published\")",
          call. = FALSE)
   }
-  lapply(publication, function(v) if (inherits(v, "Date")) .cp_date(v) else v)
+}
+
+# One whole positive number, given as an integer, a double or a string.
+.cp_check_superseded_by <- function(superseded_by) {
+  sb <- if (is.numeric(superseded_by) || is.character(superseded_by)) {
+    suppressWarnings(as.numeric(superseded_by))
+  }
+  if (length(sb) != 1L || is.na(sb) || sb < 1 || sb != round(sb) ||
+        sb > .Machine$integer.max) {
+    stop("study_close(): outcome 'superseded' needs superseded_by, one ST ",
+         "number", call. = FALSE)
+  }
+  as.integer(sb)
+}
+
+.cp_check_string <- function(x, caller, what) {
+  if (!is.character(x) || length(x) != 1L || is.na(x)) {
+    stop(caller, "(): ", what, " must be one character string", call. = FALSE)
+  }
 }
 
 #' Close or reopen a study
@@ -73,8 +101,8 @@
 #' @param reason Optional character(1). For \code{study_reopen()}, required.
 #' @param publication Named list of publication details; required for
 #'   \code{"published"}.
-#' @param superseded_by Integer(1). ST number; required for
-#'   \code{"superseded"}.
+#' @param superseded_by One whole positive number, the ST number, given as an
+#'   integer, a double or a string; required for \code{"superseded"}.
 #' @param closed_at,reopened_at Date of the event. Defaults to today.
 #' @param new_lead Optional character(1), the username of a new study lead.
 #' @param root Character. Study root. Defaults to \code{study_root()}.
@@ -117,21 +145,17 @@ study_close <- function(outcome, reason = NULL, publication = NULL,
          },
          call. = FALSE)
   }
-  repo <- .cp_repo_init(root, study$remote)
+  if (!is.null(reason)) .cp_check_string(reason, "study_close", "reason")
   if (.cp_is_closed(root)) {
     stop("study_close(): the study is already closed; run study_reopen() ",
          "first", call. = FALSE)
   }
   if (outcome == "published") {
-    publication <- .cp_check_publication(repo, publication)
+    publication <- .cp_check_publication(publication)
+    .cp_check_published_tag(root)
   }
   if (outcome == "superseded") {
-    sb <- suppressWarnings(as.integer(superseded_by))
-    if (length(sb) != 1L || is.na(sb) || sb < 1L) {
-      stop("study_close(): outcome 'superseded' needs superseded_by, one ST ",
-           "number", call. = FALSE)
-    }
-    superseded_by <- sb
+    superseded_by <- .cp_check_superseded_by(superseded_by)
   }
   .cp_free_text_notice(reason)
 
@@ -162,16 +186,19 @@ study_reopen <- function(reason, new_lead = NULL, reopened_at = Sys.Date(),
   root <- normalizePath(root, mustWork = TRUE)
   .cp_reconcile(root)
   study <- .cp_study(root, "study_reopen")
-  if (missing(reason) || length(reason) != 1L || is.na(reason) ||
-        !nzchar(reason)) {
-    stop("study_reopen(): a reason is required", call. = FALSE)
+  if (missing(reason) || !is.character(reason) || length(reason) != 1L ||
+        is.na(reason) || !nzchar(reason)) {
+    stop("study_reopen(): a reason is required, as one character string",
+         call. = FALSE)
   }
-  repo <- .cp_repo_init(root, study$remote)
+  if (!is.null(new_lead)) .cp_check_string(new_lead, "study_reopen", "new_lead")
   if (!.cp_is_closed(root)) {
     stop("study_reopen(): the study is not closed", call. = FALSE)
   }
   .cp_free_text_notice(reason)
-  tag <- paste0("reopened-", .cp_closure_counts(repo)[["reopened"]] + 1L)
+  repo <- .cp_repo_init(root, study$remote)
+  # max + 1, not a count: delivery renumbers past remote tags, leaving gaps.
+  tag <- .cp_next_tag(repo, "reopened")
   entry <- list(
     type = "reopening", reopening_id = uuid::UUIDgenerate(),
     st_id = study$st_id, workspace_id = study$workspace_id,
@@ -182,12 +209,14 @@ study_reopen <- function(reason, new_lead = NULL, reopened_at = Sys.Date(),
   id <- entry$reopening_id
   .cp_log_append(root, entry)
   done <- FALSE
+  tagged <- FALSE
   undo <- function() {
-    .cp_git(repo, c("tag", "-d", tag))
+    if (tagged) .cp_git(repo, c("tag", "-d", tag))
     try(.cp_log_update(root, id, list(state = "abandoned")), silent = TRUE)
   }
   on.exit(if (!done) undo(), add = TRUE)
   sha <- .cp_tag_head(repo, tag, .cp_tag_message(entry))
+  tagged <- TRUE
   entry <- .cp_log_update(root, id, list(state = "committed", git_commit = sha))
   done <- TRUE
   .cp_deliver(root, study)

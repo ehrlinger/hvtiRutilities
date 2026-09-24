@@ -30,8 +30,8 @@ study_reopen(
 \item{publication}{Named list of publication details; required for
 \code{"published"}.}
 
-\item{superseded_by}{Integer(1). ST number; required for
-\code{"superseded"}.}
+\item{superseded_by}{One whole positive number, the ST number, given as an
+integer, a double or a string; required for \code{"superseded"}.}
 
 \item{closed_at, reopened_at}{Date of the event. Defaults to today.}
 

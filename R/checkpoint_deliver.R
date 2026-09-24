@@ -50,13 +50,25 @@
   entry
 }
 
+# TRUE when the remote holds the entry's tag on a different commit. A
+# closure number is shared by every outcome (spec 6.2), so a closed-* tag
+# also collides with any other remote closed-* tag carrying its number.
+.cp_collides <- function(repo, entry) {
+  remote <- .cp_commit_of(repo, paste0("refs/remote-tags/", entry$tag))
+  if (!is.na(remote) && !identical(remote, entry$git_commit)) return(TRUE)
+  if (!grepl("^closed-[a-z_]+-[0-9]+$", entry$tag)) return(FALSE)
+  others <- .cp_remote_tags(repo)
+  others <- others[grepl("^closed-[a-z_]+-[0-9]+$", others) &
+                     others != entry$tag]
+  any(.cp_seq_of(others) == .cp_seq_of(entry$tag))
+}
+
 # The entry as it should be once its local tag matches the log: renumbered
-# when the remote holds the same name on a different commit. NULL when the
-# local tag already names the entry's commit and nothing collides.
+# when it collides with a remote tag. NULL when the local tag already names
+# the entry's commit and nothing collides.
 .cp_retag_plan <- function(entry, repo) {
   if (is.null(entry$tag) || is.null(entry$git_commit)) return(NULL)
-  remote <- .cp_commit_of(repo, paste0("refs/remote-tags/", entry$tag))
-  collides <- !is.na(remote) && !identical(remote, entry$git_commit)
+  collides <- .cp_collides(repo, entry)
   local <- .cp_commit_of(repo, paste0("refs/tags/", entry$tag))
   if (!collides && identical(local, entry$git_commit)) return(NULL)
   if (collides) {

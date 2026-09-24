@@ -94,3 +94,21 @@ reject_tag_push_once <- function(bare, marker) {
   Sys.chmod(hook, "755")
   invisible(hook)
 }
+
+# A closed study whose reopening tag was renumbered, as delivery does:
+# closed-abandoned-1, reopened-2, closed-abandoned-2, and no reopened-1.
+gap_study <- function(dir) {
+  root <- make_checkpoint_study(dir)
+  repo <- .cp_repo_path(root)
+  study_close("abandoned", root = root)
+  suppressMessages(study_reopen("new PI", root = root))
+  git_out(repo, c("tag", "reopened-2", "reopened-1"))
+  git_out(repo, c("tag", "-d", "reopened-1"))
+  study_close("abandoned", root = root)
+  root
+}
+
+tag_commits <- function(repo) {
+  tags <- git_out(repo, c("tag", "-l"))
+  vapply(tags, function(t) git_out(repo, c("rev-parse", t)), character(1))
+}

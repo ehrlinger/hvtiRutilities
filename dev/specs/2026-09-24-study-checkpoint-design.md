@@ -424,3 +424,8 @@ push included, on all five platforms. Tests needing git skip with
    (for example, a submitted-manuscript archive outside git) is needed.
 8. **Free-text PHI.** Revisit the warning-only rule (section 5.1a) once real
    checkpoints show what analysts write in `note` and `reason`.
+9. **Closure state from local tags only.** Whether a study is closed is read
+   from local `closed-*` and `reopened-*` tags. Remote tags are fetched into
+   `refs/remote-tags` and are not counted, so a closure made from another copy
+   of the study is not seen until a fresh clone, and two copies can each close
+   the study. Decide whether closure state should include remote tags.
