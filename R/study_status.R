@@ -211,6 +211,11 @@
 #' is not a check that failed, and conflating the two makes the audit
 #' unreadable on exactly the legacy studies it is most needed for.
 #'
+#' A \code{_study.yml} whose identity was entered by hand and not yet
+#' confirmed against Study Tracker (\code{identity_verified: false}) is
+#' reported \code{"UNVERIFIED"}. A manifest without the field is a Tracker
+#' identity and is reported \code{"OK"}.
+#'
 #' Release-aware datasets add an \code{update:<dataset>} row with status
 #' \code{"CURRENT"}, \code{"UPDATE AVAILABLE"},
 #' \code{"UPDATE STATUS UNKNOWN"}, or \code{"FAIL"}. Legacy studies retain
@@ -231,7 +236,8 @@
 #'
 #' @return An object of class \code{"study_status"}: a list with \code{root},
 #'   \code{checks} (a data frame of \code{item}, \code{status} --
-#'   \code{"OK"}, \code{"MISSING"}, \code{"FAIL"}, \code{"CURRENT"},
+#'   \code{"OK"}, \code{"MISSING"}, \code{"FAIL"}, \code{"UNVERIFIED"},
+#'   \code{"CURRENT"},
 #'   \code{"UPDATE AVAILABLE"}, or \code{"UPDATE STATUS UNKNOWN"} -- and
 #'   \code{detail}). The five base rows are followed by release-aware update
 #'   rows and by dataset and update rows for each named dataset.
@@ -271,8 +277,13 @@ study_status <- function(root = getwd()) {
       row_yml <- .status_row("_study.yml", "FAIL", conditionMessage(parsed))
     } else {
       cfg <- parsed
-      row_yml <- .status_row("_study.yml", "OK",
-                             paste0("study: ", cfg$study))
+      row_yml <- if (isFALSE(cfg$identity_verified)) {
+        .status_row("_study.yml", "UNVERIFIED",
+                    paste0("study: ", cfg$study, "; identity entered by ",
+                           "hand, confirm it with study-setup --verify"))
+      } else {
+        .status_row("_study.yml", "OK", paste0("study: ", cfg$study))
+      }
     }
   }
 

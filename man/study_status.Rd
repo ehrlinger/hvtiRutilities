@@ -12,7 +12,8 @@ study_status(root = getwd())
 \value{
 An object of class \code{"study_status"}: a list with \code{root},
   \code{checks} (a data frame of \code{item}, \code{status} --
-  \code{"OK"}, \code{"MISSING"}, \code{"FAIL"}, \code{"CURRENT"},
+  \code{"OK"}, \code{"MISSING"}, \code{"FAIL"}, \code{"UNVERIFIED"},
+  \code{"CURRENT"},
   \code{"UPDATE AVAILABLE"}, or \code{"UPDATE STATUS UNKNOWN"} -- and
   \code{detail}). The five base rows are followed by release-aware update
   rows and by dataset and update rows for each named dataset.
@@ -31,6 +32,11 @@ not error on one. Checks that cannot run because an earlier one failed are
 reported \code{"MISSING"}, never \code{"FAIL"} -- a check that could not run
 is not a check that failed, and conflating the two makes the audit
 unreadable on exactly the legacy studies it is most needed for.
+
+A \code{_study.yml} whose identity was entered by hand and not yet
+confirmed against Study Tracker (\code{identity_verified: false}) is
+reported \code{"UNVERIFIED"}. A manifest without the field is a Tracker
+identity and is reported \code{"OK"}.
 
 Release-aware datasets add an \code{update:<dataset>} row with status
 \code{"CURRENT"}, \code{"UPDATE AVAILABLE"},

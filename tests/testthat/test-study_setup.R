@@ -182,3 +182,57 @@ test_that("study_setup sees a hidden existing R project", {
     ".hidden.Rproj"
   )
 })
+
+test_that("study_setup records a Tracker identity as verified by default", {
+  root <- file.path(withr::local_tempdir(), "new-study")
+
+  study_setup(root, "Example study", 42L)
+
+  cfg <- study_config(root, require_data = FALSE)
+  expect_identical(cfg$identity_source, "tracker")
+  expect_true(cfg$identity_verified)
+})
+
+test_that("study_setup records a manual identity as unverified", {
+  root <- file.path(withr::local_tempdir(), "new-study")
+
+  status <- study_setup(root, "Example study", 42L,
+                        identity_source = "manual")
+
+  cfg <- study_config(root, require_data = FALSE)
+  expect_identical(cfg$identity_source, "manual")
+  expect_false(cfg$identity_verified)
+  row <- status$checks[status$checks$item == "_study.yml", ]
+  expect_identical(row$status, "UNVERIFIED")
+})
+
+test_that("study_setup rejects an unknown identity source without writing", {
+  root <- file.path(withr::local_tempdir(), "new-study")
+
+  expect_error(
+    study_setup(root, "Example study", 42L, identity_source = "typed"),
+    "identity_source"
+  )
+  expect_false(dir.exists(root))
+})
+
+test_that("adoption keeps an existing identity and its source", {
+  root <- file.path(withr::local_tempdir(), "new-study")
+  study_setup(root, "Example study", 42L, identity_source = "manual")
+
+  study_setup(root, "Example study", 42L, adopt = TRUE)
+
+  cfg <- study_config(root, require_data = FALSE)
+  expect_identical(cfg$identity_source, "manual")
+  expect_false(cfg$identity_verified)
+})
+
+test_that("study_setup rejects an abbreviated identity source", {
+  root <- file.path(withr::local_tempdir(), "new-study")
+
+  expect_error(
+    study_setup(root, "Example study", 42L, identity_source = "man"),
+    "identity_source"
+  )
+  expect_false(dir.exists(root))
+})

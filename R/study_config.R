@@ -100,6 +100,36 @@
   value
 }
 
+# identity_source and identity_verified are optional: a manifest written
+# before they existed is a Tracker identity. When present they must be the
+# values study_setup() writes, and agree with each other (a Tracker identity
+# is verified, a manual one is not until verification rewrites it as a
+# Tracker identity), because study_status() and recovery decide from them
+# whether the identity can be trusted.
+.study_validate_identity <- function(raw, found) {
+  source <- raw$identity_source
+  if (!is.null(source) &&
+        !(is.character(source) && length(source) == 1L &&
+            source %in% c("tracker", "manual"))) {
+    stop("study_config(): ", found, " has an invalid identity_source; ",
+         "expected tracker or manual", call. = FALSE)
+  }
+  verified <- raw$identity_verified
+  if (!is.null(verified) &&
+        !(is.logical(verified) && length(verified) == 1L && !is.na(verified))) {
+    stop("study_config(): ", found, " has an invalid identity_verified; ",
+         "expected true or false", call. = FALSE)
+  }
+  if (!is.null(source) && !is.null(verified) &&
+        !identical(verified, identical(source, "tracker"))) {
+    stop("study_config(): ", found, " records identity_source: ", source,
+         " with identity_verified: ", tolower(as.character(verified)),
+         "; a tracker identity is verified and a manual one is not",
+         call. = FALSE)
+  }
+  invisible(raw)
+}
+
 #' Read the study manifest
 #'
 #' @description
@@ -169,6 +199,7 @@ study_config <- function(start = getwd(), require_data = TRUE) {
   }
 
   raw <- yaml::read_yaml(found)
+  .study_validate_identity(raw, found)
   raw$release <- .study_validate_release(raw$release, found, "study")
   raw$additional_datasets <- .study_validate_additional(
     raw$additional_datasets,

@@ -13,7 +13,8 @@ study_setup(
   irb_number = NULL,
   cvir_no = NULL,
   study_creation_date = NULL,
-  adopt = FALSE
+  adopt = FALSE,
+  identity_source = c("tracker", "manual")
 )
 }
 \arguments{
@@ -28,6 +29,15 @@ study_setup(
 \item{study_creation_date}{Optional Study Tracker creation date.}
 
 \item{adopt}{Logical. Permit additive setup in an existing root.}
+
+\item{identity_source}{Character(1). Where the identity values came
+from: \code{"tracker"} (the default), for a Study Tracker record, or
+\code{"manual"}, for values typed by hand while the Tracker was
+unavailable. A new \code{_study.yml} records it as
+\code{identity_source}, with \code{identity_verified} set to
+\code{TRUE} for \code{"tracker"} and \code{FALSE} for
+\code{"manual"}. An existing \code{_study.yml} is not rewritten, so
+adoption keeps the recorded source.}
 }
 \value{
 An object of class \code{"study_status"}, returned visibly.

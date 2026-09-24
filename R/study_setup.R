@@ -79,6 +79,14 @@
 #' @param umbrella,owner,irb_number,cvir_no Optional identity values.
 #' @param study_creation_date Optional Study Tracker creation date.
 #' @param adopt Logical. Permit additive setup in an existing root.
+#' @param identity_source Character(1). Where the identity values came
+#'   from: \code{"tracker"} (the default), for a Study Tracker record, or
+#'   \code{"manual"}, for values typed by hand while the Tracker was
+#'   unavailable. A new \code{_study.yml} records it as
+#'   \code{identity_source}, with \code{identity_verified} set to
+#'   \code{TRUE} for \code{"tracker"} and \code{FALSE} for
+#'   \code{"manual"}. An existing \code{_study.yml} is not rewritten, so
+#'   adoption keeps the recorded source.
 #'
 #' @return An object of class \code{"study_status"}, returned visibly.
 #'
@@ -89,7 +97,17 @@
 study_setup <- function(root, study, study_tracker_id,
                         umbrella = NULL, owner = NULL,
                         irb_number = NULL, cvir_no = NULL,
-                        study_creation_date = NULL, adopt = FALSE) {
+                        study_creation_date = NULL, adopt = FALSE,
+                        identity_source = c("tracker", "manual")) {
+  # Exact values only: match.arg() would accept an abbreviation such as
+  # "man", and a provenance field should record what the caller meant.
+  sources <- c("tracker", "manual")
+  if (identical(identity_source, sources)) identity_source <- "tracker"
+  if (!is.character(identity_source) || length(identity_source) != 1L ||
+        !identity_source %in% sources) {
+    stop("study_setup(): identity_source must be \"tracker\" or ",
+         "\"manual\"", call. = FALSE)
+  }
   root <- .study_scalar(root, "root", required = TRUE)
   study <- .study_scalar(study, "study", required = TRUE)
   tracker <- suppressWarnings(as.integer(study_tracker_id))
@@ -177,6 +195,8 @@ study_setup <- function(root, study, study_tracker_id,
     irb_number = irb_number,
     cvir_no = cvir_no,
     study_creation_date = study_creation_date,
+    identity_source = identity_source,
+    identity_verified = identical(identity_source, "tracker"),
     population = NULL,
     built = NULL,
     citation = NULL

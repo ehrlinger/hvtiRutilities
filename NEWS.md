@@ -1,3 +1,16 @@
+# hvtiRutilities (unreleased)
+
+## New features
+
+* `study_setup()` gains `identity_source = c("tracker", "manual")`. A new
+  `_study.yml` records `identity_source` and `identity_verified`, which is
+  `false` for an identity typed by hand while Study Tracker was
+  unavailable. `study_status()` reports such an identity as
+  `"UNVERIFIED"` on the `_study.yml` row, so `study_checklist()` leaves its
+  box unticked. A manifest written before these fields existed is a
+  Tracker identity and is still reported `"OK"`. `study_config()` rejects
+  any other value of either field.
+
 # hvtiRutilities 1.4.0
 
 ## Breaking changes
