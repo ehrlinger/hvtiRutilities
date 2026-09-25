@@ -55,7 +55,7 @@ test_that("a logical event is accepted", {
 
 test_that("every missing column is named in one error", {
   expect_error(followup_check(d, "dead", c("iv_dead", "nope1"), identifier = "nope2"),
-               "Unknown follow-up column\\(s\\): nope1, nope2")
+               "Unknown column\\(s\\): nope1, nope2")
 })
 
 test_that("arguments are validated before anything is computed", {

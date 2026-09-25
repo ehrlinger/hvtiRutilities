@@ -21,8 +21,8 @@ show in \code{review}.}
 order. Default 25.}
 }
 \value{
-An object of class \code{followup_check}, a list of four data
-  frames:
+An object of class \code{followup_check}, a list of four
+  components, three data frames and a list of three:
 \describe{
   \item{\code{cohort}}{One row: \code{full}, \code{event}, \code{censored}
     and \code{missing_event} counts.}

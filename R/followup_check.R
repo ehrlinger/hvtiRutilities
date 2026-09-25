@@ -36,8 +36,8 @@
 #' @param max_rows The most suspicious rows to return in \code{review}, in data
 #'   order. Default 25.
 #'
-#' @return An object of class \code{followup_check}, a list of four data
-#'   frames:
+#' @return An object of class \code{followup_check}, a list of four
+#'   components, three data frames and a list of three:
 #' \describe{
 #'   \item{\code{cohort}}{One row: \code{full}, \code{event}, \code{censored}
 #'     and \code{missing_event} counts.}
@@ -77,7 +77,7 @@ followup_check <- function(data, event, followup, identifier = NULL, max_rows = 
   needed <- unique(c(event, followup, identifier))
   unknown <- setdiff(needed, names(data))
   if (length(unknown)) {
-    stop("Unknown follow-up column(s): ", paste(unknown, collapse = ", "), call. = FALSE)
+    stop("Unknown column(s): ", paste(unknown, collapse = ", "), call. = FALSE)
   }
   ev <- data[[event]]
   if ((!is.numeric(ev) && !is.logical(ev)) || any(!is.na(ev) & !ev %in% c(0, 1))) {
