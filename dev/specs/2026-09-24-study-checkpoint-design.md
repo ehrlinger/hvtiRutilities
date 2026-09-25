@@ -228,6 +228,16 @@ patient information. There is no schema or redaction for now (decided
 
 ### 6.1 Failure rules
 
+- **One session at a time.** Every writing entry point
+  (`study_checkpoint()`, `study_checkpoint_push()`, `study_close()`,
+  `study_reopen()`) takes an exclusive lock, the directory
+  `.checkpoint/lock` (`dir.create()` is atomic), before it reconciles, and
+  releases it on exit, including on error. The holder writes its user, pid
+  and start time into the lock. A lock held by another session for less than
+  30 minutes is an error that names the holder and says to retry; an older one
+  was left by a crashed session and is taken over with a warning.
+  `study_status()` only reads and takes no lock.
+
 - **Steps 1 to 5 are all-or-nothing, and a crash between them is
   reconciled.** A failure before step 4 leaves nothing. At the start of every
   core call, an entry still in `state: committing` is matched by its

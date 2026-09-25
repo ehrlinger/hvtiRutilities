@@ -135,6 +135,8 @@ study_close <- function(outcome, reason = NULL, publication = NULL,
                         root = study_root()) {
   .cp_require_git("study_close")
   root <- normalizePath(root, mustWork = TRUE)
+  held <- .cp_lock(root, "study_close")
+  on.exit(.cp_unlock(held), add = TRUE)
   .cp_reconcile(root)
   study <- .cp_study(root, "study_close")
   if (length(outcome) != 1L || is.na(outcome) || !outcome %in% .cp_outcomes()) {
@@ -187,6 +189,8 @@ study_reopen <- function(reason, new_lead = NULL, reopened_at = Sys.Date(),
                          root = study_root()) {
   .cp_require_git("study_reopen")
   root <- normalizePath(root, mustWork = TRUE)
+  held <- .cp_lock(root, "study_reopen")
+  on.exit(.cp_unlock(held), add = TRUE)
   .cp_reconcile(root)
   study <- .cp_study(root, "study_reopen")
   if (missing(reason) || !is.character(reason) || length(reason) != 1L ||
@@ -218,7 +222,8 @@ study_reopen <- function(reason, new_lead = NULL, reopened_at = Sys.Date(),
     if (tagged) .cp_git(repo, c("tag", "-d", tag))
     try(.cp_log_update(root, id, list(state = "abandoned")), silent = TRUE)
   }
-  on.exit(if (!done) undo(), add = TRUE)
+  # Ahead of the unlock, so the entry is settled while the lock is held.
+  on.exit(if (!done) undo(), add = TRUE, after = FALSE)
   sha <- .cp_tag_head(repo, tag, .cp_tag_message(entry))
   tagged <- TRUE
   entry <- .cp_log_update(root, id, list(state = "committed", git_commit = sha))

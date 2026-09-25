@@ -24,7 +24,9 @@
   still names the exact document that was submitted. A checkpoint is
   committed locally first, so an unreachable remote never loses one;
   `study_checkpoint_push()` retries. A study whose identity is unverified is
-  committed but not pushed.
+  committed but not pushed. Two sessions cannot interleave on one study:
+  each writing call takes `.checkpoint/lock`, and a lock left by a crashed
+  session is taken over after 30 minutes.
 
 * `study_close()` closes a study as published, not published, superseded or
   abandoned, with a final snapshot tagged `closed-<outcome>-<n>`;

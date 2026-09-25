@@ -202,6 +202,8 @@ study_checkpoint <- function(kind, note = NULL, attributes = NULL,
                              occurred_at = Sys.Date(), root = study_root()) {
   .cp_require_git("study_checkpoint")
   root <- normalizePath(root, mustWork = TRUE)
+  held <- .cp_lock(root, "study_checkpoint")
+  on.exit(.cp_unlock(held), add = TRUE)
   .cp_reconcile(root)
   study <- .cp_study(root, "study_checkpoint")
   row <- .cp_kind_check(.cp_kinds(root), kind, "study_checkpoint")
@@ -281,6 +283,8 @@ print.study_checkpoint <- function(x, ...) {
 study_checkpoint_push <- function(root = study_root()) {
   .cp_require_git("study_checkpoint_push")
   root <- normalizePath(root, mustWork = TRUE)
+  held <- .cp_lock(root, "study_checkpoint_push")
+  on.exit(.cp_unlock(held), add = TRUE)
   .cp_reconcile(root)
   study <- .cp_study(root, "study_checkpoint_push")
   invisible(.cp_log_frame(.cp_deliver(root, study)))
