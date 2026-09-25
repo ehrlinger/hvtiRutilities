@@ -2,6 +2,13 @@
 
 ## New features
 
+* `followup_check()` checks an event indicator and its follow-up intervals
+  before a time-related analysis: cohort, event, censored and missing-event
+  counts; the missing, negative and zero intervals; a `proc_means()` table
+  for each subset; and the suspicious rows, with identifiers only on request.
+  Every missing column is named in one error. It is the `dc-gfup` template's
+  checks as a function, so that job and the EDA report compute them once.
+
 * `study_setup()` gains `identity_source = c("tracker", "manual")`. A new
   `_study.yml` records `identity_source` and `identity_verified`, which is
   `false` for an identity typed by hand while Study Tracker was
