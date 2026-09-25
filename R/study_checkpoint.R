@@ -307,6 +307,30 @@ print.study_checkpoint <- function(x, ...) {
 #'   columns \code{type}, \code{tag}, \code{state}, \code{git}, \code{st} and
 #'   \code{reason}.
 #'
+#' @section Repairing a stuck delivery:
+#' Two failures leave an entry pending in a way that retrying
+#' \code{study_checkpoint_push()} cannot fix by itself. Each is reported as a
+#' warning that names the tag and points back here.
+#'
+#' \itemize{
+#'   \item \strong{Not on main} (a log write was lost after a replay).
+#'   Find the commit on \code{main} whose message carries the entry's id
+#'   (\code{checkpoint_id} for a checkpoint, \code{closure_id} for a closure,
+#'   \code{reopening_id} for a reopening):
+#'   \code{git -C .checkpoint/repo log --fixed-strings --grep=<id>
+#'   --format=\%H main}. If a commit is found, set the entry's
+#'   \code{git_commit} in \code{.checkpoint/log.yml} to that commit, keep the
+#'   old value as \code{replayed_from}, then run \code{study_checkpoint_push()}
+#'   again. If no such commit exists, set the entry's \code{state} to
+#'   \code{"abandoned"} instead; an abandoned entry is never delivered.
+#'   \item \strong{Unnumbered tag clash} (two copies of the study each
+#'   recorded the same unnumbered tag, for example \code{workspace_created}).
+#'   The two copies have diverged. Keep one copy's \code{.checkpoint/}
+#'   directory, normally the one whose history is already on the remote,
+#'   move the other copy's \code{.checkpoint/} aside, and run
+#'   \code{study_checkpoint_push()} again from the kept copy.
+#' }
+#'
 #' @seealso \code{\link{study_checkpoint}}
 #'
 #' @export

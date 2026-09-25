@@ -251,6 +251,20 @@ patient information. There is no schema or redaction for now (decided
   `study_checkpoint()` call, retry every pending entry in log order. A tag the
   remote already has counts as delivered. The ST side is idempotent through the
   client-generated `checkpoint_id` (API spec §4.2).
+- **Manual repair.** Two failures stop delivery at a stuck entry rather than
+  resolving on retry, and each warning names the fix and points to
+  `?study_checkpoint_push`:
+  - **Not on main** (a log write was lost after a replay): find the commit on
+    `main` whose message carries the entry's id with
+    `git -C .checkpoint/repo log --fixed-strings --grep=<id> --format=%H main`,
+    set the entry's `git_commit` in `.checkpoint/log.yml` to that commit and
+    its `replayed_from` to the old value, then run `study_checkpoint_push()`;
+    or, if no such commit exists, set the entry's `state` to `abandoned`.
+  - **Unnumbered tag clash** (two copies each recorded the same unnumbered
+    tag, for example `workspace_created`): the copies have diverged; keep one
+    copy's `.checkpoint/` (normally the one whose history is on the remote),
+    move the other aside, and run `study_checkpoint_push()` again from the
+    kept copy.
 - **Divergence.** When the remote `main` has commits the local clone lacks
   (someone checkpointed from a second copy), the push is rejected as
   non-fast-forward. The core fetches and **replays** each unpushed snapshot on
@@ -447,3 +461,14 @@ push included, on all five platforms. Tests needing git skip with
    the study. Decide whether closure state should include remote tags.
    A first use while offline creates an empty clone, so the closure guards
    see no history until a fresh clone either.
+10. **Two sessions can both take over the same stale lock.** Each reads
+    `holder.yml`, judges it stale at the same instant, and deletes and
+    recreates the lock directory; both then believe they hold it. Narrowing
+    this is possible by re-reading `holder.yml` immediately before deleting
+    it and aborting if it changed; closing it fully needs an atomic rename
+    rather than a delete-then-create.
+11. **A long-running holder is not refreshed.** A session that runs past the
+    30-minute stale age, for example `verify_manifest()` hashing large
+    datasets over a share, never updates its lock's `time`, so it looks
+    stale and can be taken over by another session while it is still
+    working.

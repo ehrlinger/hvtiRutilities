@@ -157,11 +157,13 @@
   if (!is.null(orphan) && is.character(reason) &&
         endsWith(reason, " is not on main")) {
     repair <- paste0("The entry for ", orphan$tag, " needs manual repair of ",
-                     ".checkpoint/log.yml: its git_commit is not on main.")
+                     ".checkpoint/log.yml: its git_commit is not on main. ",
+                     "See ?study_checkpoint_push.")
   } else if (!is.null(clash) && is.character(reason) &&
                endsWith(reason, " is never renumbered")) {
     repair <- paste0("Another copy of the study already delivered ",
-                     clash$tag, "; reconcile the two copies by hand.")
+                     clash$tag, "; reconcile the two copies by hand. ",
+                     "See ?study_checkpoint_push.")
   }
   list(reason = reason, entries = entries, repair = repair)
 }
