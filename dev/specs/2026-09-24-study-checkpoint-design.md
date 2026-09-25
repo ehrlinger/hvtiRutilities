@@ -134,7 +134,10 @@ Selection runs three passes in order. **A deny always beats an allow.**
      `.git-credentials`, `tracker.env`, `id_rsa*`, `id_ed25519*`, `*.pem`,
      `*.key`, `*.p12`, `*.pfx`
    - symbolic links, whatever they point at: the selector never follows or
-     copies one, so nothing outside the study root can enter
+     copies one, so nothing outside the study root can enter. A path is a
+     link when it or a parent directory reads as one, or when it resolves
+     anywhere but its literal place under the root; the second test covers
+     Windows links and junctions, which `Sys.readlink()` cannot see
    - anywhere, including `50_documents/`: `.sas7bdat .xpt .parquet .rds .RData .csv .xlsx .xls .lst .log
      .rda .tsv .sav .dta .sas7bcat .feather .fst .qs .sqlite .db .zip .gz`
      (SAS `.lst` and `.log` echo data values, so they are data; `.zip` and

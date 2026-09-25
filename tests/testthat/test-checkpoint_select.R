@@ -94,6 +94,55 @@ test_that("symbolic links are denied and never followed", {
   expect_equal(sel$denied[["symlink"]], 2L)
 })
 
+# A directory link: a symlink, or on Windows a junction when symlinks need a
+# privilege the session lacks. NULL when neither can be made.
+make_dir_link <- function(target, link) {
+  ok <- suppressWarnings(file.symlink(target, link))
+  # Sys.junction() exists only in Windows builds of R, so it is looked up.
+  junction <- get0("Sys.junction", envir = baseenv(), mode = "function")
+  if (!isTRUE(ok) && !is.null(junction)) {
+    ok <- suppressWarnings(junction(target, link))
+  }
+  if (isTRUE(ok) && dir.exists(link)) link else NULL
+}
+
+test_that("a file reached through a directory link to outside the root is denied", {
+  root <- withr::local_tempdir()
+  outside <- withr::local_tempdir()
+  plant_files(outside, "inner.R")
+  plant_files(root, "30_analyses/fit.R")
+  link <- make_dir_link(outside, file.path(root, "30_analyses", "linkdir"))
+  if (is.null(link)) testthat::skip("could not create a directory link")
+  sel <- .cp_select(root, include = "**/*.R")
+  expect_equal(sel$files, "30_analyses/fit.R")
+  expect_equal(sel$denied[["symlink"]], 1L)
+})
+
+test_that("a link is denied even where Sys.readlink() cannot see it", {
+  # On Windows Sys.readlink() returns "" for links and junctions; the
+  # resolved-path comparison must catch them on its own.
+  root <- withr::local_tempdir()
+  outside <- withr::local_tempdir()
+  plant_files(outside, c("inner.R", "secret.R"))
+  plant_files(root, "30_analyses/fit.R")
+  link <- make_dir_link(outside, file.path(root, "30_analyses", "linkdir"))
+  if (is.null(link)) testthat::skip("could not create a directory link")
+  testthat::local_mocked_bindings(.cp_readlink = function(path) rep("", length(path)))
+  sel <- .cp_select(root, include = "**/*.R")
+  expect_equal(sel$files, "30_analyses/fit.R")
+  expect_equal(sel$denied[["symlink"]], 2L)
+})
+
+test_that("ordinary nested files and names with spaces are not taken for links", {
+  root <- withr::local_tempdir()
+  files <- c("30_analyses/fit.R", "30_analyses/sub model/deep dir/fit two.R",
+             "10_descriptive/a b/desc.sas", "renv.lock")
+  plant_files(root, files)
+  sel <- .cp_select(root)
+  expect_setequal(sel$files, files)
+  expect_equal(sel$denied[["symlink"]], 0L)
+})
+
 test_that("files over the size cap are skipped and reported", {
   root <- withr::local_tempdir()
   plant_files(root, "30_analyses/big.R", text = strrep("x", 200))

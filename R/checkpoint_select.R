@@ -31,19 +31,31 @@
     tolower(tools::file_ext(name)) %in% c("pem", "key", "p12", "pfx")
 }
 
+# Sys.readlink(), as a seam the tests can blank to act as Windows does.
+.cp_readlink <- function(path) Sys.readlink(path)
+
 # TRUE for each path whose file, or any parent directory below root, is a
 # symbolic link. list.files() follows linked directories, so every prefix is
-# checked, not just the file. On Windows Sys.readlink() returns "" and no
-# link is detected.
+# checked, not just the file. On Windows Sys.readlink() returns "" for links
+# and junctions, so a path is also denied, whatever the platform, when it
+# resolves anywhere but its literal place under root: fail closed.
 .cp_symlinked <- function(root, rel) {
   prefixes <- lapply(strsplit(rel, "/", fixed = TRUE), function(p) {
     vapply(seq_along(p), function(i) paste(p[seq_len(i)], collapse = "/"),
            character(1))
   })
   uniq <- unique(unlist(prefixes))
-  target <- Sys.readlink(file.path(root, uniq))
+  target <- .cp_readlink(file.path(root, uniq))
   linked <- uniq[!is.na(target) & nzchar(target)]
-  vapply(prefixes, function(p) any(p %in% linked), logical(1))
+  by_link <- vapply(prefixes, function(p) any(p %in% linked), logical(1))
+  literal <- file.path(normalizePath(root, winslash = "/"), rel)
+  resolved <- normalizePath(file.path(root, rel), winslash = "/",
+                            mustWork = FALSE)
+  if (.Platform$OS.type == "windows") {
+    literal <- tolower(literal)
+    resolved <- tolower(resolved)
+  }
+  by_link | resolved != literal
 }
 
 # The rule a relative path hits, or NA. The order is the precedence: tooling,
