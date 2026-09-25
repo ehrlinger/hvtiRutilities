@@ -201,6 +201,29 @@ test_that(".cp_reconcile removes an orphan commit left by a crash", {
   expect_true(first$commit %in% main_history)
 })
 
+test_that(".cp_reconcile peels stacked orphan commits from the top", {
+  skip_if_no_git()
+  local_git_env()
+  root <- make_checkpoint_study(withr::local_tempdir())
+  first <- study_checkpoint("abstract_submitted", root = root)
+  repo <- .cp_repo_path(root)
+  ids <- c(uuid::UUIDgenerate(), uuid::UUIDgenerate())
+  for (i in seq_along(ids)) {
+    writeLines(ids[i], file.path(repo, "orphan.txt"))
+    git_out(repo, c("add", "-A"))
+    git_out(repo, c("commit", "-q", "-m", ids[i]))
+    .cp_log_append(root, list(
+      type = "checkpoint", checkpoint_id = ids[i], st_id = 1267L,
+      kind = "abstract_submitted", tag = paste0("abstract_submitted-", i + 1L),
+      state = "committing", delivery = list(git = "pending", st = "pending")
+    ))
+  }
+  .cp_reconcile(root)
+  states <- vapply(.cp_log_read(root), function(e) e$state, character(1))
+  expect_equal(states, c("committed", "abandoned", "abandoned"))
+  expect_equal(.cp_head(repo), first$commit)
+})
+
 test_that("a tag succeeds but marking committed fails: rollback and abandon", {
   skip_if_no_git()
   local_git_env()

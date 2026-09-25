@@ -54,9 +54,11 @@
 }
 
 # Repair entries a crash left in state "committing". The tag message carries
-# the entry id, so a tag that names the id proves the commit happened: the
-# entry is completed from it. Otherwise the commit never happened and the
-# entry is abandoned, never to be delivered.
+# the entry id, so a tag that names the id proves the commit and tag both
+# happened: the entry is completed from it. Otherwise the entry is abandoned,
+# never to be delivered; the commit may still have landed without its tag,
+# which .cp_reconcile_orphan() removes from main. Entries are visited newest
+# first, so orphans stacked by successive crashes peel from the top.
 .cp_reconcile <- function(root) {
   log <- .cp_log_read(root)
   open <- which(vapply(log, function(e) identical(e$state, "committing"),
@@ -64,7 +66,7 @@
   if (!length(open)) return(invisible(log))
   repo <- .cp_repo_path(root)
   has_repo <- dir.exists(file.path(repo, ".git"))
-  for (i in open) {
+  for (i in rev(open)) {
     e <- log[[i]]
     sha <- NA_character_
     if (has_repo && !is.null(e$tag)) {
