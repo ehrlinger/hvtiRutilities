@@ -271,3 +271,36 @@ test_that("a replayed closure and its reopening move together to the remote", {
   }
   expect_equal(git_out(fx$bare, c("rev-parse", "main")), closure$git_commit)
 })
+
+test_that("an unnumbered tag the remote already holds is never renumbered", {
+  skip_if_no_git()
+  local_git_env()
+  dir <- withr::local_tempdir()
+  root <- make_checkpoint_study(dir)
+  bare <- make_bare_remote(dir)
+  study_checkpoint("workspace_created", root = root)
+  other <- file.path(dir, "other")
+  git_out(dir, c("clone", "-q", bare, other))
+  git_out(other, c("checkout", "-q", "-b", "main"))
+  plant_files(other, "other.R")
+  git_out(other, c("add", "-A"))
+  git_out(other, c("commit", "-q", "-m", "other copy"))
+  git_out(other, c("tag", "-a", "workspace_created", "-m", "other"))
+  git_out(other, c("push", "-q", "origin", "main", "refs/tags/workspace_created"))
+  remote_tag <- git_out(bare, c("rev-parse", "workspace_created^{commit}"))
+  set_study_keys(root, checkpoint = list(remote = bare))
+
+  w <- expect_warning(study_checkpoint_push(root),
+                      "workspace_created is already on the remote")
+  expect_no_match(conditionMessage(w), "retry")
+  e <- .cp_log_read(root)[[1]]
+  expect_equal(e$delivery$git, "pending")
+  expect_equal(e$tag, "workspace_created")
+  expect_null(e$renumbered_from)
+  expect_match(e$delivery$reason, "unnumbered")
+  expect_equal(git_out(bare, c("tag", "-l")), "workspace_created")
+  expect_equal(git_out(bare, c("rev-parse", "workspace_created^{commit}")),
+               remote_tag)
+  expect_false(any(grepl("^workspace_created-",
+                         git_out(.cp_repo_path(root), c("tag", "-l")))))
+})

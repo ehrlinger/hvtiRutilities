@@ -68,12 +68,16 @@
 
 # The entry as it should be once its local tag matches the log: renumbered
 # when it collides with a remote tag. NULL when the local tag already names
-# the entry's commit and nothing collides.
+# the entry's commit and nothing collides. An unnumbered tag
+# (workspace_created) has no number to advance, so a collision returns
+# list(clash = TRUE) and the entry stays pending rather than becoming
+# workspace_created-1.
 .cp_retag_plan <- function(entry, repo) {
   if (is.null(entry$tag) || is.null(entry$git_commit)) return(NULL)
   collides <- .cp_collides(repo, entry)
   local <- .cp_commit_of(repo, paste0("refs/tags/", entry$tag))
   if (!collides && identical(local, entry$git_commit)) return(NULL)
+  if (collides && !grepl("-[0-9]+$", entry$tag)) return(list(clash = TRUE))
   if (collides) {
     entry$renumbered_from <- entry$tag
     entry$tag <- .cp_renumber(repo, entry$tag)
@@ -109,10 +113,11 @@
   probe <- .cp_remote_probe(repo)
   if (!probe$reachable) {
     return(list(reason = paste("remote unreachable:", .cp_last(probe$out)),
-                entries = entries, orphan = NULL))
+                entries = entries, repair = NULL))
   }
   refspecs <- "+refs/tags/*:refs/remote-tags/*"
   orphan <- NULL
+  clash <- NULL
   if (probe$has_main) {
     refspecs <- c("+refs/heads/main:refs/remotes/origin/main", refspecs)
   }
@@ -127,24 +132,38 @@
       }
       planned <- .cp_retag_plan(entries[[i]], repo)
       if (is.null(planned)) next
+      if (isTRUE(planned$clash)) {
+        clash <- entries[[i]]
+        break
+      }
       old_tag <- entries[[i]]$tag
       entries[[i]] <- planned
       .cp_retag(repo, old_tag, planned)
     }
     persist(entries)
-    if (is.null(orphan)) {
-      .cp_push_refs(repo, entries)
-    } else {
+    if (!is.null(orphan)) {
       paste0("commit ", orphan$git_commit, " of ", orphan$tag,
              " is not on main")
+    } else if (!is.null(clash)) {
+      paste0("tag ", clash$tag, " is already on the remote on another ",
+             "commit, and an unnumbered tag is never renumbered")
+    } else {
+      .cp_push_refs(repo, entries)
     }
   }, error = function(e) conditionMessage(e))
-  # The orphan's tag only when its reason is the one reported, not an error
-  # raised after it was found.
-  backstop <- !is.null(orphan) && is.character(reason) &&
-    endsWith(reason, " is not on main")
-  list(reason = reason, entries = entries,
-       orphan = if (backstop) orphan$tag)
+  # Neither stop heals on a retry, so each carries its own advice; only when
+  # its reason is the one reported, not an error raised after it was found.
+  repair <- NULL
+  if (!is.null(orphan) && is.character(reason) &&
+        endsWith(reason, " is not on main")) {
+    repair <- paste0("The entry for ", orphan$tag, " needs manual repair of ",
+                     ".checkpoint/log.yml: its git_commit is not on main.")
+  } else if (!is.null(clash) && is.character(reason) &&
+               endsWith(reason, " is never renumbered")) {
+    repair <- paste0("Another copy of the study already delivered ",
+                     clash$tag, "; reconcile the two copies by hand.")
+  }
+  list(reason = reason, entries = entries, repair = repair)
 }
 
 .cp_push_refs <- function(repo, entries) {
@@ -173,7 +192,7 @@
     identical(e$state, "committed") && identical(e$delivery$git, "pending")
   }, logical(1)))
   if (!length(pending)) return(invisible(log))
-  orphan <- NULL
+  repair <- NULL
   reason <- if (!study$verified) {
     "identity unverified"
   } else if (is.null(study$remote)) {
@@ -192,7 +211,7 @@
                          list(reason = conditionMessage(e), entries = log[pending])
                        })
     reason <- pushed$reason
-    orphan <- pushed$orphan
+    repair <- pushed$repair
     log[pending] <- pushed$entries
   }
   for (i in pending) {
@@ -206,14 +225,7 @@
             "study_checkpoint_push().")
   } else if (!is.null(reason) && reason != "no remote configured") {
     tags <- unlist(lapply(log[pending], function(e) e$tag))
-    # The not-on-main backstop does not heal on a retry: the log names a
-    # commit main no longer holds, so only a repaired log can move it.
-    advice <- if (is.null(orphan)) {
-      "Run study_checkpoint_push() to retry."
-    } else {
-      paste0("The entry for ", orphan, " needs manual repair of ",
-             ".checkpoint/log.yml: its git_commit is not on main.")
-    }
+    advice <- .cp_or(repair, "Run study_checkpoint_push() to retry.")
     warning(length(pending), " checkpoint(s) saved locally, not pushed (",
             paste(tags, collapse = ", "), "): ", reason, ". ", advice,
             call. = FALSE)
