@@ -2,11 +2,14 @@
 # interleave reconcile, snapshot and delivery on one outbox and one clone.
 # dir.create() is atomic: of two sessions creating .checkpoint/lock at once,
 # exactly one succeeds. The holder writes its user, pid and start time into
-# the lock, so a refusal can name it. A lock older than the stale age was
-# left by a crashed session and is taken over with a warning. study_status()
-# only reads and takes no lock.
+# the lock, so a refusal can name it. The holder refreshes that time between
+# phases (.cp_lock_touch()), so a lock whose time is older than the stale age
+# was left by a crashed session and is taken over with a warning.
+# study_status() only reads and takes no lock. Checkpoints run on the
+# server's local filesystem, never over an SMB mount, so dir.create() is
+# atomic here.
 
-.cp_lock_stale_mins <- function() 30
+.cp_lock_stale_mins <- function() 6 * 60
 
 .cp_lock_holder <- function(lock) {
   h <- tryCatch(yaml::read_yaml(file.path(lock, "holder.yml")),
@@ -52,6 +55,19 @@
                         time = .cp_utc(Sys.time()), token = token),
                    file.path(lock, "holder.yml"))
   list(lock = lock, token = token, created = created)
+}
+
+# Refresh the holder's time, so a long call is not judged stale while it is
+# still working. Only a lock this call still holds is touched: one taken over
+# as stale belongs to another session. Called between phases, not from a
+# timer, so one phase must finish within the stale age.
+.cp_lock_touch <- function(held) {
+  if (is.null(held)) return(invisible(FALSE))
+  h <- .cp_lock_holder(held$lock)
+  if (!identical(h$token, held$token)) return(invisible(FALSE))
+  h$time <- .cp_utc(Sys.time())
+  yaml::write_yaml(h, file.path(held$lock, "holder.yml"))
+  invisible(TRUE)
 }
 
 # Release only a lock this call still holds: a lock taken over as stale now

@@ -180,7 +180,8 @@ study_close <- function(outcome, reason = NULL, publication = NULL,
     n <- if (length(tags)) max(.cp_seq_of(tags)) + 1L else 1L
     paste0("closed-", outcome, "-", n)
   }
-  snap <- .cp_snapshot(root, study, tag_fn, entry, "study_close")
+  snap <- .cp_snapshot(root, study, tag_fn, entry, "study_close", held)
+  .cp_lock_touch(held)
   .cp_deliver(root, study)
   invisible(.cp_result(.cp_or(.cp_log_find(root, entry$closure_id),
                               snap$entry), snap))
@@ -231,6 +232,7 @@ study_reopen <- function(reason, new_lead = NULL, reopened_at = Sys.Date(),
   tagged <- TRUE
   entry <- .cp_log_update(root, id, list(state = "committed", git_commit = sha))
   done <- TRUE
+  .cp_lock_touch(held)
   .cp_deliver(root, study)
   invisible(.cp_result(.cp_or(.cp_log_find(root, id), entry), NULL))
 }

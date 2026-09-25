@@ -233,10 +233,14 @@ patient information. There is no schema or redaction for now (decided
   `study_reopen()`) takes an exclusive lock, the directory
   `.checkpoint/lock` (`dir.create()` is atomic), before it reconciles, and
   releases it on exit, including on error. The holder writes its user, pid
-  and start time into the lock. A lock held by another session for less than
-  30 minutes is an error that names the holder and says to retry; an older one
-  was left by a crashed session and is taken over with a warning.
-  `study_status()` only reads and takes no lock.
+  and start time into the lock, and refreshes that time between phases:
+  after selection, after `CHECKPOINT.yml`, after the commit and tag, and
+  before delivery (only while the lock's token is still its own). A lock
+  whose time is less than 6 hours old is an error that names the holder and
+  says to retry; an older one was left by a crashed session and is taken
+  over with a warning. `study_status()` only reads and takes no lock.
+  Checkpoints run on the server's local filesystem, never over an SMB mount,
+  so `dir.create()` is atomic and the lock's time is the server's clock.
 
 - **Steps 1 to 5 are all-or-nothing, and a crash between them is
   reconciled.** A failure before step 4 leaves nothing. At the start of every
@@ -467,8 +471,12 @@ push included, on all five platforms. Tests needing git skip with
     this is possible by re-reading `holder.yml` immediately before deleting
     it and aborting if it changed; closing it fully needs an atomic rename
     rather than a delete-then-create.
-11. **A long-running holder is not refreshed.** A session that runs past the
-    30-minute stale age, for example `verify_manifest()` hashing large
-    datasets over a share, never updates its lock's `time`, so it looks
-    stale and can be taken over by another session while it is still
-    working.
+11. ✅ RESOLVED 2026-09-25 (PR #151 review). **A long-running holder is not
+    refreshed.** A session that ran past the old 30-minute stale age, for
+    example `verify_manifest()` hashing large datasets, never updated its
+    lock's `time`, so it looked stale and could be taken over while still
+    working. Resolved by `.cp_lock_touch()`, which rewrites the holder's
+    time between phases (after selection, after `CHECKPOINT.yml`, after the
+    commit and tag, before delivery) while the token still matches, and by
+    raising the stale age to 6 hours (section 6.1). A single phase must still
+    finish within the stale age.

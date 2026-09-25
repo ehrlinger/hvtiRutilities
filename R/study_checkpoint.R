@@ -91,10 +91,11 @@
 # `tag_fn(repo)` names the tag, so checkpoints, closures and the unnumbered
 # workspace_created share one transaction. Any failure puts the repository
 # back as it was and, once the entry exists, marks it abandoned.
-.cp_snapshot <- function(root, study, tag_fn, entry, caller) {
+.cp_snapshot <- function(root, study, tag_fn, entry, caller, held = NULL) {
   repo <- .cp_repo_init(root, study$remote)
   tag <- tag_fn(repo)
   sel <- .cp_select(root, study$include)
+  .cp_lock_touch(held)
   if (nrow(sel$skipped)) {
     warning(caller, "(): skipped over the 50 MB cap: ",
             paste(sel$skipped$path, collapse = ", "), call. = FALSE)
@@ -114,6 +115,7 @@
   entry$tag <- tag
   .cp_sync_tree(repo, root, sel$files)
   .cp_write_meta(repo, root, entry, sel)
+  .cp_lock_touch(held)
   entry$state <- "committing"
   entry$delivery$git <- "pending"
   .cp_log_append(root, entry)
@@ -121,6 +123,7 @@
   sha <- .cp_commit_tag(repo, tag, .cp_tag_message(entry))
   entry <- .cp_log_update(root, id, list(state = "committed", git_commit = sha))
   done <- TRUE
+  .cp_lock_touch(held)
   list(entry = entry, selection = sel, repo = repo)
 }
 
@@ -184,8 +187,10 @@
 #' \code{\link{study_close}} and \code{study_reopen()} hold the lock
 #' \code{.checkpoint/lock} while they run. A call that finds it held by
 #' another session stops, naming the holder; retry once that session has
-#' finished. A lock older than 30 minutes was left by a crashed session and
-#' is taken over with a warning.
+#' finished. The holder refreshes the lock between phases (selection, the
+#' snapshot's \code{CHECKPOINT.yml}, the commit and tag, delivery), so a lock
+#' not refreshed for 6 hours was left by a crashed session and is taken over
+#' with a warning.
 #'
 #' \code{note} and \code{attributes} are written to the snapshot, the tag and
 #' the outbox, so they leave the study folder. A message says so whenever
@@ -253,6 +258,7 @@ study_checkpoint <- function(kind, note = NULL, attributes = NULL,
     entry$state <- "recorded"
     .cp_log_append(root, entry)
     # Spec 6.1: every call retries pending deliveries, snapshot or not.
+    .cp_lock_touch(held)
     .cp_deliver(root, study)
     return(invisible(.cp_result(entry, NULL)))
   }
@@ -265,7 +271,8 @@ study_checkpoint <- function(kind, note = NULL, attributes = NULL,
     }
     kind
   }
-  snap <- .cp_snapshot(root, study, tag_fn, entry, "study_checkpoint")
+  snap <- .cp_snapshot(root, study, tag_fn, entry, "study_checkpoint", held)
+  .cp_lock_touch(held)
   .cp_deliver(root, study)
   final <- .cp_or(.cp_log_find(root, entry$checkpoint_id), snap$entry)
   if (identical(kind, "manuscript_published")) {
@@ -341,5 +348,6 @@ study_checkpoint_push <- function(root = study_root()) {
   on.exit(.cp_unlock(held), add = TRUE)
   .cp_reconcile(root)
   study <- .cp_study(root, "study_checkpoint_push")
+  .cp_lock_touch(held)
   invisible(.cp_log_frame(.cp_deliver(root, study)))
 }
