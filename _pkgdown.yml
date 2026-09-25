@@ -97,6 +97,7 @@ reference:
   - proc_means
   - proc_univariate
   - proc_freq
+  - followup_check
   - compare_datasets
 
 - title: Dataset Versioning
