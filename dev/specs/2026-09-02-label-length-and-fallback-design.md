@@ -255,6 +255,12 @@ label must not equal.
 
 #### 4.2.1 The study's list lives with the analysis set
 
+⚠️ **Superseded 2026-09-25 by `2026-09-25-study-abbreviations-design.md`**:
+a job reads the list live from `_study.yml` over a group default, and records it
+in its own provenance, rather than a snapshot in each analysis set's sidecar.
+The rule below that the list never rewrites stored labels still holds. The rest
+of this section is kept as history.
+
 Decided 2026-09-24: a study keeps its own abbreviation list, applied at the
 data subsetting step. `_study.yml` gains a top-level `abbreviations:` mapping.
 `hvtiRdatabuild::write_analysis_set()` snapshots it into the set's
