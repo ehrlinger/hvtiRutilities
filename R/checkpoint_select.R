@@ -9,7 +9,8 @@
 .cp_doc_ext  <- function() c("qmd", "bib")
 .cp_data_ext <- function() {
   c("sas7bdat", "xpt", "parquet", "rds", "rdata", "csv", "xlsx", "xls",
-    "lst", "log")
+    "lst", "log", "rda", "tsv", "sav", "dta", "sas7bcat", "feather", "fst",
+    "qs", "sqlite", "db", "zip", "gz")
 }
 .cp_output_ext <- function() c("html", "pdf", "docx", "pptx", "png", "tiff")
 .cp_always <- function() {

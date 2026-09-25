@@ -146,9 +146,10 @@
 #' reproducibility files) to a private git repository in
 #' \code{.checkpoint/repo/}, tags it with the checkpoint kind and a sequence
 #' number, records it in the outbox \code{.checkpoint/log.yml}, and pushes it
-#' when \code{_study.yml} names a remote. Data never enter the snapshot:
-#' \code{00_datasets/}, \code{90_estimates/}, credentials, symbolic links and
-#' data or output file types are always excluded. Files in
+#' when \code{_study.yml} names a remote. Known data formats, credentials and
+#' symbolic links are never committed, even through \code{include:} patterns,
+#' and neither is anything under \code{00_datasets/} or \code{90_estimates/}
+#' or an output file type. Files in
 #' \code{50_documents/} other than \code{.qmd} and \code{.bib} sources are not
 #' committed; \code{CHECKPOINT.yml} records their size and checksum.
 #'

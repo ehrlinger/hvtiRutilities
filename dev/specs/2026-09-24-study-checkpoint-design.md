@@ -135,8 +135,14 @@ Selection runs three passes in order. **A deny always beats an allow.**
      `*.key`, `*.p12`, `*.pfx`
    - symbolic links, whatever they point at: the selector never follows or
      copies one, so nothing outside the study root can enter
-   - anywhere, including `50_documents/`: `.sas7bdat .xpt .parquet .rds .RData .csv .xlsx .xls .lst .log`
-     (SAS `.lst` and `.log` echo data values, so they are data)
+   - anywhere, including `50_documents/`: `.sas7bdat .xpt .parquet .rds .RData .csv .xlsx .xls .lst .log
+     .rda .tsv .sav .dta .sas7bcat .feather .fst .qs .sqlite .db .zip .gz`
+     (SAS `.lst` and `.log` echo data values, so they are data; `.zip` and
+     `.gz` because an archive can hold any of the others). Extensions are
+     matched case-insensitively. `.txt`, `.dat` and `.json` are deliberately
+     not on the list: they are as often notes and configuration as data, and
+     none is on the allow-list, so one enters only through an `include:`
+     pattern the study chose.
    - `.html .pdf .docx .pptx .png .tiff` anywhere (outside `50_documents/`
      they are outputs; inside it they are recorded by checksum, D9)
 3. **Size cap:** a file over 50 MB is skipped with a warning that names it.

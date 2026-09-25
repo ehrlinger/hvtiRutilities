@@ -15,8 +15,10 @@
   identity and reproducibility files) to a private repository in
   `.checkpoint/repo/`, tags it with a StudyTracker checkpoint kind such as
   `manuscript_submitted-1`, records it in the outbox `.checkpoint/log.yml`,
-  and pushes it when `_study.yml` names a `checkpoint: remote:`. Data,
-  credentials and symbolic links never enter the snapshot. Files in
+  and pushes it when `_study.yml` names a `checkpoint: remote:`. Known data
+  formats, credentials and symbolic links are never committed, even through
+  `include:` patterns, and neither is anything under `00_datasets/` or
+  `90_estimates/`. Files in
   `50_documents/` other than `.qmd` and `.bib` sources are not committed
   either: `CHECKPOINT.yml` records each one's size and checksum, so a tag
   still names the exact document that was submitted. A checkpoint is

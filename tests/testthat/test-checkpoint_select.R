@@ -42,6 +42,19 @@ test_that("include patterns admit extra files but cannot admit data", {
   expect_equal(sel$files, "30_analyses/notes.txt")
 })
 
+test_that("include patterns cannot admit any known data format", {
+  root <- withr::local_tempdir()
+  ext <- c("rda", "tsv", "sav", "dta", "sas7bcat", "feather", "fst", "qs",
+           "sqlite", "db", "zip", "gz", "RDA", "Zip")
+  # Distinct stems, so a case-insensitive file system keeps data.rda and
+  # data.RDA apart.
+  data <- paste0("30_analyses/data", seq_along(ext), ".", ext)
+  plant_files(root, c(data, "30_analyses/notes.txt"))
+  sel <- .cp_select(root, include = c("*", "**/*", paste0("*.", ext)))
+  expect_equal(sel$files, "30_analyses/notes.txt")
+  expect_equal(sel$denied[["data_extension"]], length(ext))
+})
+
 test_that("legacy folder spellings get the same rules", {
   root <- withr::local_tempdir()
   plant_files(root, c("datasets/built.csv", "estimates/fit.R",
