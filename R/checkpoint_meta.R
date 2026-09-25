@@ -19,9 +19,10 @@
 
 # verify_manifest() runs against the source study: the snapshot holds no
 # data. Its warnings are recorded and still reach the caller (the calling
-# handler does not muffle them). An entry without n_rows is reported OK
-# although its rows were never counted; it is recorded as "unchecked". A
-# mismatch never blocks the checkpoint.
+# handler does not muffle them). An entry verify_manifest() passes without
+# counting its rows (no n_rows recorded, or a file type it cannot count) is
+# recorded as "unchecked", read from its own row_count_checked column; FAIL
+# stays FAIL. A mismatch never blocks the checkpoint.
 .cp_manifest_check <- function(root) {
   path <- file.path(root, "manifest.yaml")
   if (!file.exists(path)) return(NULL)
@@ -42,13 +43,10 @@
     warning(msg, call. = FALSE)
     return(list(error = msg))
   }
-  status <- structure(as.list(report$status), names = report$file)
-  for (d in .cp_or(yaml::read_yaml(path)$datasets, list())) {
-    if (is.null(d$n_rows) && identical(status[[d$file]], "OK")) {
-      status[[d$file]] <- "unchecked"
-    }
-  }
-  list(datasets = status, warnings = seen$warnings)
+  status <- ifelse(report$status == "OK" & !report$row_count_checked,
+                   "unchecked", report$status)
+  list(datasets = structure(as.list(status), names = report$file),
+       warnings = seen$warnings)
 }
 
 .cp_write_meta <- function(repo, root, entry, selection) {

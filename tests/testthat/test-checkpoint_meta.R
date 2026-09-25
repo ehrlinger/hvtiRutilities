@@ -52,6 +52,25 @@ test_that("a manifest entry without n_rows is recorded as unchecked", {
   expect_identical(res$warnings, character(0))
 })
 
+test_that("an entry whose row count cannot be checked is recorded as unchecked", {
+  root <- withr::local_tempdir()
+  plant_files(root, c("00_datasets/built.parquet", "00_datasets/rows.csv"))
+  sha <- function(f) digest::digest(file.path(root, "00_datasets", f),
+                                    algo = "sha256", file = TRUE)
+  yaml::write_yaml(
+    list(datasets = list(
+      list(file = "built.parquet", extract_date = "2026-09-01", n_rows = 1L,
+           sha256 = sha("built.parquet"), role = "source"),
+      list(file = "rows.csv", extract_date = "2026-09-01", n_rows = 0L,
+           sha256 = sha("rows.csv"), role = "source")
+    )),
+    file.path(root, "manifest.yaml")
+  )
+  res <- .cp_manifest_check(root)
+  expect_equal(res$datasets[["built.parquet"]], "unchecked")
+  expect_equal(res$datasets[["rows.csv"]], "OK")
+})
+
 test_that("a manifest mismatch in the source study warns and is recorded", {
   root <- withr::local_tempdir()
   plant_files(root, "datasets/built.csv")
