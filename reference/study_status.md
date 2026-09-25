@@ -17,6 +17,15 @@ against Study Tracker (`identity_verified: false`) is reported
 `"UNVERIFIED"`. A manifest without the field is a Tracker identity and
 is reported `"OK"`.
 
+A study that has been checkpointed (it has a `.checkpoint/` directory)
+adds a `checkpoints` row: `"OK"` when every checkpoint, closure and
+reopening has reached the remote, or `"PENDING"` when some are saved
+locally and not yet pushed. Its detail counts the recorded events, names
+the last tag, and counts those not yet pushed or not yet in ST. A closed
+study then adds a `closure` row with status `"CLOSED"` and the outcome
+and date of the latest closure; see
+[`study_close`](https://ehrlinger.github.io/hvtiRutilities/reference/study_close.md).
+
 Release-aware datasets add an `update:<dataset>` row with status
 `"CURRENT"`, `"UPDATE AVAILABLE"`, `"UPDATE STATUS UNKNOWN"`, or
 `"FAIL"`. Legacy studies retain the five base rows and their existing
@@ -53,11 +62,12 @@ study_status(root = getwd())
 
 An object of class `"study_status"`: a list with `root`, `checks` (a
 data frame of `item`, `status` – `"OK"`, `"MISSING"`, `"FAIL"`,
-`"UNVERIFIED"`, `"CURRENT"`, `"UPDATE AVAILABLE"`, or
-`"UPDATE STATUS UNKNOWN"` – and `detail`). The five base rows are
-followed by release-aware update rows and by dataset and update rows for
-each named dataset. `counts` lists `r_files`, `qmd`, `sas_jobs` and
-`sidecars`.
+`"UNVERIFIED"`, `"CURRENT"`, `"UPDATE AVAILABLE"`,
+`"UPDATE STATUS UNKNOWN"`, `"PENDING"`, or `"CLOSED"` – and `detail`).
+The five base rows are followed by release-aware update rows, by dataset
+and update rows for each named dataset, and by the `checkpoints` and
+`closure` rows when they apply. `counts` lists `r_files`, `qmd`,
+`sas_jobs` and `sidecars`.
 
 ## See also
 
@@ -70,7 +80,7 @@ each named dataset. `counts` lists `r_files`, `qmd`, `sas_jobs` and
 root <- file.path(tempdir(), "study-status-example")
 dir.create(root, showWarnings = FALSE)
 study_status(root)
-#> Study: /tmp/Rtmpozcbs3/study-status-example
+#> Study: /tmp/RtmpLzehMQ/study-status-example
 #> 
 #> [ ] _study.yml — no _study.yml at this root; recovery may be available with study-setup --recover; if its Tracker ID cannot be inferred, run study-setup 42 --recover
 #> [ ] renv.lock — no renv.lock; run renv::init() in the study project

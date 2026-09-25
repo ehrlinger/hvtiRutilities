@@ -106,7 +106,10 @@ files would otherwise be counted twice under two study labels.</p></dd>
     <p><strong>Nothing is filtered out.</strong> Placement and classification are columns,
 not reasons to drop a row, so a file this sweep cannot classify stays
 findable. A sweep that reports only what it kept makes a missing job
-indistinguishable from a job that does not exist.</p>
+indistinguishable from a job that does not exist. The one exception is
+tooling: a path with a <code>.git</code> or <code>.checkpoint</code> component holds
+version-control internals or a study checkpoint's mirror, not study files,
+and is not listed.</p>
 <p>A legacy prefix listed in <code><a href="hvti_prefix_folds.html">hvti_prefix_folds</a></code> is reported as
 the prefix it folds into, so a <code>pm.*</code> file counts as <code>lm</code>.
 <code>stem</code> keeps the name as written, so a folded file stays findable.</p>

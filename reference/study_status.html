@@ -13,6 +13,14 @@ A _study.yml whose identity was entered by hand and not yet
 confirmed against Study Tracker (identity_verified: false) is
 reported &quot;UNVERIFIED&quot;. A manifest without the field is a Tracker
 identity and is reported &quot;OK&quot;.
+A study that has been checkpointed (it has a .checkpoint/
+directory) adds a checkpoints row: &quot;OK&quot; when every
+checkpoint, closure and reopening has reached the remote, or
+&quot;PENDING&quot; when some are saved locally and not yet pushed. Its detail
+counts the recorded events, names the last tag, and counts those not yet
+pushed or not yet in ST. A closed study then adds a closure row with
+status &quot;CLOSED&quot; and the outcome and date of the latest closure; see
+study_close.
 Release-aware datasets add an update:&amp;lt;dataset&amp;gt; row with status
 &quot;CURRENT&quot;, &quot;UPDATE AVAILABLE&quot;,
 &quot;UPDATE STATUS UNKNOWN&quot;, or &quot;FAIL&quot;. Legacy studies retain
@@ -39,6 +47,14 @@ A _study.yml whose identity was entered by hand and not yet
 confirmed against Study Tracker (identity_verified: false) is
 reported &quot;UNVERIFIED&quot;. A manifest without the field is a Tracker
 identity and is reported &quot;OK&quot;.
+A study that has been checkpointed (it has a .checkpoint/
+directory) adds a checkpoints row: &quot;OK&quot; when every
+checkpoint, closure and reopening has reached the remote, or
+&quot;PENDING&quot; when some are saved locally and not yet pushed. Its detail
+counts the recorded events, names the last tag, and counts those not yet
+pushed or not yet in ST. A closed study then adds a closure row with
+status &quot;CLOSED&quot; and the outcome and date of the latest closure; see
+study_close.
 Release-aware datasets add an update:&amp;lt;dataset&amp;gt; row with status
 &quot;CURRENT&quot;, &quot;UPDATE AVAILABLE&quot;,
 &quot;UPDATE STATUS UNKNOWN&quot;, or &quot;FAIL&quot;. Legacy studies retain
@@ -123,6 +139,14 @@ unreadable on exactly the legacy studies it is most needed for.</p>
 confirmed against Study Tracker (<code>identity_verified: false</code>) is
 reported <code>"UNVERIFIED"</code>. A manifest without the field is a Tracker
 identity and is reported <code>"OK"</code>.</p>
+<p>A study that has been checkpointed (it has a <code>.checkpoint/</code>
+directory) adds a <code>checkpoints</code> row: <code>"OK"</code> when every
+checkpoint, closure and reopening has reached the remote, or
+<code>"PENDING"</code> when some are saved locally and not yet pushed. Its detail
+counts the recorded events, names the last tag, and counts those not yet
+pushed or not yet in ST. A closed study then adds a <code>closure</code> row with
+status <code>"CLOSED"</code> and the outcome and date of the latest closure; see
+<code><a href="study_close.html">study_close</a></code>.</p>
 <p>Release-aware datasets add an <code>update:&lt;dataset&gt;</code> row with status
 <code>"CURRENT"</code>, <code>"UPDATE AVAILABLE"</code>,
 <code>"UPDATE STATUS UNKNOWN"</code>, or <code>"FAIL"</code>. Legacy studies retain
@@ -157,9 +181,11 @@ rather than silent.</p>
   <code>checks</code> (a data frame of <code>item</code>, <code>status</code> –
   <code>"OK"</code>, <code>"MISSING"</code>, <code>"FAIL"</code>, <code>"UNVERIFIED"</code>,
   <code>"CURRENT"</code>,
-  <code>"UPDATE AVAILABLE"</code>, or <code>"UPDATE STATUS UNKNOWN"</code> – and
+  <code>"UPDATE AVAILABLE"</code>, <code>"UPDATE STATUS UNKNOWN"</code>,
+  <code>"PENDING"</code>, or <code>"CLOSED"</code> – and
   <code>detail</code>). The five base rows are followed by release-aware update
-  rows and by dataset and update rows for each named dataset.
+  rows, by dataset and update rows for each named dataset, and by the
+  <code>checkpoints</code> and <code>closure</code> rows when they apply.
   <code>counts</code> lists <code>r_files</code>, <code>qmd</code>,
   <code>sas_jobs</code> and <code>sidecars</code>.</p>
     </div>
@@ -173,7 +199,7 @@ rather than silent.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">root</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"study-status-example"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="va">root</span>, showWarnings <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">study_status</span><span class="op">(</span><span class="va">root</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Study: /tmp/Rtmpozcbs3/study-status-example</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Study: /tmp/RtmpLzehMQ/study-status-example</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [ ] _study.yml — no _study.yml at this root; recovery may be available with study-setup --recover; if its Tracker ID cannot be inferred, run study-setup 42 --recover</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [ ] renv.lock — no renv.lock; run renv::init() in the study project</span>

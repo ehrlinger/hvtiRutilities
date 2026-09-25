@@ -42,7 +42,10 @@ roots hold no files.
 **Nothing is filtered out.** Placement and classification are columns,
 not reasons to drop a row, so a file this sweep cannot classify stays
 findable. A sweep that reports only what it kept makes a missing job
-indistinguishable from a job that does not exist.
+indistinguishable from a job that does not exist. The one exception is
+tooling: a path with a `.git` or `.checkpoint` component holds
+version-control internals or a study checkpoint's mirror, not study
+files, and is not listed.
 
 A legacy prefix listed in
 [`hvti_prefix_folds`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_prefix_folds.md)

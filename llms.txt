@@ -324,6 +324,19 @@ ready
 - [`preflight_report()`](https://ehrlinger.github.io/hvtiRutilities/reference/preflight_report.md)
   : Audit the analysis environment before running an analysis
 
+## Study Checkpoints
+
+Snapshot a study’s code at each checkpoint, record its documents by
+checksum, and record its closure
+
+- [`study_checkpoint()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checkpoint.md)
+  : Record a study checkpoint
+- [`study_checkpoint_push()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checkpoint_push.md)
+  : Push pending study checkpoints
+- [`study_close()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_close.md)
+  [`study_reopen()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_close.md)
+  : Close or reopen a study
+
 ## Study Manifest and Data Contract
 
 Locate a study from its `_study.yml`, resolve its paths, and read and

@@ -3,8 +3,8 @@
 Turns a
 [`study_status`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md)
 result into markdown: one checkbox per check, ticked where the check
-passed and left open otherwise, with the detail alongside. File counts
-follow.
+passed (`"OK"`) or the study is closed (`"CLOSED"`) and left open
+otherwise, with the detail alongside. File counts follow.
 
 ## Usage
 
@@ -44,7 +44,7 @@ dir.create(root, showWarnings = FALSE)
 cat(study_checklist(study_status(root)), sep = "\n")
 #> # Study readiness
 #> 
-#> Study root: `/tmp/Rtmpozcbs3/study-checklist-example`
+#> Study root: `/tmp/RtmpLzehMQ/study-checklist-example`
 #> 
 #> ## Checks
 #> 
