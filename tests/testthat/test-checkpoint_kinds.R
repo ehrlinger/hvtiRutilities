@@ -48,3 +48,20 @@ test_that("a live row overrides only the fields it names", {
   expect_true(adhoc$numbered)
   expect_false(adhoc$retired)
 })
+
+test_that("an explicit null field in a live row keeps the base value", {
+  root <- withr::local_tempdir()
+  dir.create(file.path(root, ".checkpoint"))
+  writeLines(c("- kind: data_received",
+               "  trigger: null",
+               "  numbered: ~",
+               "- kind: workspace_created",
+               "  retired: null"),
+             file.path(root, ".checkpoint", "kinds.yml"))
+  kinds <- .cp_kinds(root)
+  expect_equal(nrow(kinds), 12L)
+  expect_equal(kinds$trigger[kinds$kind == "data_received"], "auto")
+  expect_true(kinds$numbered[kinds$kind == "data_received"])
+  expect_false(kinds$numbered[kinds$kind == "workspace_created"])
+  expect_false(kinds$retired[kinds$kind == "workspace_created"])
+})
