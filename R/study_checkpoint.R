@@ -180,6 +180,13 @@
 #' unreachable remote never loses one; \code{\link{study_checkpoint_push}}
 #' retries later.
 #'
+#' One session at a time: this function, \code{\link{study_checkpoint_push}},
+#' \code{\link{study_close}} and \code{study_reopen()} hold the lock
+#' \code{.checkpoint/lock} while they run. A call that finds it held by
+#' another session stops, naming the holder; retry once that session has
+#' finished. A lock older than 30 minutes was left by a crashed session and
+#' is taken over with a warning.
+#'
 #' \code{note} and \code{attributes} are written to the snapshot, the tag and
 #' the outbox, so they leave the study folder. A message says so whenever
 #' either is given: they must not contain patient information.
