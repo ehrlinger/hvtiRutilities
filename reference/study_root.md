@@ -36,6 +36,6 @@ yaml::write_yaml(
   file.path(root, "_study.yml")
 )
 study_root(root)
-#> [1] "/tmp/RtmpHq0KQh/study-root-example"
+#> [1] "/tmp/RtmpajEIzn/study-root-example"
 unlink(root, recursive = TRUE)
 ```
