@@ -109,9 +109,10 @@
   probe <- .cp_remote_probe(repo)
   if (!probe$reachable) {
     return(list(reason = paste("remote unreachable:", .cp_last(probe$out)),
-                entries = entries))
+                entries = entries, orphan = NULL))
   }
   refspecs <- "+refs/tags/*:refs/remote-tags/*"
+  orphan <- NULL
   if (probe$has_main) {
     refspecs <- c("+refs/heads/main:refs/remotes/origin/main", refspecs)
   }
@@ -119,7 +120,6 @@
     .cp_git_do(repo, c("fetch", "-q", "--no-tags", "origin", refspecs))
     map <- if (probe$has_main) .cp_replay(repo) else character(0)
     entries <- lapply(entries, .cp_apply_map, map = map)
-    orphan <- NULL
     for (i in seq_along(entries)) {
       if (!.cp_on_main(repo, entries[[i]])) {
         orphan <- entries[[i]]
@@ -139,7 +139,12 @@
              " is not on main")
     }
   }, error = function(e) conditionMessage(e))
-  list(reason = reason, entries = entries)
+  # The orphan's tag only when its reason is the one reported, not an error
+  # raised after it was found.
+  backstop <- !is.null(orphan) && is.character(reason) &&
+    endsWith(reason, " is not on main")
+  list(reason = reason, entries = entries,
+       orphan = if (backstop) orphan$tag)
 }
 
 .cp_push_refs <- function(repo, entries) {
@@ -168,6 +173,7 @@
     identical(e$state, "committed") && identical(e$delivery$git, "pending")
   }, logical(1)))
   if (!length(pending)) return(invisible(log))
+  orphan <- NULL
   reason <- if (!study$verified) {
     "identity unverified"
   } else if (is.null(study$remote)) {
@@ -186,6 +192,7 @@
                          list(reason = conditionMessage(e), entries = log[pending])
                        })
     reason <- pushed$reason
+    orphan <- pushed$orphan
     log[pending] <- pushed$entries
   }
   for (i in pending) {
@@ -199,9 +206,17 @@
             "study_checkpoint_push().")
   } else if (!is.null(reason) && reason != "no remote configured") {
     tags <- unlist(lapply(log[pending], function(e) e$tag))
+    # The not-on-main backstop does not heal on a retry: the log names a
+    # commit main no longer holds, so only a repaired log can move it.
+    advice <- if (is.null(orphan)) {
+      "Run study_checkpoint_push() to retry."
+    } else {
+      paste0("The entry for ", orphan, " needs manual repair of ",
+             ".checkpoint/log.yml: its git_commit is not on main.")
+    }
     warning(length(pending), " checkpoint(s) saved locally, not pushed (",
-            paste(tags, collapse = ", "), "): ", reason,
-            ". Run study_checkpoint_push() to retry.", call. = FALSE)
+            paste(tags, collapse = ", "), "): ", reason, ". ", advice,
+            call. = FALSE)
   }
   invisible(log)
 }

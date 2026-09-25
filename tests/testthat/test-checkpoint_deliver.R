@@ -209,7 +209,12 @@ test_that("a log lost before its write never lets a retry push an orphan", {
   expect_warning(study_checkpoint_push(fx$root), "tag push rejected")
   writeLines(before, log_path)  # an interrupt before any log write
 
-  expect_warning(study_checkpoint_push(fx$root), "not on main")
+  w <- expect_warning(study_checkpoint_push(fx$root), "not on main")
+  expect_match(conditionMessage(w), paste0(
+    "data_request_submitted-[0-9]+ needs manual repair of ",
+    "[.]checkpoint/log[.]yml"
+  ))
+  expect_no_match(conditionMessage(w), "retry")
   e <- .cp_log_read(fx$root)[[1]]
   expect_equal(e$delivery$git, "pending")
   expect_equal(e$git_commit, fx$local_cp$commit)
