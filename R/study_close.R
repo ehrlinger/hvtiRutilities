@@ -8,7 +8,7 @@
 .cp_outcomes <- function() c("published", "not_published", "superseded", "abandoned")
 
 .cp_closure_counts <- function(repo) {
-  if (!dir.exists(file.path(repo, ".git"))) return(c(closed = 0L, reopened = 0L))
+  if (!.cp_has_repo(repo)) return(c(closed = 0L, reopened = 0L))
   tags <- .cp_git_do(repo, c("tag", "-l"))
   c(closed = sum(grepl("^closed-[a-z_]+-[0-9]+$", tags)),
     reopened = sum(grepl("^reopened-[0-9]+$", tags)))
@@ -40,7 +40,7 @@
 # manuscript_published checkpoint, so nothing needs creating to answer.
 .cp_check_published_tag <- function(root) {
   repo <- .cp_repo_path(root)
-  has <- dir.exists(file.path(repo, ".git")) &&
+  has <- .cp_has_repo(repo) &&
     length(.cp_tags(repo, "^manuscript_published-[0-9]+$")) > 0L
   if (!has) {
     stop("study_close(): outcome 'published' needs a manuscript_published ",

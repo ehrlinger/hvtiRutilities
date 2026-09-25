@@ -38,6 +38,24 @@
 # that is not there.
 .cp_repo_path <- function(root) file.path(root, ".checkpoint", "repo")
 
+# TRUE when `repo` holds a git repository, FALSE when it has no .git. A .git
+# that git does not recognise (on Windows, what a failed delete leaves: git
+# writes its objects read-only and unlink() cannot remove them) stops here
+# rather than as a raw git error later. The git dir must be repo's own, not a
+# parent repository's that git found by walking up.
+.cp_has_repo <- function(repo) {
+  if (!dir.exists(file.path(repo, ".git"))) return(FALSE)
+  res <- .cp_git(repo, c("rev-parse", "--git-dir"))
+  if (!res$ok || !identical(res$out[1], ".git")) {
+    stop(".checkpoint/repo is not a valid git repository: its .git directory ",
+         "is incomplete. Delete .checkpoint/repo and run again; the next ",
+         "checkpoint recreates it, from the remote when one is set. On Windows, ",
+         "clear the read-only attribute on its files first (git writes them ",
+         "read-only), or the delete leaves them behind.", call. = FALSE)
+  }
+  TRUE
+}
+
 # Keep origin pointed at the remote _study.yml names, which qhsprograms may
 # write after the first local checkpoint.
 .cp_set_remote <- function(repo, remote) {
@@ -62,7 +80,7 @@
 # re-cloned or second copy), start from it so tag numbers continue.
 .cp_repo_init <- function(root, remote = NULL) {
   repo <- .cp_repo_path(root)
-  if (dir.exists(file.path(repo, ".git"))) {
+  if (.cp_has_repo(repo)) {
     .cp_set_remote(repo, remote)
     return(repo)
   }

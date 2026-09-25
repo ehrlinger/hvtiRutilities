@@ -121,7 +121,7 @@ test_that("a re-cloned .checkpoint continues the sequence", {
   set_study_keys(root, checkpoint = list(remote = bare))
   study_checkpoint("abstract_submitted", root = root)
   study_checkpoint("abstract_submitted", root = root)
-  unlink(file.path(root, ".checkpoint"), recursive = TRUE)
+  remove_tree(file.path(root, ".checkpoint"))
   expect_equal(study_checkpoint("abstract_submitted", root = root)$tag,
                "abstract_submitted-3")
 })

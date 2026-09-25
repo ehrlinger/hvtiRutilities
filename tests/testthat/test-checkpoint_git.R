@@ -122,3 +122,15 @@ test_that("rolling back a tag that was never created does not warn", {
   head_before <- .cp_head(repo)
   expect_no_warning(.cp_rollback(repo, head_before, "never-made"))
 })
+
+test_that("a .git directory that is not a repository is a clear error", {
+  skip_if_no_git()
+  local_git_env()
+  root <- make_checkpoint_study(withr::local_tempdir())
+  dir.create(file.path(.cp_repo_path(root), ".git"), recursive = TRUE)
+  msg <- "not a valid git repository.*Delete \\.checkpoint/repo.*read-only"
+  expect_error(.cp_repo_init(root), msg)
+  expect_error(.cp_closure_counts(.cp_repo_path(root)), msg)
+  expect_error(study_checkpoint("abstract_submitted", root = root), msg)
+  expect_error(study_close("abandoned", root = root), msg)
+})

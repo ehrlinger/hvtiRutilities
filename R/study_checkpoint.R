@@ -65,7 +65,7 @@
                        logical(1)))
   if (!length(open)) return(invisible(log))
   repo <- .cp_repo_path(root)
-  has_repo <- dir.exists(file.path(repo, ".git"))
+  has_repo <- .cp_has_repo(repo)
   for (i in rev(open)) {
     e <- log[[i]]
     sha <- NA_character_

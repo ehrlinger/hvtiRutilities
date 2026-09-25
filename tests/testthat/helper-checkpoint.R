@@ -112,3 +112,16 @@ tag_commits <- function(repo) {
   tags <- git_out(repo, c("tag", "-l"))
   vapply(tags, function(t) git_out(repo, c("rev-parse", t)), character(1))
 }
+
+# Delete a directory tree that may hold git objects. Git writes its object
+# files read-only, and on Windows unlink() cannot remove a read-only file, so
+# a partial .git would survive and look like a repository. Clear the bit
+# first, then insist the tree is gone.
+remove_tree <- function(path) {
+  files <- list.files(path, recursive = TRUE, full.names = TRUE,
+                      all.files = TRUE, include.dirs = TRUE, no.. = TRUE)
+  Sys.chmod(c(path, files), "0777", use_umask = FALSE)
+  unlink(path, recursive = TRUE, force = TRUE)
+  testthat::expect_false(dir.exists(path))
+  invisible(path)
+}
