@@ -106,19 +106,34 @@ abbreviation step sees the overridden label as `label_full`.
 ### 4.3 The accessor: `study_abbreviations()`
 
 ```r
-study_abbreviations(cfg = study_config(), defaults = TRUE)
+study_abbreviations(cfg = study_config(), extra = NULL, defaults = TRUE)
 ```
 
-Returns a named character vector, phrase to abbreviation: the group default
-(unless `defaults = FALSE`) merged with the study list by section 2's rules,
-with `null` entries removed. A job passes it, merged with its own
-`ABBREVIATIONS`, to `label_map(abbreviations = )`.
+Merges **all three levels in one place**: the group default (unless
+`defaults = FALSE`), the study list, and `extra`, the job's own entries. A job
+passes its `ABBREVIATIONS` as `extra` rather than merging them itself, so that:
+
+- the section 4.4 checks run on the list the job actually uses, including a job
+  entry that collides with a study or default entry (a job adding
+  `Systolic pressure = SP` where the study already has `Surgical procedure = SP`);
+- the case-insensitive merge rules live in one function, not copied into every
+  template;
+- the level each entry came from is known, for provenance (section 4.6).
+
+**Return shape:** a named character vector, phrase to abbreviation, ready for
+`label_map(abbreviations = )`, carrying an attribute `source`: a character
+vector of the same length, each element `"job"`, `"study"` or `"default"`.
+`null` removals are applied and do not appear in the result.
 
 ### 4.4 Validation
 
 `study_abbreviations()` and a test on the default file enforce:
 
-- a phrase and its abbreviation are each one non-empty string;
+- a phrase is one non-empty string, and its abbreviation is one non-empty
+  string **or `null`**. `null` is allowed in the study list and in `extra`,
+  where it removes a lower level's entry for that phrase; a `null` entry is
+  exempt from the remaining checks, since it adds no abbreviation. `null` in
+  the group default file is an error;
 - a phrase appears once per list, compared ignoring case;
 - **two different phrases may not share an abbreviation** in the merged list:
   `SP` for both `Surgical procedure` and `Systolic pressure` would make a
@@ -135,19 +150,16 @@ once, the house rule for validation errors.
 # EDIT: phrases this job abbreviates beyond the study's list, or NULL.
 ABBREVIATIONS <- NULL
 ...
-abbrev <- hvtiRutilities::study_abbreviations(.cfg)
-abbrev[names(ABBREVIATIONS)] <- ABBREVIATIONS   # the job's entries win
+abbrev <- hvtiRutilities::study_abbreviations(.cfg, extra = ABBREVIATIONS)
 labels <- label_map(d, label_max = LABEL_MAX, abbreviations = abbrev)
 ```
 
-The phrase comparison for "the job's entries win" is case-insensitive, like the
-merge in section 2; the sketch above omits that for brevity, and the template
-must not.
+The template does no merging of its own; section 4.3 says why.
 
 ### 4.6 Provenance
 
-The job adds the merged list, and which level each entry came from, to its
-provenance record (`hvtiRtemplates:::.embed_provenance(extra = ...)`). Only the
+The job adds the merged list, with its `source` attribute giving each
+entry's level, to its provenance record (`hvtiRtemplates:::.embed_provenance(extra = ...)`). Only the
 entries that `label_map()` actually used also appear in the report, as the
 abbreviation key under each section (§4.2's `abbreviations` attribute).
 
@@ -164,20 +176,25 @@ The matching rules are §4.2's, restated so this note stands alone:
 ## 6. Tests
 
 - `study_abbreviations()`: default only; a study addition; a study override of
-  a default, differing only in case; a `null` removal; `defaults = FALSE`.
+  a default, differing only in case; a `null` removal, in the study list and
+  in `extra`; `extra` overriding a study entry; `defaults = FALSE`; the
+  `source` attribute naming each entry's level.
+- A collision introduced by `extra` alone (a job phrase sharing a study
+  phrase's abbreviation) is caught.
 - Every validation rule in section 4.4, each with an error naming the entry and
   its level; several bad entries reported in one error.
 - The default file passes section 4.4.
 - A study with no `abbreviations:` key gets the default list, not an error.
-- hvtiRtemplates: a job's `ABBREVIATIONS` entry beats the study's for the same
-  phrase; the merged list appears in the job's provenance.
+- hvtiRtemplates: a job's `ABBREVIATIONS`, passed as `extra`, beats the
+  study's entry for the same phrase; the merged list and its `source` appear
+  in the job's provenance.
 
 ## 7. What ships where
 
 | package | release | adds |
 |---|---|---|
 | hvtiRutilities | 1.4.2 | `inst/extdata/abbreviations.yml`; `study_abbreviations()`; `_study.yml` `abbreviations:` validated by `study_config()`; `label_map(abbreviations = )` from §4.2 |
-| hvtiRtemplates | 1.2.3 | `ABBREVIATIONS` `EDIT:` point in `dp-postage` and `dp-eda`; the merge; the provenance record |
+| hvtiRtemplates | 1.2.3 | `ABBREVIATIONS` `EDIT:` point in `dp-postage` and `dp-eda`, passed as `extra`; the provenance record |
 
 ## 8. Open
 
