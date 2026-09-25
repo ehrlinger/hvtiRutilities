@@ -71,10 +71,13 @@
 #' Close or reopen a study
 #'
 #' @description
-#' \code{study_close()} records how a study ended and freezes it: it takes a
-#' final checkpoint snapshot, tags it \code{closed-<outcome>-<n>} and records
-#' a closure in the outbox. \code{study_reopen()} records a reopening and tags
-#' the current snapshot \code{reopened-<n>}; the next checkpoint snapshots as
+#' \code{study_close()} records how a study ended: it takes a final
+#' checkpoint snapshot, tags it \code{closed-<outcome>-<n>} and records a
+#' closure in the outbox. It does not make the study read-only: the folder
+#' stays writable, and a checkpoint taken on a closed study is still recorded,
+#' with a warning. The closure tag is what fixes the code as it stood at
+#' closure. \code{study_reopen()} records a reopening and tags the current
+#' snapshot \code{reopened-<n>}; the next checkpoint snapshots as
 #' usual. A study may be closed and reopened any number of times, and every
 #' cycle is kept.
 #'
