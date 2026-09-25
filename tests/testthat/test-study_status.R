@@ -356,7 +356,7 @@ test_that("print.study_status returns its argument invisibly", {
   st <- study_status(withr::local_tempdir())
 
   expect_output(print(st), "_study.yml")
-  expect_invisible(print(st))
+  expect_output(expect_invisible(print(st)))
 })
 
 test_that("study_status reports a hand-entered identity as UNVERIFIED", {

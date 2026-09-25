@@ -11,6 +11,11 @@
   Tracker identity and is still reported `"OK"`. `study_config()` rejects
   any other value of either field.
 
+## Internal
+
+* The `print.study_status()` visibility test now captures its printed report,
+  so the `study_status` test log no longer carries a stray status block.
+
 # hvtiRutilities 1.4.0
 
 ## Breaking changes
