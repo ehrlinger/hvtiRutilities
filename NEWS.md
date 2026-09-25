@@ -48,6 +48,11 @@
 
 * The `print.study_status()` visibility test now captures its printed report,
   so the `study_status` test log no longer carries a stray status block.
+* A `.cache_heads()` test quoted `pkg::fn(x)` as a fixture. `R CMD check`
+  read `pkg` as an undeclared test dependency and fetched the CRAN and
+  Bioconductor indexes to look it up, so a Bioconductor outage failed the
+  check with a WARNING. The fixture now uses `digest::digest(x)`, a declared
+  import, and the check no longer reaches the network.
 
 # hvtiRutilities 1.4.0
 
