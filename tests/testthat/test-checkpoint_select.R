@@ -108,8 +108,9 @@ make_dir_link <- function(target, link, .env = parent.frame()) {
   if (!isTRUE(ok) || !dir.exists(link)) return(NULL)
   withr::defer({
     if (.Platform$OS.type == "windows") {
-      # rmdir removes a junction or directory symlink, never its target.
-      system2("cmd", c("/c", "rmdir", shQuote(normalizePath(link), type = "cmd")),
+      # rmdir removes a junction or directory symlink, never its target. The
+      # literal path is used: normalizePath() would resolve to the target.
+      system2("cmd", c("/c", "rmdir", shQuote(gsub("/", "\\\\", link), type = "cmd")),
               stdout = FALSE, stderr = FALSE)
     } else {
       unlink(link)
