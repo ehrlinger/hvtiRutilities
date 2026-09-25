@@ -124,6 +124,23 @@
   list(entry = entry, selection = sel, repo = repo)
 }
 
+# attributes travel to CHECKPOINT.yml, the tag and the ST record as flat
+# key: value pairs, so only a named list of single atomic values is taken.
+.cp_check_attributes <- function(attributes, caller) {
+  if (is.null(attributes)) return(invisible(NULL))
+  nms <- names(attributes)
+  ok <- is.list(attributes) && !is.object(attributes) &&
+    (!length(attributes) ||
+       (!is.null(nms) && all(!is.na(nms) & nzchar(nms)) &&
+          all(vapply(attributes, function(v) is.atomic(v) && length(v) == 1L,
+                     logical(1)))))
+  if (!ok) {
+    stop(caller, "(): attributes must be NULL or a named list of single ",
+         "values, for example list(journal = \"JTCVS\")", call. = FALSE)
+  }
+  invisible(attributes)
+}
+
 .cp_log_find <- function(root, id) {
   for (e in .cp_log_read(root)) {
     if (identical(.cp_entry_id(e), id)) return(e)
@@ -169,8 +186,8 @@
 #'
 #' @param kind Character(1). A checkpoint kind.
 #' @param note Optional character(1), stored with the checkpoint.
-#' @param attributes Optional named list of kind-specific details, for example
-#'   \code{list(journal = "JTCVS")}.
+#' @param attributes Optional named list of kind-specific details, each a
+#'   single value, for example \code{list(journal = "JTCVS")}.
 #' @param occurred_at Date the event happened. Defaults to today.
 #' @param root Character. Study root. Defaults to \code{study_root()}.
 #'
@@ -209,6 +226,8 @@ study_checkpoint <- function(kind, note = NULL, attributes = NULL,
   .cp_reconcile(root)
   study <- .cp_study(root, "study_checkpoint")
   row <- .cp_kind_check(.cp_kinds(root), kind, "study_checkpoint")
+  if (!is.null(note)) .cp_check_string(note, "study_checkpoint", "note")
+  .cp_check_attributes(attributes, "study_checkpoint")
   if (.cp_is_closed(root)) {
     warning("study_checkpoint(): the study is closed; recording the ",
             "checkpoint anyway", call. = FALSE)

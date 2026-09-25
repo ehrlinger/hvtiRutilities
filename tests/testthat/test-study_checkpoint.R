@@ -92,6 +92,33 @@ test_that("free text prompts a one-line patient-information reminder", {
   expect_silent(study_checkpoint("abstract_submitted", note = "", root = root))
 })
 
+test_that("note and attributes are validated before anything is written", {
+  skip_if_no_git()
+  local_git_env()
+  root <- make_checkpoint_study(withr::local_tempdir())
+  for (bad in list(1, c("a", "b"), NA_character_, list("a"))) {
+    expect_error(study_checkpoint("abstract_submitted", note = bad, root = root),
+                 "note must be one character string")
+  }
+  bad_attributes <- list(
+    "AATS", c(meeting = "AATS"), list("AATS"), list(meeting = c("a", "b")),
+    list(meeting = list(city = "Boston")), list(meeting = NULL),
+    list(meeting = "AATS", "x"), list(meeting = mean)
+  )
+  for (bad in bad_attributes) {
+    expect_error(study_checkpoint("abstract_submitted", attributes = bad,
+                                  root = root),
+                 "attributes must be NULL or a named list")
+  }
+  expect_false(dir.exists(file.path(root, ".checkpoint")))
+  cp <- suppressMessages(study_checkpoint(
+    "abstract_submitted", note = "ASAIO",
+    attributes = list(meeting = "AATS", year = 2026L, poster = TRUE),
+    root = root
+  ))
+  expect_equal(cp$entry$attributes$year, 2026L)
+})
+
 test_that("an automatic kind logs an entry but makes no commit", {
   skip_if_no_git()
   local_git_env()
