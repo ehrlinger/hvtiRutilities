@@ -272,6 +272,7 @@ patient information. There is no schema or redaction for now (decided
     copy's `.checkpoint/` (normally the one whose history is on the remote),
     move the other aside, and run `study_checkpoint_push()` again from the
     kept copy.
+  Making the not-on-main repair automatic is tracked in [#152](https://github.com/ehrlinger/hvtiRutilities/issues/152).
 - **Divergence.** When the remote `main` has commits the local clone lacks
   (someone checkpointed from a second copy), the push is rejected as
   non-fast-forward. The core fetches and **replays** each unpushed snapshot on
@@ -454,21 +455,21 @@ push included, on all five platforms. Tests needing git skip with
 6. **`git_commit` on Closure.** The API spec's Closure record has no
    `git_commit` field. Propose adding it (optional), so the ST record of a
    published study points at the frozen code behind the paper.
-7. **Backup retention for `50_documents/`.** D9 relies on the share's
+7. **Backup retention for `50_documents/`.** Tracked in [#155](https://github.com/ehrlinger/hvtiRutilities/issues/155). D9 relies on the share's
    backups for the documents themselves; retention is reported as 30 or 90
    days. Confirm it. Past that window a checkpoint proves which document was
    submitted but cannot restore it, so decide whether a longer-term copy
    (for example, a submitted-manuscript archive outside git) is needed.
-8. **Free-text PHI.** Revisit the warning-only rule (section 5.1a) once real
+8. **Free-text PHI.** Tracked in [#156](https://github.com/ehrlinger/hvtiRutilities/issues/156). Revisit the warning-only rule (section 5.1a) once real
    checkpoints show what analysts write in `note` and `reason`.
-9. **Closure state from local tags only.** Whether a study is closed is read
+9. **Closure state from local tags only.** Tracked in [#153](https://github.com/ehrlinger/hvtiRutilities/issues/153). Whether a study is closed is read
    from local `closed-*` and `reopened-*` tags. Remote tags are fetched into
    `refs/remote-tags` and are not counted, so a closure made from another copy
    of the study is not seen until a fresh clone, and two copies can each close
    the study. Decide whether closure state should include remote tags.
    A first use while offline creates an empty clone, so the closure guards
    see no history until a fresh clone either.
-10. **Two sessions can both take over the same stale lock.** Each reads
+10. **Two sessions can both take over the same stale lock.** Tracked in [#154](https://github.com/ehrlinger/hvtiRutilities/issues/154). Each reads
     `holder.yml`, judges it stale at the same instant, and deletes and
     recreates the lock directory; both then believe they hold it. Narrowing
     this is possible by re-reading `holder.yml` immediately before deleting
