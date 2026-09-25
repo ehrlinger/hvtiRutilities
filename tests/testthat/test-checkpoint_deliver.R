@@ -244,3 +244,30 @@ test_that("retargeted entries reach the log before the network push", {
   expect_equal(seen$entry$git_commit,
                git_out(.cp_repo_path(fx$root), c("rev-parse", "main")))
 })
+
+test_that("a replayed closure and its reopening move together to the remote", {
+  skip_if_no_git()
+  local_git_env()
+  dir <- withr::local_tempdir()
+  fx <- diverge_study(dir)
+  cl <- study_close("abandoned", root = fx$root)
+  ro <- suppressMessages(study_reopen("new PI", root = fx$root))
+  expect_equal(ro$commit, cl$commit)
+  set_study_keys(fx$root, checkpoint = list(remote = fx$bare))
+  study_checkpoint_push(fx$root)
+
+  log <- .cp_log_read(fx$root)
+  expect_equal(vapply(log, function(e) e$delivery$git, character(1)),
+               rep("delivered", 3L))
+  closure <- log[[2]]
+  reopening <- log[[3]]
+  expect_equal(closure$replayed_from, cl$commit)
+  expect_equal(reopening$replayed_from, cl$commit)
+  expect_equal(reopening$git_commit, closure$git_commit)
+  expect_false(identical(closure$git_commit, cl$commit))
+  for (t in c("closed-abandoned-1", "reopened-1")) {
+    expect_equal(git_out(fx$bare, c("rev-parse", paste0(t, "^{commit}"))),
+                 closure$git_commit, info = t)
+  }
+  expect_equal(git_out(fx$bare, c("rev-parse", "main")), closure$git_commit)
+})

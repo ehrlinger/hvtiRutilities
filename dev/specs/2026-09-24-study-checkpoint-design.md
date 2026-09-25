@@ -445,3 +445,5 @@ push included, on all five platforms. Tests needing git skip with
    `refs/remote-tags` and are not counted, so a closure made from another copy
    of the study is not seen until a fresh clone, and two copies can each close
    the study. Decide whether closure state should include remote tags.
+   A first use while offline creates an empty clone, so the closure guards
+   see no history until a fresh clone either.
