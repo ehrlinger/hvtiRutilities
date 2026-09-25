@@ -29,6 +29,10 @@
   `study_reopen()` reopens it. `study_status()` reports checkpoints, pending
   deliveries and closure.
 
+* `job_files()`, and so `job_census()`, skip any path with a `.git` or
+  `.checkpoint` component, so a checkpointed study's `.checkpoint/repo`
+  mirror is no longer counted as a second study.
+
 ## Internal
 
 * The `print.study_status()` visibility test now captures its printed report,
