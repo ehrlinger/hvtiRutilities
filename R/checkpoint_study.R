@@ -19,6 +19,19 @@
   include
 }
 
+# The package holds no credentials (git's own credential helper does), and
+# the remote URL is echoed in git output and warnings, so a URL whose
+# userinfo carries a password is refused. The message does not repeat it.
+.cp_check_remote <- function(remote, caller) {
+  if (!is.null(remote) &&
+        any(grepl("^[A-Za-z][A-Za-z0-9+.-]*://[^/@]*:[^/@]*@", remote))) {
+    stop(caller, "(): the checkpoint remote URL must not carry a password ",
+         "(scheme://user:password@host); remove it from _study.yml and let ",
+         "git's credential helper authenticate", call. = FALSE)
+  }
+  remote
+}
+
 .cp_study <- function(root, caller) {
   yml <- file.path(root, "_study.yml")
   if (!file.exists(yml)) {
@@ -37,7 +50,7 @@
     st_id = st,
     workspace_id = raw$workspace_id,
     verified = !isFALSE(raw$identity_verified),
-    remote = cp$remote,
+    remote = .cp_check_remote(cp$remote, caller),
     include = .cp_check_include(as.character(unlist(cp$include)), caller)
   )
 }

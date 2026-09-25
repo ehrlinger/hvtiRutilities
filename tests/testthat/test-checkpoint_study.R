@@ -44,3 +44,24 @@ test_that("an include pattern that leaves the study root is an error", {
                  paste0("include pattern '", bad, "'"), fixed = TRUE)
   }
 })
+
+test_that("a remote URL carrying a password is an error that does not echo it", {
+  root <- withr::local_tempdir()
+  for (bad in c("https://analyst:s3cret@dev.azure.com/org/p/_git/r",
+                "ssh://git:s3cret@host.example.org:22/r.git",
+                "http://:s3cret@host/r.git")) {
+    yaml::write_yaml(list(st_id = 1L, checkpoint = list(remote = bad)),
+                     file.path(root, "_study.yml"))
+    err <- expect_error(.cp_study(root, "study_checkpoint"),
+                        "remote URL must not carry a password")
+    expect_no_match(conditionMessage(err), "s3cret")
+  }
+  for (good in c("git@ssh.dev.azure.com:v3/org/p/r",
+                 "https://dev.azure.com/org/p/_git/r",
+                 "https://analyst@dev.azure.com/org/p/_git/r",
+                 "ssh://git@host.example.org:22/r.git")) {
+    yaml::write_yaml(list(st_id = 1L, checkpoint = list(remote = good)),
+                     file.path(root, "_study.yml"))
+    expect_equal(.cp_study(root, "study_checkpoint")$remote, good)
+  }
+})
