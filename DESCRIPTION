@@ -7,7 +7,7 @@ Authors@R: c(
     person(
       "John", "Ehrlinger",
       email = "john.ehrlinger@gmail.com",
-      role = c("aut", "cre")
+      role = c("aut", "cre", "cph")
     )
   )
 License: GPL-3
@@ -15,7 +15,7 @@ Encoding: UTF-8
 URL: https://github.com/ehrlinger/hvtiRutilities, https://ehrlinger.github.io/hvtiRutilities/
 BugReports: https://github.com/ehrlinger/hvtiRutilities/issues
 Description: R utilities for the clinical investigations statistics group within
-  The Heart \& Vascular Institute at the Cleveland Clinic.
+  The Heart & Vascular Institute at the Cleveland Clinic.
 Depends:
     R (>= 4.1.0)
 Imports:
