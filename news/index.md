@@ -1,5 +1,77 @@
 # Changelog
 
+## hvtiRutilities 1.4.1
+
+### New features
+
+- [`followup_check()`](https://ehrlinger.github.io/hvtiRutilities/reference/followup_check.md)
+  checks an event indicator and its follow-up intervals before a
+  time-related analysis: cohort, event, censored and missing-event
+  counts; the missing, negative and zero intervals; a
+  [`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
+  table for each subset; and the suspicious rows, with identifiers only
+  on request. Every missing column is named in one error. It is the
+  `dc-gfup` template’s checks as a function, so that job and the EDA
+  report compute them once.
+
+- [`study_setup()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md)
+  gains `identity_source = c("tracker", "manual")`. A new `_study.yml`
+  records `identity_source` and `identity_verified`, which is `false`
+  for an identity typed by hand while Study Tracker was unavailable.
+  [`study_status()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md)
+  reports such an identity as `"UNVERIFIED"` on the `_study.yml` row, so
+  [`study_checklist()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checklist.md)
+  leaves its box unticked. A manifest written before these fields
+  existed is a Tracker identity and is still reported `"OK"`.
+  [`study_config()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md)
+  rejects any other value of either field.
+
+- [`study_checkpoint()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checkpoint.md)
+  commits an allow-listed snapshot of a study (its code, identity and
+  reproducibility files) to a private repository in `.checkpoint/repo/`,
+  tags it with a StudyTracker checkpoint kind such as
+  `manuscript_submitted-1`, records it in the outbox
+  `.checkpoint/log.yml`, and pushes it when `_study.yml` names a
+  `checkpoint: remote:`. Known data formats, credentials and symbolic
+  links are never committed, even through `include:` patterns, and
+  neither is anything under `00_datasets/` or `90_estimates/`. Files in
+  `50_documents/` other than `.qmd` and `.bib` sources are not committed
+  either: `CHECKPOINT.yml` records each one’s size and checksum, so a
+  tag still names the exact document that was submitted. A checkpoint is
+  committed locally first, so an unreachable remote never loses one;
+  [`study_checkpoint_push()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checkpoint_push.md)
+  retries. A study whose identity is unverified is committed but not
+  pushed. Two sessions cannot interleave on one study: each writing call
+  takes `.checkpoint/lock` and refreshes it between phases, and a lock
+  left by a crashed session is taken over after six hours.
+
+- [`study_close()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_close.md)
+  closes a study as published, not published, superseded or abandoned,
+  with a final snapshot tagged `closed-<outcome>-<n>`;
+  [`study_reopen()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_close.md)
+  reopens it.
+  [`study_status()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md)
+  reports checkpoints, pending deliveries and closure.
+
+- [`job_files()`](https://ehrlinger.github.io/hvtiRutilities/reference/job_files.md),
+  and so
+  [`job_census()`](https://ehrlinger.github.io/hvtiRutilities/reference/job_census.md),
+  skip any path with a `.git` or `.checkpoint` component, so a
+  checkpointed study’s `.checkpoint/repo` mirror is no longer counted as
+  a second study.
+
+### Internal
+
+- The `print.study_status()` visibility test now captures its printed
+  report, so the `study_status` test log no longer carries a stray
+  status block.
+- A `.cache_heads()` test quoted `pkg::fn(x)` as a fixture.
+  `R CMD check` read `pkg` as an undeclared test dependency and fetched
+  the CRAN and Bioconductor indexes to look it up, so a Bioconductor
+  outage failed the check with a WARNING. The fixture now uses
+  `digest::digest(x)`, a declared import, and the check no longer
+  reaches the network.
+
 ## hvtiRutilities 1.4.0
 
 ### Breaking changes
