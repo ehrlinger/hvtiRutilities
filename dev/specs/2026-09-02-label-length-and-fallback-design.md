@@ -5,7 +5,8 @@
 John Ehrlinger: option **B, then C**. §8's catalogue question answered
 2026-09-03 — **there are none**; §4, §4.1, §5's input 2 and the §2.1 test all
 landed 2026-09-03. §6.1 prefix stripping and the `hvtiRdatabuild` build step
-remain.
+remain. §4.2, distinct labels by abbreviation, was proposed 2026-09-24 and
+is not built.
 B has an implementation plan:
 `dev/specs/2026-09-02-r-data-types-value-labels-plan.md`.
 **Package:** `hvtiRutilities`, with a build-step piece in `hvtiRdatabuild`
@@ -183,6 +184,105 @@ from the variable name, the name passes through whole, however long, and
 This interaction is not in the handoff. It falls out of combining the cap with
 the fallback, and it is invisible to a review that reads §2.1 and §4 as
 separate decisions.
+
+### 4.2 Distinct labels stay distinct (proposed 2026-09-24, not built)
+
+§4 cuts each label on its own. Nothing looks at the other labels in the
+map, so labels that share their first 40 characters come out identical.
+Seen in a template review on 2026-09-24: several labels of the form
+`Surgical procedure: <which procedure>` all printed as the same
+`Surgical procedure: ...` stem, and the part that told them apart was the
+part that was cut. The figure was unreadable, and nothing warned.
+
+**Invariant:** within one `label_map()` call, labels that differ in
+`label_full` differ in `label`. There is no exception: step 4 guarantees it
+by giving up the cap, never the distinction. `label_map()` already sees every
+column at once, so it can enforce this; a property test can assert it
+directly.
+
+The display label is built in four steps, and each runs only on labels the
+step before left over the cap or colliding. A label that fits and collides
+with nothing is returned whole, as today.
+
+1. **Abbreviate a shared heading.** A heading is the text before the first
+   separator (`: `, ` - ` or `; `). Where two or more labels share a heading
+   and at least one of them is over the cap, the heading is abbreviated in
+   **every** label that carries it, so a figure never shows `SP:` beside
+   `Surgical procedure:`. The abbreviation is the initials of the heading's
+   words, in capitals, skipping `of`, `and`, `the`, `in`, `for`, `to`, `at`,
+   `on`, `with`, `by` and `or`: `Surgical procedure` is `SP`, `Coronary
+   artery bypass graft` is `CABG`. A hyphenated word counts once. A heading
+   of one content word is left alone, because `P:` says less than
+   `Procedure:`.
+2. **Cut at a word boundary and mark the cut**, as §4 does today.
+3. **Keep both ends.** Where cut labels still collide, keep the head and
+   the tail with the marker between them, `Ascending aorta ... plus arch`,
+   so the distinguishing end survives. A shared opening with no separator
+   lands here rather than in step 1: initials of words that do not form a
+   heading read as noise (`AA only versus ...`). Decided 2026-09-24.
+4. **Give up the cap, and report it.** A label still colliding after step 3
+   is shown as its whole `label_full`, over the cap. Distinct full labels are
+   distinct, so this always resolves the collision; a long label is a
+   layout problem a reader can see, and two identical labels are a wrong
+   figure nobody can. It is reported, not raised, following §4's precedent:
+   a new logical column `over_cap` marks it, and `subset(x, over_cap)` is
+   the report. `truncated` is `FALSE` for such a label, because it was not
+   cut.
+
+**An abbreviation can collide too.** `Surgical procedure` and `Systolic
+pressure` both give `SP`. Where two distinct headings give the same initials,
+neither is abbreviated and their labels continue to step 2. Inventing a
+longer form (`SurgP`) is a guess a reader cannot check.
+
+**A supplied list beats the initials rule.** `label_map()` gains an
+`abbreviations` argument: a named character vector, name the phrase and value
+the abbreviation, `c("Left ventricular" = "LV", "Coronary artery bypass graft"
+= "CABG")`. A supplied abbreviation is used for a shared heading in place of
+initials, and is also applied, as a whole-word, case-insensitive match, to any
+phrase in a label that is over the cap. A label that fits is never
+abbreviated, except as a member of a step-1 heading group.
+
+**The key comes back with the map.** The abbreviations actually used, and
+only those, are returned as an `abbreviations` attribute on the map: a data
+frame of `abbreviation` and `expansion`. A figure or table prints it as its
+key. `dc-tables` already carries an `ABBREVIATIONS` `EDIT:` constant for
+table footnotes; the attribute feeds the same slot, so tables and figures
+explain an abbreviation the same way.
+
+§4.1 still holds. A variable name standing in for a missing label is never
+abbreviated or cut. It takes part in the collision check only as something a
+label must not equal.
+
+#### 4.2.1 The study's list lives with the analysis set
+
+Decided 2026-09-24: a study keeps its own abbreviation list, applied at the
+data subsetting step. `_study.yml` gains a top-level `abbreviations:` mapping.
+`hvtiRdatabuild::write_analysis_set()` snapshots it into the set's
+`<name>.set.yml` sidecar, and `read_analysis_set()` returns it as an
+`abbreviations` attribute on the data.
+
+⚠️ **Applied at the subsetting step means recorded there, not written into the
+labels.** Rewriting the stored labels would be the lossy, read-time change §4
+exists to refuse. The parquet keeps its labels whole; the abbreviations are a
+display input that travels beside them.
+
+⚠️ **Changing the list must not make a set stale.** It is a display choice,
+not a cohort decision, so it stays out of `declaration_sha256`. The cost of
+snapshotting is that an edited list reaches a set only when the set is
+written again. That is the reproducible choice: an old render of an old set
+shows the abbreviations it showed then.
+
+⚠️ **Whether the attribute survives depends on the verb.** Measured
+2026-09-24 on a data frame: `d[rows, cols]` and `subset()` drop it, while
+`dplyr::filter()`, `select()` and `mutate()` keep it. Templates therefore read
+it once, right after the read, `ABBREV <- attr(d, "abbreviations")`, and pass
+it to `label_map()` explicitly, merged with any job-level `EDIT:` additions. A
+`label_map()` default that reads the attribute would work until a study author
+filtered with base R, then silently stop.
+
+Open: `read_built()`, the study dataset EDA reads before any set exists, has
+no sidecar. Whether it should read the list straight from `_study.yml` is not
+decided here.
 
 ## 5. Value labels are the code-to-text source
 
