@@ -95,15 +95,27 @@ test_that("symbolic links are denied and never followed", {
 })
 
 # A directory link: a symlink, or on Windows a junction when symlinks need a
-# privilege the session lacks. NULL when neither can be made.
-make_dir_link <- function(target, link) {
+# privilege the session lacks. NULL when neither can be made. The link is
+# removed when the calling test ends, before its temporary directories are:
+# unlink(recursive = TRUE) cannot delete a Windows junction and warns.
+make_dir_link <- function(target, link, .env = parent.frame()) {
   ok <- suppressWarnings(file.symlink(target, link))
   # Sys.junction() exists only in Windows builds of R, so it is looked up.
   junction <- get0("Sys.junction", envir = baseenv(), mode = "function")
   if (!isTRUE(ok) && !is.null(junction)) {
     ok <- suppressWarnings(junction(target, link))
   }
-  if (isTRUE(ok) && dir.exists(link)) link else NULL
+  if (!isTRUE(ok) || !dir.exists(link)) return(NULL)
+  withr::defer({
+    if (.Platform$OS.type == "windows") {
+      # rmdir removes a junction or directory symlink, never its target.
+      system2("cmd", c("/c", "rmdir", shQuote(normalizePath(link), type = "cmd")),
+              stdout = FALSE, stderr = FALSE)
+    } else {
+      unlink(link)
+    }
+  }, envir = .env)
+  link
 }
 
 test_that("a file reached through a directory link to outside the root is denied", {
