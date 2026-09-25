@@ -26,6 +26,7 @@ condenses it; `plan` files carry none.
 
 | date | note | status |
 |---|---|---|
+| 2026-09-25 | [Study abbreviation lists: one list per study, over a group default](2026-09-25-study-abbreviations-design.md) | design; §2 and §3 decided 2026-09-25, §8 open, not built |
 | 2026-09-24 | [Study checkpoints and closure to `CORR_STUDIES`](2026-09-24-study-checkpoint-design.md) | design under review (PR #147) |
 | 2026-09-21 | [`hvtiRutilities` dataset release consumer plan](2026-09-21-dataset-release-consumer-plan.md) | consumer plan for the contract below |
 | 2026-09-21 | [Dataset release and study adoption contract](2026-09-21-dataset-release-contract-design.md) | approved; consumer implementation planned |
@@ -45,7 +46,7 @@ condenses it; `plan` files carry none.
 | 2026-09-04 | [Handoff — `hvtiGraphics` documents a `label_map()` shape that no longer exists](2026-09-04-hvtigraphics-label-map-shape-handoff.md) | open; **execute in `hvtiGraphics`**, not here |
 | 2026-09-02 | [Ordinal variables — the representation decision](2026-09-02-ordinal-representation-design.md) | decision note; §7 open, awaiting the statisticians |
 | 2026-09-02 | [Handoff — ordinal variables](2026-09-02-ordinal-representation-handoff.md) | step 1 answered by the design note above |
-| 2026-09-02 | [Labels — length, fallback, value labels, and what `r_data_types()` is doing wrong](2026-09-02-label-length-and-fallback-design.md) | approved; §7 decided (B then C); B has a plan, C does not; §4.2 (distinct labels by abbreviation) proposed 2026-09-24, not built |
+| 2026-09-02 | [Labels — length, fallback, value labels, and what `r_data_types()` is doing wrong](2026-09-02-label-length-and-fallback-design.md) | approved; §7 decided (B then C); B has a plan, C does not; §4.2 (distinct labels by abbreviation) proposed 2026-09-24, not built; §4.2.1 superseded 2026-09-25 by the study-abbreviations design |
 | 2026-09-02 | [Handoff — label length, the fallback rule, and the exception that is not one](2026-09-02-label-length-and-fallback-handoff.md) | answered by the design note above |
 | 2026-09-02 | [`use_value_labels` — plan for the design note's §7 option B](2026-09-02-r-data-types-value-labels-plan.md) | plan for §7 of the label design above |
 | 2026-08-26 | [Job-type inventory — the level-one corpus sweep](2026-08-26-job-type-inventory-design.md) | implemented here; `hvtiRtemplates` re-export pending |
