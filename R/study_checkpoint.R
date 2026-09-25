@@ -245,6 +245,8 @@ study_checkpoint <- function(kind, note = NULL, attributes = NULL,
   if (!identical(row$trigger, "manual")) {
     entry$state <- "recorded"
     .cp_log_append(root, entry)
+    # Spec 6.1: every call retries pending deliveries, snapshot or not.
+    .cp_deliver(root, study)
     return(invisible(.cp_result(entry, NULL)))
   }
 

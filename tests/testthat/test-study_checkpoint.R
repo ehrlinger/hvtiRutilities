@@ -132,6 +132,22 @@ test_that("an automatic kind logs an entry but makes no commit", {
   expect_false(dir.exists(file.path(.cp_repo_path(root), ".git")))
 })
 
+test_that("an automatic kind retries pending deliveries too", {
+  skip_if_no_git()
+  local_git_env()
+  dir <- withr::local_tempdir()
+  root <- make_checkpoint_study(dir)
+  bare <- make_bare_remote(dir)
+  first <- study_checkpoint("abstract_submitted", root = root)
+  expect_equal(first$delivery$git, "pending")
+  set_study_keys(root, checkpoint = list(remote = bare))
+  study_checkpoint("data_received", root = root)
+  log <- .cp_log_read(root)
+  expect_equal(log[[1]]$delivery$git, "delivered")
+  expect_equal(log[[2]]$delivery$git, "none")
+  expect_equal(git_out(bare, c("tag", "-l")), "abstract_submitted-1")
+})
+
 test_that("a failure before the log append leaves no tag and no log entry", {
   skip_if_no_git()
   local_git_env()
