@@ -55,8 +55,9 @@ test_that("a manifest entry without n_rows is recorded as unchecked", {
 test_that("an entry whose row count cannot be checked is recorded as unchecked", {
   root <- withr::local_tempdir()
   plant_files(root, c("00_datasets/built.parquet", "00_datasets/rows.csv"))
-  sha <- function(f) digest::digest(file.path(root, "00_datasets", f),
-                                    algo = "sha256", file = TRUE)
+  sha <- function(f) {
+    digest::digest(file.path(root, "00_datasets", f), algo = "sha256", file = TRUE)
+  }
   yaml::write_yaml(
     list(datasets = list(
       list(file = "built.parquet", extract_date = "2026-09-01", n_rows = 1L,
