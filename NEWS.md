@@ -11,6 +11,32 @@
   Tracker identity and is still reported `"OK"`. `study_config()` rejects
   any other value of either field.
 
+* `study_checkpoint()` commits an allow-listed snapshot of a study (its code,
+  identity and reproducibility files) to a private repository in
+  `.checkpoint/repo/`, tags it with a StudyTracker checkpoint kind such as
+  `manuscript_submitted-1`, records it in the outbox `.checkpoint/log.yml`,
+  and pushes it when `_study.yml` names a `checkpoint: remote:`. Known data
+  formats, credentials and symbolic links are never committed, even through
+  `include:` patterns, and neither is anything under `00_datasets/` or
+  `90_estimates/`. Files in
+  `50_documents/` other than `.qmd` and `.bib` sources are not committed
+  either: `CHECKPOINT.yml` records each one's size and checksum, so a tag
+  still names the exact document that was submitted. A checkpoint is
+  committed locally first, so an unreachable remote never loses one;
+  `study_checkpoint_push()` retries. A study whose identity is unverified is
+  committed but not pushed. Two sessions cannot interleave on one study:
+  each writing call takes `.checkpoint/lock` and refreshes it between
+  phases, and a lock left by a crashed session is taken over after six hours.
+
+* `study_close()` closes a study as published, not published, superseded or
+  abandoned, with a final snapshot tagged `closed-<outcome>-<n>`;
+  `study_reopen()` reopens it. `study_status()` reports checkpoints, pending
+  deliveries and closure.
+
+* `job_files()`, and so `job_census()`, skip any path with a `.git` or
+  `.checkpoint` component, so a checkpointed study's `.checkpoint/repo`
+  mirror is no longer counted as a second study.
+
 ## Internal
 
 * The `print.study_status()` visibility test now captures its printed report,

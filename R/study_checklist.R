@@ -6,8 +6,9 @@
 #'
 #' @description
 #' Turns a \code{\link{study_status}} result into markdown: one checkbox per
-#' check, ticked where the check passed and left open otherwise, with the
-#' detail alongside. File counts follow.
+#' check, ticked where the check passed (\code{"OK"}) or the study is closed
+#' (\code{"CLOSED"}) and left open otherwise, with the detail alongside. File
+#' counts follow.
 #'
 #' @param status An object of class \code{"study_status"}, from
 #'   \code{\link{study_status}} or \code{\link{study_setup}}.
@@ -35,7 +36,8 @@ study_checklist <- function(status, path = NULL) {
   boxes <- vapply(
     seq_len(nrow(status$checks)),
     function(i) {
-      paste0(if (identical(status$checks$status[i], "OK")) {
+      # A closed study is a settled state, not an open task.
+      paste0(if (status$checks$status[i] %in% c("OK", "CLOSED")) {
         "- [x] "
       } else {
         "- [ ] "

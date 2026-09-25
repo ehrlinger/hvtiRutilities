@@ -1,0 +1,15 @@
+# Base checkpoint vocabulary: the initial lk_checkpoint_kinds rows of the
+# StudyTracker Workspace API spec, section 6. The live table, cached by
+# qhsprograms in <study>/.checkpoint/kinds.yml, overrides these rows by kind.
+- {kind: workspace_created, label: Workspace created, task_type: null, task_status: null, trigger: manual, numbered: false, retired: false}
+- {kind: data_request_submitted, label: Data request submitted, task_type: Data Request, task_status: in progress, trigger: manual, numbered: true, retired: false}
+- {kind: data_received, label: Data received, task_type: Data Request, task_status: complete, trigger: auto, numbered: true, retired: false}
+- {kind: analysis_dataset_frozen, label: Analysis dataset frozen, task_type: Analysis Dataset, task_status: complete, trigger: auto, numbered: true, retired: false}
+- {kind: analysis_started, label: Analysis started, task_type: Data Analysis, task_status: in progress, trigger: auto, numbered: true, retired: false}
+- {kind: abstract_submitted, label: Abstract submitted, task_type: Presentation, task_status: in progress, trigger: manual, numbered: true, retired: false}
+- {kind: abstract_accepted, label: Abstract accepted, task_type: Presentation, task_status: complete, trigger: manual, numbered: true, retired: false}
+- {kind: manuscript_submitted, label: Manuscript submitted, task_type: Manuscript, task_status: in progress, trigger: manual, numbered: true, retired: false}
+- {kind: manuscript_rejected, label: Manuscript rejected, task_type: Manuscript, task_status: in progress, trigger: manual, numbered: true, retired: false}
+- {kind: revision_submitted, label: Revision submitted, task_type: Manuscript, task_status: in progress, trigger: manual, numbered: true, retired: false}
+- {kind: manuscript_accepted, label: Manuscript accepted, task_type: Manuscript, task_status: in progress, trigger: manual, numbered: true, retired: false}
+- {kind: manuscript_published, label: Manuscript published, task_type: Manuscript, task_status: complete, trigger: manual, numbered: true, retired: false}

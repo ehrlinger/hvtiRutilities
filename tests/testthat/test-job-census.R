@@ -320,3 +320,20 @@ test_that("the coverage line stays coherent after a row subset", {
 
   expect_equal(subset_line, full_line)
 })
+
+test_that("a checkpoint mirror or git directory is not counted as a study", {
+  d <- withr::local_tempdir()
+  make_corpus_fixture(d)
+  for (f in c("alpha/.checkpoint/repo/distributions/hz.dead.sas",
+              "alpha/.checkpoint/repo/.git/distributions/hz.x.sas",
+              "alpha/.git/distributions/hz.y.sas")) {
+    dir.create(dirname(file.path(d, f)), recursive = TRUE, showWarnings = FALSE)
+    file.create(file.path(d, f))
+  }
+
+  files <- job_files(d)
+  expect_equal(nrow(files), 16L)
+  expect_false(any(grepl(".checkpoint", files$study, fixed = TRUE)))
+  expect_setequal(unique(job_census(d)$study), unique(job_census(files)$study))
+  expect_false(any(grepl("(^|/)[.](checkpoint|git)(/|$)", job_census(d)$study)))
+})

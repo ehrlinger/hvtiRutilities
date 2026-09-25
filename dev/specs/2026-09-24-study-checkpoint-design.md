@@ -134,9 +134,18 @@ Selection runs three passes in order. **A deny always beats an allow.**
      `.git-credentials`, `tracker.env`, `id_rsa*`, `id_ed25519*`, `*.pem`,
      `*.key`, `*.p12`, `*.pfx`
    - symbolic links, whatever they point at: the selector never follows or
-     copies one, so nothing outside the study root can enter
-   - anywhere, including `50_documents/`: `.sas7bdat .xpt .parquet .rds .RData .csv .xlsx .xls .lst .log`
-     (SAS `.lst` and `.log` echo data values, so they are data)
+     copies one, so nothing outside the study root can enter. A path is a
+     link when it or a parent directory reads as one, or when it resolves
+     anywhere but its literal place under the root; the second test covers
+     Windows links and junctions, which `Sys.readlink()` cannot see
+   - anywhere, including `50_documents/`: `.sas7bdat .xpt .parquet .rds .RData .csv .xlsx .xls .lst .log
+     .rda .tsv .sav .dta .sas7bcat .feather .fst .qs .sqlite .db .zip .gz`
+     (SAS `.lst` and `.log` echo data values, so they are data; `.zip` and
+     `.gz` because an archive can hold any of the others). Extensions are
+     matched case-insensitively. `.txt`, `.dat` and `.json` are deliberately
+     not on the list: they are as often notes and configuration as data, and
+     none is on the allow-list, so one enters only through an `include:`
+     pattern the study chose.
    - `.html .pdf .docx .pptx .png .tiff` anywhere (outside `50_documents/`
      they are outputs; inside it they are recorded by checksum, D9)
 3. **Size cap:** a file over 50 MB is skipped with a warning that names it.
@@ -222,6 +231,20 @@ patient information. There is no schema or redaction for now (decided
 
 ### 6.1 Failure rules
 
+- **One session at a time.** Every writing entry point
+  (`study_checkpoint()`, `study_checkpoint_push()`, `study_close()`,
+  `study_reopen()`) takes an exclusive lock, the directory
+  `.checkpoint/lock` (`dir.create()` is atomic), before it reconciles, and
+  releases it on exit, including on error. The holder writes its user, pid
+  and start time into the lock, and refreshes that time between phases:
+  after selection, after `CHECKPOINT.yml`, after the commit and tag, and
+  before delivery (only while the lock's token is still its own). A lock
+  whose time is less than 6 hours old is an error that names the holder and
+  says to retry; an older one was left by a crashed session and is taken
+  over with a warning. `study_status()` only reads and takes no lock.
+  Checkpoints run on the server's local filesystem, never over an SMB mount,
+  so `dir.create()` is atomic and the lock's time is the server's clock.
+
 - **Steps 1 to 5 are all-or-nothing, and a crash between them is
   reconciled.** A failure before step 4 leaves nothing. At the start of every
   core call, an entry still in `state: committing` is matched by its
@@ -235,6 +258,20 @@ patient information. There is no schema or redaction for now (decided
   `study_checkpoint()` call, retry every pending entry in log order. A tag the
   remote already has counts as delivered. The ST side is idempotent through the
   client-generated `checkpoint_id` (API spec §4.2).
+- **Manual repair.** Two failures stop delivery at a stuck entry rather than
+  resolving on retry, and each warning names the fix and points to
+  `?study_checkpoint_push`:
+  - **Not on main** (a log write was lost after a replay): find the commit on
+    `main` whose message carries the entry's id with
+    `git -C .checkpoint/repo log --fixed-strings --grep=<id> --format=%H main`,
+    set the entry's `git_commit` in `.checkpoint/log.yml` to that commit and
+    its `replayed_from` to the old value, then run `study_checkpoint_push()`;
+    or, if no such commit exists, set the entry's `state` to `abandoned`.
+  - **Unnumbered tag clash** (two copies each recorded the same unnumbered
+    tag, for example `workspace_created`): the copies have diverged; keep one
+    copy's `.checkpoint/` (normally the one whose history is on the remote),
+    move the other aside, and run `study_checkpoint_push()` again from the
+    kept copy.
 - **Divergence.** When the remote `main` has commits the local clone lacks
   (someone checkpointed from a second copy), the push is rejected as
   non-fast-forward. The core fetches and **replays** each unpushed snapshot on
@@ -424,3 +461,25 @@ push included, on all five platforms. Tests needing git skip with
    (for example, a submitted-manuscript archive outside git) is needed.
 8. **Free-text PHI.** Revisit the warning-only rule (section 5.1a) once real
    checkpoints show what analysts write in `note` and `reason`.
+9. **Closure state from local tags only.** Whether a study is closed is read
+   from local `closed-*` and `reopened-*` tags. Remote tags are fetched into
+   `refs/remote-tags` and are not counted, so a closure made from another copy
+   of the study is not seen until a fresh clone, and two copies can each close
+   the study. Decide whether closure state should include remote tags.
+   A first use while offline creates an empty clone, so the closure guards
+   see no history until a fresh clone either.
+10. **Two sessions can both take over the same stale lock.** Each reads
+    `holder.yml`, judges it stale at the same instant, and deletes and
+    recreates the lock directory; both then believe they hold it. Narrowing
+    this is possible by re-reading `holder.yml` immediately before deleting
+    it and aborting if it changed; closing it fully needs an atomic rename
+    rather than a delete-then-create.
+11. ✅ RESOLVED 2026-09-25 (PR #151 review). **A long-running holder is not
+    refreshed.** A session that ran past the old 30-minute stale age, for
+    example `verify_manifest()` hashing large datasets, never updated its
+    lock's `time`, so it looked stale and could be taken over while still
+    working. Resolved by `.cp_lock_touch()`, which rewrites the holder's
+    time between phases (after selection, after `CHECKPOINT.yml`, after the
+    commit and tag, before delivery) while the token still matches, and by
+    raising the stale age to 6 hours (section 6.1). A single phase must still
+    finish within the stale age.

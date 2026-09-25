@@ -136,6 +136,13 @@ reference:
   - study_checklist
   - preflight_report
 
+- title: Study Checkpoints
+  desc: Snapshot a study's code at each checkpoint, record its documents by checksum, and record its closure
+  contents:
+  - study_checkpoint
+  - study_checkpoint_push
+  - study_close
+
 - title: Study Manifest and Data Contract
   desc: Locate a study from its `_study.yml`, resolve its paths, and read and reconcile its built dataset
   contents:

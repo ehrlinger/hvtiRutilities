@@ -196,6 +196,41 @@
   }
 }
 
+# Checkpoint and closure rows. Absent for a study that has never been
+# checkpointed, so the audit of a plain study is unchanged. Abandoned entries
+# (a checkpoint that never committed) are not events and are not counted.
+.status_checkpoints <- function(root) {
+  if (!dir.exists(file.path(root, ".checkpoint"))) return(NULL)
+  log <- Filter(function(e) !identical(e$state, "abandoned"),
+                .cp_log_read(root))
+  git_pending <- sum(vapply(log, function(e) {
+    identical(e$state, "committed") && identical(e$delivery$git, "pending")
+  }, logical(1)))
+  st_pending <- sum(vapply(log, function(e) identical(e$delivery$st, "pending"),
+                           logical(1)))
+  last <- if (length(log)) log[[length(log)]] else NULL
+  when <- .cp_or(last$occurred_at,
+                 .cp_or(last$closed_at, last$reopened_at))
+  detail <- paste0(
+    length(log), " recorded",
+    if (!is.null(last$tag)) paste0(" (last ", last$tag, ", ", when, ")"),
+    if (git_pending) paste0("; ", git_pending, " not pushed"),
+    if (st_pending) paste0("; ", st_pending, " not in ST")
+  )
+  rows <- .status_row("checkpoints",
+                      if (git_pending) "PENDING" else "OK",
+                      detail)
+  closed <- tryCatch(.cp_is_closed(root), error = function(e) FALSE)
+  closures <- Filter(function(e) identical(e$type, "closure"), log)
+  if (closed && length(closures)) {
+    lc <- closures[[length(closures)]]
+    rows <- rbind(rows, .status_row("closure", "CLOSED",
+                                    paste0(lc$outcome, " (", lc$closed_at,
+                                           ")")))
+  }
+  rows
+}
+
 #' Audit a study's reproducibility readiness
 #'
 #' @description
@@ -215,6 +250,15 @@
 #' confirmed against Study Tracker (\code{identity_verified: false}) is
 #' reported \code{"UNVERIFIED"}. A manifest without the field is a Tracker
 #' identity and is reported \code{"OK"}.
+#'
+#' A study that has been checkpointed (it has a \code{.checkpoint/}
+#' directory) adds a \code{checkpoints} row: \code{"OK"} when every
+#' checkpoint, closure and reopening has reached the remote, or
+#' \code{"PENDING"} when some are saved locally and not yet pushed. Its detail
+#' counts the recorded events, names the last tag, and counts those not yet
+#' pushed or not yet in ST. A closed study then adds a \code{closure} row with
+#' status \code{"CLOSED"} and the outcome and date of the latest closure; see
+#' \code{\link{study_close}}.
 #'
 #' Release-aware datasets add an \code{update:<dataset>} row with status
 #' \code{"CURRENT"}, \code{"UPDATE AVAILABLE"},
@@ -238,9 +282,11 @@
 #'   \code{checks} (a data frame of \code{item}, \code{status} --
 #'   \code{"OK"}, \code{"MISSING"}, \code{"FAIL"}, \code{"UNVERIFIED"},
 #'   \code{"CURRENT"},
-#'   \code{"UPDATE AVAILABLE"}, or \code{"UPDATE STATUS UNKNOWN"} -- and
+#'   \code{"UPDATE AVAILABLE"}, \code{"UPDATE STATUS UNKNOWN"},
+#'   \code{"PENDING"}, or \code{"CLOSED"} -- and
 #'   \code{detail}). The five base rows are followed by release-aware update
-#'   rows and by dataset and update rows for each named dataset.
+#'   rows, by dataset and update rows for each named dataset, and by the
+#'   \code{checkpoints} and \code{closure} rows when they apply.
 #'   \code{counts} lists \code{r_files}, \code{qmd},
 #'   \code{sas_jobs} and \code{sidecars}.
 #'
@@ -334,7 +380,8 @@ study_status <- function(root = getwd()) {
     checks = rbind(row_yml, row_lock, row_man, row_data,
                    default_update,
                    named_rows,
-                   .status_provenance(root)),
+                   .status_provenance(root),
+                   .status_checkpoints(root)),
     counts = list(
       r_files  = length(.status_files(root, "[.]R$")),
       qmd      = length(.status_files(root, "[.](qmd|Rmd)$")),
@@ -354,7 +401,9 @@ print.study_status <- function(x, ...) {
     FAIL = "[!]",
     CURRENT = "[x]",
     "UPDATE AVAILABLE" = "[~]",
-    "UPDATE STATUS UNKNOWN" = "[?]"
+    "UPDATE STATUS UNKNOWN" = "[?]",
+    PENDING = "[~]",
+    CLOSED = "[x]"
   )
   cat("Study: ", x$root, "\n\n", sep = "")
   for (i in seq_len(nrow(x$checks))) {

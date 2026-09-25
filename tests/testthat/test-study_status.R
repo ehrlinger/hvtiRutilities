@@ -412,3 +412,35 @@ test_that("study_status reports a source that disagrees with verification", {
     expect_match(row$detail, "a tracker identity is verified", fixed = TRUE)
   }
 })
+
+test_that("study_status adds no checkpoint row to a study without one", {
+  root <- file.path(withr::local_tempdir(), "s")
+  study_setup(root, "No checkpoints", 7L)
+  expect_false("checkpoints" %in% study_status(root)$checks$item)
+})
+
+test_that("study_status reports checkpoints, pending pushes and closure", {
+  skip_if_no_git()
+  local_git_env()
+  root <- make_checkpoint_study(withr::local_tempdir())
+  study_checkpoint("abstract_submitted", root = root)
+  suppressMessages(study_close("abandoned", closed_at = as.Date("2026-11-14"),
+                               root = root))
+  .cp_log_append(root, list(
+    type = "checkpoint", checkpoint_id = "lost-1", st_id = 1267L,
+    kind = "abstract_submitted", git_commit = NULL,
+    tag = "abstract_submitted-9", state = "abandoned",
+    delivery = list(git = "pending", st = "pending")
+  ))
+  checks <- study_status(root)$checks
+  cp <- checks[checks$item == "checkpoints", ]
+  expect_equal(cp$status, "PENDING")
+  expect_match(cp$detail, "2 recorded")
+  expect_match(cp$detail, "last closed-abandoned-1, 2026-11-14")
+  expect_match(cp$detail, "2 not pushed")
+  expect_match(cp$detail, "2 not in ST")
+  cl <- checks[checks$item == "closure", ]
+  expect_equal(cl$status, "CLOSED")
+  expect_equal(cl$detail, "abandoned (2026-11-14)")
+  expect_output(print(study_status(root)), "closure")
+})

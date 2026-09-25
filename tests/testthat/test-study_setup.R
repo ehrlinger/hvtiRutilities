@@ -42,6 +42,7 @@ test_that("study_setup creates missing environment files", {
     "RENV_CONFIG_CACHE_SYMLINKS=FALSE"
   )
   ignore <- readLines(file.path(root, ".renvignore"))
+  expect_true(".checkpoint/" %in% ignore)
   expect_true(all(c("00_datasets/", "datasets/", "40_graphs/", "graphs/",
                     "90_estimates/", "estimates/", "templates/") %in%
                     ignore))

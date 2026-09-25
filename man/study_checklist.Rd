@@ -19,8 +19,9 @@ When \code{path} is \code{NULL}, a character vector of markdown
 }
 \description{
 Turns a \code{\link{study_status}} result into markdown: one checkbox per
-check, ticked where the check passed and left open otherwise, with the
-detail alongside. File counts follow.
+check, ticked where the check passed (\code{"OK"}) or the study is closed
+(\code{"CLOSED"}) and left open otherwise, with the detail alongside. File
+counts follow.
 }
 \examples{
 root <- file.path(tempdir(), "study-checklist-example")
