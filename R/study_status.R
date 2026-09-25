@@ -251,6 +251,15 @@
 #' reported \code{"UNVERIFIED"}. A manifest without the field is a Tracker
 #' identity and is reported \code{"OK"}.
 #'
+#' A study that has been checkpointed (it has a \code{.checkpoint/}
+#' directory) adds a \code{checkpoints} row: \code{"OK"} when every
+#' checkpoint, closure and reopening has reached the remote, or
+#' \code{"PENDING"} when some are saved locally and not yet pushed. Its detail
+#' counts the recorded events, names the last tag, and counts those not yet
+#' pushed or not yet in ST. A closed study then adds a \code{closure} row with
+#' status \code{"CLOSED"} and the outcome and date of the latest closure; see
+#' \code{\link{study_close}}.
+#'
 #' Release-aware datasets add an \code{update:<dataset>} row with status
 #' \code{"CURRENT"}, \code{"UPDATE AVAILABLE"},
 #' \code{"UPDATE STATUS UNKNOWN"}, or \code{"FAIL"}. Legacy studies retain
@@ -273,9 +282,11 @@
 #'   \code{checks} (a data frame of \code{item}, \code{status} --
 #'   \code{"OK"}, \code{"MISSING"}, \code{"FAIL"}, \code{"UNVERIFIED"},
 #'   \code{"CURRENT"},
-#'   \code{"UPDATE AVAILABLE"}, or \code{"UPDATE STATUS UNKNOWN"} -- and
+#'   \code{"UPDATE AVAILABLE"}, \code{"UPDATE STATUS UNKNOWN"},
+#'   \code{"PENDING"}, or \code{"CLOSED"} -- and
 #'   \code{detail}). The five base rows are followed by release-aware update
-#'   rows and by dataset and update rows for each named dataset.
+#'   rows, by dataset and update rows for each named dataset, and by the
+#'   \code{checkpoints} and \code{closure} rows when they apply.
 #'   \code{counts} lists \code{r_files}, \code{qmd},
 #'   \code{sas_jobs} and \code{sidecars}.
 #'

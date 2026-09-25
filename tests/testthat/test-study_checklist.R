@@ -12,6 +12,21 @@ test_that("study_checklist ticks OK items and leaves others open", {
   expect_true(any(grepl("^- \\[ \\] \\*\\*_study.yml\\*\\*", md)))
 })
 
+test_that("study_checklist ticks a CLOSED closure row like OK", {
+  status <- structure(
+    list(root = "/s",
+         checks = data.frame(item = c("checkpoints", "closure"),
+                             status = c("PENDING", "CLOSED"),
+                             detail = c("2 recorded", "abandoned (2026-09-24)"),
+                             stringsAsFactors = FALSE),
+         counts = list(r_files = 0L, qmd = 0L, sas_jobs = 0L, sidecars = 0L)),
+    class = "study_status"
+  )
+  md <- study_checklist(status)
+  expect_true(any(grepl("^- \\[x\\] \\*\\*closure\\*\\*", md)))
+  expect_true(any(grepl("^- \\[ \\] \\*\\*checkpoints\\*\\*", md)))
+})
+
 test_that("study_checklist reports counts", {
   root <- withr::local_tempdir()
   writeLines("proc means data=x;", file.path(root, "bh.dead_s1.sas"))
