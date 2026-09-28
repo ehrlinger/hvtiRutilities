@@ -196,15 +196,19 @@ The matching rules are §4.2's, restated so this note stands alone:
 | hvtiRutilities | 1.4.2 | `inst/extdata/abbreviations.yml`; `study_abbreviations()`; `_study.yml` `abbreviations:` validated by `study_config()`; `label_map(abbreviations = )` from §4.2 |
 | hvtiRtemplates | 1.2.3 | `ABBREVIATIONS` `EDIT:` point in `dp-postage` and `dp-eda`, passed as `extra`; the provenance record |
 
-## 8. Open
+## 8. Decided (John Ehrlinger, 2026-09-27)
 
-1. **The starter list.** Which phrases the group default holds on day one.
-   Proposed: start small, from phrases that appear in labels across several
-   studies' built datasets (a census, as for the templates), rather than from
-   memory.
-2. **Who curates it after.** A change to the default changes every study's
-   labels on its next render. It should go through a PR like any other change,
-   with a NEWS line naming the entries added or changed.
-3. **A helper to edit a study's list** (`add_abbreviation()`), or hand-editing
-   `_study.yml` only. Proposed: hand-editing for now; `study_config()` already
-   validates the file.
+1. **The starter list comes from a census.** Phrases that recur in labels
+   across studies' built datasets, proposed for John's approval, rather than
+   a list written from memory. The default file ships **empty** with
+   `study_abbreviations()` and fills in a later pull request once the census
+   is approved.
+2. **Curation is by pull request**, with a NEWS line naming the entries added
+   or changed, because a change to the default changes every study's labels on
+   its next render.
+3. **`add_abbreviation(phrase, abbreviation, start)` is provided**, rather than
+   hand-editing only. It checks the entry against the merged list before
+   writing, and writes nothing if refused. `abbreviation = NULL` writes a
+   removal. Like `register_data()`, it rewrites `_study.yml` whole with
+   `yaml::write_yaml()`, so comments in that file are not kept; its help page
+   says so.

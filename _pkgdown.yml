@@ -148,6 +148,8 @@ reference:
   desc: Locate a study from its `_study.yml`, resolve its paths, and read and reconcile its built dataset
   contents:
   - study_config
+  - study_abbreviations
+  - add_abbreviation
   - study_root
   - sas_path
   - built_path
