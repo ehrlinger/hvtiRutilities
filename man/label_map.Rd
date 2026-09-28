@@ -4,7 +4,7 @@
 \alias{label_map}
 \title{Build a lookup map of data labels}
 \usage{
-label_map(data, label_max = 40)
+label_map(data, label_max = 40, abbreviations = NULL)
 }
 \arguments{
 \item{data}{A data frame, tibble, or similar object with variable labels
@@ -15,9 +15,16 @@ including the \code{...} marker. Defaults to 40, the historical
 convention. Must be at least 4, so that a cut always has room to be
 marked; use \code{Inf} or \code{NA} to disable truncation. Does not
 apply to a variable name filled in for a missing label.}
+
+\item{abbreviations}{\code{NULL}, or a named character vector of
+abbreviations, the name the phrase and the value its abbreviation:
+\code{c("Left ventricular" = "LV")}. Used only on labels over the cap, and
+for a shared heading in place of its initials.}
 }
 \value{
-A data frame with four columns:
+A data frame with five columns, and an \code{abbreviations}
+  attribute: a data frame of \code{abbreviation} and \code{expansion} for
+  every abbreviation the labels show, with no rows when there are none.
 \describe{
   \item{key}{Character vector of variable names from the input dataset}
   \item{label}{Character vector of labels fit to print: the variable label
@@ -28,6 +35,9 @@ A data frame with four columns:
   \item{truncated}{Logical: \code{TRUE} where \code{label} was cut from
     \code{label_full}. Always \code{FALSE} for a filled variable name.
     \code{subset(x, truncated)} is the report of what was cut}
+  \item{over_cap}{Logical: \code{TRUE} where \code{label} is longer than
+    \code{label_max} because every shorter form collided with another
+    label. \code{subset(x, over_cap)} is the report}
 }
 }
 \description{
@@ -58,6 +68,32 @@ in for a missing label passes through whole, however long, and
 \code{truncated} is \code{FALSE}. A truncated name would match nothing in
 the data and would read as a deliberately short label rather than as a
 missing one, destroying the signal the fallback exists to give.
+
+\strong{Labels that differ stay different.} Cutting each label on its own
+can make two labels identical once their distinguishing ends are cut off.
+Within one map, labels that differ in \code{label_full} always differ in
+\code{label}. Each step below runs only on labels still over the cap or
+still colliding:
+\enumerate{
+  \item A heading, the text before the first \code{": "}, \code{" - "} or
+    \code{"; "}, shared by two or more labels, one of them over the cap, is
+    abbreviated in every label that carries it: to its entry in
+    \code{abbreviations}, or else to the initials of its words, skipping
+    small words such as "of" and "and". \code{"Surgical procedure"} becomes
+    \code{"SP"}. A one-word heading is left alone, and two headings with the
+    same initials are neither abbreviated.
+  \item Any phrase in \code{abbreviations} is applied, whole words and
+    ignoring case, to a label still over the cap. A label that fits is never
+    abbreviated this way.
+  \item The label is cut on a word boundary and marked.
+  \item Cut labels that still collide keep both ends, \code{"Ascending aorta
+    ... plus arch"}.
+  \item A label that still collides is shown whole, over the cap, and
+    \code{over_cap} marks it: a long label is a layout problem a reader can
+    see, two identical labels a wrong figure nobody can.
+}
+The abbreviations actually shown come back as the \code{abbreviations}
+attribute, to print as a key beneath a figure or table.
 }
 \examples{
 # Generate labeled survival data
@@ -83,6 +119,14 @@ subset(label_map(dta, label_max = 20), truncated)
 
 # Keep the source text
 label_map(dta, label_max = Inf)
+
+# Labels sharing a heading keep what tells them apart, and the key says why
+procs <- data.frame(avr = 1, mvr = 1)
+attr(procs$avr, "label") <- "Surgical procedure: aortic valve replacement with root enlargement"
+attr(procs$mvr, "label") <- "Surgical procedure: mitral valve repair"
+lmap <- label_map(procs)
+lmap$label
+attr(lmap, "abbreviations")
 }
 \seealso{
 \code{\link{get_label}} for looking up a single label,

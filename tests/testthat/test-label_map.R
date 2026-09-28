@@ -12,8 +12,8 @@ test_that("label_map returns data.frame with correct structure", {
 
   expect_s3_class(result, "data.frame")
   expect_equal(nrow(result), 2)
-  expect_equal(ncol(result), 4)
-  expect_named(result, c("key", "label", "label_full", "truncated"))
+  expect_equal(ncol(result), 5)
+  expect_named(result, c("key", "label", "label_full", "truncated", "over_cap"))
 })
 
 test_that("label_map extracts correct key-label pairs", {
