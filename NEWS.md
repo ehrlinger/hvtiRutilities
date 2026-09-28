@@ -2,6 +2,21 @@
 
 ## New features
 
+* `label_map()` keeps labels that differ distinct. Cutting each label to
+  `label_max` on its own could make two labels identical once their
+  distinguishing ends were cut off; a figure of `Surgical procedure: ...`
+  panels became unreadable, and nothing warned. Within one map, labels that
+  differ in `label_full` now always differ in `label`. A heading shared by
+  labels over the cap is abbreviated in all of them (`Surgical procedure`
+  becomes `SP`); cut labels that still collide keep both ends
+  (`Ascending aorta ... plus arch`); and a label that collides whatever is
+  done is shown whole, flagged in a new `over_cap` column. A new
+  `abbreviations` argument supplies a study's own abbreviations, and the
+  abbreviations the labels show come back as an `abbreviations` attribute, a
+  key to print under the figure. `add_labels()` and `apply_label_overrides()`
+  rebuild the whole map, so an added label keeps the guarantee. Design:
+  `dev/specs/2026-09-02-label-length-and-fallback-design.md` section 4.2.
+
 * `study_abbreviations()` merges the three abbreviation lists a job's labels
   draw on: a job's own entries (`extra`), the study's `abbreviations:` mapping
   in `_study.yml`, and a group default shipped in

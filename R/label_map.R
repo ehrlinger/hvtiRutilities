@@ -72,9 +72,179 @@
   out
 }
 
-## Keep label_full and truncated honest after an override. Without this the
-## new label lands in `label`, uncapped, while `label_full` still shows the
-## text it replaced -- a column that lies is worse than no column.
+## =============================================================================
+## Internal: distinct labels stay distinct. Section 4.2 of the design above.
+## Within one map, labels that differ in label_full differ in label.
+
+## Words the initials rule skips: "History of heart failure" is HHF, not HOHF.
+.label_small_words <- c("of", "and", "the", "in", "for", "to", "at", "on", "with", "by", "or")
+
+.validate_abbreviations <- function(abbreviations) {
+  if (is.null(abbreviations)) {
+    return(stats::setNames(character(), character()))
+  }
+  phrases <- names(abbreviations)
+  if (!is.character(abbreviations) || is.null(phrases) || anyNA(abbreviations) || anyNA(phrases) ||
+        !all(nzchar(abbreviations)) || !all(nzchar(phrases)) || anyDuplicated(tolower(phrases))) {
+    stop("'abbreviations' must be NULL or a named character vector, phrase = abbreviation, ",
+         "with no missing, empty or repeated phrases.", call. = FALSE)
+  }
+  abbreviations
+}
+
+## Escape a phrase for use inside a regular expression.
+.regex_escape <- function(x) gsub("([][{}()+*^$|\\\\?.])", "\\\\\\1", x)
+
+## The supplied abbreviation for a phrase, matched whole and case-insensitively,
+## or NA.
+.supplied_for <- function(phrase, abbreviations) {
+  hit <- match(tolower(phrase), tolower(names(abbreviations)))
+  if (is.na(hit)) NA_character_ else unname(abbreviations[[hit]])
+}
+
+## Initials of a heading's content words, or NA for a heading of fewer than two
+## content words, because "P:" says less than "Procedure:". Splitting on
+## whitespace only is what makes a hyphenated word count once.
+.heading_initials <- function(heading) {
+  words <- strsplit(heading, "[[:space:]]+")[[1L]]
+  words <- words[nzchar(words) & !(tolower(words) %in% .label_small_words)]
+  first <- toupper(substr(gsub("[^[:alnum:]]", "", words), 1L, 1L))
+  first <- first[nzchar(first)]
+  if (length(first) < 2L) NA_character_ else paste(first, collapse = "")
+}
+
+## Keep the head and the tail with the marker between them, so the end that
+## tells two labels apart survives: "Ascending aorta ... plus arch".
+.truncate_both_ends <- function(text, label_max) {
+  mid <- paste0(" ", .label_marker, " ")
+  budget <- label_max - nchar(mid)
+  words <- strsplit(text, " ", fixed = TRUE)[[1L]]
+  tail <- character()
+  for (w in rev(words)) {
+    candidate <- paste(c(w, tail), collapse = " ")
+    if (nchar(candidate) > budget %/% 2L) break
+    tail <- c(w, tail)
+  }
+  if (!length(tail) || length(tail) == length(words)) {
+    return(text)
+  }
+  head_words <- words[seq_len(length(words) - length(tail))]
+  head <- character()
+  for (w in head_words) {
+    candidate <- paste(c(head, w), collapse = " ")
+    if (nchar(candidate) > budget - nchar(paste(tail, collapse = " "))) break
+    head <- c(head, w)
+  }
+  if (!length(head)) {
+    return(text)
+  }
+  paste0(sub("[[:space:][:punct:]]+$", "", paste(head, collapse = " ")), mid, paste(tail, collapse = " "))
+}
+
+## The display labels for a whole map. `full` is every row's label_full,
+## `filled` marks rows where the variable name stands in for a missing label:
+## those pass through whole (section 4.1) and take part only as text a label
+## must not equal. Returns the label, truncated and over_cap columns and the
+## abbreviations actually shown.
+.display_labels <- function(full, filled, label_max, abbreviations) {
+  n <- length(full)
+  label <- full
+  cut <- rep(FALSE, n)
+  used <- vector("list", n)
+  none <- data.frame(abbreviation = character(), expansion = character(), stringsAsFactors = FALSE)
+  if (!n || !is.finite(label_max)) {
+    return(list(label = label, truncated = cut, over_cap = cut, abbreviations = none))
+  }
+  own <- which(!filled)
+  over <- function(i) nchar(label[i]) > label_max
+
+  # Step 1: a heading shared by two or more labels, one of them over the cap,
+  # is abbreviated in every label that carries it.
+  sep_at <- regexpr(": | - |; ", full)
+  has_heading <- !filled & sep_at > 0L
+  heading <- ifelse(has_heading, substr(full, 1L, sep_at - 1L), NA_character_)
+  groups <- split(which(has_heading), heading[has_heading])
+  groups <- groups[vapply(groups, function(g) length(g) >= 2L && any(nchar(full[g]) > label_max), logical(1L))]
+  if (length(groups)) {
+    short <- vapply(names(groups), function(h) {
+      s <- .supplied_for(h, abbreviations)
+      if (is.na(s)) .heading_initials(h) else s
+    }, character(1L))
+    # Two distinct headings giving the same abbreviation: neither is used.
+    short[short %in% short[duplicated(short)]] <- NA_character_
+    for (h in names(groups)[!is.na(short)]) {
+      for (i in groups[[h]]) {
+        label[i] <- paste0(short[[h]], substring(full[i], sep_at[i]))
+        used[[i]] <- rbind(used[[i]], data.frame(abbreviation = short[[h]], expansion = h))
+      }
+    }
+  }
+
+  # The supplied list also shortens any label still over the cap, whole words
+  # only; a label that fits is left as written. Longer phrases go first so
+  # "Left ventricular ejection fraction" wins over "Left ventricular".
+  if (length(abbreviations)) {
+    phrases <- names(abbreviations)[order(-nchar(names(abbreviations)))]
+    for (i in own[vapply(own, over, logical(1L))]) {
+      for (p in phrases) {
+        # Stop once the label fits: a fitting label is never abbreviated here.
+        if (!over(i)) break
+        pattern <- paste0("(?<![[:alnum:]])", .regex_escape(p), "(?![[:alnum:]])")
+        if (grepl(pattern, label[i], ignore.case = TRUE, perl = TRUE)) {
+          label[i] <- gsub(pattern, abbreviations[[p]], label[i], ignore.case = TRUE, perl = TRUE)
+          used[[i]] <- rbind(used[[i]], data.frame(abbreviation = unname(abbreviations[[p]]), expansion = p))
+        }
+      }
+    }
+  }
+
+  # Step 2: cut at a word boundary and mark the cut. Keep the uncut form: step
+  # 3 works from it, so a heading abbreviated in step 1 stays abbreviated.
+  uncut <- label
+  long <- own[vapply(own, over, logical(1L))]
+  label[long] <- .truncate_labels(label[long], label_max)
+  cut[long] <- TRUE
+
+  # A row collides when its label equals another row's while the full labels
+  # differ; rows sharing one full label may share a display label.
+  colliding <- function() {
+    dup_label <- label %in% label[duplicated(label)]
+    vapply(seq_len(n), function(i) dup_label[i] && any(label == label[i] & full != full[i]), logical(1L))
+  }
+
+  # Step 3: cut labels that collide keep both ends.
+  again <- intersect(which(colliding()), which(cut))
+  for (i in again) {
+    # No shorter two-ended form: keep the cut, and let step 4 decide.
+    both <- .truncate_both_ends(uncut[i], label_max)
+    if (both != uncut[i] && nchar(both) <= label_max) label[i] <- both
+  }
+
+  # Step 4: give up the cap rather than the distinction. Restoring one label
+  # can collide with another's shortened form, so repeat until none collide;
+  # full labels are distinct, so this ends.
+  over_cap <- rep(FALSE, n)
+  repeat {
+    hit <- intersect(which(colliding()), own)
+    hit <- hit[label[hit] != full[hit]]
+    if (!length(hit)) break
+    label[hit] <- full[hit]
+    cut[hit] <- FALSE
+    used[hit] <- list(NULL)
+    over_cap[hit] <- nchar(full[hit]) > label_max
+  }
+
+  shown <- do.call(rbind, c(list(none), used))
+  shown <- unique(shown)
+  rownames(shown) <- NULL
+  list(label = label, truncated = cut & label != full, over_cap = over_cap, abbreviations = shown)
+}
+
+## Keep label_full, truncated and the distinctness guarantee honest after an
+## override. Without this the new label lands in `label`, uncapped, while
+## `label_full` still shows the text it replaced -- a column that lies is worse
+## than no column. The whole map is rebuilt, not just the changed rows,
+## because whether a label collides depends on every other label.
 .refresh_truncation <- function(map, keys) {
   if (!all(c("label_full", "truncated") %in% names(map))) {
     return(map)
@@ -89,8 +259,13 @@
     return(map)
   }
   map$label_full[idx] <- map$label[idx]
-  map$label[idx] <- .truncate_labels(map$label_full[idx], label_max)
-  map$truncated[idx] <- map$label[idx] != map$label_full[idx]
+  # A row whose full text is its own key is a filled name, exempt from the cap.
+  shown <- .display_labels(map$label_full, map$label_full == map$key, label_max,
+                           .validate_abbreviations(attr(map, "abbreviation_list")))
+  map$label <- shown$label
+  map$truncated <- shown$truncated
+  if ("over_cap" %in% names(map)) map$over_cap <- shown$over_cap
+  attr(map, "abbreviations") <- shown$abbreviations
   map
 }
 
@@ -126,6 +301,32 @@
 #' the data and would read as a deliberately short label rather than as a
 #' missing one, destroying the signal the fallback exists to give.
 #'
+#' \strong{Labels that differ stay different.} Cutting each label on its own
+#' can make two labels identical once their distinguishing ends are cut off.
+#' Within one map, labels that differ in \code{label_full} always differ in
+#' \code{label}. Each step below runs only on labels still over the cap or
+#' still colliding:
+#' \enumerate{
+#'   \item A heading, the text before the first \code{": "}, \code{" - "} or
+#'     \code{"; "}, shared by two or more labels, one of them over the cap, is
+#'     abbreviated in every label that carries it: to its entry in
+#'     \code{abbreviations}, or else to the initials of its words, skipping
+#'     small words such as "of" and "and". \code{"Surgical procedure"} becomes
+#'     \code{"SP"}. A one-word heading is left alone, and two headings with the
+#'     same initials are neither abbreviated.
+#'   \item Any phrase in \code{abbreviations} is applied, whole words and
+#'     ignoring case, to a label still over the cap. A label that fits is never
+#'     abbreviated this way.
+#'   \item The label is cut on a word boundary and marked.
+#'   \item Cut labels that still collide keep both ends, \code{"Ascending aorta
+#'     ... plus arch"}.
+#'   \item A label that still collides is shown whole, over the cap, and
+#'     \code{over_cap} marks it: a long label is a layout problem a reader can
+#'     see, two identical labels a wrong figure nobody can.
+#' }
+#' The abbreviations actually shown come back as the \code{abbreviations}
+#' attribute, to print as a key beneath a figure or table.
+#'
 #' @param data A data frame, tibble, or similar object with variable labels
 #'   (typically created using the \code{labelled} package or imported from SAS).
 #' @param label_max Maximum length of a displayed label, in characters,
@@ -133,8 +334,14 @@
 #'   convention. Must be at least 4, so that a cut always has room to be
 #'   marked; use \code{Inf} or \code{NA} to disable truncation. Does not
 #'   apply to a variable name filled in for a missing label.
+#' @param abbreviations \code{NULL}, or a named character vector in which
+#'   each name is a phrase and each value is that phrase's abbreviation:
+#'   \code{c("Left ventricular" = "LV")}. Used only on labels over the cap, and
+#'   for a shared heading in place of its initials.
 #'
-#' @return A data frame with four columns:
+#' @return A data frame with five columns, and an \code{abbreviations}
+#'   attribute: a data frame of \code{abbreviation} and \code{expansion} for
+#'   every abbreviation the labels show, with no rows when there are none.
 #' \describe{
 #'   \item{key}{Character vector of variable names from the input dataset}
 #'   \item{label}{Character vector of labels fit to print: the variable label
@@ -145,6 +352,9 @@
 #'   \item{truncated}{Logical: \code{TRUE} where \code{label} was cut from
 #'     \code{label_full}. Always \code{FALSE} for a filled variable name.
 #'     \code{subset(x, truncated)} is the report of what was cut}
+#'   \item{over_cap}{Logical: \code{TRUE} where \code{label} is longer than
+#'     \code{label_max} because every shorter form collided with another
+#'     label. \code{subset(x, over_cap)} is the report}
 #' }
 #'
 #' @seealso \code{\link{get_label}} for looking up a single label,
@@ -178,8 +388,17 @@
 #'
 #' # Keep the source text
 #' label_map(dta, label_max = Inf)
-label_map <- function(data, label_max = 40) {
+#'
+#' # Labels sharing a heading keep what tells them apart, and the key says why
+#' procs <- data.frame(avr = 1, mvr = 1)
+#' attr(procs$avr, "label") <- "Surgical procedure: aortic valve replacement with root enlargement"
+#' attr(procs$mvr, "label") <- "Surgical procedure: mitral valve repair"
+#' lmap <- label_map(procs)
+#' lmap$label
+#' attr(lmap, "abbreviations")
+label_map <- function(data, label_max = 40, abbreviations = NULL) {
   label_max <- .validate_label_max(label_max)
+  abbreviations <- .validate_abbreviations(abbreviations)
 
   # null_action = "na" distinguishes a variable with no label from one whose
   # label happens to equal its name. "fill" cannot: both come back as the
@@ -190,18 +409,20 @@ label_map <- function(data, label_max = 40) {
   filled <- is.na(declared)
   full <- ifelse(filled, names(data), declared)
 
-  display <- full
-  display[!filled] <- .truncate_labels(full[!filled], label_max)
+  shown <- .display_labels(full, filled, label_max, abbreviations)
 
   result <- data.frame(
     key = names(data),
-    label = display,
+    label = shown$label,
     label_full = full,
-    truncated = !filled & display != full,
+    truncated = shown$truncated,
+    over_cap = shown$over_cap,
     stringsAsFactors = FALSE
   )
   rownames(result) <- NULL
   attr(result, "label_max") <- label_max
+  attr(result, "abbreviation_list") <- abbreviations
+  attr(result, "abbreviations") <- shown$abbreviations
 
   # Warn when most columns lack real labels
   if (nrow(result) > 0) {
