@@ -68,7 +68,7 @@ which applies it.
 ``` r
 root <- file.path(tempdir(), "abbrev-example")
 study_setup(root, "Abbreviation example", 1L)
-#> Study: /tmp/Rtmp41Bhq8/abbrev-example
+#> Study: /tmp/RtmpbD6lWZ/abbrev-example
 #> 
 #> [x] _study.yml — study: Abbreviation example
 #> [ ] renv.lock — no renv.lock; run renv::init() in the study project
