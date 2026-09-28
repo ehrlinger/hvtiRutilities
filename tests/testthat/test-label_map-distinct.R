@@ -193,3 +193,30 @@ test_that("supplied phrases stop once the label fits", {
   expect_equal(lmap$label, "LVEF measured before operation")
   expect_equal(attr(lmap, "abbreviations")$abbreviation, "LVEF")
 })
+
+test_that("overlapping phrases are read left to right", {
+  # Longest-first alone gave "Right CABG": the shorter phrase starting earlier
+  # wins the overlap.
+  ab <- c("Right coronary artery" = "RCA", "Coronary artery bypass graft" = "CABG", "Coronary artery disease" = "CAD")
+  lmap <- quiet_map(labelled_frame(c(
+    a = "Right coronary artery bypass graft patency at follow-up",
+    b = "Right coronary artery disease severity at catheterization",
+    c = "Coronary artery bypass graft performed with vein conduits only"
+  )), label_max = 40, abbreviations = ab)
+  expect_equal(lmap$label[1:2], c("RCA bypass graft patency at follow-up", "RCA disease severity at catheterization"))
+  expect_match(lmap$label[3], "^CABG performed")
+})
+
+test_that("heading initials never reuse an abbreviation the list gives another phrase", {
+  # "Aortic valve reoperation" has the initials AVR, which the list gives to
+  # aortic valve replacement; one key must not say AVR twice.
+  lmap <- quiet_map(labelled_frame(c(
+    a = "Aortic valve reoperation: time to event in years from index",
+    b = "Aortic valve reoperation: indication recorded by the surgeon",
+    c = "Aortic valve replacement performed at the index operation date"
+  )), label_max = 40, abbreviations = c("Aortic valve replacement" = "AVR"))
+  key <- attr(lmap, "abbreviations")
+  expect_false(anyDuplicated(key$abbreviation) > 0L)
+  expect_false(any(grepl("^AVR:", lmap$label)))
+  expect_match(lmap$label[3], "^AVR performed")
+})

@@ -166,10 +166,14 @@
   groups <- split(which(has_heading), heading[has_heading])
   groups <- groups[vapply(groups, function(g) length(g) >= 2L && any(nchar(full[g]) > label_max), logical(1L))]
   if (length(groups)) {
+    supplied <- vapply(names(groups), .supplied_for, character(1L), abbreviations = abbreviations)
     short <- vapply(names(groups), function(h) {
-      s <- .supplied_for(h, abbreviations)
-      if (is.na(s)) .heading_initials(h) else s
+      if (is.na(supplied[[h]])) .heading_initials(h) else supplied[[h]]
     }, character(1L))
+    # Initials that equal an abbreviation the list gives another phrase would
+    # make one abbreviation mean two things in one key ("Aortic valve
+    # reoperation" and the list's AVR): such a heading is not abbreviated.
+    short[is.na(supplied) & short %in% unname(abbreviations)] <- NA_character_
     # Two distinct headings giving the same abbreviation: neither is used.
     short[short %in% short[duplicated(short)]] <- NA_character_
     for (h in names(groups)[!is.na(short)]) {
@@ -184,16 +188,33 @@
   # only; a label that fits is left as written. Longer phrases go first so
   # "Left ventricular ejection fraction" wins over "Left ventricular".
   if (length(abbreviations)) {
-    phrases <- names(abbreviations)[order(-nchar(names(abbreviations)))]
+    patterns <- paste0("(?<![[:alnum:]])", .regex_escape(names(abbreviations)), "(?![[:alnum:]])")
     for (i in own[vapply(own, over, logical(1L))]) {
-      for (p in phrases) {
+      # Replace one match at a time, leftmost first and the longest phrase at
+      # that position, so overlapping phrases read the way the label does:
+      # "Right coronary artery bypass graft" is "RCA bypass graft", not
+      # "Right CABG". Search resumes after each replacement, so it ends.
+      from <- 1L
+      repeat {
         # Stop once the label fits: a fitting label is never abbreviated here.
         if (!over(i)) break
-        pattern <- paste0("(?<![[:alnum:]])", .regex_escape(p), "(?![[:alnum:]])")
-        if (grepl(pattern, label[i], ignore.case = TRUE, perl = TRUE)) {
-          label[i] <- gsub(pattern, abbreviations[[p]], label[i], ignore.case = TRUE, perl = TRUE)
-          used[[i]] <- rbind(used[[i]], data.frame(abbreviation = unname(abbreviations[[p]]), expansion = p))
+        best <- NULL
+        for (k in seq_along(patterns)) {
+          m <- gregexpr(patterns[k], label[i], ignore.case = TRUE, perl = TRUE)[[1L]]
+          ok <- which(m >= from)
+          if (!length(ok)) next
+          start <- m[ok[1L]]
+          len <- attr(m, "match.length")[ok[1L]]
+          if (is.null(best) || start < best$start || (start == best$start && len > best$len)) {
+            best <- list(start = start, len = len, k = k)
+          }
         }
+        if (is.null(best)) break
+        short_form <- unname(abbreviations[[best$k]])
+        label[i] <- paste0(substr(label[i], 1L, best$start - 1L), short_form,
+                           substring(label[i], best$start + best$len))
+        used[[i]] <- rbind(used[[i]], data.frame(abbreviation = short_form, expansion = names(abbreviations)[best$k]))
+        from <- best$start + nchar(short_form)
       }
     }
   }

@@ -16,6 +16,19 @@
   - echocardiography: `EF`, `LVIDd`, `LVIDs`, `RWT`;
   - blood products and course: `FFP`, `RBC`, `LOS`, `Preop`.
 
+## Bug fixes
+
+* `label_map()` reads overlapping phrases left to right. Phrases were applied
+  longest first, so in "Right coronary artery bypass graft" the longer
+  "Coronary artery bypass graft" won the overlap and the label read
+  "Right CABG". The leftmost phrase now wins, and the longest one where two
+  start together: "RCA bypass graft".
+* `label_map()` no longer abbreviates a shared heading to initials that the
+  abbreviation list already gives another phrase. "Aortic valve reoperation"
+  became "AVR", the list's aortic valve replacement, so one key listed `AVR`
+  twice with two meanings. Such a heading now falls through to the later
+  steps, and the supplied list keeps its meaning.
+
 ## Changes
 
 * `study_abbreviations()` compares abbreviations exactly, case included, when
