@@ -146,6 +146,10 @@ reconcile its built dataset
 
 - [`study_config()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md)
   : Read the study manifest
+- [`study_abbreviations()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_abbreviations.md)
+  : The abbreviation list a study's labels use
+- [`add_abbreviation()`](https://ehrlinger.github.io/hvtiRutilities/reference/add_abbreviation.md)
+  : Add a phrase to a study's abbreviation list
 - [`study_root()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_root.md)
   : Locate the study root
 - [`sas_path()`](https://ehrlinger.github.io/hvtiRutilities/reference/sas_path.md)
