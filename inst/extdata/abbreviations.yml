@@ -1,0 +1,6 @@
+# The group default abbreviation list, phrase: abbreviation. Every study
+# inherits it; a study overrides or removes an entry in _study.yml.
+# Empty until the label census proposes a starter list (design section 8.1).
+# A change here changes every study's labels on its next render, so it goes
+# through a pull request with a NEWS line naming the entries changed.
+{}

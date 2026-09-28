@@ -1,3 +1,22 @@
+# hvtiRutilities (unreleased)
+
+## New features
+
+* `study_abbreviations()` merges the three abbreviation lists a job's labels
+  draw on: a job's own entries (`extra`), the study's `abbreviations:` mapping
+  in `_study.yml`, and a group default shipped in
+  `inst/extdata/abbreviations.yml`. A higher level replaces a lower level's
+  entry for the same phrase, ignoring case, and `null` removes one. The result
+  carries a `source` attribute naming each entry's level, for a job's
+  provenance. Two phrases sharing an abbreviation are an error naming both and
+  their levels, and every bad entry is reported in one error.
+  `add_abbreviation()` writes one entry to a study's list, after checking it
+  against the merged list; like `register_data()`, it rewrites `_study.yml`
+  whole, so comments there are not kept. `study_config()` now validates the
+  `abbreviations:` block. The group default ships empty: its starter list
+  comes from a census of labels across studies. Design:
+  `dev/specs/2026-09-25-study-abbreviations-design.md`.
+
 # hvtiRutilities 1.4.1
 
 ## New features
