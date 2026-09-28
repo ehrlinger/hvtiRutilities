@@ -217,31 +217,31 @@ print(lmap)
 #> 22   nyha_class                 NYHA functional class
 #> 23     diabetes                     Diabetes mellitus
 #> 24 hypertension                          Hypertension
-#>                                        label_full truncated
-#> 1                                      Patient ID     FALSE
-#> 2                  Calendar year for iv_opyrs = 0     FALSE
-#> 3  Observation interval (years) since origin_year      TRUE
-#> 4                 Follow-up time to death (years)     FALSE
-#> 5            Death indicator (1=dead, 0=censored)     FALSE
-#> 6                       Reoperation (1=yes, 0=no)     FALSE
-#> 7           Follow-up time to reoperation (years)     FALSE
-#> 8                          Age at surgery (years)     FALSE
-#> 9                                             Sex     FALSE
-#> 10                        Body mass index (kg/m2)     FALSE
-#> 11                     Baseline hemoglobin (g/dL)     FALSE
-#> 12                      Baseline WBC count (K/uL)     FALSE
-#> 13                 Baseline platelet count (K/uL)     FALSE
-#> 14                  Baseline eGFR (mL/min/1.73m2)     FALSE
-#> 15              Baseline LV ejection fraction (%)     FALSE
-#> 16                           Baseline LV mass (g)     FALSE
-#> 17                  Baseline LV mass index (g/m2)     FALSE
-#> 18           Baseline SV index - systolic (mL/m2)     FALSE
-#> 19          Baseline SV index - diastolic (mL/m2)     FALSE
-#> 20              Cardiopulmonary bypass time (min)     FALSE
-#> 21                  Aortic cross-clamp time (min)     FALSE
-#> 22                          NYHA functional class     FALSE
-#> 23                              Diabetes mellitus     FALSE
-#> 24                                   Hypertension     FALSE
+#>                                        label_full truncated over_cap
+#> 1                                      Patient ID     FALSE    FALSE
+#> 2                  Calendar year for iv_opyrs = 0     FALSE    FALSE
+#> 3  Observation interval (years) since origin_year      TRUE    FALSE
+#> 4                 Follow-up time to death (years)     FALSE    FALSE
+#> 5            Death indicator (1=dead, 0=censored)     FALSE    FALSE
+#> 6                       Reoperation (1=yes, 0=no)     FALSE    FALSE
+#> 7           Follow-up time to reoperation (years)     FALSE    FALSE
+#> 8                          Age at surgery (years)     FALSE    FALSE
+#> 9                                             Sex     FALSE    FALSE
+#> 10                        Body mass index (kg/m2)     FALSE    FALSE
+#> 11                     Baseline hemoglobin (g/dL)     FALSE    FALSE
+#> 12                      Baseline WBC count (K/uL)     FALSE    FALSE
+#> 13                 Baseline platelet count (K/uL)     FALSE    FALSE
+#> 14                  Baseline eGFR (mL/min/1.73m2)     FALSE    FALSE
+#> 15              Baseline LV ejection fraction (%)     FALSE    FALSE
+#> 16                           Baseline LV mass (g)     FALSE    FALSE
+#> 17                  Baseline LV mass index (g/m2)     FALSE    FALSE
+#> 18           Baseline SV index - systolic (mL/m2)     FALSE    FALSE
+#> 19          Baseline SV index - diastolic (mL/m2)     FALSE    FALSE
+#> 20              Cardiopulmonary bypass time (min)     FALSE    FALSE
+#> 21                  Aortic cross-clamp time (min)     FALSE    FALSE
+#> 22                          NYHA functional class     FALSE    FALSE
+#> 23                              Diabetes mellitus     FALSE    FALSE
+#> 24                                   Hypertension     FALSE    FALSE
 ```
 
 The label map is useful for annotating tables and plots with descriptive

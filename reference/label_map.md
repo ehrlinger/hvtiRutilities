@@ -30,10 +30,40 @@ in for a missing label passes through whole, however long, and
 and would read as a deliberately short label rather than as a missing
 one, destroying the signal the fallback exists to give.
 
+**Labels that differ stay different.** Cutting each label on its own can
+make two labels identical once their distinguishing ends are cut off.
+Within one map, labels that differ in `label_full` always differ in
+`label`. Each step below runs only on labels still over the cap or still
+colliding:
+
+1.  A heading, the text before the first `": "`, `" - "` or `"; "`,
+    shared by two or more labels, one of them over the cap, is
+    abbreviated in every label that carries it: to its entry in
+    `abbreviations`, or else to the initials of its words, skipping
+    small words such as "of" and "and". `"Surgical procedure"` becomes
+    `"SP"`. A one-word heading is left alone, and two headings with the
+    same initials are neither abbreviated.
+
+2.  Any phrase in `abbreviations` is applied, whole words and ignoring
+    case, to a label still over the cap. A label that fits is never
+    abbreviated this way.
+
+3.  The label is cut on a word boundary and marked.
+
+4.  Cut labels that still collide keep both ends,
+    `"Ascending aorta ... plus arch"`.
+
+5.  A label that still collides is shown whole, over the cap, and
+    `over_cap` marks it: a long label is a layout problem a reader can
+    see, two identical labels a wrong figure nobody can.
+
+The abbreviations actually shown come back as the `abbreviations`
+attribute, to print as a key beneath a figure or table.
+
 ## Usage
 
 ``` r
-label_map(data, label_max = 40)
+label_map(data, label_max = 40, abbreviations = NULL)
 ```
 
 ## Arguments
@@ -51,9 +81,18 @@ label_map(data, label_max = 40)
   to disable truncation. Does not apply to a variable name filled in for
   a missing label.
 
+- abbreviations:
+
+  `NULL`, or a named character vector in which each name is a phrase and
+  each value is that phrase's abbreviation:
+  `c("Left ventricular" = "LV")`. Used only on labels over the cap, and
+  for a shared heading in place of its initials.
+
 ## Value
 
-A data frame with four columns:
+A data frame with five columns, and an `abbreviations` attribute: a data
+frame of `abbreviation` and `expansion` for every abbreviation the
+labels show, with no rows when there are none.
 
 - key:
 
@@ -75,6 +114,12 @@ A data frame with four columns:
   Logical: `TRUE` where `label` was cut from `label_full`. Always
   `FALSE` for a filled variable name. `subset(x, truncated)` is the
   report of what was cut
+
+- over_cap:
+
+  Logical: `TRUE` where `label` is longer than `label_max` because every
+  shorter form collided with another label. `subset(x, over_cap)` is the
+  report
 
 ## See also
 
@@ -99,13 +144,13 @@ head(lmap)
 #> 4     iv_dead       Follow-up time to death (years)
 #> 5        dead  Death indicator (1=dead, 0=censored)
 #> 6        reop             Reoperation (1=yes, 0=no)
-#>                                       label_full truncated
-#> 1                                     Patient ID     FALSE
-#> 2                 Calendar year for iv_opyrs = 0     FALSE
-#> 3 Observation interval (years) since origin_year      TRUE
-#> 4                Follow-up time to death (years)     FALSE
-#> 5           Death indicator (1=dead, 0=censored)     FALSE
-#> 6                      Reoperation (1=yes, 0=no)     FALSE
+#>                                       label_full truncated over_cap
+#> 1                                     Patient ID     FALSE    FALSE
+#> 2                 Calendar year for iv_opyrs = 0     FALSE    FALSE
+#> 3 Observation interval (years) since origin_year      TRUE    FALSE
+#> 4                Follow-up time to death (years)     FALSE    FALSE
+#> 5           Death indicator (1=dead, 0=censored)     FALSE    FALSE
+#> 6                      Reoperation (1=yes, 0=no)     FALSE    FALSE
 
 # Use for publication-ready tables
 summary_vars <- c("age", "bmi", "hgb_bs")
@@ -123,28 +168,40 @@ print(tbl)
 # With sample data (has labels)
 dta <- sample_data(n = 20)
 label_map(dta)
-#>       key                label           label_full truncated
-#> 1      id   Patient Identifier   Patient Identifier     FALSE
-#> 2 boolean     Binary Indicator     Binary Indicator     FALSE
-#> 3 logical       Logical Status       Logical Status     FALSE
-#> 4  f_real Random Uniform Value Random Uniform Value     FALSE
-#> 5   float  Random Normal Value  Random Normal Value     FALSE
-#> 6    char               Gender               Gender     FALSE
-#> 7  factor       Category Group       Category Group     FALSE
+#>       key                label           label_full truncated over_cap
+#> 1      id   Patient Identifier   Patient Identifier     FALSE    FALSE
+#> 2 boolean     Binary Indicator     Binary Indicator     FALSE    FALSE
+#> 3 logical       Logical Status       Logical Status     FALSE    FALSE
+#> 4  f_real Random Uniform Value Random Uniform Value     FALSE    FALSE
+#> 5   float  Random Normal Value  Random Normal Value     FALSE    FALSE
+#> 6    char               Gender               Gender     FALSE    FALSE
+#> 7  factor       Category Group       Category Group     FALSE    FALSE
 
 # Which labels were cut, and what they were
 subset(label_map(dta, label_max = 20), truncated)
-#> [1] key        label      label_full truncated 
+#> [1] key        label      label_full truncated  over_cap  
 #> <0 rows> (or 0-length row.names)
 
 # Keep the source text
 label_map(dta, label_max = Inf)
-#>       key                label           label_full truncated
-#> 1      id   Patient Identifier   Patient Identifier     FALSE
-#> 2 boolean     Binary Indicator     Binary Indicator     FALSE
-#> 3 logical       Logical Status       Logical Status     FALSE
-#> 4  f_real Random Uniform Value Random Uniform Value     FALSE
-#> 5   float  Random Normal Value  Random Normal Value     FALSE
-#> 6    char               Gender               Gender     FALSE
-#> 7  factor       Category Group       Category Group     FALSE
+#>       key                label           label_full truncated over_cap
+#> 1      id   Patient Identifier   Patient Identifier     FALSE    FALSE
+#> 2 boolean     Binary Indicator     Binary Indicator     FALSE    FALSE
+#> 3 logical       Logical Status       Logical Status     FALSE    FALSE
+#> 4  f_real Random Uniform Value Random Uniform Value     FALSE    FALSE
+#> 5   float  Random Normal Value  Random Normal Value     FALSE    FALSE
+#> 6    char               Gender               Gender     FALSE    FALSE
+#> 7  factor       Category Group       Category Group     FALSE    FALSE
+
+# Labels sharing a heading keep what tells them apart, and the key says why
+procs <- data.frame(avr = 1, mvr = 1)
+attr(procs$avr, "label") <- "Surgical procedure: aortic valve replacement with root enlargement"
+attr(procs$mvr, "label") <- "Surgical procedure: mitral valve repair"
+lmap <- label_map(procs)
+lmap$label
+#> [1] "SP: aortic valve replacement with..."
+#> [2] "SP: mitral valve repair"             
+attr(lmap, "abbreviations")
+#>   abbreviation          expansion
+#> 1           SP Surgical procedure
 ```

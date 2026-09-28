@@ -66,17 +66,17 @@ head(lmap, 10)
 #> 8          age                Age at surgery (years)
 #> 9          sex                                   Sex
 #> 10         bmi               Body mass index (kg/m2)
-#>                                        label_full truncated
-#> 1                                      Patient ID     FALSE
-#> 2                  Calendar year for iv_opyrs = 0     FALSE
-#> 3  Observation interval (years) since origin_year      TRUE
-#> 4                 Follow-up time to death (years)     FALSE
-#> 5            Death indicator (1=dead, 0=censored)     FALSE
-#> 6                       Reoperation (1=yes, 0=no)     FALSE
-#> 7           Follow-up time to reoperation (years)     FALSE
-#> 8                          Age at surgery (years)     FALSE
-#> 9                                             Sex     FALSE
-#> 10                        Body mass index (kg/m2)     FALSE
+#>                                        label_full truncated over_cap
+#> 1                                      Patient ID     FALSE    FALSE
+#> 2                  Calendar year for iv_opyrs = 0     FALSE    FALSE
+#> 3  Observation interval (years) since origin_year      TRUE    FALSE
+#> 4                 Follow-up time to death (years)     FALSE    FALSE
+#> 5            Death indicator (1=dead, 0=censored)     FALSE    FALSE
+#> 6                       Reoperation (1=yes, 0=no)     FALSE    FALSE
+#> 7           Follow-up time to reoperation (years)     FALSE    FALSE
+#> 8                          Age at surgery (years)     FALSE    FALSE
+#> 9                                             Sex     FALSE    FALSE
+#> 10                        Body mass index (kg/m2)     FALSE    FALSE
 ```
 
 The result is a two-column data frame: `key` (variable name) and `label`
@@ -102,10 +102,10 @@ lmap_csv <- label_map(csv_data)
 #> Warning: 3 of 3 variables (100%) lack descriptive labels. Consider adding a
 #> labels_overrides.yml or using add_labels().
 print(lmap_csv)
-#>      key  label label_full truncated
-#> 1 pat_id pat_id     pat_id     FALSE
-#> 2    hgb    hgb        hgb     FALSE
-#> 3   egfr   egfr       egfr     FALSE
+#>      key  label label_full truncated over_cap
+#> 1 pat_id pat_id     pat_id     FALSE    FALSE
+#> 2    hgb    hgb        hgb     FALSE    FALSE
+#> 3   egfr   egfr       egfr     FALSE    FALSE
 ```
 
 The warning is intentional: it prevents the common mistake of generating
@@ -158,9 +158,9 @@ lmap[lmap$key %in% c("age_group", "ef_low"), ]
 #>          key                            label                       label_full
 #> 25 age_group             Age Group at Surgery             Age Group at Surgery
 #> 26    ef_low Reduced Ejection Fraction (<40%) Reduced Ejection Fraction (<40%)
-#>    truncated
-#> 25     FALSE
-#> 26     FALSE
+#>    truncated over_cap
+#> 25     FALSE    FALSE
+#> 26     FALSE    FALSE
 ```
 
 #### Method B: Update the label map (for reporting)
@@ -187,11 +187,11 @@ tail(lmap, 4)
 #> 25    age_group             Age Group at Surgery
 #> 26       ef_low Reduced Ejection Fraction (<40%)
 #> 27   risk_score             Composite Risk Score
-#>                          label_full truncated
-#> 24                     Hypertension     FALSE
-#> 25             Age Group at Surgery     FALSE
-#> 26 Reduced Ejection Fraction (<40%)     FALSE
-#> 27             Composite Risk Score     FALSE
+#>                          label_full truncated over_cap
+#> 24                     Hypertension     FALSE    FALSE
+#> 25             Age Group at Surgery     FALSE    FALSE
+#> 26 Reduced Ejection Fraction (<40%)     FALSE    FALSE
+#> 27             Composite Risk Score     FALSE    FALSE
 ```
 
 #### Which method should I use?
@@ -230,11 +230,11 @@ lmap <- label_map(generate_survival_data(n = 50, seed = 1))
 # Apply study-specific overrides
 lmap <- apply_label_overrides(lmap, overrides_file = tmp_overrides)
 lmap[lmap$key %in% c("lvefvs_b", "hgb_bs", "gfr_bs", "nyha_class"), ]
-#>           key                label           label_full truncated
-#> 11     hgb_bs    Hemoglobin (g/dL)    Hemoglobin (g/dL)     FALSE
-#> 14     gfr_bs eGFR (mL/min/1.73m2) eGFR (mL/min/1.73m2)     FALSE
-#> 15   lvefvs_b    Baseline LVEF (%)    Baseline LVEF (%)     FALSE
-#> 22 nyha_class           NYHA Class           NYHA Class     FALSE
+#>           key                label           label_full truncated over_cap
+#> 11     hgb_bs    Hemoglobin (g/dL)    Hemoglobin (g/dL)     FALSE    FALSE
+#> 14     gfr_bs eGFR (mL/min/1.73m2) eGFR (mL/min/1.73m2)     FALSE    FALSE
+#> 15   lvefvs_b    Baseline LVEF (%)    Baseline LVEF (%)     FALSE    FALSE
+#> 22 nyha_class           NYHA Class           NYHA Class     FALSE    FALSE
 ```
 
 In a real project, `labels_overrides.yml` lives alongside `config.yml`
@@ -434,17 +434,17 @@ head(lmap, 10)
 #> 8          age                Age at surgery (years)
 #> 9          sex                                   Sex
 #> 10         bmi               Body mass index (kg/m2)
-#>                                        label_full truncated
-#> 1                                      Patient ID     FALSE
-#> 2                  Calendar year for iv_opyrs = 0     FALSE
-#> 3  Observation interval (years) since origin_year      TRUE
-#> 4                 Follow-up time to death (years)     FALSE
-#> 5            Death indicator (1=dead, 0=censored)     FALSE
-#> 6                       Reoperation (1=yes, 0=no)     FALSE
-#> 7           Follow-up time to reoperation (years)     FALSE
-#> 8                          Age at surgery (years)     FALSE
-#> 9                                             Sex     FALSE
-#> 10                        Body mass index (kg/m2)     FALSE
+#>                                        label_full truncated over_cap
+#> 1                                      Patient ID     FALSE    FALSE
+#> 2                  Calendar year for iv_opyrs = 0     FALSE    FALSE
+#> 3  Observation interval (years) since origin_year      TRUE    FALSE
+#> 4                 Follow-up time to death (years)     FALSE    FALSE
+#> 5            Death indicator (1=dead, 0=censored)     FALSE    FALSE
+#> 6                       Reoperation (1=yes, 0=no)     FALSE    FALSE
+#> 7           Follow-up time to reoperation (years)     FALSE    FALSE
+#> 8                          Age at surgery (years)     FALSE    FALSE
+#> 9                                             Sex     FALSE    FALSE
+#> 10                        Body mass index (kg/m2)     FALSE    FALSE
 ```
 
 ## Labels and `r_data_types()`

@@ -72,26 +72,26 @@ str(dta)
 #>  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 4 5 4 4 2 2 1 3 4 3 ...
 #>   ..- attr(*, "label")= chr "Category Group"
 label_map(dta)
-#>       key                label           label_full truncated
-#> 1      id   Patient Identifier   Patient Identifier     FALSE
-#> 2 boolean     Binary Indicator     Binary Indicator     FALSE
-#> 3 logical       Logical Status       Logical Status     FALSE
-#> 4  f_real Random Uniform Value Random Uniform Value     FALSE
-#> 5   float  Random Normal Value  Random Normal Value     FALSE
-#> 6    char               Gender               Gender     FALSE
-#> 7  factor       Category Group       Category Group     FALSE
+#>       key                label           label_full truncated over_cap
+#> 1      id   Patient Identifier   Patient Identifier     FALSE    FALSE
+#> 2 boolean     Binary Indicator     Binary Indicator     FALSE    FALSE
+#> 3 logical       Logical Status       Logical Status     FALSE    FALSE
+#> 4  f_real Random Uniform Value Random Uniform Value     FALSE    FALSE
+#> 5   float  Random Normal Value  Random Normal Value     FALSE    FALSE
+#> 6    char               Gender               Gender     FALSE    FALSE
+#> 7  factor       Category Group       Category Group     FALSE    FALSE
 
 # Full workflow: generate, convert types, extract labels
 dta <- sample_data(n = 100)
 dta_clean <- r_data_types(dta, skip_vars = "id")
 lmap <- label_map(dta_clean)
 print(lmap)
-#>       key                label           label_full truncated
-#> 1      id   Patient Identifier   Patient Identifier     FALSE
-#> 2 boolean     Binary Indicator     Binary Indicator     FALSE
-#> 3 logical       Logical Status       Logical Status     FALSE
-#> 4  f_real Random Uniform Value Random Uniform Value     FALSE
-#> 5   float  Random Normal Value  Random Normal Value     FALSE
-#> 6    char               Gender               Gender     FALSE
-#> 7  factor       Category Group       Category Group     FALSE
+#>       key                label           label_full truncated over_cap
+#> 1      id   Patient Identifier   Patient Identifier     FALSE    FALSE
+#> 2 boolean     Binary Indicator     Binary Indicator     FALSE    FALSE
+#> 3 logical       Logical Status       Logical Status     FALSE    FALSE
+#> 4  f_real Random Uniform Value Random Uniform Value     FALSE    FALSE
+#> 5   float  Random Normal Value  Random Normal Value     FALSE    FALSE
+#> 6    char               Gender               Gender     FALSE    FALSE
+#> 7  factor       Category Group       Category Group     FALSE    FALSE
 ```

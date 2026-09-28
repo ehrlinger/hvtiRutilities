@@ -79,8 +79,8 @@ dta <- generate_survival_data(n = 50, seed = 42)
 lmap <- label_map(dta)
 lmap <- apply_label_overrides(lmap, overrides_file = tmp)
 lmap[lmap$key == "age", ]
-#>   key               label          label_full truncated
-#> 8 age Patient Age (years) Patient Age (years)     FALSE
+#>   key               label          label_full truncated over_cap
+#> 8 age Patient Age (years) Patient Age (years)     FALSE    FALSE
 
 # --- Directly on data (preferred) ---
 dta <- apply_label_overrides(dta, overrides_file = tmp)
