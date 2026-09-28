@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.4.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.4.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,6 +55,14 @@
       <small>Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.4.2" id="hvtirutilities-142">hvtiRutilities 1.4.2<a class="anchor" aria-label="anchor" href="#hvtirutilities-142"></a></h2>
+<div class="section level3">
+<h3 id="new-features-1-4-2">New features<a class="anchor" aria-label="anchor" href="#new-features-1-4-2"></a></h3>
+<ul><li><p><code><a href="../reference/label_map.html">label_map()</a></code> keeps labels that differ distinct. Cutting each label to <code>label_max</code> on its own could make two labels identical once their distinguishing ends were cut off; a figure of <code>Surgical procedure: ...</code> panels became unreadable, and nothing warned. Within one map, labels that differ in <code>label_full</code> now always differ in <code>label</code>. A heading shared by labels over the cap is abbreviated in all of them (<code>Surgical procedure</code> becomes <code>SP</code>); cut labels that still collide keep both ends (<code>Ascending aorta ... plus arch</code>); and a label that collides whatever is done is shown whole, flagged in a new <code>over_cap</code> column. A new <code>abbreviations</code> argument supplies a study’s own abbreviations, and the abbreviations the labels show come back as an <code>abbreviations</code> attribute, a key to print under the figure. <code><a href="../reference/add_labels.html">add_labels()</a></code> and <code><a href="../reference/apply_label_overrides.html">apply_label_overrides()</a></code> rebuild the whole map, so an added label keeps the guarantee. Design: <code>dev/specs/2026-09-02-label-length-and-fallback-design.md</code> section 4.2.</p></li>
+<li><p><code><a href="../reference/study_abbreviations.html">study_abbreviations()</a></code> merges the three abbreviation lists a job’s labels draw on: a job’s own entries (<code>extra</code>), the study’s <code>abbreviations:</code> mapping in <code>_study.yml</code>, and a group default shipped in <code>inst/extdata/abbreviations.yml</code>. A higher level replaces a lower level’s entry for the same phrase, ignoring case, and <code>null</code> removes one. The result carries a <code>source</code> attribute naming each entry’s level, for a job’s provenance. Two phrases sharing an abbreviation are an error naming both and their levels, and every bad entry is reported in one error. <code><a href="../reference/add_abbreviation.html">add_abbreviation()</a></code> writes one entry to a study’s list, after checking it against the merged list; like <code><a href="../reference/register_data.html">register_data()</a></code>, it rewrites <code>_study.yml</code> whole, so comments there are not kept. <code><a href="../reference/study_config.html">study_config()</a></code> now validates the <code>abbreviations:</code> block. The group default ships empty: its starter list comes from a census of labels across studies. Design: <code>dev/specs/2026-09-25-study-abbreviations-design.md</code>.</p></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.4.1" id="hvtirutilities-141">hvtiRutilities 1.4.1<a class="anchor" aria-label="anchor" href="#hvtirutilities-141"></a></h2>
 <div class="section level3">

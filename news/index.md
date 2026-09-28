@@ -1,5 +1,49 @@
 # Changelog
 
+## hvtiRutilities 1.4.2
+
+### New features
+
+- [`label_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)
+  keeps labels that differ distinct. Cutting each label to `label_max`
+  on its own could make two labels identical once their distinguishing
+  ends were cut off; a figure of `Surgical procedure: ...` panels became
+  unreadable, and nothing warned. Within one map, labels that differ in
+  `label_full` now always differ in `label`. A heading shared by labels
+  over the cap is abbreviated in all of them (`Surgical procedure`
+  becomes `SP`); cut labels that still collide keep both ends
+  (`Ascending aorta ... plus arch`); and a label that collides whatever
+  is done is shown whole, flagged in a new `over_cap` column. A new
+  `abbreviations` argument supplies a study’s own abbreviations, and the
+  abbreviations the labels show come back as an `abbreviations`
+  attribute, a key to print under the figure.
+  [`add_labels()`](https://ehrlinger.github.io/hvtiRutilities/reference/add_labels.md)
+  and
+  [`apply_label_overrides()`](https://ehrlinger.github.io/hvtiRutilities/reference/apply_label_overrides.md)
+  rebuild the whole map, so an added label keeps the guarantee. Design:
+  `dev/specs/2026-09-02-label-length-and-fallback-design.md` section
+  4.2.
+
+- [`study_abbreviations()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_abbreviations.md)
+  merges the three abbreviation lists a job’s labels draw on: a job’s
+  own entries (`extra`), the study’s `abbreviations:` mapping in
+  `_study.yml`, and a group default shipped in
+  `inst/extdata/abbreviations.yml`. A higher level replaces a lower
+  level’s entry for the same phrase, ignoring case, and `null` removes
+  one. The result carries a `source` attribute naming each entry’s
+  level, for a job’s provenance. Two phrases sharing an abbreviation are
+  an error naming both and their levels, and every bad entry is reported
+  in one error.
+  [`add_abbreviation()`](https://ehrlinger.github.io/hvtiRutilities/reference/add_abbreviation.md)
+  writes one entry to a study’s list, after checking it against the
+  merged list; like
+  [`register_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md),
+  it rewrites `_study.yml` whole, so comments there are not kept.
+  [`study_config()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md)
+  now validates the `abbreviations:` block. The group default ships
+  empty: its starter list comes from a census of labels across studies.
+  Design: `dev/specs/2026-09-25-study-abbreviations-design.md`.
+
 ## hvtiRutilities 1.4.1
 
 ### New features
