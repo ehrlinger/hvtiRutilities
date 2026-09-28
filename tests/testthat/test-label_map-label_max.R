@@ -16,7 +16,7 @@ lab <- function(text, var = "v") {
 test_that("label_map reports the cap and the source text", {
   result <- label_map(lab("Age at operation (years)"))
 
-  expect_named(result, c("key", "label", "label_full", "truncated"))
+  expect_named(result, c("key", "label", "label_full", "truncated", "over_cap"))
 })
 
 test_that("a label inside the cap is returned unchanged", {
