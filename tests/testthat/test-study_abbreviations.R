@@ -68,6 +68,10 @@ test_that("extra, the job's own list, beats the study and can remove", {
   expect_false("Left ventricular" %in% names(out))
   out <- study_abbreviations(cfg, extra = list("Left ventricular" = NULL))
   expect_false("Left ventricular" %in% names(out))
+  # NA in a list is a removal too, as the help page says.
+  out <- study_abbreviations(cfg, extra = list("Left ventricular" = NA, "Aortic valve" = "AV"))
+  expect_false("Left ventricular" %in% names(out))
+  expect_identical(out[["Aortic valve"]], "AV")
 })
 
 test_that("defaults = FALSE leaves the group list out", {

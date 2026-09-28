@@ -11,16 +11,14 @@
   if (!length(raw)) list() else raw
 }
 
-## One level's entries as a named list, NULL meaning "remove this phrase". A
-## character vector marks a removal with NA, since it cannot hold NULL.
+## One level's entries as a named list, NULL meaning "remove this phrase".
 .abbreviation_entries <- function(x) {
   if (is.null(x) || !length(x)) {
     return(list())
   }
-  if (is.character(x)) {
-    x <- lapply(x, function(v) if (is.na(v)) NULL else v)
-  }
-  as.list(x)
+  # A single NA marks a removal in either shape: a character vector cannot
+  # hold NULL, and list(x = NA) is how a list spells the same thing.
+  lapply(as.list(x), function(v) if (length(v) == 1L && is.na(v)) NULL else v)
 }
 
 ## Every problem with one level's entries, as messages naming the phrase and
