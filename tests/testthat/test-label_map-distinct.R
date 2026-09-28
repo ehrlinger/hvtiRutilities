@@ -179,6 +179,7 @@ test_that("keeping both ends keeps the heading abbreviated", {
     p3 = "Surgical procedure: mitral"
   )), label_max = 30)
   expect_match(lmap$label, "^SP: ")
-  expect_match(lmap$label[1:2], c("arch$", "root$"))
+  expect_match(lmap$label[1], "arch$")
+  expect_match(lmap$label[2], "root$")
   expect_false(anyDuplicated(lmap$label) > 0L)
 })
