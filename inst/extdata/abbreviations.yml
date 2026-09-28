@@ -5,9 +5,11 @@
 # A change here changes every study's labels on its next render, so it goes
 # through a pull request with a NEWS line naming the entries changed.
 #
-# Phrases match whole words, ignoring case, longest first, and only in labels
-# over the cap. Abbreviations are compared exactly: valve procedures take R for
-# replacement and r for repair.
+# Phrases match whole words, ignoring case, leftmost first, and only in labels
+# over the cap. One entry may list spellings of a term, "A | B", which share its
+# abbreviation; the first is what a key prints. Two entries may not share an
+# abbreviation, ignoring case, except R for replacement against r for repair.
+# PVR is left free: in cardiology it usually means pulmonary vascular resistance.
 
 # Chambers and vessels
 Left ventricular: LV
@@ -28,11 +30,10 @@ Mitral valve replacement: MVR
 Mitral valve repair: MVr
 Tricuspid valve replacement: TVR
 Tricuspid valve repair: TVr
-Pulmonary valve replacement: PVR
 Pulmonary valve repair: PVr
 
 # Procedures and support
-Coronary artery bypass graft: CABG
+Coronary artery bypass graft | Coronary artery bypass grafting: CABG
 Percutaneous coronary intervention: PCI
 Cardiopulmonary bypass: CPB
 Intra-aortic balloon pump: IABP
@@ -43,7 +44,7 @@ Coronary artery disease: CAD
 Congenital heart disease: CHD
 Hypertrophic obstructive cardiomyopathy: HOCM
 Atrial fibrillation: AF
-Cerebral vascular accident: CVA
+Cerebral vascular accident | Cerebrovascular accident: CVA
 Transient ischemic attack: TIA
 Chronic obstructive pulmonary disease: COPD
 Deep sternal wound infection: DSWI
@@ -51,12 +52,12 @@ New York Heart Association: NYHA
 
 # Echocardiography
 Ejection fraction: EF
-Left ventricular inner diameter in diastole: LVIDd
-Left ventricular inner diameter in systole: LVIDs
+Left ventricular inner diameter in diastole | Left ventricular internal diameter in diastole: LVIDd
+Left ventricular inner diameter in systole | Left ventricular internal diameter in systole: LVIDs
 Relative wall thickness: RWT
 
 # Blood products and course
 Fresh frozen plasma: FFP
-Red blood cell: RBC
+Red blood cell | Red blood cells: RBC
 Length of stay: LOS
 Preoperative: Preop

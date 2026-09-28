@@ -138,10 +138,12 @@ vector of the same length, each element `"job"`, `"study"` or `"default"`.
 - **two different phrases may not share an abbreviation** in the merged list:
   `SP` for both `Surgical procedure` and `Systolic pressure` would make a
   shortened label ambiguous. That is an error naming both phrases and the
-  level each came from. Abbreviations are compared **exactly, case
-  included** (decided 2026-09-28): the house style writes `AVR` for
-  replacement and `AVr` for repair, which a case-insensitive check would
-  refuse;
+  level each came from. Abbreviations are compared **ignoring case, except
+  that the house style's `R` for replacement and `r` for repair may differ in
+  that last letter's case** (`AVR`, `AVr`); decided 2026-09-28, after a
+  review showed that exact comparison also admitted accidental pairs such as
+  `Pv` beside `PV`. Spellings of one entry (`"A | B"`) share its abbreviation
+  and are not a clash;
 - an abbreviation is not longer than its phrase.
 
 An invalid study list stops the render with a message naming every bad entry at
@@ -226,3 +228,10 @@ even where the labels rarely write them (`CHD`, `DSWI`, `LVIDd`, `LVIDs`,
 `RWT`); atrial fibrillation is `AF`. `CA` and cross-clamp forms are left out,
 `CA` because it has several meanings. The list ships in
 `inst/extdata/abbreviations.yml` in 1.4.3.
+
+**Revised the same day, after an adversarial review of the starter list.**
+John's calls: the case exception is limited to a trailing `R`/`r`; `PVR` is
+dropped from the defaults, since it usually means pulmonary vascular
+resistance; an entry may list spellings of one term, separated by ` | `, so
+"grafting", "cells", "cerebrovascular" and "internal diameter" match; and a
+word-like abbreviation (`Preop`) takes the case of the text it replaces.

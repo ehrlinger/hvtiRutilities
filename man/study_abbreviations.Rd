@@ -40,9 +40,14 @@ reported in one error: an abbreviation must be one non-empty string no
 longer than its phrase, and a phrase may appear only once in a list. After
 merging, two phrases may not share an abbreviation, because the shortened
 label could then mean either; the error names both phrases and the level
-each came from. Abbreviations are compared exactly, case included: the house
-style writes \code{AVR} for aortic valve replacement and \code{AVr} for
-aortic valve repair, and those are two abbreviations, not one.
+each came from. Abbreviations are compared ignoring case, with one
+exception for the house style: \code{R} for replacement and \code{r} for
+repair (\code{AVR}, \code{AVr}) may differ only in that last letter's case.
+
+One entry may list several spellings of a term, separated by \code{" | "}:
+\code{"Red blood cell | Red blood cells" = "RBC"}. The spellings share the
+entry's abbreviation, which is not a clash, and the first spelling is the
+expansion a key prints.
 
 The list is a display input. It is never written into the stored labels.
 }

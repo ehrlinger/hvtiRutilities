@@ -167,6 +167,13 @@
   groups <- groups[vapply(groups, function(g) length(g) >= 2L && any(nchar(full[g]) > label_max), logical(1L))]
   if (length(groups)) {
     supplied <- vapply(names(groups), .supplied_for, character(1L), abbreviations = abbreviations)
+    # A supplied heading keys the term its entry stands for, so spellings of
+    # one term never give the key two rows.
+    listed <- attr(abbreviations, "expansion")
+    heading_expansion <- vapply(names(groups), function(h) {
+      k <- match(tolower(h), tolower(names(abbreviations)))
+      if (!is.na(supplied[[h]]) && length(listed) == length(abbreviations) && !is.na(k)) listed[[k]] else h
+    }, character(1L))
     short <- vapply(names(groups), function(h) {
       if (is.na(supplied[[h]])) .heading_initials(h) else supplied[[h]]
     }, character(1L))
@@ -179,7 +186,7 @@
     for (h in names(groups)[!is.na(short)]) {
       for (i in groups[[h]]) {
         label[i] <- paste0(short[[h]], substring(full[i], sep_at[i]))
-        used[[i]] <- rbind(used[[i]], data.frame(abbreviation = short[[h]], expansion = h))
+        used[[i]] <- rbind(used[[i]], data.frame(abbreviation = short[[h]], expansion = heading_expansion[[h]]))
       }
     }
   }
@@ -189,6 +196,10 @@
   # "Left ventricular ejection fraction" wins over "Left ventricular".
   if (length(abbreviations)) {
     patterns <- paste0("(?<![[:alnum:]])", .regex_escape(names(abbreviations)), "(?![[:alnum:]])")
+    # Spellings of one term share an abbreviation; the key names the term once,
+    # by the expansion study_abbreviations() records, or else by the phrase.
+    expansions <- attr(abbreviations, "expansion")
+    if (length(expansions) != length(abbreviations)) expansions <- names(abbreviations)
     for (i in own[vapply(own, over, logical(1L))]) {
       # Replace one match at a time, leftmost first and the longest phrase at
       # that position, so overlapping phrases read the way the label does:
@@ -211,9 +222,15 @@
         }
         if (is.null(best)) break
         short_form <- unname(abbreviations[[best$k]])
+        # A word-like abbreviation (Preop) follows the case of the text it
+        # replaces, so mid-sentence "preoperative" reads "preop"; initialisms
+        # (LV, AVr, LVIDd) are written as the list spells them.
+        if (grepl("^[A-Z][a-z]", short_form) && grepl("^[a-z]", substr(label[i], best$start, best$start))) {
+          short_form <- paste0(tolower(substr(short_form, 1L, 1L)), substring(short_form, 2L))
+        }
         label[i] <- paste0(substr(label[i], 1L, best$start - 1L), short_form,
                            substring(label[i], best$start + best$len))
-        used[[i]] <- rbind(used[[i]], data.frame(abbreviation = short_form, expansion = names(abbreviations)[best$k]))
+        used[[i]] <- rbind(used[[i]], data.frame(abbreviation = short_form, expansion = expansions[best$k]))
         from <- best$start + nchar(short_form)
       }
     }
@@ -358,7 +375,10 @@
 #' @param abbreviations \code{NULL}, or a named character vector in which
 #'   each name is a phrase and each value is that phrase's abbreviation:
 #'   \code{c("Left ventricular" = "LV")}. Used only on labels over the cap, and
-#'   for a shared heading in place of its initials.
+#'   for a shared heading in place of its initials. An \code{expansion}
+#'   attribute, as \code{\link{study_abbreviations}} returns, names the term
+#'   each abbreviation stands for in the key. A word-like abbreviation such as
+#'   \code{"Preop"} takes the case of the text it replaces.
 #'
 #' @return A data frame with five columns, and an \code{abbreviations}
 #'   attribute: a data frame of \code{abbreviation} and \code{expansion} for

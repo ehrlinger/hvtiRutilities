@@ -3,18 +3,28 @@
 ## New features
 
 * The group default abbreviation list (`inst/extdata/abbreviations.yml`) now
-  holds a starter list of 40 entries, drawn from a census of the labels in 705
+  holds a starter list of 39 entries, drawn from a census of the labels in 705
   studies' built datasets. Every study inherits it on its next render; a study
   overrides or drops an entry in `_study.yml`. The entries:
   - chambers and vessels: `LV`, `RV`, `LA`, `PA`, `RCA`, `IMA`;
-  - valves: `AV`, `MV`, `TV`, `PV`, and for each valve `R` for replacement
-    and `r` for repair (`AVR`, `AVr`, `MVR`, `MVr`, `TVR`, `TVr`, `PVR`,
-    `PVr`);
+  - valves: `AV`, `MV`, `TV`, `PV`, and `R` for replacement and `r` for
+    repair (`AVR`, `AVr`, `MVR`, `MVr`, `TVR`, `TVr`, `PVr`). `PVR` is left
+    out: in cardiology it usually means pulmonary vascular resistance;
   - procedures and support: `CABG`, `PCI`, `CPB`, `IABP`, `CEA`;
   - conditions: `CAD`, `CHD`, `HOCM`, `AF`, `CVA`, `TIA`, `COPD`, `DSWI`,
     `NYHA`;
   - echocardiography: `EF`, `LVIDd`, `LVIDs`, `RWT`;
   - blood products and course: `FFP`, `RBC`, `LOS`, `Preop`.
+
+  Five entries also list a second spelling: "Coronary artery bypass
+  grafting", "Cerebrovascular accident", "Red blood cells", and "Left
+  ventricular internal diameter" in diastole and systole.
+
+* An abbreviation list entry may name several spellings of one term,
+  separated by ` | `: `Red blood cell | Red blood cells: RBC`. The spellings
+  share the abbreviation, and a key prints the first. `study_abbreviations()`
+  returns one element per spelling, with an `expansion` attribute naming the
+  term, which `label_map()` uses for its key.
 
 ## Bug fixes
 
@@ -31,11 +41,13 @@
 
 ## Changes
 
-* `study_abbreviations()` compares abbreviations exactly, case included, when
-  it checks that no two phrases share one. `AVR` (replacement) and `AVr`
-  (repair) are two abbreviations in the house style, and the case-insensitive
-  check in 1.4.2 refused them. Two phrases given the identical abbreviation
-  are still an error.
+* `study_abbreviations()` still refuses two entries whose abbreviations differ
+  only in case, with one exception: the house style's `R` for replacement and
+  `r` for repair, so `AVR` and `AVr` coexist while `Pv` beside `PV` is refused.
+* `label_map()` writes a word-like abbreviation such as `Preop` in the case of
+  the text it replaces: "Days from preoperative echocardiogram" becomes "Days
+  from preop echocardiogram", not "Days from Preop". Initialisms (`LV`, `AVr`,
+  `LVIDd`) keep the list's spelling.
 
 # hvtiRutilities 1.4.2
 

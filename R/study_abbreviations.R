@@ -21,6 +21,11 @@
   lapply(as.list(x), function(v) if (length(v) == 1L && is.na(v)) NULL else v)
 }
 
+## The spellings an entry lists, "A | B" -> c("A", "B"). One entry may name
+## several spellings of one term; they share its abbreviation, and the first
+## is the expansion a key prints.
+.abbreviation_spellings <- function(phrase) trimws(strsplit(phrase, "|", fixed = TRUE)[[1L]])
+
 ## Every problem with one level's entries, as messages naming the phrase and
 ## the level. `allow_null` is FALSE only for the group default, which has
 ## nothing below it to remove.
@@ -37,13 +42,19 @@
       if (!allow_null) out <- c(out, sprintf("'%s' (%s): the default list cannot remove a phrase", p, level))
       next
     }
+    spellings <- .abbreviation_spellings(p)
+    if (!length(spellings) || !all(nzchar(spellings)) || grepl("\\|[[:space:]]*$", p)) {
+      out <- c(out, sprintf("'%s' (%s): a blank spelling between the | separators", p, level))
+      next
+    }
     if (!is.character(v) || length(v) != 1L || is.na(v) || !nzchar(v)) {
       out <- c(out, sprintf("'%s' (%s): the abbreviation must be one non-empty string, or null to remove it", p, level))
-    } else if (nchar(v) > nchar(p)) {
+    } else if (nchar(v) > min(nchar(spellings))) {
       out <- c(out, sprintf("'%s' (%s): the abbreviation '%s' is longer than its phrase", p, level, v))
     }
   }
-  twice <- unique(phrases[duplicated(tolower(phrases))])
+  every <- unlist(lapply(phrases, .abbreviation_spellings))
+  twice <- unique(every[duplicated(tolower(every))])
   c(out, sprintf("'%s' (%s): listed more than once, ignoring case", twice, level))
 }
 
@@ -86,9 +97,14 @@
 #' longer than its phrase, and a phrase may appear only once in a list. After
 #' merging, two phrases may not share an abbreviation, because the shortened
 #' label could then mean either; the error names both phrases and the level
-#' each came from. Abbreviations are compared exactly, case included: the house
-#' style writes \code{AVR} for aortic valve replacement and \code{AVr} for
-#' aortic valve repair, and those are two abbreviations, not one.
+#' each came from. Abbreviations are compared ignoring case, with one
+#' exception for the house style: \code{R} for replacement and \code{r} for
+#' repair (\code{AVR}, \code{AVr}) may differ only in that last letter's case.
+#'
+#' One entry may list several spellings of a term, separated by \code{" | "}:
+#' \code{"Red blood cell | Red blood cells" = "RBC"}. The spellings share the
+#' entry's abbreviation, which is not a clash, and the first spelling is the
+#' expansion a key prints.
 #'
 #' The list is a display input. It is never written into the stored labels.
 #'
@@ -133,38 +149,58 @@ study_abbreviations <- function(cfg = study_config(), extra = NULL, defaults = T
          " in the abbreviation lists:\n  ", paste(problems, collapse = "\n  "), call. = FALSE)
   }
 
+  # One row per spelling. `entry` ties spellings of one entry together, and
+  # `expansion` is that entry's first spelling.
   phrase <- character()
   short <- character()
   source <- character()
+  expansion <- character()
+  entry <- character()
   for (level in names(levels)) {
     entries <- levels[[level]]
     for (p in names(entries)) {
-      keep <- tolower(phrase) != tolower(p)
+      spellings <- .abbreviation_spellings(p)
+      # Naming any spelling of a lower entry replaces or removes that whole
+      # entry: "Red blood cell: ~" must drop "Red blood cells" as well.
+      keep <- !(entry %in% entry[tolower(phrase) %in% tolower(spellings)])
       phrase <- phrase[keep]
       short <- short[keep]
       source <- source[keep]
+      expansion <- expansion[keep]
+      entry <- entry[keep]
       if (!is.null(entries[[p]])) {
-        phrase <- c(phrase, p)
-        short <- c(short, entries[[p]])
-        source <- c(source, level)
+        phrase <- c(phrase, spellings)
+        short <- c(short, rep(entries[[p]], length(spellings)))
+        source <- c(source, rep(level, length(spellings)))
+        expansion <- c(expansion, rep(spellings[1L], length(spellings)))
+        entry <- c(entry, rep(paste(level, p, sep = "\r"), length(spellings)))
       }
     }
   }
 
-  # Exact comparison, case included: AVR (replacement) and AVr (repair) are
-  # the house style's two abbreviations, and must be allowed to coexist.
-  shared <- unique(short[duplicated(short)])
-  if (length(shared)) {
-    clashes <- vapply(shared, function(s) {
-      i <- which(short == s)
-      sprintf("'%s' abbreviates %s", short[i[1L]], paste(sprintf("%s (%s)", phrase[i], source[i]), collapse = " and "))
-    }, character(1L))
+  # Two entries may not share an abbreviation, compared ignoring case, so a
+  # shortened label cannot mean either. Two exceptions: spellings of one
+  # entry share it by design, and the house style's R for replacement and r
+  # for repair (AVR, AVr) differ only in that last letter's case.
+  rr_pair <- function(a, b) {
+    n <- nchar(a)
+    n == nchar(b) && n > 1L && substr(a, 1L, n - 1L) == substr(b, 1L, n - 1L) &&
+      setequal(c(substr(a, n, n), substr(b, n, n)), c("R", "r"))
+  }
+  clash <- character()
+  for (i in seq_along(short)) for (j in seq_along(short)) {
+    if (j <= i || entry[i] == entry[j] || tolower(short[i]) != tolower(short[j]) || rr_pair(short[i], short[j])) next
+    clash <- c(clash, sprintf("'%s' abbreviates %s (%s) and '%s' abbreviates %s (%s)",
+                              short[i], expansion[i], source[i], short[j], expansion[j], source[j]))
+  }
+  if (length(clash)) {
     stop("study_abbreviations(): two phrases share an abbreviation, so a shortened label could mean either:\n  ",
-         paste(clashes, collapse = "\n  "), call. = FALSE)
+         paste(unique(clash), collapse = "\n  "), call. = FALSE)
   }
 
   out <- stats::setNames(short, phrase)
   attr(out, "source") <- source
+  attr(out, "expansion") <- expansion
   out
 }
 

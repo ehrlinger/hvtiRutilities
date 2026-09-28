@@ -19,7 +19,10 @@ apply to a variable name filled in for a missing label.}
 \item{abbreviations}{\code{NULL}, or a named character vector in which
 each name is a phrase and each value is that phrase's abbreviation:
 \code{c("Left ventricular" = "LV")}. Used only on labels over the cap, and
-for a shared heading in place of its initials.}
+for a shared heading in place of its initials. An \code{expansion}
+attribute, as \code{\link{study_abbreviations}} returns, names the term
+each abbreviation stands for in the key. A word-like abbreviation such as
+\code{"Preop"} takes the case of the text it replaces.}
 }
 \value{
 A data frame with five columns, and an \code{abbreviations}
