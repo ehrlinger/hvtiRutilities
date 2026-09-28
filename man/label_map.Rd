@@ -16,8 +16,8 @@ convention. Must be at least 4, so that a cut always has room to be
 marked; use \code{Inf} or \code{NA} to disable truncation. Does not
 apply to a variable name filled in for a missing label.}
 
-\item{abbreviations}{\code{NULL}, or a named character vector of
-abbreviations, the name the phrase and the value its abbreviation:
+\item{abbreviations}{\code{NULL}, or a named character vector in which
+each name is a phrase and each value is that phrase's abbreviation:
 \code{c("Left ventricular" = "LV")}. Used only on labels over the cap, and
 for a shared heading in place of its initials.}
 }

@@ -183,3 +183,13 @@ test_that("keeping both ends keeps the heading abbreviated", {
   expect_match(lmap$label[2], "root$")
   expect_false(anyDuplicated(lmap$label) > 0L)
 })
+
+test_that("supplied phrases stop once the label fits", {
+  # Phrases go longest first. The longer one alone brings this label under the
+  # cap, so the shorter "before operation" must not be applied as well.
+  lmap <- quiet_map(labelled_frame(c(a = "Left ventricular ejection fraction measured before operation")),
+                    label_max = 40,
+                    abbreviations = c("Left ventricular ejection fraction" = "LVEF", "before operation" = "preop"))
+  expect_equal(lmap$label, "LVEF measured before operation")
+  expect_equal(attr(lmap, "abbreviations")$abbreviation, "LVEF")
+})

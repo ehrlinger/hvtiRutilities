@@ -187,6 +187,8 @@
     phrases <- names(abbreviations)[order(-nchar(names(abbreviations)))]
     for (i in own[vapply(own, over, logical(1L))]) {
       for (p in phrases) {
+        # Stop once the label fits: a fitting label is never abbreviated here.
+        if (!over(i)) break
         pattern <- paste0("(?<![[:alnum:]])", .regex_escape(p), "(?![[:alnum:]])")
         if (grepl(pattern, label[i], ignore.case = TRUE, perl = TRUE)) {
           label[i] <- gsub(pattern, abbreviations[[p]], label[i], ignore.case = TRUE, perl = TRUE)
@@ -332,8 +334,8 @@
 #'   convention. Must be at least 4, so that a cut always has room to be
 #'   marked; use \code{Inf} or \code{NA} to disable truncation. Does not
 #'   apply to a variable name filled in for a missing label.
-#' @param abbreviations \code{NULL}, or a named character vector of
-#'   abbreviations, the name the phrase and the value its abbreviation:
+#' @param abbreviations \code{NULL}, or a named character vector in which
+#'   each name is a phrase and each value is that phrase's abbreviation:
 #'   \code{c("Left ventricular" = "LV")}. Used only on labels over the cap, and
 #'   for a shared heading in place of its initials.
 #'
