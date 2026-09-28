@@ -147,3 +147,27 @@ test_that("add_abbreviation() refuses an entry that would break the merged list,
   expect_error(add_abbreviation(c("a", "b"), "A", start = dir), "phrase")
   expect_identical(readLines(file.path(dir, "_study.yml")), before)
 })
+
+test_that("abbreviations differing only in case coexist; an exact repeat is still an error", {
+  # The house style: R for replacement, r for repair.
+  local_defaults(c("Aortic valve replacement" = "AVR", "Aortic valve repair" = "AVr"))
+  cfg <- study_config(abbrev_study())
+  out <- study_abbreviations(cfg)
+  expect_identical(unname(out[c("Aortic valve replacement", "Aortic valve repair")]), c("AVR", "AVr"))
+  expect_error(study_abbreviations(cfg, extra = c("Aortic valve reconstruction" = "AVr")),
+               "Aortic valve repair \\(default\\)")
+})
+
+test_that("the shipped default list merges cleanly and shortens labels in the house style", {
+  cfg <- study_config(abbrev_study())
+  out <- study_abbreviations(cfg)
+  expect_gt(length(out), 0L)
+  expect_true(all(attr(out, "source") == "default"))
+  expect_identical(out[["Aortic valve replacement"]], "AVR")
+  expect_identical(out[["Aortic valve repair"]], "AVr")
+  d <- data.frame(a = 1, b = 1)
+  attr(d$a, "label") <- "Aortic valve replacement performed at the index operation"
+  attr(d$b, "label") <- "Aortic valve repair performed at the index operation"
+  lmap <- suppressWarnings(label_map(d, abbreviations = out))
+  expect_identical(lmap$label, c("AVR performed at the index operation", "AVr performed at the index operation"))
+})

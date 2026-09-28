@@ -1,3 +1,29 @@
+# hvtiRutilities (unreleased)
+
+## New features
+
+* The group default abbreviation list (`inst/extdata/abbreviations.yml`) now
+  holds a starter list of 40 entries, drawn from a census of the labels in 705
+  studies' built datasets. Every study inherits it on its next render; a study
+  overrides or drops an entry in `_study.yml`. The entries:
+  - chambers and vessels: `LV`, `RV`, `LA`, `PA`, `RCA`, `IMA`;
+  - valves: `AV`, `MV`, `TV`, `PV`, and for each valve `R` for replacement
+    and `r` for repair (`AVR`, `AVr`, `MVR`, `MVr`, `TVR`, `TVr`, `PVR`,
+    `PVr`);
+  - procedures and support: `CABG`, `PCI`, `CPB`, `IABP`, `CEA`;
+  - conditions: `CAD`, `CHD`, `HOCM`, `AF`, `CVA`, `TIA`, `COPD`, `DSWI`,
+    `NYHA`;
+  - echocardiography: `EF`, `LVIDd`, `LVIDs`, `RWT`;
+  - blood products and course: `FFP`, `RBC`, `LOS`, `Preop`.
+
+## Changes
+
+* `study_abbreviations()` compares abbreviations exactly, case included, when
+  it checks that no two phrases share one. `AVR` (replacement) and `AVr`
+  (repair) are two abbreviations in the house style, and the case-insensitive
+  check in 1.4.2 refused them. Two phrases given the identical abbreviation
+  are still an error.
+
 # hvtiRutilities 1.4.2
 
 ## New features

@@ -38,9 +38,11 @@ ignoring case, and an entry of \code{null} (\code{NA} or \code{NULL} in
 Every list is checked before anything is merged, and every problem is
 reported in one error: an abbreviation must be one non-empty string no
 longer than its phrase, and a phrase may appear only once in a list. After
-merging, two phrases may not share an abbreviation, compared ignoring case,
-because the shortened label could then mean either; the error names both
-phrases and the level each came from.
+merging, two phrases may not share an abbreviation, because the shortened
+label could then mean either; the error names both phrases and the level
+each came from. Abbreviations are compared exactly, case included: the house
+style writes \code{AVR} for aortic valve replacement and \code{AVr} for
+aortic valve repair, and those are two abbreviations, not one.
 
 The list is a display input. It is never written into the stored labels.
 }

@@ -84,9 +84,11 @@
 #' Every list is checked before anything is merged, and every problem is
 #' reported in one error: an abbreviation must be one non-empty string no
 #' longer than its phrase, and a phrase may appear only once in a list. After
-#' merging, two phrases may not share an abbreviation, compared ignoring case,
-#' because the shortened label could then mean either; the error names both
-#' phrases and the level each came from.
+#' merging, two phrases may not share an abbreviation, because the shortened
+#' label could then mean either; the error names both phrases and the level
+#' each came from. Abbreviations are compared exactly, case included: the house
+#' style writes \code{AVR} for aortic valve replacement and \code{AVr} for
+#' aortic valve repair, and those are two abbreviations, not one.
 #'
 #' The list is a display input. It is never written into the stored labels.
 #'
@@ -149,10 +151,12 @@ study_abbreviations <- function(cfg = study_config(), extra = NULL, defaults = T
     }
   }
 
-  shared <- unique(tolower(short[duplicated(tolower(short))]))
+  # Exact comparison, case included: AVR (replacement) and AVr (repair) are
+  # the house style's two abbreviations, and must be allowed to coexist.
+  shared <- unique(short[duplicated(short)])
   if (length(shared)) {
     clashes <- vapply(shared, function(s) {
-      i <- which(tolower(short) == s)
+      i <- which(short == s)
       sprintf("'%s' abbreviates %s", short[i[1L]], paste(sprintf("%s (%s)", phrase[i], source[i]), collapse = " and "))
     }, character(1L))
     stop("study_abbreviations(): two phrases share an abbreviation, so a shortened label could mean either:\n  ",
