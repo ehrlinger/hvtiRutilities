@@ -272,10 +272,29 @@
     over_cap[hit] <- nchar(full[hit]) > label_max
   }
 
+  # Keep only abbreviations the final label still shows: a two-ended cut can
+  # drop the middle an abbreviation sat in.
+  for (i in which(!vapply(used, is.null, logical(1L)))) {
+    visible <- vapply(used[[i]]$abbreviation, function(a) {
+      grepl(paste0("(?<![[:alnum:]])", .regex_escape(a), "(?![[:alnum:]])"), label[i], perl = TRUE)
+    }, logical(1L))
+    used[[i]] <- if (any(visible)) unique(used[[i]][visible, , drop = FALSE]) else NULL
+  }
   shown <- do.call(rbind, c(list(none), used))
   shown <- unique(shown)
   rownames(shown) <- NULL
-  list(label = label, truncated = cut & label != full, over_cap = over_cap, abbreviations = shown)
+  list(label = label, truncated = cut & label != full, over_cap = over_cap, abbreviations = shown, by_row = used)
+}
+
+## Per-variable provenance: which abbreviations each key's label shows.
+.abbreviations_by_key <- function(keys, by_row) {
+  rows <- lapply(seq_along(by_row), function(i) {
+    if (is.null(by_row[[i]])) NULL else data.frame(key = keys[i], by_row[[i]], stringsAsFactors = FALSE)
+  })
+  out <- do.call(rbind, c(list(data.frame(key = character(), abbreviation = character(), expansion = character(),
+                                          stringsAsFactors = FALSE)), rows))
+  rownames(out) <- NULL
+  out
 }
 
 ## Keep label_full, truncated and the distinctness guarantee honest after an
@@ -304,6 +323,7 @@
   map$truncated <- shown$truncated
   if ("over_cap" %in% names(map)) map$over_cap <- shown$over_cap
   attr(map, "abbreviations") <- shown$abbreviations
+  attr(map, "abbreviations_by_key") <- .abbreviations_by_key(map$key, shown$by_row)
   map
 }
 
@@ -363,7 +383,10 @@
 #'     see, two identical labels a wrong figure nobody can.
 #' }
 #' The abbreviations actually shown come back as the \code{abbreviations}
-#' attribute, to print as a key beneath a figure or table.
+#' attribute, to print as a key beneath a figure or table, and per variable as
+#' the \code{abbreviations_by_key} attribute (\code{key}, \code{abbreviation},
+#' \code{expansion}), so a key under one section can list only what that
+#' section's labels use.
 #'
 #' @param data A data frame, tibble, or similar object with variable labels
 #'   (typically created using the \code{labelled} package or imported from SAS).
@@ -464,6 +487,7 @@ label_map <- function(data, label_max = 40, abbreviations = NULL) {
   attr(result, "label_max") <- label_max
   attr(result, "abbreviation_list") <- abbreviations
   attr(result, "abbreviations") <- shown$abbreviations
+  attr(result, "abbreviations_by_key") <- .abbreviations_by_key(result$key, shown$by_row)
 
   # Warn when most columns lack real labels
   if (nrow(result) > 0) {

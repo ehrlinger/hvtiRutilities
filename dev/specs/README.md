@@ -26,7 +26,7 @@ condenses it; `plan` files carry none.
 
 | date | note | status |
 |---|---|---|
-| 2026-09-25 | [Study abbreviation lists: one list per study, over a group default](2026-09-25-study-abbreviations-design.md) | design; §2 and §3 decided 2026-09-25, §8 decided 2026-09-27; built as `study_abbreviations()` and `add_abbreviation()`, the default list empty until the label census |
+| 2026-09-25 | [Study abbreviation lists: one list per study, over a group default](2026-09-25-study-abbreviations-design.md) | design; §2 and §3 decided 2026-09-25, §8 decided 2026-09-27; built as `study_abbreviations()` and `add_abbreviation()` (1.4.2); the census-based starter list, 39 entries with spellings per entry, ships in 1.4.3 |
 | 2026-09-24 | [Study checkpoints and closure to `CORR_STUDIES`](2026-09-24-study-checkpoint-design.md) | design under review (PR #147) |
 | 2026-09-21 | [`hvtiRutilities` dataset release consumer plan](2026-09-21-dataset-release-consumer-plan.md) | consumer plan for the contract below |
 | 2026-09-21 | [Dataset release and study adoption contract](2026-09-21-dataset-release-contract-design.md) | approved; consumer implementation planned |

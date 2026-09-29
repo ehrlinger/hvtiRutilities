@@ -220,3 +220,21 @@ test_that("heading initials never reuse an abbreviation the list gives another p
   expect_false(any(grepl("^AVR:", lmap$label)))
   expect_match(lmap$label[3], "^AVR performed")
 })
+
+test_that("the map records which abbreviations each variable's label shows", {
+  # A label that says SP in its own words, and is shortened only by a cut, is
+  # not using the key's SP; per-variable provenance says so where a text search
+  # of the shortened labels could not.
+  lmap <- quiet_map(labelled_frame(c(
+    p1 = "Surgical procedure: aortic valve replacement with root enlargement",
+    p2 = "Surgical procedure: mitral valve repair with annuloplasty ring",
+    sp = "SP indicates the systolic pressure measured at the first clinic visit"
+  )), label_max = 40)
+  by_key <- attr(lmap, "abbreviations_by_key")
+  expect_named(by_key, c("key", "abbreviation", "expansion"))
+  expect_identical(sort(by_key$key), c("p1", "p2"))
+  expect_true(all(by_key$abbreviation == "SP"))
+  # Kept current by an override, like the rest of the map.
+  lmap <- add_labels(lmap, c(sp = "Surgical procedure: tricuspid valve repair with a ring annuloplasty"))
+  expect_identical(sort(attr(lmap, "abbreviations_by_key")$key), c("p1", "p2", "sp"))
+})

@@ -114,10 +114,16 @@
 #'   a lower level supplies. \code{NULL} for none.
 #' @param defaults \code{FALSE} leaves the group default list out.
 #'
-#' @return A named character vector, phrase to abbreviation, ready for
-#'   \code{label_map(abbreviations = )}, with a \code{source} attribute of the
-#'   same length naming each entry's level: \code{"job"}, \code{"study"} or
-#'   \code{"default"}. Removed phrases do not appear.
+#' @return A named character vector, one element per spelling, phrase to
+#'   abbreviation, ready for \code{label_map(abbreviations = )}. Removed
+#'   phrases do not appear. Two attributes of the same length:
+#'   \describe{
+#'     \item{source}{each entry's level: \code{"job"}, \code{"study"} or
+#'       \code{"default"};}
+#'     \item{expansion}{the term each abbreviation stands for, the first
+#'       spelling of its entry, which \code{\link{label_map}} prints in its
+#'       key.}
+#'   }
 #'
 #' @seealso \code{\link{add_abbreviation}} to add to a study's list,
 #'   \code{\link{label_map}}, which applies it.

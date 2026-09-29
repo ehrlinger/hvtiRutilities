@@ -96,7 +96,10 @@ still colliding:
     see, two identical labels a wrong figure nobody can.
 }
 The abbreviations actually shown come back as the \code{abbreviations}
-attribute, to print as a key beneath a figure or table.
+attribute, to print as a key beneath a figure or table, and per variable as
+the \code{abbreviations_by_key} attribute (\code{key}, \code{abbreviation},
+\code{expansion}), so a key under one section can list only what that
+section's labels use.
 }
 \examples{
 # Generate labeled survival data

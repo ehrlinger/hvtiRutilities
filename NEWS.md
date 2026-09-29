@@ -4,7 +4,10 @@
 
 * The group default abbreviation list (`inst/extdata/abbreviations.yml`) now
   holds a starter list of 39 entries, drawn from a census of the labels in 705
-  studies' built datasets. Every study inherits it on its next render; a study
+  studies' built datasets. It is the group level of `study_abbreviations()`:
+  a job that passes that function's result to `label_map(abbreviations = )`,
+  as the hvtiRtemplates EDA templates do, uses it on its next render.
+  `label_map()` itself still applies no list unless given one. A study
   overrides or drops an entry in `_study.yml`. The entries:
   - chambers and vessels: `LV`, `RV`, `LA`, `PA`, `RCA`, `IMA`;
   - valves: `AV`, `MV`, `TV`, `PV`, and `R` for replacement and `r` for
@@ -25,6 +28,12 @@
   share the abbreviation, and a key prints the first. `study_abbreviations()`
   returns one element per spelling, with an `expansion` attribute naming the
   term, which `label_map()` uses for its key.
+
+* `label_map()` records which abbreviations each variable's label shows, as
+  an `abbreviations_by_key` attribute (`key`, `abbreviation`, `expansion`), so
+  a key printed under one section of a report lists only what that section's
+  labels use. A text search of the labels could not tell a label that says
+  "SP" in its own words from one the list shortened.
 
 ## Bug fixes
 
