@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.4.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.4.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,6 +55,38 @@
       <small>Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.4.3" id="hvtirutilities-143">hvtiRutilities 1.4.3<a class="anchor" aria-label="anchor" href="#hvtirutilities-143"></a></h2>
+<div class="section level3">
+<h3 id="new-features-1-4-3">New features<a class="anchor" aria-label="anchor" href="#new-features-1-4-3"></a></h3>
+<ul><li>
+<p>The group default abbreviation list (<code>inst/extdata/abbreviations.yml</code>) now holds a starter list of 39 entries, drawn from a census of the labels in 705 studies’ built datasets. It is the group level of <code><a href="../reference/study_abbreviations.html">study_abbreviations()</a></code>: a job that passes that function’s result to <code>label_map(abbreviations = )</code>, as the hvtiRtemplates EDA templates do, uses it on its next render. <code><a href="../reference/label_map.html">label_map()</a></code> itself still applies no list unless given one. A study overrides or drops an entry in <code>_study.yml</code>. The entries:</p>
+<ul><li>chambers and vessels: <code>LV</code>, <code>RV</code>, <code>LA</code>, <code>PA</code>, <code>RCA</code>, <code>IMA</code>;</li>
+<li>valves: <code>AV</code>, <code>MV</code>, <code>TV</code>, <code>PV</code>, and <code>R</code> for replacement and <code>r</code> for repair (<code>AVR</code>, <code>AVr</code>, <code>MVR</code>, <code>MVr</code>, <code>TVR</code>, <code>TVr</code>, <code>PVr</code>). <code>PVR</code> is left out: in cardiology it usually means pulmonary vascular resistance;</li>
+<li>procedures and support: <code>CABG</code>, <code>PCI</code>, <code>CPB</code>, <code>IABP</code>, <code>CEA</code>;</li>
+<li>conditions: <code>CAD</code>, <code>CHD</code>, <code>HOCM</code>, <code>AF</code>, <code>CVA</code>, <code>TIA</code>, <code>COPD</code>, <code>DSWI</code>, <code>NYHA</code>;</li>
+<li>echocardiography: <code>EF</code>, <code>LVIDd</code>, <code>LVIDs</code>, <code>RWT</code>;</li>
+<li>blood products and course: <code>FFP</code>, <code>RBC</code>, <code>LOS</code>, <code>Preop</code>.</li>
+</ul><p>Five entries also list a second spelling: “Coronary artery bypass grafting”, “Cerebrovascular accident”, “Red blood cells”, and “Left ventricular internal diameter” in diastole and systole.</p>
+</li>
+<li><p>An abbreviation list entry may name several spellings of one term, separated by <code>|</code>: <code>Red blood cell | Red blood cells: RBC</code>. The spellings share the abbreviation, and a key prints the first. <code><a href="../reference/study_abbreviations.html">study_abbreviations()</a></code> returns one element per spelling, with an <code>expansion</code> attribute naming the term, which <code><a href="../reference/label_map.html">label_map()</a></code> uses for its key.</p></li>
+<li><p><code><a href="../reference/label_map.html">label_map()</a></code> records which abbreviations each variable’s label shows, as an <code>abbreviations_by_key</code> attribute (<code>key</code>, <code>abbreviation</code>, <code>expansion</code>), so a key printed under one section of a report lists only what that section’s labels use. A text search of the labels could not tell a label that says “SP” in its own words from one the list shortened.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-1-4-3">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-4-3"></a></h3>
+<ul><li>
+<code><a href="../reference/label_map.html">label_map()</a></code> reads overlapping phrases left to right. Phrases were applied longest first, so in “Right coronary artery bypass graft” the longer “Coronary artery bypass graft” won the overlap and the label read “Right CABG”. The leftmost phrase now wins, and the longest one where two start together: “RCA bypass graft”.</li>
+<li>
+<code><a href="../reference/label_map.html">label_map()</a></code> no longer abbreviates a shared heading to initials that the abbreviation list already gives another phrase. “Aortic valve reoperation” became “AVR”, the list’s aortic valve replacement, so one key listed <code>AVR</code> twice with two meanings. Such a heading now falls through to the later steps, and the supplied list keeps its meaning.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="changes-1-4-3">Changes<a class="anchor" aria-label="anchor" href="#changes-1-4-3"></a></h3>
+<ul><li>
+<code><a href="../reference/study_abbreviations.html">study_abbreviations()</a></code> still refuses two entries whose abbreviations differ only in case, with one exception: the house style’s <code>R</code> for replacement and <code>r</code> for repair, so <code>AVR</code> and <code>AVr</code> coexist while <code>Pv</code> beside <code>PV</code> is refused.</li>
+<li>
+<code><a href="../reference/label_map.html">label_map()</a></code> writes a word-like abbreviation such as <code>Preop</code> in the case of the text it replaces: “Days from preoperative echocardiogram” becomes “Days from preop echocardiogram”, not “Days from Preop”. Initialisms (<code>LV</code>, <code>AVr</code>, <code>LVIDd</code>) keep the list’s spelling.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.4.2" id="hvtirutilities-142">hvtiRutilities 1.4.2<a class="anchor" aria-label="anchor" href="#hvtirutilities-142"></a></h2>
 <div class="section level3">
