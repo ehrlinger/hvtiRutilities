@@ -58,7 +58,10 @@ colliding:
     see, two identical labels a wrong figure nobody can.
 
 The abbreviations actually shown come back as the `abbreviations`
-attribute, to print as a key beneath a figure or table.
+attribute, to print as a key beneath a figure or table, and per variable
+as the `abbreviations_by_key` attribute (`key`, `abbreviation`,
+`expansion`), so a key under one section can list only what that
+section's labels use.
 
 ## Usage
 
@@ -86,7 +89,12 @@ label_map(data, label_max = 40, abbreviations = NULL)
   `NULL`, or a named character vector in which each name is a phrase and
   each value is that phrase's abbreviation:
   `c("Left ventricular" = "LV")`. Used only on labels over the cap, and
-  for a shared heading in place of its initials.
+  for a shared heading in place of its initials. An `expansion`
+  attribute, as
+  [`study_abbreviations`](https://ehrlinger.github.io/hvtiRutilities/reference/study_abbreviations.md)
+  returns, names the term each abbreviation stands for in the key. A
+  word-like abbreviation such as `"Preop"` takes the case of the text it
+  replaces.
 
 ## Value
 

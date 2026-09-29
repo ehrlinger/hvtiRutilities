@@ -108,19 +108,33 @@ a lower level supplies. <code>NULL</code> for none.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A named character vector, phrase to abbreviation, ready for
-  <code>label_map(abbreviations = )</code>, with a <code>source</code> attribute of the
-  same length naming each entry's level: <code>"job"</code>, <code>"study"</code> or
-  <code>"default"</code>. Removed phrases do not appear.</p>
-    </div>
+    <p>A named character vector, one element per spelling, phrase to
+  abbreviation, ready for <code>label_map(abbreviations = )</code>. Removed
+  phrases do not appear. Two attributes of the same length:</p><dl><dt>source</dt>
+<dd><p>each entry's level: <code>"job"</code>, <code>"study"</code> or
+      <code>"default"</code>;</p></dd>
+
+    <dt>expansion</dt>
+<dd><p>the term each abbreviation stands for, the first
+      spelling of its entry, which <code><a href="label_map.html">label_map</a></code> prints in its
+      key.</p></dd>
+
+
+</dl></div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>Every list is checked before anything is merged, and every problem is
 reported in one error: an abbreviation must be one non-empty string no
 longer than its phrase, and a phrase may appear only once in a list. After
-merging, two phrases may not share an abbreviation, compared ignoring case,
-because the shortened label could then mean either; the error names both
-phrases and the level each came from.</p>
+merging, two phrases may not share an abbreviation, because the shortened
+label could then mean either; the error names both phrases and the level
+each came from. Abbreviations are compared ignoring case, with one
+exception for the house style: <code>R</code> for replacement and <code>r</code> for
+repair (<code>AVR</code>, <code>AVr</code>) may differ only in that last letter's case.</p>
+<p>One entry may list several spellings of a term, separated by <code>" | "</code>:
+<code>"Red blood cell | Red blood cells" = "RBC"</code>. The spellings share the
+entry's abbreviation, which is not a clash, and the first spelling is the
+expansion a key prints.</p>
 <p>The list is a display input. It is never written into the stored labels.</p>
     </div>
     <div class="section level2">
@@ -133,7 +147,7 @@ phrases and the level each came from.</p>
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">root</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"abbrev-example"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="study_setup.html">study_setup</a></span><span class="op">(</span><span class="va">root</span>, <span class="st">"Abbreviation example"</span>, <span class="fl">1L</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Study: /tmp/RtmpWgk15M/abbrev-example</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Study: /tmp/RtmpwvjFuz/abbrev-example</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [x] _study.yml — study: Abbreviation example</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [ ] renv.lock — no renv.lock; run renv::init() in the study project</span>
@@ -145,10 +159,153 @@ phrases and the level each came from.</p>
 <span class="r-in"><span><span class="fu"><a href="add_abbreviation.html">add_abbreviation</a></span><span class="op">(</span><span class="st">"Surgical procedure"</span>, <span class="st">"SP"</span>, start <span class="op">=</span> <span class="va">root</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">study_abbreviations</span><span class="op">(</span><span class="fu"><a href="study_config.html">study_config</a></span><span class="op">(</span><span class="va">root</span>, require_data <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>                    extra <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Left ventricular outflow tract"</span> <span class="op">=</span> <span class="st">"LVOT"</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>             Surgical procedure Left ventricular outflow tract </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                           "SP"                         "LVOT" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                               Left ventricular </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                           "LV" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                              Right ventricular </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                           "RV" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                    Left atrial </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                           "LA" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                               Pulmonary artery </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                           "PA" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          Right coronary artery </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                          "RCA" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        Internal mammary artery </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                          "IMA" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                   Aortic valve </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                           "AV" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                   Mitral valve </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                           "MV" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                Tricuspid valve </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                           "TV" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                Pulmonary valve </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                           "PV" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                       Aortic valve replacement </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                          "AVR" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                            Aortic valve repair </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                          "AVr" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                       Mitral valve replacement </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                          "MVR" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                            Mitral valve repair </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                          "MVr" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                    Tricuspid valve replacement </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                          "TVR" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         Tricuspid valve repair </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                          "TVr" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         Pulmonary valve repair </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                          "PVr" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                   Coronary artery bypass graft </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                         "CABG" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                Coronary artery bypass grafting </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                         "CABG" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             Percutaneous coronary intervention </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                          "PCI" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         Cardiopulmonary bypass </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                          "CPB" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                      Intra-aortic balloon pump </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                         "IABP" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         Carotid endarterectomy </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                          "CEA" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        Coronary artery disease </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                          "CAD" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                       Congenital heart disease </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                          "CHD" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        Hypertrophic obstructive cardiomyopathy </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                         "HOCM" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                            Atrial fibrillation </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                           "AF" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                     Cerebral vascular accident </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                          "CVA" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                       Cerebrovascular accident </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                          "CVA" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                      Transient ischemic attack </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                          "TIA" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          Chronic obstructive pulmonary disease </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                         "COPD" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                   Deep sternal wound infection </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                         "DSWI" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                     New York Heart Association </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                         "NYHA" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                              Ejection fraction </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                           "EF" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    Left ventricular inner diameter in diastole </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                        "LVIDd" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Left ventricular internal diameter in diastole </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                        "LVIDd" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Left ventricular inner diameter in systole </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                        "LVIDs" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Left ventricular internal diameter in systole </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                        "LVIDs" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        Relative wall thickness </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                          "RWT" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                            Fresh frozen plasma </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                          "FFP" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                 Red blood cell </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                          "RBC" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                Red blood cells </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                          "RBC" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                 Length of stay </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                          "LOS" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                   Preoperative </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                        "Preop" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                             Surgical procedure </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                           "SP" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                 Left ventricular outflow tract </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                         "LVOT" </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> attr(,"source")</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "study" "job"  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [1] "default" "default" "default" "default" "default" "default" "default"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [8] "default" "default" "default" "default" "default" "default" "default"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [15] "default" "default" "default" "default" "default" "default" "default"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [22] "default" "default" "default" "default" "default" "default" "default"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [29] "default" "default" "default" "default" "default" "default" "default"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [36] "default" "default" "default" "default" "default" "default" "default"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [43] "default" "default" "study"   "job"    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> attr(,"expansion")</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [1] "Left ventricular"                           </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [2] "Right ventricular"                          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [3] "Left atrial"                                </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [4] "Pulmonary artery"                           </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [5] "Right coronary artery"                      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [6] "Internal mammary artery"                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [7] "Aortic valve"                               </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [8] "Mitral valve"                               </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [9] "Tricuspid valve"                            </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [10] "Pulmonary valve"                            </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [11] "Aortic valve replacement"                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [12] "Aortic valve repair"                        </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [13] "Mitral valve replacement"                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [14] "Mitral valve repair"                        </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [15] "Tricuspid valve replacement"                </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [16] "Tricuspid valve repair"                     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [17] "Pulmonary valve repair"                     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18] "Coronary artery bypass graft"               </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [19] "Coronary artery bypass graft"               </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [20] "Percutaneous coronary intervention"         </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [21] "Cardiopulmonary bypass"                     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [22] "Intra-aortic balloon pump"                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [23] "Carotid endarterectomy"                     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [24] "Coronary artery disease"                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [25] "Congenital heart disease"                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [26] "Hypertrophic obstructive cardiomyopathy"    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [27] "Atrial fibrillation"                        </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [28] "Cerebral vascular accident"                 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [29] "Cerebral vascular accident"                 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [30] "Transient ischemic attack"                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [31] "Chronic obstructive pulmonary disease"      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [32] "Deep sternal wound infection"               </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [33] "New York Heart Association"                 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [34] "Ejection fraction"                          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [35] "Left ventricular inner diameter in diastole"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [36] "Left ventricular inner diameter in diastole"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [37] "Left ventricular inner diameter in systole" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [38] "Left ventricular inner diameter in systole" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [39] "Relative wall thickness"                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [40] "Fresh frozen plasma"                        </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [41] "Red blood cell"                             </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [42] "Red blood cell"                             </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [43] "Length of stay"                             </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [44] "Preoperative"                               </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [45] "Surgical procedure"                         </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [46] "Left ventricular outflow tract"             </span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/unlink.html" class="external-link">unlink</a></span><span class="op">(</span><span class="va">root</span>, recursive <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 </code></pre></div>
     </div>
