@@ -193,3 +193,48 @@ test_that("supplied phrases stop once the label fits", {
   expect_equal(lmap$label, "LVEF measured before operation")
   expect_equal(attr(lmap, "abbreviations")$abbreviation, "LVEF")
 })
+
+test_that("overlapping phrases are read left to right", {
+  # Longest-first alone gave "Right CABG": the shorter phrase starting earlier
+  # wins the overlap.
+  ab <- c("Right coronary artery" = "RCA", "Coronary artery bypass graft" = "CABG", "Coronary artery disease" = "CAD")
+  lmap <- quiet_map(labelled_frame(c(
+    a = "Right coronary artery bypass graft patency at follow-up",
+    b = "Right coronary artery disease severity at catheterization",
+    c = "Coronary artery bypass graft performed with vein conduits only"
+  )), label_max = 40, abbreviations = ab)
+  expect_equal(lmap$label[1:2], c("RCA bypass graft patency at follow-up", "RCA disease severity at catheterization"))
+  expect_match(lmap$label[3], "^CABG performed")
+})
+
+test_that("heading initials never reuse an abbreviation the list gives another phrase", {
+  # "Aortic valve reoperation" has the initials AVR, which the list gives to
+  # aortic valve replacement; one key must not say AVR twice.
+  lmap <- quiet_map(labelled_frame(c(
+    a = "Aortic valve reoperation: time to event in years from index",
+    b = "Aortic valve reoperation: indication recorded by the surgeon",
+    c = "Aortic valve replacement performed at the index operation date"
+  )), label_max = 40, abbreviations = c("Aortic valve replacement" = "AVR"))
+  key <- attr(lmap, "abbreviations")
+  expect_false(anyDuplicated(key$abbreviation) > 0L)
+  expect_false(any(grepl("^AVR:", lmap$label)))
+  expect_match(lmap$label[3], "^AVR performed")
+})
+
+test_that("the map records which abbreviations each variable's label shows", {
+  # A label that says SP in its own words, and is shortened only by a cut, is
+  # not using the key's SP; per-variable provenance says so where a text search
+  # of the shortened labels could not.
+  lmap <- quiet_map(labelled_frame(c(
+    p1 = "Surgical procedure: aortic valve replacement with root enlargement",
+    p2 = "Surgical procedure: mitral valve repair with annuloplasty ring",
+    sp = "SP indicates the systolic pressure measured at the first clinic visit"
+  )), label_max = 40)
+  by_key <- attr(lmap, "abbreviations_by_key")
+  expect_named(by_key, c("key", "abbreviation", "expansion"))
+  expect_identical(sort(by_key$key), c("p1", "p2"))
+  expect_true(all(by_key$abbreviation == "SP"))
+  # Kept current by an override, like the rest of the map.
+  lmap <- add_labels(lmap, c(sp = "Surgical procedure: tricuspid valve repair with a ring annuloplasty"))
+  expect_identical(sort(attr(lmap, "abbreviations_by_key")$key), c("p1", "p2", "sp"))
+})

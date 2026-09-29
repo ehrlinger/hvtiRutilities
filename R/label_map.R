@@ -166,16 +166,27 @@
   groups <- split(which(has_heading), heading[has_heading])
   groups <- groups[vapply(groups, function(g) length(g) >= 2L && any(nchar(full[g]) > label_max), logical(1L))]
   if (length(groups)) {
-    short <- vapply(names(groups), function(h) {
-      s <- .supplied_for(h, abbreviations)
-      if (is.na(s)) .heading_initials(h) else s
+    supplied <- vapply(names(groups), .supplied_for, character(1L), abbreviations = abbreviations)
+    # A supplied heading keys the term its entry stands for, so spellings of
+    # one term never give the key two rows.
+    listed <- attr(abbreviations, "expansion")
+    heading_expansion <- vapply(names(groups), function(h) {
+      k <- match(tolower(h), tolower(names(abbreviations)))
+      if (!is.na(supplied[[h]]) && length(listed) == length(abbreviations) && !is.na(k)) listed[[k]] else h
     }, character(1L))
+    short <- vapply(names(groups), function(h) {
+      if (is.na(supplied[[h]])) .heading_initials(h) else supplied[[h]]
+    }, character(1L))
+    # Initials that equal an abbreviation the list gives another phrase would
+    # make one abbreviation mean two things in one key ("Aortic valve
+    # reoperation" and the list's AVR): such a heading is not abbreviated.
+    short[is.na(supplied) & short %in% unname(abbreviations)] <- NA_character_
     # Two distinct headings giving the same abbreviation: neither is used.
     short[short %in% short[duplicated(short)]] <- NA_character_
     for (h in names(groups)[!is.na(short)]) {
       for (i in groups[[h]]) {
         label[i] <- paste0(short[[h]], substring(full[i], sep_at[i]))
-        used[[i]] <- rbind(used[[i]], data.frame(abbreviation = short[[h]], expansion = h))
+        used[[i]] <- rbind(used[[i]], data.frame(abbreviation = short[[h]], expansion = heading_expansion[[h]]))
       }
     }
   }
@@ -184,16 +195,43 @@
   # only; a label that fits is left as written. Longer phrases go first so
   # "Left ventricular ejection fraction" wins over "Left ventricular".
   if (length(abbreviations)) {
-    phrases <- names(abbreviations)[order(-nchar(names(abbreviations)))]
+    patterns <- paste0("(?<![[:alnum:]])", .regex_escape(names(abbreviations)), "(?![[:alnum:]])")
+    # Spellings of one term share an abbreviation; the key names the term once,
+    # by the expansion study_abbreviations() records, or else by the phrase.
+    expansions <- attr(abbreviations, "expansion")
+    if (length(expansions) != length(abbreviations)) expansions <- names(abbreviations)
     for (i in own[vapply(own, over, logical(1L))]) {
-      for (p in phrases) {
+      # Replace one match at a time, leftmost first and the longest phrase at
+      # that position, so overlapping phrases read the way the label does:
+      # "Right coronary artery bypass graft" is "RCA bypass graft", not
+      # "Right CABG". Search resumes after each replacement, so it ends.
+      from <- 1L
+      repeat {
         # Stop once the label fits: a fitting label is never abbreviated here.
         if (!over(i)) break
-        pattern <- paste0("(?<![[:alnum:]])", .regex_escape(p), "(?![[:alnum:]])")
-        if (grepl(pattern, label[i], ignore.case = TRUE, perl = TRUE)) {
-          label[i] <- gsub(pattern, abbreviations[[p]], label[i], ignore.case = TRUE, perl = TRUE)
-          used[[i]] <- rbind(used[[i]], data.frame(abbreviation = unname(abbreviations[[p]]), expansion = p))
+        best <- NULL
+        for (k in seq_along(patterns)) {
+          m <- gregexpr(patterns[k], label[i], ignore.case = TRUE, perl = TRUE)[[1L]]
+          ok <- which(m >= from)
+          if (!length(ok)) next
+          start <- m[ok[1L]]
+          len <- attr(m, "match.length")[ok[1L]]
+          if (is.null(best) || start < best$start || (start == best$start && len > best$len)) {
+            best <- list(start = start, len = len, k = k)
+          }
         }
+        if (is.null(best)) break
+        short_form <- unname(abbreviations[[best$k]])
+        # A word-like abbreviation (Preop) follows the case of the text it
+        # replaces, so mid-sentence "preoperative" reads "preop"; initialisms
+        # (LV, AVr, LVIDd) are written as the list spells them.
+        if (grepl("^[A-Z][a-z]", short_form) && grepl("^[a-z]", substr(label[i], best$start, best$start))) {
+          short_form <- paste0(tolower(substr(short_form, 1L, 1L)), substring(short_form, 2L))
+        }
+        label[i] <- paste0(substr(label[i], 1L, best$start - 1L), short_form,
+                           substring(label[i], best$start + best$len))
+        used[[i]] <- rbind(used[[i]], data.frame(abbreviation = short_form, expansion = expansions[best$k]))
+        from <- best$start + nchar(short_form)
       }
     }
   }
@@ -234,10 +272,29 @@
     over_cap[hit] <- nchar(full[hit]) > label_max
   }
 
+  # Keep only abbreviations the final label still shows: a two-ended cut can
+  # drop the middle an abbreviation sat in.
+  for (i in which(!vapply(used, is.null, logical(1L)))) {
+    visible <- vapply(used[[i]]$abbreviation, function(a) {
+      grepl(paste0("(?<![[:alnum:]])", .regex_escape(a), "(?![[:alnum:]])"), label[i], perl = TRUE)
+    }, logical(1L))
+    used[[i]] <- if (any(visible)) unique(used[[i]][visible, , drop = FALSE]) else NULL
+  }
   shown <- do.call(rbind, c(list(none), used))
   shown <- unique(shown)
   rownames(shown) <- NULL
-  list(label = label, truncated = cut & label != full, over_cap = over_cap, abbreviations = shown)
+  list(label = label, truncated = cut & label != full, over_cap = over_cap, abbreviations = shown, by_row = used)
+}
+
+## Per-variable provenance: which abbreviations each key's label shows.
+.abbreviations_by_key <- function(keys, by_row) {
+  rows <- lapply(seq_along(by_row), function(i) {
+    if (is.null(by_row[[i]])) NULL else data.frame(key = keys[i], by_row[[i]], stringsAsFactors = FALSE)
+  })
+  out <- do.call(rbind, c(list(data.frame(key = character(), abbreviation = character(), expansion = character(),
+                                          stringsAsFactors = FALSE)), rows))
+  rownames(out) <- NULL
+  out
 }
 
 ## Keep label_full, truncated and the distinctness guarantee honest after an
@@ -266,6 +323,7 @@
   map$truncated <- shown$truncated
   if ("over_cap" %in% names(map)) map$over_cap <- shown$over_cap
   attr(map, "abbreviations") <- shown$abbreviations
+  attr(map, "abbreviations_by_key") <- .abbreviations_by_key(map$key, shown$by_row)
   map
 }
 
@@ -325,7 +383,10 @@
 #'     see, two identical labels a wrong figure nobody can.
 #' }
 #' The abbreviations actually shown come back as the \code{abbreviations}
-#' attribute, to print as a key beneath a figure or table.
+#' attribute, to print as a key beneath a figure or table, and per variable as
+#' the \code{abbreviations_by_key} attribute (\code{key}, \code{abbreviation},
+#' \code{expansion}), so a key under one section can list only what that
+#' section's labels use.
 #'
 #' @param data A data frame, tibble, or similar object with variable labels
 #'   (typically created using the \code{labelled} package or imported from SAS).
@@ -337,7 +398,10 @@
 #' @param abbreviations \code{NULL}, or a named character vector in which
 #'   each name is a phrase and each value is that phrase's abbreviation:
 #'   \code{c("Left ventricular" = "LV")}. Used only on labels over the cap, and
-#'   for a shared heading in place of its initials.
+#'   for a shared heading in place of its initials. An \code{expansion}
+#'   attribute, as \code{\link{study_abbreviations}} returns, names the term
+#'   each abbreviation stands for in the key. A word-like abbreviation such as
+#'   \code{"Preop"} takes the case of the text it replaces.
 #'
 #' @return A data frame with five columns, and an \code{abbreviations}
 #'   attribute: a data frame of \code{abbreviation} and \code{expansion} for
@@ -423,6 +487,7 @@ label_map <- function(data, label_max = 40, abbreviations = NULL) {
   attr(result, "label_max") <- label_max
   attr(result, "abbreviation_list") <- abbreviations
   attr(result, "abbreviations") <- shown$abbreviations
+  attr(result, "abbreviations_by_key") <- .abbreviations_by_key(result$key, shown$by_row)
 
   # Warn when most columns lack real labels
   if (nrow(result) > 0) {

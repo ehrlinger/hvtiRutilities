@@ -16,10 +16,16 @@ a lower level supplies. \code{NULL} for none.}
 \item{defaults}{\code{FALSE} leaves the group default list out.}
 }
 \value{
-A named character vector, phrase to abbreviation, ready for
-  \code{label_map(abbreviations = )}, with a \code{source} attribute of the
-  same length naming each entry's level: \code{"job"}, \code{"study"} or
-  \code{"default"}. Removed phrases do not appear.
+A named character vector, one element per spelling, phrase to
+  abbreviation, ready for \code{label_map(abbreviations = )}. Removed
+  phrases do not appear. Two attributes of the same length:
+  \describe{
+    \item{source}{each entry's level: \code{"job"}, \code{"study"} or
+      \code{"default"};}
+    \item{expansion}{the term each abbreviation stands for, the first
+      spelling of its entry, which \code{\link{label_map}} prints in its
+      key.}
+  }
 }
 \description{
 Merges the three abbreviation lists a job's labels can draw on, and checks
@@ -38,9 +44,16 @@ ignoring case, and an entry of \code{null} (\code{NA} or \code{NULL} in
 Every list is checked before anything is merged, and every problem is
 reported in one error: an abbreviation must be one non-empty string no
 longer than its phrase, and a phrase may appear only once in a list. After
-merging, two phrases may not share an abbreviation, compared ignoring case,
-because the shortened label could then mean either; the error names both
-phrases and the level each came from.
+merging, two phrases may not share an abbreviation, because the shortened
+label could then mean either; the error names both phrases and the level
+each came from. Abbreviations are compared ignoring case, with one
+exception for the house style: \code{R} for replacement and \code{r} for
+repair (\code{AVR}, \code{AVr}) may differ only in that last letter's case.
+
+One entry may list several spellings of a term, separated by \code{" | "}:
+\code{"Red blood cell | Red blood cells" = "RBC"}. The spellings share the
+entry's abbreviation, which is not a clash, and the first spelling is the
+expansion a key prints.
 
 The list is a display input. It is never written into the stored labels.
 }

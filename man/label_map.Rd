@@ -19,7 +19,10 @@ apply to a variable name filled in for a missing label.}
 \item{abbreviations}{\code{NULL}, or a named character vector in which
 each name is a phrase and each value is that phrase's abbreviation:
 \code{c("Left ventricular" = "LV")}. Used only on labels over the cap, and
-for a shared heading in place of its initials.}
+for a shared heading in place of its initials. An \code{expansion}
+attribute, as \code{\link{study_abbreviations}} returns, names the term
+each abbreviation stands for in the key. A word-like abbreviation such as
+\code{"Preop"} takes the case of the text it replaces.}
 }
 \value{
 A data frame with five columns, and an \code{abbreviations}
@@ -93,7 +96,10 @@ still colliding:
     see, two identical labels a wrong figure nobody can.
 }
 The abbreviations actually shown come back as the \code{abbreviations}
-attribute, to print as a key beneath a figure or table.
+attribute, to print as a key beneath a figure or table, and per variable as
+the \code{abbreviations_by_key} attribute (\code{key}, \code{abbreviation},
+\code{expansion}), so a key under one section can list only what that
+section's labels use.
 }
 \examples{
 # Generate labeled survival data

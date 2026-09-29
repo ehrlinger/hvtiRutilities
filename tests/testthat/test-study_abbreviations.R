@@ -147,3 +147,90 @@ test_that("add_abbreviation() refuses an entry that would break the merged list,
   expect_error(add_abbreviation(c("a", "b"), "A", start = dir), "phrase")
   expect_identical(readLines(file.path(dir, "_study.yml")), before)
 })
+
+test_that("abbreviations differing only in case coexist; an exact repeat is still an error", {
+  # The house style: R for replacement, r for repair.
+  local_defaults(c("Aortic valve replacement" = "AVR", "Aortic valve repair" = "AVr"))
+  cfg <- study_config(abbrev_study())
+  out <- study_abbreviations(cfg)
+  expect_identical(unname(out[c("Aortic valve replacement", "Aortic valve repair")]), c("AVR", "AVr"))
+  expect_error(study_abbreviations(cfg, extra = c("Aortic valve reconstruction" = "AVr")),
+               "Aortic valve repair \\(default\\)")
+})
+
+test_that("the shipped default list merges cleanly and shortens labels in the house style", {
+  cfg <- study_config(abbrev_study())
+  out <- study_abbreviations(cfg)
+  expect_gt(length(out), 0L)
+  expect_true(all(attr(out, "source") == "default"))
+  expect_identical(out[["Aortic valve replacement"]], "AVR")
+  expect_identical(out[["Aortic valve repair"]], "AVr")
+  d <- data.frame(a = 1, b = 1)
+  attr(d$a, "label") <- "Aortic valve replacement performed at the index operation"
+  attr(d$b, "label") <- "Aortic valve repair performed at the index operation"
+  lmap <- suppressWarnings(label_map(d, abbreviations = out))
+  expect_identical(lmap$label, c("AVR performed at the index operation", "AVr performed at the index operation"))
+})
+
+test_that("one entry may list spellings, which share its abbreviation and its expansion", {
+  local_defaults(list("Coronary artery bypass graft | Coronary artery bypass grafting" = "CABG"))
+  cfg <- study_config(abbrev_study())
+  out <- study_abbreviations(cfg)
+  expect_identical(names(out), c("Coronary artery bypass graft", "Coronary artery bypass grafting"))
+  expect_identical(as.vector(out), c("CABG", "CABG"))
+  expect_identical(attr(out, "expansion"), rep("Coronary artery bypass graft", 2L))
+  expect_identical(attr(out, "source"), c("default", "default"))
+  # Separate entries still may not share one.
+  expect_error(study_abbreviations(cfg, extra = c("Coronary artery bypass" = "CABG")), "share an abbreviation")
+  # A blank spelling is an entry problem.
+  expect_error(study_abbreviations(cfg, extra = c("Aortic valve | " = "AV")), "blank spelling")
+})
+
+test_that("abbreviations differing only in case clash, except a trailing R against r", {
+  local_defaults(c("Aortic valve replacement" = "AVR", "Aortic valve repair" = "AVr", "Pulmonary valve" = "PV"))
+  cfg <- study_config(abbrev_study())
+  expect_silent(study_abbreviations(cfg))
+  err <- expect_error(study_abbreviations(cfg, extra = c("Pulmonary vein" = "Pv")))
+  expect_match(conditionMessage(err), "Pulmonary valve \\(default\\)")
+  expect_match(conditionMessage(err), "Pulmonary vein \\(job\\)")
+  expect_error(study_abbreviations(cfg, extra = c("Atrioventricular" = "avr")), "share an abbreviation")
+})
+
+test_that("the shipped list leaves PVR free and knows the common spellings", {
+  out <- study_abbreviations(study_config(abbrev_study()))
+  expect_false("PVR" %in% out)
+  expect_silent(study_abbreviations(study_config(abbrev_study()), extra = c("Pulmonary vascular resistance" = "PVR")))
+  d <- data.frame(a = 1, b = 1, c = 1, e = 1)
+  attr(d$a, "label") <- "Coronary artery bypass grafting performed at the index operation"
+  attr(d$b, "label") <- "Packed red blood cells transfused intraoperatively in units"
+  attr(d$c, "label") <- "Cerebrovascular accident within thirty days of the operation"
+  attr(d$e, "label") <- "Days from preoperative echocardiogram to the index operation"
+  lmap <- suppressWarnings(label_map(d, abbreviations = out))
+  expect_match(lmap$label[1], "^CABG performed")
+  expect_match(lmap$label[2], "^Packed RBC transfused")
+  expect_match(lmap$label[3], "^CVA within")
+  expect_match(lmap$label[4], "^Days from preop echo")
+  key <- attr(lmap, "abbreviations")
+  expect_identical(key$expansion[key$abbreviation == "CABG"], "Coronary artery bypass graft")
+})
+
+test_that("naming one spelling overrides or removes the whole entry", {
+  local_defaults(list("Red blood cell | Red blood cells" = "RBC"))
+  cfg <- study_config(abbrev_study(list(`Red blood cell` = NULL)))
+  expect_false(any(c("Red blood cell", "Red blood cells") %in% names(study_abbreviations(cfg))))
+  cfg <- study_config(abbrev_study(list(`red blood cells` = "Erythrocyte")))
+  out <- study_abbreviations(cfg)
+  expect_identical(names(out), "red blood cells")
+  expect_identical(unname(as.vector(out)), "Erythrocyte")
+})
+
+test_that("a heading shortened from a spelling keys the entry's expansion", {
+  ab <- structure(c("Red blood cell" = "RBC", "Red blood cells" = "RBC"),
+                  expansion = c("Red blood cell", "Red blood cell"))
+  d <- data.frame(a = 1, b = 1, c = 1)
+  attr(d$a, "label") <- "Red blood cells: units transfused during the index operation"
+  attr(d$b, "label") <- "Red blood cells: units transfused in intensive care"
+  attr(d$c, "label") <- "Red blood cell count measured at the first postoperative visit"
+  key <- attr(suppressWarnings(label_map(d, abbreviations = ab)), "abbreviations")
+  expect_identical(unique(key$expansion[key$abbreviation == "RBC"]), "Red blood cell")
+})
