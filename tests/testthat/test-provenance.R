@@ -219,10 +219,47 @@ test_that("a package installed from a git remote records its commit", {
     names(entry(list(Repository = "CRAN"))),
     c("package", "version", "source")
   )
+  # A hash alone is not evidence of a git build.
+  stray_cran <- entry(list(Repository = "CRAN", RemoteSha = sha))
+  stray_local <- entry(list(RemoteType = "local", RemoteSha = sha))
+  expect_false("sha" %in% names(stray_cran))
+  expect_false("sha" %in% names(stray_local))
   for (bad in list(NULL, NA_character_, "", "not-a-sha", c(sha, sha))) {
     bad_entry <- entry(list(RemoteType = "github", RemoteSha = bad))
     expect_false("sha" %in% names(bad_entry))
   }
+})
+
+test_that("package entries describe the loaded copy, not the first on the path", {
+  # withr is loaded by testthat. Put a decoy install of it first on the
+  # library path, with a different version and a git SHA, and check that the
+  # recorded entry still describes the namespace that is actually loaded.
+  decoy <- withr::local_tempdir()
+  real <- getNamespaceInfo("withr", "path")
+  dir.create(file.path(decoy, "withr", "Meta"), recursive = TRUE)
+  description <- readLines(file.path(real, "DESCRIPTION"))
+  description <- c(
+    sub("^Version: .*", "Version: 999.0.0", description[!grepl("^Remote", description)]),
+    "RemoteType: github",
+    "RemoteSha: 0123456789abcdef0123456789abcdef01234567"
+  )
+  writeLines(description, file.path(decoy, "withr", "DESCRIPTION"))
+  meta <- readRDS(file.path(real, "Meta", "package.rds"))
+  meta$DESCRIPTION[["Version"]] <- "999.0.0"
+  saveRDS(meta, file.path(decoy, "withr", "Meta", "package.rds"))
+  withr::local_libpaths(c(decoy, .libPaths()))
+  # The decoy really is what a path search finds first.
+  expect_identical(
+    utils::packageDescription("withr", lib.loc = .libPaths())$Version,
+    "999.0.0"
+  )
+
+  entries <- hvtiRutilities:::.loaded_packages()
+  names <- vapply(entries, `[[`, "", "package")
+  recorded <- entries[[which(names == "withr")]]
+  loaded_version <- packageVersion("withr", lib.loc = dirname(real))
+  expect_identical(recorded$version, as.character(loaded_version))
+  expect_null(recorded$sha)
 })
 
 test_that("capture extras cannot displace reserved fields", {

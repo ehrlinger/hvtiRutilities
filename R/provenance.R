@@ -53,11 +53,20 @@
     version = as.character(utils::packageVersion(package)),
     source = source
   )
-  sha <- if (is.null(description)) NULL else description$RemoteSha
+  git_remote <- !is.null(description) &&
+    isTRUE(description$RemoteType %in% .git_remote_types())
+  sha <- if (git_remote) description$RemoteSha else NULL
   if (.provenance_sha_valid(sha)) {
     entry$sha <- sha
   }
   entry
+}
+
+# RemoteType values whose RemoteSha names a git commit. A hash on any other
+# description (a CRAN build carrying a stale RemoteSha, say) is not evidence
+# of which git build ran, so it is not recorded.
+.git_remote_types <- function() {
+  c("github", "gitlab", "bitbucket", "git", "xgit")
 }
 
 .provenance_sha_valid <- function(value) {
