@@ -21,6 +21,19 @@ imports this file.
   warn.
 - Not "it looks right". A run that finished is not a run that is correct.
 
+## The standard of care
+
+**This package is not headed to CRAN, and it is held to the CRAN standard anyway.** The hvtiR
+packages are distributed internally to get feedback faster than a public release allows, not
+to lower the bar.
+
+- Before a release, audit against every chapter of the
+  [CRAN Cookbook](https://contributor.r-project.org/cran-cookbook/), run
+  `R CMD check --as-cran` with the manual and vignettes built, check reverse dependencies
+  within the hvtiR family and check URLs.
+- Every Cookbook or `--as-cran` finding is real work to do. Order findings by effort and risk,
+  never by "would CRAN care", and never offer "skip it, it's internal" as an option.
+
 ## The automated gates
 
 Six workflows. Know what each one fails on before you push:
