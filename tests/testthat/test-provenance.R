@@ -205,6 +205,63 @@ test_that("capture records the complete session snapshot", {
   expect_match(record$renv_lock$sha256, "^[0-9a-f]{64}$")
 })
 
+test_that("a package installed from a git remote records its commit", {
+  sha <- "0123456789abcdef0123456789abcdef01234567"
+  entry <- function(description) {
+    hvtiRutilities:::.package_entry("utils", description)
+  }
+
+  remote <- entry(list(RemoteType = "github", RemoteSha = sha))
+  expect_identical(remote$sha, sha)
+  expect_identical(remote$source, "github")
+
+  expect_identical(
+    names(entry(list(Repository = "CRAN"))),
+    c("package", "version", "source")
+  )
+  # A hash alone is not evidence of a git build.
+  stray_cran <- entry(list(Repository = "CRAN", RemoteSha = sha))
+  stray_local <- entry(list(RemoteType = "local", RemoteSha = sha))
+  expect_false("sha" %in% names(stray_cran))
+  expect_false("sha" %in% names(stray_local))
+  for (bad in list(NULL, NA_character_, "", "not-a-sha", c(sha, sha))) {
+    bad_entry <- entry(list(RemoteType = "github", RemoteSha = bad))
+    expect_false("sha" %in% names(bad_entry))
+  }
+})
+
+test_that("package entries describe the loaded copy, not the first on the path", {
+  # withr is loaded by testthat. Put a decoy install of it first on the
+  # library path, with a different version and a git SHA, and check that the
+  # recorded entry still describes the namespace that is actually loaded.
+  decoy <- withr::local_tempdir()
+  real <- getNamespaceInfo("withr", "path")
+  dir.create(file.path(decoy, "withr", "Meta"), recursive = TRUE)
+  description <- readLines(file.path(real, "DESCRIPTION"))
+  description <- c(
+    sub("^Version: .*", "Version: 999.0.0", description[!grepl("^Remote", description)]),
+    "RemoteType: github",
+    "RemoteSha: 0123456789abcdef0123456789abcdef01234567"
+  )
+  writeLines(description, file.path(decoy, "withr", "DESCRIPTION"))
+  meta <- readRDS(file.path(real, "Meta", "package.rds"))
+  meta$DESCRIPTION[["Version"]] <- "999.0.0"
+  saveRDS(meta, file.path(decoy, "withr", "Meta", "package.rds"))
+  withr::local_libpaths(c(decoy, .libPaths()))
+  # The decoy really is what a path search finds first.
+  expect_identical(
+    utils::packageDescription("withr", lib.loc = .libPaths())$Version,
+    "999.0.0"
+  )
+
+  entries <- hvtiRutilities:::.loaded_packages()
+  names <- vapply(entries, `[[`, "", "package")
+  recorded <- entries[[which(names == "withr")]]
+  loaded_version <- packageVersion("withr", lib.loc = dirname(real))
+  expect_identical(recorded$version, as.character(loaded_version))
+  expect_null(recorded$sha)
+})
+
 test_that("capture extras cannot displace reserved fields", {
   root <- make_registered_study(withr::local_tempdir())
   cfg <- study_config(root)
@@ -312,6 +369,27 @@ test_that("publish accepts a captured payload after a JSON round trip", {
   expect_true(file.exists(provenance_path(out)))
 })
 
+test_that("publish accepts package entries with and without a commit", {
+  root <- make_registered_study(withr::local_tempdir())
+  cfg <- study_config(root)
+  out <- make_output(root)
+  payload <- capture_provenance(
+    "death-hz-ac",
+    data = list(provenance_data(cfg = cfg)),
+    artifacts = list(),
+    cfg = cfg
+  )
+  payload$packages[[1]]$sha <- "0123456789abcdef0123456789abcdef01234567"
+  transported <- jsonlite::fromJSON(
+    jsonlite::toJSON(payload, auto_unbox = TRUE, null = "null", digits = NA),
+    simplifyVector = FALSE
+  )
+
+  expect_true(any(vapply(transported$packages,
+                         function(p) is.null(p$sha), logical(1))))
+  expect_invisible(publish_provenance(out, transported))
+})
+
 test_that("publish rejects malformed payloads", {
   root <- make_registered_study(withr::local_tempdir())
   out <- make_output(root)
@@ -353,6 +431,8 @@ test_that("publish deeply validates a round-tripped captured payload", {
     package_scalar = within(payload, packages[[1]]$version <- character()),
     package_source = within(payload, packages[[1]]$source <- list("CRAN")),
     package_list = within(payload, packages <- list()),
+    package_sha = within(payload, packages[[1]]$sha <- "not-a-sha"),
+    package_sha_na = within(payload, packages[[1]]$sha <- "NA"),
     data_record = within(payload, data[[1]]$mtime <- "2026-99-99T25:61:61Z"),
     artifact_record = within(payload, artifacts[[1]]$sha256 <- "not-a-hash")
   )

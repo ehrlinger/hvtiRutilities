@@ -26,23 +26,52 @@
       utils::packageDescription(package),
       error = function(e) NULL
     )
-    source <- if (is.null(description)) {
-      NA_character_
-    } else if (!is.null(description$RemoteType)) {
-      description$RemoteType
-    } else if (!is.null(description$Repository)) {
-      description$Repository
-    } else if (identical(description$Priority, "base")) {
-      "base"
-    } else {
-      NA_character_
-    }
-    list(
-      package = package,
-      version = as.character(utils::packageVersion(package)),
-      source = source
-    )
+    .package_entry(package, description)
   })
+}
+
+# A version number can cover more than one build: TemporalHazard's se.fit
+# changed meaning inside 1.2.11. So a package installed from a git remote also
+# records the commit it was built from. `sha` is added only when RemoteSha is a
+# real commit, never as NA, so an entry is either the three base fields or
+# those plus `sha`, and a JSON round trip cannot turn a missing SHA into the
+# string "NA".
+.package_entry <- function(package, description) {
+  source <- if (is.null(description)) {
+    NA_character_
+  } else if (!is.null(description$RemoteType)) {
+    description$RemoteType
+  } else if (!is.null(description$Repository)) {
+    description$Repository
+  } else if (identical(description$Priority, "base")) {
+    "base"
+  } else {
+    NA_character_
+  }
+  entry <- list(
+    package = package,
+    version = as.character(utils::packageVersion(package)),
+    source = source
+  )
+  git_remote <- !is.null(description) &&
+    isTRUE(description$RemoteType %in% .git_remote_types())
+  sha <- if (git_remote) description$RemoteSha else NULL
+  if (.provenance_sha_valid(sha)) {
+    entry$sha <- sha
+  }
+  entry
+}
+
+# RemoteType values whose RemoteSha names a git commit. A hash on any other
+# description (a CRAN build carrying a stale RemoteSha, say) is not evidence
+# of which git build ran, so it is not recorded.
+.git_remote_types <- function() {
+  c("github", "gitlab", "bitbucket", "git", "xgit")
+}
+
+.provenance_sha_valid <- function(value) {
+  is.character(value) && length(value) == 1L && !is.na(value) &&
+    grepl("^[0-9a-f]{7,40}$", value)
 }
 
 .provenance_scalar_character <- function(value, name, caller) {
@@ -264,16 +293,20 @@
       .provenance_hash_valid(payload$renv_lock$sha256)
   )
   package_valid <- function(entry) {
+    fields <- c("package", "version", "source")
+    has_sha <- is.list(entry) && "sha" %in% names(entry)
     named <- .provenance_named_shape(
       entry,
-      c("package", "version", "source")
+      if (has_sha) c(fields, "sha") else fields
     )
+    sha_valid <- !has_sha || .provenance_sha_valid(entry$sha)
     source_valid <- named && (
       is.null(entry$source) ||
         (is.character(entry$source) && length(entry$source) == 1L &&
            (is.na(entry$source) || nzchar(entry$source)))
     )
-    named && scalar(entry$package) && scalar(entry$version) && source_valid
+    named && scalar(entry$package) && scalar(entry$version) && source_valid &&
+      sha_valid
   }
   packages_valid <- is.list(payload$packages) && length(payload$packages) > 0L &&
     all(vapply(payload$packages, package_valid, logical(1)))
@@ -414,7 +447,10 @@ provenance_artifact <- function(path, role = "input", cfg = study_config()) {
 #'
 #' @description
 #' Freezes the study identity, executing R session, loaded packages, lockfile,
-#' and explicit data and artifact records. Capture never resolves a current
+#' and explicit data and artifact records. Each loaded package is recorded with
+#' its version and source, and a package installed from a git remote also
+#' records the commit it was built from (\code{sha}), because one version
+#' number can cover more than one build. Capture never resolves a current
 #' dataset implicitly. Pass \code{list()} deliberately when a job has no known
 #' direct data input.
 #'

@@ -1,3 +1,18 @@
+# hvtiRutilities (unreleased)
+
+## New features
+
+* Captured provenance now records which build of each package produced a
+  result, not only its version. A package installed from a git remote gains
+  a `sha` field holding the commit it was built from (`RemoteSha`); CRAN and
+  base packages are recorded as before. A version number alone can cover more
+  than one build: TemporalHazard changed what `se.fit` means on its survival
+  path inside version 1.2.11, so two jobs recording "TemporalHazard 1.2.11"
+  could hold different quantities with nothing to tell them apart.
+  `publish_provenance()` accepts entries with or without `sha`, so sidecars
+  written before this change still validate, and rejects a `sha` that is not
+  a hexadecimal commit.
+
 # hvtiRutilities 1.4.3
 
 ## New features
