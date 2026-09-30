@@ -1,8 +1,11 @@
 # Capture an explicit job provenance payload
 
 Freezes the study identity, executing R session, loaded packages,
-lockfile, and explicit data and artifact records. Capture never resolves
-a current dataset implicitly. Pass
+lockfile, and explicit data and artifact records. Each loaded package is
+recorded with its version and source, and a package installed from a git
+remote also records the commit it was built from (`sha`), because one
+version number can cover more than one build. Capture never resolves a
+current dataset implicitly. Pass
 [`list()`](https://rdrr.io/r/base/list.html) deliberately when a job has
 no known direct data input.
 
