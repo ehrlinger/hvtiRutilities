@@ -1,14 +1,19 @@
 # Parsing a job filename into its prefix.
 #
-# Four naming conventions are live in the corpus at once, and they are not
+# Five naming conventions are live in the corpus at once, and they are not
 # variations on one pattern -- see section 4.2 of
 # dev/specs/2026-08-26-job-type-inventory-design.md. Each gets its own anchored
 # regex, and the parsers run most-specific-first.
 #
 # The order is load-bearing, not stylistic. `legacy` is permissive enough to
 # match almost any dotted name -- it reads "03.01-ac.qmd" as prefix "03" --
-# so it must run last or it shadows the three R-side patterns and every R job
+# so it must run last or it shadows the four R-side patterns and every R job
 # in the corpus is misclassified. test-job-names.R pins this.
+#
+# `scaffolded` runs after `r_transitional` for the same reason. Both are three
+# dash-fields and a .qmd, so 03-bc-dead.qmd fits either; the two required
+# digits make r_transitional the narrower reading, and its -parity suffix is
+# not a qualifier.
 
 # One row per input basename, in input order. `naming` and `prefix` are NA for
 # a name no parser claims; the row still exists, because a file this sweep
@@ -49,6 +54,12 @@
     template       = "^\\d{2}[.]\\d{2}-([A-Za-z0-9]+)[.]qmd$",
     # <NN>-<prefix>-<endpoint>[-parity].qmd
     r_transitional = "^\\d{2}-([A-Za-z0-9]+)-[A-Za-z0-9_]+(?:-parity)?[.]qmd$",
+    # <subject>-<type>-<prefix>[-<qualifier>].qmd, hvtiRtemplates::add_job()
+    # output, and the -runner.R it writes beside some reports. The runner is
+    # matched here, not left unparsed, so that it is counted as part of its
+    # report; job_files() gives it the report's stem.
+    scaffolded     = paste0("^[A-Za-z0-9_]+-[A-Za-z0-9_]+-([A-Za-z0-9]+)",
+                            "(?:-([A-Za-z0-9_]+))?(?:[.]qmd|-runner[.]R)$"),
     # <prefix>.<anything>.<ext>
     legacy         = "^([A-Za-z0-9_]+)[.].+$"
   )
@@ -62,12 +73,17 @@
     prefix[hit] <- sub(patterns[[nm]], "\\1", stripped[hit])
   }
 
-  # Only `legacy` has a qualifier slot. The other three conventions have a
-  # fixed grammar in which every field is accounted for, so a qualifier there
-  # would be an invention rather than a reading.
+  # Only `legacy` and `scaffolded` have a qualifier slot. The other three
+  # conventions have a fixed grammar in which every field is accounted for,
+  # so a qualifier there would be an invention rather than a reading.
   quals <- rep(list(character(0)), n)
   leg <- !is.na(naming) & naming == "legacy"
   if (any(leg)) quals[leg] <- .legacy_qualifiers(stripped[leg])
+  sca <- !is.na(naming) & naming == "scaffolded"
+  if (any(sca)) {
+    q <- sub(patterns$scaffolded, "\\2", stripped[sca])
+    quals[sca] <- lapply(q, function(x) if (nzchar(x)) x else character(0))
+  }
 
   data.frame(
     naming = naming,

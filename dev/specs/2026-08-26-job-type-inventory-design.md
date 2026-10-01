@@ -159,6 +159,12 @@ conventions are live:
 | `template` | `<NN>.<MM>-<prefix>.qmd` | `03.01-ac.qmd` | `hvtiRtemplates/inst/templates/` |
 | `set` | `<endpoint>-<type>-<NN>.<MM>-<prefix>[-parity].qmd` | `dead_pa-hz-03.01-ac.qmd` | `new_job()` output — the forward convention |
 | `r_transitional` | `<NN>-<prefix>-<endpoint>[-parity].qmd` | `02-hz-dead_pa.qmd` | preserve_root `analyses/R_hazard/qmd/` and `parity/` |
+| `scaffolded` | `<subject>-<type>-<prefix>[-<qualifier>].qmd` | `dead-hz-bc.qmd` | `hvtiRtemplates::add_job()` output (added 2026-10-01, #170) |
+
+`scaffolded` also claims the `<stem>-runner.R` that `add_job()` writes beside
+the bl, br, bc and bh reports. `job_files()` gives a runner its report's stem,
+so the runner adds a file to that job and never a second job; read as a plain
+four-field name, `runner` would otherwise be taken for a qualifier.
 
 `set` is the authoritative convention for R jobs, designed in
 `hvtiRtemplates/specs/2026-08-21-template-set-layout-design.md`. Its
@@ -177,7 +183,9 @@ renamed to `set`; the parser exists to see them until then, not to bless them.
 Renaming them is study-tree work and out of scope here.
 
 `prefix` is resolved by trying each parser **in a fixed order — `set`,
-`template`, `r_transitional`, `legacy` — and taking the first match.** The order
+`template`, `r_transitional`, `scaffolded`, `legacy` — and taking the first
+match.** `scaffolded` follows `r_transitional` because `03-bc-dead.qmd` fits
+both, and the two required digits make `r_transitional` the narrower reading. The order
 is most-specific-first and must not be rearranged casually: the three R-side
 patterns are tightly anchored (two required digits, a required `.qmd`), while
 `legacy` is permissive enough to "succeed" on almost any dotted name and would

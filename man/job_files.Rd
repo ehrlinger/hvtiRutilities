@@ -23,7 +23,8 @@ A data frame with one row per file and the columns \code{path},
   \code{qualifiers}, \code{n_qualifiers}, \code{stem}, \code{ext},
   \code{prefix_class}, \code{folder_expected} and \code{folder_ok}.
   The three qualifier columns carry the dot-fields of a \code{legacy}
-  name that lie between the prefix and the extension, and are \code{NA}
+  name that lie between the prefix and the extension, or the trailing
+  qualifier field of a \code{scaffolded} name, and are \code{NA}
   (count zero) for every other convention. They are named by position
   because the second field means a different thing in each taxonomy
   folder; see \code{\link{hvti_taxonomy}} and the design note referenced
@@ -43,6 +44,12 @@ indistinguishable from a job that does not exist. The one exception is
 tooling: a path with a \code{.git} or \code{.checkpoint} component holds
 version-control internals or a study checkpoint's mirror, not study files,
 and is not listed.
+
+A \code{scaffolded} name, \code{<subject>-<type>-<prefix>[-<qualifier>].qmd}
+as written by \code{hvtiRtemplates::add_job()}, is parsed with its
+qualifier. The \code{-runner.R} that \code{add_job()} writes beside some
+reports takes the report's \code{stem}, so it counts as a file of that job
+rather than as a second job.
 
 A legacy prefix listed in \code{\link{hvti_prefix_folds}} is reported as
 the prefix it folds into, so a \code{pm.*} file counts as \code{lm}.

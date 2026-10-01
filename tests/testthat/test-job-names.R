@@ -103,7 +103,7 @@ test_that("the tp. marker is stripped before qualifiers are read", {
   expect_equal(out$qualifier1, "dead")
 })
 
-test_that("only the legacy convention has a qualifier slot", {
+test_that("set, template and r_transitional have no qualifier slot", {
   # set, template and r_transitional each account for every field in their
   # grammar, so a qualifier there would be invented rather than read.
   out <- hvtiRutilities:::.job_name_fields(
@@ -111,4 +111,46 @@ test_that("only the legacy convention has a qualifier slot", {
   )
   expect_true(all(is.na(out$qualifier1)))
   expect_equal(out$n_qualifiers, rep(0L, 4))
+})
+
+test_that("the scaffolded convention is parsed, qualifier carried", {
+  # hvtiRtemplates::add_job() writes <subject>-<type>-<prefix>[-<qualifier>].qmd.
+  out <- hvtiRutilities:::.job_name_fields(
+    c("dead-hz-bc.qmd", "lvef-boost-nb-boostmtree.qmd")
+  )
+  expect_equal(out$naming, c("scaffolded", "scaffolded"))
+  expect_equal(out$prefix, c("bc", "nb"))
+  expect_equal(out$qualifier1, c(NA, "boostmtree"))
+  expect_equal(out$qualifiers, c(NA, "boostmtree"))
+  expect_equal(out$n_qualifiers, c(0L, 1L))
+})
+
+test_that("a scaffolded job's runner is parsed as that job, not a qualifier", {
+  # add_job() writes <stem>-runner.R beside the bl, br, bc and bh reports.
+  # "runner" read as a qualifier would make the runner a second, distinct job.
+  out <- hvtiRutilities:::.job_name_fields(
+    c("dead-hz-bc-runner.R", "lvef-boost-nb-boostmtree-runner.R")
+  )
+  expect_equal(out$naming, c("scaffolded", "scaffolded"))
+  expect_equal(out$prefix, c("bc", "nb"))
+  expect_equal(out$qualifier1, c(NA, "boostmtree"))
+})
+
+test_that("r_transitional still wins over scaffolded on a two-digit lead", {
+  # 03-bc-dead.qmd fits both grammars. The two required digits make
+  # r_transitional the more specific, and -parity is its suffix, not a
+  # qualifier.
+  out <- hvtiRutilities:::.job_name_fields(
+    c("03-bc-dead.qmd", "01-ac-dead_pa-parity.qmd")
+  )
+  expect_equal(out$naming, c("r_transitional", "r_transitional"))
+  expect_equal(out$prefix, c("bc", "ac"))
+})
+
+test_that("a dashed name of the wrong shape is not scaffolded", {
+  # Two fields, five fields, and an .R that is not a runner.
+  out <- hvtiRutilities:::.job_name_fields(
+    c("dead-hz.qmd", "a-b-c-d-e.qmd", "dead-hz-bc.R")
+  )
+  expect_true(all(is.na(out$naming)))
 })
