@@ -13,6 +13,18 @@
   written before this change still validate, and rejects a `sha` that is not
   a hexadecimal commit.
 
+## Bug fixes
+
+* Two sessions can no longer both take over the same stale checkpoint lock.
+  A lock more than 6 hours old was taken over by deleting and recreating
+  `.checkpoint/lock`, so two sessions judging it stale at the same moment
+  could both recreate it and both believe they held it, letting their outbox
+  writes interleave. The takeover now renames the stale lock aside, which
+  only one session can do; the other stops with the usual "retry when it
+  has finished" error. A session that finds it renamed a lock another
+  session had just taken puts it back and stops with the same error. The
+  lock's holder file is now written whole or not at all (#154).
+
 # hvtiRutilities 1.4.3
 
 ## New features

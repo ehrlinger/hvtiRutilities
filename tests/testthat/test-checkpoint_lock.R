@@ -131,3 +131,55 @@ test_that("a failed reopening abandons its entry before the lock is released", {
                "tag failed")
   expect_equal(seen, c("committed", "abandoned"))
 })
+
+# A competing session acts in the gap between this session judging the lock
+# stale and taking it over: `compete` runs from the takeover warning.
+lock_with_competitor <- function(root, compete) {
+  done <- FALSE
+  suppressWarnings(withCallingHandlers(
+    .cp_lock(root, "test"),
+    warning = function(w) {
+      if (!done) {
+        done <<- TRUE
+        compete()
+      }
+    }
+  ))
+}
+
+test_that("a second takeover of the same stale lock fails with the retry error", {
+  root <- withr::local_tempdir()
+  lock <- plant_lock(root, .cp_utc(Sys.time() - (6 * 60 + 1) * 60))
+  theirs <- NULL
+  expect_error(
+    lock_with_competitor(root, function() theirs <<- suppressWarnings(.cp_lock(root, "other"))),
+    "took the checkpoint lock first; retry"
+  )
+  expect_equal(.cp_lock_holder(lock)$token, theirs$token)
+  expect_true(.cp_lock_touch(theirs))
+  expect_equal(list.files(dirname(lock)), "lock")
+  expect_equal(list.files(lock), "holder.yml")
+  .cp_unlock(theirs)
+  expect_false(dir.exists(lock))
+})
+
+test_that("a stale lock that vanishes before the takeover fails with the retry error", {
+  root <- withr::local_tempdir()
+  lock <- plant_lock(root, .cp_utc(Sys.time() - (6 * 60 + 1) * 60))
+  expect_error(
+    lock_with_competitor(root, function() unlink(lock, recursive = TRUE)),
+    "took the checkpoint lock first; retry"
+  )
+  expect_false(dir.exists(lock))
+  expect_equal(list.files(dirname(lock)), character())
+})
+
+test_that("a stale takeover leaves only the new lock behind", {
+  root <- withr::local_tempdir()
+  lock <- plant_lock(root, .cp_utc(Sys.time() - (6 * 60 + 1) * 60))
+  held <- suppressWarnings(.cp_lock(root, "test"))
+  expect_equal(.cp_lock_holder(lock)$token, held$token)
+  expect_equal(list.files(dirname(lock)), "lock")
+  expect_equal(list.files(lock), "holder.yml")
+  .cp_unlock(held)
+})

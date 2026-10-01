@@ -241,9 +241,11 @@ patient information. There is no schema or redaction for now (decided
   before delivery (only while the lock's token is still its own). A lock
   whose time is less than 6 hours old is an error that names the holder and
   says to retry; an older one was left by a crashed session and is taken
-  over with a warning. `study_status()` only reads and takes no lock.
-  Checkpoints run on the server's local filesystem, never over an SMB mount,
-  so `dir.create()` is atomic and the lock's time is the server's clock.
+  over with a warning, by renaming it aside (open item 10), so two sessions
+  cannot both take over one stale lock. `study_status()` only reads and
+  takes no lock. Checkpoints run on the server's local filesystem, never
+  over an SMB mount, so `dir.create()` and `file.rename()` are atomic and
+  the lock's time is the server's clock.
 
 - **Steps 1 to 5 are all-or-nothing, and a crash between them is
   reconciled.** A failure before step 4 leaves nothing. At the start of every
@@ -469,12 +471,24 @@ push included, on all five platforms. Tests needing git skip with
    the study. Decide whether closure state should include remote tags.
    A first use while offline creates an empty clone, so the closure guards
    see no history until a fresh clone either.
-10. **Two sessions can both take over the same stale lock.** Tracked in [#154](https://github.com/ehrlinger/hvtiRutilities/issues/154). Each reads
-    `holder.yml`, judges it stale at the same instant, and deletes and
-    recreates the lock directory; both then believe they hold it. Narrowing
-    this is possible by re-reading `holder.yml` immediately before deleting
-    it and aborting if it changed; closing it fully needs an atomic rename
-    rather than a delete-then-create.
+10. ✅ RESOLVED 2026-10-01 ([#154](https://github.com/ehrlinger/hvtiRutilities/issues/154)).
+    **Two sessions can both take over the same stale lock.** Each read
+    `holder.yml`, judged it stale at the same instant, and deleted and
+    recreated the lock directory; both then believed they held it. Resolved
+    by taking over with an atomic rename: `.cp_lock_take_stale()` renames the
+    stale `.checkpoint/lock` to a name unique to the attempt (pid and a UUID),
+    so only one session's rename can succeed; a session whose rename fails
+    stops with the retry error. The winner re-reads the holder from the
+    renamed directory; if it is not the holder it judged stale, it moved a
+    live lock taken over in the gap, so it puts that lock back (claiming the
+    name with `dir.create()` and moving the holder file in) and stops with
+    the retry error. Otherwise it discards the renamed directory and takes
+    the lock through the normal `dir.create()` path. `holder.yml` is now
+    written to a temporary file and renamed into place, and
+    `.cp_lock_touch()` still writes only while the token is its own. What
+    remains: a third session that claims the name while a mistaken rename is
+    being put back keeps the lock, and the session whose lock was moved
+    finds its token gone.
 11. ✅ RESOLVED 2026-09-25 (PR #151 review). **A long-running holder is not
     refreshed.** A session that ran past the old 30-minute stale age, for
     example `verify_manifest()` hashing large datasets, never updated its
