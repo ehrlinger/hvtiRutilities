@@ -328,14 +328,25 @@ print.study_checkpoint <- function(x, ...) {
 #'
 #' \itemize{
 #'   \item \strong{Not on main} (a log write was lost after a replay).
-#'   Find the commit on \code{main} whose message carries the entry's id
-#'   (\code{checkpoint_id} for a checkpoint, \code{closure_id} for a closure,
-#'   \code{reopening_id} for a reopening):
+#'   This one usually repairs itself. Delivery finds the entry's replayed
+#'   commit in one of three ways, in order: another entry in the log already
+#'   records the same old commit as its \code{replayed_from}; exactly one
+#'   commit on \code{main} carries the entry's own id (\code{checkpoint_id}
+#'   or \code{closure_id}); or exactly one commit on \code{main} carries the
+#'   id in the old commit's own message. The last way covers a reopening,
+#'   whose \code{reopening_id} is only in its tag: it tags an existing commit,
+#'   a closure's or that of a checkpoint taken while the study was closed.
+#'   Delivery then points the entry at that commit, keeps the old value as
+#'   \code{replayed_from}, and delivers as normal. Only when none of these
+#'   finds exactly one commit does the entry stay pending with a warning.
+#'   Then repair it by hand: look the id up with
 #'   \code{git -C .checkpoint/repo log --fixed-strings --grep=<id>
-#'   --format=\%H main}. If a commit is found, set the entry's
-#'   \code{git_commit} in \code{.checkpoint/log.yml} to that commit, keep the
-#'   old value as \code{replayed_from}, then run \code{study_checkpoint_push()}
-#'   again. If no such commit exists, set the entry's \code{state} to
+#'   --format=\%H main}, choose the right commit, set the entry's
+#'   \code{git_commit} in \code{.checkpoint/log.yml} to it, and set its
+#'   \code{replayed_from} to the old \code{git_commit}. Then run
+#'   \code{study_checkpoint_push()} again. Do not skip \code{replayed_from}:
+#'   a later entry that names the same old commit, such as a reopening,
+#'   heals from it. If no such commit exists, set the entry's \code{state} to
 #'   \code{"abandoned"} instead; an abandoned entry is never delivered.
 #'   \item \strong{Unnumbered tag clash} (two copies of the study each
 #'   recorded the same unnumbered tag, for example \code{workspace_created}).

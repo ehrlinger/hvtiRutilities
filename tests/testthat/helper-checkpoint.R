@@ -95,6 +95,32 @@ reject_tag_push_once <- function(bare, marker) {
   invisible(hook)
 }
 
+# The divergence fixture after a replay whose log write was lost: the first
+# push replays and retags, its tag push is refused, and the pre-push log is
+# restored, so the entry names the pre-replay commit and the original tag.
+lose_replay_log_write <- function(dir) {
+  fx <- diverge_study(dir)
+  reject_tag_push_once(fx$bare, file.path(dir, "rejected-once"))
+  set_study_keys(fx$root, checkpoint = list(remote = fx$bare))
+  log_path <- .cp_log_path(fx$root)
+  before <- readLines(log_path)
+  testthat::expect_warning(study_checkpoint_push(fx$root), "tag push rejected")
+  writeLines(before, log_path)  # an interrupt before any log write
+  fx
+}
+
+# Every tag on the remote names a commit on its main, never the local
+# pre-replay commit.
+expect_no_orphan_on_remote <- function(fx) {
+  for (t in git_out(fx$bare, c("tag", "-l"))) {
+    commit <- git_out(fx$bare, c("rev-parse", paste0(t, "^{commit}")))
+    testthat::expect_false(identical(commit, fx$local_cp$commit), info = t)
+    res <- system2("git", shQuote(c("-C", fx$bare, "merge-base",
+                                    "--is-ancestor", commit, "main")))
+    testthat::expect_equal(res, 0L, info = t)
+  }
+}
+
 # A closed study whose reopening tag was renumbered, as delivery does:
 # closed-abandoned-1, reopened-2, closed-abandoned-2, and no reopened-1.
 gap_study <- function(dir) {

@@ -499,3 +499,40 @@ test_that("the sanitiser stays non-fatal when warnings are errors", {
   expect_no_error(res <- job_files(d))
   expect_equal(nrow(res), 1L)
 })
+
+test_that("a scaffolded job and its runner count as one job (#170)", {
+  root <- file.path(withr::local_tempdir(), "studies")
+  s <- file.path(root, "demo_study")
+  dir.create(file.path(s, "30_analyses"), recursive = TRUE)
+  dir.create(file.path(s, "analyses"))
+  for (f in c("30_analyses/dead-hz-bc.qmd", "30_analyses/dead-hz-bc-runner.R",
+              "30_analyses/lvef-boost-nb-boostmtree.qmd", "analyses/bc.dead.sas")) {
+    file.create(file.path(s, f))
+  }
+
+  out <- job_files(root)
+  out <- out[order(basename(out$path)), ]
+  expect_equal(out$naming, c("legacy", "scaffolded", "scaffolded", "scaffolded"))
+  expect_equal(out$prefix, c("bc", "bc", "bc", "nb"))
+  # The runner keeps its path but shares the report's stem.
+  expect_equal(out$stem, c("bc.dead", "dead-hz-bc", "dead-hz-bc",
+                           "lvef-boost-nb-boostmtree"))
+  expect_equal(out$qualifier1, c("dead", NA, NA, "boostmtree"))
+
+  cen <- job_census(root)
+  bc <- cen[cen$prefix == "bc" & cen$folder == "analyses", ]
+  expect_equal(sum(bc$n_jobs), 2L)   # bc.dead and dead-hz-bc
+  expect_equal(sum(bc$n_files), 3L)  # the runner is a file, not a job
+})
+
+test_that("a two-digit-subject report and its runner are one job", {
+  root <- file.path(withr::local_tempdir(), "studies")
+  s <- file.path(root, "demo_study", "analyses")
+  dir.create(s, recursive = TRUE)
+  file.create(file.path(s, c("03-hz-bc.qmd", "03-hz-bc-runner.R")))
+
+  cen <- job_census(root)
+  expect_equal(cen$prefix, "bc")
+  expect_equal(cen$n_jobs, 1L)
+  expect_equal(cen$n_files, 2L)
+})
