@@ -23,7 +23,11 @@
   only one session can do; the other stops with the usual "retry when it
   has finished" error. A session that finds it renamed a lock another
   session had just taken puts it back and stops with the same error. The
-  lock's holder file is now written whole or not at all (#154).
+  refresh a long call makes between phases had the same race and could
+  write its old holder back over a session that had just taken over. The
+  holder now refreshes a lease file named for its own token, in one step,
+  and a session whose lock was taken over stops with an error saying so
+  instead of carrying on (#154).
 
 # hvtiRutilities 1.4.3
 

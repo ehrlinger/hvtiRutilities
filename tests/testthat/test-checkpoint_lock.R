@@ -38,25 +38,76 @@ test_that("a lock under six hours old is not stale", {
   expect_equal(.cp_lock_holder(lock)$token, "theirs")
 })
 
-test_that("touching the lock refreshes its time only while the token matches", {
+test_that("touching the lock refreshes its lease and leaves holder.yml alone", {
   root <- withr::local_tempdir()
   held <- .cp_lock(root, "test")
-  h <- .cp_lock_holder(held$lock)
-  h$time <- .cp_utc(Sys.time() - 60 * 60)
-  yaml::write_yaml(h, file.path(held$lock, "holder.yml"))
-  .cp_lock_touch(held)
-  touched <- .cp_lock_holder(held$lock)
-  expect_equal(touched$token, held$token)
-  age <- difftime(Sys.time(), as.POSIXct(touched$time, format = "%Y-%m-%dT%H:%M:%SZ",
-                                         tz = "UTC"), units = "mins")
-  expect_lt(as.numeric(age), 5)
-
-  theirs <- list(user = "other_analyst", pid = 4242L, time = "2020-01-01T00:00:00Z",
-                 token = "theirs")
-  yaml::write_yaml(theirs, file.path(held$lock, "holder.yml"))
-  .cp_lock_touch(held)
-  expect_equal(.cp_lock_holder(held$lock), theirs)
+  lease <- .cp_lock_lease(held$lock, held$token)
+  expect_true(file.exists(lease))
+  Sys.setFileTime(lease, Sys.time() - 60 * 60)
+  holder <- .cp_lock_holder(held$lock)
+  expect_true(.cp_lock_touch(held))
+  expect_lt(as.numeric(difftime(Sys.time(), file.mtime(lease), units = "mins")), 5)
+  expect_equal(.cp_lock_holder(held$lock), holder)
   .cp_unlock(held)
+})
+
+test_that("a touch is one call: it fails on a missing lease and does not create it", {
+  root <- withr::local_tempdir()
+  held <- .cp_lock(root, "test")
+  lease <- .cp_lock_lease(held$lock, held$token)
+  unlink(lease)
+  expect_error(.cp_lock_touch(held), "test\\(\\): the checkpoint lock was taken over",
+               class = "hvti_cp_lock_lost")
+  expect_false(file.exists(lease))
+  .cp_unlock(held)
+})
+
+test_that("staleness is judged from the lease, not holder.yml's time", {
+  root <- withr::local_tempdir()
+  held <- .cp_lock(root, "test")
+  Sys.setFileTime(.cp_lock_lease(held$lock, held$token),
+                  Sys.time() - (6 * 60 + 1) * 60)
+  expect_warning(theirs <- .cp_lock(root, "other"), "stale checkpoint lock")
+  expect_error(.cp_lock_touch(held), class = "hvti_cp_lock_lost")
+  .cp_unlock(theirs)
+
+  held <- .cp_lock(root, "test")
+  h <- .cp_lock_holder(held$lock)
+  h$time <- "2020-01-01T00:00:00Z"
+  yaml::write_yaml(h, file.path(held$lock, "holder.yml"))
+  expect_error(.cp_lock(root, "other"), "another session holds the checkpoint lock")
+  .cp_unlock(held)
+})
+
+test_that("a legacy lock with no lease file is judged by holder.yml's time", {
+  root <- withr::local_tempdir()
+  lock <- plant_lock(root, .cp_utc(Sys.time() - 60))
+  expect_error(.cp_lock(root, "test"), "other_analyst, pid 4242.*retry")
+  unlink(lock, recursive = TRUE)
+  lock <- plant_lock(root, .cp_utc(Sys.time() - (6 * 60 + 1) * 60))
+  expect_warning(held <- .cp_lock(root, "test"), "stale checkpoint lock")
+  expect_equal(.cp_lock_holder(lock)$token, held$token)
+  .cp_unlock(held)
+})
+
+test_that("a lost lock in a snapshot stops without rolling back the other session's work", {
+  skip_if_no_git()
+  local_git_env()
+  root <- make_checkpoint_study(withr::local_tempdir())
+  n <- 0L
+  rolled_back <- FALSE
+  lost <- structure(class = c("hvti_cp_lock_lost", "error", "condition"),
+                    list(message = "lock lost", call = NULL))
+  testthat::local_mocked_bindings(
+    .cp_lock_touch = function(held) {
+      n <<- n + 1L
+      if (n == 2L) stop(lost)
+    },
+    .cp_rollback = function(...) rolled_back <<- TRUE
+  )
+  expect_error(study_checkpoint("abstract_submitted", root = root), class = "hvti_cp_lock_lost")
+  expect_false(rolled_back)
+  expect_length(.cp_log_read(root), 0L)
 })
 
 test_that("every entry point refreshes the lock between phases", {
@@ -158,7 +209,7 @@ test_that("a second takeover of the same stale lock fails with the retry error",
   expect_equal(.cp_lock_holder(lock)$token, theirs$token)
   expect_true(.cp_lock_touch(theirs))
   expect_equal(list.files(dirname(lock)), "lock")
-  expect_equal(list.files(lock), "holder.yml")
+  expect_equal(sort(list.files(lock)), sort(c("holder.yml", paste0("lease-", theirs$token))))
   .cp_unlock(theirs)
   expect_false(dir.exists(lock))
 })
@@ -174,12 +225,57 @@ test_that("a stale lock that vanishes before the takeover fails with the retry e
   expect_equal(list.files(dirname(lock)), character())
 })
 
+# Make a held lock look abandoned: its holder time and any lease file are
+# set back past the stale age.
+age_lock <- function(lock) {
+  old <- Sys.time() - (6 * 60 + 1) * 60
+  h <- .cp_lock_holder(lock)
+  h$time <- .cp_utc(old)
+  yaml::write_yaml(h, file.path(lock, "holder.yml"))
+  leases <- list.files(lock, pattern = "^lease-", full.names = TRUE)
+  if (length(leases)) Sys.setFileTime(leases, old)
+}
+
+test_that("a touch after another session took the lock over stops with the lost-lock error", {
+  root <- withr::local_tempdir()
+  a <- .cp_lock(root, "a")
+  age_lock(a$lock)
+  b <- suppressWarnings(.cp_lock(root, "b"))
+  b_holder <- .cp_lock_holder(b$lock)
+  b_files <- sort(list.files(b$lock))
+  b_mtimes <- file.mtime(file.path(b$lock, b_files))
+  expect_error(.cp_lock_touch(a), "taken over by another session.*retry", class = "hvti_cp_lock_lost")
+  expect_equal(.cp_lock_holder(b$lock), b_holder)
+  expect_equal(sort(list.files(b$lock)), b_files)
+  expect_equal(file.mtime(file.path(b$lock, b_files)), b_mtimes)
+  .cp_unlock(a)
+  expect_true(dir.exists(b$lock))
+  .cp_unlock(b)
+})
+
+test_that("a lease refreshed between the staleness check and the takeover puts the lock back", {
+  root <- withr::local_tempdir()
+  a <- .cp_lock(root, "a")
+  age_lock(a$lock)
+  a_holder <- .cp_lock_holder(a$lock)
+  expect_error(
+    lock_with_competitor(root, function() .cp_lock_touch(a)),
+    "took the checkpoint lock first; retry"
+  )
+  expect_equal(.cp_lock_holder(a$lock), a_holder)
+  expect_equal(sort(list.files(a$lock)), sort(c("holder.yml", paste0("lease-", a$token))))
+  expect_equal(list.files(dirname(a$lock)), "lock")
+  expect_true(.cp_lock_touch(a))
+  .cp_unlock(a)
+  expect_false(dir.exists(a$lock))
+})
+
 test_that("a stale takeover leaves only the new lock behind", {
   root <- withr::local_tempdir()
   lock <- plant_lock(root, .cp_utc(Sys.time() - (6 * 60 + 1) * 60))
   held <- suppressWarnings(.cp_lock(root, "test"))
   expect_equal(.cp_lock_holder(lock)$token, held$token)
   expect_equal(list.files(dirname(lock)), "lock")
-  expect_equal(list.files(lock), "holder.yml")
+  expect_equal(sort(list.files(lock)), sort(c("holder.yml", paste0("lease-", held$token))))
   .cp_unlock(held)
 })

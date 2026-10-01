@@ -115,7 +115,14 @@
   entry$tag <- tag
   .cp_sync_tree(repo, root, sel$files)
   .cp_write_meta(repo, root, entry, sel)
-  .cp_lock_touch(held)
+  # A lost lock belongs to another session, which may already have committed:
+  # rolling back to head_before would erase its work, so stop without the
+  # undo. Nothing is logged or tagged yet; the next snapshot's sync rewrites
+  # the working tree.
+  tryCatch(.cp_lock_touch(held), hvti_cp_lock_lost = function(e) {
+    done <<- TRUE
+    stop(e)
+  })
   entry$state <- "committing"
   entry$delivery$git <- "pending"
   .cp_log_append(root, entry)
