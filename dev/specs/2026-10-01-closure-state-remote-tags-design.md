@@ -1,6 +1,6 @@
 # Closure state across copies of a study
 
-**Status:** proposal, 2026-10-01. Awaiting the maintainer's decision.
+**Status:** approved 2026-10-01 — all three decisions in section 7 taken as proposed.
 **Resolves:** open item 9 of `2026-09-24-study-checkpoint-design.md` ([#153](https://github.com/ehrlinger/hvtiRutilities/issues/153)).
 **Changes:** section 6.4 of that spec, `.cp_is_closed()`, and the guards in
 `study_close()`, `study_reopen()` and `study_checkpoint()`.
