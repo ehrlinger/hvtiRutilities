@@ -94,7 +94,8 @@ files would otherwise be counted twice under two study labels.</p></dd>
   <code>qualifiers</code>, <code>n_qualifiers</code>, <code>stem</code>, <code>ext</code>,
   <code>prefix_class</code>, <code>folder_expected</code> and <code>folder_ok</code>.
   The three qualifier columns carry the dot-fields of a <code>legacy</code>
-  name that lie between the prefix and the extension, and are <code>NA</code>
+  name that lie between the prefix and the extension, or the trailing
+  qualifier field of a <code>scaffolded</code> name, and are <code>NA</code>
   (count zero) for every other convention. They are named by position
   because the second field means a different thing in each taxonomy
   folder; see <code><a href="hvti_taxonomy.html">hvti_taxonomy</a></code> and the design note referenced
@@ -110,6 +111,11 @@ indistinguishable from a job that does not exist. The one exception is
 tooling: a path with a <code>.git</code> or <code>.checkpoint</code> component holds
 version-control internals or a study checkpoint's mirror, not study files,
 and is not listed.</p>
+<p>A <code>scaffolded</code> name, <code>&lt;subject&gt;-&lt;type&gt;-&lt;prefix&gt;[-&lt;qualifier&gt;].qmd</code>
+as written by <code>hvtiRtemplates::add_job()</code>, is parsed with its
+qualifier. The <code>-runner.R</code> that <code>add_job()</code> writes beside some
+reports takes the report's <code>stem</code>, so it counts as a file of that job
+rather than as a second job.</p>
 <p>A legacy prefix listed in <code><a href="hvti_prefix_folds.html">hvti_prefix_folds</a></code> is reported as
 the prefix it folds into, so a <code>pm.*</code> file counts as <code>lm</code>.
 <code>stem</code> keeps the name as written, so a folded file stays findable.</p>

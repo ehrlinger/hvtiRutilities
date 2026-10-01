@@ -30,9 +30,10 @@ A data frame with one row per file and the columns `path`, `study`,
 `qualifier1`, `qualifiers`, `n_qualifiers`, `stem`, `ext`,
 `prefix_class`, `folder_expected` and `folder_ok`. The three qualifier
 columns carry the dot-fields of a `legacy` name that lie between the
-prefix and the extension, and are `NA` (count zero) for every other
-convention. They are named by position because the second field means a
-different thing in each taxonomy folder; see
+prefix and the extension, or the trailing qualifier field of a
+`scaffolded` name, and are `NA` (count zero) for every other convention.
+They are named by position because the second field means a different
+thing in each taxonomy folder; see
 [`hvti_taxonomy`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_taxonomy.md)
 and the design note referenced in `R/job_names.R`. Zero rows if the
 roots hold no files.
@@ -46,6 +47,12 @@ indistinguishable from a job that does not exist. The one exception is
 tooling: a path with a `.git` or `.checkpoint` component holds
 version-control internals or a study checkpoint's mirror, not study
 files, and is not listed.
+
+A `scaffolded` name, `<subject>-<type>-<prefix>[-<qualifier>].qmd` as
+written by `hvtiRtemplates::add_job()`, is parsed with its qualifier.
+The `-runner.R` that `add_job()` writes beside some reports takes the
+report's `stem`, so it counts as a file of that job rather than as a
+second job.
 
 A legacy prefix listed in
 [`hvti_prefix_folds`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_prefix_folds.md)
