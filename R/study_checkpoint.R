@@ -240,7 +240,13 @@ study_checkpoint <- function(kind, note = NULL, attributes = NULL,
   row <- .cp_kind_check(.cp_kinds(root), kind, "study_checkpoint")
   if (!is.null(note)) .cp_check_string(note, "study_checkpoint", "note")
   .cp_check_attributes(attributes, "study_checkpoint")
-  if (.cp_is_closed(root)) {
+  .cp_sync(root, study)
+  closed <- .cp_is_closed(root)
+  if (is.na(closed)) {
+    warning("study_checkpoint(): ", .cp_unknown_reason(), "; recording the ",
+            "checkpoint anyway. Run study_checkpoint_push() while the remote ",
+            "is reachable.", call. = FALSE)
+  } else if (closed) {
     warning("study_checkpoint(): the study is closed; recording the ",
             "checkpoint anyway", call. = FALSE)
   }

@@ -1,22 +1,111 @@
 # Closing and reopening, following the StudyTracker Workspace API's Closure
 # and Reopening rules. Closing always takes a final snapshot; reopening only
 # tags. A study is closed when its latest closed-* tag has no reopened-* tag
-# after it; because the two alternate, that is read from counts, which cannot
-# tie the way tag timestamps can. Both write their outbox entry before any
+# after it, where "latest" is position on main's first-parent history, never
+# a tag timestamp (spec 2026-10-01). Both write their outbox entry before any
 # git change and complete it after, as study_checkpoint() does.
 
 .cp_outcomes <- function() c("published", "not_published", "superseded", "abandoned")
 
-.cp_closure_counts <- function(repo) {
-  if (!.cp_has_repo(repo)) return(c(closed = 0L, reopened = 0L))
-  tags <- .cp_git_do(repo, c("tag", "-l"))
-  c(closed = sum(grepl("^closed-[a-z_]+-[0-9]+$", tags)),
-    reopened = sum(grepl("^reopened-[0-9]+$", tags)))
+# Closed when the latest closure event on HEAD's first-parent history is a
+# closed-* tag. Local and fetched remote tags both count, resolved to their
+# commits and de-duplicated by (family, commit), so a commit known under two
+# names is one event. On one commit a reopening follows its closure: a
+# closure always makes a new commit, and a reopening only tags HEAD. A remote
+# tag whose commit is not on that history only means this copy is behind, and
+# is ignored. A LOCAL tag off that history (delivery interrupted between
+# moving main and retagging) is an event that cannot be placed, so the state
+# is unknown and the result is NA: ignoring it would allow a second close.
+.cp_is_closed <- function(root) {
+  repo <- .cp_repo_path(root)
+  if (!.cp_has_repo(repo) || is.na(.cp_head(repo))) return(FALSE)
+  refs <- .cp_git_do(repo, c("for-each-ref", "--format=%(refname)",
+                             "refs/tags", "refs/remote-tags"))
+  name <- sub("^refs/(remote-)?tags/", "", refs)
+  family <- ifelse(grepl("^closed-[a-z_]+-[0-9]+$", name), "closed",
+                   ifelse(grepl("^reopened-[0-9]+$", name), "reopened", NA))
+  refs <- refs[!is.na(family)]
+  family <- family[!is.na(family)]
+  if (!length(refs)) return(FALSE)
+  commits <- .cp_git_do(repo, c("rev-parse", paste0(refs, "^{commit}")))
+  history <- .cp_git_do(repo, c("rev-list", "--first-parent", "HEAD"))
+  # rev-list lists newest first, so the latest event has the smallest position.
+  pos <- match(commits, history)
+  if (any(startsWith(refs, "refs/tags/") & is.na(pos))) return(NA)
+  if (all(is.na(pos))) return(FALSE)
+  latest <- family[which(pos == min(pos, na.rm = TRUE))]
+  !"reopened" %in% latest
 }
 
-.cp_is_closed <- function(root) {
-  n <- .cp_closure_counts(.cp_repo_path(root))
-  n[["closed"]] > n[["reopened"]]
+# Bring HEAD up to the remote's main before a closure guard, so every pushed
+# closed-* and reopened-* tag sits on its history. Pending entries go through
+# .cp_deliver(), which fetches, replays and retargets them. With nothing
+# pending, fetch and fast-forward only when HEAD is an ancestor of
+# origin/main: there is no entry to retarget, so the log cannot be left
+# naming a stale commit. Returns TRUE when the sync reached the remote; when
+# it did not and a remote is configured, says that closure state reflects
+# this copy only. Never stops.
+.cp_sync <- function(root, study) {
+  if (is.null(study$remote)) return(invisible(FALSE))
+  repo <- .cp_repo_init(root, study$remote)
+  ancestor <- function(a, b) .cp_git(repo, c("merge-base", "--is-ancestor", a, b))$ok
+  has_origin <- function() !is.na(.cp_commit_of(repo, "refs/remotes/origin/main"))
+  why <- NULL
+  if (!study$verified) {
+    why <- "an unverified study does not read the remote"
+  } else {
+    log <- .cp_log_read(root)
+    pending <- which(vapply(log, function(e) {
+      identical(e$state, "committed") && identical(e$delivery$git, "pending")
+    }, logical(1)))
+    if (length(pending)) {
+      log <- .cp_deliver(root, study)
+      reasons <- unlist(lapply(log[pending], function(e) e$delivery$reason))
+      if (any(grepl("^(remote unreachable|git fetch)", reasons))) {
+        why <- "the remote could not be reached"
+      } else if (has_origin() && !ancestor("refs/remotes/origin/main", "HEAD")) {
+        why <- "this copy could not be replayed onto the remote"
+      }
+    } else {
+      why <- .cp_fast_forward(repo, ancestor, has_origin)
+    }
+  }
+  if (!is.null(why)) {
+    message("Closure state is from this copy's last fetch and may be out of ",
+            "date: ", why, ".")
+  }
+  invisible(is.null(why))
+}
+
+# The nothing-pending half of .cp_sync(): fetch with .cp_push()'s refspecs
+# and fast-forward. Returns NULL on success, otherwise why it stopped short.
+.cp_fast_forward <- function(repo, ancestor, has_origin) {
+  probe <- .cp_remote_probe(repo)
+  if (!probe$reachable) return("the remote could not be reached")
+  refspecs <- "+refs/tags/*:refs/remote-tags/*"
+  if (probe$has_main) {
+    refspecs <- c("+refs/heads/main:refs/remotes/origin/main", refspecs)
+  }
+  fetched <- .cp_git(repo, c("fetch", "-q", "--no-tags", "origin", refspecs))
+  if (!fetched$ok) return("the remote could not be reached")
+  if (!probe$has_main || !has_origin()) return(NULL)
+  if (is.na(.cp_head(repo)) || ancestor("HEAD", "refs/remotes/origin/main")) {
+    .cp_git_do(repo, c("reset", "-q", "--hard", "refs/remotes/origin/main"))
+    return(NULL)
+  }
+  if (ancestor("refs/remotes/origin/main", "HEAD")) return(NULL)
+  "this copy has diverged from the remote"
+}
+
+.cp_unknown_reason <- function() {
+  paste0("closure state cannot be determined from this copy: a closed-* or ",
+         "reopened-* tag is not on main")
+}
+
+.cp_stop_unknown <- function(caller) {
+  stop(caller, "(): ", .cp_unknown_reason(), ". Run study_checkpoint_push() ",
+       "while the remote is reachable; see ?study_checkpoint_push.",
+       call. = FALSE)
 }
 
 # Field checks only, so they run before anything is written. doi and pmid are
@@ -95,6 +184,16 @@
 #' These rules are checked before anything is written, so a close made
 #' offline fails at once rather than when the outbox is delivered.
 #'
+#' Whether the study is closed is read from the latest \code{closed-*} or
+#' \code{reopened-*} tag on the checkpoint history, counting tags pushed from
+#' other copies of the study. Before deciding, both functions sync with the
+#' remote, delivering any pending checkpoints first. When the remote cannot
+#' be reached, a message says that the closure state is from this copy's last
+#' fetch and may be out of date. When a closure or reopening tag in this copy
+#' is not on its history, which an interrupted delivery can leave, the state
+#' cannot be determined and both functions stop; run
+#' \code{\link{study_checkpoint_push}} while the remote is reachable.
+#'
 #' \code{reason} is written to the snapshot, the tag and the outbox, so it
 #' leaves the study folder. A message says so whenever it is given: it must
 #' not contain patient information.
@@ -157,10 +256,12 @@ study_close <- function(outcome, reason = NULL, publication = NULL,
   if (outcome == "superseded") {
     superseded_by <- .cp_check_superseded_by(superseded_by)
   }
-  # Spec 6.1 step 1: a fresh copy clones the remote first, so the tag guards
-  # below see closures made from other copies.
-  if (!is.null(study$remote)) .cp_repo_init(root, study$remote)
-  if (.cp_is_closed(root)) {
+  # Spec 6.1 step 1 and spec 2026-10-01 3.2: clone or sync with the remote
+  # first, so the tag guards below see closures made from other copies.
+  .cp_sync(root, study)
+  closed <- .cp_is_closed(root)
+  if (is.na(closed)) .cp_stop_unknown("study_close")
+  if (closed) {
     stop("study_close(): the study is already closed; run study_reopen() ",
          "first", call. = FALSE)
   }
@@ -203,8 +304,10 @@ study_reopen <- function(reason, new_lead = NULL, reopened_at = Sys.Date(),
          call. = FALSE)
   }
   if (!is.null(new_lead)) .cp_check_string(new_lead, "study_reopen", "new_lead")
-  if (!is.null(study$remote)) .cp_repo_init(root, study$remote)
-  if (!.cp_is_closed(root)) {
+  .cp_sync(root, study)
+  closed <- .cp_is_closed(root)
+  if (is.na(closed)) .cp_stop_unknown("study_reopen")
+  if (!closed) {
     stop("study_reopen(): the study is not closed", call. = FALSE)
   }
   .cp_free_text_notice(reason)

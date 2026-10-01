@@ -255,3 +255,152 @@ test_that("a pushed closure tag is never renumbered", {
   expect_equal(e$delivery$git, "delivered")
   expect_false("closed-abandoned-2" %in% git_out(bare, c("tag", "-l")))
 })
+
+test_that("an existing copy sees a closure pushed from another copy", {
+  skip_if_no_git()
+  local_git_env()
+  s <- two_copies()
+  expect_equal(study_close("abandoned", root = s$a)$delivery$git, "delivered")
+  expect_error(study_close("not_published", root = s$b), "already closed")
+  ro <- suppressMessages(study_reopen("new PI", root = s$b))
+  expect_equal(ro$commit, git_out(s$bare, c("rev-parse",
+                                            "closed-abandoned-1^{commit}")))
+  expect_false(.cp_is_closed(s$b))
+})
+
+test_that("two closures and one reopening read open, on both copies", {
+  skip_if_no_git()
+  local_git_env()
+  s <- two_copies()
+  set_study_keys(s$b, checkpoint = list(remote = file.path(s$dir, "gone.git")))
+  study_close("abandoned", root = s$a)
+  suppressMessages(expect_warning(study_close("abandoned", root = s$b),
+                                  "not pushed"))
+  set_study_keys(s$b, checkpoint = list(remote = s$bare))
+  study_checkpoint_push(s$b)
+  e <- .cp_log_read(s$b)[[2]]
+  expect_equal(e$delivery$git, "delivered")
+  expect_equal(e$tag, "closed-abandoned-2")
+  expect_true(.cp_is_closed(s$b))
+  expect_error(study_close("abandoned", root = s$a), "already closed")
+  suppressMessages(study_reopen("new PI", root = s$b))
+  expect_false(.cp_is_closed(s$b))
+  expect_error(study_reopen("again", root = s$a), "not closed")
+  expect_false(.cp_is_closed(s$a))
+})
+
+test_that("a commit known under a local and a remote name is one closure", {
+  skip_if_no_git()
+  local_git_env()
+  dir <- withr::local_tempdir()
+  root <- make_checkpoint_study(dir)
+  bare <- make_bare_remote(dir)
+  set_study_keys(root, checkpoint = list(remote = bare))
+  cl <- study_close("abandoned", root = root)
+  repo <- .cp_repo_path(root)
+  # As delivery leaves a renumbering it has not finished: the commit is
+  # closed-abandoned-1 on the remote and closed-abandoned-2 here.
+  git_out(repo, c("tag", "-a", "closed-abandoned-2", "-m", "renamed",
+                  cl$commit))
+  git_out(repo, c("tag", "-d", "closed-abandoned-1"))
+  expect_true(.cp_is_closed(root))
+  suppressMessages(study_reopen("new PI", root = root))
+  expect_false(.cp_is_closed(root))
+})
+
+test_that("offline, a cached remote closure off HEAD is ignored, and said so", {
+  skip_if_no_git()
+  local_git_env()
+  s <- two_copies()
+  study_close("abandoned", root = s$a)
+  repo <- .cp_repo_path(s$b)
+  git_out(repo, c("fetch", "-q", "--no-tags", "origin",
+                  "+refs/heads/main:refs/remotes/origin/main",
+                  "+refs/tags/*:refs/remote-tags/*"))
+  expect_true("closed-abandoned-1" %in% .cp_remote_tags(repo))
+  expect_false(.cp_is_closed(s$b))
+  set_study_keys(s$b, checkpoint = list(remote = file.path(s$dir, "gone.git")))
+  expect_message(
+    expect_warning(cl <- study_close("abandoned", root = s$b), "not pushed"),
+    "may be out of date"
+  )
+  expect_equal(cl$tag, "closed-abandoned-1")
+})
+
+test_that("study_status reads closure state without touching the network", {
+  skip_if_no_git()
+  local_git_env()
+  dir <- withr::local_tempdir()
+  root <- make_checkpoint_study(dir)
+  study_close("abandoned", root = root)
+  set_study_keys(root, checkpoint = list(remote = file.path(dir, "gone.git")))
+  real <- .cp_git
+  seen <- character(0)
+  local_mocked_bindings(.cp_git = function(repo, args) {
+    seen <<- c(seen, args[1])
+    real(repo, args)
+  })
+  st <- study_status(root)
+  expect_false(any(seen %in% c("fetch", "ls-remote", "push", "clone")))
+  row <- st$checks[st$checks$item == "closure", ]
+  expect_equal(row$status, "CLOSED")
+  expect_match(row$detail, "as of the last fetch")
+})
+
+test_that("a local closure tag off main makes closure state unknown", {
+  skip_if_no_git()
+  local_git_env()
+  dir <- withr::local_tempdir()
+  root <- make_checkpoint_study(dir)
+  set_study_keys(root, checkpoint = list(remote = file.path(dir, "gone.git")))
+  suppressMessages(suppressWarnings({
+    study_checkpoint("abstract_submitted", root = root)
+    cl <- study_close("abandoned", root = root)
+  }))
+  repo <- .cp_repo_path(root)
+  # Delivery moved main onto a replayed commit and stopped before retagging:
+  # closed-abandoned-1 still names the old commit, which main no longer has.
+  tree <- git_out(repo, c("rev-parse", paste0(cl$commit, "^{tree}")))
+  moved <- git_out(repo, c("commit-tree", tree, "-p", paste0(cl$commit, "^"),
+                           "-m", "replayed"))
+  git_out(repo, c("reset", "-q", "--hard", moved))
+  expect_true(is.na(.cp_is_closed(root)))
+  msg <- "cannot be determined.*not on main.*study_checkpoint_push"
+  suppressMessages(suppressWarnings(
+    expect_error(study_close("abandoned", root = root), msg)
+  ))
+  suppressMessages(suppressWarnings(
+    expect_error(study_reopen("new PI", root = root), msg)
+  ))
+  expect_equal(grep("^closed-", git_out(repo, c("tag", "-l")), value = TRUE),
+               "closed-abandoned-1")
+  suppressMessages(suppressWarnings(expect_warning(
+    study_checkpoint("abstract_submitted", root = root),
+    "cannot be determined"
+  )))
+  row <- study_status(root)$checks
+  expect_equal(row$status[row$item == "closure"], "UNKNOWN")
+})
+
+test_that("offline, a stale closure records a harmless extra reopening", {
+  skip_if_no_git()
+  local_git_env()
+  s <- two_copies()
+  study_close("abandoned", root = s$a)
+  # B's next call syncs, so B has now fetched A's closure.
+  expect_warning(study_checkpoint("abstract_submitted", root = s$b),
+                 "study is closed")
+  suppressMessages(study_reopen("new PI", root = s$a))
+  set_study_keys(s$b, checkpoint = list(remote = file.path(s$dir, "gone.git")))
+  expect_true(.cp_is_closed(s$b))
+  expect_message(
+    suppressWarnings(study_reopen("stale", root = s$b)),
+    "may be out of date"
+  )
+  set_study_keys(s$b, checkpoint = list(remote = s$bare))
+  study_checkpoint_push(s$b)
+  expect_equal(.cp_log_read(s$b)[[3]]$delivery$git, "delivered")
+  expect_false(.cp_is_closed(s$b))
+  expect_error(suppressMessages(study_reopen("again", root = s$a)),
+               "not closed")
+})

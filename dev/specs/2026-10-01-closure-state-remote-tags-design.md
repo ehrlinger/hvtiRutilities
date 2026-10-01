@@ -102,12 +102,43 @@ No remote, an unverified identity, or an unreachable remote means
   on `HEAD`'s history, by the rule in 3.1;
 - ignores cached remote tags whose commits are not on `HEAD`. They cannot be
   placed without a sync;
-- **says so**: a one-line `message()` that closure state reflects this copy
-  only, because the remote could not be reached. It does not stop.
+- **says so**: a one-line `message()` that closure state is from this copy's
+  last fetch and may be out of date. It does not stop.
 
-Remote tags are never moved or deleted (section 6.1), so a cache that is
-behind can only show less history than the remote, never history that is
-wrong. The fallback can miss a closure, but it cannot make one up.
+**The offline state can be stale in either direction** (resolved in PR #172
+review). A cache that is behind shows less history than the remote, and less
+history can read either way. Copy B cached A's closure, A then reopened, and
+B, now offline, still reads the study as closed. Or B never fetched A's
+closure and reads it as open. The consequences are bounded:
+
+- a valid close or reopen may be refused. Retry once the remote is reachable;
+- an extra closure or reopening may be recorded. Delivery renumbers it, and a
+  second reopening (or closure) in a row is harmless under the latest-event
+  rule in 3.1, because only the last event decides.
+
+Message-and-continue stays the rule; the maintainer chose it over stopping.
+
+**A local tag that cannot be placed makes the state unknown** (resolved in
+PR #172 review). Delivery moves `HEAD` onto replayed commits before it
+retags and persists their entries. A crash in that window leaves a pending
+local `closed-*` or `reopened-*` tag on the old commit, which is no longer
+on `main`. Ignoring that event, as a cached remote tag is ignored, would
+allow an invalid second close. So:
+
+- online, the sync runs first, and delivery heals such entries (the
+  `.cp_heal()` work in
+  [#152](https://github.com/ehrlinger/hvtiRutilities/issues/152)). Nothing
+  here depends on that change having landed;
+- if any **local** `closed-*` or `reopened-*` tag is still off `HEAD`'s
+  first-parent history after the sync, or there was no sync, the closure
+  state is **unknown**. `study_close()` and `study_reopen()` stop, saying the
+  state cannot be determined from this copy because a tag is not on `main`,
+  and pointing to `study_checkpoint_push()` while the remote is reachable.
+  `study_checkpoint()` warns and records, since checkpoints are never refused.
+  `study_status()` shows the closure row as `UNKNOWN`;
+- cached **remote** tags off `HEAD` are still ignored. Pushed tags always sit
+  on the remote's `main`, so an off-`HEAD` remote tag only means this copy is
+  behind, which is the stale case above.
 
 `study_status()` never syncs, because a status read must not touch the network
 or push. It uses the 3.3 rule as it stands and labels the closure row "as of
@@ -131,9 +162,17 @@ the last fetch" when a remote is configured.
 3. A commit known under two names, one local and one remote, counts as one
    closure.
 4. Offline: B with a cached remote closure not on its `HEAD` keeps today's
-   answer and prints the "this copy only" message.
+   answer and prints the "may be out of date" message.
 5. `study_status()` makes no network call. Assert it with an unreachable
    remote URL and no delay.
+6. A local closure tag on a commit that is no longer on `main`, with the
+   remote unreachable: `study_close()` and `study_reopen()` stop rather than
+   close again, `study_checkpoint()` warns and records, and `study_status()`
+   shows `UNKNOWN`. (Added in PR #172 review.)
+7. The mirror of 4: B cached A's closure, A reopened, and B, offline, reads
+   the study as closed and records a second reopening with the "may be out of
+   date" message. After B delivers, both copies read open. (Added in PR #172
+   review.)
 
 ## 6. Alternatives considered
 

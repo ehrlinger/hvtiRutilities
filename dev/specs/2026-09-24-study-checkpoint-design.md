@@ -324,10 +324,19 @@ the checkpoint lifecycle above, with these differences:
 ### 6.4 Closure state
 
 **A study is closed when its latest `closed-*` tag has no `reopened-*` tag
-after it**, the same definition as the API spec. Because closing needs an
-open study and reopening needs a closed one, the tags alternate, so the
-state is read from counts: closed when there are more `closed-*` tags than
-`reopened-*` tags. Counts, unlike tag timestamps, cannot tie. There
+after it**, the same definition as the API spec. "Latest" is position on the
+first-parent history of `main`, not a tag timestamp, so it cannot tie. The
+`closed-*` and `reopened-*` tags are collected from both `refs/tags` and
+`refs/remote-tags`, resolved to their commits and de-duplicated by
+(family, commit); a reopening on the same commit as a closure comes after it,
+and a tag whose commit is not on `HEAD`'s history is ignored. Counts were
+used here until 2026-10-01; across copies the two families no longer
+alternate, so a count can read closed after a reopening. `study_close()`,
+`study_reopen()` and `study_checkpoint()` sync with the remote before the
+guard, and say so when they cannot. A local tag whose commit is not on
+`main` makes the state unknown: closing and reopening stop, a checkpoint warns
+and records. See
+`2026-10-01-closure-state-remote-tags-design.md`. There
 is no separate state file. A checkpoint on a closed study is allowed, since
 checkpoints are never rejected for their order, but it warns that the study
 is closed.
@@ -462,7 +471,10 @@ push included, on all five platforms. Tests needing git skip with
    (for example, a submitted-manuscript archive outside git) is needed.
 8. **Free-text PHI.** Tracked in [#156](https://github.com/ehrlinger/hvtiRutilities/issues/156). Revisit the warning-only rule (section 5.1a) once real
    checkpoints show what analysts write in `note` and `reason`.
-9. **Closure state from local tags only.** Tracked in [#153](https://github.com/ehrlinger/hvtiRutilities/issues/153). Whether a study is closed is read
+9. ✅ RESOLVED 2026-10-01 (#153; see
+   `2026-10-01-closure-state-remote-tags-design.md`). State is now the latest
+   closure event on `main` across local and remote tags, read after a sync.
+   **Closure state from local tags only.** Tracked in [#153](https://github.com/ehrlinger/hvtiRutilities/issues/153). Whether a study is closed is read
    from local `closed-*` and `reopened-*` tags. Remote tags are fetched into
    `refs/remote-tags` and are not counted, so a closure made from another copy
    of the study is not seen until a fresh clone, and two copies can each close

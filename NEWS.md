@@ -13,6 +13,24 @@
   written before this change still validate, and rejects a `sha` that is not
   a hexadecimal commit.
 
+## Bug fixes
+
+* `study_close()`, `study_reopen()` and `study_checkpoint()` now see a
+  closure made from another copy of the study (#153). Before deciding whether
+  the study is closed, each one syncs with the remote: it delivers pending
+  entries, or fetches and fast-forwards when nothing is pending. Closure state
+  is the latest `closed-*` or `reopened-*` event on `main`, counting local and
+  remote tags once per commit, rather than a count of local tags. The count
+  read a study as closed after it was reopened once two copies had each
+  closed it. When the remote cannot be reached, a message says that closure
+  state is from this copy's last fetch and may be out of date, in either
+  direction. When a closure or reopening tag in this copy is not on its
+  `main`, which an interrupted delivery can leave behind, the state is
+  unknown: `study_close()` and `study_reopen()` stop and point to
+  `study_checkpoint_push()`, and `study_checkpoint()` warns and records.
+  `study_status()` never syncs. Its closure row says "as of the last fetch"
+  when a remote is configured, and shows `UNKNOWN` in that case.
+
 # hvtiRutilities 1.4.3
 
 ## New features

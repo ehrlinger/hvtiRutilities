@@ -220,13 +220,24 @@
   rows <- .status_row("checkpoints",
                       if (git_pending) "PENDING" else "OK",
                       detail)
+  # Never syncs: a status read must not touch the network. With a remote,
+  # the answer is only as fresh as the last fetch, and the row says so.
   closed <- tryCatch(.cp_is_closed(root), error = function(e) FALSE)
+  remote <- tryCatch(.cp_study(root, "study_status")$remote,
+                     error = function(e) NULL)
   closures <- Filter(function(e) identical(e$type, "closure"), log)
-  if (closed && length(closures)) {
+  if (is.na(closed)) {
+    rows <- rbind(rows, .status_row("closure", "UNKNOWN",
+                                    paste0(.cp_unknown_reason(), "; run ",
+                                           "study_checkpoint_push()")))
+  } else if (closed && length(closures)) {
     lc <- closures[[length(closures)]]
     rows <- rbind(rows, .status_row("closure", "CLOSED",
                                     paste0(lc$outcome, " (", lc$closed_at,
-                                           ")")))
+                                           ")",
+                                           if (!is.null(remote)) {
+                                             "; as of the last fetch"
+                                           })))
   }
   rows
 }
@@ -258,7 +269,10 @@
 #' counts the recorded events, names the last tag, and counts those not yet
 #' pushed or not yet in ST. A closed study then adds a \code{closure} row with
 #' status \code{"CLOSED"} and the outcome and date of the latest closure; see
-#' \code{\link{study_close}}.
+#' \code{\link{study_close}}. This function never contacts the remote, so
+#' when one is configured that row adds \emph{as of the last fetch}. When a
+#' closure or reopening tag in this copy is not on its \code{main}, the state
+#' cannot be determined and the row has status \code{"UNKNOWN"}.
 #'
 #' Release-aware datasets add an \code{update:<dataset>} row with status
 #' \code{"CURRENT"}, \code{"UPDATE AVAILABLE"},
@@ -283,7 +297,7 @@
 #'   \code{"OK"}, \code{"MISSING"}, \code{"FAIL"}, \code{"UNVERIFIED"},
 #'   \code{"CURRENT"},
 #'   \code{"UPDATE AVAILABLE"}, \code{"UPDATE STATUS UNKNOWN"},
-#'   \code{"PENDING"}, or \code{"CLOSED"} -- and
+#'   \code{"PENDING"}, \code{"CLOSED"}, or \code{"UNKNOWN"} -- and
 #'   \code{detail}). The five base rows are followed by release-aware update
 #'   rows, by dataset and update rows for each named dataset, and by the
 #'   \code{checkpoints} and \code{closure} rows when they apply.
@@ -403,7 +417,8 @@ print.study_status <- function(x, ...) {
     "UPDATE AVAILABLE" = "[~]",
     "UPDATE STATUS UNKNOWN" = "[?]",
     PENDING = "[~]",
-    CLOSED = "[x]"
+    CLOSED = "[x]",
+    UNKNOWN = "[?]"
   )
   cat("Study: ", x$root, "\n\n", sep = "")
   for (i in seq_len(nrow(x$checks))) {
