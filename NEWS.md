@@ -15,6 +15,14 @@
 
 ## Bug fixes
 
+* `job_files()`, and so `job_census()`, now reads the job names
+  `hvtiRtemplates::add_job()` writes, `<subject>-<type>-<prefix>[-<qualifier>].qmd`,
+  as `naming = "scaffolded"` with the qualifier carried. They came back with
+  `prefix = NA` before, so the census undercounted every scaffolded job and
+  would in time have reported a well-used prefix as unused. The `-runner.R`
+  that `add_job()` writes beside some reports shares its report's stem and
+  counts as a file of that job, not a second job (#170).
+
 * A checkpoint delivery stuck on "is not on main" now repairs itself
   (#152). If a session died after replaying unpushed snapshots onto the
   remote's `main` but before writing the log, the entry kept naming the

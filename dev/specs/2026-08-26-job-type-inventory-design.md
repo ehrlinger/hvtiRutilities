@@ -159,6 +159,12 @@ conventions are live:
 | `template` | `<NN>.<MM>-<prefix>.qmd` | `03.01-ac.qmd` | `hvtiRtemplates/inst/templates/` |
 | `set` | `<endpoint>-<type>-<NN>.<MM>-<prefix>[-parity].qmd` | `dead_pa-hz-03.01-ac.qmd` | `new_job()` output — the forward convention |
 | `r_transitional` | `<NN>-<prefix>-<endpoint>[-parity].qmd` | `02-hz-dead_pa.qmd` | preserve_root `analyses/R_hazard/qmd/` and `parity/` |
+| `scaffolded` | `<subject>-<type>-<prefix>[-<qualifier>].qmd` | `dead-hz-bc.qmd` | `hvtiRtemplates::add_job()` output (added 2026-10-01, #170) |
+
+`scaffolded` also claims the `<stem>-runner.R` that `add_job()` writes beside
+the bl, br, bc and bh reports. `job_files()` gives a runner its report's stem,
+so the runner adds a file to that job and never a second job; read as a plain
+four-field name, `runner` would otherwise be taken for a qualifier.
 
 `set` is the authoritative convention for R jobs, designed in
 `hvtiRtemplates/specs/2026-08-21-template-set-layout-design.md`. Its
@@ -177,7 +183,17 @@ renamed to `set`; the parser exists to see them until then, not to bless them.
 Renaming them is study-tree work and out of scope here.
 
 `prefix` is resolved by trying each parser **in a fixed order — `set`,
-`template`, `r_transitional`, `legacy` — and taking the first match.** The order
+`template`, `r_transitional`, `scaffolded`, `legacy` — and taking the first
+match.** `scaffolded` and `r_transitional` overlap on a two-digit first
+field, and `add_job()` accepts a subject such as `03`, so the digits cannot
+decide. The third field does. In a scaffolded name it is a prefix, and every
+prefix `add_job()` can write is in `hvti_taxonomy()`; in a transitional name it
+is an endpoint. So a scaffolded reading whose prefix is a known (or folded)
+taxonomy prefix is claimed **before** `r_transitional` runs: `03-hz-bc.qmd`
+is a scaffolded `bc` job and `03-bc-dead.qmd` stays a transitional `bc` job.
+Other scaffolded names are tried after `r_transitional`, as before. The
+residual risk is a transitional file whose endpoint is itself a taxonomy
+prefix. The order
 is most-specific-first and must not be rearranged casually: the three R-side
 patterns are tightly anchored (two required digits, a required `.qmd`), while
 `legacy` is permissive enough to "succeed" on almost any dotted name and would

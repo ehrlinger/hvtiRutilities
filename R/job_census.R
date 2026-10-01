@@ -172,6 +172,12 @@
 #' version-control internals or a study checkpoint's mirror, not study files,
 #' and is not listed.
 #'
+#' A \code{scaffolded} name, \code{<subject>-<type>-<prefix>[-<qualifier>].qmd}
+#' as written by \code{hvtiRtemplates::add_job()}, is parsed with its
+#' qualifier. The \code{-runner.R} that \code{add_job()} writes beside some
+#' reports takes the report's \code{stem}, so it counts as a file of that job
+#' rather than as a second job.
+#'
 #' A legacy prefix listed in \code{\link{hvti_prefix_folds}} is reported as
 #' the prefix it folds into, so a \code{pm.*} file counts as \code{lm}.
 #' \code{stem} keeps the name as written, so a folded file stays findable.
@@ -206,7 +212,8 @@
 #'   \code{qualifiers}, \code{n_qualifiers}, \code{stem}, \code{ext},
 #'   \code{prefix_class}, \code{folder_expected} and \code{folder_ok}.
 #'   The three qualifier columns carry the dot-fields of a \code{legacy}
-#'   name that lie between the prefix and the extension, and are \code{NA}
+#'   name that lie between the prefix and the extension, or the trailing
+#'   qualifier field of a \code{scaffolded} name, and are \code{NA}
 #'   (count zero) for every other convention. They are named by position
 #'   because the second field means a different thing in each taxonomy
 #'   folder; see \code{\link{hvti_taxonomy}} and the design note referenced
@@ -299,6 +306,11 @@ job_files <- function(roots) {
     no_real_ext <- has_ext & !nzchar(stem)
     stem <- ifelse(no_real_ext, base, stem)
     ext <- ifelse(no_real_ext, NA_character_, ext)
+
+    # A scaffolded job's -runner.R belongs to the report beside it, so it
+    # takes the report's stem: one more file, not one more job.
+    runner <- fields$naming %in% "scaffolded" & grepl("-runner[.]R$", base)
+    stem[runner] <- sub("-runner$", "", stem[runner])
 
     # A folded legacy prefix is counted as the prefix it folds into, before
     # classification, so it lands as "known" rather than "unknown". The stem
