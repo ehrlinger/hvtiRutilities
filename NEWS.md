@@ -15,6 +15,44 @@
 
 ## Bug fixes
 
+* `job_files()`, and so `job_census()`, now reads the job names
+  `hvtiRtemplates::add_job()` writes, `<subject>-<type>-<prefix>[-<qualifier>].qmd`,
+  as `naming = "scaffolded"` with the qualifier carried. They came back with
+  `prefix = NA` before, so the census undercounted every scaffolded job and
+  would in time have reported a well-used prefix as unused. The `-runner.R`
+  that `add_job()` writes beside some reports shares its report's stem and
+  counts as a file of that job, not a second job (#170).
+
+* A checkpoint delivery stuck on "is not on main" now repairs itself
+  (#152). If a session died after replaying unpushed snapshots onto the
+  remote's `main` but before writing the log, the entry kept naming the
+  pre-replay commit, stayed pending on every retry, and held back every
+  later entry until `.checkpoint/log.yml` was edited by hand. Delivery now
+  finds the replayed commit, records the old commit as `replayed_from`, and
+  delivers as normal. It looks in three places: another log entry already
+  mapping the same old commit, the one commit on `main` carrying the entry's
+  id, or the one carrying the id in the old commit's own message. The last
+  covers a reopening, which tags an existing commit. When none finds exactly
+  one commit, the entry stays pending with the manual-repair warning, as
+  before. A hand repair should set `replayed_from` as well as `git_commit`,
+  so later entries can heal from it.
+
+* Two sessions can no longer both take over the same stale checkpoint lock.
+  A lock more than 6 hours old was taken over by deleting and recreating
+  `.checkpoint/lock`, so two sessions judging it stale at the same moment
+  could both recreate it and both believe they held it, letting their outbox
+  writes interleave. The takeover now renames the stale lock aside, which
+  only one session can do; the other stops with the usual "retry when it
+  has finished" error. A session that finds it renamed a lock another
+  session had just taken puts it back and stops with the same error. The
+  refresh a long call makes between phases had the same race and could
+  write its old holder back over a session that had just taken over. The
+  holder now refreshes a lease file named for its own token, in one step,
+  and a session whose lock was taken over stops with an error saying so
+  instead of carrying on. A lock whose setup or put-back fails part way no
+  longer strands an empty `.checkpoint/lock` that refused every session for
+  six hours (#154).
+
 * `study_close()`, `study_reopen()` and `study_checkpoint()` now see a
   closure made from another copy of the study (#153). Before deciding whether
   the study is closed, each one syncs with the remote: it delivers pending

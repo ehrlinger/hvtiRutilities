@@ -1,14 +1,27 @@
 # Parsing a job filename into its prefix.
 #
-# Four naming conventions are live in the corpus at once, and they are not
+# Five naming conventions are live in the corpus at once, and they are not
 # variations on one pattern -- see section 4.2 of
 # dev/specs/2026-08-26-job-type-inventory-design.md. Each gets its own anchored
 # regex, and the parsers run most-specific-first.
 #
 # The order is load-bearing, not stylistic. `legacy` is permissive enough to
 # match almost any dotted name -- it reads "03.01-ac.qmd" as prefix "03" --
-# so it must run last or it shadows the three R-side patterns and every R job
+# so it must run last or it shadows the four R-side patterns and every R job
 # in the corpus is misclassified. test-job-names.R pins this.
+#
+# `scaffolded` and `r_transitional` overlap, and digits alone cannot settle
+# it. Both are three dash-fields and a .qmd. add_job() accepts any
+# [A-Za-z0-9_]+ subject, "03" included, so 03-hz-bc.qmd is a scaffolded bc
+# job, while preserve_root's 03-bc-dead.qmd is a transitional bc job. What
+# separates them is the third field. In a scaffolded name it is a prefix, and
+# every prefix add_job() can write is in hvti_taxonomy(). In a transitional
+# name it is an endpoint (dead, dead_pa). So a scaffolded reading whose prefix
+# is known is claimed before r_transitional runs, and the rest fall through to
+# r_transitional and then to scaffolded as before. The rule also keeps a
+# report and its -runner.R on the same reading; the runner can only ever be
+# scaffolded. The residual risk is a transitional file whose endpoint happens
+# to be a taxonomy prefix, which would read as scaffolded.
 
 # One row per input basename, in input order. `naming` and `prefix` are NA for
 # a name no parser claims; the row still exists, because a file this sweep
@@ -49,9 +62,21 @@
     template       = "^\\d{2}[.]\\d{2}-([A-Za-z0-9]+)[.]qmd$",
     # <NN>-<prefix>-<endpoint>[-parity].qmd
     r_transitional = "^\\d{2}-([A-Za-z0-9]+)-[A-Za-z0-9_]+(?:-parity)?[.]qmd$",
+    # <subject>-<type>-<prefix>[-<qualifier>].qmd, hvtiRtemplates::add_job()
+    # output, and the -runner.R it writes beside some reports. The runner is
+    # matched here, not left unparsed, so that it is counted as part of its
+    # report; job_files() gives it the report's stem.
+    scaffolded     = paste0("^[A-Za-z0-9_]+-[A-Za-z0-9_]+-([A-Za-z0-9]+)",
+                            "(?:-([A-Za-z0-9_]+))?(?:[.]qmd|-runner[.]R)$"),
     # <prefix>.<anything>.<ext>
     legacy         = "^([A-Za-z0-9_]+)[.].+$"
   )
+
+  known <- c(hvti_taxonomy()$prefix, names(hvti_prefix_folds()))
+  sca_hit <- grepl(patterns$scaffolded, stripped)
+  sca_known <- sca_hit & sub(patterns$scaffolded, "\\1", stripped) %in% known
+  naming[sca_known] <- "scaffolded"
+  prefix[sca_known] <- sub(patterns$scaffolded, "\\1", stripped[sca_known])
 
   for (nm in names(patterns)) {
     todo <- is.na(naming)
@@ -62,12 +87,17 @@
     prefix[hit] <- sub(patterns[[nm]], "\\1", stripped[hit])
   }
 
-  # Only `legacy` has a qualifier slot. The other three conventions have a
-  # fixed grammar in which every field is accounted for, so a qualifier there
-  # would be an invention rather than a reading.
+  # Only `legacy` and `scaffolded` have a qualifier slot. The other three
+  # conventions have a fixed grammar in which every field is accounted for,
+  # so a qualifier there would be an invention rather than a reading.
   quals <- rep(list(character(0)), n)
   leg <- !is.na(naming) & naming == "legacy"
   if (any(leg)) quals[leg] <- .legacy_qualifiers(stripped[leg])
+  sca <- !is.na(naming) & naming == "scaffolded"
+  if (any(sca)) {
+    q <- sub(patterns$scaffolded, "\\2", stripped[sca])
+    quals[sca] <- lapply(q, function(x) if (nzchar(x)) x else character(0))
+  }
 
   data.frame(
     naming = naming,

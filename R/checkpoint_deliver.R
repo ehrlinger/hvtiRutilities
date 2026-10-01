@@ -103,13 +103,75 @@
   .cp_git(repo, c("merge-base", "--is-ancestor", entry$git_commit, "HEAD"))$ok
 }
 
+# The commit on main whose message carries `id`, or NA unless exactly one
+# does. A replay copies the message verbatim, so this finds the replayed
+# commit of an entry whose log write was lost.
+.cp_commit_with_id <- function(repo, id) {
+  if (is.null(id)) return(NA_character_)
+  res <- .cp_git(repo, c("log", "--fixed-strings", paste0("--grep=", id),
+                         "--format=%H", "HEAD"))
+  hits <- res$out[nzchar(res$out)]
+  if (res$ok && length(hits) == 1L) hits else NA_character_
+}
+
+# Old commit -> replayed commit, from every entry that records replayed_from
+# and names a commit on main: replays, earlier heals and hand repairs alike.
+.cp_heal_map <- function(repo, entries) {
+  map <- character(0)
+  for (e in entries) {
+    old <- e$replayed_from
+    if (is.null(old) || is.null(e$git_commit) || old %in% names(map)) next
+    if (.cp_git(repo, c("merge-base", "--is-ancestor", e$git_commit, "HEAD"))$ok) {
+      map[[old]] <- e$git_commit
+    }
+  }
+  map
+}
+
+# The snapshot id (checkpoint_id or closure_id) in a commit's own message, or
+# NULL when the commit is gone or its message carries no single id. Commit
+# messages are .cp_tag_message() of the entry that made the commit.
+.cp_snapshot_id <- function(repo, commit) {
+  res <- .cp_git(repo, c("log", "-1", "--format=%B", commit))
+  if (!res$ok) return(NULL)
+  hit <- grep("^(checkpoint|closure)_id: *[^ ]", res$out, value = TRUE)
+  if (length(hit) != 1L) return(NULL)
+  gsub("^[a-z_]+: *|['\"]", "", hit)
+}
+
+# Heal an entry the not-on-main backstop stopped. Its new commit is, in
+# order: what `healed` maps its old commit to; the one commit on main that
+# carries its own id; the one commit on main that carries the snapshot id in
+# its old commit's message (a reopening's id is only in its tag, so it heals
+# through the commit it names). When a local tag on the new commit carries
+# the entry's id, that tag is adopted so the replay's renumbering is not
+# repeated. NULL when no single commit is found.
+.cp_heal <- function(repo, entry, healed) {
+  old <- entry$git_commit
+  new <- if (old %in% names(healed)) healed[[old]] else .cp_commit_with_id(repo, .cp_entry_id(entry))
+  if (is.na(new)) new <- .cp_commit_with_id(repo, .cp_snapshot_id(repo, old))
+  if (is.na(new)) return(NULL)
+  entry$replayed_from <- old
+  entry$git_commit <- new
+  for (t in .cp_git_do(repo, c("tag", "-l", "--points-at", new))) {
+    msg <- .cp_git_do(repo, c("tag", "-l", "--format=%(contents)", t))
+    if (t != entry$tag && any(grepl(.cp_entry_id(entry), msg, fixed = TRUE))) {
+      entry$renumbered_from <- .cp_or(entry$renumbered_from, entry$tag)
+      entry$tag <- t
+      break
+    }
+  }
+  entry
+}
+
 # Returns the entries as they stand against the local refs on success AND on
 # failure, so the log never names a tag or commit the clone has moved away
 # from. Every failure after the probe becomes a reason, never an error: the
 # checkpoint is already saved locally. `persist` writes the entries to the
 # log after the local ref moves and before the network push, so an
-# interrupted push cannot lose them.
-.cp_push <- function(repo, entries, persist) {
+# interrupted push cannot lose them. `others` is the rest of the log, read
+# only to seed the heal map.
+.cp_push <- function(repo, entries, persist, others = list()) {
   probe <- .cp_remote_probe(repo)
   if (!probe$reachable) {
     return(list(reason = paste("remote unreachable:", .cp_last(probe$out)),
@@ -125,10 +187,16 @@
     .cp_git_do(repo, c("fetch", "-q", "--no-tags", "origin", refspecs))
     map <- if (probe$has_main) .cp_replay(repo) else character(0)
     entries <- lapply(entries, .cp_apply_map, map = map)
+    healed <- .cp_heal_map(repo, c(others, entries))
     for (i in seq_along(entries)) {
       if (!.cp_on_main(repo, entries[[i]])) {
-        orphan <- entries[[i]]
-        break
+        fixed <- .cp_heal(repo, entries[[i]], healed)
+        if (is.null(fixed)) {
+          orphan <- entries[[i]]
+          break
+        }
+        healed[[fixed$replayed_from]] <- fixed$git_commit
+        entries[[i]] <- fixed
       }
       planned <- .cp_retag_plan(entries[[i]], repo)
       if (is.null(planned)) next
@@ -208,7 +276,7 @@
       .cp_log_write(root, log)
     }
     pushed <- tryCatch(.cp_push(.cp_repo_init(root, study$remote), log[pending],
-                                persist),
+                                persist, log[-pending]),
                        error = function(e) {
                          list(reason = conditionMessage(e), entries = log[pending])
                        })
