@@ -235,15 +235,21 @@ patient information. There is no schema or redaction for now (decided
   (`study_checkpoint()`, `study_checkpoint_push()`, `study_close()`,
   `study_reopen()`) takes an exclusive lock, the directory
   `.checkpoint/lock` (`dir.create()` is atomic), before it reconciles, and
-  releases it on exit, including on error. The holder writes its user, pid
-  and start time into the lock, and refreshes that time between phases:
-  after selection, after `CHECKPOINT.yml`, after the commit and tag, and
-  before delivery (only while the lock's token is still its own). A lock
-  whose time is less than 6 hours old is an error that names the holder and
-  says to retry; an older one was left by a crashed session and is taken
-  over with a warning. `study_status()` only reads and takes no lock.
-  Checkpoints run on the server's local filesystem, never over an SMB mount,
-  so `dir.create()` is atomic and the lock's time is the server's clock.
+  releases it on exit, including on error. The holder writes its user, pid,
+  start time and a token into the lock's `holder.yml` once, and creates a
+  lease file `lease-<token>` whose mtime is the lease time. It refreshes the
+  lease between phases: after selection, after `CHECKPOINT.yml`, after the
+  commit and tag, and before delivery. The refresh sets that file's mtime in
+  one call and fails if the file is gone, which stops the call with an error
+  saying the lock was taken over and to retry. A lock whose lease (or, for a
+  lock with no lease file, whose `holder.yml` time) is less than 6 hours old
+  is an error that names the holder and says to retry; an older one was left
+  by a crashed session and is taken over with a warning, by renaming it
+  aside (open item 10), so two sessions cannot both take over one stale
+  lock. `study_status()` only reads and
+  takes no lock. Checkpoints run on the server's local filesystem, never
+  over an SMB mount, so `dir.create()` and `file.rename()` are atomic and
+  the lock's time is the server's clock.
 
 - **Steps 1 to 5 are all-or-nothing, and a crash between them is
   reconciled.** A failure before step 4 leaves nothing. At the start of every
@@ -489,12 +495,38 @@ push included, on all five platforms. Tests needing git skip with
    the study. Decide whether closure state should include remote tags.
    A first use while offline creates an empty clone, so the closure guards
    see no history until a fresh clone either.
-10. **Two sessions can both take over the same stale lock.** Tracked in [#154](https://github.com/ehrlinger/hvtiRutilities/issues/154). Each reads
-    `holder.yml`, judges it stale at the same instant, and deletes and
-    recreates the lock directory; both then believe they hold it. Narrowing
-    this is possible by re-reading `holder.yml` immediately before deleting
-    it and aborting if it changed; closing it fully needs an atomic rename
-    rather than a delete-then-create.
+10. ✅ RESOLVED 2026-10-01 ([#154](https://github.com/ehrlinger/hvtiRutilities/issues/154)).
+    **Two sessions can both take over the same stale lock.** Each read
+    `holder.yml`, judged it stale at the same instant, and deleted and
+    recreated the lock directory; both then believed they held it. The lease
+    refresh had the same race: it read the holder, checked its token, and
+    wrote the holder back, so a takeover between the read and the write was
+    overwritten and both sessions held the lock. Resolved in two parts.
+    The takeover is an atomic rename: `.cp_lock_take_stale()` renames the
+    stale `.checkpoint/lock` to a name unique to the attempt (pid and a UUID),
+    so only one session's rename can succeed; a session whose rename fails
+    stops with the retry error. The winner re-reads the holder and the lease
+    mtimes from the renamed directory; if either differs from what it judged
+    stale, it moved a live lock (taken over, or refreshed, in the gap), so it
+    puts that lock back (claiming the name with `dir.create()` and moving the
+    files in) and stops with the retry error. Otherwise it discards the
+    renamed directory and takes the lock through the normal `dir.create()`
+    path. The renamed directory is deleted only once nothing in it is
+    needed: a put-back that cannot move (or copy) every file keeps it and
+    warns, and removes the lock it claimed if that is still empty, since an
+    empty lock reads as fresh and would refuse every session for six hours.
+    Acquisition likewise removes a lock whose holder or lease could not be
+    written. The refresh no longer reads or rewrites anything: `holder.yml` is
+    written once, at acquisition, alongside a lease file `lease-<token>`, and
+    `.cp_lock_touch()` is a single `Sys.setFileTime()` on that path. After a
+    takeover the path is gone or inside the new holder's directory, which has
+    no file with the old token, so the call fails and stops its caller with a
+    lost-lock error; `.cp_snapshot()` skips its rollback for that error so it
+    cannot reset the new holder's commits. A lock with no lease file, from
+    before this change, is judged by `holder.yml`'s time. What remains: a
+    third session that claims the name while a mistaken rename is being put
+    back keeps the lock, and the session whose lock was moved stops with the
+    lost-lock error at its next refresh.
 11. ✅ RESOLVED 2026-09-25 (PR #151 review). **A long-running holder is not
     refreshed.** A session that ran past the old 30-minute stale age, for
     example `verify_manifest()` hashing large datasets, never updated its
@@ -503,4 +535,5 @@ push included, on all five platforms. Tests needing git skip with
     time between phases (after selection, after `CHECKPOINT.yml`, after the
     commit and tag, before delivery) while the token still matches, and by
     raising the stale age to 6 hours (section 6.1). A single phase must still
-    finish within the stale age.
+    finish within the stale age. Since #154 the refresh sets a lease file's
+    mtime instead of rewriting the holder (item 10).

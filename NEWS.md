@@ -37,6 +37,22 @@
   before. A hand repair should set `replayed_from` as well as `git_commit`,
   so later entries can heal from it.
 
+* Two sessions can no longer both take over the same stale checkpoint lock.
+  A lock more than 6 hours old was taken over by deleting and recreating
+  `.checkpoint/lock`, so two sessions judging it stale at the same moment
+  could both recreate it and both believe they held it, letting their outbox
+  writes interleave. The takeover now renames the stale lock aside, which
+  only one session can do; the other stops with the usual "retry when it
+  has finished" error. A session that finds it renamed a lock another
+  session had just taken puts it back and stops with the same error. The
+  refresh a long call makes between phases had the same race and could
+  write its old holder back over a session that had just taken over. The
+  holder now refreshes a lease file named for its own token, in one step,
+  and a session whose lock was taken over stops with an error saying so
+  instead of carrying on. A lock whose setup or put-back fails part way no
+  longer strands an empty `.checkpoint/lock` that refused every session for
+  six hours (#154).
+
 # hvtiRutilities 1.4.3
 
 ## New features
