@@ -184,8 +184,16 @@ Renaming them is study-tree work and out of scope here.
 
 `prefix` is resolved by trying each parser **in a fixed order — `set`,
 `template`, `r_transitional`, `scaffolded`, `legacy` — and taking the first
-match.** `scaffolded` follows `r_transitional` because `03-bc-dead.qmd` fits
-both, and the two required digits make `r_transitional` the narrower reading. The order
+match.** `scaffolded` and `r_transitional` overlap on a two-digit first
+field, and `add_job()` accepts a subject such as `03`, so the digits cannot
+decide. The third field does. In a scaffolded name it is a prefix, and every
+prefix `add_job()` can write is in `hvti_taxonomy()`; in a transitional name it
+is an endpoint. So a scaffolded reading whose prefix is a known (or folded)
+taxonomy prefix is claimed **before** `r_transitional` runs: `03-hz-bc.qmd`
+is a scaffolded `bc` job and `03-bc-dead.qmd` stays a transitional `bc` job.
+Other scaffolded names are tried after `r_transitional`, as before. The
+residual risk is a transitional file whose endpoint is itself a taxonomy
+prefix. The order
 is most-specific-first and must not be rearranged casually: the three R-side
 patterns are tightly anchored (two required digits, a required `.qmd`), while
 `legacy` is permissive enough to "succeed" on almost any dotted name and would

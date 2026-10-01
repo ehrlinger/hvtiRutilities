@@ -524,3 +524,15 @@ test_that("a scaffolded job and its runner count as one job (#170)", {
   expect_equal(sum(bc$n_jobs), 2L)   # bc.dead and dead-hz-bc
   expect_equal(sum(bc$n_files), 3L)  # the runner is a file, not a job
 })
+
+test_that("a two-digit-subject report and its runner are one job", {
+  root <- file.path(withr::local_tempdir(), "studies")
+  s <- file.path(root, "demo_study", "analyses")
+  dir.create(s, recursive = TRUE)
+  file.create(file.path(s, c("03-hz-bc.qmd", "03-hz-bc-runner.R")))
+
+  cen <- job_census(root)
+  expect_equal(cen$prefix, "bc")
+  expect_equal(cen$n_jobs, 1L)
+  expect_equal(cen$n_files, 2L)
+})

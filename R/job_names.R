@@ -10,10 +10,18 @@
 # so it must run last or it shadows the four R-side patterns and every R job
 # in the corpus is misclassified. test-job-names.R pins this.
 #
-# `scaffolded` runs after `r_transitional` for the same reason. Both are three
-# dash-fields and a .qmd, so 03-bc-dead.qmd fits either; the two required
-# digits make r_transitional the narrower reading, and its -parity suffix is
-# not a qualifier.
+# `scaffolded` and `r_transitional` overlap, and digits alone cannot settle
+# it. Both are three dash-fields and a .qmd. add_job() accepts any
+# [A-Za-z0-9_]+ subject, "03" included, so 03-hz-bc.qmd is a scaffolded bc
+# job, while preserve_root's 03-bc-dead.qmd is a transitional bc job. What
+# separates them is the third field. In a scaffolded name it is a prefix, and
+# every prefix add_job() can write is in hvti_taxonomy(). In a transitional
+# name it is an endpoint (dead, dead_pa). So a scaffolded reading whose prefix
+# is known is claimed before r_transitional runs, and the rest fall through to
+# r_transitional and then to scaffolded as before. The rule also keeps a
+# report and its -runner.R on the same reading; the runner can only ever be
+# scaffolded. The residual risk is a transitional file whose endpoint happens
+# to be a taxonomy prefix, which would read as scaffolded.
 
 # One row per input basename, in input order. `naming` and `prefix` are NA for
 # a name no parser claims; the row still exists, because a file this sweep
@@ -63,6 +71,12 @@
     # <prefix>.<anything>.<ext>
     legacy         = "^([A-Za-z0-9_]+)[.].+$"
   )
+
+  known <- c(hvti_taxonomy()$prefix, names(hvti_prefix_folds()))
+  sca_hit <- grepl(patterns$scaffolded, stripped)
+  sca_known <- sca_hit & sub(patterns$scaffolded, "\\1", stripped) %in% known
+  naming[sca_known] <- "scaffolded"
+  prefix[sca_known] <- sub(patterns$scaffolded, "\\1", stripped[sca_known])
 
   for (nm in names(patterns)) {
     todo <- is.na(naming)

@@ -136,10 +136,10 @@ test_that("a scaffolded job's runner is parsed as that job, not a qualifier", {
   expect_equal(out$qualifier1, c(NA, "boostmtree"))
 })
 
-test_that("r_transitional still wins over scaffolded on a two-digit lead", {
-  # 03-bc-dead.qmd fits both grammars. The two required digits make
-  # r_transitional the more specific, and -parity is its suffix, not a
-  # qualifier.
+test_that("r_transitional keeps a two-digit name whose third field is an endpoint", {
+  # 03-bc-dead.qmd fits both grammars. "dead" is not a taxonomy prefix, so it
+  # is an endpoint and the name stays r_transitional; -parity is its suffix,
+  # not a qualifier.
   out <- hvtiRutilities:::.job_name_fields(
     c("03-bc-dead.qmd", "01-ac-dead_pa-parity.qmd")
   )
@@ -153,4 +153,16 @@ test_that("a dashed name of the wrong shape is not scaffolded", {
     c("dead-hz.qmd", "a-b-c-d-e.qmd", "dead-hz-bc.R")
   )
   expect_true(all(is.na(out$naming)))
+})
+
+test_that("a two-digit subject still parses as scaffolded, runner included", {
+  # add_job(prefix = "bc", subject = "03", type = "hz") writes 03-hz-bc.qmd
+  # and 03-hz-bc-runner.R. Read as r_transitional, the report became a false
+  # hz job and the runner an orphan bc job.
+  out <- hvtiRutilities:::.job_name_fields(
+    c("03-hz-bc.qmd", "03-hz-bc-runner.R", "03-hz-nb-boostmtree.qmd")
+  )
+  expect_equal(out$naming, rep("scaffolded", 3))
+  expect_equal(out$prefix, c("bc", "bc", "nb"))
+  expect_equal(out$qualifier1, c(NA, NA, "boostmtree"))
 })
