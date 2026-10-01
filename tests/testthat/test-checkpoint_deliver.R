@@ -221,7 +221,7 @@ test_that("a log lost after a replay heals from the id on main", {
   expect_no_orphan_on_remote(fx)
 })
 
-test_that("an id no commit on main carries still needs manual repair", {
+test_that("an entry whose own id is unfindable heals through its old commit", {
   skip_if_no_git()
   # The hook is a shell script; the delivery logic under test is platform-independent.
   skip_on_os("windows")
@@ -229,6 +229,26 @@ test_that("an id no commit on main carries still needs manual repair", {
   fx <- lose_replay_log_write(withr::local_tempdir())
   log <- .cp_log_read(fx$root)
   log[[1]]$checkpoint_id <- "no-such-checkpoint"
+  .cp_log_write(fx$root, log)
+
+  expect_no_warning(study_checkpoint_push(fx$root))
+  e <- .cp_log_read(fx$root)[[1]]
+  expect_equal(e$delivery$git, "delivered")
+  expect_equal(e$replayed_from, fx$local_cp$commit)
+  expect_equal(e$git_commit, git_out(.cp_repo_path(fx$root), c("rev-parse", "main")))
+  expect_no_orphan_on_remote(fx)
+})
+
+test_that("an unfindable id and a missing old commit still need manual repair", {
+  skip_if_no_git()
+  # The hook is a shell script; the delivery logic under test is platform-independent.
+  skip_on_os("windows")
+  local_git_env()
+  fx <- lose_replay_log_write(withr::local_tempdir())
+  missing <- strrep("0123456789", 4L)  # no such object in the clone
+  log <- .cp_log_read(fx$root)
+  log[[1]]$checkpoint_id <- "no-such-checkpoint"
+  log[[1]]$git_commit <- missing
   .cp_log_write(fx$root, log)
 
   w <- expect_warning(study_checkpoint_push(fx$root), "not on main")
@@ -239,7 +259,7 @@ test_that("an id no commit on main carries still needs manual repair", {
   expect_no_match(conditionMessage(w), "retry")
   e <- .cp_log_read(fx$root)[[1]]
   expect_equal(e$delivery$git, "pending")
-  expect_equal(e$git_commit, fx$local_cp$commit)
+  expect_equal(e$git_commit, missing)
   expect_null(e$replayed_from)
   expect_no_orphan_on_remote(fx)
 })
@@ -291,6 +311,119 @@ test_that("a reopening heals with the closure whose commit it shares", {
     expect_equal(git_out(fx$bare, c("rev-parse", paste0(e$tag, "^{commit}"))),
                  e$git_commit, info = e$tag)
   }
+  expect_no_orphan_on_remote(fx)
+})
+
+test_that("a reopening heals from a closure repaired by hand", {
+  skip_if_no_git()
+  # The hook is a shell script; the delivery logic under test is platform-independent.
+  skip_on_os("windows")
+  local_git_env()
+  dir <- withr::local_tempdir()
+  fx <- diverge_study(dir)
+  cl <- study_close("abandoned", root = fx$root)
+  suppressMessages(study_reopen("new PI", root = fx$root))
+  reject_tag_push_once(fx$bare, file.path(dir, "rejected-once"))
+  set_study_keys(fx$root, checkpoint = list(remote = fx$bare))
+  log_path <- .cp_log_path(fx$root)
+  before <- readLines(log_path)
+  expect_warning(study_checkpoint_push(fx$root), "tag push rejected")
+  writeLines(before, log_path)
+
+  # The automatic match for the closure fails (as an ambiguous one would), and
+  # keeps failing, so only the hand repair can heal the reopening.
+  closure_id <- .cp_log_read(fx$root)[[2]]$closure_id
+  find_id <- .cp_commit_with_id
+  testthat::local_mocked_bindings(.cp_commit_with_id = function(repo, id) {
+    if (identical(id, closure_id)) NA_character_ else find_id(repo, id)
+  })
+  w <- expect_warning(study_checkpoint_push(fx$root), "not on main")
+  expect_match(conditionMessage(w), "closed-abandoned-[0-9]+ needs manual repair")
+
+  repo <- .cp_repo_path(fx$root)
+  log <- .cp_log_read(fx$root)
+  log[[2]]$replayed_from <- log[[2]]$git_commit
+  log[[2]]$git_commit <- git_out(repo, c("log", "--fixed-strings",
+                                         paste0("--grep=", closure_id),
+                                         "--format=%H", "main"))
+  .cp_log_write(fx$root, log)
+
+  expect_no_warning(cp <- study_checkpoint("abstract_submitted", root = fx$root))
+  log <- .cp_log_read(fx$root)
+  expect_equal(vapply(log, function(e) e$delivery$git, character(1)),
+               rep("delivered", 4L))
+  expect_equal(log[[3]]$replayed_from, cl$commit)
+  expect_equal(log[[3]]$git_commit, log[[2]]$git_commit)
+  expect_equal(git_out(fx$bare, c("rev-parse", paste0(log[[3]]$tag, "^{commit}"))),
+               log[[2]]$git_commit)
+  expect_equal(git_out(fx$bare, c("rev-parse", "main")), cp$commit)
+  expect_no_orphan_on_remote(fx)
+})
+
+test_that("a reopening of a checkpoint taken while closed heals with it", {
+  skip_if_no_git()
+  # The hook is a shell script; the delivery logic under test is platform-independent.
+  skip_on_os("windows")
+  local_git_env()
+  dir <- withr::local_tempdir()
+  fx <- diverge_study(dir)
+  study_close("abandoned", root = fx$root)
+  expect_warning(cp <- study_checkpoint("abstract_submitted", root = fx$root),
+                 "closed")
+  ro <- suppressMessages(study_reopen("new PI", root = fx$root))
+  expect_equal(ro$commit, cp$commit)
+  reject_tag_push_once(fx$bare, file.path(dir, "rejected-once"))
+  set_study_keys(fx$root, checkpoint = list(remote = fx$bare))
+  log_path <- .cp_log_path(fx$root)
+  before <- readLines(log_path)
+  expect_warning(study_checkpoint_push(fx$root), "tag push rejected")
+  writeLines(before, log_path)
+
+  expect_no_warning(study_checkpoint_push(fx$root))
+  log <- .cp_log_read(fx$root)
+  expect_equal(vapply(log, function(e) e$delivery$git, character(1)),
+               rep("delivered", 4L))
+  expect_equal(log[[4]]$replayed_from, cp$commit)
+  expect_equal(log[[4]]$git_commit, log[[3]]$git_commit)
+  expect_false(identical(log[[3]]$git_commit, cp$commit))
+  for (e in log[3:4]) {
+    expect_equal(git_out(fx$bare, c("rev-parse", paste0(e$tag, "^{commit}"))),
+                 log[[3]]$git_commit, info = e$tag)
+  }
+  expect_equal(log[[4]]$tag, "reopened-1")
+  expect_null(log[[4]]$renumbered_from)
+  expect_no_orphan_on_remote(fx)
+})
+
+test_that("a reopening whose old commit carries no findable id still stops", {
+  skip_if_no_git()
+  # The hook is a shell script; the delivery logic under test is platform-independent.
+  skip_on_os("windows")
+  local_git_env()
+  dir <- withr::local_tempdir()
+  fx <- diverge_study(dir)
+  study_close("abandoned", root = fx$root)
+  suppressMessages(study_reopen("new PI", root = fx$root))
+  reject_tag_push_once(fx$bare, file.path(dir, "rejected-once"))
+  set_study_keys(fx$root, checkpoint = list(remote = fx$bare))
+  log_path <- .cp_log_path(fx$root)
+  before <- readLines(log_path)
+  expect_warning(study_checkpoint_push(fx$root), "tag push rejected")
+  writeLines(before, log_path)
+
+  repo <- .cp_repo_path(fx$root)
+  stray <- git_out(repo, c("commit-tree", git_out(repo, c("rev-parse", "HEAD^{tree}")),
+                           "-m", "a commit that carries no id"))
+  log <- .cp_log_read(fx$root)
+  log[[3]]$git_commit <- stray
+  .cp_log_write(fx$root, log)
+
+  w <- expect_warning(study_checkpoint_push(fx$root), "not on main")
+  expect_match(conditionMessage(w), "reopened-[0-9]+ needs manual repair")
+  e <- .cp_log_read(fx$root)[[3]]
+  expect_equal(e$delivery$git, "pending")
+  expect_equal(e$git_commit, stray)
+  expect_null(e$replayed_from)
   expect_no_orphan_on_remote(fx)
 })
 

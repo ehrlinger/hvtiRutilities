@@ -114,15 +114,42 @@
   if (res$ok && length(hits) == 1L) hits else NA_character_
 }
 
-# Heal an entry the not-on-main backstop stopped: point it at the commit on
-# main that carries its id (or that `healed` already mapped its commit to; a
-# reopening shares its closure's commit, whose message carries only the
-# closure's id) and, when a local tag on that commit carries the id, adopt
-# that tag so the replay's renumbering is not repeated. NULL when no single
-# commit is found.
+# Old commit -> replayed commit, from every entry that records replayed_from
+# and names a commit on main: replays, earlier heals and hand repairs alike.
+.cp_heal_map <- function(repo, entries) {
+  map <- character(0)
+  for (e in entries) {
+    old <- e$replayed_from
+    if (is.null(old) || is.null(e$git_commit) || old %in% names(map)) next
+    if (.cp_git(repo, c("merge-base", "--is-ancestor", e$git_commit, "HEAD"))$ok) {
+      map[[old]] <- e$git_commit
+    }
+  }
+  map
+}
+
+# The snapshot id (checkpoint_id or closure_id) in a commit's own message, or
+# NULL when the commit is gone or its message carries no single id. Commit
+# messages are .cp_tag_message() of the entry that made the commit.
+.cp_snapshot_id <- function(repo, commit) {
+  res <- .cp_git(repo, c("log", "-1", "--format=%B", commit))
+  if (!res$ok) return(NULL)
+  hit <- grep("^(checkpoint|closure)_id: *[^ ]", res$out, value = TRUE)
+  if (length(hit) != 1L) return(NULL)
+  gsub("^[a-z_]+: *|['\"]", "", hit)
+}
+
+# Heal an entry the not-on-main backstop stopped. Its new commit is, in
+# order: what `healed` maps its old commit to; the one commit on main that
+# carries its own id; the one commit on main that carries the snapshot id in
+# its old commit's message (a reopening's id is only in its tag, so it heals
+# through the commit it names). When a local tag on the new commit carries
+# the entry's id, that tag is adopted so the replay's renumbering is not
+# repeated. NULL when no single commit is found.
 .cp_heal <- function(repo, entry, healed) {
   old <- entry$git_commit
   new <- if (old %in% names(healed)) healed[[old]] else .cp_commit_with_id(repo, .cp_entry_id(entry))
+  if (is.na(new)) new <- .cp_commit_with_id(repo, .cp_snapshot_id(repo, old))
   if (is.na(new)) return(NULL)
   entry$replayed_from <- old
   entry$git_commit <- new
@@ -142,8 +169,9 @@
 # from. Every failure after the probe becomes a reason, never an error: the
 # checkpoint is already saved locally. `persist` writes the entries to the
 # log after the local ref moves and before the network push, so an
-# interrupted push cannot lose them.
-.cp_push <- function(repo, entries, persist) {
+# interrupted push cannot lose them. `others` is the rest of the log, read
+# only to seed the heal map.
+.cp_push <- function(repo, entries, persist, others = list()) {
   probe <- .cp_remote_probe(repo)
   if (!probe$reachable) {
     return(list(reason = paste("remote unreachable:", .cp_last(probe$out)),
@@ -159,7 +187,7 @@
     .cp_git_do(repo, c("fetch", "-q", "--no-tags", "origin", refspecs))
     map <- if (probe$has_main) .cp_replay(repo) else character(0)
     entries <- lapply(entries, .cp_apply_map, map = map)
-    healed <- character(0)
+    healed <- .cp_heal_map(repo, c(others, entries))
     for (i in seq_along(entries)) {
       if (!.cp_on_main(repo, entries[[i]])) {
         fixed <- .cp_heal(repo, entries[[i]], healed)
@@ -248,7 +276,7 @@
       .cp_log_write(root, log)
     }
     pushed <- tryCatch(.cp_push(.cp_repo_init(root, study$remote), log[pending],
-                                persist),
+                                persist, log[-pending]),
                        error = function(e) {
                          list(reason = conditionMessage(e), entries = log[pending])
                        })

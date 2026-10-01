@@ -20,11 +20,14 @@
   remote's `main` but before writing the log, the entry kept naming the
   pre-replay commit, stayed pending on every retry, and held back every
   later entry until `.checkpoint/log.yml` was edited by hand. Delivery now
-  finds the one commit on `main` whose message carries the entry's id,
-  records the old commit as `replayed_from`, and delivers as normal. A
-  reopening follows its closure, whose commit it shares. When no commit or
-  more than one carries the id, the entry stays pending with the
-  manual-repair warning, as before.
+  finds the replayed commit, records the old commit as `replayed_from`, and
+  delivers as normal. It looks in three places: another log entry already
+  mapping the same old commit, the one commit on `main` carrying the entry's
+  id, or the one carrying the id in the old commit's own message. The last
+  covers a reopening, which tags an existing commit. When none finds exactly
+  one commit, the entry stays pending with the manual-repair warning, as
+  before. A hand repair should set `replayed_from` as well as `git_commit`,
+  so later entries can heal from it.
 
 # hvtiRutilities 1.4.3
 
