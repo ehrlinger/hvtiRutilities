@@ -195,19 +195,41 @@ test_that("a failed fetch after the probe leaves the entry pending", {
   expect_match(e$delivery$reason, "git fetch failed")
 })
 
-test_that("a log lost before its write never lets a retry push an orphan", {
+test_that("a log lost after a replay heals from the id on main", {
   skip_if_no_git()
   # The hook is a shell script; the delivery logic under test is platform-independent.
   skip_on_os("windows")
   local_git_env()
-  dir <- withr::local_tempdir()
-  fx <- diverge_study(dir)
-  reject_tag_push_once(fx$bare, file.path(dir, "rejected-once"))
-  set_study_keys(fx$root, checkpoint = list(remote = fx$bare))
-  log_path <- .cp_log_path(fx$root)
-  before <- readLines(log_path)
-  expect_warning(study_checkpoint_push(fx$root), "tag push rejected")
-  writeLines(before, log_path)  # an interrupt before any log write
+  fx <- lose_replay_log_write(withr::local_tempdir())
+  expect_equal(.cp_log_read(fx$root)[[1]]$git_commit, fx$local_cp$commit)
+
+  expect_no_warning(study_checkpoint_push(fx$root))
+  e <- .cp_log_read(fx$root)[[1]]
+  repo <- .cp_repo_path(fx$root)
+  expect_equal(e$delivery$git, "delivered")
+  expect_null(e$delivery$reason)
+  expect_equal(e$replayed_from, fx$local_cp$commit)
+  expect_equal(e$git_commit, git_out(repo, c("rev-parse", "main")))
+  expect_equal(e$tag, "data_request_submitted-2")
+  expect_equal(e$renumbered_from, "data_request_submitted-1")
+  expect_setequal(git_out(fx$bare, c("tag", "-l")),
+                  c("data_request_submitted-1", "data_request_submitted-2"))
+  expect_equal(git_out(fx$bare, c("rev-parse", paste0(e$tag, "^{commit}"))),
+               e$git_commit)
+  # The heal adopts the replay's tag rather than minting a third number.
+  expect_equal(git_out(repo, c("tag", "-l")), "data_request_submitted-2")
+  expect_no_orphan_on_remote(fx)
+})
+
+test_that("an id no commit on main carries still needs manual repair", {
+  skip_if_no_git()
+  # The hook is a shell script; the delivery logic under test is platform-independent.
+  skip_on_os("windows")
+  local_git_env()
+  fx <- lose_replay_log_write(withr::local_tempdir())
+  log <- .cp_log_read(fx$root)
+  log[[1]]$checkpoint_id <- "no-such-checkpoint"
+  .cp_log_write(fx$root, log)
 
   w <- expect_warning(study_checkpoint_push(fx$root), "not on main")
   expect_match(conditionMessage(w), paste0(
@@ -218,13 +240,58 @@ test_that("a log lost before its write never lets a retry push an orphan", {
   e <- .cp_log_read(fx$root)[[1]]
   expect_equal(e$delivery$git, "pending")
   expect_equal(e$git_commit, fx$local_cp$commit)
-  for (t in git_out(fx$bare, c("tag", "-l"))) {
-    commit <- git_out(fx$bare, c("rev-parse", paste0(t, "^{commit}")))
-    expect_false(identical(commit, fx$local_cp$commit), info = t)
-    res <- system2("git", shQuote(c("-C", fx$bare, "merge-base",
-                                    "--is-ancestor", commit, "main")))
-    expect_equal(res, 0L, info = t)
+  expect_null(e$replayed_from)
+  expect_no_orphan_on_remote(fx)
+})
+
+test_that("later pending entries are delivered once a stuck entry heals", {
+  skip_if_no_git()
+  # The hook is a shell script; the delivery logic under test is platform-independent.
+  skip_on_os("windows")
+  local_git_env()
+  fx <- lose_replay_log_write(withr::local_tempdir())
+
+  expect_no_warning(cp <- study_checkpoint("abstract_submitted", root = fx$root))
+  expect_equal(cp$delivery$git, "delivered")
+  log <- .cp_log_read(fx$root)
+  expect_equal(vapply(log, function(e) e$delivery$git, character(1)),
+               rep("delivered", 2L))
+  expect_equal(log[[1]]$replayed_from, fx$local_cp$commit)
+  expect_setequal(git_out(fx$bare, c("tag", "-l")),
+                  c("data_request_submitted-1", "data_request_submitted-2",
+                    "abstract_submitted-1"))
+  expect_equal(git_out(fx$bare, c("rev-parse", "main")), log[[2]]$git_commit)
+  expect_no_orphan_on_remote(fx)
+})
+
+test_that("a reopening heals with the closure whose commit it shares", {
+  skip_if_no_git()
+  # The hook is a shell script; the delivery logic under test is platform-independent.
+  skip_on_os("windows")
+  local_git_env()
+  dir <- withr::local_tempdir()
+  fx <- diverge_study(dir)
+  cl <- study_close("abandoned", root = fx$root)
+  suppressMessages(study_reopen("new PI", root = fx$root))
+  reject_tag_push_once(fx$bare, file.path(dir, "rejected-once"))
+  set_study_keys(fx$root, checkpoint = list(remote = fx$bare))
+  log_path <- .cp_log_path(fx$root)
+  before <- readLines(log_path)
+  expect_warning(study_checkpoint_push(fx$root), "tag push rejected")
+  writeLines(before, log_path)
+
+  expect_no_warning(study_checkpoint_push(fx$root))
+  log <- .cp_log_read(fx$root)
+  expect_equal(vapply(log, function(e) e$delivery$git, character(1)),
+               rep("delivered", 3L))
+  expect_equal(log[[3]]$replayed_from, cl$commit)
+  expect_equal(log[[3]]$git_commit, log[[2]]$git_commit)
+  expect_equal(git_out(fx$bare, c("rev-parse", "main")), log[[2]]$git_commit)
+  for (e in log[2:3]) {
+    expect_equal(git_out(fx$bare, c("rev-parse", paste0(e$tag, "^{commit}"))),
+                 e$git_commit, info = e$tag)
   }
+  expect_no_orphan_on_remote(fx)
 })
 
 test_that("retargeted entries reach the log before the network push", {

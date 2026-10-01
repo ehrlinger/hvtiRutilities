@@ -261,18 +261,26 @@ patient information. There is no schema or redaction for now (decided
 - **Manual repair.** Two failures stop delivery at a stuck entry rather than
   resolving on retry, and each warning names the fix and points to
   `?study_checkpoint_push`:
-  - **Not on main** (a log write was lost after a replay): find the commit on
-    `main` whose message carries the entry's id with
-    `git -C .checkpoint/repo log --fixed-strings --grep=<id> --format=%H main`,
-    set the entry's `git_commit` in `.checkpoint/log.yml` to that commit and
-    its `replayed_from` to the old value, then run `study_checkpoint_push()`;
-    or, if no such commit exists, set the entry's `state` to `abandoned`.
+  - **Not on main** (a log write was lost after a replay): the repair is
+    automatic when the entry's id is found. When the backstop fires,
+    delivery runs
+    `git -C .checkpoint/repo log --fixed-strings --grep=<id> --format=%H main`.
+    If exactly one commit carries the id, it sets the entry's `replayed_from`
+    to the old `git_commit`, sets `git_commit` to the match, and continues the
+    normal retag plan; a local tag on that commit whose message carries the
+    id is adopted, so the replay's renumbering is not repeated. A reopening
+    shares its closure's commit, whose message carries only the closure's
+    id, so it follows its closure's match. Later pending entries are then
+    delivered too. Only when no commit or several commits match does the
+    entry stay pending with the manual-repair warning: choose the commit by
+    hand, set the entry's `git_commit` in `.checkpoint/log.yml` to it and its
+    `replayed_from` to the old value, then run `study_checkpoint_push()`; or,
+    if no such commit exists, set the entry's `state` to `abandoned`.
   - **Unnumbered tag clash** (two copies each recorded the same unnumbered
     tag, for example `workspace_created`): the copies have diverged; keep one
     copy's `.checkpoint/` (normally the one whose history is on the remote),
     move the other aside, and run `study_checkpoint_push()` again from the
     kept copy.
-  Making the not-on-main repair automatic is tracked in [#152](https://github.com/ehrlinger/hvtiRutilities/issues/152).
 - **Divergence.** When the remote `main` has commits the local clone lacks
   (someone checkpointed from a second copy), the push is rejected as
   non-fast-forward. The core fetches and **replays** each unpushed snapshot on

@@ -13,6 +13,19 @@
   written before this change still validate, and rejects a `sha` that is not
   a hexadecimal commit.
 
+## Bug fixes
+
+* A checkpoint delivery stuck on "is not on main" now repairs itself
+  (#152). If a session died after replaying unpushed snapshots onto the
+  remote's `main` but before writing the log, the entry kept naming the
+  pre-replay commit, stayed pending on every retry, and held back every
+  later entry until `.checkpoint/log.yml` was edited by hand. Delivery now
+  finds the one commit on `main` whose message carries the entry's id,
+  records the old commit as `replayed_from`, and delivers as normal. A
+  reopening follows its closure, whose commit it shares. When no commit or
+  more than one carries the id, the entry stays pending with the
+  manual-repair warning, as before.
+
 # hvtiRutilities 1.4.3
 
 ## New features
