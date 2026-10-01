@@ -105,14 +105,25 @@ never pushed.</p>
 <code>study_checkpoint_push()</code> cannot fix by itself. Each is reported as a
 warning that names the tag and points back here.</p>
 <ul><li><p><strong>Not on main</strong> (a log write was lost after a replay).
-  Find the commit on <code>main</code> whose message carries the entry's id
-  (<code>checkpoint_id</code> for a checkpoint, <code>closure_id</code> for a closure,
-  <code>reopening_id</code> for a reopening):
+  This one usually repairs itself. Delivery finds the entry's replayed
+  commit in one of three ways, in order: another entry in the log already
+  records the same old commit as its <code>replayed_from</code>; exactly one
+  commit on <code>main</code> carries the entry's own id (<code>checkpoint_id</code>
+  or <code>closure_id</code>); or exactly one commit on <code>main</code> carries the
+  id in the old commit's own message. The last way covers a reopening,
+  whose <code>reopening_id</code> is only in its tag: it tags an existing commit,
+  a closure's or that of a checkpoint taken while the study was closed.
+  Delivery then points the entry at that commit, keeps the old value as
+  <code>replayed_from</code>, and delivers as normal. Only when none of these
+  finds exactly one commit does the entry stay pending with a warning.
+  Then repair it by hand: look the id up with
   <code>git -C .checkpoint/repo log --fixed-strings --grep=&lt;id&gt;
-  --format=%H main</code>. If a commit is found, set the entry's
-  <code>git_commit</code> in <code>.checkpoint/log.yml</code> to that commit, keep the
-  old value as <code>replayed_from</code>, then run <code>study_checkpoint_push()</code>
-  again. If no such commit exists, set the entry's <code>state</code> to
+  --format=%H main</code>, choose the right commit, set the entry's
+  <code>git_commit</code> in <code>.checkpoint/log.yml</code> to it, and set its
+  <code>replayed_from</code> to the old <code>git_commit</code>. Then run
+  <code>study_checkpoint_push()</code> again. Do not skip <code>replayed_from</code>:
+  a later entry that names the same old commit, such as a reopening,
+  heals from it. If no such commit exists, set the entry's <code>state</code> to
   <code>"abandoned"</code> instead; an abandoned entry is never delivered.</p></li>
 <li><p><strong>Unnumbered tag clash</strong> (two copies of the study each
   recorded the same unnumbered tag, for example <code>workspace_created</code>).
