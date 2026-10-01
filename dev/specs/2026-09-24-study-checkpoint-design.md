@@ -261,18 +261,38 @@ patient information. There is no schema or redaction for now (decided
 - **Manual repair.** Two failures stop delivery at a stuck entry rather than
   resolving on retry, and each warning names the fix and points to
   `?study_checkpoint_push`:
-  - **Not on main** (a log write was lost after a replay): find the commit on
-    `main` whose message carries the entry's id with
-    `git -C .checkpoint/repo log --fixed-strings --grep=<id> --format=%H main`,
-    set the entry's `git_commit` in `.checkpoint/log.yml` to that commit and
-    its `replayed_from` to the old value, then run `study_checkpoint_push()`;
+  - **Not on main** (a log write was lost after a replay): the repair is
+    automatic when the replayed commit can be found. When the backstop
+    fires, delivery looks for it in three ways, in order:
+    1. the heal map: old commit to new commit, seeded before the loop from
+       every log entry, delivered or pending, that records `replayed_from`
+       and names a `git_commit` on `main`, and extended as entries heal in
+       the loop;
+    2. the entry's own id:
+       `git -C .checkpoint/repo log --fixed-strings --grep=<id> --format=%H main`;
+    3. the snapshot id (`checkpoint_id` or `closure_id`) in the old commit's
+       own message (`git log -1 --format=%B <old>`; replay never deletes the
+       object), searched for on `main` the same way.
+
+    The third way covers a reopening, whose `reopening_id` is only in its
+    tag message: it tags an existing commit, a closure's or that of a
+    checkpoint taken while the study was closed, and heals through that
+    commit. When one commit is found, delivery sets the entry's
+    `replayed_from` to the old `git_commit`, sets `git_commit` to the match,
+    and continues the normal retag plan. A local tag on that commit whose
+    message carries the entry's id is adopted, so the replay's renumbering
+    is not repeated. Later pending entries are then delivered too. Only when
+    no way finds exactly one commit, or the old object is missing, does the
+    entry stay pending with the manual-repair warning. Then choose the commit
+    by hand, set the entry's `git_commit` in `.checkpoint/log.yml` to it,
+    **and** set its `replayed_from` to the old value, so later entries naming
+    the same old commit heal from it. Run `study_checkpoint_push()` again;
     or, if no such commit exists, set the entry's `state` to `abandoned`.
   - **Unnumbered tag clash** (two copies each recorded the same unnumbered
     tag, for example `workspace_created`): the copies have diverged; keep one
     copy's `.checkpoint/` (normally the one whose history is on the remote),
     move the other aside, and run `study_checkpoint_push()` again from the
     kept copy.
-  Making the not-on-main repair automatic is tracked in [#152](https://github.com/ehrlinger/hvtiRutilities/issues/152).
 - **Divergence.** When the remote `main` has commits the local clone lacks
   (someone checkpointed from a second copy), the push is rejected as
   non-fast-forward. The core fetches and **replays** each unpushed snapshot on
