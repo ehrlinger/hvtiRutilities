@@ -49,7 +49,9 @@
   write its old holder back over a session that had just taken over. The
   holder now refreshes a lease file named for its own token, in one step,
   and a session whose lock was taken over stops with an error saying so
-  instead of carrying on (#154).
+  instead of carrying on. A lock whose setup or put-back fails part way no
+  longer strands an empty `.checkpoint/lock` that refused every session for
+  six hours (#154).
 
 # hvtiRutilities 1.4.3
 

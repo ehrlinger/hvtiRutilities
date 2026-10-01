@@ -85,16 +85,45 @@
 # on a lock six hours stale. A judged lock with no lease and an unreadable
 # holder (its time came from the directory's mtime) cannot be told apart from
 # a lock whose holder and lease are not written yet; both read as empty.
+#
+# The directory set aside is deleted only once nothing in it is still needed:
+# the judged lock, or a live lock whose every file is back in place. A put-back
+# that cannot move or copy every file keeps the aside directory, so the live
+# holder's files are never destroyed, and removes the lock it claimed if that
+# is still empty. An empty lock reads as fresh and would refuse every session
+# for six hours; without it, the live holder stops at its next refresh and the
+# next session takes the lock normally.
 .cp_lock_take_stale <- function(lock, judged) {
   aside <- paste0(lock, ".stale-", Sys.getpid(), "-", uuid::UUIDgenerate())
   if (!suppressWarnings(file.rename(lock, aside))) return(FALSE)
-  on.exit(unlink(aside, recursive = TRUE, force = TRUE), add = TRUE)
-  if (identical(.cp_lock_state(aside), judged)) return(TRUE)
-  if (dir.create(lock, showWarnings = FALSE)) {
-    moved <- list.files(aside, all.files = TRUE, no.. = TRUE)
-    file.rename(file.path(aside, moved), file.path(lock, moved))
+  if (identical(.cp_lock_state(aside), judged)) {
+    unlink(aside, recursive = TRUE, force = TRUE)
+    return(TRUE)
+  }
+  if (!dir.create(lock, showWarnings = FALSE)) {
+    # A third session claimed the name; see above.
+    unlink(aside, recursive = TRUE, force = TRUE)
+    return(FALSE)
+  }
+  moved <- list.files(aside, all.files = TRUE, no.. = TRUE)
+  ok <- vapply(moved, function(f) .cp_lock_move(file.path(aside, f), file.path(lock, f)),
+               logical(1))
+  if (all(ok)) {
+    unlink(aside, recursive = TRUE, force = TRUE)
+  } else {
+    if (!length(list.files(lock, all.files = TRUE, no.. = TRUE))) unlink(lock, recursive = TRUE)
+    warning("could not put back a live checkpoint lock moved by mistake; its files are kept in ",
+            aside, call. = FALSE)
   }
   FALSE
+}
+
+# Move one file, falling back to a copy and delete. TRUE when it is in place.
+.cp_lock_move <- function(from, to) {
+  if (suppressWarnings(file.rename(from, to))) return(TRUE)
+  if (!suppressWarnings(file.copy(from, to, copy.date = TRUE))) return(FALSE)
+  unlink(from)
+  TRUE
 }
 
 .cp_utc <- function(t) format(t, "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")
@@ -127,14 +156,19 @@
            "retry when it has finished", call. = FALSE)
     }
   }
+  # This session owns `lock` from here. Until the holder and the lease both
+  # exist, a failure removes it: a lock left without them reads as fresh and
+  # would refuse every session for six hours.
+  acquired <- FALSE
+  on.exit(if (!acquired) unlink(lock, recursive = TRUE, force = TRUE), add = TRUE)
   token <- uuid::UUIDgenerate()
   .cp_lock_write_holder(lock, list(user = Sys.info()[["user"]], pid = Sys.getpid(),
                                    time = .cp_utc(Sys.time()), token = token))
   if (!file.create(.cp_lock_lease(lock, token), showWarnings = FALSE)) {
-    unlink(lock, recursive = TRUE, force = TRUE)
     stop(caller, "(): could not create the checkpoint lock's lease file",
          call. = FALSE)
   }
+  acquired <- TRUE
   list(lock = lock, token = token, created = created, caller = caller)
 }
 

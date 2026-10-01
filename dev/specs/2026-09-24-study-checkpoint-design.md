@@ -511,7 +511,12 @@ push included, on all five platforms. Tests needing git skip with
     puts that lock back (claiming the name with `dir.create()` and moving the
     files in) and stops with the retry error. Otherwise it discards the
     renamed directory and takes the lock through the normal `dir.create()`
-    path. The refresh no longer reads or rewrites anything: `holder.yml` is
+    path. The renamed directory is deleted only once nothing in it is
+    needed: a put-back that cannot move (or copy) every file keeps it and
+    warns, and removes the lock it claimed if that is still empty, since an
+    empty lock reads as fresh and would refuse every session for six hours.
+    Acquisition likewise removes a lock whose holder or lease could not be
+    written. The refresh no longer reads or rewrites anything: `holder.yml` is
     written once, at acquisition, alongside a lease file `lease-<token>`, and
     `.cp_lock_touch()` is a single `Sys.setFileTime()` on that path. After a
     takeover the path is gone or inside the new holder's directory, which has

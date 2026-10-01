@@ -279,3 +279,53 @@ test_that("a stale takeover leaves only the new lock behind", {
   expect_equal(sort(list.files(lock)), sort(c("holder.yml", paste0("lease-", held$token))))
   .cp_unlock(held)
 })
+
+test_that("a put-back that cannot move the files keeps them and leaves no empty lock", {
+  root <- withr::local_tempdir()
+  a <- .cp_lock(root, "a")
+  live <- sort(list.files(a$lock))
+  testthat::local_mocked_bindings(.cp_lock_move = function(from, to) FALSE)
+  expect_warning(
+    expect_false(.cp_lock_take_stale(a$lock, list(holder = list(), leases = numeric()))),
+    "files are kept in"
+  )
+  aside <- list.files(dirname(a$lock), pattern = "^lock[.]stale-", full.names = TRUE)
+  expect_length(aside, 1L)
+  expect_equal(sort(list.files(aside)), live)
+  expect_false(dir.exists(a$lock))
+  # Not refused for six hours: the next session takes the lock, and the
+  # session whose lock was moved stops at its next refresh.
+  b <- .cp_lock(root, "b")
+  expect_error(.cp_lock_touch(a), class = "hvti_cp_lock_lost")
+  .cp_unlock(b)
+})
+
+test_that("a put-back that moves only some files keeps the rest aside", {
+  root <- withr::local_tempdir()
+  a <- .cp_lock(root, "a")
+  testthat::local_mocked_bindings(.cp_lock_move = function(from, to) {
+    if (basename(from) == "holder.yml") file.rename(from, to) else FALSE
+  })
+  expect_warning(.cp_lock_take_stale(a$lock, list(holder = list(), leases = numeric())),
+                 "files are kept in")
+  aside <- list.files(dirname(a$lock), pattern = "^lock[.]stale-", full.names = TRUE)
+  expect_equal(list.files(aside), paste0("lease-", a$token))
+  expect_equal(list.files(a$lock), "holder.yml")
+  # The holder stops at its next refresh, and its unlock clears the lock.
+  expect_error(.cp_lock_touch(a), class = "hvti_cp_lock_lost")
+  .cp_unlock(a)
+  expect_false(dir.exists(a$lock))
+})
+
+test_that("a failed holder write leaves no lock behind", {
+  root <- withr::local_tempdir()
+  testthat::local_mocked_bindings(.cp_lock_write_holder = function(lock, h) stop("disk full"))
+  expect_error(.cp_lock(root, "a"), "disk full")
+  expect_false(dir.exists(file.path(root, ".checkpoint", "lock")))
+  testthat::local_mocked_bindings(.cp_lock_write_holder = function(lock, h) {
+    yaml::write_yaml(h, file.path(lock, "holder.yml"))
+  })
+  held <- .cp_lock(root, "a")
+  expect_true(dir.exists(held$lock))
+  .cp_unlock(held)
+})
