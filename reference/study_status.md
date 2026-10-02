@@ -25,6 +25,10 @@ the last tag, and counts those not yet pushed or not yet in ST. A closed
 study then adds a `closure` row with status `"CLOSED"` and the outcome
 and date of the latest closure; see
 [`study_close`](https://ehrlinger.github.io/hvtiRutilities/reference/study_close.md).
+This function never contacts the remote, so when one is configured that
+row adds *as of the last fetch*. When a closure or reopening tag in this
+copy is not on its `main`, the state cannot be determined and the row
+has status `"UNKNOWN"`.
 
 Release-aware datasets add an `update:<dataset>` row with status
 `"CURRENT"`, `"UPDATE AVAILABLE"`, `"UPDATE STATUS UNKNOWN"`, or
@@ -63,11 +67,11 @@ study_status(root = getwd())
 An object of class `"study_status"`: a list with `root`, `checks` (a
 data frame of `item`, `status` – `"OK"`, `"MISSING"`, `"FAIL"`,
 `"UNVERIFIED"`, `"CURRENT"`, `"UPDATE AVAILABLE"`,
-`"UPDATE STATUS UNKNOWN"`, `"PENDING"`, or `"CLOSED"` – and `detail`).
-The five base rows are followed by release-aware update rows, by dataset
-and update rows for each named dataset, and by the `checkpoints` and
-`closure` rows when they apply. `counts` lists `r_files`, `qmd`,
-`sas_jobs` and `sidecars`.
+`"UPDATE STATUS UNKNOWN"`, `"PENDING"`, `"CLOSED"`, or `"UNKNOWN"` – and
+`detail`). The five base rows are followed by release-aware update rows,
+by dataset and update rows for each named dataset, and by the
+`checkpoints` and `closure` rows when they apply. `counts` lists
+`r_files`, `qmd`, `sas_jobs` and `sidecars`.
 
 ## See also
 
@@ -80,7 +84,7 @@ and update rows for each named dataset, and by the `checkpoints` and
 root <- file.path(tempdir(), "study-status-example")
 dir.create(root, showWarnings = FALSE)
 study_status(root)
-#> Study: /tmp/RtmpRPykw1/study-status-example
+#> Study: /tmp/RtmpMUUz5M/study-status-example
 #> 
 #> [ ] _study.yml — no _study.yml at this root; recovery may be available with study-setup --recover; if its Tracker ID cannot be inferred, run study-setup 42 --recover
 #> [ ] renv.lock — no renv.lock; run renv::init() in the study project

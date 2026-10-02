@@ -153,6 +153,15 @@ integer, a double or a string; required for <code>"superseded"</code>.</p></dd>
 <li><p><code>"not_published"</code> and <code>"abandoned"</code> need nothing further.</p></li>
 </ul><p>These rules are checked before anything is written, so a close made
 offline fails at once rather than when the outbox is delivered.</p>
+<p>Whether the study is closed is read from the latest <code>closed-*</code> or
+<code>reopened-*</code> tag on the checkpoint history, counting tags pushed from
+other copies of the study. Before deciding, both functions sync with the
+remote, delivering any pending checkpoints first. When the remote cannot
+be reached, a message says that the closure state is from this copy's last
+fetch and may be out of date. When a closure or reopening tag in this copy
+is not on its history, which an interrupted delivery can leave, the state
+cannot be determined and both functions stop; run
+<code><a href="study_checkpoint_push.html">study_checkpoint_push</a></code> while the remote is reachable.</p>
 <p><code>reason</code> is written to the snapshot, the tag and the outbox, so it
 leaves the study folder. A message says so whenever it is given: it must
 not contain patient information.</p>

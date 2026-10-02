@@ -20,7 +20,10 @@ checkpoint, closure and reopening has reached the remote, or
 counts the recorded events, names the last tag, and counts those not yet
 pushed or not yet in ST. A closed study then adds a closure row with
 status &quot;CLOSED&quot; and the outcome and date of the latest closure; see
-study_close.
+study_close. This function never contacts the remote, so
+when one is configured that row adds as of the last fetch. When a
+closure or reopening tag in this copy is not on its main, the state
+cannot be determined and the row has status &quot;UNKNOWN&quot;.
 Release-aware datasets add an update:&amp;lt;dataset&amp;gt; row with status
 &quot;CURRENT&quot;, &quot;UPDATE AVAILABLE&quot;,
 &quot;UPDATE STATUS UNKNOWN&quot;, or &quot;FAIL&quot;. Legacy studies retain
@@ -54,7 +57,10 @@ checkpoint, closure and reopening has reached the remote, or
 counts the recorded events, names the last tag, and counts those not yet
 pushed or not yet in ST. A closed study then adds a closure row with
 status &quot;CLOSED&quot; and the outcome and date of the latest closure; see
-study_close.
+study_close. This function never contacts the remote, so
+when one is configured that row adds as of the last fetch. When a
+closure or reopening tag in this copy is not on its main, the state
+cannot be determined and the row has status &quot;UNKNOWN&quot;.
 Release-aware datasets add an update:&amp;lt;dataset&amp;gt; row with status
 &quot;CURRENT&quot;, &quot;UPDATE AVAILABLE&quot;,
 &quot;UPDATE STATUS UNKNOWN&quot;, or &quot;FAIL&quot;. Legacy studies retain
@@ -146,7 +152,10 @@ checkpoint, closure and reopening has reached the remote, or
 counts the recorded events, names the last tag, and counts those not yet
 pushed or not yet in ST. A closed study then adds a <code>closure</code> row with
 status <code>"CLOSED"</code> and the outcome and date of the latest closure; see
-<code><a href="study_close.html">study_close</a></code>.</p>
+<code><a href="study_close.html">study_close</a></code>. This function never contacts the remote, so
+when one is configured that row adds <em>as of the last fetch</em>. When a
+closure or reopening tag in this copy is not on its <code>main</code>, the state
+cannot be determined and the row has status <code>"UNKNOWN"</code>.</p>
 <p>Release-aware datasets add an <code>update:&lt;dataset&gt;</code> row with status
 <code>"CURRENT"</code>, <code>"UPDATE AVAILABLE"</code>,
 <code>"UPDATE STATUS UNKNOWN"</code>, or <code>"FAIL"</code>. Legacy studies retain
@@ -182,7 +191,7 @@ rather than silent.</p>
   <code>"OK"</code>, <code>"MISSING"</code>, <code>"FAIL"</code>, <code>"UNVERIFIED"</code>,
   <code>"CURRENT"</code>,
   <code>"UPDATE AVAILABLE"</code>, <code>"UPDATE STATUS UNKNOWN"</code>,
-  <code>"PENDING"</code>, or <code>"CLOSED"</code> – and
+  <code>"PENDING"</code>, <code>"CLOSED"</code>, or <code>"UNKNOWN"</code> – and
   <code>detail</code>). The five base rows are followed by release-aware update
   rows, by dataset and update rows for each named dataset, and by the
   <code>checkpoints</code> and <code>closure</code> rows when they apply.
@@ -199,7 +208,7 @@ rather than silent.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">root</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"study-status-example"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="va">root</span>, showWarnings <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">study_status</span><span class="op">(</span><span class="va">root</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Study: /tmp/RtmpRPykw1/study-status-example</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Study: /tmp/RtmpMUUz5M/study-status-example</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [ ] _study.yml — no _study.yml at this root; recovery may be available with study-setup --recover; if its Tracker ID cannot be inferred, run study-setup 42 --recover</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [ ] renv.lock — no renv.lock; run renv::init() in the study project</span>
