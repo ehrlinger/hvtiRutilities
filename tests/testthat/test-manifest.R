@@ -914,7 +914,10 @@ test_that("verify_manifest fails a role: primary entry when the parquet's hash d
   m$datasets[[1]]$sha256 <- strrep("0", 64)         # deliberately wrong
   yaml::write_yaml(m, mp)
 
-  res <- verify_manifest(mp, stop_on_error = FALSE)
+  expect_warning(
+    res <- verify_manifest(mp, stop_on_error = FALSE),
+    "STOP: manifest verification failed"
+  )
   expect_equal(res$status[1], "FAIL")
   expect_match(res$message[1], "mismatch")
 })
@@ -930,7 +933,10 @@ test_that("verify_manifest still fails a role: source entry with a missing file"
   update_manifest(f, manifest_path = mp, n_cols = 1L)
   file.remove(f)
 
-  res <- verify_manifest(mp, stop_on_error = FALSE)
+  expect_warning(
+    res <- verify_manifest(mp, stop_on_error = FALSE),
+    "STOP: manifest verification failed"
+  )
   expect_equal(res$status[1], "FAIL")
   expect_match(res$message[1], "not found")
 })
@@ -947,7 +953,10 @@ test_that("verify_manifest fails when a role: primary entry's parquet is missing
   yaml::write_yaml(m, mp)
   # no d.parquet ever written
 
-  res <- verify_manifest(mp, stop_on_error = FALSE)
+  expect_warning(
+    res <- verify_manifest(mp, stop_on_error = FALSE),
+    "STOP: manifest verification failed"
+  )
   expect_equal(res$status[1], "FAIL")
   expect_match(res$message[1], "d\\.parquet")
 })
@@ -964,7 +973,10 @@ test_that("verify_manifest fails when the sidecar has been edited", {
 
   cat("tampered\n", file = side, append = TRUE)
 
-  res <- verify_manifest(mp, stop_on_error = FALSE)
+  expect_warning(
+    res <- verify_manifest(mp, stop_on_error = FALSE),
+    "STOP: manifest verification failed"
+  )
   expect_true(any(res$status == "FAIL"))
   # "Schema" alone also matches the "sidecar not found" branch; an
   # implementation that only checked file.exists() and never hashed would
@@ -988,7 +1000,10 @@ test_that("verify_manifest reports two entries claiming the same derived paths",
   # An empty sidecar is enough to make the contention real.
   file.create(file.path(dir, "built.schema.csv"))
 
-  res <- verify_manifest(mp, stop_on_error = FALSE)
+  expect_warning(
+    res <- verify_manifest(mp, stop_on_error = FALSE),
+    "STOP: manifest verification failed"
+  )
   expect_match(paste(res$message, collapse = " "), "derived path")
   collisions <- res[grepl("derived path", res$message), , drop = FALSE]
   expect_equal(nrow(collisions), 1L)
