@@ -151,3 +151,18 @@ remove_tree <- function(path) {
   testthat::expect_false(dir.exists(path))
   invisible(path)
 }
+
+# Spec 2026-10-01 (#153): closure state across copies of a study. Two copies,
+# A and B, share one file:// bare remote; both have taken a checkpoint, so B
+# holds a .checkpoint/repo from before anything is closed.
+two_copies <- function(.env = parent.frame()) {
+  dir <- withr::local_tempdir(.local_envir = .env)
+  bare <- make_bare_remote(dir)
+  a <- make_checkpoint_study(file.path(dir, "a"))
+  b <- make_checkpoint_study(file.path(dir, "b"))
+  set_study_keys(a, checkpoint = list(remote = bare))
+  set_study_keys(b, checkpoint = list(remote = bare))
+  study_checkpoint("abstract_submitted", root = a)
+  study_checkpoint("abstract_submitted", root = b)
+  list(dir = dir, bare = bare, a = a, b = b)
+}

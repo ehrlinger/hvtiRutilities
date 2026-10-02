@@ -67,6 +67,16 @@ The outcomes follow the StudyTracker closure rules:
 These rules are checked before anything is written, so a close made
 offline fails at once rather than when the outbox is delivered.
 
+Whether the study is closed is read from the latest \code{closed-*} or
+\code{reopened-*} tag on the checkpoint history, counting tags pushed from
+other copies of the study. Before deciding, both functions sync with the
+remote, delivering any pending checkpoints first. When the remote cannot
+be reached, a message says that the closure state is from this copy's last
+fetch and may be out of date. When a closure or reopening tag in this copy
+is not on its history, which an interrupted delivery can leave, the state
+cannot be determined and both functions stop; run
+\code{\link{study_checkpoint_push}} while the remote is reachable.
+
 \code{reason} is written to the snapshot, the tag and the outbox, so it
 leaves the study folder. A message says so whenever it is given: it must
 not contain patient information.

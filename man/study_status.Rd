@@ -15,7 +15,7 @@ An object of class \code{"study_status"}: a list with \code{root},
   \code{"OK"}, \code{"MISSING"}, \code{"FAIL"}, \code{"UNVERIFIED"},
   \code{"CURRENT"},
   \code{"UPDATE AVAILABLE"}, \code{"UPDATE STATUS UNKNOWN"},
-  \code{"PENDING"}, or \code{"CLOSED"} -- and
+  \code{"PENDING"}, \code{"CLOSED"}, or \code{"UNKNOWN"} -- and
   \code{detail}). The five base rows are followed by release-aware update
   rows, by dataset and update rows for each named dataset, and by the
   \code{checkpoints} and \code{closure} rows when they apply.
@@ -47,7 +47,10 @@ checkpoint, closure and reopening has reached the remote, or
 counts the recorded events, names the last tag, and counts those not yet
 pushed or not yet in ST. A closed study then adds a \code{closure} row with
 status \code{"CLOSED"} and the outcome and date of the latest closure; see
-\code{\link{study_close}}.
+\code{\link{study_close}}. This function never contacts the remote, so
+when one is configured that row adds \emph{as of the last fetch}. When a
+closure or reopening tag in this copy is not on its \code{main}, the state
+cannot be determined and the row has status \code{"UNKNOWN"}.
 
 Release-aware datasets add an \code{update:<dataset>} row with status
 \code{"CURRENT"}, \code{"UPDATE AVAILABLE"},
