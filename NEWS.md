@@ -69,6 +69,16 @@
   `study_status()` never syncs. Its closure row says "as of the last fetch"
   when a remote is configured, and shows `UNKNOWN` in that case.
 
+## Internal
+
+* The test suite runs with no warnings; it reported seven. Five came from
+  `verify_manifest(stop_on_error = FALSE)`, which reports failures as a
+  warning by design; those tests now assert it with `expect_warning()`. The
+  other two were the once-per-session `convert_types` and `use_value_labels`
+  deprecation notices, which fired in whichever test first omitted the
+  argument. A setup file now marks both as spent; the dedicated tests that
+  assert each notice still reset the flag and see it.
+
 # hvtiRutilities 1.4.3
 
 ## New features
