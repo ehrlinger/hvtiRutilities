@@ -1,5 +1,109 @@
 # Changelog
 
+## hvtiRutilities 1.4.4
+
+### New features
+
+- Captured provenance now records which build of each package produced a
+  result, not only its version. A package installed from a git remote
+  gains a `sha` field holding the commit it was built from
+  (`RemoteSha`); CRAN and base packages are recorded as before. A
+  version number alone can cover more than one build: TemporalHazard
+  changed what `se.fit` means on its survival path inside version
+  1.2.11, so two jobs recording “TemporalHazard 1.2.11” could hold
+  different quantities with nothing to tell them apart.
+  [`publish_provenance()`](https://ehrlinger.github.io/hvtiRutilities/reference/publish_provenance.md)
+  accepts entries with or without `sha`, so sidecars written before this
+  change still validate, and rejects a `sha` that is not a hexadecimal
+  commit.
+
+### Bug fixes
+
+- [`job_files()`](https://ehrlinger.github.io/hvtiRutilities/reference/job_files.md),
+  and so
+  [`job_census()`](https://ehrlinger.github.io/hvtiRutilities/reference/job_census.md),
+  now reads the job names `hvtiRtemplates::add_job()` writes,
+  `<subject>-<type>-<prefix>[-<qualifier>].qmd`, as
+  `naming = "scaffolded"` with the qualifier carried. They came back
+  with `prefix = NA` before, so the census undercounted every scaffolded
+  job and would in time have reported a well-used prefix as unused. The
+  `-runner.R` that `add_job()` writes beside some reports shares its
+  report’s stem and counts as a file of that job, not a second job
+  ([\#170](https://github.com/ehrlinger/hvtiRutilities/issues/170)).
+
+- A checkpoint delivery stuck on “is not on main” now repairs itself
+  ([\#152](https://github.com/ehrlinger/hvtiRutilities/issues/152)). If
+  a session died after replaying unpushed snapshots onto the remote’s
+  `main` but before writing the log, the entry kept naming the
+  pre-replay commit, stayed pending on every retry, and held back every
+  later entry until `.checkpoint/log.yml` was edited by hand. Delivery
+  now finds the replayed commit, records the old commit as
+  `replayed_from`, and delivers as normal. It looks in three places:
+  another log entry already mapping the same old commit, the one commit
+  on `main` carrying the entry’s id, or the one carrying the id in the
+  old commit’s own message. The last covers a reopening, which tags an
+  existing commit. When none finds exactly one commit, the entry stays
+  pending with the manual-repair warning, as before. A hand repair
+  should set `replayed_from` as well as `git_commit`, so later entries
+  can heal from it.
+
+- Two sessions can no longer both take over the same stale checkpoint
+  lock. A lock more than 6 hours old was taken over by deleting and
+  recreating `.checkpoint/lock`, so two sessions judging it stale at the
+  same moment could both recreate it and both believe they held it,
+  letting their outbox writes interleave. The takeover now renames the
+  stale lock aside, which only one session can do; the other stops with
+  the usual “retry when it has finished” error. A session that finds it
+  renamed a lock another session had just taken puts it back and stops
+  with the same error. The refresh a long call makes between phases had
+  the same race and could write its old holder back over a session that
+  had just taken over. The holder now refreshes a lease file named for
+  its own token, in one step, and a session whose lock was taken over
+  stops with an error saying so instead of carrying on. A lock whose
+  setup or put-back fails part way no longer strands an empty
+  `.checkpoint/lock` that refused every session for six hours
+  ([\#154](https://github.com/ehrlinger/hvtiRutilities/issues/154)).
+
+- [`study_close()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_close.md),
+  [`study_reopen()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_close.md)
+  and
+  [`study_checkpoint()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checkpoint.md)
+  now see a closure made from another copy of the study
+  ([\#153](https://github.com/ehrlinger/hvtiRutilities/issues/153)).
+  Before deciding whether the study is closed, each one syncs with the
+  remote: it delivers pending entries, or fetches and fast-forwards when
+  nothing is pending. Closure state is the latest `closed-*` or
+  `reopened-*` event on `main`, counting local and remote tags once per
+  commit, rather than a count of local tags. The count read a study as
+  closed after it was reopened once two copies had each closed it. When
+  the remote cannot be reached, a message says that closure state is
+  from this copy’s last fetch and may be out of date, in either
+  direction. When a closure or reopening tag in this copy is not on its
+  `main`, which an interrupted delivery can leave behind, the state is
+  unknown:
+  [`study_close()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_close.md)
+  and
+  [`study_reopen()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_close.md)
+  stop and point to
+  [`study_checkpoint_push()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checkpoint_push.md),
+  and
+  [`study_checkpoint()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checkpoint.md)
+  warns and records.
+  [`study_status()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md)
+  never syncs. Its closure row says “as of the last fetch” when a remote
+  is configured, and shows `UNKNOWN` in that case.
+
+### Internal
+
+- The test suite runs with no warnings; it reported seven. Five came
+  from `verify_manifest(stop_on_error = FALSE)`, which reports failures
+  as a warning by design; those tests now assert it with
+  `expect_warning()`. The other two were the once-per-session
+  `convert_types` and `use_value_labels` deprecation notices, which
+  fired in whichever test first omitted the argument. A setup file now
+  marks both as spent; the dedicated tests that assert each notice still
+  reset the flag and see it.
+
 ## hvtiRutilities 1.4.3
 
 ### New features
