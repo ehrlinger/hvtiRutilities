@@ -2,6 +2,11 @@
 
 ## Breaking changes
 
+* Now requires R 4.4.0 or newer, up from 4.1.0, to match the rest of the
+  HVTI family. `hvtiR::install()` installs the members together, and several
+  already required 4.4.0, so on an older R the install failed whatever this
+  package declared.
+
 * `proc_means()` now defaults to `c("n", "mean", "std", "min", "p15",
   "median", "p85", "max")` rather than SAS's own five. The group reports the
   15th and 85th percentiles alongside the median in its descriptive summaries,
