@@ -17,7 +17,7 @@ BugReports: https://github.com/ehrlinger/hvtiRutilities/issues
 Description: R utilities for the clinical investigations statistics group within
   The Heart & Vascular Institute at the Cleveland Clinic.
 Depends:
-    R (>= 4.1.0)
+    R (>= 4.4.0)
 Imports:
     digest,
     dplyr,
