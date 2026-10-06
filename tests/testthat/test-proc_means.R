@@ -3,12 +3,13 @@ library(hvtiRutilities)
 
 # Structure ----
 
-test_that("proc_means defaults to SAS's five statistics", {
+test_that("proc_means defaults to the group's summary, not SAS's five", {
   dta <- data.frame(a = c(1, 2, 3, 4), b = c(10, 20, 30, 40))
   res <- proc_means(dta)
 
   expect_s3_class(res, "data.frame")
-  expect_named(res, c("variable", "label", "n", "mean", "std", "min", "max"))
+  expect_named(res, c("variable", "label", "n", "mean", "std", "min",
+                      "p15", "median", "p85", "max"))
   expect_equal(res$variable, c("a", "b"))
 })
 
@@ -34,7 +35,7 @@ test_that("proc_means carries variable labels", {
 
 # Statistic values ----
 
-test_that("proc_means computes the default five correctly", {
+test_that("proc_means computes the default statistics correctly", {
   dta <- data.frame(a = c(2, 4, 4, 4, 5, 5, 7, 9))
   res <- proc_means(dta)
 
@@ -43,6 +44,13 @@ test_that("proc_means computes the default five correctly", {
   expect_equal(res$std, sd(c(2, 4, 4, 4, 5, 5, 7, 9)))
   expect_equal(res$min, 2)
   expect_equal(res$max, 9)
+  # SAS QNTLDEF=5, n = 8. p15: np = 1.2, so j = 1 and g > 0, giving x(2) = 4.
+  # median: np = 4, g = 0, giving (x(4) + x(5)) / 2 = (4 + 5) / 2 = 4.5.
+  # p85: np = 6.8, so j = 6 and g > 0, giving x(7) = 7. R's default type 7
+  # would interpolate p85 to 5 + 0.95 * (7 - 5) = 6.9.
+  expect_equal(res$p15, 4)
+  expect_equal(res$median, 4.5)
+  expect_equal(res$p85, 7)
 })
 
 test_that("proc_means computes n, nmiss, sum, range, stderr and cv", {
@@ -154,7 +162,8 @@ test_that("proc_means warns and returns zero rows when nothing is numeric", {
   expect_warning(res <- proc_means(dta), "No numeric columns")
 
   expect_equal(nrow(res), 0L)
-  expect_named(res, c("variable", "label", "n", "mean", "std", "min", "max"))
+  expect_named(res, c("variable", "label", "n", "mean", "std", "min",
+                      "p15", "median", "p85", "max"))
   expect_type(res$n, "integer")
   expect_type(res$mean, "double")
 })

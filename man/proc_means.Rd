@@ -8,7 +8,7 @@ proc_means(
   data,
   vars = NULL,
   class = NULL,
-  stats = c("n", "mean", "std", "min", "max"),
+  stats = c("n", "mean", "std", "min", "p15", "median", "p85", "max"),
   weights = NULL
 )
 }
@@ -22,7 +22,10 @@ selects every numeric column not named in \code{class}.}
 as leading columns. Rows with a missing value in any class variable are
 dropped, matching SAS's default.}
 
-\item{stats}{Character vector of SAS statistic keywords. Counts:
+\item{stats}{Character vector of SAS statistic keywords. The default,
+\code{c("n", "mean", "std", "min", "p15", "median", "p85", "max")}, is
+the group's descriptive summary, not SAS's own five; see the description.
+Counts:
 \code{"n"}, \code{"nmiss"}, \code{"nobs"}, \code{"sumwgt"}. Location:
 \code{"mean"}, \code{"median"}, \code{"mode"}. Spread: \code{"std"},
 \code{"var"}, \code{"stderr"}, \code{"cv"}, \code{"min"}, \code{"max"},
@@ -48,6 +51,15 @@ A data frame with one row per analysis variable per class
 \description{
 Produces the table SAS \code{PROC MEANS} prints: one row per analysis
 variable, one column per requested statistic, in the order requested.
+
+The default statistics are \strong{not} SAS's. \code{PROC MEANS} with no
+statistic list prints N, mean, standard deviation, minimum and maximum, and
+no percentiles. The HVTI group reports the 15th and 85th percentiles
+alongside the median in its descriptive summaries, rather than the
+quartiles, so the default here adds \code{p15}, \code{median} and
+\code{p85}. A SAS parity comparison must therefore name the same
+statistics on both sides: pass the SAS job's list to \code{stats}, or add
+\code{P15 MEDIAN P85} to the SAS \code{PROC MEANS} statement.
 }
 \details{
 Quantiles use \code{stats::quantile(type = 2)}, which is the R equivalent of
@@ -100,7 +112,7 @@ would give \code{Inf}.
 \examples{
 dta <- generate_survival_data(n = 200, seed = 42)
 
-# SAS default statistics over every numeric variable
+# The group's default statistics over every numeric variable
 head(proc_means(dta))
 
 # Named variables and an explicit statistic list

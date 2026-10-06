@@ -20,9 +20,15 @@
 #'
 #' The quartiles in \code{intervals} use R's default interpolated quantiles
 #' (\code{type = 7}), while \code{\link{proc_means}} uses the SAS
-#' \code{QNTLDEF=5} estimator, so the two tables can disagree on a small
-#' subset. The difference is deliberate: \code{intervals} is a quick
+#' \code{QNTLDEF=5} estimator, so a median in the two tables can disagree on
+#' a small subset. The difference is deliberate: \code{intervals} is a quick
 #' screen, and \code{means} is the table to compare against SAS.
+#'
+#' \code{means} reports the 15th and 85th percentiles rather than the
+#' quartiles, because those are what the group's descriptive summaries show.
+#' SAS \code{PROC MEANS} prints no percentiles unless asked, so a parity
+#' comparison names the same statistics on the SAS side, or passes the SAS
+#' job's list to \code{stats}.
 #'
 #' Identifiers are never included unless named in \code{identifier}. Check the
 #' result before sharing a report that shows \code{review} with one.
@@ -35,6 +41,10 @@
 #'   show in \code{review}.
 #' @param max_rows The most suspicious rows to return in \code{review}, in data
 #'   order. Default 25.
+#' @param stats Character vector of SAS statistic keywords for the
+#'   \code{means} tables, passed to \code{\link{proc_means}} and validated the
+#'   same way. Default
+#'   \code{c("n", "nmiss", "mean", "std", "min", "p15", "median", "p85", "max")}.
 #'
 #' @return An object of class \code{followup_check}, a list of four
 #'   components, three data frames and a list of three:
@@ -47,7 +57,7 @@
 #'     observed values.}
 #'   \item{\code{means}}{A named list, \code{full}, \code{event} and
 #'     \code{censored}, of \code{\link{proc_means}} tables over the
-#'     intervals.}
+#'     intervals, one column per statistic in \code{stats}.}
 #'   \item{\code{review}}{Up to \code{max_rows} suspicious rows, with the
 #'     event, the intervals and any \code{identifier}.}
 #' }
@@ -62,7 +72,8 @@
 #' fc$cohort
 #' fc$review
 #' @export
-followup_check <- function(data, event, followup, identifier = NULL, max_rows = 25L) {
+followup_check <- function(data, event, followup, identifier = NULL, max_rows = 25L,
+                           stats = c("n", "nmiss", "mean", "std", "min", "p15", "median", "p85", "max")) {
   if (!is.data.frame(data)) stop("`data` must be a data frame.", call. = FALSE)
   field_names <- function(x) is.character(x) && length(x) > 0L && !anyNA(x) && all(nzchar(x)) && !anyDuplicated(x)
   if (!field_names(event) || length(event) != 1L) stop("`event` must name one column.", call. = FALSE)
@@ -74,6 +85,7 @@ followup_check <- function(data, event, followup, identifier = NULL, max_rows = 
         !is.finite(max_rows) || max_rows < 1 || max_rows != floor(max_rows)) {
     stop("`max_rows` must be one positive integer.", call. = FALSE)
   }
+  .validate_stats(stats)
   needed <- unique(c(event, followup, identifier))
   unknown <- setdiff(needed, names(data))
   if (length(unknown)) {
@@ -100,8 +112,7 @@ followup_check <- function(data, event, followup, identifier = NULL, max_rows = 
   }))
   subsets <- list(full = data, event = data[!is.na(ev) & ev == 1, , drop = FALSE],
                   censored = data[!is.na(ev) & ev == 0, , drop = FALSE])
-  st <- c("n", "nmiss", "mean", "std", "min", "p25", "median", "p75", "max")
-  means <- lapply(subsets, function(s) proc_means(s, vars = followup, stats = st))
+  means <- lapply(subsets, function(s) proc_means(s, vars = followup, stats = stats))
   suspicious <- is.na(ev) | Reduce(`|`, lapply(data[followup], function(x) is.na(x) | x <= 0))
   review <- data[utils::head(which(suspicious), max_rows), needed, drop = FALSE]
   rownames(review) <- NULL
