@@ -3,6 +3,15 @@
 Produces the table SAS `PROC MEANS` prints: one row per analysis
 variable, one column per requested statistic, in the order requested.
 
+The default statistics are **not** SAS's. `PROC MEANS` with no statistic
+list prints N, mean, standard deviation, minimum and maximum, and no
+percentiles. The HVTI group reports the 15th and 85th percentiles
+alongside the median in its descriptive summaries, rather than the
+quartiles, so the default here adds `p15`, `median` and `p85`. A SAS
+parity comparison must therefore name the same statistics on both sides:
+pass the SAS job's list to `stats`, or add `P15 MEDIAN P85` to the SAS
+`PROC MEANS` statement.
+
 ## Usage
 
 ``` r
@@ -10,7 +19,7 @@ proc_means(
   data,
   vars = NULL,
   class = NULL,
-  stats = c("n", "mean", "std", "min", "max"),
+  stats = c("n", "mean", "std", "min", "p15", "median", "p85", "max"),
   weights = NULL
 )
 ```
@@ -34,12 +43,14 @@ proc_means(
 
 - stats:
 
-  Character vector of SAS statistic keywords. Counts: `"n"`, `"nmiss"`,
-  `"nobs"`, `"sumwgt"`. Location: `"mean"`, `"median"`, `"mode"`.
-  Spread: `"std"`, `"var"`, `"stderr"`, `"cv"`, `"min"`, `"max"`,
-  `"range"`, `"qrange"`, `"q1"`, `"q3"`, or any `"pNN"` for NN from 1
-  to 99. Sums: `"sum"`, `"uss"`, `"css"`. Shape: `"skewness"`,
-  `"kurtosis"`.
+  Character vector of SAS statistic keywords. The default,
+  `c("n", "mean", "std", "min", "p15", "median", "p85", "max")`, is the
+  group's descriptive summary, not SAS's own five; see the description.
+  Counts: `"n"`, `"nmiss"`, `"nobs"`, `"sumwgt"`. Location: `"mean"`,
+  `"median"`, `"mode"`. Spread: `"std"`, `"var"`, `"stderr"`, `"cv"`,
+  `"min"`, `"max"`, `"range"`, `"qrange"`, `"q1"`, `"q3"`, or any
+  `"pNN"` for NN from 1 to 99. Sums: `"sum"`, `"uss"`, `"css"`. Shape:
+  `"skewness"`, `"kurtosis"`.
 
 - weights:
 
@@ -115,7 +126,7 @@ for variable metadata.
 ``` r
 dta <- generate_survival_data(n = 200, seed = 42)
 
-# SAS default statistics over every numeric variable
+# The group's default statistics over every numeric variable
 head(proc_means(dta))
 #>      variable                                          label   n        mean
 #> 1 origin_year                 Calendar year for iv_opyrs = 0 200 2008.110000
@@ -124,13 +135,13 @@ head(proc_means(dta))
 #> 4        dead           Death indicator (1=dead, 0=censored) 200    0.540000
 #> 5        reop                      Reoperation (1=yes, 0=no) 200    0.165000
 #> 6     iv_reop          Follow-up time to reoperation (years)  33    1.732727
-#>         std     min     max
-#> 1 5.8299090 1998.00 2018.00
-#> 2 4.0759650    1.06   14.99
-#> 3 3.1987862    0.25   13.98
-#> 4 0.4996481    0.00    1.00
-#> 5 0.3721120    0.00    1.00
-#> 6 1.9354171    0.04    9.92
+#>         std     min      p15  median      p85     max
+#> 1 5.8299090 1998.00 2001.000 2008.00 2015.000 2018.00
+#> 2 4.0759650    1.06    3.085    7.87   13.035   14.99
+#> 3 3.1987862    0.25    1.770    4.10    8.780   13.98
+#> 4 0.4996481    0.00    0.000    1.00    1.000    1.00
+#> 5 0.3721120    0.00    0.000    0.00    1.000    1.00
+#> 6 1.9354171    0.04    0.210    1.29    3.360    9.92
 
 # Named variables and an explicit statistic list
 proc_means(dta, vars = c("age", "bmi"),

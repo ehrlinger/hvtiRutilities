@@ -219,16 +219,30 @@ run;
 ```
 
 gives you N, mean, standard deviation, minimum, and maximum over every
-numeric variable. So does the R default:
+numeric variable, and no percentiles. The R default deliberately goes
+further. The group reports the 15th and 85th percentiles alongside the
+median, not the quartiles, so
+[`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
+adds `p15`, `median` and `p85` between the minimum and the maximum:
 
 ``` r
 
 proc_means(dta, vars = c("age", "bmi", "gfr_bs"))
-#>   variable                         label   n    mean       std  min   max
-#> 1      age        Age at surgery (years) 200 44.5890 14.595538  1.0  85.0
-#> 2      bmi       Body mass index (kg/m2) 200 26.7885  4.750479 15.0  41.8
-#> 3   gfr_bs Baseline eGFR (mL/min/1.73m2) 200 76.1505 19.392901 25.9 120.0
+#>   variable                         label   n    mean       std  min   p15
+#> 1      age        Age at surgery (years) 200 44.5890 14.595538  1.0 29.30
+#> 2      bmi       Body mass index (kg/m2) 200 26.7885  4.750479 15.0 21.90
+#> 3   gfr_bs Baseline eGFR (mL/min/1.73m2) 200 76.1505 19.392901 25.9 56.95
+#>   median   p85   max
+#> 1  44.75 60.55  85.0
+#> 2  26.65 31.75  41.8
+#> 3  75.75 96.30 120.0
 ```
+
+That makes the default a departure from SAS on purpose, and a parity
+check has to account for it. Name the same statistics on both sides: add
+`P15 MEDIAN P85` to the SAS statement, or pass the SAS job’s own list to
+`stats`, as
+`proc_means(dta, stats = c("n", "mean", "std", "min", "max"))`.
 
 Omit `vars` and every numeric column is analysed, matching SAS’s
 behaviour when you leave out the `VAR` statement. Ask for specific

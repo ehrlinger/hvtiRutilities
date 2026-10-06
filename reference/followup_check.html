@@ -77,7 +77,14 @@ against a close date.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">followup_check</span><span class="op">(</span><span class="va">data</span>, <span class="va">event</span>, <span class="va">followup</span>, identifier <span class="op">=</span> <span class="cn">NULL</span>, max_rows <span class="op">=</span> <span class="fl">25L</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">followup_check</span><span class="op">(</span></span>
+<span>  <span class="va">data</span>,</span>
+<span>  <span class="va">event</span>,</span>
+<span>  <span class="va">followup</span>,</span>
+<span>  identifier <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  max_rows <span class="op">=</span> <span class="fl">25L</span>,</span>
+<span>  stats <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"n"</span>, <span class="st">"nmiss"</span>, <span class="st">"mean"</span>, <span class="st">"std"</span>, <span class="st">"min"</span>, <span class="st">"p15"</span>, <span class="st">"median"</span>, <span class="st">"p85"</span>, <span class="st">"max"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -106,6 +113,13 @@ show in <code>review</code>.</p></dd>
 <dd><p>The most suspicious rows to return in <code>review</code>, in data
 order. Default 25.</p></dd>
 
+
+<dt id="arg-stats">stats<a class="anchor" aria-label="anchor" href="#arg-stats"></a></dt>
+<dd><p>Character vector of SAS statistic keywords for the
+<code>means</code> tables, passed to <code><a href="proc_means.html">proc_means</a></code> and validated the
+same way. Default
+<code>c("n", "nmiss", "mean", "std", "min", "p15", "median", "p85", "max")</code>.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -123,7 +137,7 @@ order. Default 25.</p></dd>
   <dt><code>means</code></dt>
 <dd><p>A named list, <code>full</code>, <code>event</code> and
     <code>censored</code>, of <code><a href="proc_means.html">proc_means</a></code> tables over the
-    intervals.</p></dd>
+    intervals, one column per statistic in <code>stats</code>.</p></dd>
 
   <dt><code>review</code></dt>
 <dd><p>Up to <code>max_rows</code> suspicious rows, with the
@@ -142,9 +156,14 @@ when its event is missing or any of its intervals is missing, negative or
 zero.</p>
 <p>The quartiles in <code>intervals</code> use R's default interpolated quantiles
 (<code>type = 7</code>), while <code><a href="proc_means.html">proc_means</a></code> uses the SAS
-<code>QNTLDEF=5</code> estimator, so the two tables can disagree on a small
-subset. The difference is deliberate: <code>intervals</code> is a quick
+<code>QNTLDEF=5</code> estimator, so a median in the two tables can disagree on
+a small subset. The difference is deliberate: <code>intervals</code> is a quick
 screen, and <code>means</code> is the table to compare against SAS.</p>
+<p><code>means</code> reports the 15th and 85th percentiles rather than the
+quartiles, because those are what the group's descriptive summaries show.
+SAS <code>PROC MEANS</code> prints no percentiles unless asked, so a parity
+comparison names the same statistics on the SAS side, or passes the SAS
+job's list to <code>stats</code>.</p>
 <p>Identifiers are never included unless named in <code>identifier</code>. Check the
 result before sharing a report that shows <code>review</code> with one.</p>
     </div>

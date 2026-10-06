@@ -113,7 +113,8 @@
 <li>
 <strong><code><a href="reference/proc_means.html">proc_means()</a></code></strong>: SAS <code>PROC MEANS</code> in R
 <ul>
-<li>SAS statistic keywords (<code>n</code>, <code>nmiss</code>, <code>mean</code>, <code>std</code>, <code>min</code>, <code>max</code>, <code>median</code>, <code>q1</code>, <code>q3</code>, <code>pNN</code>, …), defaulting to SAS’s own five</li>
+<li>SAS statistic keywords (<code>n</code>, <code>nmiss</code>, <code>mean</code>, <code>std</code>, <code>min</code>, <code>max</code>, <code>median</code>, <code>q1</code>, <code>q3</code>, <code>pNN</code>, …), defaulting to SAS’s five plus the group’s <code>p15</code>, <code>median</code> and <code>p85</code>
+</li>
 <li>
 <code>class =</code> stratification, dropping missing class levels as SAS does</li>
 <li>Quantiles use SAS’s <code>QNTLDEF=5</code> definition, not R’s default</li>

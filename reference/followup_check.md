@@ -11,7 +11,14 @@ date.
 ## Usage
 
 ``` r
-followup_check(data, event, followup, identifier = NULL, max_rows = 25L)
+followup_check(
+  data,
+  event,
+  followup,
+  identifier = NULL,
+  max_rows = 25L,
+  stats = c("n", "nmiss", "mean", "std", "min", "p15", "median", "p85", "max")
+)
 ```
 
 ## Arguments
@@ -38,6 +45,14 @@ followup_check(data, event, followup, identifier = NULL, max_rows = 25L)
   The most suspicious rows to return in `review`, in data order. Default
   25.
 
+- stats:
+
+  Character vector of SAS statistic keywords for the `means` tables,
+  passed to
+  [`proc_means`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
+  and validated the same way. Default
+  `c("n", "nmiss", "mean", "std", "min", "p15", "median", "p85", "max")`.
+
 ## Value
 
 An object of class `followup_check`, a list of four components, three
@@ -57,7 +72,7 @@ data frames and a list of three:
 
   A named list, `full`, `event` and `censored`, of
   [`proc_means`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
-  tables over the intervals.
+  tables over the intervals, one column per statistic in `stats`.
 
 - `review`:
 
@@ -78,9 +93,15 @@ zero.
 The quartiles in `intervals` use R's default interpolated quantiles
 (`type = 7`), while
 [`proc_means`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
-uses the SAS `QNTLDEF=5` estimator, so the two tables can disagree on a
-small subset. The difference is deliberate: `intervals` is a quick
-screen, and `means` is the table to compare against SAS.
+uses the SAS `QNTLDEF=5` estimator, so a median in the two tables can
+disagree on a small subset. The difference is deliberate: `intervals` is
+a quick screen, and `means` is the table to compare against SAS.
+
+`means` reports the 15th and 85th percentiles rather than the quartiles,
+because those are what the group's descriptive summaries show. SAS
+`PROC MEANS` prints no percentiles unless asked, so a parity comparison
+names the same statistics on the SAS side, or passes the SAS job's list
+to `stats`.
 
 Identifiers are never included unless named in `identifier`. Check the
 result before sharing a report that shows `review` with one.
