@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.4.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.4.5</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,6 +55,15 @@
       <small>Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.4.5" id="hvtirutilities-145">hvtiRutilities 1.4.5<a class="anchor" aria-label="anchor" href="#hvtirutilities-145"></a></h2>
+<div class="section level3">
+<h3 id="breaking-changes-1-4-5">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-1-4-5"></a></h3>
+<ul><li><p>Now requires R 4.4.0 or newer, up from 4.1.0, to match the rest of the HVTI family. <code>hvtiR::install()</code> installs the members together, and several already required 4.4.0, so on an older R the install failed whatever this package declared.</p></li>
+<li><p><code><a href="../reference/proc_means.html">proc_means()</a></code> now defaults to <code>c("n", "mean", "std", "min", "p15", "median", "p85", "max")</code> rather than SAS’s own five. The group reports the 15th and 85th percentiles alongside the median in its descriptive summaries, not the quartiles, so the default says what a report shows. It departs from SAS <code>PROC MEANS</code>, which prints no percentiles unless asked: a parity comparison must request the same statistics on both sides, either by adding <code>P15 MEDIAN P85</code> to the SAS statement or by passing the SAS job’s list to <code>stats</code>. A call that relied on the old default and compares column for column needs <code>stats = c("n", "mean", "std", "min", "max")</code>.</p></li>
+<li><p><code><a href="../reference/followup_check.html">followup_check()</a></code>’s <code>means</code> tables report <code>p15</code> and <code>p85</code> in place of <code>p25</code> and <code>p75</code>, for the same reason. A new <code>stats</code> argument chooses the statistics, defaulting to <code>c("n", "nmiss", "mean", "std", "min", "p15", "median", "p85", "max")</code>, and is validated exactly as <code><a href="../reference/proc_means.html">proc_means()</a></code> validates its own. Code reading <code>$means$full$p25</code> or <code>$p75</code> now gets <code>NULL</code>; pass <code>stats</code> with <code>"p25"</code> and <code>"p75"</code> to keep them.</p></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.4.4" id="hvtirutilities-144">hvtiRutilities 1.4.4<a class="anchor" aria-label="anchor" href="#hvtirutilities-144"></a></h2>
 <div class="section level3">
