@@ -4,7 +4,14 @@
 \alias{followup_check}
 \title{Check recorded follow-up before a time-related analysis}
 \usage{
-followup_check(data, event, followup, identifier = NULL, max_rows = 25L)
+followup_check(
+  data,
+  event,
+  followup,
+  identifier = NULL,
+  max_rows = 25L,
+  stats = c("n", "nmiss", "mean", "std", "min", "p15", "median", "p85", "max")
+)
 }
 \arguments{
 \item{data}{A data frame, one row per patient.}
@@ -19,6 +26,11 @@ show in \code{review}.}
 
 \item{max_rows}{The most suspicious rows to return in \code{review}, in data
 order. Default 25.}
+
+\item{stats}{Character vector of SAS statistic keywords for the
+\code{means} tables, passed to \code{\link{proc_means}} and validated the
+same way. Default
+\code{c("n", "nmiss", "mean", "std", "min", "p15", "median", "p85", "max")}.}
 }
 \value{
 An object of class \code{followup_check}, a list of four
@@ -32,7 +44,7 @@ An object of class \code{followup_check}, a list of four
     observed values.}
   \item{\code{means}}{A named list, \code{full}, \code{event} and
     \code{censored}, of \code{\link{proc_means}} tables over the
-    intervals.}
+    intervals, one column per statistic in \code{stats}.}
   \item{\code{review}}{Up to \code{max_rows} suspicious rows, with the
     event, the intervals and any \code{identifier}.}
 }
@@ -57,9 +69,15 @@ zero.
 
 The quartiles in \code{intervals} use R's default interpolated quantiles
 (\code{type = 7}), while \code{\link{proc_means}} uses the SAS
-\code{QNTLDEF=5} estimator, so the two tables can disagree on a small
-subset. The difference is deliberate: \code{intervals} is a quick
+\code{QNTLDEF=5} estimator, so a median in the two tables can disagree on
+a small subset. The difference is deliberate: \code{intervals} is a quick
 screen, and \code{means} is the table to compare against SAS.
+
+\code{means} reports the 15th and 85th percentiles rather than the
+quartiles, because those are what the group's descriptive summaries show.
+SAS \code{PROC MEANS} prints no percentiles unless asked, so a parity
+comparison names the same statistics on the SAS side, or passes the SAS
+job's list to \code{stats}.
 
 Identifiers are never included unless named in \code{identifier}. Check the
 result before sharing a report that shows \code{review} with one.

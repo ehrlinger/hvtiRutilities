@@ -1,3 +1,24 @@
+# hvtiRutilities (unreleased)
+
+## Breaking changes
+
+* `proc_means()` now defaults to `c("n", "mean", "std", "min", "p15",
+  "median", "p85", "max")` rather than SAS's own five. The group reports the
+  15th and 85th percentiles alongside the median in its descriptive summaries,
+  not the quartiles, so the default says what a report shows. It departs from
+  SAS `PROC MEANS`, which prints no percentiles unless asked: a parity
+  comparison must request the same statistics on both sides, either by adding
+  `P15 MEDIAN P85` to the SAS statement or by passing the SAS job's list to
+  `stats`. A call that relied on the old default and compares column for
+  column needs `stats = c("n", "mean", "std", "min", "max")`.
+
+* `followup_check()`'s `means` tables report `p15` and `p85` in place of
+  `p25` and `p75`, for the same reason. A new `stats` argument chooses the
+  statistics, defaulting to `c("n", "nmiss", "mean", "std", "min", "p15",
+  "median", "p85", "max")`, and is validated exactly as `proc_means()`
+  validates its own. Code reading `$means$full$p25` or `$p75` now gets `NULL`;
+  pass `stats` with `"p25"` and `"p75"` to keep them.
+
 # hvtiRutilities 1.4.4
 
 ## New features

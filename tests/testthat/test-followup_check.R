@@ -30,11 +30,29 @@ test_that("an interval with no observed value summarises as NA, not an error", {
 
 test_that("means are proc_means over the full, event and censored subsets", {
   fc <- followup_check(d, "dead", "iv_dead")
-  st <- c("n", "nmiss", "mean", "std", "min", "p25", "median", "p75", "max")
+  st <- c("n", "nmiss", "mean", "std", "min", "p15", "median", "p85", "max")
   expect_named(fc$means, c("full", "event", "censored"))
+  expect_named(fc$means$full, c("variable", "label", st))
   expect_identical(fc$means$full, proc_means(d, vars = "iv_dead", stats = st))
   expect_identical(fc$means$event, proc_means(d[c(1, 5), ], vars = "iv_dead", stats = st))
   expect_identical(fc$means$censored, proc_means(d[c(2, 3, 6), ], vars = "iv_dead", stats = st))
+})
+
+test_that("means report the 15th and 85th percentiles under SAS QNTLDEF=5", {
+  dd <- data.frame(dead = rep(0, 8), iv = c(2, 4, 4, 4, 5, 5, 7, 9))
+  m <- followup_check(dd, "dead", "iv")$means$full
+  # n = 8. p15: np = 1.2, giving x(2) = 4. p85: np = 6.8, giving x(7) = 7.
+  # R's default type 7 would give 6.9 for p85.
+  expect_equal(c(m$p15, m$median, m$p85), c(4, 4.5, 7))
+  expect_null(m$p25)
+  expect_null(m$p75)
+})
+
+test_that("stats chooses the means statistics and is validated like proc_means", {
+  fc <- followup_check(d, "dead", "iv_dead", stats = c("n", "p25", "p75"))
+  expect_identical(fc$means$full, proc_means(d, vars = "iv_dead", stats = c("n", "p25", "p75")))
+  expect_error(followup_check(d, "dead", "iv_dead", stats = c("n", "bogus")),
+               "Unrecognised statistic keyword\\(s\\): bogus")
 })
 
 test_that("review holds suspicious rows in data order, capped, identifiers only on request", {

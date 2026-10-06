@@ -170,11 +170,19 @@ run;
 ```
 
 gives you N, mean, standard deviation, minimum, and maximum over every numeric
-variable. So does the R default:
+variable, and no percentiles. The R default deliberately goes further. The group
+reports the 15th and 85th percentiles alongside the median, not the quartiles,
+so `proc_means()` adds `p15`, `median` and `p85` between the minimum and the
+maximum:
 
 ```{r means-default}
 proc_means(dta, vars = c("age", "bmi", "gfr_bs"))
 ```
+
+That makes the default a departure from SAS on purpose, and a parity check has
+to account for it. Name the same statistics on both sides: add
+`P15 MEDIAN P85` to the SAS statement, or pass the SAS job's own list to
+`stats`, as `proc_means(dta, stats = c("n", "mean", "std", "min", "max"))`.
 
 Omit `vars` and every numeric column is analysed, matching SAS's behaviour when
 you leave out the `VAR` statement. Ask for specific statistics and you get them
