@@ -1,5 +1,26 @@
 # hvtiRutilities (unreleased)
 
+## Breaking changes
+
+* **Registering a dataset converts it to a dated parquet, and
+  `update_manifest()` with no arguments registers a rebuilt one.**
+  `register_data()` now writes `<name>_YYYYMMDD.parquet` and its column record
+  beside the source, and jobs read that parquet. The source file
+  (`built.sas7bdat`) may be rebuilt freely: `read_built()` keeps reading the
+  registered version and signals `hvtiRutilities_source_changed`, and
+  `verify_manifest()` reports the dataset as `PENDING` rather than failing.
+  Run `update_manifest()` from anywhere in the study to register the rebuild
+  as a new version; earlier versions are kept and still verified. A study
+  registered before this release is converted on its first
+  `update_manifest()`; if its source was already overwritten, the previous
+  version is recovered from the read cache where it still matches.
+  `verify_manifest()` now defaults to the study's manifest when run inside a
+  study, and a checksum mismatch names `update_manifest()`. Registration and
+  update need the arrow package. `read_clinical_data()` reads `.parquet`
+  files, so a parquet source registers like any other format.
+  `provenance_data()` records the dated parquet as the file a job read, so a
+  report names its own data version.
+
 ## New features
 
 * `cache_fit()` gains `packages =`, a character vector of package names whose
