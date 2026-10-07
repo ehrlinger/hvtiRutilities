@@ -4,7 +4,14 @@
 \alias{cache_fit}
 \title{Cache an expensive computation, strictly}
 \usage{
-cache_fit(name, code, seed = NULL, dir = study_dir("estimates"), refit = FALSE)
+cache_fit(
+  name,
+  code,
+  seed = NULL,
+  dir = study_dir("estimates"),
+  refit = FALSE,
+  packages = NULL
+)
 }
 \arguments{
 \item{name}{Character(1). File stem; the result is stored at
@@ -21,6 +28,11 @@ estimates folder.}
 \item{refit}{Logical(1). \code{TRUE} recomputes and overwrites the file only
 when it is stale or unkeyed; a valid cache is still loaded, not
 recomputed, regardless of \code{refit}.}
+
+\item{packages}{\code{NULL} or a character vector of package names whose
+versions are added to the key. Use it for a package that does the work
+beneath a wrapper and so never appears in \code{code} itself; see
+Details.}
 }
 \value{
 The result of \code{code}, computed or loaded, with its key attached
@@ -88,6 +100,19 @@ This shows up as a loud, classed \code{hvtiRutilities_stale_cache} error
 rather than a silently wrong cache hit, which is the safer failure mode,
 but is worth knowing about when a downstream cache goes stale for no
 apparent reason.
+
+The key records the version of the package that owns each function called
+in \code{code}, and no other. A wrapper is therefore keyed on itself only:
+\code{gg_partial_rfsrc(forest, ...)} records ggRandomForests, though
+randomForestSRC computes the partial dependence when it runs. An upgrade of
+randomForestSRC reaches that key only through \code{forest}'s own key,
+which holds the version at fit time, not the version that runs now. Name
+such a package in \code{packages}, e.g.
+\code{packages = "randomForestSRC"}, and its version joins the key, so an
+upgrade makes the cache stale. Adding \code{packages} to an existing call
+makes its cache stale once, with the package reported as
+\code{(absent)} in the stored key. Base-priority packages are ignored, as
+they are for functions called in \code{code}.
 
 The computation must return a value; a result of \code{NULL} is an error,
 because there would be nothing to cache.
