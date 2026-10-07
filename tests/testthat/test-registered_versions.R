@@ -418,15 +418,21 @@ test_that("an overwritten parquet source is not mistaken for a cache", {
   raw <- yaml::read_yaml(file.path(root, "_study.yml"))
   raw$built <- "built.parquet"
   yaml::write_yaml(raw, file.path(root, "_study.yml"))
+  # Make the overwritten source look exactly like a usable read cache: same
+  # row and column counts, and a schema sidecar the entry records. Only the
+  # parquet-source rule stops migration from renaming the source away.
+  schema <- file.path(study_dir("datasets", root), "built.schema.csv")
+  utils::write.csv(dataset_schema(data.frame(id = 1:3)), schema, row.names = FALSE)
   entry <- .registration_manifest_entry(src, data.frame(id = 1:3), "2026-09-15", NULL)
+  entry$schema_sha256 <- digest::digest(schema, algo = "sha256", file = TRUE)
   yaml::write_yaml(list(datasets = list(entry)), file.path(root, "manifest.yaml"))
-  arrow::write_parquet(data.frame(id = 1:5), src)
+  arrow::write_parquet(data.frame(id = 4:6), src)
   Sys.setFileTime(src, as.POSIXct("2026-10-07 12:00:00", tz = "UTC"))
   withr::local_dir(root)
 
   expect_message(update_manifest(), "cannot be recovered", fixed = TRUE)
   expect_true(file.exists(src))
-  expect_identical(nrow(arrow::read_parquet(src)), 5L)
+  expect_identical(arrow::read_parquet(src)$id, 4:6)
   expect_null(manifest_entry_for(root, "built.parquet")$history)
 })
 
@@ -472,4 +478,22 @@ test_that("a migration that fails keeps the legacy cache of an untouched source"
   expect_error(suppressMessages(update_manifest()), "disk full")
   expect_true(all(file.exists(cache)))
   expect_false(file.exists(file.path(study_dir("datasets", root), "built_20260915.parquet")))
+})
+
+test_that("a migration whose manifest write fails puts a recovered cache back", {
+  root <- legacy_with_cache()
+  data_dir <- study_dir("datasets", root)
+  cache <- file.path(data_dir, c("built.parquet", "built.schema.csv"))
+  before <- unname(tools::md5sum(cache))
+  rebuild_source(root, data.frame(id = 1:5, dead = c(1L, 0L, 0L, 0L, 1L), iv_dead = 1:5))
+  withr::local_dir(root)
+  real_atomic_write <- .atomic_write
+  local_mocked_bindings(.atomic_write = function(target, write_fn) {
+    if (identical(basename(target), "manifest.yaml")) stop("disk full")
+    real_atomic_write(target, write_fn)
+  })
+
+  expect_error(suppressMessages(update_manifest()), "disk full")
+  expect_identical(unname(tools::md5sum(cache)), before)
+  expect_identical(list.files(data_dir, pattern = "_2026"), character())
 })
