@@ -62,6 +62,19 @@
 #' but is worth knowing about when a downstream cache goes stale for no
 #' apparent reason.
 #'
+#' The key records the version of the package that owns each function called
+#' in \code{code}, and no other. A wrapper is therefore keyed on itself only:
+#' \code{gg_partial_rfsrc(forest, ...)} records ggRandomForests, though
+#' randomForestSRC computes the partial dependence when it runs. An upgrade of
+#' randomForestSRC reaches that key only through \code{forest}'s own key,
+#' which holds the version at fit time, not the version that runs now. Name
+#' such a package in \code{packages}, e.g.
+#' \code{packages = "randomForestSRC"}, and its version joins the key, so an
+#' upgrade makes the cache stale. Adding \code{packages} to an existing call
+#' makes its cache stale once, with the package reported as
+#' \code{(absent)} in the stored key. Base-priority packages are ignored, as
+#' they are for functions called in \code{code}.
+#'
 #' The computation must return a value; a result of \code{NULL} is an error,
 #' because there would be nothing to cache.
 #'
@@ -95,6 +108,10 @@
 #' @param refit Logical(1). \code{TRUE} recomputes and overwrites the file only
 #'   when it is stale or unkeyed; a valid cache is still loaded, not
 #'   recomputed, regardless of \code{refit}.
+#' @param packages \code{NULL} or a character vector of package names whose
+#'   versions are added to the key. Use it for a package that does the work
+#'   beneath a wrapper and so never appears in \code{code} itself; see
+#'   Details.
 #'
 #' @return The result of \code{code}, computed or loaded, with its key attached
 #'   as attribute \code{hvtiRutilities_cache_key}.
@@ -113,10 +130,11 @@
 #' identical(first, again)
 #' unlink(dir, recursive = TRUE)
 cache_fit <- function(name, code, seed = NULL, dir = study_dir("estimates"),
-                      refit = FALSE) {
+                      refit = FALSE, packages = NULL) {
   expr <- substitute(code)
   env  <- parent.frame()
   .cache_check_args(name, seed, refit, dir)
+  .cache_check_packages(packages)
   if (!is.null(seed)) seed <- as.integer(seed)
   code <- .cache_resolve(expr, env)
 
@@ -124,7 +142,7 @@ cache_fit <- function(name, code, seed = NULL, dir = study_dir("estimates"),
     stop("cache_fit(): directory does not exist: ", dir, call. = FALSE)
   }
   path <- file.path(dir, paste0(name, ".rds"))
-  key  <- .cache_key(code, env, seed)
+  key  <- .cache_key(code, env, seed, as.character(packages))
 
   if (file.exists(path)) {
     stored <- tryCatch(readRDS(path), error = function(e) NULL)
@@ -179,6 +197,23 @@ cache_fit <- function(name, code, seed = NULL, dir = study_dir("estimates"),
     stop("cache_fit(): `dir` must be a single, non-NA character string.",
          call. = FALSE)
   }
+}
+
+# A package named in `packages` must be installed: a typo would otherwise key
+# on NA and go unnoticed, which is the silent miss the argument exists to stop.
+.cache_check_packages <- function(packages) {
+  if (is.null(packages)) return(invisible())
+  if (!is.character(packages) || anyNA(packages) || !all(nzchar(packages))) {
+    stop("cache_fit(): `packages` must be NULL or a character vector of ",
+         "package names.", call. = FALSE)
+  }
+  missing <- packages[!nzchar(vapply(packages, function(p) system.file(package = p),
+                                     character(1)))]
+  if (length(missing) > 0L) {
+    stop("cache_fit(): `packages` names packages that are not installed: ",
+         paste(missing, collapse = ", "), call. = FALSE)
+  }
+  invisible()
 }
 
 # The code is what was written, unless what was written is a single name bound

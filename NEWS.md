@@ -1,5 +1,19 @@
 # hvtiRutilities (unreleased)
 
+## New features
+
+* `cache_fit()` gains `packages =`, a character vector of package names whose
+  versions join the cache key. The key records only the package that owns each
+  function called in `code`, so a wrapper is keyed on itself:
+  `gg_partial_rfsrc(forest, ...)` recorded ggRandomForests and not
+  randomForestSRC, which computes the result. After a randomForestSRC upgrade
+  that cache stayed valid, and `refit = TRUE` kept it, because `refit` only
+  recomputes a cache that is stale. With `packages = "randomForestSRC"` the
+  upgrade makes the cache stale. Without `packages` the key is unchanged, so
+  existing caches stay valid; adding it to a call makes that cache stale once.
+
+## Documentation
+
 * Vignettes put the table of contents on the left and use the full width
   of the window, the same layout as the HVTI Quarto books and the
   hvtiRtemplates jobs. `vignettes/_quarto.yml` sets it once for every
