@@ -11,7 +11,14 @@ stops and lists what changed. It never returns a stale result.
 ## Usage
 
 ``` r
-cache_fit(name, code, seed = NULL, dir = study_dir("estimates"), refit = FALSE)
+cache_fit(
+  name,
+  code,
+  seed = NULL,
+  dir = study_dir("estimates"),
+  refit = FALSE,
+  packages = NULL
+)
 ```
 
 ## Arguments
@@ -41,6 +48,12 @@ cache_fit(name, code, seed = NULL, dir = study_dir("estimates"), refit = FALSE)
   Logical(1). `TRUE` recomputes and overwrites the file only when it is
   stale or unkeyed; a valid cache is still loaded, not recomputed,
   regardless of `refit`.
+
+- packages:
+
+  `NULL` or a character vector of package names whose versions are added
+  to the key. Use it for a package that does the work beneath a wrapper
+  and so never appears in `code` itself; see Details.
 
 ## Value
 
@@ -103,6 +116,18 @@ platforms even when nothing meaningful about them changed. This shows up
 as a loud, classed `hvtiRutilities_stale_cache` error rather than a
 silently wrong cache hit, which is the safer failure mode, but is worth
 knowing about when a downstream cache goes stale for no apparent reason.
+
+The key records the version of the package that owns each function
+called in `code`, and no other. A wrapper is therefore keyed on itself
+only: `gg_partial_rfsrc(forest, ...)` records ggRandomForests, though
+randomForestSRC computes the partial dependence when it runs. An upgrade
+of randomForestSRC reaches that key only through `forest`'s own key,
+which holds the version at fit time, not the version that runs now. Name
+such a package in `packages`, e.g. `packages = "randomForestSRC"`, and
+its version joins the key, so an upgrade makes the cache stale. Adding
+`packages` to an existing call makes its cache stale once, with the
+package reported as `(absent)` in the stored key. Base-priority packages
+are ignored, as they are for functions called in `code`.
 
 The computation must return a value; a result of `NULL` is an error,
 because there would be nothing to cache.
