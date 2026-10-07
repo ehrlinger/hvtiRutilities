@@ -146,3 +146,105 @@
     )
   )
 }
+
+# Register a rebuilt source as the next version; the current one moves to the
+# head of history. Unchanged sources are left alone.
+.next_version <- function(entry, source_path, extract_date) {
+  if (!.source_changed(source_path, entry)) {
+    return(list(entry = entry, written = character(), action = "unchanged",
+                detail = paste0("unchanged since ", entry$extract_date, " (", entry$parquet, ")")))
+  }
+  dir <- dirname(source_path)
+  history <- if (is.list(entry$history)) entry$history else list()
+  taken <- c(entry$parquet, vapply(history, function(h) h$parquet, character(1)))
+  date <- if (is.null(extract_date)) as.Date(file.info(source_path)$mtime) else extract_date
+  version <- .write_version(source_path, dir, date, taken, caller = "update_manifest")
+  list(
+    entry = .versioned_entry(entry$file, version, extra = .entry_extra(entry),
+                             history = c(list(.history_record(entry)), history)),
+    written = file.path(dir, c(version$parquet, .version_schema_name(version$parquet))),
+    action = "registered",
+    detail = paste0("registered ", version$parquet, " (", version$n_rows, " rows, ", version$n_cols,
+                    " columns); previous version kept as ", entry$parquet)
+  )
+}
+
+.manifest_update_row <- function(dataset, action, detail) {
+  data.frame(dataset = dataset, action = action, detail = detail, stringsAsFactors = FALSE)
+}
+
+# update_manifest() with no file: find the study from the working directory and
+# register every dataset (or the one named) whose source has changed.
+.update_study_manifest <- function(dataset = NULL, extract_date = NULL) {
+  cfg <- tryCatch(study_config(require_data = FALSE), error = function(e) NULL)
+  if (is.null(cfg)) {
+    stop("update_manifest() with no file looks for a study (a _study.yml in this directory or above) ",
+         "and found none. To record a single file, pass it: update_manifest(\"path/to/file\").",
+         call. = FALSE)
+  }
+  .require_arrow("update_manifest")
+  targets <- if (is.null(dataset)) {
+    c(if (!is.null(cfg$built)) "study", names(cfg$additional_datasets))
+  } else {
+    .study_dataset(cfg, dataset)
+    dataset
+  }
+  if (!length(targets)) {
+    stop("update_manifest(): the study at ", cfg$root, " has no registered dataset to update. ",
+         "Register one with register_data().", call. = FALSE)
+  }
+  manifest_path <- file.path(cfg$root, "manifest.yaml")
+  manifest <- yaml::read_yaml(manifest_path)
+  written <- character()
+  committed <- FALSE
+  on.exit(if (!committed) unlink(written), add = TRUE)
+  rows <- list()
+
+  for (name in targets) {
+    contract <- .study_dataset(cfg, name)
+    if (!is.null(contract$release)) {
+      if (!is.null(dataset)) {
+        stop("update_manifest(): '", name, "' is a release-aware dataset. Review and adopt a published ",
+             "release with review_data_update() and adopt_data_update().", call. = FALSE)
+      }
+      rows[[name]] <- .manifest_update_row(name, "skipped", "release-aware; use review_data_update() and adopt_data_update()")
+      next
+    }
+    hit <- which(vapply(manifest$datasets, function(e) identical(e$file, contract$built), logical(1)))
+    if (length(hit) != 1L) {
+      stop("update_manifest(): ", contract$built, " has ", if (length(hit)) "more than one entry" else "no entry",
+           " in manifest.yaml. Register it with register_data().", call. = FALSE)
+    }
+    entry <- manifest$datasets[[hit]]
+    source_path <- file.path(study_dir("datasets", cfg$root), contract$built)
+    if (!file.exists(source_path)) {
+      rows[[name]] <- .manifest_update_row(name, "unchanged", paste0(contract$built, " is not on disk; jobs keep reading ",
+                                                            if (.is_versioned(entry)) entry$parquet else contract$built))
+      next
+    }
+    step <- if (.is_versioned(entry)) {
+      .next_version(entry, source_path, extract_date)
+    } else {
+      .migrate_entry(entry, source_path, extract_date)
+    }
+    written <- c(written, step$written)
+    manifest$datasets[[hit]] <- step$entry
+    rows[[name]] <- .manifest_update_row(name, step$action, step$detail)
+  }
+
+  out <- do.call(rbind, unname(rows))
+  if (any(out$action %in% c("registered", "migrated"))) {
+    .atomic_write(manifest_path, function(tmp) yaml::write_yaml(manifest, tmp))
+  }
+  committed <- TRUE
+  message(paste0(format(out$dataset), ": ", out$detail, collapse = "\n"))
+  if (any(out$action %in% c("registered", "migrated"))) {
+    message("Commit manifest.yaml so the record of which version is current travels with the study.")
+  }
+  invisible(out)
+}
+
+.migrate_entry <- function(entry, source_path, extract_date) {
+  stop("update_manifest(): ", entry$file, " was registered before 2026-10; migration arrives with Task 6.",
+       call. = FALSE)
+}

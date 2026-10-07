@@ -254,3 +254,112 @@ test_that("study_status reports a rebuilt source as pending, not failed", {
   expect_identical(row$status, "PENDING")
   expect_match(row$detail, "update_manifest()", fixed = TRUE)
 })
+
+rebuild_source <- function(root, data = data.frame(id = 1:4, DEAD = c(1L, 1L, 0L, 0L)), when = "2026-10-07 12:00:00") {
+  path <- built_path(study_config(root))
+  utils::write.csv(data, path, row.names = FALSE)
+  Sys.setFileTime(path, as.POSIXct(when, tz = "UTC"))
+  path
+}
+
+test_that("update_manifest() outside a study says what it looked for", {
+  withr::local_dir(withr::local_tempdir())
+  expect_error(update_manifest(), "found none", fixed = TRUE)
+  expect_error(update_manifest(), "update_manifest(\"path/to/file\")", fixed = TRUE)
+})
+
+test_that("update_manifest() with nothing changed writes nothing", {
+  root <- versioned_study()
+  before <- readLines(file.path(root, "manifest.yaml"))
+  withr::local_dir(root)
+
+  expect_message(out <- update_manifest(), "unchanged")
+  expect_identical(out$action, "unchanged")
+  expect_identical(readLines(file.path(root, "manifest.yaml")), before)
+})
+
+test_that("update_manifest() registers a rebuilt source and keeps the old version", {
+  root <- versioned_study()
+  rebuild_source(root)
+  withr::local_dir(study_dir("datasets", root))
+
+  expect_message(out <- update_manifest(), "previous version kept as built_20260915.parquet", fixed = TRUE)
+  expect_identical(out$action, "registered")
+
+  e <- manifest_entry_for(root)
+  expect_identical(e$parquet, "built_20261007.parquet")
+  expect_identical(e$history[[1L]]$parquet, "built_20260915.parquet")
+  expect_true(file.exists(file.path(study_dir("datasets", root), "built_20260915.parquet")))
+  expect_identical(verify_manifest()$status, c("OK", "OK"))
+  expect_no_message(d <- read_built(study_config(root)))
+  expect_identical(nrow(d), 4L)
+})
+
+test_that("a rebuilt parquet source is updated the same way", {
+  skip_if_not_installed("arrow")
+  root <- file.path(withr::local_tempdir(), "study")
+  suppressMessages(study_setup(root, "Parquet update", 42L))
+  src <- file.path(study_dir("datasets", root), "built.parquet")
+  arrow::write_parquet(data.frame(id = 1:3), src)
+  Sys.setFileTime(src, as.POSIXct("2026-09-15 12:00:00", tz = "UTC"))
+  suppressMessages(register_data(root, "built.parquet"))
+  arrow::write_parquet(data.frame(id = 1:4), src)
+  Sys.setFileTime(src, as.POSIXct("2026-10-07 12:00:00", tz = "UTC"))
+  withr::local_dir(root)
+
+  suppressMessages(update_manifest())
+
+  e <- manifest_entry_for(root, "built.parquet")
+  expect_identical(e$parquet, "built_20261007.parquet")
+  expect_identical(e$history[[1L]]$parquet, "built_20260915.parquet")
+  expect_true(file.exists(src))
+  expect_identical(nrow(read_built(study_config(root))), 4L)
+})
+
+test_that("a second update on the same date takes the next revision", {
+  root <- versioned_study()
+  withr::local_dir(root)
+  rebuild_source(root)
+  suppressMessages(update_manifest())
+  rebuild_source(root, data.frame(id = 1:5, DEAD = c(1L, 1L, 0L, 0L, 0L)), when = "2026-10-07 15:00:00")
+  suppressMessages(update_manifest())
+
+  e <- manifest_entry_for(root)
+  expect_identical(e$parquet, "built_20261007_r2.parquet")
+  expect_identical(vapply(e$history, `[[`, "", "parquet"), c("built_20261007.parquet", "built_20260915.parquet"))
+})
+
+test_that("update_manifest() keeps fields registration recorded", {
+  skip_if_not_installed("arrow")
+  root <- file.path(withr::local_tempdir(), "study")
+  suppressMessages(study_setup(root, "Source field", 42L))
+  path <- file.path(study_dir("datasets", root), "built.csv")
+  utils::write.csv(data.frame(id = 1:2), path, row.names = FALSE)
+  suppressMessages(register_data(root, "built.csv", source = "Synthetic"))
+  utils::write.csv(data.frame(id = 1:3), path, row.names = FALSE)
+  withr::local_dir(root)
+  suppressMessages(update_manifest())
+  expect_identical(manifest_entry_for(root)$source, "Synthetic")
+})
+
+test_that("update_manifest() refuses a release-aware dataset by name", {
+  fx <- make_release_aware_study(withr::local_tempdir())
+  withr::local_dir(fx$root)
+  expect_error(update_manifest(dataset = "study"), "review_data_update()", fixed = TRUE)
+})
+
+test_that("update_manifest(file, ...) keeps its single-file behaviour", {
+  dir <- withr::local_tempdir()
+  path <- file.path(dir, "x.csv")
+  utils::write.csv(data.frame(a = 1:2), path, row.names = FALSE)
+  m <- update_manifest(path, manifest_path = file.path(dir, "manifest.yaml"), extract_date = "2026-10-07")
+  expect_identical(m$datasets[[1L]]$file, "x.csv")
+  expect_identical(m$datasets[[1L]]$role, "source")
+})
+
+test_that("update_manifest() in a study with no registered dataset names register_data()", {
+  root <- file.path(withr::local_tempdir(), "study")
+  suppressMessages(study_setup(root, "Empty study", 42L))
+  withr::local_dir(root)
+  expect_error(update_manifest(), "register_data()", fixed = TRUE)
+})
