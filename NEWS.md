@@ -1,3 +1,11 @@
+# hvtiRutilities (unreleased)
+
+* Vignettes put the table of contents on the left and use the full width
+  of the window, the same layout as the HVTI Quarto books and the
+  hvtiRtemplates jobs. `vignettes/_quarto.yml` sets it once for every
+  vignette, and `pkgdown/extra.css` gives the pkgdown site's articles the
+  same arrangement.
+
 # hvtiRutilities 1.4.5
 
 ## Breaking changes
