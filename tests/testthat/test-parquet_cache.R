@@ -677,3 +677,20 @@ test_that("refresh = TRUE with the cache disabled on a role: source entry just r
   expect_equal(nrow(d), 20L)
   expect_false(file.exists(file.path(dir, "datasets", "built_test.parquet")))
 })
+
+test_that("the legacy cache never writes over a parquet source", {
+  skip_if_not_installed("arrow")
+  dir <- withr::local_tempdir()
+  src <- file.path(dir, "built.parquet")
+  arrow::write_parquet(data.frame(id = 1:3), src)
+  before <- digest::digest(src, algo = "sha256", file = TRUE)
+  manifest <- file.path(dir, "manifest.yaml")
+
+  d <- .cache_read(src, function(f) as.data.frame(arrow::read_parquet(f)), manifest_path = manifest)
+
+  expect_identical(nrow(d), 3L)
+  expect_identical(digest::digest(src, algo = "sha256", file = TRUE), before)
+  expect_false(file.exists(file.path(dir, "built.schema.csv")))
+  expect_false(file.exists(manifest))
+  expect_identical(.reader_provenance(src), paste("arrow", as.character(utils::packageVersion("arrow"))))
+})

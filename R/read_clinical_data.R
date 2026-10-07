@@ -21,6 +21,8 @@
 #'   \item{\code{.xlsx}, \code{.xls}}{Excel workbooks via
 #'     \code{readxl::read_excel()}}
 #'   \item{\code{.rds}}{R serialized objects via \code{readRDS()}}
+#'   \item{\code{.parquet}}{Parquet files via \code{arrow::read_parquet()}; needs
+#'     the \pkg{arrow} package}
 #' }
 #'
 #' @details
@@ -147,7 +149,7 @@ read_clinical_data <- function(file, convert_types = FALSE, ...,
   if (!nzchar(ext))
     stop(
       "Cannot determine file type: '", file, "' has no extension. ",
-      "Supported formats: .sas7bdat, .csv, .xlsx, .xls, .rds",
+      "Supported formats: .sas7bdat, .csv, .xlsx, .xls, .rds, .parquet",
       call. = FALSE
     )
 
@@ -159,9 +161,16 @@ read_clinical_data <- function(file, convert_types = FALSE, ...,
     xlsx     = ,
     xls      = readxl::read_excel(file),
     rds      = readRDS(file),
+    parquet  = {
+      if (!requireNamespace("arrow", quietly = TRUE)) {
+        stop("Reading '", file, "' needs the arrow package. Install it with install.packages(\"arrow\").",
+             call. = FALSE)
+      }
+      arrow::read_parquet(file)
+    },
     stop(
       "Unsupported file type: '.", ext, "' in '", file, "'. ",
-      "Supported formats: .sas7bdat, .csv, .xlsx, .xls, .rds",
+      "Supported formats: .sas7bdat, .csv, .xlsx, .xls, .rds, .parquet",
       call. = FALSE
     )
   )

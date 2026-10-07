@@ -84,7 +84,7 @@ test_that("read_clinical_data errors on missing file", {
 })
 
 test_that("read_clinical_data errors on unsupported format", {
-  tmp <- tempfile(fileext = ".parquet")
+  tmp <- tempfile(fileext = ".json")
   on.exit(unlink(tmp))
   writeLines("dummy", tmp)
 
@@ -179,4 +179,20 @@ test_that("convert_types = TRUE still converts", {
   d <- read_clinical_data(tmp, convert_types = TRUE)
 
   expect_true(is.logical(d$dead))
+})
+
+test_that("a parquet file is read like any other format", {
+  skip_if_not_installed("arrow")
+  f <- withr::local_tempfile(fileext = ".parquet")
+  arrow::write_parquet(data.frame(id = 1:3, x = c(1.5, 2.5, 3.5)), f)
+  d <- read_clinical_data(f, convert_types = FALSE)
+  expect_s3_class(d, "data.frame")
+  expect_identical(nrow(d), 3L)
+  expect_identical(names(d), c("id", "x"))
+})
+
+test_that("the unsupported-format message lists parquet", {
+  f <- withr::local_tempfile(fileext = ".json")
+  file.create(f)
+  expect_error(read_clinical_data(f, convert_types = FALSE), ".parquet", fixed = TRUE)
 })

@@ -85,6 +85,7 @@
                 sas7bdat = "haven",
                 xlsx     = ,
                 xls      = "readxl",
+                parquet  = "arrow",
                 NULL)
   if (is.null(pkg)) return(NULL)
   paste(pkg, as.character(utils::packageVersion(pkg)))
@@ -200,6 +201,10 @@
   }
 
   if (!.cache_enabled()) return(reader(path))
+
+  # A parquet source has no cache: its derived name, <stem>.parquet, is the
+  # source itself, so writing the cache would overwrite the data being read.
+  if (identical(tolower(tools::file_ext(path)), "parquet")) return(reader(path))
 
   if (!refresh && .cache_valid(path, derived, entry)) {
     # An unreadable parquet -- truncated, corrupted, an interrupted write
