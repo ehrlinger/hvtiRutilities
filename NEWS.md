@@ -20,6 +20,10 @@
   vignette, and `pkgdown/extra.css` gives the pkgdown site's articles the
   same arrangement.
 
+* `DESCRIPTION` now declares the Quarto command line tool in
+  `SystemRequirements`. The vignettes have always needed it to build; the
+  field makes that visible to installers and to `R CMD check`.
+
 # hvtiRutilities 1.4.5
 
 ## Breaking changes
