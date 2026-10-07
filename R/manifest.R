@@ -71,7 +71,9 @@
 #' file in a \code{manifest.yaml}. If the manifest already contains an entry
 #' for the named file it is updated in place; otherwise a new entry is
 #' appended. The manifest is intended to be committed to version control while
-#' the data files themselves are not.
+#' the data files themselves are not. It refuses a file a study
+#' registers as dated versions, whose entry it would flatten; use the
+#' no-argument form for those.
 #'
 #' Row counts are detected automatically for \strong{CSV} (\code{.csv}) files.
 #' For \strong{SAS} (\code{.sas7bdat}) and \strong{Excel} (\code{.xlsx},
@@ -242,6 +244,13 @@ update_manifest <- function(file,
     function(d) identical(d$file, entry$file),
     logical(1)
   )
+
+  if (any(existing) && .is_versioned(manifest$datasets[[which(existing)]])) {
+    stop("update_manifest(): ", entry$file, " is registered as dated versions (current: ",
+         manifest$datasets[[which(existing)]]$parquet, "). Recording it as a single file would drop ",
+         "every registered version. To register a rebuilt ", entry$file, ", run ",
+         "hvtiRutilities::update_manifest() with no arguments from inside the study.", call. = FALSE)
+  }
 
   if (any(existing)) {
     manifest$datasets[[which(existing)]] <- entry

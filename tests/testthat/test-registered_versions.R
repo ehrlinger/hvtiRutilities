@@ -497,3 +497,21 @@ test_that("a migration whose manifest write fails puts a recovered cache back", 
   expect_identical(unname(tools::md5sum(cache)), before)
   expect_identical(list.files(data_dir, pattern = "_2026"), character())
 })
+
+test_that("update_manifest(file, ...) refuses to flatten a registered dataset", {
+  root <- versioned_study()
+  before <- readLines(file.path(root, "manifest.yaml"))
+  expect_error(update_manifest(built_path(study_config(root)), manifest_path = file.path(root, "manifest.yaml")),
+               "with no arguments", fixed = TRUE)
+  expect_identical(readLines(file.path(root, "manifest.yaml")), before)
+})
+
+test_that("the version date is the source's local modification date", {
+  skip_if_not_installed("arrow")
+  withr::local_timezone("America/New_York")
+  dir <- withr::local_tempdir()
+  src <- write_source_csv(dir)
+  # 01:30 UTC on 7 October is 21:30 on 6 October in New York.
+  Sys.setFileTime(src, as.POSIXct("2026-10-07 01:30:00", tz = "UTC"))
+  expect_identical(.mtime_date(src), "2026-10-06")
+})

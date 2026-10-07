@@ -278,7 +278,7 @@ register_data <- function(root = getwd(), built, dataset = "study",
     raw$additional_datasets[[dataset]] <- contract
   }
 
-  if (is.null(extract_date)) extract_date <- as.Date(file.info(path)$mtime)
+  if (is.null(extract_date)) extract_date <- .mtime_date(path)
   version_files <- character()
   entry <- if (is.null(release)) {
     version <- .write_version(path, dirname(path), extract_date)

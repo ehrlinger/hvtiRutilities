@@ -50,6 +50,12 @@
   }
 }
 
+# The local calendar date a file was last written. as.Date() on an mtime
+# converts in UTC, which files an evening rebuild in the Americas under the
+# next day; format() uses the session's time zone, as a person reading the
+# file listing would.
+.mtime_date <- function(path) format(file.info(path)$mtime, "%Y-%m-%d")
+
 .source_stamp <- function(path) {
   info <- file.info(path)
   list(source_size = as.numeric(info$size),
@@ -157,7 +163,7 @@
   dir <- dirname(source_path)
   history <- if (is.list(entry$history)) entry$history else list()
   taken <- c(entry$parquet, vapply(history, function(h) h$parquet, character(1)))
-  date <- if (is.null(extract_date)) as.Date(file.info(source_path)$mtime) else extract_date
+  date <- if (is.null(extract_date)) .mtime_date(source_path) else extract_date
   version <- .write_version(source_path, dir, date, taken, caller = "update_manifest")
   list(
     entry = .versioned_entry(entry$file, version, extra = .entry_extra(entry),
@@ -303,7 +309,7 @@
   restore <- list(from = character(), to = character())
   returned <- FALSE
   if (unchanged) {
-    date <- if (is.null(entry$extract_date)) as.Date(file.info(source_path)$mtime) else entry$extract_date
+    date <- if (is.null(entry$extract_date)) .mtime_date(source_path) else entry$extract_date
   } else {
     old <- .recover_cached_version(entry, source_path)
     if (is.null(old)) {
@@ -319,7 +325,7 @@
       note <- paste0("previous version recovered from the read cache as ", old$parquet,
                      ", not from the original ", entry$file)
     }
-    date <- if (is.null(extract_date)) as.Date(file.info(source_path)$mtime) else extract_date
+    date <- if (is.null(extract_date)) .mtime_date(source_path) else extract_date
   }
   taken <- vapply(history, function(h) h$parquet, character(1))
   version <- .write_version(source_path, dirname(source_path), date, taken, caller = "update_manifest")
