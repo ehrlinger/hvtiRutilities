@@ -363,3 +363,120 @@ test_that("update_manifest() in a study with no registered dataset names registe
   withr::local_dir(root)
   expect_error(update_manifest(), "register_data()", fixed = TRUE)
 })
+
+# A legacy study whose read cache has been populated, as any study that ran a job has.
+legacy_with_cache <- function(env = parent.frame()) {
+  skip_if_not_installed("arrow")
+  root <- make_legacy_registered_study(withr::local_tempdir(.local_envir = env))
+  read_built(study_config(root))
+  root
+}
+
+test_that("migration converts an untouched source and drops the old cache", {
+  root <- legacy_with_cache()
+  withr::local_dir(root)
+
+  expect_message(out <- update_manifest(), "migrated|registered")
+  expect_identical(out$action, "migrated")
+  e <- manifest_entry_for(root)
+  expect_identical(e$parquet, "built_20260915.parquet")
+  expect_null(e$history)
+  expect_false(file.exists(file.path(study_dir("datasets", root), "built.parquet")))
+})
+
+test_that("migration after an overwrite recovers the old version from the cache", {
+  root <- legacy_with_cache()
+  rebuild_source(root, data.frame(id = 1:5, dead = c(1L, 0L, 0L, 0L, 1L), iv_dead = 1:5))
+  withr::local_dir(root)
+
+  expect_message(out <- update_manifest(), "recovered from the read cache", fixed = TRUE)
+  e <- manifest_entry_for(root)
+  expect_identical(e$parquet, "built_20261007.parquet")
+  expect_identical(e$history[[1L]]$parquet, "built_20260915.parquet")
+  expect_identical(e$history[[1L]]$recovered_from, "cache")
+  expect_identical(verify_manifest()$status, c("OK", "OK"))
+})
+
+test_that("migrating a study whose source is built.parquet never touches the source", {
+  skip_if_not_installed("arrow")
+  root <- file.path(withr::local_tempdir(), "study")
+  suppressMessages(study_setup(root, "Legacy parquet", 42L))
+  src <- file.path(study_dir("datasets", root), "built.parquet")
+  arrow::write_parquet(data.frame(id = 1:3), src)
+  raw <- yaml::read_yaml(file.path(root, "_study.yml"))
+  raw$built <- "built.parquet"
+  yaml::write_yaml(raw, file.path(root, "_study.yml"))
+  entry <- .registration_manifest_entry(src, data.frame(id = 1:3), "2026-09-15", NULL)
+  yaml::write_yaml(list(datasets = list(entry)), file.path(root, "manifest.yaml"))
+  withr::local_dir(root)
+
+  # Unchanged: converted, and the source is left in place.
+  suppressMessages(update_manifest())
+  expect_true(file.exists(src))
+  expect_identical(manifest_entry_for(root, "built.parquet")$parquet, "built_20260915.parquet")
+})
+
+test_that("an overwritten parquet source is not mistaken for a cache", {
+  skip_if_not_installed("arrow")
+  root <- file.path(withr::local_tempdir(), "study")
+  suppressMessages(study_setup(root, "Legacy parquet overwritten", 42L))
+  src <- file.path(study_dir("datasets", root), "built.parquet")
+  arrow::write_parquet(data.frame(id = 1:3), src)
+  raw <- yaml::read_yaml(file.path(root, "_study.yml"))
+  raw$built <- "built.parquet"
+  yaml::write_yaml(raw, file.path(root, "_study.yml"))
+  entry <- .registration_manifest_entry(src, data.frame(id = 1:3), "2026-09-15", NULL)
+  yaml::write_yaml(list(datasets = list(entry)), file.path(root, "manifest.yaml"))
+  arrow::write_parquet(data.frame(id = 1:5), src)
+  Sys.setFileTime(src, as.POSIXct("2026-10-07 12:00:00", tz = "UTC"))
+  withr::local_dir(root)
+
+  expect_message(update_manifest(), "cannot be recovered", fixed = TRUE)
+  expect_true(file.exists(src))
+  expect_identical(nrow(arrow::read_parquet(src)), 5L)
+  expect_null(manifest_entry_for(root, "built.parquet")$history)
+})
+
+test_that("migration after an overwrite with no usable cache says the old version is gone", {
+  skip_if_not_installed("arrow")
+  root <- make_legacy_registered_study(withr::local_tempdir())
+  rebuild_source(root, data.frame(id = 1:5, dead = c(1L, 0L, 0L, 0L, 1L), iv_dead = 1:5))
+  withr::local_dir(root)
+
+  expect_message(update_manifest(), "cannot be recovered", fixed = TRUE)
+  e <- manifest_entry_for(root)
+  expect_identical(e$parquet, "built_20261007.parquet")
+  expect_null(e$history)
+})
+
+test_that("a migration that fails after recovering the cache puts the cache back", {
+  root <- legacy_with_cache()
+  data_dir <- study_dir("datasets", root)
+  cache <- file.path(data_dir, c("built.parquet", "built.schema.csv"))
+  before <- unname(tools::md5sum(cache))
+  manifest_before <- readLines(file.path(root, "manifest.yaml"))
+  rebuild_source(root, data.frame(id = 1:5, dead = c(1L, 0L, 0L, 0L, 1L), iv_dead = 1:5))
+  withr::local_dir(root)
+  local_mocked_bindings(.write_version = function(...) stop("conversion failed"))
+
+  expect_error(update_manifest(), "conversion failed")
+  expect_identical(unname(tools::md5sum(cache)), before)
+  expect_false(file.exists(file.path(data_dir, "built_20260915.parquet")))
+  expect_identical(readLines(file.path(root, "manifest.yaml")), manifest_before)
+})
+
+test_that("a migration that fails keeps the legacy cache of an untouched source", {
+  root <- legacy_with_cache()
+  cache <- file.path(study_dir("datasets", root), c("built.parquet", "built.schema.csv"))
+  withr::local_dir(root)
+  # Fail only the manifest write, after the new version has been converted.
+  real_atomic_write <- .atomic_write
+  local_mocked_bindings(.atomic_write = function(target, write_fn) {
+    if (identical(basename(target), "manifest.yaml")) stop("disk full")
+    real_atomic_write(target, write_fn)
+  })
+
+  expect_error(suppressMessages(update_manifest()), "disk full")
+  expect_true(all(file.exists(cache)))
+  expect_false(file.exists(file.path(study_dir("datasets", root), "built_20260915.parquet")))
+})

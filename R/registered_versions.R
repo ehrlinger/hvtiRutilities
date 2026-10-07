@@ -196,8 +196,15 @@
   manifest_path <- file.path(cfg$root, "manifest.yaml")
   manifest <- yaml::read_yaml(manifest_path)
   written <- character()
+  # A recovered cache was renamed, not copied: it is the only copy of that
+  # version, so a failed update renames it back rather than deleting it.
+  restore <- list(from = character(), to = character())
+  drop <- character()
   committed <- FALSE
-  on.exit(if (!committed) unlink(written), add = TRUE)
+  on.exit(if (!committed) {
+    unlink(written)
+    file.rename(restore$from, restore$to)
+  }, add = TRUE)
   rows <- list()
 
   for (name in targets) {
@@ -228,6 +235,9 @@
       .migrate_entry(entry, source_path, extract_date)
     }
     written <- c(written, step$written)
+    restore$from <- c(restore$from, step$restore$from)
+    restore$to <- c(restore$to, step$restore$to)
+    drop <- c(drop, step$drop)
     manifest$datasets[[hit]] <- step$entry
     rows[[name]] <- .manifest_update_row(name, step$action, step$detail)
   }
@@ -237,6 +247,7 @@
     .atomic_write(manifest_path, function(tmp) yaml::write_yaml(manifest, tmp))
   }
   committed <- TRUE
+  unlink(drop)
   message(paste0(format(out$dataset), ": ", out$detail, collapse = "\n"))
   if (any(out$action %in% c("registered", "migrated"))) {
     message("Commit manifest.yaml so the record of which version is current travels with the study.")
@@ -244,7 +255,89 @@
   invisible(out)
 }
 
+# The old read cache (<stem>.parquet and <stem>.schema.csv beside the source)
+# still holds the version registered before the source was overwritten when
+# its row count, column count and column record match the old entry. Rename it
+# to a dated version rather than copy it: it is the only copy.
+.recover_cached_version <- function(entry, source_path) {
+  # A parquet source has no cache: <stem>.parquet is the source itself, and
+  # renaming it would take the data away. Never recover from it.
+  if (identical(tolower(tools::file_ext(source_path)), "parquet")) return(NULL)
+  cache <- .derived_paths(source_path)
+  usable <- file.exists(cache$parquet) && file.exists(cache$schema) && !is.null(entry$schema_sha256) &&
+    identical(digest::digest(cache$schema, algo = "sha256", file = TRUE), entry$schema_sha256)
+  if (!usable) return(NULL)
+  d <- tryCatch(arrow::read_parquet(cache$parquet), error = function(e) NULL)
+  if (is.null(d) || !identical(nrow(d), as.integer(entry$n_rows)) ||
+        (!is.null(entry$n_cols) && !identical(ncol(d), as.integer(entry$n_cols)))) {
+    return(NULL)
+  }
+  dir <- dirname(source_path)
+  date <- if (is.null(entry$extract_date)) Sys.Date() else entry$extract_date
+  name <- .version_filename(tools::file_path_sans_ext(entry$file), date, dir)
+  parquet <- file.path(dir, name)
+  schema <- file.path(dir, .version_schema_name(name))
+  if (!file.rename(cache$parquet, parquet)) return(NULL)
+  if (!file.rename(cache$schema, schema)) {
+    file.rename(parquet, cache$parquet)
+    return(NULL)
+  }
+  record <- list(parquet = name, sha256 = digest::digest(parquet, algo = "sha256", file = TRUE),
+                 source_sha256 = entry$sha256, extract_date = format(as.Date(date), "%Y-%m-%d"),
+                 n_rows = as.integer(nrow(d)), n_cols = as.integer(ncol(d)),
+                 schema_sha256 = entry$schema_sha256, recovered_from = "cache")
+  if (!is.null(entry$reader)) record$reader <- entry$reader
+  record
+}
+
+# A study registered before 2026-10 has role "source" and no parquet. Its first
+# update converts it. Three cases: the source still matches (convert it, as a
+# fresh registration on its original date); it was overwritten and the cache
+# still holds the old data (keep that as the earlier version); or neither (say
+# the earlier version is gone, and register the new one anyway).
 .migrate_entry <- function(entry, source_path, extract_date) {
-  stop("update_manifest(): ", entry$file, " was registered before 2026-10; migration arrives with Task 6.",
-       call. = FALSE)
+  unchanged <- identical(entry$sha256, digest::digest(source_path, algo = "sha256", file = TRUE))
+  history <- list()
+  note <- NULL
+  restore <- list(from = character(), to = character())
+  returned <- FALSE
+  if (unchanged) {
+    date <- if (is.null(entry$extract_date)) as.Date(file.info(source_path)$mtime) else entry$extract_date
+  } else {
+    old <- .recover_cached_version(entry, source_path)
+    if (is.null(old)) {
+      note <- paste0("the previous version cannot be recovered: ", entry$file,
+                     " was overwritten and no matching cached copy exists")
+    } else {
+      history <- list(old)
+      cache <- .derived_paths(source_path)
+      restore <- list(from = file.path(dirname(source_path), c(old$parquet, .version_schema_name(old$parquet))),
+                      to = c(cache$parquet, cache$schema))
+      # Until this function returns, its caller cannot undo the rename.
+      on.exit(if (!returned) file.rename(restore$from, restore$to), add = TRUE)
+      note <- paste0("previous version recovered from the read cache as ", old$parquet,
+                     ", not from the original ", entry$file)
+    }
+    date <- if (is.null(extract_date)) as.Date(file.info(source_path)$mtime) else extract_date
+  }
+  taken <- vapply(history, function(h) h$parquet, character(1))
+  version <- .write_version(source_path, dirname(source_path), date, taken, caller = "update_manifest")
+  # The superseded cache is dropped once the manifest is written, so a failed
+  # update leaves the legacy entry and its sidecar intact. Never a parquet
+  # source, whose derived name is itself.
+  drop <- if (unchanged && !identical(tolower(tools::file_ext(source_path)), "parquet")) {
+    unlist(.derived_paths(source_path), use.names = FALSE)
+  } else {
+    character()
+  }
+  returned <- TRUE
+  list(
+    entry = .versioned_entry(entry$file, version, extra = .entry_extra(entry), history = history),
+    restore = restore,
+    drop = drop,
+    written = file.path(dirname(source_path), c(version$parquet, .version_schema_name(version$parquet))),
+    action = "migrated",
+    detail = paste0("registered ", version$parquet, " (", version$n_rows, " rows, ", version$n_cols, " columns)",
+                    if (!is.null(note)) paste0("; ", note) else "")
+  )
 }
