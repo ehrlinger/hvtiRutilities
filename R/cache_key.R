@@ -391,10 +391,12 @@
 }
 
 # Versions of the packages the code's functions come from: every pkg:: in the
-# code, and for each bare function name the namespace that defines it.
-# Base-priority packages are left out; R's own version is recorded separately
-# and not compared.
-.cache_packages <- function(code, env) {
+# code, for each bare function name the namespace that defines it, and any
+# package named in `extra` (cache_fit()'s `packages`, for a package that runs
+# beneath a wrapper and so never appears as a call head). Base-priority
+# packages are left out; R's own version is recorded separately and not
+# compared.
+.cache_packages <- function(code, env, extra = character(0)) {
   heads <- .cache_heads(code)
   from_bare <- character(0)
   for (fn in heads$bare) {
@@ -405,7 +407,7 @@
       from_bare <- c(from_bare, nm)
     }
   }
-  pkgs <- sort(unique(c(heads$ns, from_bare)))
+  pkgs <- sort(unique(c(heads$ns, from_bare, extra)))
   pkgs <- pkgs[!vapply(pkgs, .cache_is_base_package, logical(1))]
   out <- list()
   for (p in pkgs) {
@@ -415,11 +417,11 @@
   out
 }
 
-.cache_key <- function(code, env, seed) {
+.cache_key <- function(code, env, seed, packages = character(0)) {
   list(
     code         = .cache_code_text(code),
     inputs       = .cache_inputs(code, env),
-    packages     = .cache_packages(code, env),
+    packages     = .cache_packages(code, env, packages),
     seed         = seed,
     reproducible = TRUE,
     r_version    = R.version.string

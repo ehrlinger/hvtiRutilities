@@ -494,3 +494,63 @@ test_that(".cache_show truncates a long value to 60 characters", {
   expect_identical(nchar(shown), 60L)
   expect_identical(shown, paste0(strrep("a", 57L), "..."))
 })
+
+test_that("packages named in `extra` join the key though no call head names them", {
+  # gg_partial_rfsrc() is the motivating case: its head names ggRandomForests
+  # only, while randomForestSRC computes the result.
+  pk <- hvtiRutilities:::.cache_packages(quote(sum(x)), environment(), "digest")
+  expect_identical(names(pk), "digest")
+  expect_identical(pk$digest, as.character(utils::packageVersion("digest")))
+
+  # Merged with the heads, without duplicating one also called directly, and a
+  # base-priority package is still left out.
+  pk2 <- hvtiRutilities:::.cache_packages(
+    quote(jsonlite::toJSON(x)), environment(), c("digest", "jsonlite", "stats")
+  )
+  expect_identical(names(pk2), c("digest", "jsonlite"))
+
+  # No extra leaves the key exactly as before, so existing caches stay valid.
+  expect_identical(
+    hvtiRutilities:::.cache_key(quote(sum(x)), environment(), NULL),
+    hvtiRutilities:::.cache_key(quote(sum(x)), environment(), NULL, character(0))
+  )
+})
+
+test_that("an upgrade of a `packages` dependency makes the cache stale", {
+  dir <- withr::local_tempdir()
+  x <- c(3, 1, 2)
+  first <- suppressMessages(
+    cache_fit("wrapped", sort(x), dir = dir, packages = "digest")
+  )
+  expect_identical(attr(first, "hvtiRutilities_cache_key")$packages$digest,
+                   as.character(utils::packageVersion("digest")))
+
+  # Simulate the cache having been written under an older digest.
+  path <- file.path(dir, "wrapped.rds")
+  rec <- readRDS(path)
+  rec$key$packages$digest <- "0.0.1"
+  saveRDS(rec, path)
+
+  expect_error(
+    suppressMessages(cache_fit("wrapped", sort(x), dir = dir, packages = "digest")),
+    class = "hvtiRutilities_stale_cache"
+  )
+  expect_error(
+    suppressMessages(cache_fit("wrapped", sort(x), dir = dir, packages = "digest")),
+    "packages\\$digest  0\\.0\\.1"
+  )
+  refit <- suppressMessages(
+    cache_fit("wrapped", sort(x), dir = dir, packages = "digest", refit = TRUE)
+  )
+  expect_identical(as.numeric(refit), c(1, 2, 3))
+})
+
+test_that("`packages` must name installed packages", {
+  dir <- withr::local_tempdir()
+  expect_error(cache_fit("p", sum(1), dir = dir, packages = 1),
+               "character vector")
+  expect_error(cache_fit("p", sum(1), dir = dir, packages = NA_character_),
+               "character vector")
+  expect_error(cache_fit("p", sum(1), dir = dir, packages = "notAPackageXYZ"),
+               "not installed: notAPackageXYZ")
+})
