@@ -212,3 +212,45 @@ test_that("provenance records the registered parquet, not the source", {
   rec <- provenance_data(cfg = study_config(root))
   expect_match(rec$path, "built_20260915[.]parquet$")
 })
+
+test_that("verify_manifest checks the version and treats a rebuilt source as pending", {
+  root <- versioned_study()
+  cfg <- study_config(root)
+  manifest <- file.path(root, "manifest.yaml")
+
+  rep <- verify_manifest(manifest)
+  expect_identical(rep$status, "OK")
+
+  utils::write.csv(data.frame(id = 1:4, DEAD = c(1L, 1L, 0L, 0L)), built_path(cfg), row.names = FALSE)
+  expect_no_error(rep <- verify_manifest(manifest))
+  expect_identical(rep$status, c("OK", "PENDING"))
+  expect_match(rep$message[[2L]], "update_manifest()", fixed = TRUE)
+})
+
+test_that("verify_manifest stops on an edited version with the restore message", {
+  root <- versioned_study()
+  cat("tamper", file = file.path(study_dir("datasets", root), "built_20260915.parquet"), append = TRUE)
+  expect_error(verify_manifest(file.path(root, "manifest.yaml")), "restore it from backup")
+})
+
+test_that("verify_manifest finds the study's manifest from a subfolder", {
+  root <- versioned_study()
+  withr::local_dir(study_dir("datasets", root))
+  expect_identical(verify_manifest()$status, "OK")
+})
+
+test_that("a legacy checksum mismatch names update_manifest()", {
+  root <- make_legacy_registered_study(withr::local_tempdir())
+  path <- file.path(study_dir("datasets", root), "built.csv")
+  utils::write.csv(data.frame(id = 1:9), path, row.names = FALSE)
+  expect_error(verify_manifest(file.path(root, "manifest.yaml")), "update_manifest()", fixed = TRUE)
+})
+
+test_that("study_status reports a rebuilt source as pending, not failed", {
+  root <- versioned_study()
+  utils::write.csv(data.frame(id = 1:4, DEAD = c(1L, 1L, 0L, 0L)), built_path(study_config(root)), row.names = FALSE)
+  st <- study_status(root)
+  row <- st$checks[st$checks$item == "manifest.yaml", , drop = FALSE]
+  expect_identical(row$status, "PENDING")
+  expect_match(row$detail, "update_manifest()", fixed = TRUE)
+})

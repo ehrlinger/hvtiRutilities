@@ -52,6 +52,11 @@ when one is configured that row adds \emph{as of the last fetch}. When a
 closure or reopening tag in this copy is not on its \code{main}, the state
 cannot be determined and the row has status \code{"UNKNOWN"}.
 
+The \code{manifest.yaml} row is \code{"PENDING"} when a dataset registered
+as a dated parquet has had its source file rebuilt since registration. Jobs
+keep reading the registered version; the detail names the datasets and
+\code{\link{update_manifest}()}, which registers the rebuild.
+
 Release-aware datasets add an \code{update:<dataset>} row with status
 \code{"CURRENT"}, \code{"UPDATE AVAILABLE"},
 \code{"UPDATE STATUS UNKNOWN"}, or \code{"FAIL"}. Legacy studies retain

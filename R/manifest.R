@@ -226,6 +226,48 @@ update_manifest <- function(file,
   invisible(manifest)
 }
 
+# Inside a study, the study's manifest; elsewhere, manifest.yaml here. A job run
+# from a subfolder used to check a manifest.yaml in its own folder.
+.default_manifest_path <- function() {
+  cfg <- tryCatch(study_config(require_data = FALSE), error = function(e) NULL)
+  if (is.null(cfg)) "manifest.yaml" else file.path(cfg$root, "manifest.yaml")
+}
+
+.verify_row <- function(file, status, message) {
+  data.frame(file = file, status = status, message = message, row_count_checked = FALSE,
+             stringsAsFactors = FALSE)
+}
+
+# One row per registered version (current first), plus a PENDING row when the
+# source has been rebuilt since. A version is registered data, so a missing or
+# edited one FAILs with the restore instruction; a rebuilt source is expected.
+.verify_versioned_entry <- function(entry, resolve) {
+  versions <- c(list(.history_record(entry)), if (is.list(entry$history)) entry$history else list())
+  rows <- lapply(seq_along(versions), function(i) {
+    v <- versions[[i]]
+    label <- if (i == 1L) entry$file else paste0(entry$file, " (", v$extract_date, ")")
+    target <- resolve(v$parquet)
+    restore <- " It is registered data and cannot be rebuilt from its source; restore it from backup and tell the study's data manager."
+    if (!file.exists(target)) return(.verify_row(label, "FAIL", paste0(v$parquet, " is missing.", restore)))
+    if (!identical(digest::digest(target, algo = "sha256", file = TRUE), v$sha256)) {
+      return(.verify_row(label, "FAIL", paste0(v$parquet, " does not match its recorded checksum.", restore)))
+    }
+    if (!is.null(v$schema_sha256)) {
+      side <- resolve(.version_schema_name(v$parquet))
+      if (!file.exists(side) || !identical(digest::digest(side, algo = "sha256", file = TRUE), v$schema_sha256)) {
+        return(.verify_row(label, "FAIL", paste0(.version_schema_name(v$parquet),
+                                                 " is missing or does not match its recorded checksum.", restore)))
+      }
+    }
+    .verify_row(label, "OK", paste0("SHA-256 match (", v$parquet, ", n = ", v$n_rows, ")"))
+  })
+  if (.source_changed(resolve(entry$file), entry)) {
+    rows[[length(rows) + 1L]] <- .verify_row(entry$file, "PENDING",
+                                             trimws(conditionMessage(.source_changed_condition(entry))))
+  }
+  do.call(rbind, rows)
+}
+
 ## =============================================================================
 #' Verify all datasets listed in a manifest
 #'
@@ -258,12 +300,20 @@ update_manifest <- function(file,
 #' \code{row_count_checked} column is \code{TRUE} only in the first case, and
 #' the message names which of the three it was.
 #'
-#' Call this function at the top of every analysis script or Quarto document
+   #' For a dataset registered with \code{\link{register_data}}, every registered
+   #' version (the current dated parquet and each earlier one) is checked. A
+   #' source file rebuilt since registration is reported with status
+   #' \code{"PENDING"} and never stops: jobs keep reading the registered version
+   #' until \code{\link{update_manifest}()} registers the new one.
+   #'
+   #' Call this function at the top of every analysis script or Quarto document
 #' to ensure data integrity before any results are generated.
 #'
-#' @param manifest_path Character. Path to the manifest YAML file.
-#'   Defaults to \code{"manifest.yaml"} in the current working directory.
-#' @param data_dir Character. Directory holding the dataset files. When
+   #' @param manifest_path Character. Path to the manifest YAML file. Defaults to
+   #'   the study's \code{manifest.yaml} when run inside a study (a
+   #'   \code{_study.yml} here or above), and to \code{"manifest.yaml"} in the
+   #'   working directory otherwise.
+   #' @param data_dir Character. Directory holding the dataset files. When
 #'   supplied, it is used exactly as given. When \code{NULL} (default), the
 #'   manifest directory is inspected once. \code{00_datasets/} supports the
 #'   numbered layout created by \code{\link{study_setup}}, \code{datasets/}
@@ -321,7 +371,7 @@ update_manifest <- function(file,
 #'
 #' @seealso \code{\link{update_manifest}}
 #' @export
-verify_manifest <- function(manifest_path = "manifest.yaml",
+verify_manifest <- function(manifest_path = .default_manifest_path(),
                             data_dir      = NULL,
                             stop_on_error = TRUE,
                             verbose       = FALSE,
@@ -368,7 +418,9 @@ verify_manifest <- function(manifest_path = "manifest.yaml",
       entry_files <- vapply(
         manifest$datasets,
         function(entry) {
-          if (identical(entry$role, "primary")) {
+          if (.is_versioned(entry)) {
+            entry$parquet
+          } else if (identical(entry$role, "primary")) {
             basename(.derived_paths(entry$file)$parquet)
           } else {
             entry$file
@@ -387,6 +439,7 @@ verify_manifest <- function(manifest_path = "manifest.yaml",
   }
 
   results <- lapply(manifest$datasets, function(entry) {
+    if (.is_versioned(entry)) return(.verify_versioned_entry(entry, resolve_entry))
     # sha256 describes whichever file `role` makes authoritative. `file`
     # never changes on promotion (it names the dataset, not the file
     # currently storing it), so which physical file to hash cannot be
@@ -441,7 +494,9 @@ verify_manifest <- function(manifest_path = "manifest.yaml",
         file    = entry$file,
         status  = "FAIL",
         message = paste0("SHA-256 mismatch\n  expected: ", entry$sha256,
-                         "\n  actual:   ", sha256),
+                         "\n  actual:   ", sha256,
+                         "\n  If this file was rebuilt on purpose, run hvtiRutilities::update_manifest() ",
+                         "to register the new version."),
         row_count_checked = FALSE,
         stringsAsFactors = FALSE
       ))
