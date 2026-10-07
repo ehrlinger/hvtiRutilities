@@ -1,4 +1,5 @@
 registration_study <- function() {
+  testthat::skip_if_not_installed("arrow")
   root <- file.path(withr::local_tempdir(.local_envir = parent.frame()),
                     "study")
   study_setup(root, "Registration fixture", 42L)

@@ -49,6 +49,7 @@ make_study_fixture <- function(dir,
 }
 
 make_registered_study <- function(dir, ancillary = FALSE) {
+  testthat::skip_if_not_installed("arrow")
   root <- file.path(dir, "study")
   study_setup(root, "Registered fixture", 42L)
   data_dir <- study_dir("datasets", root)
@@ -86,5 +87,22 @@ make_registered_study <- function(dir, ancillary = FALSE) {
     )
   }
 
+  root
+}
+
+# A study registered before 2026-10: role "source" and no parquet field. Written
+# directly, because register_data() now writes the versioned form. Used by the
+# tests of the legacy read cache and of migration.
+make_legacy_registered_study <- function(dir, file = "built.csv",
+                                         data = data.frame(id = 1:3, dead = c(1L, 0L, 0L), iv_dead = 1:3)) {
+  root <- file.path(dir, "study")
+  suppressMessages(study_setup(root, "Legacy fixture", 42L))
+  path <- file.path(study_dir("datasets", root), file)
+  utils::write.csv(data, path, row.names = FALSE)
+  raw <- yaml::read_yaml(file.path(root, "_study.yml"))
+  raw$built <- file
+  yaml::write_yaml(raw, file.path(root, "_study.yml"))
+  entry <- .registration_manifest_entry(path, data, "2026-09-15", NULL)
+  yaml::write_yaml(list(datasets = list(entry)), file.path(root, "manifest.yaml"))
   root
 }

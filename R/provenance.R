@@ -375,7 +375,9 @@ provenance_path <- function(path) {
 #' @description
 #' Records the authoritative physical file selected by \code{dataset}. For a
 #' manifest entry with \code{role: "primary"}, this is the promoted Parquet
-#' file rather than the retired source. The returned plain list contains the
+#' file rather than the retired source, and for a dataset registered with
+#' \code{\link{register_data}} it is the registered version, the dated Parquet
+#' file, rather than the source it was converted from. The returned plain list contains the
 #' logical dataset name, a canonical study-relative path, its role, byte count,
 #' modification time, and SHA-256 hash.
 #'
@@ -395,11 +397,7 @@ provenance_data <- function(dataset = "study", cfg = study_config(),
   .study_dataset(cfg, dataset)
   source <- built_path(cfg, dataset)
   entry <- .manifest_entry(file.path(cfg$root, "manifest.yaml"), source)
-  authoritative <- if (identical(entry$role, "primary")) {
-    .derived_paths(source)$parquet
-  } else {
-    source
-  }
+  authoritative <- .authoritative_path(entry, source)
   resolved <- .provenance_relative_path(
     authoritative,
     cfg,

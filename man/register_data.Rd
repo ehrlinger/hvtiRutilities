@@ -46,6 +46,16 @@ Completes the default study data contract or adds one distinctly named
 dataset. The function derives row and column counts from the file and
 replaces \code{_study.yml} and \code{manifest.yaml} only after both updated
 files have been prepared successfully.
+
+Registration converts the file once to a dated parquet in the same folder,
+\code{<name>_YYYYMMDD.parquet}, with its column record beside it as
+\code{<name>_YYYYMMDD.schema.csv}. That parquet is what \code{\link{read_built}}
+and the job templates read, so the source file may be rebuilt freely; run
+\code{\link{update_manifest}()} to register a rebuilt file as a new version.
+The date is the file's modification date unless \code{extract_date} is given.
+Conversion needs the \pkg{arrow} package. A release-aware registration
+(\code{catalog_dataset} and \code{release_id}) records the catalog's file as
+it is and converts nothing.
 }
 \seealso{
 \code{\link{study_setup}}, \code{\link{study_config}},

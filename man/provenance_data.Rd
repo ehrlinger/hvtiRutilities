@@ -19,7 +19,9 @@ A plain list containing one immutable-by-convention data record.
 \description{
 Records the authoritative physical file selected by \code{dataset}. For a
 manifest entry with \code{role: "primary"}, this is the promoted Parquet
-file rather than the retired source. The returned plain list contains the
+file rather than the retired source, and for a dataset registered with
+\code{\link{register_data}} it is the registered version, the dated Parquet
+file, rather than the source it was converted from. The returned plain list contains the
 logical dataset name, a canonical study-relative path, its role, byte count,
 modification time, and SHA-256 hash.
 }

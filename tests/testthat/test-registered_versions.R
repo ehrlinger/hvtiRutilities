@@ -86,3 +86,129 @@ test_that("a versioned entry keeps extra fields and history, and history drops t
   expect_length(e$history, 1L)
   expect_false(any(c("source_size", "source_mtime") %in% names(.history_record(e))))
 })
+
+# A registered study whose source was last modified on 2026-09-15.
+versioned_study <- function(env = parent.frame(), data = data.frame(id = 1:3, DEAD = c(1L, 0L, 0L))) {
+  skip_if_not_installed("arrow")
+  root <- file.path(withr::local_tempdir(.local_envir = env), "study")
+  suppressMessages(study_setup(root, "Versioned fixture", 42L))
+  path <- file.path(study_dir("datasets", root), "built.csv")
+  utils::write.csv(data, path, row.names = FALSE)
+  Sys.setFileTime(path, as.POSIXct("2026-09-15 12:00:00", tz = "UTC"))
+  suppressMessages(register_data(root, "built.csv"))
+  root
+}
+
+manifest_entry_for <- function(root, file = "built.csv") {
+  m <- yaml::read_yaml(file.path(root, "manifest.yaml"))
+  Filter(function(e) identical(e$file, file), m$datasets)[[1L]]
+}
+
+test_that("register_data converts the dataset to a dated parquet", {
+  root <- versioned_study()
+  data_dir <- study_dir("datasets", root)
+  e <- manifest_entry_for(root)
+
+  expect_identical(e$role, "primary")
+  expect_identical(e$parquet, "built_20260915.parquet")
+  expect_identical(e$extract_date, "2026-09-15")
+  expect_true(file.exists(file.path(data_dir, "built_20260915.parquet")))
+  expect_true(file.exists(file.path(data_dir, "built_20260915.schema.csv")))
+  expect_identical(e$sha256, digest::digest(file.path(data_dir, e$parquet), algo = "sha256", file = TRUE))
+  expect_identical(e$source_sha256, digest::digest(file.path(data_dir, "built.csv"), algo = "sha256", file = TRUE))
+  expect_identical(e$n_rows, 3L)
+  expect_null(e$history)
+})
+
+test_that("a parquet source is registered the same way, and is never the copy jobs read", {
+  skip_if_not_installed("arrow")
+  root <- file.path(withr::local_tempdir(), "study")
+  suppressMessages(study_setup(root, "Parquet source", 42L))
+  data_dir <- study_dir("datasets", root)
+  src <- file.path(data_dir, "built.parquet")
+  arrow::write_parquet(data.frame(id = 1:3, dead = c(1L, 0L, 0L)), src)
+  Sys.setFileTime(src, as.POSIXct("2026-09-15 12:00:00", tz = "UTC"))
+  before <- digest::digest(src, algo = "sha256", file = TRUE)
+
+  suppressMessages(register_data(root, "built.parquet"))
+
+  e <- manifest_entry_for(root, "built.parquet")
+  expect_identical(e$parquet, "built_20260915.parquet")
+  expect_identical(e$source_sha256, before)
+  expect_identical(digest::digest(src, algo = "sha256", file = TRUE), before)
+  expect_true(file.exists(file.path(data_dir, "built_20260915.parquet")))
+  expect_match(provenance_data(cfg = study_config(root))$path, "built_20260915[.]parquet$")
+})
+
+test_that("a source already named with a date gets its own version name and is never overwritten", {
+  skip_if_not_installed("arrow")
+  root <- file.path(withr::local_tempdir(), "study")
+  suppressMessages(study_setup(root, "Dated source", 42L))
+  src <- file.path(study_dir("datasets", root), "built_20261007.parquet")
+  arrow::write_parquet(data.frame(id = 1:2), src)
+  Sys.setFileTime(src, as.POSIXct("2026-10-07 12:00:00", tz = "UTC"))
+  before <- digest::digest(src, algo = "sha256", file = TRUE)
+
+  suppressMessages(register_data(root, "built_20261007.parquet"))
+
+  e <- manifest_entry_for(root, "built_20261007.parquet")
+  expect_false(identical(e$parquet, "built_20261007.parquet"))
+  expect_identical(digest::digest(src, algo = "sha256", file = TRUE), before)
+})
+
+test_that("register_data without arrow stops and writes nothing", {
+  root <- file.path(withr::local_tempdir(), "study")
+  suppressMessages(study_setup(root, "No arrow", 42L))
+  path <- file.path(study_dir("datasets", root), "built.csv")
+  utils::write.csv(data.frame(id = 1:2), path, row.names = FALSE)
+  before <- yaml::read_yaml(file.path(root, "_study.yml"))
+  local_mocked_bindings(.arrow_available = function() FALSE)
+
+  expect_error(register_data(root, "built.csv"), "install.packages(\"arrow\")", fixed = TRUE)
+  expect_identical(yaml::read_yaml(file.path(root, "_study.yml")), before)
+  expect_identical(list.files(study_dir("datasets", root)), "built.csv")
+})
+
+test_that("a registration refused after conversion leaves no parquet behind", {
+  root <- versioned_study()
+  # Registering the same file again under another name passes the early checks,
+  # converts it (to built_20260915_r2.parquet), then is refused because the file
+  # is already listed in manifest.yaml. The conversion must be cleaned up.
+  expect_error(register_data(root, "built.csv", dataset = "again", role = "named"), "already listed")
+  expect_identical(list.files(study_dir("datasets", root), pattern = "[.]parquet$"), "built_20260915.parquet")
+})
+
+test_that("read_built reads the registered version and says when the source moved on", {
+  root <- versioned_study()
+  cfg <- study_config(root)
+
+  expect_no_message(d <- read_built(cfg))
+  expect_identical(names(d), c("id", "dead"))
+  expect_identical(nrow(d), 3L)
+
+  utils::write.csv(data.frame(id = 1:4, DEAD = c(1L, 1L, 0L, 0L)), built_path(cfg), row.names = FALSE)
+  expect_message(d <- read_built(cfg), class = "hvtiRutilities_source_changed")
+  expect_identical(nrow(d), 3L)
+})
+
+test_that("read_built stops on an edited or missing registered version", {
+  root <- versioned_study()
+  cfg <- study_config(root)
+  parquet <- file.path(study_dir("datasets", root), "built_20260915.parquet")
+
+  cat("tamper", file = parquet, append = TRUE)
+  expect_error(read_built(cfg), "does not match its recorded checksum")
+  unlink(parquet)
+  expect_error(read_built(cfg), "Restore it from backup")
+})
+
+test_that("refresh does not apply to a registered version and names update_manifest()", {
+  root <- versioned_study()
+  expect_error(read_built(study_config(root), refresh = TRUE), "update_manifest()", fixed = TRUE)
+})
+
+test_that("provenance records the registered parquet, not the source", {
+  root <- versioned_study()
+  rec <- provenance_data(cfg = study_config(root))
+  expect_match(rec$path, "built_20260915[.]parquet$")
+})

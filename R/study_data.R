@@ -117,6 +117,40 @@ built_manifest <- function(cfg = study_config(), dataset = "study") {
   )
 }
 
+# read_built()'s normalisation, shared by the cached-source and
+# registered-version paths so both deliver the same frame.
+.normalise_built <- function(d) {
+  names(d) <- tolower(names(d))
+  logi <- vapply(d, is.logical, logical(1))
+  d[logi] <- lapply(d[logi], as.integer)
+  lab <- vapply(d, function(x) inherits(x, "haven_labelled"), logical(1))
+  d[lab] <- lapply(d[lab], function(x) {
+    a   <- attributes(x)
+    out <- as.vector(x)
+    if (!is.null(a$label)) attr(out, "label") <- a$label
+    out
+  })
+  d
+}
+
+# A registered version is the data: checked against its recorded hash on every
+# read, and never rebuilt from the source, which may have moved on.
+.read_registered_version <- function(source_path, entry) {
+  .require_arrow("read_built")
+  parquet <- .authoritative_path(entry, source_path)
+  if (!file.exists(parquet)) {
+    stop("read_built(): the registered version of ", entry$file, ", ", entry$parquet, ", is missing from ",
+         dirname(parquet), ". It is the data jobs read and cannot be rebuilt from ", entry$file,
+         ". Restore it from backup and tell the study's data manager.", call. = FALSE)
+  }
+  if (!identical(digest::digest(parquet, algo = "sha256", file = TRUE), entry$sha256)) {
+    stop("read_built(): ", entry$parquet, " does not match its recorded checksum. It is the registered data ",
+         "and must not be edited. Restore it from backup and tell the study's data manager.", call. = FALSE)
+  }
+  if (.source_changed(source_path, entry)) message(.source_changed_condition(entry))
+  as.data.frame(arrow::read_parquet(parquet))
+}
+
 # Errors if lowercasing `names(d)` would collide, naming the colliding
 # original names. Called from inside the reader closure passed to
 # .cache_read(), so a collision is caught before any cache artifact --
@@ -150,6 +184,12 @@ built_manifest <- function(cfg = study_config(), dataset = "study") {
 #' Reads the dataset named in \code{_study.yml} and normalises its types so
 #' that both available read paths deliver the same frame.
 #'
+#' For a dataset registered with \code{\link{register_data}}, the registered
+#' version (a dated parquet) is read, after its checksum is checked. If the
+#' source file has been rebuilt since, the registered version is still read
+#' and a message of class \code{hvtiRutilities_source_changed} says so and
+#' names \code{\link{update_manifest}()}.
+#'
 #' For a release-aware contract, the pinned release is verified before cache
 #' access. A later valid release emits a message of class
 #' \code{hvtiRutilities_update_available}; an unavailable catalog or invalid
@@ -175,6 +215,8 @@ built_manifest <- function(cfg = study_config(), dataset = "study") {
 #'   applied out of band. Errors if the manifest entry has
 #'   \code{role: "primary"}: that role means the source has been retired and
 #'   the parquet is authoritative, so there is nothing to refresh from.
+#'   It also errors for a dataset registered as a dated parquet, and names
+#'   \code{\link{update_manifest}()}, which registers a rebuilt source.
 #' @param dataset Character(1). Logical dataset name. Defaults to
 #'   \code{"study"}.
 #' @param allow_withdrawn Logical. If \code{TRUE}, allow a deliberately pinned
@@ -213,6 +255,16 @@ read_built <- function(cfg = study_config(), refresh = FALSE,
   p <- built_path(cfg, dataset)
   manifest_path <- file.path(cfg$root, "manifest.yaml")
 
+  entry <- .manifest_entry(manifest_path, p)
+  if (.is_versioned(entry)) {
+    if (isTRUE(refresh)) {
+      stop("read_built(): refresh = TRUE does not apply to ", basename(p), ", which is registered as ",
+           entry$parquet, ". To register a rebuilt ", basename(p), ", run hvtiRutilities::update_manifest().",
+           call. = FALSE)
+    }
+    return(.normalise_built(.read_registered_version(p, entry)))
+  }
+
   if (!file.exists(p)) {
     # role: "primary" means the source was retired on purpose -- promotion
     # exists precisely so this dataset can still be served with no source on
@@ -250,18 +302,5 @@ read_built <- function(cfg = study_config(), refresh = FALSE,
   # yield two columns named foo and every downstream d$foo would silently take
   # the first. The check above already ruled this out for `d`; this just
   # applies it.
-  names(d) <- tolower(names(d))
-
-  logi <- vapply(d, is.logical, logical(1))
-  d[logi] <- lapply(d[logi], as.integer)
-
-  lab <- vapply(d, function(x) inherits(x, "haven_labelled"), logical(1))
-  d[lab] <- lapply(d[lab], function(x) {
-    a   <- attributes(x)
-    out <- as.vector(x)
-    if (!is.null(a$label)) attr(out, "label") <- a$label
-    out
-  })
-
-  d
+  .normalise_built(d)
 }

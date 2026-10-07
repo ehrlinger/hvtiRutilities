@@ -40,9 +40,12 @@ test_that("provenance_data snapshots a registered file with an explicit role", {
   named <- provenance_data("complete_cases", cfg, role = "validation")
 
   expect_identical(study$dataset, "study")
-  expect_file_record(study, "00_datasets/built.csv", "analysis")
+  # A registered dataset's authoritative file is its dated parquet, not the source.
+  expect_match(study$path, "^00_datasets/built_[0-9]{8}[.]parquet$")
+  expect_file_record(study, study$path, "analysis")
   expect_identical(named$dataset, "complete_cases")
-  expect_file_record(named, "00_datasets/complete.csv", "validation")
+  expect_match(named$path, "^00_datasets/complete_[0-9]{8}[.]parquet$")
+  expect_file_record(named, named$path, "validation")
   expect_identical(
     study$sha256,
     digest::digest(file.path(root, study$path), algo = "sha256", file = TRUE)
@@ -89,7 +92,8 @@ test_that("provenance_artifact snapshots canonical study-relative bytes", {
 test_that("snapshot helpers reject missing files and invalid roles", {
   root <- make_registered_study(withr::local_tempdir())
   cfg <- study_config(root)
-  unlink(built_path(cfg))
+  # The registered version, not the source, is the file provenance records.
+  unlink(file.path(root, provenance_data(cfg = cfg)$path))
 
   expect_error(provenance_data(cfg = cfg), "missing")
   expect_error(provenance_artifact("estimates/no-fit.rds", cfg = cfg),
