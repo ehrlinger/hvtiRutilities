@@ -276,7 +276,8 @@ update_manifest <- function(file,
     v <- versions[[i]]
     label <- if (i == 1L) entry$file else paste0(entry$file, " (", v$extract_date, ")")
     target <- resolve(v$parquet)
-    restore <- " It is registered data and cannot be rebuilt from its source; restore it from backup and tell the study's data manager."
+    restore <- paste0(" It is registered data and cannot be rebuilt from its source; restore it from backup ",
+                      "and tell the study's data manager.")
     if (!file.exists(target)) return(.verify_row(label, "FAIL", paste0(v$parquet, " is missing.", restore)))
     if (!identical(digest::digest(target, algo = "sha256", file = TRUE), v$sha256)) {
       return(.verify_row(label, "FAIL", paste0(v$parquet, " does not match its recorded checksum.", restore)))
@@ -329,20 +330,20 @@ update_manifest <- function(file,
 #' \code{row_count_checked} column is \code{TRUE} only in the first case, and
 #' the message names which of the three it was.
 #'
-   #' For a dataset registered with \code{\link{register_data}}, every registered
-   #' version (the current dated parquet and each earlier one) is checked. A
-   #' source file rebuilt since registration is reported with status
-   #' \code{"PENDING"} and never stops: jobs keep reading the registered version
-   #' until \code{\link{update_manifest}()} registers the new one.
-   #'
-   #' Call this function at the top of every analysis script or Quarto document
+#' For a dataset registered with \code{\link{register_data}}, every registered
+#' version (the current dated parquet and each earlier one) is checked. A
+#' source file rebuilt since registration is reported with status
+#' \code{"PENDING"} and never stops: jobs keep reading the registered version
+#' until \code{\link{update_manifest}()} registers the new one.
+#'
+#' Call this function at the top of every analysis script or Quarto document
 #' to ensure data integrity before any results are generated.
 #'
-   #' @param manifest_path Character. Path to the manifest YAML file. Defaults to
-   #'   the study's \code{manifest.yaml} when run inside a study (a
-   #'   \code{_study.yml} here or above), and to \code{"manifest.yaml"} in the
-   #'   working directory otherwise.
-   #' @param data_dir Character. Directory holding the dataset files. When
+#' @param manifest_path Character. Path to the manifest YAML file. Defaults to
+#'   the study's \code{manifest.yaml} when run inside a study (a
+#'   \code{_study.yml} here or above), and to \code{"manifest.yaml"} in the
+#'   working directory otherwise.
+#' @param data_dir Character. Directory holding the dataset files. When
 #'   supplied, it is used exactly as given. When \code{NULL} (default), the
 #'   manifest directory is inspected once. \code{00_datasets/} supports the
 #'   numbered layout created by \code{\link{study_setup}}, \code{datasets/}

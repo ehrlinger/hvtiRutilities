@@ -89,7 +89,7 @@ test_that("a versioned entry keeps extra fields and history, and history drops t
 
 # A registered study whose source was last modified on 2026-09-15.
 versioned_study <- function(env = parent.frame(), data = data.frame(id = 1:3, DEAD = c(1L, 0L, 0L))) {
-  skip_if_not_installed("arrow")
+  testthat::skip_if_not_installed("arrow")
   root <- file.path(withr::local_tempdir(.local_envir = env), "study")
   suppressMessages(study_setup(root, "Versioned fixture", 42L))
   path <- file.path(study_dir("datasets", root), "built.csv")
@@ -364,13 +364,6 @@ test_that("update_manifest() in a study with no registered dataset names registe
   expect_error(update_manifest(), "register_data()", fixed = TRUE)
 })
 
-# A legacy study whose read cache has been populated, as any study that ran a job has.
-legacy_with_cache <- function(env = parent.frame()) {
-  skip_if_not_installed("arrow")
-  root <- make_legacy_registered_study(withr::local_tempdir(.local_envir = env))
-  read_built(study_config(root))
-  root
-}
 
 test_that("migration converts an untouched source and drops the old cache", {
   root <- legacy_with_cache()

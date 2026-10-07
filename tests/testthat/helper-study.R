@@ -106,3 +106,11 @@ make_legacy_registered_study <- function(dir, file = "built.csv",
   yaml::write_yaml(list(datasets = list(entry)), file.path(root, "manifest.yaml"))
   root
 }
+
+# A legacy study whose read cache has been populated, as any study that ran a job has.
+legacy_with_cache <- function(env = parent.frame()) {
+  testthat::skip_if_not_installed("arrow")
+  root <- make_legacy_registered_study(withr::local_tempdir(.local_envir = env))
+  read_built(study_config(root))
+  root
+}

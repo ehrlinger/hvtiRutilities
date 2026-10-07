@@ -225,8 +225,9 @@
     entry <- manifest$datasets[[hit]]
     source_path <- file.path(study_dir("datasets", cfg$root), contract$built)
     if (!file.exists(source_path)) {
-      rows[[name]] <- .manifest_update_row(name, "unchanged", paste0(contract$built, " is not on disk; jobs keep reading ",
-                                                            if (.is_versioned(entry)) entry$parquet else contract$built))
+      reading <- if (.is_versioned(entry)) entry$parquet else contract$built
+      rows[[name]] <- .manifest_update_row(name, "unchanged",
+                                           paste0(contract$built, " is not on disk; jobs keep reading ", reading))
       next
     }
     step <- if (.is_versioned(entry)) {
