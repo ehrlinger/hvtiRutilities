@@ -7,8 +7,13 @@ changed to a new dated parquet (`<name>_YYYYMMDD.parquet`, or `_r2`,
 `_r3` for another version on the same date), keeps every earlier
 version, records the change in `manifest.yaml`, and prints one line per
 dataset. Jobs read the new version from then on. Unchanged datasets are
-left alone. Name one with `dataset`. Release-aware datasets are skipped;
-use
+left alone. Datasets that are not combined are updated before the
+combined datasets built from them, and a combined dataset records its
+parents' versions when its own rebuilt source is registered. One whose
+parents have since been updated, or that records no parent versions, is
+listed as out of date in a message after the table until its source is
+rebuilt and `update_manifest()` is run again. Name one dataset with
+`dataset`. Release-aware datasets are skipped; use
 [`review_data_update`](https://ehrlinger.github.io/hvtiRutilities/reference/review_data_update.md)
 and
 [`adopt_data_update`](https://ehrlinger.github.io/hvtiRutilities/reference/adopt_data_update.md).

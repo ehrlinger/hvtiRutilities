@@ -17,6 +17,20 @@ modification date unless `extract_date` is given. Conversion needs the
 arrow package. A release-aware registration (`catalog_dataset` and
 `release_id`) records the catalog's file as it is and converts nothing.
 
+A dataset is registered once: registering it again stops with "already
+registered". So a study whose datasets are already registered adds
+`kind`, `key` or `parents` by editing that dataset's entry in
+`_study.yml`, then running
+[`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md).
+The key is checked when the next version is registered. A combined
+dataset records its parents' versions only once its source has been
+rebuilt, and reads as out of date until then. A release-aware dataset is
+skipped by
+[`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md):
+its parents' versions are recorded when a release is adopted with
+[`adopt_data_update()`](https://ehrlinger.github.io/hvtiRutilities/reference/adopt_data_update.md),
+and its key is checked only at registration.
+
 ## Usage
 
 ``` r
@@ -29,7 +43,10 @@ register_data(
   source = NULL,
   extract_date = NULL,
   catalog_dataset = NULL,
-  release_id = NULL
+  release_id = NULL,
+  kind = NULL,
+  key = NULL,
+  parents = NULL
 )
 ```
 
@@ -71,6 +88,25 @@ register_data(
   Character(1) or `NULL`. Producer catalog dataset ID and exact
   published release ID. Supply both to make the study contract
   release-aware, or neither for a legacy registration.
+
+- kind:
+
+  Character(1) or `NULL`. What the dataset is: `"built"` (the study
+  dataset), `"subset"`, `"ancillary"` (many rows per patient, such as
+  echoes or labs, joined to the cohort by a job) or `"combined"` (built
+  by joining others).
+
+- key:
+
+  Character or `NULL`. The columns that make each row unique, such as
+  `c("ccfid", "echo_date")`. Checked at registration, which stops if any
+  row repeats on it. Jobs use it unless they set their own.
+
+- parents:
+
+  Character or `NULL`. For `kind = "combined"` only: the registered
+  datasets it was built from. Their current versions are recorded, so a
+  later update to a parent marks this dataset out of date.
 
 ## Value
 

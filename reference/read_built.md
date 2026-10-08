@@ -11,6 +11,15 @@ version is still read and a message of class
 `hvtiRutilities_source_changed` says so and names
 [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md).
 
+A combined dataset (see
+[`register_data`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md))
+is still read when a dataset it was built from has been updated since. A
+message of class `hvtiRutilities_parent_changed`, which inherits
+`hvtiRutilities_out_of_date`, names the parents' recorded and current
+versions and the commands that update it. A combined dataset with no
+recorded parent versions is reported the same way, as `unrecorded`,
+until it is rebuilt and registered again.
+
 For a release-aware contract, the pinned release is verified before
 cache access. A later valid release emits a message of class
 `hvtiRutilities_update_available`; an unavailable catalog or invalid

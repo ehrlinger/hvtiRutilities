@@ -32,6 +32,14 @@ Release-aware datasets add an update:&amp;lt;dataset&amp;gt; row with status
 &quot;CURRENT&quot;, &quot;UPDATE AVAILABLE&quot;,
 &quot;UPDATE STATUS UNKNOWN&quot;, or &quot;FAIL&quot;. Legacy studies retain
 the five base rows and their existing dataset rows.
+A combined dataset built from parents that have since been updated adds an
+out_of_date:&amp;lt;dataset&amp;gt; row with status &quot;OUT OF DATE&quot;. Its detail
+names the parents' recorded and current versions and the commands that bring
+the combined data up to date. A combined dataset with no recorded parent
+versions is reported the same way, with the parent versions shown as
+unrecorded. If that check itself cannot run, for example because
+manifest.yaml cannot be parsed, the row has status &quot;FAIL&quot;
+and the error as its detail.
 Unlike study_config, this function does not walk up
 the directory tree. It asks whether root itself is a study root, so
 that a subdirectory of a study is never mistaken for one.
@@ -73,6 +81,14 @@ Release-aware datasets add an update:&amp;lt;dataset&amp;gt; row with status
 &quot;CURRENT&quot;, &quot;UPDATE AVAILABLE&quot;,
 &quot;UPDATE STATUS UNKNOWN&quot;, or &quot;FAIL&quot;. Legacy studies retain
 the five base rows and their existing dataset rows.
+A combined dataset built from parents that have since been updated adds an
+out_of_date:&amp;lt;dataset&amp;gt; row with status &quot;OUT OF DATE&quot;. Its detail
+names the parents' recorded and current versions and the commands that bring
+the combined data up to date. A combined dataset with no recorded parent
+versions is reported the same way, with the parent versions shown as
+unrecorded. If that check itself cannot run, for example because
+manifest.yaml cannot be parsed, the row has status &quot;FAIL&quot;
+and the error as its detail.
 Unlike study_config, this function does not walk up
 the directory tree. It asks whether root itself is a study root, so
 that a subdirectory of a study is never mistaken for one.
@@ -172,6 +188,14 @@ keep reading the registered version; the detail names the datasets and
 <code>"CURRENT"</code>, <code>"UPDATE AVAILABLE"</code>,
 <code>"UPDATE STATUS UNKNOWN"</code>, or <code>"FAIL"</code>. Legacy studies retain
 the five base rows and their existing dataset rows.</p>
+<p>A combined dataset built from parents that have since been updated adds an
+<code>out_of_date:&lt;dataset&gt;</code> row with status <code>"OUT OF DATE"</code>. Its detail
+names the parents' recorded and current versions and the commands that bring
+the combined data up to date. A combined dataset with no recorded parent
+versions is reported the same way, with the parent versions shown as
+<code>unrecorded</code>. If that check itself cannot run, for example because
+<code>manifest.yaml</code> cannot be parsed, the row has status <code>"FAIL"</code>
+and the error as its detail.</p>
 <p>Unlike <code><a href="study_config.html">study_config</a></code>, this function does <strong>not</strong> walk up
 the directory tree. It asks whether <code>root</code> itself is a study root, so
 that a subdirectory of a study is never mistaken for one.</p>
@@ -203,7 +227,7 @@ rather than silent.</p>
   <code>"OK"</code>, <code>"MISSING"</code>, <code>"FAIL"</code>, <code>"UNVERIFIED"</code>,
   <code>"CURRENT"</code>,
   <code>"UPDATE AVAILABLE"</code>, <code>"UPDATE STATUS UNKNOWN"</code>,
-  <code>"PENDING"</code>, <code>"CLOSED"</code>, or <code>"UNKNOWN"</code> – and
+  <code>"OUT OF DATE"</code>, <code>"PENDING"</code>, <code>"CLOSED"</code>, or <code>"UNKNOWN"</code> – and
   <code>detail</code>). The five base rows are followed by release-aware update
   rows, by dataset and update rows for each named dataset, and by the
   <code>checkpoints</code> and <code>closure</code> rows when they apply.
@@ -220,7 +244,7 @@ rather than silent.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">root</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"study-status-example"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="va">root</span>, showWarnings <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">study_status</span><span class="op">(</span><span class="va">root</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Study: /tmp/RtmpjbiwnY/study-status-example</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Study: /tmp/RtmpXuar4x/study-status-example</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [ ] _study.yml — no _study.yml at this root; recovery may be available with study-setup --recover; if its Tracker ID cannot be inferred, run study-setup 42 --recover</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [ ] renv.lock — no renv.lock; run renv::init() in the study project</span>

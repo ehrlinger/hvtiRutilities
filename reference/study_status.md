@@ -41,6 +41,15 @@ Release-aware datasets add an `update:<dataset>` row with status
 `"FAIL"`. Legacy studies retain the five base rows and their existing
 dataset rows.
 
+A combined dataset built from parents that have since been updated adds
+an `out_of_date:<dataset>` row with status `"OUT OF DATE"`. Its detail
+names the parents' recorded and current versions and the commands that
+bring the combined data up to date. A combined dataset with no recorded
+parent versions is reported the same way, with the parent versions shown
+as `unrecorded`. If that check itself cannot run, for example because
+`manifest.yaml` cannot be parsed, the row has status `"FAIL"` and the
+error as its detail.
+
 Unlike
 [`study_config`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md),
 this function does **not** walk up the directory tree. It asks whether
@@ -73,11 +82,11 @@ study_status(root = getwd())
 An object of class `"study_status"`: a list with `root`, `checks` (a
 data frame of `item`, `status` – `"OK"`, `"MISSING"`, `"FAIL"`,
 `"UNVERIFIED"`, `"CURRENT"`, `"UPDATE AVAILABLE"`,
-`"UPDATE STATUS UNKNOWN"`, `"PENDING"`, `"CLOSED"`, or `"UNKNOWN"` – and
-`detail`). The five base rows are followed by release-aware update rows,
-by dataset and update rows for each named dataset, and by the
-`checkpoints` and `closure` rows when they apply. `counts` lists
-`r_files`, `qmd`, `sas_jobs` and `sidecars`.
+`"UPDATE STATUS UNKNOWN"`, `"OUT OF DATE"`, `"PENDING"`, `"CLOSED"`, or
+`"UNKNOWN"` – and `detail`). The five base rows are followed by
+release-aware update rows, by dataset and update rows for each named
+dataset, and by the `checkpoints` and `closure` rows when they apply.
+`counts` lists `r_files`, `qmd`, `sas_jobs` and `sidecars`.
 
 ## See also
 
@@ -90,7 +99,7 @@ by dataset and update rows for each named dataset, and by the
 root <- file.path(tempdir(), "study-status-example")
 dir.create(root, showWarnings = FALSE)
 study_status(root)
-#> Study: /tmp/RtmpjbiwnY/study-status-example
+#> Study: /tmp/RtmpXuar4x/study-status-example
 #> 
 #> [ ] _study.yml — no _study.yml at this root; recovery may be available with study-setup --recover; if its Tracker ID cannot be inferred, run study-setup 42 --recover
 #> [ ] renv.lock — no renv.lock; run renv::init() in the study project

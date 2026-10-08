@@ -11,7 +11,17 @@ update_manifest() to register a rebuilt file as a new version.
 The date is the file's modification date unless extract_date is given.
 Conversion needs the arrow package. A release-aware registration
 (catalog_dataset and release_id) records the catalog's file as
-it is and converts nothing."><meta property="og:description" content="Completes the default study data contract or adds one distinctly named
+it is and converts nothing.
+A dataset is registered once: registering it again stops with &quot;already
+registered&quot;. So a study whose datasets are already registered adds
+kind, key or parents by editing that dataset's entry in
+_study.yml, then running update_manifest(). The key is
+checked when the next version is registered. A combined dataset records its
+parents' versions only once its source has been rebuilt, and reads as out of
+date until then. A release-aware dataset is skipped by
+update_manifest(): its parents' versions are recorded when a release is
+adopted with adopt_data_update(), and its key is checked only at
+registration."><meta property="og:description" content="Completes the default study data contract or adds one distinctly named
 dataset. The function derives row and column counts from the file and
 replaces _study.yml and manifest.yaml only after both updated
 files have been prepared successfully.
@@ -23,7 +33,17 @@ update_manifest() to register a rebuilt file as a new version.
 The date is the file's modification date unless extract_date is given.
 Conversion needs the arrow package. A release-aware registration
 (catalog_dataset and release_id) records the catalog's file as
-it is and converts nothing."></head><body>
+it is and converts nothing.
+A dataset is registered once: registering it again stops with &quot;already
+registered&quot;. So a study whose datasets are already registered adds
+kind, key or parents by editing that dataset's entry in
+_study.yml, then running update_manifest(). The key is
+checked when the next version is registered. A combined dataset records its
+parents' versions only once its source has been rebuilt, and reads as out of
+date until then. A release-aware dataset is skipped by
+update_manifest(): its parents' versions are recorded when a release is
+adopted with adopt_data_update(), and its key is checked only at
+registration."></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -94,6 +114,16 @@ The date is the file's modification date unless <code>extract_date</code> is giv
 Conversion needs the <span class="pkg">arrow</span> package. A release-aware registration
 (<code>catalog_dataset</code> and <code>release_id</code>) records the catalog's file as
 it is and converts nothing.</p>
+<p>A dataset is registered once: registering it again stops with "already
+registered". So a study whose datasets are already registered adds
+<code>kind</code>, <code>key</code> or <code>parents</code> by editing that dataset's entry in
+<code>_study.yml</code>, then running <code><a href="update_manifest.html">update_manifest()</a></code>. The key is
+checked when the next version is registered. A combined dataset records its
+parents' versions only once its source has been rebuilt, and reads as out of
+date until then. A release-aware dataset is skipped by
+<code><a href="update_manifest.html">update_manifest()</a></code>: its parents' versions are recorded when a release is
+adopted with <code><a href="adopt_data_update.html">adopt_data_update()</a></code>, and its key is checked only at
+registration.</p>
     </div>
 
     <div class="section level2">
@@ -107,7 +137,10 @@ it is and converts nothing.</p>
 <span>  source <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  extract_date <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  catalog_dataset <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  release_id <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  release_id <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  kind <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  key <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  parents <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -150,6 +183,25 @@ date. The file modification date is used when omitted.</p></dd>
 <dd><p>Character(1) or <code>NULL</code>. Producer
 catalog dataset ID and exact published release ID. Supply both to make
 the study contract release-aware, or neither for a legacy registration.</p></dd>
+
+
+<dt id="arg-kind">kind<a class="anchor" aria-label="anchor" href="#arg-kind"></a></dt>
+<dd><p>Character(1) or <code>NULL</code>. What the dataset is:
+<code>"built"</code> (the study dataset), <code>"subset"</code>, <code>"ancillary"</code>
+(many rows per patient, such as echoes or labs, joined to the cohort by a
+job) or <code>"combined"</code> (built by joining others).</p></dd>
+
+
+<dt id="arg-key">key<a class="anchor" aria-label="anchor" href="#arg-key"></a></dt>
+<dd><p>Character or <code>NULL</code>. The columns that make each row unique,
+such as <code>c("ccfid", "echo_date")</code>. Checked at registration, which
+stops if any row repeats on it. Jobs use it unless they set their own.</p></dd>
+
+
+<dt id="arg-parents">parents<a class="anchor" aria-label="anchor" href="#arg-parents"></a></dt>
+<dd><p>Character or <code>NULL</code>. For <code>kind = "combined"</code> only:
+the registered datasets it was built from. Their current versions are
+recorded, so a later update to a parent marks this dataset out of date.</p></dd>
 
 </dl></div>
     <div class="section level2">
