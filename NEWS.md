@@ -1,5 +1,37 @@
 # hvtiRutilities (unreleased)
 
+## Bug fixes
+
+* Registered versions are checked and protected more strictly. These fix
+  problems found in review of the dated-parquet registration that shipped in
+  1.5.0.
+  * `verify_manifest()` re-derives each registered version's row count from
+    its parquet footer and fails a mismatch. Under `strict = TRUE` it fails a
+    version whose count could not be re-derived, as it already did for other
+    files. A malformed `history:` entry, or a version with no recorded schema
+    checksum under `strict = TRUE`, now fails rather than being skipped.
+  * A dated version name can no longer be another dataset's read cache.
+    `register_data()` and `adopt_data_update()` refuse a dataset whose cache
+    name would be a registered version, and the read cache never writes over
+    one. Before, a dataset named like `cohort_20260915.csv` could overwrite
+    the registered version of `cohort.csv`, and migrating it could delete
+    that version.
+  * `verify_manifest()` and `study_status()` give the pending source and each
+    earlier version its own label, e.g. `built.csv (source)` and
+    `built.csv (built_20260915.parquet)`. A checkpoint taken while a rebuilt
+    source was pending wrote duplicate keys to `CHECKPOINT.yml`, which could
+    not then be read.
+  * A study registered before dated versions is dated, when migrated, as a
+    fresh registration would be: by `extract_date` when given, otherwise by
+    the source's local modification date.
+  * The source is hashed between the two stability checks, so a rebuild that
+    lands while a version is being written is seen on the next update rather
+    than recorded as already registered.
+  * `study_status()` counts datasets rather than version files, and reports
+    a dataset whose source is gone as present when its registered version is
+    there, since that is what `read_built()` serves. `update_manifest()` on a
+    study with no `manifest.yaml` names `register_data()`.
+
 ## Internal
 
 * The `registered_versions` tests no longer print `update_manifest()`'s
@@ -31,19 +63,6 @@
   files, so a parquet source registers like any other format.
   `provenance_data()` records the dated parquet as the file a job read, so a
   report names its own data version.
-
-  `update_manifest()` gains a `dataset` argument, so
-  `update_manifest(dataset = "study")` registers just that dataset.
-  `study_status()` and `verify_manifest()` can now return the status
-  `PENDING`. `read_built(refresh = TRUE)` now errors for a registered dataset
-  and names `update_manifest()`, and `update_manifest(file, ...)` refuses a
-  file that is a registered dataset rather than dropping its versions.
-  `study_status()` reports a dataset whose source is gone as present when its
-  registered version is there, since that is what `read_built()` serves.
-  `verify_manifest()` re-derives each registered version's row count from its
-  parquet footer and fails a mismatch, and under `strict = TRUE` it fails a
-  version whose count could not be re-derived, as it already did for other
-  files.
 
 ## New features
 
