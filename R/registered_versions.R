@@ -265,7 +265,6 @@
     file.rename(restore$from, restore$to)
   }, add = TRUE)
   rows <- list()
-  parents_recorded <- FALSE
 
   for (name in targets) {
     contract <- .study_dataset(cfg, name)
@@ -308,10 +307,6 @@
     manifest$datasets[[hit]] <- step$entry
     if (identical(contract$kind, "combined") && step$action %in% c("registered", "migrated")) {
       manifest$datasets[[hit]]$parent_versions <- .parent_versions(cfg, contract$parents, manifest)
-    } else if (identical(contract$kind, "combined") && is.null(entry$parent_versions)) {
-      # Nothing was recorded, so the parents' current versions are the best record there can be.
-      manifest$datasets[[hit]]$parent_versions <- .parent_versions(cfg, contract$parents, manifest)
-      parents_recorded <- TRUE
     }
     rows[[name]] <- .manifest_update_row(name, step$action, step$detail)
   }
@@ -327,7 +322,7 @@
   }
 
   out <- do.call(rbind, unname(rows))
-  if (parents_recorded || any(out$action %in% c("registered", "migrated"))) {
+  if (any(out$action %in% c("registered", "migrated"))) {
     .atomic_write(manifest_path, function(tmp) yaml::write_yaml(manifest, tmp))
   }
   committed <- TRUE

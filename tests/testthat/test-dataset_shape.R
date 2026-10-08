@@ -231,9 +231,10 @@ drop_parent_versions <- function(root) {
   yaml::write_yaml(manifest, path)
 }
 
-test_that("a combined dataset with no recorded parent versions is out of date until update_manifest() records them", {
+test_that("a combined dataset with no recorded parent versions stays out of date until it is rebuilt", {
   root <- combined_study()
   drop_parent_versions(root)
+  manifest_file <- file.path(root, "manifest.yaml")
 
   cond <- NULL
   withCallingHandlers(
@@ -245,11 +246,19 @@ test_that("a combined dataset with no recorded parent versions is out of date un
   )
   expect_s3_class(cond, "hvtiRutilities_parent_changed")
   expect_identical(lengths(regmatches(conditionMessage(cond), gregexpr("was unrecorded", conditionMessage(cond)))), 2L)
+  expect_match(conditionMessage(cond), "rebuild be.csv.*then run hvtiRutilities::update_manifest()")
 
-  withr::local_dir(root)
-  suppressMessages(update_manifest())
+  # source unchanged: update_manifest() must not bless it
+  before <- unname(tools::md5sum(manifest_file))
+  withr::with_dir(root, suppressMessages(update_manifest()))
+  expect_identical(unname(tools::md5sum(manifest_file)), before)
+  expect_message(read_built(study_config(root), dataset = "built_echo"), class = "hvtiRutilities_parent_changed")
+
+  # source rebuilt: the new version is registered with the parents recorded
+  rebuild(root, "be.csv", data.frame(ccfid = c(1L, 2L), echo_date = c(10, 10), dead = c(1L, 0L)))
+  withr::with_dir(root, suppressMessages(update_manifest()))
   expect_no_message(read_built(study_config(root), dataset = "built_echo"))
-  m <- yaml::read_yaml(file.path(root, "manifest.yaml"))
+  m <- yaml::read_yaml(manifest_file)
   e <- Filter(function(x) identical(x$file, "be.csv"), m$datasets)[[1L]]
   expect_named(e$parent_versions, c("study", "echo"))
 })
