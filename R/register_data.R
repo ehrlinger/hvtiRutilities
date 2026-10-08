@@ -112,7 +112,10 @@
 #' \code{_study.yml}, then running \code{\link{update_manifest}()}. The key is
 #' checked when the next version is registered. A combined dataset records its
 #' parents' versions only once its source has been rebuilt, and reads as out of
-#' date until then.
+#' date until then. A release-aware dataset is skipped by
+#' \code{update_manifest()}: its parents' versions are recorded when a release is
+#' adopted with \code{\link{adopt_data_update}()}, and its key is checked only at
+#' registration.
 #'
 #' @param root Character. Study root or a directory beneath it.
 #' @param built Character(1). Dataset filename within the logical

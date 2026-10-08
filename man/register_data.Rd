@@ -79,7 +79,10 @@ registered". So a study whose datasets are already registered adds
 \code{_study.yml}, then running \code{\link{update_manifest}()}. The key is
 checked when the next version is registered. A combined dataset records its
 parents' versions only once its source has been rebuilt, and reads as out of
-date until then.
+date until then. A release-aware dataset is skipped by
+\code{update_manifest()}: its parents' versions are recorded when a release is
+adopted with \code{\link{adopt_data_update}()}, and its key is checked only at
+registration.
 }
 \seealso{
 \code{\link{study_setup}}, \code{\link{study_config}},
