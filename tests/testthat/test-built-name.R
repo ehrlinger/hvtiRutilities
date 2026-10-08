@@ -107,3 +107,12 @@ test_that("adopt_data_update(\"built\") advances the default contract, not a nam
   expect_identical(after$release$release_id, "surgery_cohort-20260921-r1")
   expect_null(after$additional_datasets$built)
 })
+
+test_that("update_manifest() passes on the rename instruction rather than reporting no study", {
+  root <- built_name_study()
+  y <- yaml::read_yaml(file.path(root, "_study.yml"))
+  y$additional_datasets <- list(built = list(built = "x.csv"))
+  yaml::write_yaml(y, file.path(root, "_study.yml"))
+  withr::local_dir(study_dir("datasets", root))
+  expect_error(update_manifest(), "Rename it under additional_datasets: and in manifest.yaml", fixed = TRUE)
+})

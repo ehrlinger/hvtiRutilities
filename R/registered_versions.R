@@ -229,7 +229,13 @@
 # update_manifest() with no file: find the study from the working directory and
 # register every dataset (or the one named) whose source has changed.
 .update_study_manifest <- function(dataset = NULL, extract_date = NULL) {
-  cfg <- tryCatch(study_config(require_data = FALSE), error = function(e) NULL)
+  # Only a missing _study.yml means "no study here". Any other study_config()
+  # error, such as the rename instruction for an additional dataset named
+  # built, is about a study that exists and is passed on unchanged.
+  cfg <- tryCatch(study_config(require_data = FALSE), error = function(e) {
+    if (!grepl("no _study.yml found", conditionMessage(e), fixed = TRUE)) stop(e)
+    NULL
+  })
   if (is.null(cfg)) {
     stop("update_manifest() with no file looks for a study (a _study.yml in this directory or above) ",
          "and found none. To record a single file, pass it: update_manifest(\"path/to/file\").",
