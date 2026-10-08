@@ -63,7 +63,8 @@
     # <NN>-<prefix>-<endpoint>[-parity].qmd
     r_transitional = "^\\d{2}-([A-Za-z0-9]+)-[A-Za-z0-9_]+(?:-parity)?[.]qmd$",
     # <subject>-<type>-<prefix>[-<qualifier>].qmd, hvtiRtemplates::add_job()
-    # output, and the -runner.R it writes beside some reports. The runner is
+    # output until 2026-10 (the template-first form is parsed separately,
+    # above `legacy`), and the -runner.R it writes beside some reports. The runner is
     # matched here, not left unparsed, so that it is counted as part of its
     # report; job_files() gives it the report's stem.
     scaffolded     = paste0("^[A-Za-z0-9_]+-[A-Za-z0-9_]+-([A-Za-z0-9]+)",
@@ -77,6 +78,19 @@
   sca_known <- sca_hit & sub(patterns$scaffolded, "\\1", stripped) %in% known
   naming[sca_known] <- "scaffolded"
   prefix[sca_known] <- sub(patterns$scaffolded, "\\1", stripped[sca_known])
+
+  # <prefix>[.<qualifier>].<subject>.<type>.qmd, add_job()'s form since
+  # 2026-10, and its .runner.R. No field contains a period, so three fields is
+  # a template with no qualifier and four is one with a qualifier: the count
+  # settles it without the template catalog, which lives in hvtiRtemplates.
+  # Claimed only for a known prefix, and before `legacy`, which would otherwise
+  # read any dotted name as a SAS-era job.
+  dotted <- paste0("^([A-Za-z0-9]+)(?:[.]([A-Za-z0-9_]+))?[.][A-Za-z0-9_]+[.][A-Za-z0-9_]+",
+                   "(?:[.]qmd|[.]runner[.]R)$")
+  dot_hit <- is.na(naming) & grepl(dotted, stripped, perl = TRUE) &
+    sub(dotted, "\\1", stripped, perl = TRUE) %in% known
+  naming[dot_hit] <- "scaffolded"
+  prefix[dot_hit] <- sub(dotted, "\\1", stripped[dot_hit], perl = TRUE)
 
   for (nm in names(patterns)) {
     todo <- is.na(naming)
@@ -95,7 +109,9 @@
   if (any(leg)) quals[leg] <- .legacy_qualifiers(stripped[leg])
   sca <- !is.na(naming) & naming == "scaffolded"
   if (any(sca)) {
-    q <- sub(patterns$scaffolded, "\\2", stripped[sca])
+    is_dot <- grepl(dotted, stripped[sca], perl = TRUE)
+    q <- ifelse(is_dot, sub(dotted, "\\2", stripped[sca], perl = TRUE),
+                sub(patterns$scaffolded, "\\2", stripped[sca]))
     quals[sca] <- lapply(q, function(x) if (nzchar(x)) x else character(0))
   }
 
