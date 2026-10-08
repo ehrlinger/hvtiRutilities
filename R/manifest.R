@@ -180,6 +180,20 @@ update_manifest <- function(file,
                             verbose       = FALSE,
                             dataset       = NULL) {
   if (missing(file)) {
+    # The no-file form registers whatever changed in the study; these describe
+    # one file, so passing one here would be silently ignored.
+    single <- c("manifest_path", "n_rows", "n_cols", "source", "sort_key", "schema_sha256", "role",
+                "reader", "verbose")
+    absent <- c(missing(manifest_path), missing(n_rows), missing(n_cols), missing(source),
+                missing(sort_key), missing(schema_sha256), missing(role), missing(reader),
+                missing(verbose))
+    given <- single[!absent]
+    if (length(given)) {
+      stop("update_manifest(): ", paste0("`", given, "`", collapse = ", "),
+           if (length(given) > 1L) " describe" else " describes",
+           " a single file and cannot be used without `file`. Call update_manifest() with no ",
+           "arguments to register every changed dataset, or name the file.", call. = FALSE)
+    }
     return(.update_study_manifest(dataset = dataset,
                                   extract_date = if (missing(extract_date)) NULL else extract_date))
   }

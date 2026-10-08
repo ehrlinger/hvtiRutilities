@@ -1,9 +1,3 @@
-write_source_csv <- function(dir, data = data.frame(id = 1:3, x = c(1.5, 2.5, 3.5)), file = "built.csv") {
-  path <- file.path(dir, file)
-  utils::write.csv(data, path, row.names = FALSE)
-  path
-}
-
 test_that("version names are dated and take the next free revision", {
   dir <- withr::local_tempdir()
   expect_identical(.version_filename("built", "2026-10-07", dir), "built_20261007.parquet")
@@ -514,4 +508,60 @@ test_that("the version date is the source's local modification date", {
   # 01:30 UTC on 7 October is 21:30 on 6 October in New York.
   Sys.setFileTime(src, as.POSIXct("2026-10-07 01:30:00", tz = "UTC"))
   expect_identical(.mtime_date(src), "2026-10-06")
+})
+
+# ---- review fixes on #189 ------------------------------------------------------
+
+test_that("no package read of a parquet file memory-maps it", {
+  # A memory-mapped parquet stays open while any R vector read from it lives,
+  # and Windows refuses to overwrite a mapped file (error 1224). A study that
+  # registers built.parquet and then rebuilds it in the same session would fail
+  # there, as #189's Windows CI did. Every read_parquet() call in the package
+  # must pass mmap = FALSE; this walks the namespace so it holds on any platform.
+  ns <- asNamespace("hvtiRutilities")
+  offenders <- character()
+  walk <- function(x, fn) {
+    if (is.call(x)) {
+      head <- x[[1L]]
+      is_rp <- identical(head, quote(arrow::read_parquet)) || identical(head, as.name("read_parquet"))
+      if (is_rp && !isFALSE(as.list(x)$mmap)) offenders <<- c(offenders, fn)
+      for (a in as.list(x)[-1L]) if (!missing(a)) walk(a, fn)
+    }
+  }
+  for (fn in ls(ns, all.names = TRUE)) {
+    f <- get(fn, envir = ns)
+    if (is.function(f) && !is.primitive(f)) walk(body(f), fn)
+  }
+  expect_identical(unique(offenders), character())
+})
+
+test_that("a missing arrow is described as a read when read_built() needs it", {
+  local_mocked_bindings(.arrow_available = function() FALSE)
+  expect_error(.require_arrow("read_built", "read"), "reading it needs the arrow package")
+  expect_no_match(tryCatch(.require_arrow("read_built", "read"), error = conditionMessage), "Nothing was written")
+  expect_error(.require_arrow("register_data"), "registering a dataset.*Nothing was written")
+})
+
+test_that("a conversion failure during registration names register_data(), not read_built()", {
+  skip_if_not_installed("arrow")
+  dir <- withr::local_tempdir()
+  src <- file.path(dir, "built.csv")
+  utils::write.csv(data.frame(Age = 1:3, age = 4:6), src, row.names = FALSE)
+  e <- expect_error(.write_version(src, dir, "2026-10-07", caller = "register_data"), "lowercasing column names")
+  expect_match(conditionMessage(e), "^register_data\\(\\): ")
+})
+
+test_that("an unparsable recorded source mtime falls through to the hash", {
+  dir <- withr::local_tempdir()
+  src <- write_source_csv(dir)
+  entry <- list(parquet = "built_20261007.parquet", source_size = file.info(src)$size,
+                source_mtime = "not a time", source_sha256 = digest::digest(src, algo = "sha256", file = TRUE))
+  expect_false(.source_changed(src, entry))
+  entry$source_sha256 <- "different"
+  expect_true(.source_changed(src, entry))
+})
+
+test_that("update_manifest() with no file refuses arguments that describe one file", {
+  expect_error(update_manifest(role = "source"), "`role` describes a single file and cannot be used without `file`")
+  expect_error(update_manifest(n_rows = 3, verbose = TRUE), "`n_rows`, `verbose` describe a single file")
 })

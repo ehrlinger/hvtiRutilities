@@ -53,9 +53,9 @@
 # just written proves only that the write completed, not that the write was
 # correct, so the parquet is read back and compared against the frame haven
 # returned -- the one thing a byte hash cannot check.
-.verify_parquet_roundtrip <- function(original, target) {
+.verify_parquet_roundtrip <- function(original, target, caller = "read_built") {
   written <- as.data.frame(original)
-  back    <- as.data.frame(arrow::read_parquet(target))
+  back    <- as.data.frame(arrow::read_parquet(target, mmap = FALSE))
 
   bad <- if (!identical(names(written), names(back))) {
     "<column names/order>"
@@ -67,7 +67,7 @@
 
   if (!is.null(bad)) {
     unlink(target)
-    stop("read_built(): the parquet conversion of ", basename(target),
+    stop(caller, "(): the parquet conversion of ", basename(target),
          " did not round-trip -- column '", bad, "' differs after writing ",
          "and reading it back. The parquet was removed.", call. = FALSE)
   }
@@ -210,7 +210,7 @@
     # An unreadable parquet -- truncated, corrupted, an interrupted write
     # from outside this package -- must not be permanently fatal for a
     # role: "source" entry: the source is still there to regenerate it from.
-    hit <- tryCatch(as.data.frame(arrow::read_parquet(derived$parquet)),
+    hit <- tryCatch(as.data.frame(arrow::read_parquet(derived$parquet, mmap = FALSE)),
                     error = function(e) e)
     if (!inherits(hit, "error")) return(hit)
 

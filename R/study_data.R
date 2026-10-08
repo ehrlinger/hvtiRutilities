@@ -136,7 +136,7 @@ built_manifest <- function(cfg = study_config(), dataset = "study") {
 # A registered version is the data: checked against its recorded hash on every
 # read, and never rebuilt from the source, which may have moved on.
 .read_registered_version <- function(source_path, entry) {
-  .require_arrow("read_built")
+  .require_arrow("read_built", "read")
   parquet <- .authoritative_path(entry, source_path)
   if (!file.exists(parquet)) {
     stop("read_built(): the registered version of ", entry$file, ", ", entry$parquet, ", is missing from ",
@@ -148,7 +148,7 @@ built_manifest <- function(cfg = study_config(), dataset = "study") {
          "and must not be edited. Restore it from backup and tell the study's data manager.", call. = FALSE)
   }
   if (.source_changed(source_path, entry)) message(.source_changed_condition(entry))
-  as.data.frame(arrow::read_parquet(parquet))
+  as.data.frame(arrow::read_parquet(parquet, mmap = FALSE))
 }
 
 # Errors if lowercasing `names(d)` would collide, naming the colliding
@@ -164,14 +164,14 @@ built_manifest <- function(cfg = study_config(), dataset = "study") {
 # internal gets documented and exported in its place, and read_built() stops
 # being exported. devtools::test() does not catch it, because load_all()
 # exposes internals regardless of NAMESPACE; only an installed package breaks.
-.assert_no_lowercase_collision <- function(d, path) {
+.assert_no_lowercase_collision <- function(d, path, caller = "read_built") {
   lower <- tolower(names(d))
   if (anyDuplicated(lower)) {
     clashes <- unique(lower[duplicated(lower)])
     detail <- vapply(clashes, function(x) {
       paste0(x, " <- ", paste(names(d)[lower == x], collapse = ", "))
     }, character(1))
-    stop("read_built(): lowercasing column names produces duplicates in ",
+    stop(caller, "(): lowercasing column names produces duplicates in ",
          basename(path), ": ", paste(detail, collapse = "; "),
          ". Rename the colliding columns at the source.", call. = FALSE)
   }

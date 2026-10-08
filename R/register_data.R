@@ -231,7 +231,7 @@ register_data <- function(root = getwd(), built, dataset = "study",
   }
   # A release-aware contract records the catalog's file as it is; every other
   # registration converts the file to a dated parquet below, which reads it.
-  data <- if (!is.null(release)) .read_registration_data(path)
+  data <- if (!is.null(release)) .read_registration_data(path) else NULL
   if (!is.null(release)) {
     .verify_catalog_file(release, study_dir("datasets", cfg$root))
   }

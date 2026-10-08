@@ -166,7 +166,7 @@ read_clinical_data <- function(file, convert_types = FALSE, ...,
         stop("Reading '", file, "' needs the arrow package. Install it with install.packages(\"arrow\").",
              call. = FALSE)
       }
-      arrow::read_parquet(file)
+      arrow::read_parquet(file, mmap = FALSE)
     },
     stop(
       "Unsupported file type: '.", ext, "' in '", file, "'. ",

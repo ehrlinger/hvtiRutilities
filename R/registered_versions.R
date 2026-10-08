@@ -9,11 +9,18 @@
 
 .arrow_available <- function() requireNamespace("arrow", quietly = TRUE)
 
-.require_arrow <- function(caller) {
+# `action` says what needed arrow, so a read and a registration each get an
+# accurate message: only a registration can promise that nothing was written.
+.require_arrow <- function(caller, action = c("register", "read")) {
+  action <- match.arg(action)
   if (!.arrow_available()) {
-    stop(caller, "(): registering a dataset converts it to parquet, which needs the arrow package. ",
-         "Install it with install.packages(\"arrow\") and run this again. Nothing was written.",
-         call. = FALSE)
+    why <- if (action == "register") {
+      "registering a dataset converts it to parquet, which needs the arrow package. "
+    } else {
+      "the registered version of this dataset is a parquet file, and reading it needs the arrow package. "
+    }
+    stop(caller, "(): ", why, "Install it with install.packages(\"arrow\") and run this again.",
+         if (action == "register") " Nothing was written." else "", call. = FALSE)
   }
   invisible(TRUE)
 }
@@ -70,7 +77,7 @@
   .require_arrow(caller)
   before <- file.info(source)
   d <- as.data.frame(read_clinical_data(source, convert_types = FALSE))
-  .assert_no_lowercase_collision(d, source)
+  .assert_no_lowercase_collision(d, source, caller)
   after <- file.info(source)
   if (!identical(as.numeric(before$size), as.numeric(after$size)) ||
         !identical(as.numeric(before$mtime), as.numeric(after$mtime))) {
@@ -85,7 +92,7 @@
   on.exit(if (!done) unlink(c(parquet, schema)), add = TRUE)
 
   .write_parquet_atomic(d, parquet)
-  .verify_parquet_roundtrip(d, parquet)
+  .verify_parquet_roundtrip(d, parquet, caller)
   .atomic_write(schema, function(tmp) utils::write.csv(dataset_schema(d), tmp, row.names = FALSE))
 
   record <- c(
@@ -133,7 +140,11 @@
     info <- file.info(source_path)
     mtime <- as.numeric(info$mtime)
     same_size <- identical(as.numeric(entry$source_size), as.numeric(info$size))
-    same_mtime <- abs(mtime - as.numeric(as.POSIXct(entry$source_mtime, tz = "UTC"))) < 1e-4
+    # An unparsable recorded mtime (a hand-edited manifest) cannot settle it:
+    # fall through to the hash rather than test an NA.
+    recorded <- suppressWarnings(as.numeric(tryCatch(as.POSIXct(entry$source_mtime, tz = "UTC"),
+                                                     error = function(e) NA)))
+    same_mtime <- !is.na(recorded) && abs(mtime - recorded) < 1e-4
     if (same_size && same_mtime && mtime != floor(mtime)) return(FALSE)
   }
   !identical(entry$source_sha256, digest::digest(source_path, algo = "sha256", file = TRUE))
@@ -274,7 +285,7 @@
   usable <- file.exists(cache$parquet) && file.exists(cache$schema) && !is.null(entry$schema_sha256) &&
     identical(digest::digest(cache$schema, algo = "sha256", file = TRUE), entry$schema_sha256)
   if (!usable) return(NULL)
-  d <- tryCatch(arrow::read_parquet(cache$parquet), error = function(e) NULL)
+  d <- tryCatch(arrow::read_parquet(cache$parquet, mmap = FALSE), error = function(e) NULL)
   if (is.null(d) || !identical(nrow(d), as.integer(entry$n_rows)) ||
         (!is.null(entry$n_cols) && !identical(ncol(d), as.integer(entry$n_cols)))) {
     return(NULL)
