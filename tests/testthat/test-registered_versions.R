@@ -391,6 +391,7 @@ test_that("migrating a study whose source is built.parquet never touches the sou
   suppressMessages(study_setup(root, "Legacy parquet", 42L))
   src <- file.path(study_dir("datasets", root), "built.parquet")
   arrow::write_parquet(data.frame(id = 1:3), src)
+  Sys.setFileTime(src, as.POSIXct("2026-09-15 12:00:00", tz = "UTC"))
   raw <- yaml::read_yaml(file.path(root, "_study.yml"))
   raw$built <- "built.parquet"
   yaml::write_yaml(raw, file.path(root, "_study.yml"))
@@ -702,4 +703,21 @@ test_that("migration never removes a file another entry registered", {
   expect_identical(vapply(version, digest::digest, "", algo = "sha256", file = TRUE), before)
   expect_true(.is_versioned(manifest_entry_for(root, "cohort_20260915.csv")))
   expect_identical(verify_manifest()$status, c("OK", "OK"))
+})
+
+test_that("migrating an untouched source dates it as a fresh registration would", {
+  root <- make_legacy_registered_study(withr::local_tempdir())
+  path <- built_path(study_config(root))
+  Sys.setFileTime(path, as.POSIXct("2026-10-01 12:00:00", tz = "UTC"))
+  withr::local_dir(root)
+
+  suppressMessages(update_manifest())
+  e <- manifest_entry_for(root)
+  expect_identical(e$parquet, "built_20261001.parquet")
+  expect_identical(e$extract_date, "2026-10-01")
+
+  root2 <- make_legacy_registered_study(withr::local_tempdir())
+  withr::local_dir(root2)
+  suppressMessages(update_manifest(extract_date = "2026-10-03"))
+  expect_identical(manifest_entry_for(root2)$parquet, "built_20261003.parquet")
 })

@@ -92,13 +92,15 @@ make_registered_study <- function(dir, ancillary = FALSE) {
 
 # A study registered before 2026-10: role "source" and no parquet field. Written
 # directly, because register_data() now writes the versioned form. Used by the
-# tests of the legacy read cache and of migration.
+# tests of the legacy read cache and of migration. The source is dated
+# 2026-09-15, its registration date, as a file built that day would be.
 make_legacy_registered_study <- function(dir, file = "built.csv",
                                          data = data.frame(id = 1:3, dead = c(1L, 0L, 0L), iv_dead = 1:3)) {
   root <- file.path(dir, "study")
   suppressMessages(study_setup(root, "Legacy fixture", 42L))
   path <- file.path(study_dir("datasets", root), file)
   utils::write.csv(data, path, row.names = FALSE)
+  Sys.setFileTime(path, as.POSIXct("2026-09-15 12:00:00", tz = "UTC"))
   raw <- yaml::read_yaml(file.path(root, "_study.yml"))
   raw$built <- file
   yaml::write_yaml(raw, file.path(root, "_study.yml"))

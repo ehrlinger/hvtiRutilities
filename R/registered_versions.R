@@ -344,19 +344,18 @@
 }
 
 # A study registered before 2026-10 has role "source" and no parquet. Its first
-# update converts it. Three cases: the source still matches (convert it, as a
-# fresh registration on its original date); it was overwritten and the cache
-# still holds the old data (keep that as the earlier version); or neither (say
-# the earlier version is gone, and register the new one anyway).
+# update converts it. Three cases: the source still matches (convert it); it
+# was overwritten and the cache still holds the old data (keep that as the
+# earlier version); or neither (say the earlier version is gone, and register
+# the new one anyway). In every case the new version is dated as a fresh
+# registration is: the caller's extract_date, else the source's modification date.
 .migrate_entry <- function(entry, source_path, extract_date, datasets = list()) {
   unchanged <- identical(entry$sha256, digest::digest(source_path, algo = "sha256", file = TRUE))
   history <- list()
   note <- NULL
   restore <- list(from = character(), to = character())
   returned <- FALSE
-  if (unchanged) {
-    date <- if (is.null(entry$extract_date)) .mtime_date(source_path) else entry$extract_date
-  } else {
+  if (!unchanged) {
     old <- .recover_cached_version(entry, source_path, datasets)
     if (is.null(old)) {
       note <- paste0("the previous version cannot be recovered: ", entry$file,
@@ -371,8 +370,8 @@
       note <- paste0("previous version recovered from the read cache as ", old$parquet,
                      ", not from the original ", entry$file)
     }
-    date <- if (is.null(extract_date)) .mtime_date(source_path) else extract_date
   }
+  date <- if (is.null(extract_date)) .mtime_date(source_path) else extract_date
   taken <- c(.reserved_names(datasets), vapply(history, function(h) h$parquet, character(1)))
   version <- .write_version(source_path, dirname(source_path), date, taken, caller = "update_manifest")
   # The superseded cache is dropped once the manifest is written, so a failed
