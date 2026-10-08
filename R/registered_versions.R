@@ -304,7 +304,12 @@
     restore$to <- c(restore$to, step$restore$to)
     drop <- c(drop, step$drop)
     manifest$datasets[[hit]] <- step$entry
-    if (identical(contract$kind, "combined") && step$action %in% c("registered", "migrated")) {
+    # Only a rebuilt source records current parent versions. Migrating an
+    # unchanged legacy source is a format change, not a rebuild, so a combined
+    # dataset stays out of date until it is rebuilt.
+    rebuilt <- identical(step$action, "registered") ||
+      (identical(step$action, "migrated") && !identical(entry$sha256, step$entry$source_sha256))
+    if (identical(contract$kind, "combined") && rebuilt) {
       manifest$datasets[[hit]]$parent_versions <- .parent_versions(cfg, contract$parents, manifest)
     }
     rows[[name]] <- .manifest_update_row(name, step$action, step$detail)

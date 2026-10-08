@@ -116,3 +116,22 @@ legacy_with_cache <- function(env = parent.frame()) {
   read_built(study_config(root))
   root
 }
+
+# A legacy study with a combined dataset registered before dated versions, as
+# a hand edit to _study.yml giving an existing dataset kind: combined leaves it.
+legacy_combined_study <- function(env = parent.frame()) {
+  testthat::skip_if_not_installed("arrow")
+  root <- make_legacy_registered_study(withr::local_tempdir(.local_envir = env))
+  dir <- study_dir("datasets", root)
+  combined <- data.frame(id = 1:3, dead = c(1L, 0L, 0L))
+  utils::write.csv(combined, file.path(dir, "comb.csv"), row.names = FALSE)
+  Sys.setFileTime(file.path(dir, "comb.csv"), as.POSIXct("2026-09-15 12:00:00", tz = "UTC"))
+  raw <- yaml::read_yaml(file.path(root, "_study.yml"))
+  raw$additional_datasets <- list(comb = list(built = "comb.csv", kind = "combined", parents = "study"))
+  yaml::write_yaml(raw, file.path(root, "_study.yml"))
+  m <- yaml::read_yaml(file.path(root, "manifest.yaml"))
+  entry <- .registration_manifest_entry(file.path(dir, "comb.csv"), combined, "2026-09-15", NULL)
+  m$datasets <- c(m$datasets, list(entry))
+  yaml::write_yaml(m, file.path(root, "manifest.yaml"))
+  root
+}

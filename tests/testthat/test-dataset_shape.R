@@ -357,3 +357,24 @@ test_that("update_manifest() updates a combined parent before a combined child d
   expect_no_message(read_built(cfg, dataset = "c1"))
   expect_no_message(read_built(cfg, dataset = "c2"))
 })
+
+test_that("migrating a legacy combined dataset records its parents' versions only once it is rebuilt", {
+  root <- legacy_combined_study()
+
+  # source unchanged: the migration registers it but must not record current parent versions
+  withr::with_dir(root, suppressMessages(update_manifest()))
+  cond <- expect_message(read_built(study_config(root), dataset = "comb"), class = "hvtiRutilities_parent_changed")
+  expect_match(conditionMessage(cond), "study was unrecorded", fixed = TRUE)
+
+  # source rebuilt: the next update records the parents
+  rebuild(root, "comb.csv", data.frame(id = 1:4, dead = c(1L, 0L, 0L, 1L)))
+  withr::with_dir(root, suppressMessages(update_manifest()))
+  expect_no_message(read_built(study_config(root), dataset = "comb"))
+})
+
+test_that("migrating a legacy combined dataset whose source was rebuilt records its parents' versions", {
+  root <- legacy_combined_study()
+  rebuild(root, "comb.csv", data.frame(id = 1:4, dead = c(1L, 0L, 0L, 1L)))
+  withr::with_dir(root, suppressMessages(update_manifest()))
+  expect_no_message(read_built(study_config(root), dataset = "comb"))
+})
