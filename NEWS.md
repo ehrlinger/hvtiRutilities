@@ -35,11 +35,10 @@
 
 ## Documentation
 
-* Vignettes put the table of contents on the left and use the full width
-  of the window, the same layout as the HVTI Quarto books and the
-  hvtiRtemplates jobs. `vignettes/_quarto.yml` sets it once for every
-  vignette, and `pkgdown/extra.css` gives the pkgdown site's articles the
-  same arrangement.
+* Articles on the pkgdown site put the table of contents on the left and use
+  the full width of the window, through `pkgdown/extra.css`. The installed
+  vignettes are unchanged: the Quarto vignette engine renders them in its own
+  minimal format, which has no sidebar layout.
 
 * `DESCRIPTION` now declares the Quarto command line tool in
   `SystemRequirements`. The vignettes have always needed it to build; the
