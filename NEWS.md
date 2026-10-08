@@ -1,3 +1,14 @@
+# hvtiRutilities (unreleased)
+
+## Internal
+
+* The `registered_versions` tests no longer print `update_manifest()`'s
+  closing reminder to commit `manifest.yaml`; it reached the test output five
+  times. `expect_message()` captures only the first matching message, so in
+  the five tests where a run registers or migrates a dataset the reminder that
+  follows the detail line escaped. Those calls are now wrapped in
+  `suppressMessages()`, and each still asserts its detail message.
+
 # hvtiRutilities 1.5.0
 
 ## Breaking changes

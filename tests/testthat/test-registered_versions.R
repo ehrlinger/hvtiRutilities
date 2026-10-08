@@ -277,7 +277,7 @@ test_that("update_manifest() registers a rebuilt source and keeps the old versio
   rebuild_source(root)
   withr::local_dir(study_dir("datasets", root))
 
-  expect_message(out <- update_manifest(), "previous version kept as built_20260915.parquet", fixed = TRUE)
+  suppressMessages(expect_message(out <- update_manifest(), "previous version kept as built_20260915.parquet", fixed = TRUE))
   expect_identical(out$action, "registered")
 
   e <- manifest_entry_for(root)
@@ -363,7 +363,7 @@ test_that("migration converts an untouched source and drops the old cache", {
   root <- legacy_with_cache()
   withr::local_dir(root)
 
-  expect_message(out <- update_manifest(), "migrated|registered")
+  suppressMessages(expect_message(out <- update_manifest(), "migrated|registered"))
   expect_identical(out$action, "migrated")
   e <- manifest_entry_for(root)
   expect_identical(e$parquet, "built_20260915.parquet")
@@ -376,7 +376,7 @@ test_that("migration after an overwrite recovers the old version from the cache"
   rebuild_source(root, data.frame(id = 1:5, dead = c(1L, 0L, 0L, 0L, 1L), iv_dead = 1:5))
   withr::local_dir(root)
 
-  expect_message(out <- update_manifest(), "recovered from the read cache", fixed = TRUE)
+  suppressMessages(expect_message(out <- update_manifest(), "recovered from the read cache", fixed = TRUE))
   e <- manifest_entry_for(root)
   expect_identical(e$parquet, "built_20261007.parquet")
   expect_identical(e$history[[1L]]$parquet, "built_20260915.parquet")
@@ -424,7 +424,7 @@ test_that("an overwritten parquet source is not mistaken for a cache", {
   Sys.setFileTime(src, as.POSIXct("2026-10-07 12:00:00", tz = "UTC"))
   withr::local_dir(root)
 
-  expect_message(update_manifest(), "cannot be recovered", fixed = TRUE)
+  suppressMessages(expect_message(update_manifest(), "cannot be recovered", fixed = TRUE))
   expect_true(file.exists(src))
   expect_identical(arrow::read_parquet(src)$id, 4:6)
   expect_null(manifest_entry_for(root, "built.parquet")$history)
@@ -436,7 +436,7 @@ test_that("migration after an overwrite with no usable cache says the old versio
   rebuild_source(root, data.frame(id = 1:5, dead = c(1L, 0L, 0L, 0L, 1L), iv_dead = 1:5))
   withr::local_dir(root)
 
-  expect_message(update_manifest(), "cannot be recovered", fixed = TRUE)
+  suppressMessages(expect_message(update_manifest(), "cannot be recovered", fixed = TRUE))
   e <- manifest_entry_for(root)
   expect_identical(e$parquet, "built_20261007.parquet")
   expect_null(e$history)
