@@ -694,6 +694,10 @@ adopt_data_update <- function(cfg = study_config(), dataset = "study",
     )
   }
   manifest$datasets[[which(old)]] <- entry
+  adopted <- .study_dataset(current_cfg, dataset)
+  if (identical(adopted$kind, "combined")) {
+    manifest$datasets[[which(old)]]$parent_versions <- .parent_versions(current_cfg, adopted$parents, manifest)
+  }
 
   targets <- c(current_cfg$file, manifest_path)
   prepared <- c(

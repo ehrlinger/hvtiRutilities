@@ -13,7 +13,10 @@ register_data(
   source = NULL,
   extract_date = NULL,
   catalog_dataset = NULL,
-  release_id = NULL
+  release_id = NULL,
+  kind = NULL,
+  key = NULL,
+  parents = NULL
 )
 }
 \arguments{
@@ -37,6 +40,19 @@ date. The file modification date is used when omitted.}
 \item{catalog_dataset, release_id}{Character(1) or \code{NULL}. Producer
 catalog dataset ID and exact published release ID. Supply both to make
 the study contract release-aware, or neither for a legacy registration.}
+
+\item{kind}{Character(1) or \code{NULL}. What the dataset is:
+\code{"built"} (the study dataset), \code{"subset"}, \code{"ancillary"}
+(many rows per patient, such as echoes or labs, joined to the cohort by a
+job) or \code{"combined"} (built by joining others).}
+
+\item{key}{Character or \code{NULL}. The columns that make each row unique,
+such as \code{c("ccfid", "echo_date")}. Checked at registration, which
+stops if any row repeats on it. Jobs use it unless they set their own.}
+
+\item{parents}{Character or \code{NULL}. For \code{kind = "combined"} only:
+the registered datasets it was built from. Their current versions are
+recorded, so a later update to a parent marks this dataset out of date.}
 }
 \value{
 An object of class \code{"study_status"}, returned visibly.
@@ -56,6 +72,17 @@ The date is the file's modification date unless \code{extract_date} is given.
 Conversion needs the \pkg{arrow} package. A release-aware registration
 (\code{catalog_dataset} and \code{release_id}) records the catalog's file as
 it is and converts nothing.
+
+A dataset is registered once: registering it again stops with "already
+registered". So a study whose datasets are already registered adds
+\code{kind}, \code{key} or \code{parents} by editing that dataset's entry in
+\code{_study.yml}, then running \code{\link{update_manifest}()}. The key is
+checked when the next version is registered. A combined dataset records its
+parents' versions only once its source has been rebuilt, and reads as out of
+date until then. A release-aware dataset is skipped by
+\code{update_manifest()}: its parents' versions are recorded when a release is
+adopted with \code{\link{adopt_data_update}()}, and its key is checked only at
+registration.
 }
 \seealso{
 \code{\link{study_setup}}, \code{\link{study_config}},

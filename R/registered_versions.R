@@ -107,11 +107,12 @@
 # The source is stat'ed, read, hashed and stat'ed again, so the hash and the
 # stamp describe the data converted: a rebuild landing during the read or the
 # hash moves the second stat and stops the write.
-.write_version <- function(source, dir, extract_date, taken = character(), caller = "register_data") {
+.write_version <- function(source, dir, extract_date, taken = character(), caller = "register_data", key = NULL) {
   .require_arrow(caller)
   before <- file.info(source)
   d <- as.data.frame(read_clinical_data(source, convert_types = FALSE))
   .assert_no_lowercase_collision(d, source, caller)
+  .check_registration_key(d, key, basename(source), caller)
   source_sha256 <- digest::digest(source, algo = "sha256", file = TRUE)
   after <- file.info(source)
   if (!identical(as.numeric(before$size), as.numeric(after$size)) ||
@@ -201,7 +202,7 @@
 
 # Register a rebuilt source as the next version; the current one moves to the
 # head of history. Unchanged sources are left alone.
-.next_version <- function(entry, source_path, extract_date, reserved = character()) {
+.next_version <- function(entry, source_path, extract_date, reserved = character(), key = NULL) {
   if (!.source_changed(source_path, entry)) {
     return(list(entry = entry, written = character(), action = "unchanged",
                 detail = paste0("unchanged since ", entry$extract_date, " (", entry$parquet, ")")))
@@ -210,7 +211,7 @@
   history <- if (is.list(entry$history)) entry$history else list()
   taken <- c(reserved, entry$parquet, vapply(history, function(h) h$parquet, character(1)))
   date <- if (is.null(extract_date)) .mtime_date(source_path) else extract_date
-  version <- .write_version(source_path, dir, date, taken, caller = "update_manifest")
+  version <- .write_version(source_path, dir, date, taken, caller = "update_manifest", key = key)
   list(
     entry = .versioned_entry(entry$file, version, extra = .entry_extra(entry),
                              history = c(list(.history_record(entry)), history)),
@@ -241,6 +242,7 @@
     .study_dataset(cfg, dataset)
     dataset
   }
+  targets <- .parents_first(cfg, targets)
   if (!length(targets)) {
     stop("update_manifest(): the study at ", cfg$root, " has no registered dataset to update. ",
          "Register one with register_data().", call. = FALSE)
@@ -293,16 +295,34 @@
       next
     }
     step <- if (.is_versioned(entry)) {
-      .next_version(entry, source_path, extract_date, reserved = .reserved_names(manifest$datasets))
+      .next_version(entry, source_path, extract_date, reserved = .reserved_names(manifest$datasets), key = contract$key)
     } else {
-      .migrate_entry(entry, source_path, extract_date, datasets = manifest$datasets)
+      .migrate_entry(entry, source_path, extract_date, datasets = manifest$datasets, key = contract$key)
     }
     written <- c(written, step$written)
     restore$from <- c(restore$from, step$restore$from)
     restore$to <- c(restore$to, step$restore$to)
     drop <- c(drop, step$drop)
     manifest$datasets[[hit]] <- step$entry
+    # Only a rebuilt source records current parent versions. Migrating an
+    # unchanged legacy source is a format change, not a rebuild, so a combined
+    # dataset stays out of date until it is rebuilt.
+    rebuilt <- identical(step$action, "registered") ||
+      (identical(step$action, "migrated") && !identical(entry$sha256, step$entry$source_sha256))
+    if (identical(contract$kind, "combined") && rebuilt) {
+      manifest$datasets[[hit]]$parent_versions <- .parent_versions(cfg, contract$parents, manifest)
+    }
     rows[[name]] <- .manifest_update_row(name, step$action, step$detail)
+  }
+
+  behind <- character()
+  for (name in names(cfg$additional_datasets)) {
+    contract <- .study_dataset(cfg, name)
+    if (!identical(contract$kind, "combined")) next
+    hit <- which(vapply(manifest$datasets, function(e) identical(e$file, contract$built), logical(1)))
+    if (length(hit) != 1L) next
+    stale <- .stale_parents(cfg, name, manifest$datasets[[hit]], manifest)
+    if (nrow(stale)) behind <- c(behind, .parent_changed_text(contract, stale, "update"))
   }
 
   out <- do.call(rbind, unname(rows))
@@ -313,6 +333,7 @@
   # A legacy cache name can be another dataset's registered version; that file is never removed.
   unlink(drop[!basename(drop) %in% .recorded_version_names(manifest$datasets)])
   message(paste0(format(out$dataset), ": ", out$detail, collapse = "\n"))
+  for (b in behind) message(b)
   if (any(out$action %in% c("registered", "migrated"))) {
     message("Commit manifest.yaml so the record of which version is current travels with the study.")
   }
@@ -362,7 +383,7 @@
 # earlier version); or neither (say the earlier version is gone, and register
 # the new one anyway). In every case the new version is dated as a fresh
 # registration is: the caller's extract_date, else the source's modification date.
-.migrate_entry <- function(entry, source_path, extract_date, datasets = list()) {
+.migrate_entry <- function(entry, source_path, extract_date, datasets = list(), key = NULL) {
   unchanged <- identical(entry$sha256, digest::digest(source_path, algo = "sha256", file = TRUE))
   history <- list()
   note <- NULL
@@ -386,7 +407,7 @@
   }
   date <- if (is.null(extract_date)) .mtime_date(source_path) else extract_date
   taken <- c(.reserved_names(datasets), vapply(history, function(h) h$parquet, character(1)))
-  version <- .write_version(source_path, dirname(source_path), date, taken, caller = "update_manifest")
+  version <- .write_version(source_path, dirname(source_path), date, taken, caller = "update_manifest", key = key)
   # The superseded cache is dropped once the manifest is written, so a failed
   # update leaves the legacy entry and its sidecar intact. Never a parquet
   # source, whose derived name is itself.

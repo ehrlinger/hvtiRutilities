@@ -205,6 +205,7 @@ study_config <- function(start = getwd(), require_data = TRUE) {
     raw$additional_datasets,
     found
   )
+  raw <- .study_validate_shapes(raw, found)
   raw$abbreviations <- .study_validate_abbreviations(raw$abbreviations, found)
 
   missing <- Filter(function(k) is.null(.study_pluck(raw, k)),

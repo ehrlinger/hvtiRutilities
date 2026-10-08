@@ -18,7 +18,10 @@
       dataset = dataset,
       built = cfg$built,
       population = cfg$population,
-      release = cfg$release
+      release = cfg$release,
+      kind = "built",
+      key = cfg$key,
+      parents = NULL
     ))
   }
 
@@ -32,7 +35,10 @@
     dataset = dataset,
     built = out$built,
     population = out$population,
-    release = out$release
+    release = out$release,
+    kind = out$kind,
+    key = out$key,
+    parents = out$parents
   )
 }
 
@@ -190,6 +196,14 @@ built_manifest <- function(cfg = study_config(), dataset = "study") {
 #' and a message of class \code{hvtiRutilities_source_changed} says so and
 #' names \code{\link{update_manifest}()}.
 #'
+#' A combined dataset (see \code{\link{register_data}}) is still read when a
+#' dataset it was built from has been updated since. A message of class
+#' \code{hvtiRutilities_parent_changed}, which inherits
+#' \code{hvtiRutilities_out_of_date}, names the parents' recorded and current
+#' versions and the commands that update it. A combined dataset with no
+#' recorded parent versions is reported the same way, as \code{unrecorded},
+#' until it is rebuilt and registered again.
+#'
 #' For a release-aware contract, the pinned release is verified before cache
 #' access. A later valid release emits a message of class
 #' \code{hvtiRutilities_update_available}; an unavailable catalog or invalid
@@ -256,6 +270,10 @@ read_built <- function(cfg = study_config(), refresh = FALSE,
   manifest_path <- file.path(cfg$root, "manifest.yaml")
 
   entry <- .manifest_entry(manifest_path, p)
+  if (identical(contract$kind, "combined") && !is.null(entry)) {
+    stale <- .stale_parents(cfg, dataset, entry, yaml::read_yaml(manifest_path))
+    if (nrow(stale)) message(.parent_changed_condition(contract, stale))
+  }
   if (.is_versioned(entry)) {
     if (isTRUE(refresh)) {
       stop("read_built(): refresh = TRUE does not apply to ", basename(p), ", which is registered as ",

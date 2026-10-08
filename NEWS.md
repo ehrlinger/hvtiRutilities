@@ -1,5 +1,23 @@
 # hvtiRutilities (unreleased)
 
+## New features
+
+* **Datasets have a kind and a key.** `register_data()` gains `kind`
+  (`"built"`, `"subset"`, `"ancillary"` or `"combined"`), `key` (the columns
+  that make each row unique, checked at registration and again when
+  `update_manifest()` registers a rebuilt source) and `parents` (for a
+  combined dataset). `study_config()` validates all three and rejects a cycle
+  among parents. A combined dataset records the versions of the datasets it
+  was built from, when it is registered. When one of them is updated,
+  `read_built()` still reads it and signals `hvtiRutilities_parent_changed`,
+  whose message gives the commands to update it, and `study_status()` and
+  `update_manifest()` list it as out of date. A combined dataset with no
+  recorded parent versions is reported as out of date until it is rebuilt and
+  re-registered. `update_manifest()` updates every parent before the combined
+  datasets built from it. If the out-of-date check in
+  `study_status()` cannot run, the `out_of_date:<dataset>` row is `FAIL`
+  with the error.
+
 ## Bug fixes
 
 * Registered versions are checked and protected more strictly. These fix

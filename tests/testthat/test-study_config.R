@@ -73,7 +73,7 @@ test_that("legacy named cohort fields are not dataset contracts", {
 
   contract <- hvtiRutilities:::.study_dataset(study_config(root), "imaging")
 
-  expect_named(contract, c("dataset", "built", "population", "release"))
+  expect_named(contract, c("dataset", "built", "population", "release", "kind", "key", "parents"))
   expect_false("cohort" %in% names(contract))
 })
 
