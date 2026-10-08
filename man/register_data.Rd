@@ -39,7 +39,9 @@ date. The file modification date is used when omitted.}
 
 \item{catalog_dataset, release_id}{Character(1) or \code{NULL}. Producer
 catalog dataset ID and exact published release ID. Supply both to make
-the study contract release-aware, or neither for a legacy registration.}
+the study contract release-aware, or neither for a legacy registration.
+A dataset already registered as dated versions cannot be moved to a
+release this way: that would drop every registered version.}
 
 \item{kind}{Character(1) or \code{NULL}. What the dataset is:
 \code{"built"} (the study dataset), \code{"subset"}, \code{"ancillary"}
@@ -52,7 +54,8 @@ stops if any row repeats on it. Jobs use it unless they set their own.}
 
 \item{parents}{Character or \code{NULL}. For \code{kind = "combined"} only:
 the registered datasets it was built from. Their current versions are
-recorded, so a later update to a parent marks this dataset out of date.}
+recorded, so a later update to a parent marks this dataset out of date.
+\code{"built"} is a second name for \code{"study"}.}
 }
 \value{
 An object of class \code{"study_status"}, returned visibly.

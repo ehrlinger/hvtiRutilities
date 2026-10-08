@@ -130,6 +130,8 @@
 #' @param catalog_dataset,release_id Character(1) or \code{NULL}. Producer
 #'   catalog dataset ID and exact published release ID. Supply both to make
 #'   the study contract release-aware, or neither for a legacy registration.
+#'   A dataset already registered as dated versions cannot be moved to a
+#'   release this way: that would drop every registered version.
 #' @param kind Character(1) or \code{NULL}. What the dataset is:
 #'   \code{"built"} (the study dataset), \code{"subset"}, \code{"ancillary"}
 #'   (many rows per patient, such as echoes or labs, joined to the cohort by a
@@ -140,6 +142,7 @@
 #' @param parents Character or \code{NULL}. For \code{kind = "combined"} only:
 #'   the registered datasets it was built from. Their current versions are
 #'   recorded, so a later update to a parent marks this dataset out of date.
+#'   \code{"built"} is a second name for \code{"study"}.
 #'
 #' @return An object of class \code{"study_status"}, returned visibly.
 #'
