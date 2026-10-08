@@ -721,3 +721,23 @@ test_that("migrating an untouched source dates it as a fresh registration would"
   suppressMessages(update_manifest(extract_date = "2026-10-03"))
   expect_identical(manifest_entry_for(root2)$parquet, "built_20261003.parquet")
 })
+
+test_that("a rebuild landing while the source is hashed is caught, not recorded against old data", {
+  skip_if_not_installed("arrow")
+  dir <- withr::local_tempdir()
+  src <- write_source_csv(dir)
+  real <- digest::digest
+  rebuilt <- FALSE
+  local_mocked_bindings(digest = function(object, ...) {
+    if (!rebuilt && identical(object, src)) {
+      rebuilt <<- TRUE
+      write_source_csv(dir, data.frame(id = 1:4, x = c(1.5, 2.5, 3.5, 4.5)))
+      Sys.setFileTime(src, as.POSIXct("2026-10-08 12:00:00", tz = "UTC"))
+    }
+    real(object, ...)
+  }, .package = "digest")
+
+  expect_error(.write_version(src, dir, "2026-10-07"), "changed while it was being read")
+  expect_true(rebuilt)
+  expect_identical(list.files(dir), "built.csv")
+})

@@ -95,8 +95,7 @@
 # file listing would.
 .mtime_date <- function(path) format(file.info(path)$mtime, "%Y-%m-%d")
 
-.source_stamp <- function(path) {
-  info <- file.info(path)
+.source_stamp <- function(path, info = file.info(path)) {
   list(source_size = as.numeric(info$size),
        source_mtime = format(info$mtime, "%Y-%m-%d %H:%M:%OS6", tz = "UTC"))
 }
@@ -105,11 +104,15 @@
 # and returns the version record. On any error neither file is left behind.
 # The frame is stored as read, before read_built()'s normalisation, as the read
 # cache stores it, so a version reads back exactly as a cached source did.
+# The source is stat'ed, read, hashed and stat'ed again, so the hash and the
+# stamp describe the data converted: a rebuild landing during the read or the
+# hash moves the second stat and stops the write.
 .write_version <- function(source, dir, extract_date, taken = character(), caller = "register_data") {
   .require_arrow(caller)
   before <- file.info(source)
   d <- as.data.frame(read_clinical_data(source, convert_types = FALSE))
   .assert_no_lowercase_collision(d, source, caller)
+  source_sha256 <- digest::digest(source, algo = "sha256", file = TRUE)
   after <- file.info(source)
   if (!identical(as.numeric(before$size), as.numeric(after$size)) ||
         !identical(as.numeric(before$mtime), as.numeric(after$mtime))) {
@@ -131,13 +134,13 @@
     list(
       parquet = name,
       sha256 = digest::digest(parquet, algo = "sha256", file = TRUE),
-      source_sha256 = digest::digest(source, algo = "sha256", file = TRUE),
+      source_sha256 = source_sha256,
       extract_date = format(as.Date(extract_date), "%Y-%m-%d"),
       n_rows = as.integer(nrow(d)),
       n_cols = as.integer(ncol(d)),
       schema_sha256 = digest::digest(schema, algo = "sha256", file = TRUE)
     ),
-    .source_stamp(source)
+    .source_stamp(source, before)
   )
   reader <- .reader_provenance(source)
   if (!is.null(reader)) record$reader <- reader
