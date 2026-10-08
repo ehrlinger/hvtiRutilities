@@ -64,6 +64,11 @@
     )
   }
   for (name in names(value)) {
+    if (identical(name, "built")) {
+      stop("study_config(): ", found, " registers an additional dataset named 'built', which is now a second ",
+           "name for the study dataset. Rename it under additional_datasets: and in manifest.yaml.",
+           call. = FALSE)
+    }
     contract <- value[[name]]
     valid_name <- !identical(name, "study") &&
       grepl("^[a-z][a-z0-9_]*$", name)

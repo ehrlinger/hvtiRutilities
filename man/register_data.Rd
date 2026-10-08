@@ -26,7 +26,7 @@ register_data(
 \code{datasets} directory, including its extension.}
 
 \item{dataset}{Character(1). Logical dataset name. \code{"study"} is
-reserved for the default.}
+reserved for the default, and \code{"built"} is a second name for it.}
 
 \item{role}{Character. Either \code{"study"} or \code{"named"}.}
 

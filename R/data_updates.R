@@ -345,6 +345,7 @@ check_data_updates <- function(cfg = study_config(), dataset = NULL) {
   datasets <- if (is.null(dataset)) {
     c("study", names(cfg$additional_datasets))
   } else {
+    dataset <- .canonical_dataset(dataset)
     .study_dataset(cfg, dataset)
     dataset
   }
@@ -456,7 +457,7 @@ check_data_updates <- function(cfg = study_config(), dataset = NULL) {
 #'
 #' @param cfg List. A study manifest from \code{\link{study_config}}.
 #' @param dataset Character(1). Logical dataset name. Defaults to
-#'   \code{"study"}.
+#'   \code{"study"}. \code{"built"} is a second name for \code{"study"}.
 #' @param release_id Character(1). Exact candidate release ID. The value
 #'   \code{"latest"} is not accepted as an alias.
 #'
@@ -481,6 +482,7 @@ check_data_updates <- function(cfg = study_config(), dataset = NULL) {
 #' }
 review_data_update <- function(cfg = study_config(), dataset = "study",
                                release_id) {
+  dataset <- .canonical_dataset(dataset)
   if (identical(release_id, "latest")) {
     stop(
       "review_data_update(): supply an exact release ID; 'latest' is not accepted",
@@ -589,7 +591,7 @@ print.data_update_review <- function(x, ...) {
 #'
 #' @param cfg List. A study manifest from \code{\link{study_config}}.
 #' @param dataset Character(1). Logical dataset name. Defaults to
-#'   \code{"study"}.
+#'   \code{"study"}. \code{"built"} is a second name for \code{"study"}.
 #' @param release_id Character(1). Exact, newer, published candidate release
 #'   ID.
 #'
@@ -609,6 +611,7 @@ print.data_update_review <- function(x, ...) {
 #' }
 adopt_data_update <- function(cfg = study_config(), dataset = "study",
                               release_id) {
+  dataset <- .canonical_dataset(dataset)
   review <- review_data_update(cfg, dataset, release_id)
   current_cfg <- study_config(cfg$root, require_data = FALSE)
   original_contract <- .study_dataset(cfg, dataset)

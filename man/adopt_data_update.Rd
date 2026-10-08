@@ -10,7 +10,7 @@ adopt_data_update(cfg = study_config(), dataset = "study", release_id)
 \item{cfg}{List. A study manifest from \code{\link{study_config}}.}
 
 \item{dataset}{Character(1). Logical dataset name. Defaults to
-\code{"study"}.}
+\code{"study"}. \code{"built"} is a second name for \code{"study"}.}
 
 \item{release_id}{Character(1). Exact, newer, published candidate release
 ID.}
