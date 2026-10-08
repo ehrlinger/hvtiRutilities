@@ -38,5 +38,54 @@
   for (name in names(raw$additional_datasets)) {
     .study_validate_shape(raw$additional_datasets[[name]], found, name, known, default = FALSE)
   }
+  .study_validate_no_cycle(raw, found)
   raw
+}
+
+# A dataset may not be, however indirectly, its own parent: the staleness walk
+# recurses over parents. Names datasets, never values.
+.study_validate_no_cycle <- function(raw, found) {
+  edges <- lapply(raw$additional_datasets, function(x) x$parents)
+  visit <- function(name, path) {
+    if (name %in% path) {
+      cycle <- c(path[match(name, path):length(path)], name)
+      stop("study_config(): ", found, " has a cycle among dataset parents: ", paste(cycle, collapse = " -> "),
+           ".", call. = FALSE)
+    }
+    for (p in edges[[name]]) visit(p, c(path, name))
+  }
+  for (name in names(edges)) visit(name, character())
+  invisible(TRUE)
+}
+
+# Names are matched ignoring case, because read_built() lowercases them.
+.check_registration_key <- function(d, key, file, caller) {
+  if (is.null(key)) return(invisible(TRUE))
+  hit <- match(tolower(key), tolower(names(d)))
+  if (anyNA(hit)) {
+    stop(caller, "(): key names a column ", file, " does not have: ", toString(key[is.na(hit)]),
+         ". Nothing was written.", call. = FALSE)
+  }
+  repeats <- sum(duplicated(d[names(d)[hit]]))
+  if (repeats) {
+    stop(caller, "(): ", repeats, if (repeats == 1L) " row repeats" else " rows repeat",
+         " a value of the key (", toString(key), ") in ", file,
+         ". Each row must be unique on the key; add a column to it, such as a date. Nothing was written.",
+         call. = FALSE)
+  }
+  invisible(TRUE)
+}
+
+# A registered dataset's version: its dated parquet (design 2), its pinned
+# release, or, for an unconverted registration, its checksum.
+.dataset_version <- function(cfg, name, manifest) {
+  contract <- .study_dataset(cfg, name)
+  if (!is.null(contract$release)) return(contract$release$release_id)
+  hit <- Filter(function(e) identical(e$file, contract$built), manifest$datasets)
+  if (!length(hit)) return(NA_character_)
+  if (.is_versioned(hit[[1L]])) hit[[1L]]$parquet else hit[[1L]]$sha256
+}
+
+.parent_versions <- function(cfg, parents, manifest) {
+  stats::setNames(lapply(parents, function(p) .dataset_version(cfg, p, manifest)), parents)
 }

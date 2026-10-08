@@ -107,11 +107,12 @@
 # The source is stat'ed, read, hashed and stat'ed again, so the hash and the
 # stamp describe the data converted: a rebuild landing during the read or the
 # hash moves the second stat and stops the write.
-.write_version <- function(source, dir, extract_date, taken = character(), caller = "register_data") {
+.write_version <- function(source, dir, extract_date, taken = character(), caller = "register_data", key = NULL) {
   .require_arrow(caller)
   before <- file.info(source)
   d <- as.data.frame(read_clinical_data(source, convert_types = FALSE))
   .assert_no_lowercase_collision(d, source, caller)
+  .check_registration_key(d, key, basename(source), caller)
   source_sha256 <- digest::digest(source, algo = "sha256", file = TRUE)
   after <- file.info(source)
   if (!identical(as.numeric(before$size), as.numeric(after$size)) ||
@@ -201,7 +202,7 @@
 
 # Register a rebuilt source as the next version; the current one moves to the
 # head of history. Unchanged sources are left alone.
-.next_version <- function(entry, source_path, extract_date, reserved = character()) {
+.next_version <- function(entry, source_path, extract_date, reserved = character(), key = NULL) {
   if (!.source_changed(source_path, entry)) {
     return(list(entry = entry, written = character(), action = "unchanged",
                 detail = paste0("unchanged since ", entry$extract_date, " (", entry$parquet, ")")))
@@ -210,7 +211,7 @@
   history <- if (is.list(entry$history)) entry$history else list()
   taken <- c(reserved, entry$parquet, vapply(history, function(h) h$parquet, character(1)))
   date <- if (is.null(extract_date)) .mtime_date(source_path) else extract_date
-  version <- .write_version(source_path, dir, date, taken, caller = "update_manifest")
+  version <- .write_version(source_path, dir, date, taken, caller = "update_manifest", key = key)
   list(
     entry = .versioned_entry(entry$file, version, extra = .entry_extra(entry),
                              history = c(list(.history_record(entry)), history)),
@@ -293,9 +294,9 @@
       next
     }
     step <- if (.is_versioned(entry)) {
-      .next_version(entry, source_path, extract_date, reserved = .reserved_names(manifest$datasets))
+      .next_version(entry, source_path, extract_date, reserved = .reserved_names(manifest$datasets), key = contract$key)
     } else {
-      .migrate_entry(entry, source_path, extract_date, datasets = manifest$datasets)
+      .migrate_entry(entry, source_path, extract_date, datasets = manifest$datasets, key = contract$key)
     }
     written <- c(written, step$written)
     restore$from <- c(restore$from, step$restore$from)
@@ -362,7 +363,7 @@
 # earlier version); or neither (say the earlier version is gone, and register
 # the new one anyway). In every case the new version is dated as a fresh
 # registration is: the caller's extract_date, else the source's modification date.
-.migrate_entry <- function(entry, source_path, extract_date, datasets = list()) {
+.migrate_entry <- function(entry, source_path, extract_date, datasets = list(), key = NULL) {
   unchanged <- identical(entry$sha256, digest::digest(source_path, algo = "sha256", file = TRUE))
   history <- list()
   note <- NULL
@@ -386,7 +387,7 @@
   }
   date <- if (is.null(extract_date)) .mtime_date(source_path) else extract_date
   taken <- c(.reserved_names(datasets), vapply(history, function(h) h$parquet, character(1)))
-  version <- .write_version(source_path, dirname(source_path), date, taken, caller = "update_manifest")
+  version <- .write_version(source_path, dirname(source_path), date, taken, caller = "update_manifest", key = key)
   # The superseded cache is dropped once the manifest is written, so a failed
   # update leaves the legacy entry and its sidecar intact. Never a parquet
   # source, whose derived name is itself.

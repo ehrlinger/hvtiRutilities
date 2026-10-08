@@ -13,7 +13,10 @@ register_data(
   source = NULL,
   extract_date = NULL,
   catalog_dataset = NULL,
-  release_id = NULL
+  release_id = NULL,
+  kind = NULL,
+  key = NULL,
+  parents = NULL
 )
 }
 \arguments{
@@ -37,6 +40,19 @@ date. The file modification date is used when omitted.}
 \item{catalog_dataset, release_id}{Character(1) or \code{NULL}. Producer
 catalog dataset ID and exact published release ID. Supply both to make
 the study contract release-aware, or neither for a legacy registration.}
+
+\item{kind}{Character(1) or \code{NULL}. What the dataset is:
+\code{"built"} (the study dataset), \code{"subset"}, \code{"ancillary"}
+(many rows per patient, such as echoes or labs, joined to the cohort by a
+job) or \code{"combined"} (built by joining others).}
+
+\item{key}{Character or \code{NULL}. The columns that make each row unique,
+such as \code{c("ccfid", "echo_date")}. Checked at registration, which
+stops if any row repeats on it. Jobs use it unless they set their own.}
+
+\item{parents}{Character or \code{NULL}. For \code{kind = "combined"} only:
+the registered datasets it was built from. Their current versions are
+recorded, so a later update to a parent marks this dataset out of date.}
 }
 \value{
 An object of class \code{"study_status"}, returned visibly.
