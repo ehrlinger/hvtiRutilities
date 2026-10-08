@@ -832,3 +832,81 @@ test_that("update_manifest() does not claim jobs keep reading a missing legacy s
   expect_match(msgs, "read_built()", fixed = TRUE)
 })
 
+
+test_that("a mixed study (versioned, legacy, release-aware) updates, verifies and reports cleanly", {
+  skip_if_not_installed("arrow")
+  root <- file.path(withr::local_tempdir(), "study")
+  suppressMessages(study_setup(root, "Mixed fixture", 42L))
+  dir <- study_dir("datasets", root)
+  write_release_fixture(root)
+  stamp <- function(path, when) Sys.setFileTime(path, as.POSIXct(when, tz = "UTC"))
+
+  utils::write.csv(data.frame(id = 1:3, dead = c(1L, 0L, 0L)), file.path(dir, "built.csv"), row.names = FALSE)
+  stamp(file.path(dir, "built.csv"), "2026-09-15 12:00:00")
+  suppressMessages(register_data(root, "built.csv"))
+  suppressMessages(register_data(root, "cohort_20260920.csv", dataset = "named_data", role = "named",
+                                 catalog_dataset = "surgery_cohort", release_id = "surgery_cohort-20260920-r1"))
+  legacy <- data.frame(id = 1:4, dead = c(0L, 1L, 0L, 1L))
+  utils::write.csv(legacy, file.path(dir, "legacy.csv"), row.names = FALSE)
+  stamp(file.path(dir, "legacy.csv"), "2026-09-10 12:00:00")
+  raw <- yaml::read_yaml(file.path(root, "_study.yml"))
+  raw$additional_datasets$legacy <- list(built = "legacy.csv")
+  yaml::write_yaml(raw, file.path(root, "_study.yml"))
+  m <- yaml::read_yaml(file.path(root, "manifest.yaml"))
+  m$datasets <- c(m$datasets, list(.registration_manifest_entry(file.path(dir, "legacy.csv"), legacy, "2026-09-10", NULL)))
+  yaml::write_yaml(m, file.path(root, "manifest.yaml"))
+
+  sha <- function(f) digest::digest(file.path(dir, f), algo = "sha256", file = TRUE)
+  kept <- c("built_20260915.parquet", "built_20260915.schema.csv", "cohort_20260920.csv", "legacy.csv")
+  before <- vapply(kept, sha, "")
+  read_all <- function() {
+    cfg <- study_config(root)
+    # The catalog fixture also publishes r2, which read_built() announces for named_data.
+    withCallingHandlers(
+      vapply(c("study", "named_data", "legacy"), function(ds) nrow(read_built(cfg, dataset = ds)), 1L),
+      hvtiRutilities_update_available = function(m) invokeRestart("muffleMessage")
+    )
+  }
+  checkpoint_back <- function() {
+    res <- .cp_manifest_check(root)
+    path <- withr::local_tempfile(fileext = ".yml")
+    yaml::write_yaml(list(manifest_check = res), path)
+    yaml::read_yaml(path)$manifest_check$datasets
+  }
+  manifest_row <- function() {
+    checks <- study_status(root)$checks
+    expect_false(anyDuplicated(checks$item) > 0L)
+    checks[checks$item == "manifest.yaml", ]
+  }
+
+  expect_identical(read_all(), c(study = 3L, named_data = 3L, legacy = 4L))
+
+  # The default dataset is rebuilt: pending, not failed.
+  utils::write.csv(data.frame(id = 1:5, dead = 0L), file.path(dir, "built.csv"), row.names = FALSE)
+  stamp(file.path(dir, "built.csv"), "2026-10-07 12:00:00")
+  rep <- verify_manifest(file.path(root, "manifest.yaml"))
+  expect_identical(sort(rep$status), c("OK", "OK", "OK", "PENDING"))
+  row <- manifest_row()
+  expect_identical(row$status, "PENDING")
+  # A registered version's row count is not re-derived, so it is counted as such and CHECKPOINT records it unchecked.
+  expect_match(row$detail, "^3 dataset entries verified by checksum [(]row count not re-derived for 1[)];")
+  back <- checkpoint_back()
+  expect_identical(sort(unlist(back, use.names = FALSE)), c("OK", "OK", "PENDING", "unchecked"))
+
+  # One update registers the rebuild, migrates the legacy entry, skips the release.
+  out <- withr::with_dir(root, suppressMessages(update_manifest()))
+  expect_identical(out$action, c("registered", "skipped", "migrated"))
+
+  rep <- verify_manifest(file.path(root, "manifest.yaml"))
+  expect_identical(rep$status, rep("OK", 4L))
+  row <- manifest_row()
+  expect_identical(row$status, "OK")
+  expect_match(row$detail, "^3 dataset entries verified by checksum [(]4 files, counting earlier versions[)]")
+  back <- checkpoint_back()
+  expect_length(back, 4L)
+  expect_false(any(unlist(back) %in% c("FAIL", "PENDING")))
+
+  expect_identical(read_all(), c(study = 5L, named_data = 3L, legacy = 4L))
+  expect_identical(vapply(kept, sha, ""), before)
+  expect_true(file.exists(file.path(dir, manifest_entry_for(root, "legacy.csv")$parquet)))
+})
