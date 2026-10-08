@@ -94,6 +94,13 @@
   upgrade makes the cache stale. Without `packages` the key is unchanged, so
   existing caches stay valid; adding it to a call makes that cache stale once.
 
+* `"built"` is now a second name for the study dataset. Every function that
+  takes a `dataset` accepts it, and everything recorded (manifests,
+  provenance, status) still says `"study"`, so records made under either name
+  compare equal. `"built"` is reserved: a named dataset may not use it, and a
+  study that already registered an additional dataset called `built` is asked
+  to rename it.
+
 ## Documentation
 
 * Articles on the pkgdown site put the table of contents on the left and use
