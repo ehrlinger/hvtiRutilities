@@ -69,7 +69,7 @@
 </ul></div>
 <div class="section level3">
 <h3 id="documentation-1-5-0">Documentation<a class="anchor" aria-label="anchor" href="#documentation-1-5-0"></a></h3>
-<ul><li><p>Vignettes put the table of contents on the left and use the full width of the window, the same layout as the HVTI Quarto books and the hvtiRtemplates jobs. <code>vignettes/_quarto.yml</code> sets it once for every vignette, and <code>pkgdown/extra.css</code> gives the pkgdown site’s articles the same arrangement.</p></li>
+<ul><li><p>Articles on the pkgdown site put the table of contents on the left and use the full width of the window, through <code>pkgdown/extra.css</code>. The installed vignettes are unchanged: the Quarto vignette engine renders them in its own minimal format, which has no sidebar layout.</p></li>
 <li><p><code>DESCRIPTION</code> now declares the Quarto command line tool in <code>SystemRequirements</code>. The vignettes have always needed it to build; the field makes that visible to installers and to <code>R CMD check</code>.</p></li>
 </ul></div>
 </div>
