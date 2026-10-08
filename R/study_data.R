@@ -282,7 +282,7 @@ read_built <- function(cfg = study_config(), refresh = FALSE,
 
   entry <- .manifest_entry(manifest_path, p)
   if (identical(contract$kind, "combined") && !is.null(entry)) {
-    stale <- .stale_parents(cfg, dataset, entry, yaml::read_yaml(manifest_path))
+    stale <- .stale_parents(cfg, dataset, entry, .read_manifest(manifest_path))
     if (nrow(stale)) message(.parent_changed_condition(contract, stale))
   }
   if (.is_versioned(entry)) {

@@ -130,6 +130,8 @@
 #' @param catalog_dataset,release_id Character(1) or \code{NULL}. Producer
 #'   catalog dataset ID and exact published release ID. Supply both to make
 #'   the study contract release-aware, or neither for a legacy registration.
+#'   A dataset already registered as dated versions cannot be moved to a
+#'   release this way: that would drop every registered version.
 #' @param kind Character(1) or \code{NULL}. What the dataset is:
 #'   \code{"built"} (the study dataset), \code{"subset"}, \code{"ancillary"}
 #'   (many rows per patient, such as echoes or labs, joined to the cohort by a
@@ -140,6 +142,7 @@
 #' @param parents Character or \code{NULL}. For \code{kind = "combined"} only:
 #'   the registered datasets it was built from. Their current versions are
 #'   recorded, so a later update to a parent marks this dataset out of date.
+#'   \code{"built"} is a second name for \code{"study"}.
 #'
 #' @return An object of class \code{"study_status"}, returned visibly.
 #'
@@ -181,6 +184,7 @@ register_data <- function(root = getwd(), built, dataset = "study",
     stop("register_data(): release_id is invalid", call. = FALSE)
   }
 
+  parents <- .canonical_parents(parents)
   if (!is.null(parents) && !identical(kind, "combined")) {
     stop("register_data(): parents are recorded only for kind = \"combined\".", call. = FALSE)
   }
@@ -226,6 +230,17 @@ register_data <- function(root = getwd(), built, dataset = "study",
         !is.null(raw$additional_datasets[[dataset]]) && !migrating) {
     stop("register_data(): dataset '", dataset, "' is already registered",
          call. = FALSE)
+  }
+  # A release-aware entry is flat, so migrating a dataset registered as dated
+  # versions would drop every version from the manifest and leave its parquets
+  # unchecked, as update_manifest(file) refuses to do.
+  if (migrating && file.exists(file.path(cfg$root, "manifest.yaml"))) {
+    current <- Filter(function(e) identical(e$file, built), .read_manifest(file.path(cfg$root, "manifest.yaml"))$datasets)
+    if (length(current) && .is_versioned(current[[1L]])) {
+      stop("register_data(): ", built, " is registered as dated versions (current: ", current[[1L]]$parquet,
+           "). Pinning it to a catalog release would drop every registered version. Nothing was written. ",
+           "Moving a dataset with registered versions to catalog releases is not supported.", call. = FALSE)
+    }
   }
 
   path <- file.path(study_dir("datasets", cfg$root), built)
@@ -314,10 +329,12 @@ register_data <- function(root = getwd(), built, dataset = "study",
     if (!is.null(parents)) contract$parents <- parents
     raw$additional_datasets[[dataset]] <- contract
   }
+  # Before the conversion below, so a contract that cannot be recorded costs no conversion.
+  raw <- .study_validate_shapes(raw, cfg$file, caller = "register_data")
 
   if (is.null(extract_date)) extract_date <- .mtime_date(path)
   manifest_path <- file.path(cfg$root, "manifest.yaml")
-  prior <- if (file.exists(manifest_path)) yaml::read_yaml(manifest_path)$datasets
+  prior <- if (file.exists(manifest_path)) .read_manifest(manifest_path)$datasets
   clash <- .cache_name_clash(built, prior)
   if (!is.null(clash)) {
     stop("register_data(): ", built, " would be read through ", basename(.derived_paths(built)$parquet),
@@ -346,7 +363,7 @@ register_data <- function(root = getwd(), built, dataset = "study",
     )
   }
   manifest <- if (file.exists(manifest_path)) {
-    yaml::read_yaml(manifest_path)
+    .read_manifest(manifest_path)
   } else {
     list()
   }
@@ -405,9 +422,8 @@ register_data <- function(root = getwd(), built, dataset = "study",
     tempfile(pattern = ".manifest-", tmpdir = cfg$root)
   )
   on.exit(unlink(prepared[file.exists(prepared)]), add = TRUE)
-  .study_validate_shapes(raw, cfg$file)
   yaml::write_yaml(raw, prepared[[1L]])
-  yaml::write_yaml(manifest, prepared[[2L]])
+  .write_manifest(manifest, prepared[[2L]])
   .replace_study_pair(prepared, targets)
   registered <- TRUE
 

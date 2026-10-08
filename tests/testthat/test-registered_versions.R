@@ -94,7 +94,7 @@ versioned_study <- function(env = parent.frame(), data = data.frame(id = 1:3, DE
 }
 
 manifest_entry_for <- function(root, file = "built.csv") {
-  m <- yaml::read_yaml(file.path(root, "manifest.yaml"))
+  m <- .read_manifest(file.path(root, "manifest.yaml"))
   Filter(function(e) identical(e$file, file), m$datasets)[[1L]]
 }
 
@@ -614,7 +614,7 @@ collision_study <- function(env = parent.frame()) {
   raw <- yaml::read_yaml(file.path(root, "_study.yml"))
   raw$additional_datasets <- list(legacy = list(built = "cohort_20260915.csv"))
   yaml::write_yaml(raw, file.path(root, "_study.yml"))
-  m <- yaml::read_yaml(file.path(root, "manifest.yaml"))
+  m <- .read_manifest(file.path(root, "manifest.yaml"))
   m$datasets <- c(m$datasets, list(.registration_manifest_entry(file.path(dir, "cohort_20260915.csv"), legacy,
                                                                 "2026-09-15", NULL)))
   yaml::write_yaml(m, file.path(root, "manifest.yaml"))
@@ -743,7 +743,7 @@ test_that("a rebuild landing while the source is hashed is caught, not recorded 
 
 edit_entry <- function(root, fn, file = "built.csv") {
   mpath <- file.path(root, "manifest.yaml")
-  m <- yaml::read_yaml(mpath)
+  m <- .read_manifest(mpath)
   hit <- which(vapply(m$datasets, function(e) identical(e$file, file), logical(1)))
   m$datasets[[hit]] <- fn(m$datasets[[hit]])
   yaml::write_yaml(m, mpath)
@@ -851,7 +851,7 @@ test_that("a mixed study (versioned, legacy, release-aware) updates, verifies an
   raw <- yaml::read_yaml(file.path(root, "_study.yml"))
   raw$additional_datasets$legacy <- list(built = "legacy.csv")
   yaml::write_yaml(raw, file.path(root, "_study.yml"))
-  m <- yaml::read_yaml(file.path(root, "manifest.yaml"))
+  m <- .read_manifest(file.path(root, "manifest.yaml"))
   m$datasets <- c(m$datasets, list(.registration_manifest_entry(file.path(dir, "legacy.csv"), legacy, "2026-09-10", NULL)))
   yaml::write_yaml(m, file.path(root, "manifest.yaml"))
 
@@ -917,7 +917,7 @@ test_that("strict verify_manifest passes a version whose row count matches and f
   expect_true(all(rep$row_count_checked))
   expect_no_match(rep$message, "not re-derived", fixed = TRUE)
 
-  m <- yaml::read_yaml(manifest)
+  m <- .read_manifest(manifest)
   m$datasets[[1L]]$n_rows <- 99L
   yaml::write_yaml(m, manifest)
   expect_error(verify_manifest(manifest), "rows but 99 were recorded")
@@ -951,4 +951,52 @@ test_that("update_manifest(file, ...) refuses a registered dataset and leaves ma
   expect_error(update_manifest(built_path(study_config(root)), manifest_path = mpath),
                "is registered as dated versions", fixed = TRUE)
   expect_identical(readBin(mpath, "raw", file.size(mpath)), before)
+})
+
+test_that("update_manifest(file) refuses a file that is another entry's registered version", {
+  skip_if_not_installed("arrow")
+  root <- make_registered_study(withr::local_tempdir())
+  mp <- file.path(root, "manifest.yaml")
+  dir <- study_dir("datasets", root)
+  first <- .manifest_entry(mp, "built.csv")$parquet
+  write_source_csv(dir, data.frame(dead = c(1L, 0L, 0L, 1L), iv_dead = 1:4))
+  withr::with_dir(root, suppressMessages(update_manifest(dataset = "study", extract_date = "2099-01-01")))
+  current <- .manifest_entry(mp, "built.csv")$parquet
+  before <- readLines(mp)
+
+  # current version, a version in history, and a version's schema sidecar
+  for (f in c(current, first, .version_schema_name(current))) {
+    expect_error(update_manifest(file.path(dir, f), manifest_path = mp, n_rows = 3L),
+                 "registered version of built.csv")
+  }
+  expect_identical(readLines(mp), before)
+})
+
+test_that("update_manifest() re-stamps a touched but unchanged source, so later reads skip the hash", {
+  skip_if_not_installed("arrow")
+  root <- make_registered_study(withr::local_tempdir())
+  mp <- file.path(root, "manifest.yaml")
+  src <- file.path(study_dir("datasets", root), "built.csv")
+  bytes <- readBin(src, "raw", file.info(src)$size)
+  Sys.sleep(0.05)
+  writeBin(bytes, src)
+  require_subsecond_mtime(src)
+  # With the recorded hash made wrong, only a stat can call the source unchanged.
+  stat_only <- function() {
+    e <- .manifest_entry(mp, "built.csv")
+    e$source_sha256 <- "not-a-hash"
+    !.source_changed(src, e)
+  }
+  expect_false(stat_only())
+
+  before <- readLines(mp)
+  suppressMessages(read_built(study_config(root)))
+  expect_identical(readLines(mp), before)
+
+  out <- withr::with_dir(root, suppressMessages(update_manifest(dataset = "study")))
+  expect_identical(out$action, "unchanged")
+  expect_true(stat_only())
+  e <- .manifest_entry(mp, "built.csv")
+  expect_identical(e$source_size, as.numeric(file.info(src)$size))
+  expect_identical(e$parquet, Filter(is.list, yaml::read_yaml(text = before)$datasets)[[1L]]$parquet)
 })
