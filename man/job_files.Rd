@@ -47,9 +47,11 @@ and is not listed.
 
 A \code{scaffolded} name, \code{<subject>-<type>-<prefix>[-<qualifier>].qmd}
 as written by \code{hvtiRtemplates::add_job()}, is parsed with its
-qualifier. The \code{-runner.R} that \code{add_job()} writes beside some
-reports takes the report's \code{stem}, so it counts as a file of that job
-rather than as a second job.
+qualifier. So is the template-first form,
+\code{<prefix>[.<qualifier>].<subject>.<type>.qmd}. The \code{-runner.R}
+(or \code{.runner.R}) that \code{add_job()} writes beside some reports
+takes the report's \code{stem}, so it counts as a file of that job rather
+than as a second job.
 
 A legacy prefix listed in \code{\link{hvti_prefix_folds}} is reported as
 the prefix it folds into, so a \code{pm.*} file counts as \code{lm}.
