@@ -166,3 +166,51 @@ test_that("a two-digit subject still parses as scaffolded, runner included", {
   expect_equal(out$prefix, c("bc", "bc", "nb"))
   expect_equal(out$qualifier1, c(NA, NA, "boostmtree"))
 })
+
+test_that("the template-first form is parsed as scaffolded, before the legacy parser", {
+  # hvtiRtemplates::add_job() writes <prefix>[.<qualifier>].<subject>.<type>.qmd
+  # since 2026-10. The legacy parser would read any dotted name as <prefix>.<anything>
+  # and call it a SAS-era job.
+  out <- hvtiRutilities:::.job_name_fields(
+    c("ac.death.hz.qmd", "dp.trends.cohort.eda.qmd", "bl.death.boot.runner.R")
+  )
+  expect_equal(out$naming, rep("scaffolded", 3))
+  expect_equal(out$prefix, c("ac", "dp", "bl"))
+  expect_equal(out$qualifier1, c(NA, "trends", NA))
+  expect_equal(out$n_qualifiers, c(0L, 1L, 0L))
+})
+
+test_that("SAS-era dotted names stay legacy", {
+  out <- hvtiRutilities:::.job_name_fields(c("hm.dead.sas", "dp.trends.sas", "ac.death.hz.lst", "zz.death.hz.qmd"))
+  expect_equal(out$naming, rep("legacy", 4))
+})
+
+test_that("a template-first runner takes its report's stem in job_files()", {
+  root <- withr::local_tempdir()
+  dir.create(file.path(root, "alpha", "analyses"), recursive = TRUE)
+  file.create(file.path(root, "alpha", "analyses", c("bl.death.boot.qmd", "bl.death.boot.runner.R")))
+  files <- job_files(root)
+  expect_identical(unique(files$stem[files$naming %in% "scaffolded"]), "bl.death.boot")
+})
+
+test_that("old dotted names of the template-first shape are now read as scaffolded (accepted tradeoff)", {
+  # dp.spaghetti.echo.qmd was a legacy name with qualifiers (spaghetti, echo). A known prefix
+  # plus three or four dot-fields is now claimed as scaffolded, so the legacy
+  # qualifier fields are gone. The maintainer accepted this on 2026-10.
+  out <- hvtiRutilities:::.job_name_fields(c("dp.spaghetti.echo.qmd", "bd.death.hz.qmd"))
+  expect_equal(out$naming, rep("scaffolded", 2))
+  expect_equal(out$qualifier1, c(NA_character_, NA_character_))
+  expect_equal(out$qualifiers, c(NA_character_, NA_character_))
+  expect_equal(out$n_qualifiers, c(0L, 0L))
+})
+
+test_that("the boundaries of the template-first form hold", {
+  out <- hvtiRutilities:::.job_name_fields(c("ac.a.b.c.d.qmd", "ac.death.runner.R"))
+  expect_equal(out$naming, rep("legacy", 2))
+
+  hy <- hvtiRutilities:::.job_name_fields("dead_pa-hz-ac.qmd")
+  expect_equal(hy$naming, "scaffolded")
+  expect_equal(hy$prefix, "ac")
+  expect_true(is.na(hy$qualifier1))
+  expect_equal(hy$n_qualifiers, 0L)
+})
