@@ -49,8 +49,10 @@ version-control internals or a study checkpoint's mirror, not study
 files, and is not listed.
 
 A `scaffolded` name, `<subject>-<type>-<prefix>[-<qualifier>].qmd` as
-written by `hvtiRtemplates::add_job()`, is parsed with its qualifier.
-The `-runner.R` that `add_job()` writes beside some reports takes the
+written by `hvtiRtemplates::add_job()`, is parsed with its qualifier. So
+is the template-first form,
+`<prefix>[.<qualifier>].<subject>.<type>.qmd`. The `-runner.R` (or
+`.runner.R`) that `add_job()` writes beside some reports takes the
 report's `stem`, so it counts as a file of that job rather than as a
 second job.
 
