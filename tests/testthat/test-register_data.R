@@ -36,7 +36,7 @@ test_that("register_data registers the default dataset without an endpoint", {
   cfg <- study_config(root)
   expect_identical(cfg$built, "built.csv")
   expect_null(cfg$cohort)
-  manifest <- yaml::read_yaml(file.path(root, "manifest.yaml"))
+  manifest <- .read_manifest(file.path(root, "manifest.yaml"))
   expect_identical(manifest$datasets[[1L]]$n_rows, 5L)
   expect_identical(manifest$datasets[[1L]]$n_cols, 3L)
 })
@@ -139,7 +139,7 @@ test_that("register_data records source and the requested extract date", {
     extract_date = "2006-05-03"
   )
 
-  manifest <- yaml::read_yaml(file.path(root, "manifest.yaml"))
+  manifest <- .read_manifest(file.path(root, "manifest.yaml"))
   expect_identical(manifest$datasets[[1L]]$source, "Synthetic fixture")
   expect_identical(manifest$datasets[[1L]]$extract_date, "2006-05-03")
 })
@@ -151,7 +151,7 @@ test_that("register_data defaults extract date to the dataset mtime", {
 
   register_data(root, "built.csv")
 
-  manifest <- yaml::read_yaml(file.path(root, "manifest.yaml"))
+  manifest <- .read_manifest(file.path(root, "manifest.yaml"))
   expect_identical(manifest$datasets[[1L]]$extract_date, "2006-05-03")
 })
 
@@ -280,7 +280,7 @@ test_that("register_data attaches a verified published release", {
     dataset_id = "surgery_cohort",
     release_id = "surgery_cohort-20260920-r1"
   ))
-  manifest <- yaml::read_yaml(file.path(root, "manifest.yaml"))
+  manifest <- .read_manifest(file.path(root, "manifest.yaml"))
   expect_identical(
     manifest$datasets[[1L]]$sha256,
     fx$catalog$datasets$surgery_cohort$releases[[1L]]$sha256
@@ -454,7 +454,7 @@ test_that("register_data attaches a release to a legacy registration once", {
   expect_identical(cfg$population, "Synthetic cohort")
   expect_identical(cfg$release$release_id,
                    "surgery_cohort-20260920-r1")
-  manifest <- yaml::read_yaml(file.path(root, "manifest.yaml"))
+  manifest <- .read_manifest(file.path(root, "manifest.yaml"))
   files <- vapply(manifest$datasets, function(x) x$file, character(1))
   expect_identical(sum(files == "cohort_20260920.csv"), 1L)
 
@@ -482,7 +482,7 @@ test_that("release migration keeps the same logical dataset and file", {
       args$role <- "named"
     }
     do.call(register_data, args)
-    args$catalog_dataset <- "surgery_cohort"
+      args$catalog_dataset <- "surgery_cohort"
     args$release_id <- "surgery_cohort-20260920-r1"
 
     expect_s3_class(do.call(register_data, args), "study_status")

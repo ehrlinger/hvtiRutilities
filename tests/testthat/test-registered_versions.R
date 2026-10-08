@@ -94,7 +94,7 @@ versioned_study <- function(env = parent.frame(), data = data.frame(id = 1:3, DE
 }
 
 manifest_entry_for <- function(root, file = "built.csv") {
-  m <- yaml::read_yaml(file.path(root, "manifest.yaml"))
+  m <- .read_manifest(file.path(root, "manifest.yaml"))
   Filter(function(e) identical(e$file, file), m$datasets)[[1L]]
 }
 
@@ -614,7 +614,7 @@ collision_study <- function(env = parent.frame()) {
   raw <- yaml::read_yaml(file.path(root, "_study.yml"))
   raw$additional_datasets <- list(legacy = list(built = "cohort_20260915.csv"))
   yaml::write_yaml(raw, file.path(root, "_study.yml"))
-  m <- yaml::read_yaml(file.path(root, "manifest.yaml"))
+  m <- .read_manifest(file.path(root, "manifest.yaml"))
   m$datasets <- c(m$datasets, list(.registration_manifest_entry(file.path(dir, "cohort_20260915.csv"), legacy,
                                                                 "2026-09-15", NULL)))
   yaml::write_yaml(m, file.path(root, "manifest.yaml"))
@@ -743,7 +743,7 @@ test_that("a rebuild landing while the source is hashed is caught, not recorded 
 
 edit_entry <- function(root, fn, file = "built.csv") {
   mpath <- file.path(root, "manifest.yaml")
-  m <- yaml::read_yaml(mpath)
+  m <- .read_manifest(mpath)
   hit <- which(vapply(m$datasets, function(e) identical(e$file, file), logical(1)))
   m$datasets[[hit]] <- fn(m$datasets[[hit]])
   yaml::write_yaml(m, mpath)
@@ -851,7 +851,7 @@ test_that("a mixed study (versioned, legacy, release-aware) updates, verifies an
   raw <- yaml::read_yaml(file.path(root, "_study.yml"))
   raw$additional_datasets$legacy <- list(built = "legacy.csv")
   yaml::write_yaml(raw, file.path(root, "_study.yml"))
-  m <- yaml::read_yaml(file.path(root, "manifest.yaml"))
+  m <- .read_manifest(file.path(root, "manifest.yaml"))
   m$datasets <- c(m$datasets, list(.registration_manifest_entry(file.path(dir, "legacy.csv"), legacy, "2026-09-10", NULL)))
   yaml::write_yaml(m, file.path(root, "manifest.yaml"))
 
@@ -917,7 +917,7 @@ test_that("strict verify_manifest passes a version whose row count matches and f
   expect_true(all(rep$row_count_checked))
   expect_no_match(rep$message, "not re-derived", fixed = TRUE)
 
-  m <- yaml::read_yaml(manifest)
+  m <- .read_manifest(manifest)
   m$datasets[[1L]]$n_rows <- 99L
   yaml::write_yaml(m, manifest)
   expect_error(verify_manifest(manifest), "rows but 99 were recorded")

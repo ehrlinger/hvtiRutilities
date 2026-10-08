@@ -244,7 +244,7 @@ update_manifest <- function(file,
   if (!is.null(reader))   entry$reader   <- reader
 
   manifest <- if (file.exists(manifest_path)) {
-    yaml::read_yaml(manifest_path)
+    .read_manifest(manifest_path)
   } else {
     list()
   }
@@ -281,7 +281,7 @@ update_manifest <- function(file,
     if (verbose) message("Manifest entry added: ", entry$file)
   }
 
-  .atomic_write(manifest_path, function(tmp) yaml::write_yaml(manifest, tmp))
+  .atomic_write(manifest_path, function(tmp) .write_manifest(manifest, tmp))
   invisible(manifest)
 }
 
@@ -494,7 +494,7 @@ verify_manifest <- function(manifest_path = .default_manifest_path(),
     stop("Manifest file not found: ", manifest_path)
   }
 
-  manifest <- yaml::read_yaml(manifest_path)
+  manifest <- .read_manifest(manifest_path)
 
   if (is.null(data_dir)) {
     manifest_dir <- dirname(normalizePath(manifest_path))

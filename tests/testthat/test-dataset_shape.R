@@ -124,7 +124,7 @@ test_that("a combined dataset records its parents' versions in the manifest", {
                                  key = c("ccfid", "echo_date"), parents = c("study", "echo")))
 
   expect_identical(study_config(root)$additional_datasets$built_echo$parents, c("study", "echo"))
-  m <- yaml::read_yaml(file.path(root, "manifest.yaml"))
+  m <- .read_manifest(file.path(root, "manifest.yaml"))
   e <- Filter(function(x) identical(x$file, "be.csv"), m$datasets)[[1L]]
   expect_match(e$parent_versions$study, "^built_[0-9]{8}[.]parquet$")
   expect_match(e$parent_versions$echo, "^echo_[0-9]{8}[.]parquet$")
@@ -190,7 +190,7 @@ test_that("the parent-changed message names the parent versions and the update c
 test_that("a parent recorded without a version is out of date, never current", {
   root <- combined_study()
   cfg <- study_config(root)
-  manifest <- yaml::read_yaml(file.path(root, "manifest.yaml"))
+  manifest <- .read_manifest(file.path(root, "manifest.yaml"))
   i <- which(vapply(manifest$datasets, function(e) identical(e$file, "be.csv"), logical(1)))
   manifest$datasets[[i]]$parent_versions$echo <- NA_character_
 
@@ -250,10 +250,10 @@ test_that("study_status lists an out-of-date combined dataset", {
 
 drop_parent_versions <- function(root) {
   path <- file.path(root, "manifest.yaml")
-  manifest <- yaml::read_yaml(path)
+  manifest <- .read_manifest(path)
   i <- which(vapply(manifest$datasets, function(e) identical(e$file, "be.csv"), logical(1)))
   manifest$datasets[[i]]$parent_versions <- NULL
-  yaml::write_yaml(manifest, path)
+  .write_manifest(manifest, path)
 }
 
 test_that("a combined dataset with no recorded parent versions stays out of date until it is rebuilt", {
@@ -283,7 +283,7 @@ test_that("a combined dataset with no recorded parent versions stays out of date
   rebuild(root, "be.csv", data.frame(ccfid = c(1L, 2L), echo_date = c(10, 10), dead = c(1L, 0L)))
   withr::with_dir(root, suppressMessages(update_manifest()))
   expect_no_message(read_built(study_config(root), dataset = "built_echo"))
-  m <- yaml::read_yaml(manifest_file)
+  m <- .read_manifest(manifest_file)
   e <- Filter(function(x) identical(x$file, "be.csv"), m$datasets)[[1L]]
   expect_named(e$parent_versions, c("study", "echo"))
 })
@@ -329,7 +329,7 @@ test_that("adopting a release for a combined dataset records its parents' versio
 
   suppressMessages(adopt_data_update(study_config(fx$root), dataset = "named_data",
                                      release_id = "surgery_cohort-20260921-r1"))
-  m <- yaml::read_yaml(file.path(fx$root, "manifest.yaml"))
+  m <- .read_manifest(file.path(fx$root, "manifest.yaml"))
   e <- Filter(function(x) identical(x$file, "cohort_20260921.csv"), m$datasets)[[1L]]
   expect_match(e$parent_versions$study, "^default_[0-9]{8}[.]parquet$")
 

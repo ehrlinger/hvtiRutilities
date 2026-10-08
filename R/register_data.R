@@ -317,7 +317,7 @@ register_data <- function(root = getwd(), built, dataset = "study",
 
   if (is.null(extract_date)) extract_date <- .mtime_date(path)
   manifest_path <- file.path(cfg$root, "manifest.yaml")
-  prior <- if (file.exists(manifest_path)) yaml::read_yaml(manifest_path)$datasets
+  prior <- if (file.exists(manifest_path)) .read_manifest(manifest_path)$datasets
   clash <- .cache_name_clash(built, prior)
   if (!is.null(clash)) {
     stop("register_data(): ", built, " would be read through ", basename(.derived_paths(built)$parquet),
@@ -346,7 +346,7 @@ register_data <- function(root = getwd(), built, dataset = "study",
     )
   }
   manifest <- if (file.exists(manifest_path)) {
-    yaml::read_yaml(manifest_path)
+    .read_manifest(manifest_path)
   } else {
     list()
   }
@@ -407,7 +407,7 @@ register_data <- function(root = getwd(), built, dataset = "study",
   on.exit(unlink(prepared[file.exists(prepared)]), add = TRUE)
   .study_validate_shapes(raw, cfg$file)
   yaml::write_yaml(raw, prepared[[1L]])
-  yaml::write_yaml(manifest, prepared[[2L]])
+  .write_manifest(manifest, prepared[[2L]])
   .replace_study_pair(prepared, targets)
   registered <- TRUE
 
