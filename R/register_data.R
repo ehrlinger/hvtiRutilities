@@ -227,6 +227,17 @@ register_data <- function(root = getwd(), built, dataset = "study",
     stop("register_data(): dataset '", dataset, "' is already registered",
          call. = FALSE)
   }
+  # A release-aware entry is flat, so migrating a dataset registered as dated
+  # versions would drop every version from the manifest and leave its parquets
+  # unchecked, as update_manifest(file) refuses to do.
+  if (migrating && file.exists(file.path(cfg$root, "manifest.yaml"))) {
+    current <- Filter(function(e) identical(e$file, built), .read_manifest(file.path(cfg$root, "manifest.yaml"))$datasets)
+    if (length(current) && .is_versioned(current[[1L]])) {
+      stop("register_data(): ", built, " is registered as dated versions (current: ", current[[1L]]$parquet,
+           "). Pinning it to a catalog release would drop every registered version. Nothing was written. ",
+           "Moving a dataset with registered versions to catalog releases is not supported.", call. = FALSE)
+    }
+  }
 
   path <- file.path(study_dir("datasets", cfg$root), built)
   if (!file.exists(path)) {

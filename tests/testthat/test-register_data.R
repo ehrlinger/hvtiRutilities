@@ -6,6 +6,22 @@ registration_study <- function() {
   root
 }
 
+# A registration made before dated versions: a flat entry recording the file's
+# checksum, which is what a release migration starts from. register_data() now
+# writes the versioned form, so the entry is rewritten here.
+unconvert_registration <- function(root, built) {
+  mp <- file.path(root, "manifest.yaml")
+  m <- .read_manifest(mp)
+  path <- file.path(study_dir("datasets", root), built)
+  hit <- vapply(m$datasets, function(e) identical(e$file, built), logical(1))
+  unlink(file.path(dirname(path), c(m$datasets[[which(hit)]]$parquet,
+                                    .version_schema_name(m$datasets[[which(hit)]]$parquet))))
+  m$datasets[[which(hit)]] <- .registration_manifest_entry(path, .read_registration_data(path),
+                                                           m$datasets[[which(hit)]]$extract_date, NULL)
+  yaml::write_yaml(m, mp)
+  invisible(root)
+}
+
 write_registration_csv <- function(root, file, n = 5L, n_events = 2L) {
   path <- file.path(study_dir("datasets", root), file)
   d <- data.frame(
@@ -442,6 +458,7 @@ test_that("register_data attaches a release to a legacy registration once", {
     "cohort_20260920.csv",
     population = "Synthetic cohort"
   )
+  unconvert_registration(root, "cohort_20260920.csv")
 
   register_data(
     root,
@@ -482,10 +499,32 @@ test_that("release migration keeps the same logical dataset and file", {
       args$role <- "named"
     }
     do.call(register_data, args)
-      args$catalog_dataset <- "surgery_cohort"
+    unconvert_registration(root, "cohort_20260920.csv")
+    args$catalog_dataset <- "surgery_cohort"
     args$release_id <- "surgery_cohort-20260920-r1"
 
     expect_s3_class(do.call(register_data, args), "study_status")
+  }
+})
+
+test_that("release migration refuses a dataset registered as dated versions", {
+  for (role in c("study", "named")) {
+    root <- registration_study()
+    write_release_fixture(root)
+    args <- list(root = root, built = "cohort_20260920.csv")
+    if (identical(role, "named")) {
+      args$dataset <- "named_data"
+      args$role <- "named"
+    }
+    suppressMessages(do.call(register_data, args))
+    before <- lapply(file.path(root, c("_study.yml", "manifest.yaml")), readLines)
+    files <- list.files(study_dir("datasets", root))
+    args$catalog_dataset <- "surgery_cohort"
+    args$release_id <- "surgery_cohort-20260920-r1"
+
+    expect_error(do.call(register_data, args), "would drop every registered version")
+    expect_identical(lapply(file.path(root, c("_study.yml", "manifest.yaml")), readLines), before)
+    expect_identical(list.files(study_dir("datasets", root)), files)
   }
 })
 
@@ -498,6 +537,7 @@ test_that("named release migration preserves additive contract fields", {
     dataset = "named_data",
     role = "named"
   )
+  unconvert_registration(root, "cohort_20260920.csv")
   path <- file.path(root, "_study.yml")
   raw <- yaml::read_yaml(path)
   raw$additional_datasets$named_data$analysis_context <- list(
