@@ -941,3 +941,14 @@ test_that("a rebuilt source does not mask an altered parquet", {
   cat("tamper", file = file.path(study_dir("datasets", root), "built_20260915.parquet"), append = TRUE)
   expect_error(verify_manifest(file.path(root, "manifest.yaml")), "restore it from backup")
 })
+
+test_that("update_manifest(file, ...) refuses a registered dataset and leaves manifest.yaml untouched", {
+  root <- versioned_study()
+  mpath <- file.path(root, "manifest.yaml")
+  rebuild_source(root)
+  before <- readBin(mpath, "raw", file.size(mpath))
+
+  expect_error(update_manifest(built_path(study_config(root)), manifest_path = mpath),
+               "is registered as dated versions", fixed = TRUE)
+  expect_identical(readBin(mpath, "raw", file.size(mpath)), before)
+})
