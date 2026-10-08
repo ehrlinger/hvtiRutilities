@@ -142,7 +142,8 @@
     }
     if (nrow(pending)) {
       return(.status_row("manifest.yaml", "PENDING",
-                         paste0(detail, "; rebuilt since registration: ", paste(pending$file, collapse = ", "),
+                         paste0(detail, "; rebuilt since registration: ",
+                                paste(sub(" [(]source[)]$", "", pending$file), collapse = ", "),
                                 ". Run hvtiRutilities::update_manifest() to register ",
                                 if (nrow(pending) == 1L) "it." else "them.")))
     }

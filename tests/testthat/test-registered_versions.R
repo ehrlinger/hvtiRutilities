@@ -247,6 +247,7 @@ test_that("study_status reports a rebuilt source as pending, not failed", {
   row <- st$checks[st$checks$item == "manifest.yaml", , drop = FALSE]
   expect_identical(row$status, "PENDING")
   expect_match(row$detail, "update_manifest()", fixed = TRUE)
+  expect_match(row$detail, "rebuilt since registration: built.csv. Run", fixed = TRUE)
 })
 
 rebuild_source <- function(root, data = data.frame(id = 1:4, DEAD = c(1L, 1L, 0L, 0L)), when = "2026-10-07 12:00:00") {
@@ -564,4 +565,34 @@ test_that("an unparsable recorded source mtime falls through to the hash", {
 test_that("update_manifest() with no file refuses arguments that describe one file", {
   expect_error(update_manifest(role = "source"), "`role` describes a single file and cannot be used without `file`")
   expect_error(update_manifest(n_rows = 3, verbose = TRUE), "`n_rows`, `verbose` describe a single file")
+})
+
+test_that("CHECKPOINT.yml stays readable while a source is pending and versions share a date", {
+  root <- versioned_study()
+  withr::local_dir(root)
+  for (i in 1:3) {
+    rebuild_source(root, data.frame(id = seq_len(3L + i), DEAD = 0L), when = sprintf("2026-10-07 1%d:00:00", i))
+    suppressMessages(update_manifest())
+  }
+  rebuild_source(root, data.frame(id = 1:9, DEAD = 0L), when = "2026-10-08 12:00:00")
+
+  res <- .cp_manifest_check(root)
+  expect_false(anyDuplicated(names(res$datasets)) > 0L)
+  path <- withr::local_tempfile(fileext = ".yml")
+  yaml::write_yaml(list(manifest_check = res), path)
+  back <- yaml::read_yaml(path)$manifest_check$datasets
+  # A version's row count is not re-derived, so .cp_manifest_check() records it as unchecked.
+  expect_identical(back[["built.csv"]], "unchecked")
+  expect_identical(sum(unlist(back) == "PENDING"), 1L)
+  expect_length(back, 5L)
+})
+
+test_that("a pending source gets its own row label, so CHECKPOINT.yml has no duplicate key", {
+  root <- versioned_study()
+  rebuild_source(root)
+  res <- .cp_manifest_check(root)
+  path <- withr::local_tempfile(fileext = ".yml")
+  yaml::write_yaml(list(manifest_check = res), path)
+  expect_identical(yaml::read_yaml(path)$manifest_check$datasets,
+                   list(built.csv = "unchecked", `built.csv (source)` = "PENDING"))
 })

@@ -293,11 +293,14 @@ update_manifest <- function(file,
 # One row per registered version (current first), plus a PENDING row when the
 # source has been rebuilt since. A version is registered data, so a missing or
 # edited one FAILs with the restore instruction; a rebuilt source is expected.
+# Every row's label is distinct, because .cp_manifest_check() writes them as
+# YAML keys: an earlier version is named by its parquet (two can share a date)
+# and the PENDING row by "(source)".
 .verify_versioned_entry <- function(entry, resolve) {
   versions <- c(list(.history_record(entry)), if (is.list(entry$history)) entry$history else list())
   rows <- lapply(seq_along(versions), function(i) {
     v <- versions[[i]]
-    label <- if (i == 1L) entry$file else paste0(entry$file, " (", v$extract_date, ")")
+    label <- if (i == 1L) entry$file else paste0(entry$file, " (", v$parquet, ")")
     target <- resolve(v$parquet)
     restore <- paste0(" It is registered data and cannot be rebuilt from its source; restore it from backup ",
                       "and tell the study's data manager.")
@@ -315,7 +318,7 @@ update_manifest <- function(file,
     .verify_row(label, "OK", paste0("SHA-256 match (", v$parquet, ", n = ", v$n_rows, ")"))
   })
   if (.source_changed(resolve(entry$file), entry)) {
-    rows[[length(rows) + 1L]] <- .verify_row(entry$file, "PENDING",
+    rows[[length(rows) + 1L]] <- .verify_row(paste0(entry$file, " (source)"), "PENDING",
                                              trimws(conditionMessage(.source_changed_condition(entry))))
   }
   do.call(rbind, rows)
