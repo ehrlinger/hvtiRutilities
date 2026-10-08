@@ -64,7 +64,7 @@ register_data(
 - dataset:
 
   Character(1). Logical dataset name. `"study"` is reserved for the
-  default.
+  default, and `"built"` is a second name for it.
 
 - role:
 

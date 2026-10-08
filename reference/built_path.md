@@ -18,7 +18,8 @@ built_path(cfg = study_config(), dataset = "study")
 
 - dataset:
 
-  Character(1). Logical dataset name. Defaults to `"study"`.
+  Character(1). Logical dataset name. Defaults to `"study"`. `"built"`
+  is a second name for `"study"`.
 
 ## Value
 
@@ -40,6 +41,6 @@ yaml::write_yaml(
   file.path(root, "_study.yml")
 )
 built_path(study_config(root))
-#> [1] "/tmp/RtmpcaMc7s/built-path-example/datasets/example.sas7bdat"
+#> [1] "/tmp/RtmpIvNFk9/built-path-example/datasets/example.sas7bdat"
 unlink(root, recursive = TRUE)
 ```

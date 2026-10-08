@@ -71,7 +71,8 @@ read_built(
 
 - dataset:
 
-  Character(1). Logical dataset name. Defaults to `"study"`.
+  Character(1). Logical dataset name. Defaults to `"study"`. `"built"`
+  is a second name for `"study"`.
 
 - allow_withdrawn:
 

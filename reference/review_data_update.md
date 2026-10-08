@@ -21,7 +21,8 @@ review_data_update(cfg = study_config(), dataset = "study", release_id)
 
 - dataset:
 
-  Character(1). Logical dataset name. Defaults to `"study"`.
+  Character(1). Logical dataset name. Defaults to `"study"`. `"built"`
+  is a second name for `"study"`.
 
 - release_id:
 

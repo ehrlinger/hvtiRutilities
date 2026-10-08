@@ -19,7 +19,8 @@ provenance_data(dataset = "study", cfg = study_config(), role = "analysis")
 
 - dataset:
 
-  Character(1). Logical registered dataset name.
+  Character(1). Logical registered dataset name. `"built"` is a second
+  name for `"study"`.
 
 - cfg:
 

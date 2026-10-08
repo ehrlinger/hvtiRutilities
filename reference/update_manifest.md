@@ -129,8 +129,8 @@ update_manifest(
 - dataset:
 
   Character(1) or `NULL`. With no `file`: the one registered dataset to
-  update; `NULL` updates every one that changed. Ignored when `file` is
-  given.
+  update; `NULL` updates every one that changed. `"built"` is a second
+  name for `"study"`. Ignored when `file` is given.
 
 ## Value
 

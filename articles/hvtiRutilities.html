@@ -160,17 +160,17 @@
 <span><span class="co">#&gt; 'data.frame':    100 obs. of  7 variables:</span></span>
 <span><span class="co">#&gt;  $ id     : int  1 2 3 4 5 6 7 8 9 10 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Patient Identifier"</span></span>
-<span><span class="co">#&gt;  $ boolean: int  2 2 2 1 2 2 1 2 2 1 ...</span></span>
+<span><span class="co">#&gt;  $ boolean: int  2 1 2 2 2 1 1 1 2 1 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Binary Indicator"</span></span>
-<span><span class="co">#&gt;  $ logical: chr  "T" "T" "T" "F" ...</span></span>
+<span><span class="co">#&gt;  $ logical: chr  "T" "F" "T" "T" ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Logical Status"</span></span>
-<span><span class="co">#&gt;  $ f_real : num  0.5908 0.4338 0.0948 0.2855 0.5908 ...</span></span>
+<span><span class="co">#&gt;  $ f_real : num  0.525 0.947 0.958 0.942 0.727 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Random Uniform Value"</span></span>
-<span><span class="co">#&gt;  $ float  : num  -0.412 2.355 -1.454 1.022 0.62 ...</span></span>
+<span><span class="co">#&gt;  $ float  : num  -0.00184 -0.04263 -0.56664 0.71579 -0.85828 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Random Normal Value"</span></span>
-<span><span class="co">#&gt;  $ char   : chr  "female" "male" "male" "male" ...</span></span>
+<span><span class="co">#&gt;  $ char   : chr  "female" "female" "male" "female" ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Gender"</span></span>
-<span><span class="co">#&gt;  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 4 5 4 1 1 4 2 3 5 2 ...</span></span>
+<span><span class="co">#&gt;  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 5 3 2 3 2 2 5 3 5 4 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Category Group"</span></span></code></pre></div>
 </div>
 <p>Notice that the sample data has: - <code>boolean</code>: integer values (1, 2) - <code>logical</code>: character values (“F”, “T”) - <code>char</code>: character values (“male”, “female”)</p>
@@ -190,17 +190,17 @@
 <span><span class="co">#&gt; 'data.frame':    100 obs. of  7 variables:</span></span>
 <span><span class="co">#&gt;  $ id     : int  1 2 3 4 5 6 7 8 9 10 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Patient Identifier"</span></span>
-<span><span class="co">#&gt;  $ boolean: Factor w/ 2 levels "1","2": 2 2 2 1 2 2 1 2 2 1 ...</span></span>
+<span><span class="co">#&gt;  $ boolean: Factor w/ 2 levels "1","2": 2 1 2 2 2 1 1 1 2 1 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Binary Indicator"</span></span>
-<span><span class="co">#&gt;  $ logical: Factor w/ 2 levels "F","T": 2 2 2 1 2 2 1 2 2 1 ...</span></span>
+<span><span class="co">#&gt;  $ logical: Factor w/ 2 levels "F","T": 2 1 2 2 2 1 1 1 2 1 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Logical Status"</span></span>
-<span><span class="co">#&gt;  $ f_real : Factor w/ 9 levels "0.0948064227122813",..: 8 6 1 4 8 4 8 9 3 1 ...</span></span>
+<span><span class="co">#&gt;  $ f_real : Factor w/ 9 levels "0.144680340774357",..: 2 8 9 7 3 4 9 2 4 6 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Random Uniform Value"</span></span>
-<span><span class="co">#&gt;  $ float  : num  -0.412 2.355 -1.454 1.022 0.62 ...</span></span>
+<span><span class="co">#&gt;  $ float  : num  -0.00184 -0.04263 -0.56664 0.71579 -0.85828 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Random Normal Value"</span></span>
-<span><span class="co">#&gt;  $ char   : Factor w/ 2 levels "female","male": 1 2 2 2 2 2 2 2 1 1 ...</span></span>
+<span><span class="co">#&gt;  $ char   : Factor w/ 2 levels "female","male": 1 1 2 1 2 1 1 1 2 2 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Gender"</span></span>
-<span><span class="co">#&gt;  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 4 5 4 1 1 4 2 3 5 2 ...</span></span>
+<span><span class="co">#&gt;  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 5 3 2 3 2 2 5 3 5 4 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Category Group"</span></span>
 <span><span class="co">#&gt;  - attr(*, "hvti_type_conversion")='data.frame': 7 obs. of  6 variables:</span></span>
 <span><span class="co">#&gt;   ..$ variable    : chr [1:7] "id" "boolean" "logical" "f_real" ...</span></span>
