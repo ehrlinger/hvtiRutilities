@@ -129,8 +129,9 @@
 #' @return With \code{file}, invisibly returns the updated manifest as a named
 #'   list. With no \code{file}, invisibly returns a data frame with one row per
 #'   dataset and columns \code{dataset}, \code{action} (\code{"registered"},
-#'   \code{"migrated"}, \code{"unchanged"} or \code{"skipped"}) and
-#'   \code{detail}.
+#'   \code{"migrated"}, \code{"unchanged"}, \code{"skipped"} or
+#'   \code{"missing"}, for a source that is not on disk and has no registered
+#'   version) and \code{detail}.
 #'
 #' @examples
 #' \dontrun{
@@ -285,6 +286,10 @@ update_manifest <- function(file,
   if (is.null(cfg)) "manifest.yaml" else file.path(cfg$root, "manifest.yaml")
 }
 
+# The dataset a report row belongs to: a versioned entry's extra rows are
+# labelled "<file> (<parquet>)", "<file> (source)" and "<file> (history)".
+.verify_row_dataset <- function(label) sub(" [(][^()]*[)]$", "", label)
+
 .verify_row <- function(file, status, message) {
   data.frame(file = file, status = status, message = message, row_count_checked = FALSE,
              stringsAsFactors = FALSE)
@@ -296,7 +301,7 @@ update_manifest <- function(file,
 # Every row's label is distinct, because .cp_manifest_check() writes them as
 # YAML keys: an earlier version is named by its parquet (two can share a date)
 # and the PENDING row by "(source)".
-.verify_versioned_entry <- function(entry, resolve) {
+.verify_versioned_entry <- function(entry, resolve, strict = FALSE) {
   versions <- c(list(.history_record(entry)), if (is.list(entry$history)) entry$history else list())
   rows <- lapply(seq_along(versions), function(i) {
     v <- versions[[i]]
@@ -314,9 +319,25 @@ update_manifest <- function(file,
         return(.verify_row(label, "FAIL", paste0(.version_schema_name(v$parquet),
                                                  " is missing or does not match its recorded checksum.", restore)))
       }
+    } else if (strict) {
+      return(.verify_row(label, "FAIL", paste0("Schema not verified: no schema checksum is recorded for ", v$parquet,
+                                               ". The checksum matched; strict = TRUE requires every applicable ",
+                                               "check to have run.")))
     }
-    .verify_row(label, "OK", paste0("SHA-256 match (", v$parquet, ", n = ", v$n_rows, ")"))
+    msg <- if (is.null(v$n_rows)) {
+      paste0("SHA-256 match (", v$parquet, "); no row count recorded")
+    } else {
+      paste0("SHA-256 match (", v$parquet, ", n = ", v$n_rows, ")")
+    }
+    .verify_row(label, "OK", paste0(msg, if (is.null(v$schema_sha256)) "; schema not checked"))
   })
+  if (!is.null(entry$history) && !is.list(entry$history)) {
+    rows[[length(rows) + 1L]] <- .verify_row(
+      paste0(entry$file, " (history)"), "FAIL",
+      paste0("history: in manifest.yaml is not a list of versions, so the earlier versions of ", entry$file,
+             " were not checked. Restore manifest.yaml from version control and run verify_manifest() again.")
+    )
+  }
   if (.source_changed(resolve(entry$file), entry)) {
     rows[[length(rows) + 1L]] <- .verify_row(paste0(entry$file, " (source)"), "PENDING",
                                              trimws(conditionMessage(.source_changed_condition(entry))))
@@ -495,7 +516,7 @@ verify_manifest <- function(manifest_path = .default_manifest_path(),
   }
 
   results <- lapply(manifest$datasets, function(entry) {
-    if (.is_versioned(entry)) return(.verify_versioned_entry(entry, resolve_entry))
+    if (.is_versioned(entry)) return(.verify_versioned_entry(entry, resolve_entry, strict))
     # sha256 describes whichever file `role` makes authoritative. `file`
     # never changes on promotion (it names the dataset, not the file
     # currently storing it), so which physical file to hash cannot be

@@ -32,6 +32,15 @@
   `provenance_data()` records the dated parquet as the file a job read, so a
   report names its own data version.
 
+  `update_manifest()` gains a `dataset` argument, so
+  `update_manifest(dataset = "study")` registers just that dataset.
+  `study_status()` and `verify_manifest()` can now return the status
+  `PENDING`. `read_built(refresh = TRUE)` now errors for a registered dataset
+  and names `update_manifest()`, and `update_manifest(file, ...)` refuses a
+  file that is a registered dataset rather than dropping its versions.
+  `study_status()` reports a dataset whose source is gone as present when its
+  registered version is there, since that is what `read_built()` serves.
+
 ## New features
 
 * `cache_fit()` gains `packages =`, a character vector of package names whose

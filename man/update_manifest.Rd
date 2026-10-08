@@ -77,8 +77,9 @@ Ignored when \code{file} is given.}
 With \code{file}, invisibly returns the updated manifest as a named
   list. With no \code{file}, invisibly returns a data frame with one row per
   dataset and columns \code{dataset}, \code{action} (\code{"registered"},
-  \code{"migrated"}, \code{"unchanged"} or \code{"skipped"}) and
-  \code{detail}.
+  \code{"migrated"}, \code{"unchanged"}, \code{"skipped"} or
+  \code{"missing"}, for a source that is not on disk and has no registered
+  version) and \code{detail}.
 }
 \description{
 \strong{In a study}, run with no arguments after rebuilding a registered

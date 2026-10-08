@@ -741,3 +741,94 @@ test_that("a rebuild landing while the source is hashed is caught, not recorded 
   expect_true(rebuilt)
   expect_identical(list.files(dir), "built.csv")
 })
+
+edit_entry <- function(root, fn, file = "built.csv") {
+  mpath <- file.path(root, "manifest.yaml")
+  m <- yaml::read_yaml(mpath)
+  hit <- which(vapply(m$datasets, function(e) identical(e$file, file), logical(1)))
+  m$datasets[[hit]] <- fn(m$datasets[[hit]])
+  yaml::write_yaml(m, mpath)
+  mpath
+}
+
+test_that("a version with no recorded row count says so instead of 'n = '", {
+  root <- versioned_study()
+  mpath <- edit_entry(root, function(e) {
+    e$n_rows <- NULL
+    e
+  })
+  rep <- verify_manifest(mpath)
+  expect_identical(rep$status, "OK")
+  expect_match(rep$message, "no row count recorded", fixed = TRUE)
+  expect_no_match(rep$message, "n = ", fixed = TRUE)
+})
+
+test_that("a history that is not a list of versions fails verification", {
+  root <- versioned_study()
+  mpath <- edit_entry(root, function(e) {
+    e$history <- "built_20260101.parquet"
+    e
+  })
+  rep <- suppressWarnings(verify_manifest(mpath, stop_on_error = FALSE))
+  expect_true(any(rep$status == "FAIL" & grepl("history", rep$message)))
+})
+
+test_that("a version with no schema checksum is unchecked, and fails under strict", {
+  root <- versioned_study()
+  mpath <- edit_entry(root, function(e) {
+    e$schema_sha256 <- NULL
+    e
+  })
+  rep <- verify_manifest(mpath)
+  expect_identical(rep$status, "OK")
+  expect_match(rep$message, "schema not checked", fixed = TRUE)
+  expect_error(verify_manifest(mpath, strict = TRUE), "schema", fixed = TRUE)
+})
+
+test_that("study_status counts datasets, not registered versions", {
+  root <- versioned_study()
+  rebuild_source(root)
+  withr::with_dir(root, suppressMessages(update_manifest()))
+  row <- study_status(root)$checks
+  row <- row[row$item == "manifest.yaml", ]
+  expect_identical(row$status, "OK")
+  expect_match(row$detail, "^1 dataset entry verified by checksum")
+  expect_match(row$detail, "2 files", fixed = TRUE)
+})
+
+test_that("update_manifest() in a study with no manifest names register_data()", {
+  root <- file.path(withr::local_tempdir(), "study")
+  suppressMessages(study_setup(root, "Unregistered", 42L))
+  raw <- yaml::read_yaml(file.path(root, "_study.yml"))
+  raw$built <- "built.csv"
+  yaml::write_yaml(raw, file.path(root, "_study.yml"))
+  utils::write.csv(data.frame(id = 1:3), file.path(study_dir("datasets", root), "built.csv"), row.names = FALSE)
+  withr::local_dir(root)
+  expect_error(update_manifest(), "no manifest.yaml", fixed = TRUE)
+  expect_error(update_manifest(), "register_data()", fixed = TRUE)
+})
+
+test_that("study_status reports the registered version when the source is gone", {
+  root <- versioned_study()
+  unlink(built_path(study_config(root)))
+  checks <- study_status(root)$checks
+  expect_identical(checks$status[checks$item == "dataset"], "OK")
+  expect_match(checks$detail[checks$item == "dataset"], "built_20260915.parquet", fixed = TRUE)
+})
+
+test_that("study_status reports a named dataset's registered version when its source is gone", {
+  root <- make_registered_study(withr::local_tempdir())
+  unlink(built_path(study_config(root), "complete_cases"))
+  checks <- study_status(root)$checks
+  expect_identical(checks$status[checks$item == "dataset:complete_cases"], "OK")
+})
+
+test_that("update_manifest() does not claim jobs keep reading a missing legacy source", {
+  root <- make_legacy_registered_study(withr::local_tempdir())
+  unlink(built_path(study_config(root)))
+  withr::local_dir(root)
+  msgs <- paste(testthat::capture_messages(update_manifest()), collapse = "")
+  expect_no_match(msgs, "keep reading", fixed = TRUE)
+  expect_match(msgs, "read_built()", fixed = TRUE)
+})
+

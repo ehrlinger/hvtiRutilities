@@ -246,6 +246,10 @@
          "Register one with register_data().", call. = FALSE)
   }
   manifest_path <- file.path(cfg$root, "manifest.yaml")
+  if (!file.exists(manifest_path)) {
+    stop("update_manifest(): this study has no manifest.yaml, so no dataset is registered yet. ",
+         "Register one with register_data().", call. = FALSE)
+  }
   manifest <- yaml::read_yaml(manifest_path)
   written <- character()
   # A recovered cache was renamed, not copied: it is the only copy of that
@@ -277,9 +281,15 @@
     entry <- manifest$datasets[[hit]]
     source_path <- file.path(study_dir("datasets", cfg$root), contract$built)
     if (!file.exists(source_path)) {
-      reading <- if (.is_versioned(entry)) entry$parquet else contract$built
-      rows[[name]] <- .manifest_update_row(name, "unchanged",
-                                           paste0(contract$built, " is not on disk; jobs keep reading ", reading))
+      reading <- .authoritative_path(entry, source_path)
+      rows[[name]] <- if (!identical(reading, source_path) && file.exists(reading)) {
+        .manifest_update_row(name, "unchanged", paste0(contract$built, " is not on disk; jobs keep reading ",
+                                                       basename(reading)))
+      } else {
+        .manifest_update_row(name, "missing", paste0(contract$built, " is not on disk and has no registered version, ",
+                                                     "so read_built() stops for it. Restore it, then run ",
+                                                     "update_manifest() to register it"))
+      }
       next
     }
     step <- if (.is_versioned(entry)) {
