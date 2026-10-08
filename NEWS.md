@@ -9,6 +9,13 @@
   study that already registered an additional dataset called `built` is asked
   to rename it.
 
+## Bug fixes
+
+* `update_manifest()` with no file reported "found none" for any error reading
+  `_study.yml`, so a study that exists but needs fixing was told it had no
+  study. It now says that only when no `_study.yml` is found, and passes any
+  other error on unchanged.
+
 * **Datasets have a kind and a key.** `register_data()` gains `kind`
   (`"built"`, `"subset"`, `"ancillary"` or `"combined"`), `key` (the columns
   that make each row unique, checked at registration and again when
