@@ -971,3 +971,32 @@ test_that("update_manifest(file) refuses a file that is another entry's register
   }
   expect_identical(readLines(mp), before)
 })
+
+test_that("update_manifest() re-stamps a touched but unchanged source, so later reads skip the hash", {
+  skip_if_not_installed("arrow")
+  root <- make_registered_study(withr::local_tempdir())
+  mp <- file.path(root, "manifest.yaml")
+  src <- file.path(study_dir("datasets", root), "built.csv")
+  bytes <- readBin(src, "raw", file.info(src)$size)
+  Sys.sleep(0.05)
+  writeBin(bytes, src)
+  require_subsecond_mtime(src)
+  # With the recorded hash made wrong, only a stat can call the source unchanged.
+  stat_only <- function() {
+    e <- .manifest_entry(mp, "built.csv")
+    e$source_sha256 <- "not-a-hash"
+    !.source_changed(src, e)
+  }
+  expect_false(stat_only())
+
+  before <- readLines(mp)
+  suppressMessages(read_built(study_config(root)))
+  expect_identical(readLines(mp), before)
+
+  out <- withr::with_dir(root, suppressMessages(update_manifest(dataset = "study")))
+  expect_identical(out$action, "unchanged")
+  expect_true(stat_only())
+  e <- .manifest_entry(mp, "built.csv")
+  expect_identical(e$source_size, as.numeric(file.info(src)$size))
+  expect_identical(e$parquet, Filter(is.list, yaml::read_yaml(text = before)$datasets)[[1L]]$parquet)
+})

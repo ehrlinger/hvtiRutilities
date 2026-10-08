@@ -24,3 +24,9 @@
   version, current or earlier, or its schema sidecar. Recording it replaced
   nothing on disk but hid that its caller had just written over registered
   data; every job then failed the checksum with no hint of why.
+- `update_manifest()` re-records the size and modification time of a
+  registered dataset's source that was rewritten with the same contents.
+  Until then every read, `verify_manifest()` and `study_status()` hashed the
+  source again to find it unchanged. On a file system that records whole
+  seconds only, such as a network share, a hash is still needed on each read,
+  as it is for the read cache.

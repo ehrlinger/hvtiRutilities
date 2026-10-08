@@ -230,10 +230,17 @@
 }
 
 # Register a rebuilt source as the next version; the current one moves to the
-# head of history. Unchanged sources are left alone.
+# head of history. An unchanged source keeps its version, but a stamp that no
+# longer matches it (a rewrite of the same bytes) is re-recorded, so later
+# reads settle it with a stat rather than a hash. Only update_manifest()
+# writes it; reads never write the manifest.
 .next_version <- function(entry, source_path, extract_date, reserved = character(), key = NULL) {
   if (!.source_changed(source_path, entry)) {
-    return(list(entry = entry, written = character(), action = "unchanged",
+    stamp <- .source_stamp(source_path)
+    restamped <- !identical(as.numeric(entry$source_size), stamp$source_size) ||
+      !identical(entry$source_mtime, stamp$source_mtime)
+    entry[names(stamp)] <- stamp
+    return(list(entry = entry, written = character(), action = "unchanged", restamped = restamped,
                 detail = paste0("unchanged since ", entry$extract_date, " (", entry$parquet, ")")))
   }
   dir <- dirname(source_path)
@@ -303,6 +310,7 @@
     file.rename(restore$from, restore$to)
   }, add = TRUE)
   rows <- list()
+  restamped <- FALSE
 
   for (name in targets) {
     contract <- .study_dataset(cfg, name)
@@ -351,6 +359,7 @@
     if (identical(contract$kind, "combined") && rebuilt) {
       manifest$datasets[[hit]]$parent_versions <- .parent_versions(cfg, contract$parents, manifest)
     }
+    restamped <- restamped || isTRUE(step$restamped)
     rows[[name]] <- .manifest_update_row(name, step$action, step$detail)
   }
 
@@ -366,7 +375,7 @@
 
   out <- do.call(rbind, unname(rows))
   changed <- any(out$action %in% c("registered", "migrated")) || unguarded
-  if (changed) {
+  if (changed || restamped) {
     .atomic_write(manifest_path, function(tmp) .write_manifest(manifest, tmp))
   }
   committed <- TRUE
