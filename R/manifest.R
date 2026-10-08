@@ -129,8 +129,9 @@
 #' @return With \code{file}, invisibly returns the updated manifest as a named
 #'   list. With no \code{file}, invisibly returns a data frame with one row per
 #'   dataset and columns \code{dataset}, \code{action} (\code{"registered"},
-#'   \code{"migrated"}, \code{"unchanged"} or \code{"skipped"}) and
-#'   \code{detail}.
+#'   \code{"migrated"}, \code{"unchanged"}, \code{"skipped"} or
+#'   \code{"missing"}, for a source that is not on disk and has no registered
+#'   version) and \code{detail}.
 #'
 #' @examples
 #' \dontrun{
@@ -285,19 +286,35 @@ update_manifest <- function(file,
   if (is.null(cfg)) "manifest.yaml" else file.path(cfg$root, "manifest.yaml")
 }
 
-.verify_row <- function(file, status, message) {
-  data.frame(file = file, status = status, message = message, row_count_checked = FALSE,
+# The dataset a report row belongs to: a versioned entry's extra rows are
+# labelled "<file> (<parquet>)", "<file> (source)" and "<file> (history)".
+.verify_row_dataset <- function(label) sub(" [(][^()]*[)]$", "", label)
+
+.verify_row <- function(file, status, message, checked = FALSE) {
+  data.frame(file = file, status = status, message = message, row_count_checked = checked,
              stringsAsFactors = FALSE)
 }
 
 # One row per registered version (current first), plus a PENDING row when the
 # source has been rebuilt since. A version is registered data, so a missing or
 # edited one FAILs with the restore instruction; a rebuilt source is expected.
-.verify_versioned_entry <- function(entry, resolve) {
+# Every row's label is distinct, because .cp_manifest_check() writes them as
+# YAML keys: an earlier version is named by its parquet (two can share a date)
+# and the PENDING row by "(source)".
+# Row count from a parquet footer. The file is opened and closed here rather
+# than left to a reader object, which holds it open until garbage collection;
+# on Windows an open file cannot be deleted or replaced.
+.parquet_num_rows <- function(path) {
+  f <- arrow::ReadableFile$create(path)
+  on.exit(f$close(), add = TRUE)
+  as.numeric(arrow::ParquetFileReader$create(f)$num_rows)
+}
+
+.verify_versioned_entry <- function(entry, resolve, strict = FALSE) {
   versions <- c(list(.history_record(entry)), if (is.list(entry$history)) entry$history else list())
   rows <- lapply(seq_along(versions), function(i) {
     v <- versions[[i]]
-    label <- if (i == 1L) entry$file else paste0(entry$file, " (", v$extract_date, ")")
+    label <- if (i == 1L) entry$file else paste0(entry$file, " (", v$parquet, ")")
     target <- resolve(v$parquet)
     restore <- paste0(" It is registered data and cannot be rebuilt from its source; restore it from backup ",
                       "and tell the study's data manager.")
@@ -311,11 +328,48 @@ update_manifest <- function(file,
         return(.verify_row(label, "FAIL", paste0(.version_schema_name(v$parquet),
                                                  " is missing or does not match its recorded checksum.", restore)))
       }
+    } else if (strict) {
+      return(.verify_row(label, "FAIL", paste0("Schema not verified: no schema checksum is recorded for ", v$parquet,
+                                               ". The checksum matched; strict = TRUE requires every applicable ",
+                                               "check to have run.")))
     }
-    .verify_row(label, "OK", paste0("SHA-256 match (", v$parquet, ", n = ", v$n_rows, ")"))
+    # The parquet footer holds the row count, so it is re-derived without reading the data.
+    n_actual <- if (.arrow_available() && !is.null(v$n_rows)) {
+      tryCatch(.parquet_num_rows(target), error = function(e) NA_real_)
+    } else {
+      NA_real_
+    }
+    if (!is.na(n_actual) && n_actual != v$n_rows) {
+      return(.verify_row(label, "FAIL", paste0(v$parquet, " holds ", n_actual, " rows but ", v$n_rows,
+                                               " were recorded.", restore)))
+    }
+    checked <- !is.na(n_actual)
+    if (strict && !checked) {
+      why <- if (is.null(v$n_rows)) {
+        "no row count is recorded for this version"
+      } else {
+        "the arrow package is not available to re-derive it"
+      }
+      return(.verify_row(label, "FAIL", paste0("Row count not verified: ", why, ". The checksum matched; ",
+                                               "strict = TRUE requires every applicable check to have run.")))
+    }
+    msg <- if (is.null(v$n_rows)) {
+      paste0("SHA-256 match (", v$parquet, "); no row count recorded")
+    } else {
+      paste0("SHA-256 match (", v$parquet, ", n = ", v$n_rows, ")")
+    }
+    .verify_row(label, "OK", paste0(msg, if (!checked) "; row count not re-derived",
+                                    if (is.null(v$schema_sha256)) "; schema not checked"), checked)
   })
+  if (!is.null(entry$history) && !is.list(entry$history)) {
+    rows[[length(rows) + 1L]] <- .verify_row(
+      paste0(entry$file, " (history)"), "FAIL",
+      paste0("history: in manifest.yaml is not a list of versions, so the earlier versions of ", entry$file,
+             " were not checked. Restore manifest.yaml from version control and run verify_manifest() again.")
+    )
+  }
   if (.source_changed(resolve(entry$file), entry)) {
-    rows[[length(rows) + 1L]] <- .verify_row(entry$file, "PENDING",
+    rows[[length(rows) + 1L]] <- .verify_row(paste0(entry$file, " (source)"), "PENDING",
                                              trimws(conditionMessage(.source_changed_condition(entry))))
   }
   do.call(rbind, rows)
@@ -354,8 +408,9 @@ update_manifest <- function(file,
 #' the message names which of the three it was.
 #'
 #' For a dataset registered with \code{\link{register_data}}, every registered
-#' version (the current dated parquet and each earlier one) is checked. A
-#' source file rebuilt since registration is reported with status
+#' version (the current dated parquet and each earlier one) is checked, and its
+#' row count is re-derived from the parquet footer when the arrow package is
+#' available. A source file rebuilt since registration is reported with status
 #' \code{"PENDING"} and never stops: jobs keep reading the registered version
 #' until \code{\link{update_manifest}()} registers the new one.
 #'
@@ -492,7 +547,7 @@ verify_manifest <- function(manifest_path = .default_manifest_path(),
   }
 
   results <- lapply(manifest$datasets, function(entry) {
-    if (.is_versioned(entry)) return(.verify_versioned_entry(entry, resolve_entry))
+    if (.is_versioned(entry)) return(.verify_versioned_entry(entry, resolve_entry, strict))
     # sha256 describes whichever file `role` makes authoritative. `file`
     # never changes on promotion (it names the dataset, not the file
     # currently storing it), so which physical file to hash cannot be

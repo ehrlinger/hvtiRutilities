@@ -88,8 +88,9 @@ re-derived; or the manifest records no count at all.  The
 the message names which of the three it was.
 
 For a dataset registered with \code{\link{register_data}}, every registered
-version (the current dated parquet and each earlier one) is checked. A
-source file rebuilt since registration is reported with status
+version (the current dated parquet and each earlier one) is checked, and its
+row count is re-derived from the parquet footer when the arrow package is
+available. A source file rebuilt since registration is reported with status
 \code{"PENDING"} and never stops: jobs keep reading the registered version
 until \code{\link{update_manifest}()} registers the new one.
 

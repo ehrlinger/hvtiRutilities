@@ -279,9 +279,18 @@ register_data <- function(root = getwd(), built, dataset = "study",
   }
 
   if (is.null(extract_date)) extract_date <- .mtime_date(path)
+  manifest_path <- file.path(cfg$root, "manifest.yaml")
+  prior <- if (file.exists(manifest_path)) yaml::read_yaml(manifest_path)$datasets
+  clash <- .cache_name_clash(built, prior)
+  if (!is.null(clash)) {
+    stop("register_data(): ", built, " would be read through ", basename(.derived_paths(built)$parquet),
+         ", which is the registered version of ", clash$file, ". Nothing was written. Rename ", built,
+         " (for a catalog release, ask the data manager to publish it under another name) and run ",
+         "register_data() again.", call. = FALSE)
+  }
   version_files <- character()
   entry <- if (is.null(release)) {
-    version <- .write_version(path, dirname(path), extract_date)
+    version <- .write_version(path, dirname(path), extract_date, taken = .reserved_names(prior))
     version_files <- file.path(dirname(path), c(version$parquet, .version_schema_name(version$parquet)))
     .versioned_entry(built, version, extra = if (is.null(source)) list() else list(source = source))
   } else {
@@ -298,7 +307,6 @@ register_data <- function(root = getwd(), built, dataset = "study",
       call. = FALSE
     )
   }
-  manifest_path <- file.path(cfg$root, "manifest.yaml")
   manifest <- if (file.exists(manifest_path)) {
     yaml::read_yaml(manifest_path)
   } else {

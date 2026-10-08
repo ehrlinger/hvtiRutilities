@@ -42,14 +42,46 @@
 
 .version_schema_name <- function(parquet) sub("[.]parquet$", ".schema.csv", parquet)
 
+# Every parquet and schema file a versioned entry records, current or in history.
+.recorded_version_names <- function(datasets) {
+  if (!is.list(datasets)) return(character())
+  unique(unlist(lapply(datasets, function(e) {
+    if (!.is_versioned(e)) return(character())
+    history <- if (is.list(e$history)) Filter(is.list, e$history) else list()
+    p <- c(e$parquet, unlist(lapply(history, function(h) if (is.character(h$parquet)) h$parquet)))
+    c(p, .version_schema_name(p))
+  })))
+}
+
+# Names a new version must not take: every recorded version, and the legacy
+# read-cache names (<stem>.parquet, <stem>.schema.csv) of every entry. A dataset
+# whose file is cohort_20260915.csv caches to cohort_20260915.parquet, which is
+# also the name cohort.csv would get when registered on 2026-09-15.
+.reserved_names <- function(datasets) {
+  if (!is.list(datasets)) return(character())
+  caches <- unlist(lapply(datasets, function(e) {
+    if (is.character(e$file) && length(e$file) == 1L) basename(unlist(.derived_paths(e$file)))
+  }))
+  unique(c(caches, .recorded_version_names(datasets)))
+}
+
+# The entry whose registered version `file`'s read cache would overwrite, or NULL.
+.cache_name_clash <- function(file, datasets) {
+  cache <- basename(unlist(.derived_paths(file)))
+  for (e in if (is.list(datasets)) datasets else list()) {
+    if (any(cache %in% .recorded_version_names(list(e)))) return(e)
+  }
+  NULL
+}
+
 # <stem>_YYYYMMDD.parquet, then _r2, _r3 for further versions on the same date.
-# A name is taken when the manifest records it or either of its files exists.
+# A name is taken when it or its schema name is in `taken` or either file exists.
 .version_filename <- function(stem, extract_date, dir, taken = character()) {
   base <- paste0(stem, "_", format(as.Date(extract_date), "%Y%m%d"))
   rev <- 1L
   repeat {
     name <- paste0(base, if (rev > 1L) paste0("_r", rev) else "", ".parquet")
-    free <- !name %in% taken &&
+    free <- !name %in% taken && !.version_schema_name(name) %in% taken &&
       !file.exists(file.path(dir, name)) &&
       !file.exists(file.path(dir, .version_schema_name(name)))
     if (free) return(name)
@@ -63,8 +95,7 @@
 # file listing would.
 .mtime_date <- function(path) format(file.info(path)$mtime, "%Y-%m-%d")
 
-.source_stamp <- function(path) {
-  info <- file.info(path)
+.source_stamp <- function(path, info = file.info(path)) {
   list(source_size = as.numeric(info$size),
        source_mtime = format(info$mtime, "%Y-%m-%d %H:%M:%OS6", tz = "UTC"))
 }
@@ -73,11 +104,15 @@
 # and returns the version record. On any error neither file is left behind.
 # The frame is stored as read, before read_built()'s normalisation, as the read
 # cache stores it, so a version reads back exactly as a cached source did.
+# The source is stat'ed, read, hashed and stat'ed again, so the hash and the
+# stamp describe the data converted: a rebuild landing during the read or the
+# hash moves the second stat and stops the write.
 .write_version <- function(source, dir, extract_date, taken = character(), caller = "register_data") {
   .require_arrow(caller)
   before <- file.info(source)
   d <- as.data.frame(read_clinical_data(source, convert_types = FALSE))
   .assert_no_lowercase_collision(d, source, caller)
+  source_sha256 <- digest::digest(source, algo = "sha256", file = TRUE)
   after <- file.info(source)
   if (!identical(as.numeric(before$size), as.numeric(after$size)) ||
         !identical(as.numeric(before$mtime), as.numeric(after$mtime))) {
@@ -99,13 +134,13 @@
     list(
       parquet = name,
       sha256 = digest::digest(parquet, algo = "sha256", file = TRUE),
-      source_sha256 = digest::digest(source, algo = "sha256", file = TRUE),
+      source_sha256 = source_sha256,
       extract_date = format(as.Date(extract_date), "%Y-%m-%d"),
       n_rows = as.integer(nrow(d)),
       n_cols = as.integer(ncol(d)),
       schema_sha256 = digest::digest(schema, algo = "sha256", file = TRUE)
     ),
-    .source_stamp(source)
+    .source_stamp(source, before)
   )
   reader <- .reader_provenance(source)
   if (!is.null(reader)) record$reader <- reader
@@ -166,14 +201,14 @@
 
 # Register a rebuilt source as the next version; the current one moves to the
 # head of history. Unchanged sources are left alone.
-.next_version <- function(entry, source_path, extract_date) {
+.next_version <- function(entry, source_path, extract_date, reserved = character()) {
   if (!.source_changed(source_path, entry)) {
     return(list(entry = entry, written = character(), action = "unchanged",
                 detail = paste0("unchanged since ", entry$extract_date, " (", entry$parquet, ")")))
   }
   dir <- dirname(source_path)
   history <- if (is.list(entry$history)) entry$history else list()
-  taken <- c(entry$parquet, vapply(history, function(h) h$parquet, character(1)))
+  taken <- c(reserved, entry$parquet, vapply(history, function(h) h$parquet, character(1)))
   date <- if (is.null(extract_date)) .mtime_date(source_path) else extract_date
   version <- .write_version(source_path, dir, date, taken, caller = "update_manifest")
   list(
@@ -211,6 +246,10 @@
          "Register one with register_data().", call. = FALSE)
   }
   manifest_path <- file.path(cfg$root, "manifest.yaml")
+  if (!file.exists(manifest_path)) {
+    stop("update_manifest(): this study has no manifest.yaml, so no dataset is registered yet. ",
+         "Register one with register_data().", call. = FALSE)
+  }
   manifest <- yaml::read_yaml(manifest_path)
   written <- character()
   # A recovered cache was renamed, not copied: it is the only copy of that
@@ -242,15 +281,21 @@
     entry <- manifest$datasets[[hit]]
     source_path <- file.path(study_dir("datasets", cfg$root), contract$built)
     if (!file.exists(source_path)) {
-      reading <- if (.is_versioned(entry)) entry$parquet else contract$built
-      rows[[name]] <- .manifest_update_row(name, "unchanged",
-                                           paste0(contract$built, " is not on disk; jobs keep reading ", reading))
+      reading <- .authoritative_path(entry, source_path)
+      rows[[name]] <- if (!identical(reading, source_path) && file.exists(reading)) {
+        .manifest_update_row(name, "unchanged", paste0(contract$built, " is not on disk; jobs keep reading ",
+                                                       basename(reading)))
+      } else {
+        .manifest_update_row(name, "missing", paste0(contract$built, " is not on disk and has no registered version, ",
+                                                     "so read_built() stops for it. Restore it, then run ",
+                                                     "update_manifest() to register it"))
+      }
       next
     }
     step <- if (.is_versioned(entry)) {
-      .next_version(entry, source_path, extract_date)
+      .next_version(entry, source_path, extract_date, reserved = .reserved_names(manifest$datasets))
     } else {
-      .migrate_entry(entry, source_path, extract_date)
+      .migrate_entry(entry, source_path, extract_date, datasets = manifest$datasets)
     }
     written <- c(written, step$written)
     restore$from <- c(restore$from, step$restore$from)
@@ -265,7 +310,8 @@
     .atomic_write(manifest_path, function(tmp) yaml::write_yaml(manifest, tmp))
   }
   committed <- TRUE
-  unlink(drop)
+  # A legacy cache name can be another dataset's registered version; that file is never removed.
+  unlink(drop[!basename(drop) %in% .recorded_version_names(manifest$datasets)])
   message(paste0(format(out$dataset), ": ", out$detail, collapse = "\n"))
   if (any(out$action %in% c("registered", "migrated"))) {
     message("Commit manifest.yaml so the record of which version is current travels with the study.")
@@ -277,10 +323,12 @@
 # still holds the version registered before the source was overwritten when
 # its row count, column count and column record match the old entry. Rename it
 # to a dated version rather than copy it: it is the only copy.
-.recover_cached_version <- function(entry, source_path) {
+.recover_cached_version <- function(entry, source_path, datasets = list()) {
   # A parquet source has no cache: <stem>.parquet is the source itself, and
   # renaming it would take the data away. Never recover from it.
   if (identical(tolower(tools::file_ext(source_path)), "parquet")) return(NULL)
+  # Nor from a file another entry registered: it holds that dataset's data.
+  if (!is.null(.cache_name_clash(source_path, datasets))) return(NULL)
   cache <- .derived_paths(source_path)
   usable <- file.exists(cache$parquet) && file.exists(cache$schema) && !is.null(entry$schema_sha256) &&
     identical(digest::digest(cache$schema, algo = "sha256", file = TRUE), entry$schema_sha256)
@@ -292,7 +340,7 @@
   }
   dir <- dirname(source_path)
   date <- if (is.null(entry$extract_date)) Sys.Date() else entry$extract_date
-  name <- .version_filename(tools::file_path_sans_ext(entry$file), date, dir)
+  name <- .version_filename(tools::file_path_sans_ext(entry$file), date, dir, .reserved_names(datasets))
   parquet <- file.path(dir, name)
   schema <- file.path(dir, .version_schema_name(name))
   if (!file.rename(cache$parquet, parquet)) return(NULL)
@@ -309,20 +357,19 @@
 }
 
 # A study registered before 2026-10 has role "source" and no parquet. Its first
-# update converts it. Three cases: the source still matches (convert it, as a
-# fresh registration on its original date); it was overwritten and the cache
-# still holds the old data (keep that as the earlier version); or neither (say
-# the earlier version is gone, and register the new one anyway).
-.migrate_entry <- function(entry, source_path, extract_date) {
+# update converts it. Three cases: the source still matches (convert it); it
+# was overwritten and the cache still holds the old data (keep that as the
+# earlier version); or neither (say the earlier version is gone, and register
+# the new one anyway). In every case the new version is dated as a fresh
+# registration is: the caller's extract_date, else the source's modification date.
+.migrate_entry <- function(entry, source_path, extract_date, datasets = list()) {
   unchanged <- identical(entry$sha256, digest::digest(source_path, algo = "sha256", file = TRUE))
   history <- list()
   note <- NULL
   restore <- list(from = character(), to = character())
   returned <- FALSE
-  if (unchanged) {
-    date <- if (is.null(entry$extract_date)) .mtime_date(source_path) else entry$extract_date
-  } else {
-    old <- .recover_cached_version(entry, source_path)
+  if (!unchanged) {
+    old <- .recover_cached_version(entry, source_path, datasets)
     if (is.null(old)) {
       note <- paste0("the previous version cannot be recovered: ", entry$file,
                      " was overwritten and no matching cached copy exists")
@@ -336,9 +383,9 @@
       note <- paste0("previous version recovered from the read cache as ", old$parquet,
                      ", not from the original ", entry$file)
     }
-    date <- if (is.null(extract_date)) .mtime_date(source_path) else extract_date
   }
-  taken <- vapply(history, function(h) h$parquet, character(1))
+  date <- if (is.null(extract_date)) .mtime_date(source_path) else extract_date
+  taken <- c(.reserved_names(datasets), vapply(history, function(h) h$parquet, character(1)))
   version <- .write_version(source_path, dirname(source_path), date, taken, caller = "update_manifest")
   # The superseded cache is dropped once the manifest is written, so a failed
   # update leaves the legacy entry and its sidecar intact. Never a parquet

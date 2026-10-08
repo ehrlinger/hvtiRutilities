@@ -206,6 +206,14 @@
   # source itself, so writing the cache would overwrite the data being read.
   if (identical(tolower(tools::file_ext(path)), "parquet")) return(reader(path))
 
+  # Nor does a file whose cache name another entry records as a registered
+  # version (cohort_20260915.csv against cohort.csv registered on 2026-09-15):
+  # that parquet is another dataset's data, never read or written as a cache.
+  # The source is read directly instead.
+  if (file.exists(manifest)) {
+    if (!is.null(.cache_name_clash(path, yaml::read_yaml(manifest)$datasets))) return(reader(path))
+  }
+
   if (!refresh && .cache_valid(path, derived, entry)) {
     # An unreadable parquet -- truncated, corrupted, an interrupted write
     # from outside this package -- must not be permanently fatal for a

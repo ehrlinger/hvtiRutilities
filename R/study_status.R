@@ -84,11 +84,19 @@
     return(.status_row(data_item, "FAIL", conditionMessage(path)))
   }
 
-  if (!file.exists(path)) {
-    return(.status_row(data_item, "MISSING", paste("not found:", path)))
-  }
+  .status_data_row(data_item, cfg$root, path)
+}
 
-  .status_row(data_item, "OK", basename(path))
+# The file read_built() serves for `path`: the registered version when there
+# is one, so a retired or moved source is not reported as missing.
+.status_data_row <- function(item, root, path) {
+  entry <- tryCatch(.manifest_entry(file.path(root, "manifest.yaml"), path), error = function(e) NULL)
+  served <- .authoritative_path(entry, path)
+  if (!file.exists(served)) {
+    return(.status_row(item, "MISSING", paste("not found:", served)))
+  }
+  detail <- if (identical(served, path)) basename(path) else paste0(basename(path), ", registered as ", basename(served))
+  .status_row(item, "OK", detail)
 }
 
 # verify_manifest(stop_on_error = FALSE) reports failures through warning()
@@ -123,18 +131,22 @@
   rep <- rep[rep$status != "PENDING", , drop = FALSE]
   drift <- rep[rep$status == "FAIL", , drop = FALSE]
 
+  # A registered dataset reports one row per version; count datasets.
+  datasets <- unique(.verify_row_dataset(rep$file))
   if (nrow(drift)) {
+    failed <- unique(.verify_row_dataset(drift$file))
     .status_row("manifest.yaml", "FAIL",
-                paste0(nrow(drift), " of ", nrow(rep), " entries failed: ",
-                       paste(drift$file, collapse = ", ")))
+                paste0(length(failed), " of ", length(datasets), " entries failed: ",
+                       paste(failed, collapse = ", ")))
   } else {
     # Re-deriving a .sas7bdat row count needs
     # options(manifest.allow_heavy_rowcount = TRUE), so on a real study those
     # entries pass on their checksum alone. That is a check which did not run,
     # not a check which passed, and the audit says which.
-    detail  <- paste0(nrow(rep), " dataset entr",
-                      if (nrow(rep) == 1L) "y" else "ies",
-                      " verified by checksum")
+    detail  <- paste0(length(datasets), " dataset entr",
+                      if (length(datasets) == 1L) "y" else "ies",
+                      " verified by checksum",
+                      if (nrow(rep) > length(datasets)) paste0(" (", nrow(rep), " files, counting earlier versions)"))
     skipped <- sum(!rep$row_count_checked)
     if (skipped) {
       detail <- paste0(detail, " (row count not re-derived for ",
@@ -142,7 +154,8 @@
     }
     if (nrow(pending)) {
       return(.status_row("manifest.yaml", "PENDING",
-                         paste0(detail, "; rebuilt since registration: ", paste(pending$file, collapse = ", "),
+                         paste0(detail, "; rebuilt since registration: ",
+                                paste(sub(" [(]source[)]$", "", pending$file), collapse = ", "),
                                 ". Run hvtiRutilities::update_manifest() to register ",
                                 if (nrow(pending) == 1L) "it." else "them.")))
     }
@@ -382,10 +395,8 @@ study_status <- function(root = getwd()) {
     p <- tryCatch(built_path(cfg), error = function(e) e)
     if (inherits(p, "error")) {
       row_data <- .status_row("dataset", "FAIL", conditionMessage(p))
-    } else if (!file.exists(p)) {
-      row_data <- .status_row("dataset", "MISSING", paste("not found:", p))
     } else {
-      row_data <- .status_row("dataset", "OK", basename(p))
+      row_data <- .status_data_row("dataset", root, p)
     }
   }
 

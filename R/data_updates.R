@@ -668,6 +668,17 @@ adopt_data_update <- function(cfg = study_config(), dataset = "study",
     )
   }
 
+  clash <- .cache_name_clash(review$candidate$file, manifest$datasets)
+  if (!is.null(clash)) {
+    stop(
+      "adopt_data_update(): ", review$candidate$file, " would be read through ",
+      basename(.derived_paths(review$candidate$file)$parquet), ", which is the registered version of ",
+      clash$file, ". Nothing was changed. Ask the data manager to publish the release under another name, ",
+      "then run review_data_update() and adopt_data_update() again.",
+      call. = FALSE
+    )
+  }
+
   entry <- .registration_manifest_entry(
     candidate_path,
     candidate_data,
