@@ -26,7 +26,8 @@ the named file it is updated in place; otherwise a new entry is
 appended. The manifest is intended to be committed to version control
 while the data files themselves are not. It refuses a file a study
 registers as dated versions, whose entry it would flatten; use the
-no-argument form for those.
+no-argument form for those. It also refuses one of those versions or its
+schema file, which is another dataset's registered data.
 
 Row counts are detected automatically for **CSV** (`.csv`) files. For
 **SAS** (`.sas7bdat`) and **Excel** (`.xlsx`, `.xls`) files, automatic

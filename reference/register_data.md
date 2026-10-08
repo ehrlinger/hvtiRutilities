@@ -87,7 +87,9 @@ register_data(
 
   Character(1) or `NULL`. Producer catalog dataset ID and exact
   published release ID. Supply both to make the study contract
-  release-aware, or neither for a legacy registration.
+  release-aware, or neither for a legacy registration. A dataset already
+  registered as dated versions cannot be moved to a release this way:
+  that would drop every registered version.
 
 - kind:
 
@@ -106,7 +108,8 @@ register_data(
 
   Character or `NULL`. For `kind = "combined"` only: the registered
   datasets it was built from. Their current versions are recorded, so a
-  later update to a parent marks this dataset out of date.
+  later update to a parent marks this dataset out of date. `"built"` is
+  a second name for `"study"`.
 
 ## Value
 

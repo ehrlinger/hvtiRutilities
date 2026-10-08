@@ -182,7 +182,9 @@ date. The file modification date is used when omitted.</p></dd>
 <dt id="arg-catalog-dataset-release-id">catalog_dataset, release_id<a class="anchor" aria-label="anchor" href="#arg-catalog-dataset-release-id"></a></dt>
 <dd><p>Character(1) or <code>NULL</code>. Producer
 catalog dataset ID and exact published release ID. Supply both to make
-the study contract release-aware, or neither for a legacy registration.</p></dd>
+the study contract release-aware, or neither for a legacy registration.
+A dataset already registered as dated versions cannot be moved to a
+release this way: that would drop every registered version.</p></dd>
 
 
 <dt id="arg-kind">kind<a class="anchor" aria-label="anchor" href="#arg-kind"></a></dt>
@@ -201,7 +203,8 @@ stops if any row repeats on it. Jobs use it unless they set their own.</p></dd>
 <dt id="arg-parents">parents<a class="anchor" aria-label="anchor" href="#arg-parents"></a></dt>
 <dd><p>Character or <code>NULL</code>. For <code>kind = "combined"</code> only:
 the registered datasets it was built from. Their current versions are
-recorded, so a later update to a parent marks this dataset out of date.</p></dd>
+recorded, so a later update to a parent marks this dataset out of date.
+<code>"built"</code> is a second name for <code>"study"</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
