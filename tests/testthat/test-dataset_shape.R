@@ -396,3 +396,31 @@ test_that("migrating a legacy combined dataset whose source was rebuilt records 
   withr::with_dir(root, suppressMessages(update_manifest()))
   expect_no_message(read_built(study_config(root), dataset = "comb"))
 })
+
+test_that("a combined dataset stays current when its legacy parent is migrated without a change", {
+  skip_if_not_installed("arrow")
+  root <- make_legacy_registered_study(withr::local_tempdir())
+  utils::write.csv(data.frame(id = 1:3, y = 1:3), file.path(study_dir("datasets", root), "comb.csv"),
+                   row.names = FALSE)
+  suppressMessages(register_data(root, "comb.csv", dataset = "comb", role = "named", kind = "combined",
+                                 parents = "study"))
+  expect_no_message(read_built(study_config(root), dataset = "comb"))
+
+  # The parent's source is untouched: migration changes its format, not its data.
+  msgs <- character()
+  out <- withr::with_dir(root, withCallingHandlers(update_manifest(), message = function(m) {
+    msgs <<- c(msgs, conditionMessage(m))
+    invokeRestart("muffleMessage")
+  }))
+  expect_identical(out$action[out$dataset == "study"], "migrated")
+  expect_false(any(grepl("is out of date", msgs, fixed = TRUE)))
+  expect_no_message(read_built(study_config(root), dataset = "comb"))
+  expect_identical(nrow(.stale_parents(study_config(root), "comb",
+                                       .manifest_entry(file.path(root, "manifest.yaml"), "comb.csv"),
+                                       .read_manifest(file.path(root, "manifest.yaml")))), 0L)
+
+  # A parent rebuilt after the migration is a real change.
+  rebuild(root, "built.csv", data.frame(id = 1:4, dead = c(1L, 0L, 0L, 1L), iv_dead = 1:4))
+  withr::with_dir(root, suppressMessages(update_manifest(dataset = "study")))
+  expect_message(read_built(study_config(root), dataset = "comb"), class = "hvtiRutilities_parent_changed")
+})

@@ -11,3 +11,7 @@
   registered as dated versions, as `update_manifest(file)` already did. It
   replaced the entry with a flat one, dropping every registered version from
   the manifest and leaving their parquets unchecked.
+- A combined dataset registered on a parent that predates dated versions no
+  longer reads as out of date once `update_manifest()` converts that parent
+  without a change to its data. The parent's checksum, recorded at
+  registration, is recognised as the version it was converted to.
