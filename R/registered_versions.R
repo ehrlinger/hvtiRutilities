@@ -242,8 +242,7 @@
     .study_dataset(cfg, dataset)
     dataset
   }
-  kinds <- vapply(targets, function(n) .study_dataset(cfg, n)$kind %||% "", character(1))
-  targets <- c(targets[kinds != "combined"], targets[kinds == "combined"])
+  targets <- .parents_first(cfg, targets)
   if (!length(targets)) {
     stop("update_manifest(): the study at ", cfg$root, " has no registered dataset to update. ",
          "Register one with register_data().", call. = FALSE)

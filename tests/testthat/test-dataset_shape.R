@@ -331,3 +331,29 @@ test_that("adopting a release for a combined dataset records its parents' versio
   e <- Filter(function(x) identical(x$file, "cohort_20260921.csv"), m$datasets)[[1L]]
   expect_match(e$parent_versions$study, "^default_[0-9]{8}[.]parquet$")
 })
+
+test_that("update_manifest() updates a combined parent before a combined child declared ahead of it", {
+  root <- registered_shape_study()
+  data_dir <- study_dir("datasets", root)
+  utils::write.csv(data.frame(ccfid = 1:3, y = 1:3), file.path(data_dir, "c1.csv"), row.names = FALSE)
+  utils::write.csv(data.frame(ccfid = 1:3, z = 1:3), file.path(data_dir, "c2.csv"), row.names = FALSE)
+  suppressMessages(register_data(root, "c1.csv", dataset = "c1", role = "named", kind = "combined", parents = "study"))
+  suppressMessages(register_data(root, "c2.csv", dataset = "c2", role = "named", kind = "combined", parents = "c1"))
+  raw <- yaml::read_yaml(file.path(root, "_study.yml"))
+  raw$additional_datasets <- raw$additional_datasets[c("c2", "echo", "c1")]
+  yaml::write_yaml(raw, file.path(root, "_study.yml"))
+
+  rebuild(root, "built.csv", data.frame(ccfid = 1:4, dead = c(1L, 0L, 0L, 1L)), "2026-10-08 12:00:00")
+  rebuild(root, "c1.csv", data.frame(ccfid = 1:4, y = 1:4), "2026-10-08 12:01:00")
+  rebuild(root, "c2.csv", data.frame(ccfid = 1:4, z = 1:4), "2026-10-08 12:02:00")
+  msgs <- character()
+  withr::with_dir(root, withCallingHandlers(update_manifest(), message = function(m) {
+    msgs <<- c(msgs, conditionMessage(m))
+    invokeRestart("muffleMessage")
+  }))
+
+  expect_false(any(grepl("is out of date", msgs, fixed = TRUE)))
+  cfg <- study_config(root)
+  expect_no_message(read_built(cfg, dataset = "c1"))
+  expect_no_message(read_built(cfg, dataset = "c2"))
+})

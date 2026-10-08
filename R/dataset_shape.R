@@ -90,6 +90,18 @@
   stats::setNames(lapply(parents, function(p) .dataset_version(cfg, p, manifest)), parents)
 }
 
+# Order datasets so each comes after every parent it was combined from (a
+# post-order walk over parents; study_config() has already refused a cycle).
+# A parent outside `targets` is not added: it is not being updated.
+.parents_first <- function(cfg, targets) {
+  visit <- function(out, name) {
+    if (name %in% out) return(out)
+    for (p in .study_dataset(cfg, name)$parents) if (p %in% targets) out <- visit(out, p)
+    c(out, name)
+  }
+  Reduce(visit, targets, character())
+}
+
 # The parents of a combined dataset whose version now differs from the one
 # recorded in its manifest entry. A parent recorded or found without a version
 # (NA), or an entry that records no parent versions at all, is never current:
