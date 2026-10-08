@@ -96,6 +96,16 @@
 #' replaces \code{_study.yml} and \code{manifest.yaml} only after both updated
 #' files have been prepared successfully.
 #'
+#' Registration converts the file once to a dated parquet in the same folder,
+#' \code{<name>_YYYYMMDD.parquet}, with its column record beside it as
+#' \code{<name>_YYYYMMDD.schema.csv}. That parquet is what \code{\link{read_built}}
+#' and the job templates read, so the source file may be rebuilt freely; run
+#' \code{\link{update_manifest}()} to register a rebuilt file as a new version.
+#' The date is the file's modification date unless \code{extract_date} is given.
+#' Conversion needs the \pkg{arrow} package. A release-aware registration
+#' (\code{catalog_dataset} and \code{release_id}) records the catalog's file as
+#' it is and converts nothing.
+#'
 #' @param root Character. Study root or a directory beneath it.
 #' @param built Character(1). Dataset filename within the logical
 #'   \code{datasets} directory, including its extension.
@@ -219,7 +229,9 @@ register_data <- function(root = getwd(), built, dataset = "study",
     extract_date <- release$extract_date
     source <- release$source
   }
-  data <- .read_registration_data(path)
+  # A release-aware contract records the catalog's file as it is; every other
+  # registration converts the file to a dated parquet below, which reads it.
+  data <- if (!is.null(release)) .read_registration_data(path) else NULL
   if (!is.null(release)) {
     .verify_catalog_file(release, study_dir("datasets", cfg$root))
   }
@@ -266,13 +278,17 @@ register_data <- function(root = getwd(), built, dataset = "study",
     raw$additional_datasets[[dataset]] <- contract
   }
 
-  if (is.null(extract_date)) extract_date <- as.Date(file.info(path)$mtime)
-  entry <- .registration_manifest_entry(
-    path,
-    data,
-    extract_date,
-    source
-  )
+  if (is.null(extract_date)) extract_date <- .mtime_date(path)
+  version_files <- character()
+  entry <- if (is.null(release)) {
+    version <- .write_version(path, dirname(path), extract_date)
+    version_files <- file.path(dirname(path), c(version$parquet, .version_schema_name(version$parquet)))
+    .versioned_entry(built, version, extra = if (is.null(source)) list() else list(source = source))
+  } else {
+    .registration_manifest_entry(path, data, extract_date, source)
+  }
+  registered <- FALSE
+  on.exit(if (!registered) unlink(version_files), add = TRUE)
   if (!is.null(release) &&
         (!identical(entry$sha256, release$sha256) ||
            !identical(entry$n_rows, release$n_rows) ||
@@ -346,6 +362,7 @@ register_data <- function(root = getwd(), built, dataset = "study",
   yaml::write_yaml(raw, prepared[[1L]])
   yaml::write_yaml(manifest, prepared[[2L]])
   .replace_study_pair(prepared, targets)
+  registered <- TRUE
 
   study_status(cfg$root)
 }

@@ -134,7 +134,7 @@
       contract$built
     )
     promoted <- identical(entry$role, "primary")
-    path <- if (promoted) .derived_paths(source_path)$parquet else source_path
+    path <- .authoritative_path(entry, source_path)
     catalog_sha256 <- if (promoted) entry$source_sha256 else entry$sha256
     if (!valid_hash(catalog_sha256)) {
       .release_integrity_abort(paste0(

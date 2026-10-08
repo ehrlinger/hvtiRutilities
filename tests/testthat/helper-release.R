@@ -57,6 +57,7 @@ make_release_aware_study <- function(dir, pinned_sequence = 1L,
   release <- releases[[which(hit)]]
 
   if (named) {
+    testthat::skip_if_not_installed("arrow")
     default <- data.frame(dead = c(1L, 0L), iv_dead = 1:2)
     write.csv(default, file.path(fx$data_dir, "default.csv"), row.names = FALSE)
     register_data(root, "default.csv")

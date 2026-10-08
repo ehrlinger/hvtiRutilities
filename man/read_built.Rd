@@ -20,7 +20,9 @@ a reconversion regardless of the manifest's role or cached stamp.
 a rebuild that preserves \code{mtime}, a restored backup, a correction
 applied out of band. Errors if the manifest entry has
 \code{role: "primary"}: that role means the source has been retired and
-the parquet is authoritative, so there is nothing to refresh from.}
+the parquet is authoritative, so there is nothing to refresh from.
+It also errors for a dataset registered as a dated parquet, and names
+\code{\link{update_manifest}()}, which registers a rebuilt source.}
 
 \item{dataset}{Character(1). Logical dataset name. Defaults to
 \code{"study"}.}
@@ -36,6 +38,12 @@ A data frame with lower-cased names, no logical columns and no
 \description{
 Reads the dataset named in \code{_study.yml} and normalises its types so
 that both available read paths deliver the same frame.
+
+For a dataset registered with \code{\link{register_data}}, the registered
+version (a dated parquet) is read, after its checksum is checked. If the
+source file has been rebuilt since, the registered version is still read
+and a message of class \code{hvtiRutilities_source_changed} says so and
+names \code{\link{update_manifest}()}.
 
 For a release-aware contract, the pinned release is verified before cache
 access. A later valid release emits a message of class

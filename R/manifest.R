@@ -55,11 +55,25 @@
 #' Create or update a dataset manifest file
 #'
 #' @description
-#' Records dataset metadata — including a SHA-256 checksum, row count, extract
-#' date, and optional provenance fields — into a \code{manifest.yaml} file.
-#' If the manifest already contains an entry for the named file it is updated
-#' in place; otherwise a new entry is appended.  The manifest is intended to be
-#' committed to version control while the data files themselves are not.
+#' \strong{In a study}, run with no arguments after rebuilding a registered
+#' dataset: \code{update_manifest()}. It finds the study from the working
+#' directory, converts every registered dataset whose source file has changed
+#' to a new dated parquet (\code{<name>_YYYYMMDD.parquet}, or \code{_r2},
+#' \code{_r3} for another version on the same date), keeps every earlier
+#' version, records the change in \code{manifest.yaml}, and prints one line per
+#' dataset. Jobs read the new version from then on. Unchanged datasets are left
+#' alone. Name one with \code{dataset}. Release-aware datasets are skipped; use
+#' \code{\link{review_data_update}} and \code{\link{adopt_data_update}}. Needs
+#' the \pkg{arrow} package.
+#'
+#' \strong{A single file}: \code{update_manifest(file, ...)} records a SHA-256
+#' checksum, row count, extract date and optional provenance fields for one
+#' file in a \code{manifest.yaml}. If the manifest already contains an entry
+#' for the named file it is updated in place; otherwise a new entry is
+#' appended. The manifest is intended to be committed to version control while
+#' the data files themselves are not. It refuses a file a study
+#' registers as dated versions, whose entry it would flatten; use the
+#' no-argument form for those.
 #'
 #' Row counts are detected automatically for \strong{CSV} (\code{.csv}) files.
 #' For \strong{SAS} (\code{.sas7bdat}) and \strong{Excel} (\code{.xlsx},
@@ -70,13 +84,15 @@
 #' format, or when heavy counting is disabled, supply \code{n_rows}
 #' explicitly.
 #'
-#' @param file Character. Path to the dataset file.
+#' @param file Character. Path to the dataset file. Omit it inside a study to
+#'   register every changed dataset; see the description.
 #' @param manifest_path Character. Path to the manifest YAML file.
 #'   Created if it does not exist. Defaults to \code{"manifest.yaml"} in the
 #'   current working directory.
 #' @param extract_date Character or \code{Date}. The date the data were pulled
 #'   from the source system.  Stored as \code{"YYYY-MM-DD"}.  Defaults to
-#'   today's date.
+#'   today's date. With no \code{file}, the date of the new version; defaults
+#'   to the source file's modification date.
 #' @param n_rows Integer. Number of data rows.  When \code{NULL} (default) the
 #'   row count is detected automatically from CSV files, and from SAS/Excel
 #'   files only when \code{options(manifest.allow_heavy_rowcount = TRUE)} is
@@ -106,11 +122,21 @@
 #' @param verbose Logical. If \code{TRUE}, report which manifest entry was
 #'   added or updated via \code{\link[base]{message}}.  Defaults to
 #'   \code{FALSE} so that scripted or looped calls stay silent.
+#' @param dataset Character(1) or \code{NULL}. With no \code{file}: the one
+#'   registered dataset to update; \code{NULL} updates every one that changed.
+#'   Ignored when \code{file} is given.
 #'
-#' @return Invisibly returns the updated manifest as a named list.
+#' @return With \code{file}, invisibly returns the updated manifest as a named
+#'   list. With no \code{file}, invisibly returns a data frame with one row per
+#'   dataset and columns \code{dataset}, \code{action} (\code{"registered"},
+#'   \code{"migrated"}, \code{"unchanged"} or \code{"skipped"}) and
+#'   \code{detail}.
 #'
 #' @examples
 #' \dontrun{
+#' # --- In a study, after rebuilding built.sas7bdat --------------------
+#' update_manifest()
+#'
 #' # --- CSV ------------------------------------------------------------
 #' update_manifest(
 #'   file         = here::here("datasets", "cohort_20240115.csv"),
@@ -151,7 +177,26 @@ update_manifest <- function(file,
                             schema_sha256 = NULL,
                             role          = c("source", "primary"),
                             reader        = NULL,
-                            verbose       = FALSE) {
+                            verbose       = FALSE,
+                            dataset       = NULL) {
+  if (missing(file)) {
+    # The no-file form registers whatever changed in the study; these describe
+    # one file, so passing one here would be silently ignored.
+    single <- c("manifest_path", "n_rows", "n_cols", "source", "sort_key", "schema_sha256", "role",
+                "reader", "verbose")
+    absent <- c(missing(manifest_path), missing(n_rows), missing(n_cols), missing(source),
+                missing(sort_key), missing(schema_sha256), missing(role), missing(reader),
+                missing(verbose))
+    given <- single[!absent]
+    if (length(given)) {
+      stop("update_manifest(): ", paste0("`", given, "`", collapse = ", "),
+           if (length(given) > 1L) " describe" else " describes",
+           " a single file and cannot be used without `file`. Call update_manifest() with no ",
+           "arguments to register every changed dataset, or name the file.", call. = FALSE)
+    }
+    return(.update_study_manifest(dataset = dataset,
+                                  extract_date = if (missing(extract_date)) NULL else extract_date))
+  }
   role <- match.arg(role)
   if (identical(role, "primary")) {
     stop(
@@ -214,6 +259,13 @@ update_manifest <- function(file,
     logical(1)
   )
 
+  if (any(existing) && .is_versioned(manifest$datasets[[which(existing)]])) {
+    stop("update_manifest(): ", entry$file, " is registered as dated versions (current: ",
+         manifest$datasets[[which(existing)]]$parquet, "). Recording it as a single file would drop ",
+         "every registered version. To register a rebuilt ", entry$file, ", run ",
+         "hvtiRutilities::update_manifest() with no arguments from inside the study.", call. = FALSE)
+  }
+
   if (any(existing)) {
     manifest$datasets[[which(existing)]] <- entry
     if (verbose) message("Manifest updated: ", entry$file)
@@ -224,6 +276,49 @@ update_manifest <- function(file,
 
   .atomic_write(manifest_path, function(tmp) yaml::write_yaml(manifest, tmp))
   invisible(manifest)
+}
+
+# Inside a study, the study's manifest; elsewhere, manifest.yaml here. A job run
+# from a subfolder used to check a manifest.yaml in its own folder.
+.default_manifest_path <- function() {
+  cfg <- tryCatch(study_config(require_data = FALSE), error = function(e) NULL)
+  if (is.null(cfg)) "manifest.yaml" else file.path(cfg$root, "manifest.yaml")
+}
+
+.verify_row <- function(file, status, message) {
+  data.frame(file = file, status = status, message = message, row_count_checked = FALSE,
+             stringsAsFactors = FALSE)
+}
+
+# One row per registered version (current first), plus a PENDING row when the
+# source has been rebuilt since. A version is registered data, so a missing or
+# edited one FAILs with the restore instruction; a rebuilt source is expected.
+.verify_versioned_entry <- function(entry, resolve) {
+  versions <- c(list(.history_record(entry)), if (is.list(entry$history)) entry$history else list())
+  rows <- lapply(seq_along(versions), function(i) {
+    v <- versions[[i]]
+    label <- if (i == 1L) entry$file else paste0(entry$file, " (", v$extract_date, ")")
+    target <- resolve(v$parquet)
+    restore <- paste0(" It is registered data and cannot be rebuilt from its source; restore it from backup ",
+                      "and tell the study's data manager.")
+    if (!file.exists(target)) return(.verify_row(label, "FAIL", paste0(v$parquet, " is missing.", restore)))
+    if (!identical(digest::digest(target, algo = "sha256", file = TRUE), v$sha256)) {
+      return(.verify_row(label, "FAIL", paste0(v$parquet, " does not match its recorded checksum.", restore)))
+    }
+    if (!is.null(v$schema_sha256)) {
+      side <- resolve(.version_schema_name(v$parquet))
+      if (!file.exists(side) || !identical(digest::digest(side, algo = "sha256", file = TRUE), v$schema_sha256)) {
+        return(.verify_row(label, "FAIL", paste0(.version_schema_name(v$parquet),
+                                                 " is missing or does not match its recorded checksum.", restore)))
+      }
+    }
+    .verify_row(label, "OK", paste0("SHA-256 match (", v$parquet, ", n = ", v$n_rows, ")"))
+  })
+  if (.source_changed(resolve(entry$file), entry)) {
+    rows[[length(rows) + 1L]] <- .verify_row(entry$file, "PENDING",
+                                             trimws(conditionMessage(.source_changed_condition(entry))))
+  }
+  do.call(rbind, rows)
 }
 
 ## =============================================================================
@@ -258,11 +353,19 @@ update_manifest <- function(file,
 #' \code{row_count_checked} column is \code{TRUE} only in the first case, and
 #' the message names which of the three it was.
 #'
+#' For a dataset registered with \code{\link{register_data}}, every registered
+#' version (the current dated parquet and each earlier one) is checked. A
+#' source file rebuilt since registration is reported with status
+#' \code{"PENDING"} and never stops: jobs keep reading the registered version
+#' until \code{\link{update_manifest}()} registers the new one.
+#'
 #' Call this function at the top of every analysis script or Quarto document
 #' to ensure data integrity before any results are generated.
 #'
-#' @param manifest_path Character. Path to the manifest YAML file.
-#'   Defaults to \code{"manifest.yaml"} in the current working directory.
+#' @param manifest_path Character. Path to the manifest YAML file. Defaults to
+#'   the study's \code{manifest.yaml} when run inside a study (a
+#'   \code{_study.yml} here or above), and to \code{"manifest.yaml"} in the
+#'   working directory otherwise.
 #' @param data_dir Character. Directory holding the dataset files. When
 #'   supplied, it is used exactly as given. When \code{NULL} (default), the
 #'   manifest directory is inspected once. \code{00_datasets/} supports the
@@ -321,7 +424,7 @@ update_manifest <- function(file,
 #'
 #' @seealso \code{\link{update_manifest}}
 #' @export
-verify_manifest <- function(manifest_path = "manifest.yaml",
+verify_manifest <- function(manifest_path = .default_manifest_path(),
                             data_dir      = NULL,
                             stop_on_error = TRUE,
                             verbose       = FALSE,
@@ -368,7 +471,9 @@ verify_manifest <- function(manifest_path = "manifest.yaml",
       entry_files <- vapply(
         manifest$datasets,
         function(entry) {
-          if (identical(entry$role, "primary")) {
+          if (.is_versioned(entry)) {
+            entry$parquet
+          } else if (identical(entry$role, "primary")) {
             basename(.derived_paths(entry$file)$parquet)
           } else {
             entry$file
@@ -387,6 +492,7 @@ verify_manifest <- function(manifest_path = "manifest.yaml",
   }
 
   results <- lapply(manifest$datasets, function(entry) {
+    if (.is_versioned(entry)) return(.verify_versioned_entry(entry, resolve_entry))
     # sha256 describes whichever file `role` makes authoritative. `file`
     # never changes on promotion (it names the dataset, not the file
     # currently storing it), so which physical file to hash cannot be
@@ -441,7 +547,9 @@ verify_manifest <- function(manifest_path = "manifest.yaml",
         file    = entry$file,
         status  = "FAIL",
         message = paste0("SHA-256 mismatch\n  expected: ", entry$sha256,
-                         "\n  actual:   ", sha256),
+                         "\n  actual:   ", sha256,
+                         "\n  If this file was rebuilt on purpose, run hvtiRutilities::update_manifest() ",
+                         "to register the new version."),
         row_count_checked = FALSE,
         stringsAsFactors = FALSE
       ))

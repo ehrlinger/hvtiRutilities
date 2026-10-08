@@ -47,6 +47,29 @@ The catalog distinguishes a mutable draft from a published dated release and
 lets a study discover a later release without changing the release it already
 uses. We return to that workflow after the checksum example.
 
+## In a Study: Rebuild, Then Update
+
+Most of the time you do not call any of the functions below directly. A study
+registers its dataset once, and from then on the cycle is two steps.
+
+1. Rebuild `datasets/built.sas7bdat` as often as you need. Jobs are not
+   affected: they read the registered version, a dated parquet such as
+   `built_20260915.parquet`, and `read_built()` says that a newer file is
+   waiting.
+2. When the rebuild is right, register it:
+
+   ```r
+   hvtiRutilities::update_manifest()
+   ```
+
+   Run it from anywhere in the study. It converts the new file to
+   `built_20261007.parquet`, keeps every earlier version, and prints what it
+   did. Commit `manifest.yaml`.
+
+Every registered version stays on disk, so a manuscript revision can be
+reproduced from the version its paper used. The rest of this vignette explains
+the checksums underneath, and how to record a file outside a study.
+
 ## Setup
 
 ```{r}

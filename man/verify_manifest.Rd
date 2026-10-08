@@ -5,7 +5,7 @@
 \title{Verify all datasets listed in a manifest}
 \usage{
 verify_manifest(
-  manifest_path = "manifest.yaml",
+  manifest_path = .default_manifest_path(),
   data_dir = NULL,
   stop_on_error = TRUE,
   verbose = FALSE,
@@ -13,8 +13,10 @@ verify_manifest(
 )
 }
 \arguments{
-\item{manifest_path}{Character. Path to the manifest YAML file.
-Defaults to \code{"manifest.yaml"} in the current working directory.}
+\item{manifest_path}{Character. Path to the manifest YAML file. Defaults to
+the study's \code{manifest.yaml} when run inside a study (a
+\code{_study.yml} here or above), and to \code{"manifest.yaml"} in the
+working directory otherwise.}
 
 \item{data_dir}{Character. Directory holding the dataset files. When
 supplied, it is used exactly as given. When \code{NULL} (default), the
@@ -84,6 +86,12 @@ verified.  The count was compared; the count is recorded but was not
 re-derived; or the manifest records no count at all.  The
 \code{row_count_checked} column is \code{TRUE} only in the first case, and
 the message names which of the three it was.
+
+For a dataset registered with \code{\link{register_data}}, every registered
+version (the current dated parquet and each earlier one) is checked. A
+source file rebuilt since registration is reported with status
+\code{"PENDING"} and never stops: jobs keep reading the registered version
+until \code{\link{update_manifest}()} registers the new one.
 
 Call this function at the top of every analysis script or Quarto document
 to ensure data integrity before any results are generated.

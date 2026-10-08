@@ -15,11 +15,13 @@ update_manifest(
   schema_sha256 = NULL,
   role = c("source", "primary"),
   reader = NULL,
-  verbose = FALSE
+  verbose = FALSE,
+  dataset = NULL
 )
 }
 \arguments{
-\item{file}{Character. Path to the dataset file.}
+\item{file}{Character. Path to the dataset file. Omit it inside a study to
+register every changed dataset; see the description.}
 
 \item{manifest_path}{Character. Path to the manifest YAML file.
 Created if it does not exist. Defaults to \code{"manifest.yaml"} in the
@@ -27,7 +29,8 @@ current working directory.}
 
 \item{extract_date}{Character or \code{Date}. The date the data were pulled
 from the source system.  Stored as \code{"YYYY-MM-DD"}.  Defaults to
-today's date.}
+today's date. With no \code{file}, the date of the new version; defaults
+to the source file's modification date.}
 
 \item{n_rows}{Integer. Number of data rows.  When \code{NULL} (default) the
 row count is detected automatically from CSV files, and from SAS/Excel
@@ -65,16 +68,38 @@ source is retired. \code{NULL} (default) omits the field.}
 \item{verbose}{Logical. If \code{TRUE}, report which manifest entry was
 added or updated via \code{\link[base]{message}}.  Defaults to
 \code{FALSE} so that scripted or looped calls stay silent.}
+
+\item{dataset}{Character(1) or \code{NULL}. With no \code{file}: the one
+registered dataset to update; \code{NULL} updates every one that changed.
+Ignored when \code{file} is given.}
 }
 \value{
-Invisibly returns the updated manifest as a named list.
+With \code{file}, invisibly returns the updated manifest as a named
+  list. With no \code{file}, invisibly returns a data frame with one row per
+  dataset and columns \code{dataset}, \code{action} (\code{"registered"},
+  \code{"migrated"}, \code{"unchanged"} or \code{"skipped"}) and
+  \code{detail}.
 }
 \description{
-Records dataset metadata — including a SHA-256 checksum, row count, extract
-date, and optional provenance fields — into a \code{manifest.yaml} file.
-If the manifest already contains an entry for the named file it is updated
-in place; otherwise a new entry is appended.  The manifest is intended to be
-committed to version control while the data files themselves are not.
+\strong{In a study}, run with no arguments after rebuilding a registered
+dataset: \code{update_manifest()}. It finds the study from the working
+directory, converts every registered dataset whose source file has changed
+to a new dated parquet (\code{<name>_YYYYMMDD.parquet}, or \code{_r2},
+\code{_r3} for another version on the same date), keeps every earlier
+version, records the change in \code{manifest.yaml}, and prints one line per
+dataset. Jobs read the new version from then on. Unchanged datasets are left
+alone. Name one with \code{dataset}. Release-aware datasets are skipped; use
+\code{\link{review_data_update}} and \code{\link{adopt_data_update}}. Needs
+the \pkg{arrow} package.
+
+\strong{A single file}: \code{update_manifest(file, ...)} records a SHA-256
+checksum, row count, extract date and optional provenance fields for one
+file in a \code{manifest.yaml}. If the manifest already contains an entry
+for the named file it is updated in place; otherwise a new entry is
+appended. The manifest is intended to be committed to version control while
+the data files themselves are not. It refuses a file a study
+registers as dated versions, whose entry it would flatten; use the
+no-argument form for those.
 
 Row counts are detected automatically for \strong{CSV} (\code{.csv}) files.
 For \strong{SAS} (\code{.sas7bdat}) and \strong{Excel} (\code{.xlsx},
@@ -87,6 +112,9 @@ explicitly.
 }
 \examples{
 \dontrun{
+# --- In a study, after rebuilding built.sas7bdat --------------------
+update_manifest()
+
 # --- CSV ------------------------------------------------------------
 update_manifest(
   file         = here::here("datasets", "cohort_20240115.csv"),
