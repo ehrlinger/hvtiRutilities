@@ -236,10 +236,14 @@
 # writes it; reads never write the manifest.
 .next_version <- function(entry, source_path, extract_date, reserved = character(), key = NULL) {
   if (!.source_changed(source_path, entry)) {
-    stamp <- .source_stamp(source_path)
-    restamped <- !identical(as.numeric(entry$source_size), stamp$source_size) ||
-      !identical(entry$source_mtime, stamp$source_mtime)
-    entry[names(stamp)] <- stamp
+    # A missing source is also "unchanged", and has no stamp to record.
+    restamped <- FALSE
+    if (file.exists(source_path)) {
+      stamp <- .source_stamp(source_path)
+      restamped <- !identical(as.numeric(entry$source_size), stamp$source_size) ||
+        !identical(entry$source_mtime, stamp$source_mtime)
+      entry[names(stamp)] <- stamp
+    }
     return(list(entry = entry, written = character(), action = "unchanged", restamped = restamped,
                 detail = paste0("unchanged since ", entry$extract_date, " (", entry$parquet, ")")))
   }
