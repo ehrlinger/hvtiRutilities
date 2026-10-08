@@ -18,7 +18,10 @@
       dataset = dataset,
       built = cfg$built,
       population = cfg$population,
-      release = cfg$release
+      release = cfg$release,
+      kind = "built",
+      key = cfg$key,
+      parents = NULL
     ))
   }
 
@@ -32,7 +35,10 @@
     dataset = dataset,
     built = out$built,
     population = out$population,
-    release = out$release
+    release = out$release,
+    kind = out$kind,
+    key = out$key,
+    parents = out$parents
   )
 }
 
