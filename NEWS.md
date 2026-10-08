@@ -1,4 +1,4 @@
-# hvtiRutilities (unreleased)
+# hvtiRutilities 1.5.0
 
 ## Breaking changes
 
