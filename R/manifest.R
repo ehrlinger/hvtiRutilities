@@ -129,7 +129,8 @@
 #'   \code{FALSE} so that scripted or looped calls stay silent.
 #' @param dataset Character(1) or \code{NULL}. With no \code{file}: the one
 #'   registered dataset to update; \code{NULL} updates every one that changed.
-#'   Ignored when \code{file} is given.
+#'   \code{"built"} is a second name for \code{"study"}. Ignored when
+#'   \code{file} is given.
 #'
 #' @return With \code{file}, invisibly returns the updated manifest as a named
 #'   list. With no \code{file}, invisibly returns a data frame with one row per

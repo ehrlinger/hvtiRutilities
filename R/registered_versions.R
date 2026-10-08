@@ -236,6 +236,7 @@
          call. = FALSE)
   }
   .require_arrow("update_manifest")
+  if (!is.null(dataset)) dataset <- .canonical_dataset(dataset)
   targets <- if (is.null(dataset)) {
     c(if (!is.null(cfg$built)) "study", names(cfg$additional_datasets))
   } else {
