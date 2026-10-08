@@ -24,8 +24,9 @@ re-derived; or the manifest records no count at all.  The
 row_count_checked column is TRUE only in the first case, and
 the message names which of the three it was.
 For a dataset registered with register_data, every registered
-version (the current dated parquet and each earlier one) is checked. A
-source file rebuilt since registration is reported with status
+version (the current dated parquet and each earlier one) is checked, and its
+row count is re-derived from the parquet footer when the arrow package is
+available. A source file rebuilt since registration is reported with status
 "PENDING" and never stops: jobs keep reading the registered version
 until update_manifest() registers the new one.
 Call this function at the top of every analysis script or Quarto document
@@ -54,8 +55,9 @@ re-derived; or the manifest records no count at all.  The
 row_count_checked column is TRUE only in the first case, and
 the message names which of the three it was.
 For a dataset registered with register_data, every registered
-version (the current dated parquet and each earlier one) is checked. A
-source file rebuilt since registration is reported with status
+version (the current dated parquet and each earlier one) is checked, and its
+row count is re-derived from the parquet footer when the arrow package is
+available. A source file rebuilt since registration is reported with status
 "PENDING" and never stops: jobs keep reading the registered version
 until update_manifest() registers the new one.
 Call this function at the top of every analysis script or Quarto document
@@ -142,8 +144,9 @@ re-derived; or the manifest records no count at all.  The
 <code>row_count_checked</code> column is <code>TRUE</code> only in the first case, and
 the message names which of the three it was.</p>
 <p>For a dataset registered with <code><a href="register_data.html">register_data</a></code>, every registered
-version (the current dated parquet and each earlier one) is checked. A
-source file rebuilt since registration is reported with status
+version (the current dated parquet and each earlier one) is checked, and its
+row count is re-derived from the parquet footer when the arrow package is
+available. A source file rebuilt since registration is reported with status
 <code>"PENDING"</code> and never stops: jobs keep reading the registered version
 until <code><a href="update_manifest.html">update_manifest()</a></code> registers the new one.</p>
 <p>Call this function at the top of every analysis script or Quarto document

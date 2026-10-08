@@ -32,9 +32,10 @@ message names which of the three it was.
 For a dataset registered with
 [`register_data`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md),
 every registered version (the current dated parquet and each earlier
-one) is checked. A source file rebuilt since registration is reported
-with status `"PENDING"` and never stops: jobs keep reading the
-registered version until
+one) is checked, and its row count is re-derived from the parquet footer
+when the arrow package is available. A source file rebuilt since
+registration is reported with status `"PENDING"` and never stops: jobs
+keep reading the registered version until
 [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
 registers the new one.
 

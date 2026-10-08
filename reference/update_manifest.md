@@ -132,7 +132,8 @@ update_manifest(
 With `file`, invisibly returns the updated manifest as a named list.
 With no `file`, invisibly returns a data frame with one row per dataset
 and columns `dataset`, `action` (`"registered"`, `"migrated"`,
-`"unchanged"` or `"skipped"`) and `detail`.
+`"unchanged"`, `"skipped"` or `"missing"`, for a source that is not on
+disk and has no registered version) and `detail`.
 
 ## See also
 
