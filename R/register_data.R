@@ -121,7 +121,7 @@
 #' @param built Character(1). Dataset filename within the logical
 #'   \code{datasets} directory, including its extension.
 #' @param dataset Character(1). Logical dataset name. \code{"study"} is
-#'   reserved for the default.
+#'   reserved for the default, and \code{"built"} is a second name for it.
 #' @param role Character. Either \code{"study"} or \code{"named"}.
 #' @param population Character(1) or \code{NULL}. Population description.
 #' @param source Character(1) or \code{NULL}. Data-source description.
@@ -159,6 +159,11 @@ register_data <- function(root = getwd(), built, dataset = "study",
   }
   built <- scalar(built, "built", required = TRUE)
   dataset <- scalar(dataset, "dataset", required = TRUE)
+  if (identical(role, "named") && identical(dataset, "built")) {
+    stop("register_data(): \"built\" is reserved: it is a second name for the study dataset. ",
+         "Give the named dataset another name.", call. = FALSE)
+  }
+  dataset <- .canonical_dataset(dataset)
   population <- scalar(population, "population")
   source <- scalar(source, "source")
   catalog_dataset <- scalar(catalog_dataset, "catalog_dataset")

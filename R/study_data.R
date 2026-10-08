@@ -7,11 +7,19 @@
 # this package is shared across studies and a literal filename in R/ is exactly
 # the early binding this design exists to remove.
 
+# "built" is the team's word for the study dataset, and a second name for it.
+# Everything recorded uses "study", so records made under either name compare
+# equal. Design: hvtiR dev/specs/2026-10-07-built-dataset-name-design.md.
+.canonical_dataset <- function(dataset) {
+  if (is.character(dataset) && length(dataset) == 1L && identical(dataset, "built")) "study" else dataset
+}
+
 .study_dataset <- function(cfg, dataset = "study") {
   if (!is.character(dataset) || length(dataset) != 1L || is.na(dataset) ||
         !nzchar(dataset)) {
     stop("dataset must be one non-empty character name", call. = FALSE)
   }
+  dataset <- .canonical_dataset(dataset)
 
   if (identical(dataset, "study")) {
     return(list(
@@ -27,7 +35,7 @@
 
   out <- cfg$additional_datasets[[dataset]]
   if (is.null(out)) {
-    choices <- c("study", names(cfg$additional_datasets))
+    choices <- c("study (or built)", names(cfg$additional_datasets))
     stop("unknown dataset '", dataset, "'; registered: ",
          paste(choices, collapse = ", "), call. = FALSE)
   }
@@ -50,7 +58,7 @@
 #'
 #' @param cfg List. A study manifest from \code{\link{study_config}}.
 #' @param dataset Character(1). Logical dataset name. Defaults to
-#'   \code{"study"}.
+#'   \code{"study"}. \code{"built"} is a second name for \code{"study"}.
 #'
 #' @return Character(1). The path to the built dataset.
 #'
@@ -69,6 +77,7 @@
 #' built_path(study_config(root))
 #' unlink(root, recursive = TRUE)
 built_path <- function(cfg = study_config(), dataset = "study") {
+  dataset <- .canonical_dataset(dataset)
   contract <- .study_dataset(cfg, dataset)
   if (is.null(contract$built)) {
     stop("built_path(): dataset '", dataset, "' has no registered file",
@@ -86,7 +95,7 @@ built_path <- function(cfg = study_config(), dataset = "study") {
 #'
 #' @param cfg List. A study manifest from \code{\link{study_config}}.
 #' @param dataset Character(1). Logical dataset name. Defaults to
-#'   \code{"study"}.
+#'   \code{"study"}. \code{"built"} is a second name for \code{"study"}.
 #'
 #' @return A one-row data frame with columns \code{file}, \code{size_bytes},
 #'   \code{mtime} and \code{sha256}.
@@ -108,6 +117,7 @@ built_path <- function(cfg = study_config(), dataset = "study") {
 #' built_manifest(study_config(root))
 #' unlink(root, recursive = TRUE)
 built_manifest <- function(cfg = study_config(), dataset = "study") {
+  dataset <- .canonical_dataset(dataset)
   contract <- .study_dataset(cfg, dataset)
   p <- built_path(cfg, dataset)
   if (!file.exists(p)) {
@@ -232,7 +242,7 @@ built_manifest <- function(cfg = study_config(), dataset = "study") {
 #'   It also errors for a dataset registered as a dated parquet, and names
 #'   \code{\link{update_manifest}()}, which registers a rebuilt source.
 #' @param dataset Character(1). Logical dataset name. Defaults to
-#'   \code{"study"}.
+#'   \code{"study"}. \code{"built"} is a second name for \code{"study"}.
 #' @param allow_withdrawn Logical. If \code{TRUE}, allow a deliberately pinned
 #'   withdrawn release to be read for revision work. The default is
 #'   \code{FALSE}.
@@ -262,6 +272,7 @@ read_built <- function(cfg = study_config(), refresh = FALSE,
         is.na(allow_withdrawn)) {
     stop("allow_withdrawn must be TRUE or FALSE", call. = FALSE)
   }
+  dataset <- .canonical_dataset(dataset)
   contract <- .study_dataset(cfg, dataset)
   if (!is.null(contract$release)) {
     .enforce_release_read(cfg, dataset, allow_withdrawn)

@@ -71,7 +71,8 @@ added or updated via \code{\link[base]{message}}.  Defaults to
 
 \item{dataset}{Character(1) or \code{NULL}. With no \code{file}: the one
 registered dataset to update; \code{NULL} updates every one that changed.
-Ignored when \code{file} is given.}
+\code{"built"} is a second name for \code{"study"}. Ignored when
+\code{file} is given.}
 }
 \value{
 With \code{file}, invisibly returns the updated manifest as a named

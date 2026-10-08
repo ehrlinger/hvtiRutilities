@@ -25,7 +25,7 @@ It also errors for a dataset registered as a dated parquet, and names
 \code{\link{update_manifest}()}, which registers a rebuilt source.}
 
 \item{dataset}{Character(1). Logical dataset name. Defaults to
-\code{"study"}.}
+\code{"study"}. \code{"built"} is a second name for \code{"study"}.}
 
 \item{allow_withdrawn}{Logical. If \code{TRUE}, allow a deliberately pinned
 withdrawn release to be read for revision work. The default is

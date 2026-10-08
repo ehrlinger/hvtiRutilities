@@ -142,7 +142,8 @@ test_that("data helpers list registered choices for an unknown dataset", {
 
   expect_error(
     built_path(study_config(root), dataset = "unknown"),
-    "study, complete_cases"
+    "study (or built), complete_cases",
+    fixed = TRUE
   )
 })
 

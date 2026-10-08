@@ -7,7 +7,8 @@
 provenance_data(dataset = "study", cfg = study_config(), role = "analysis")
 }
 \arguments{
-\item{dataset}{Character(1). Logical registered dataset name.}
+\item{dataset}{Character(1). Logical registered dataset name.
+\code{"built"} is a second name for \code{"study"}.}
 
 \item{cfg}{List. A study manifest from \code{\link{study_config}}.}
 

@@ -10,7 +10,7 @@ built_manifest(cfg = study_config(), dataset = "study")
 \item{cfg}{List. A study manifest from \code{\link{study_config}}.}
 
 \item{dataset}{Character(1). Logical dataset name. Defaults to
-\code{"study"}.}
+\code{"study"}. \code{"built"} is a second name for \code{"study"}.}
 }
 \value{
 A one-row data frame with columns \code{file}, \code{size_bytes},
