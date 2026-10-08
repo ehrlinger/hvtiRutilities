@@ -33,7 +33,7 @@ test_that("the default dataset may be registered under either name", {
 test_that("a named dataset may not be called built", {
   root <- built_name_study()
   utils::write.csv(data.frame(id = 1:2), file.path(study_dir("datasets", root), "x.csv"), row.names = FALSE)
-  expect_error(register_data(root, "x.csv", dataset = "built", role = "named"), "reserved")
+  expect_error(register_data(root, "x.csv", dataset = "built", role = "named"), "\"built\" is reserved", fixed = TRUE)
 })
 
 test_that("an existing additional dataset named built stops with the way to rename it", {
@@ -94,4 +94,16 @@ test_that("the release functions accept built and report study", {
 
   review <- review_data_update(cfg, dataset = "built", release_id = "surgery_cohort-20260921-r1")
   expect_identical(review$dataset, "study")
+})
+
+test_that("adopt_data_update(\"built\") advances the default contract, not a named one", {
+  fx <- make_release_aware_study(withr::local_tempdir(), pinned_sequence = 1L)
+
+  status <- adopt_data_update(study_config(fx$root), dataset = "built", release_id = "surgery_cohort-20260921-r1")
+
+  expect_s3_class(status, "study_status")
+  after <- yaml::read_yaml(file.path(fx$root, "_study.yml"))
+  expect_identical(after$built, "cohort_20260921.csv")
+  expect_identical(after$release$release_id, "surgery_cohort-20260921-r1")
+  expect_null(after$additional_datasets$built)
 })
