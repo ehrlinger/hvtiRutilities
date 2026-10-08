@@ -1,4 +1,4 @@
-# hvtiRutilities (unreleased)
+# hvtiRutilities 1.5.1
 
 ## New features
 
@@ -17,6 +17,20 @@
   datasets built from it. If the out-of-date check in
   `study_status()` cannot run, the `out_of_date:<dataset>` row is `FAIL`
   with the error.
+
+* `"built"` is now a second name for the study dataset. Every function that
+  takes a `dataset` accepts it, and everything recorded (manifests,
+  provenance, status) still says `"study"`, so records made under either name
+  compare equal. `"built"` is reserved: a named dataset may not use it, and a
+  study that already registered an additional dataset called `built` is asked
+  to rename it.
+
+* `job_census()` and `job_files()` read hvtiRtemplates' template-first job
+  names, `<prefix>[.<qualifier>].<subject>.<type>.qmd` and their
+  `.runner.R`, as scaffolded jobs. Before, the SAS-legacy parser claimed any
+  dotted name and counted them as SAS-era jobs.
+  Existing dotted job names of this shape are now read as scaffolded, and no
+  longer carry legacy qualifiers.
 
 ## Bug fixes
 
@@ -49,6 +63,11 @@
     a dataset whose source is gone as present when its registered version is
     there, since that is what `read_built()` serves. `update_manifest()` on a
     study with no `manifest.yaml` names `register_data()`.
+
+* `update_manifest()` with no file reported "found none" for any error reading
+  `_study.yml`, so a study that exists but needs fixing was told it had no
+  study. It now says that only when no `_study.yml` is found, and passes any
+  other error on unchanged.
 
 ## Internal
 
