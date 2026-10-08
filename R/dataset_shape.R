@@ -4,9 +4,9 @@
 
 .study_kinds <- c("built", "subset", "ancillary", "combined")
 
-.study_validate_shape <- function(contract, found, name, known, default) {
+.study_validate_shape <- function(contract, found, name, known, default, caller = "study_config") {
   bad <- function(what) {
-    stop("study_config(): ", found, " ", what, " for dataset '", name, "'.", call. = FALSE)
+    stop(caller, "(): ", found, " ", what, " for dataset '", name, "'.", call. = FALSE)
   }
   kind <- contract$kind
   key <- contract$key
@@ -25,31 +25,45 @@
   if (identical(kind, "combined")) {
     valid <- is.character(parents) && length(parents) >= 1L && !anyNA(parents) && !anyDuplicated(parents) &&
       all(parents %in% known) && !name %in% parents
-    if (!valid) bad("needs parents naming other registered datasets")
+    unknown <- if (is.character(parents)) setdiff(parents, known) else character()
+    if (!valid) bad(paste0("needs parents naming other registered datasets",
+                           if (length(unknown)) paste0(", and ", toString(unknown), " is not one")))
   } else if (!is.null(parents)) {
     bad("has parents but is not kind combined")
   }
   invisible(TRUE)
 }
 
-.study_validate_shapes <- function(raw, found) {
-  known <- c(if (!is.null(raw$built)) "study", names(raw$additional_datasets))
-  .study_validate_shape(raw[c("kind", "key", "parents")], found, "study", known, default = TRUE)
+# "built" is a second name for "study" in parents too, as in every argument
+# that names a dataset; it is stored as "study".
+.canonical_parents <- function(parents) {
+  if (is.character(parents)) parents[parents %in% "built"] <- "study"
+  parents
+}
+
+.study_validate_shapes <- function(raw, found, caller = "study_config") {
   for (name in names(raw$additional_datasets)) {
-    .study_validate_shape(raw$additional_datasets[[name]], found, name, known, default = FALSE)
+    if (!is.null(raw$additional_datasets[[name]]$parents)) {
+      raw$additional_datasets[[name]]$parents <- .canonical_parents(raw$additional_datasets[[name]]$parents)
+    }
   }
-  .study_validate_no_cycle(raw, found)
+  known <- c(if (!is.null(raw$built)) "study", names(raw$additional_datasets))
+  .study_validate_shape(raw[c("kind", "key", "parents")], found, "study", known, default = TRUE, caller = caller)
+  for (name in names(raw$additional_datasets)) {
+    .study_validate_shape(raw$additional_datasets[[name]], found, name, known, default = FALSE, caller = caller)
+  }
+  .study_validate_no_cycle(raw, found, caller)
   raw
 }
 
 # A dataset may not be, however indirectly, its own parent: the staleness walk
 # recurses over parents. Names datasets, never values.
-.study_validate_no_cycle <- function(raw, found) {
+.study_validate_no_cycle <- function(raw, found, caller = "study_config") {
   edges <- lapply(raw$additional_datasets, function(x) x$parents)
   visit <- function(name, path) {
     if (name %in% path) {
       cycle <- c(path[match(name, path):length(path)], name)
-      stop("study_config(): ", found, " has a cycle among dataset parents: ", paste(cycle, collapse = " -> "),
+      stop(caller, "(): ", found, " has a cycle among dataset parents: ", paste(cycle, collapse = " -> "),
            ".", call. = FALSE)
     }
     for (p in edges[[name]]) visit(p, c(path, name))

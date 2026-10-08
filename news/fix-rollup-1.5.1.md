@@ -15,3 +15,8 @@
   longer reads as out of date once `update_manifest()` converts that parent
   without a change to its data. The parent's checksum, recorded at
   registration, is recognised as the version it was converted to.
+- `register_data(parents = )` and `_study.yml` accept `"built"` for the study
+  dataset, as every other argument naming a dataset does, and record it as
+  `"study"`. A parent that is not a registered dataset is now named in the
+  error, which names `register_data()` rather than `study_config()` and comes
+  before the dataset is converted to parquet.

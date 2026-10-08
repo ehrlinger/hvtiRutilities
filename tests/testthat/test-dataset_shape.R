@@ -424,3 +424,41 @@ test_that("a combined dataset stays current when its legacy parent is migrated w
   withr::with_dir(root, suppressMessages(update_manifest(dataset = "study")))
   expect_message(read_built(study_config(root), dataset = "comb"), class = "hvtiRutilities_parent_changed")
 })
+
+test_that("parents may name the study dataset as built, as every other entry point accepts", {
+  root <- registered_shape_study()
+  data_dir <- study_dir("datasets", root)
+  utils::write.csv(data.frame(ccfid = 1:3, y = 1:3), file.path(data_dir, "c1.csv"), row.names = FALSE)
+
+  suppressMessages(register_data(root, "c1.csv", dataset = "c1", role = "named", kind = "combined",
+                                 parents = c("built", "echo")))
+
+  expect_identical(yaml::read_yaml(file.path(root, "_study.yml"))$additional_datasets$c1$parents, c("study", "echo"))
+  expect_named(.manifest_entry(file.path(root, "manifest.yaml"), "c1.csv")$parent_versions, c("study", "echo"))
+  expect_no_message(read_built(study_config(root), dataset = "c1"))
+
+  # A hand-written _study.yml naming built reads the same way.
+  raw <- yaml::read_yaml(file.path(root, "_study.yml"))
+  raw$additional_datasets$c1$parents <- c("built", "echo")
+  yaml::write_yaml(raw, file.path(root, "_study.yml"))
+  expect_identical(study_config(root)$additional_datasets$c1$parents, c("study", "echo"))
+})
+
+test_that("a bad parent stops register_data() by name before anything is converted", {
+  root <- registered_shape_study()
+  data_dir <- study_dir("datasets", root)
+  utils::write.csv(data.frame(ccfid = 1:3, y = 1:3), file.path(data_dir, "c1.csv"), row.names = FALSE)
+  before <- file_snapshot(root)
+  files <- list.files(data_dir)
+  converted <- FALSE
+  local_mocked_bindings(.write_version = function(...) {
+    converted <<- TRUE
+    stop("converted")
+  })
+
+  expect_error(register_data(root, "c1.csv", dataset = "c1", role = "named", kind = "combined", parents = "nope"),
+               "^register_data\\(\\): .*needs parents naming other registered datasets")
+  expect_false(converted)
+  expect_identical(file_snapshot(root), before)
+  expect_identical(list.files(data_dir), files)
+})

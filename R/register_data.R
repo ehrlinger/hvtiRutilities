@@ -181,6 +181,7 @@ register_data <- function(root = getwd(), built, dataset = "study",
     stop("register_data(): release_id is invalid", call. = FALSE)
   }
 
+  parents <- .canonical_parents(parents)
   if (!is.null(parents) && !identical(kind, "combined")) {
     stop("register_data(): parents are recorded only for kind = \"combined\".", call. = FALSE)
   }
@@ -325,6 +326,8 @@ register_data <- function(root = getwd(), built, dataset = "study",
     if (!is.null(parents)) contract$parents <- parents
     raw$additional_datasets[[dataset]] <- contract
   }
+  # Before the conversion below, so a contract that cannot be recorded costs no conversion.
+  raw <- .study_validate_shapes(raw, cfg$file, caller = "register_data")
 
   if (is.null(extract_date)) extract_date <- .mtime_date(path)
   manifest_path <- file.path(cfg$root, "manifest.yaml")
@@ -416,7 +419,6 @@ register_data <- function(root = getwd(), built, dataset = "study",
     tempfile(pattern = ".manifest-", tmpdir = cfg$root)
   )
   on.exit(unlink(prepared[file.exists(prepared)]), add = TRUE)
-  .study_validate_shapes(raw, cfg$file)
   yaml::write_yaml(raw, prepared[[1L]])
   .write_manifest(manifest, prepared[[2L]])
   .replace_study_pair(prepared, targets)
