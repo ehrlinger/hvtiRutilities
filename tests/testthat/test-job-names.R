@@ -192,3 +192,25 @@ test_that("a template-first runner takes its report's stem in job_files()", {
   files <- job_files(root)
   expect_identical(unique(files$stem[files$naming %in% "scaffolded"]), "bl.death.boot")
 })
+
+test_that("old dotted names of the template-first shape are now read as scaffolded (accepted tradeoff)", {
+  # dp.spaghetti.echo.qmd was a legacy name with qualifiers (spaghetti, echo). A known prefix
+  # plus three or four dot-fields is now claimed as scaffolded, so the legacy
+  # qualifier fields are gone. The maintainer accepted this on 2026-10.
+  out <- hvtiRutilities:::.job_name_fields(c("dp.spaghetti.echo.qmd", "bd.death.hz.qmd"))
+  expect_equal(out$naming, rep("scaffolded", 2))
+  expect_equal(out$qualifier1, c(NA_character_, NA_character_))
+  expect_equal(out$qualifiers, c(NA_character_, NA_character_))
+  expect_equal(out$n_qualifiers, c(0L, 0L))
+})
+
+test_that("the boundaries of the template-first form hold", {
+  out <- hvtiRutilities:::.job_name_fields(c("ac.a.b.c.d.qmd", "ac.death.runner.R"))
+  expect_equal(out$naming, rep("legacy", 2))
+
+  hy <- hvtiRutilities:::.job_name_fields("dead_pa-hz-ac.qmd")
+  expect_equal(hy$naming, "scaffolded")
+  expect_equal(hy$prefix, "ac")
+  expect_true(is.na(hy$qualifier1))
+  expect_equal(hy$n_qualifiers, 0L)
+})

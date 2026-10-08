@@ -64,9 +64,9 @@
     r_transitional = "^\\d{2}-([A-Za-z0-9]+)-[A-Za-z0-9_]+(?:-parity)?[.]qmd$",
     # <subject>-<type>-<prefix>[-<qualifier>].qmd, hvtiRtemplates::add_job()
     # output until 2026-10 (the template-first form is parsed separately,
-    # above `legacy`), and the -runner.R it writes beside some reports. The runner is
-    # matched here, not left unparsed, so that it is counted as part of its
-    # report; job_files() gives it the report's stem.
+    # above `legacy`), and the -runner.R it writes beside some reports. The
+    # runner is matched here, not left unparsed, so that it is counted as part
+    # of its report; job_files() gives it the report's stem.
     scaffolded     = paste0("^[A-Za-z0-9_]+-[A-Za-z0-9_]+-([A-Za-z0-9]+)",
                             "(?:-([A-Za-z0-9_]+))?(?:[.]qmd|-runner[.]R)$"),
     # <prefix>.<anything>.<ext>
