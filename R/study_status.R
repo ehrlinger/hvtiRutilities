@@ -79,17 +79,17 @@
 
 # A combined dataset whose parents have moved on since it was built.
 .status_out_of_date <- function(cfg, dataset) {
-  contract <- tryCatch(.study_dataset(cfg, dataset), error = function(e) NULL)
-  if (is.null(contract) || !identical(contract$kind, "combined")) return(NULL)
-  manifest_path <- file.path(cfg$root, "manifest.yaml")
-  if (!file.exists(manifest_path)) return(NULL)
-  manifest <- yaml::read_yaml(manifest_path)
-  entry <- Filter(function(e) identical(e$file, contract$built), manifest$datasets)
-  if (!length(entry)) return(NULL)
-  stale <- .stale_parents(cfg, dataset, entry[[1L]], manifest)
-  if (!nrow(stale)) return(NULL)
-  .status_row(paste0("out_of_date:", dataset), "OUT OF DATE",
-              trimws(conditionMessage(.parent_changed_condition(contract, stale))))
+  tryCatch({
+    contract <- .study_dataset(cfg, dataset)
+    manifest_path <- file.path(cfg$root, "manifest.yaml")
+    if (!identical(contract$kind, "combined") || !file.exists(manifest_path)) return(NULL)
+    manifest <- yaml::read_yaml(manifest_path)
+    entry <- Filter(function(e) identical(e$file, contract$built), manifest$datasets)
+    if (!length(entry)) return(NULL)
+    stale <- .stale_parents(cfg, dataset, entry[[1L]], manifest)
+    if (!nrow(stale)) return(NULL)
+    .status_row(paste0("out_of_date:", dataset), "OUT OF DATE", .parent_changed_text(contract, stale, "status"))
+  }, error = function(e) NULL)
 }
 
 .status_named_dataset <- function(cfg, dataset) {

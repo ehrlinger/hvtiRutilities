@@ -143,7 +143,10 @@ test_that("a combined dataset reads current until a parent is updated", {
   rebuild(root, "built.csv", data.frame(ccfid = 1:4, dead = c(1L, 0L, 0L, 1L)))
   withr::with_dir(root, suppressMessages(update_manifest(dataset = "study")))
 
-  expect_message(d <- read_built(study_config(root), dataset = "built_echo"), class = "hvtiRutilities_parent_changed")
+  msg <- expect_message(d <- read_built(study_config(root), dataset = "built_echo"),
+                        class = "hvtiRutilities_parent_changed")
+  expect_s3_class(msg, "hvtiRutilities_out_of_date")
+  expect_match(conditionMessage(msg), "hvtiRutilities::update_manifest().\n", fixed = TRUE)
   expect_identical(nrow(d), 3L)
 })
 
@@ -218,4 +221,77 @@ test_that("study_status lists an out-of-date combined dataset", {
   expect_identical(row$status, "OUT OF DATE")
   expect_match(row$detail, "update_manifest()", fixed = TRUE)
   expect_output(print(study_status(root)), "out_of_date:built_echo")
+})
+
+drop_parent_versions <- function(root) {
+  path <- file.path(root, "manifest.yaml")
+  manifest <- yaml::read_yaml(path)
+  i <- which(vapply(manifest$datasets, function(e) identical(e$file, "be.csv"), logical(1)))
+  manifest$datasets[[i]]$parent_versions <- NULL
+  yaml::write_yaml(manifest, path)
+}
+
+test_that("a combined dataset with no recorded parent versions is out of date until update_manifest() records them", {
+  root <- combined_study()
+  drop_parent_versions(root)
+
+  cond <- NULL
+  withCallingHandlers(
+    read_built(study_config(root), dataset = "built_echo"),
+    hvtiRutilities_parent_changed = function(m) {
+      cond <<- m
+      invokeRestart("muffleMessage")
+    }
+  )
+  expect_s3_class(cond, "hvtiRutilities_parent_changed")
+  expect_identical(lengths(regmatches(conditionMessage(cond), gregexpr("was unrecorded", conditionMessage(cond)))), 2L)
+
+  withr::local_dir(root)
+  suppressMessages(update_manifest())
+  expect_no_message(read_built(study_config(root), dataset = "built_echo"))
+  m <- yaml::read_yaml(file.path(root, "manifest.yaml"))
+  e <- Filter(function(x) identical(x$file, "be.csv"), m$datasets)[[1L]]
+  expect_named(e$parent_versions, c("study", "echo"))
+})
+
+test_that("a combined dataset with no manifest.yaml reads without a yaml error", {
+  root <- combined_study()
+  cfg <- study_config(root)
+  file.remove(file.path(root, "manifest.yaml"))
+  err <- tryCatch(suppressMessages(read_built(cfg, dataset = "built_echo")), error = function(e) conditionMessage(e))
+  expect_false(is.character(err) && grepl("cannot open|No such file", err))
+})
+
+test_that("each context words the out-of-date message for itself and ends with the fix", {
+  contract <- list(dataset = "built_echo", built = "be.csv")
+  stale <- data.frame(parent = "study", recorded = "a.parquet", current = "b.parquet")
+  for (context in c("read", "status", "update")) {
+    txt <- .parent_changed_text(contract, stale, context)
+    expect_match(txt, "hvtiRutilities::update_manifest().", fixed = TRUE)
+    expect_match(txt, "a.parquet", fixed = TRUE)
+  }
+  expect_match(.parent_changed_text(contract, stale, "read"), "This job used the older combined data", fixed = TRUE)
+  expect_no_match(.parent_changed_text(contract, stale, "status"), "This job", fixed = TRUE)
+  expect_match(.parent_changed_text(contract, stale, "update"), "^built_echo is out of date")
+})
+
+test_that("a status audit does not throw when the manifest cannot be read", {
+  root <- combined_study()
+  cfg <- study_config(root)
+  writeLines("datasets: [unclosed", file.path(root, "manifest.yaml"))
+  expect_null(.status_out_of_date(cfg, "built_echo"))
+})
+
+test_that("adopting a release for a combined dataset records its parents' versions", {
+  fx <- make_release_aware_study(withr::local_tempdir(), pinned_sequence = 1L, named = TRUE)
+  raw <- yaml::read_yaml(file.path(fx$root, "_study.yml"))
+  raw$additional_datasets$named_data$kind <- "combined"
+  raw$additional_datasets$named_data$parents <- "study"
+  yaml::write_yaml(raw, file.path(fx$root, "_study.yml"))
+
+  suppressMessages(adopt_data_update(study_config(fx$root), dataset = "named_data",
+                                     release_id = "surgery_cohort-20260921-r1"))
+  m <- yaml::read_yaml(file.path(fx$root, "manifest.yaml"))
+  e <- Filter(function(x) identical(x$file, "cohort_20260921.csv"), m$datasets)[[1L]]
+  expect_match(e$parent_versions$study, "^default_[0-9]{8}[.]parquet$")
 })

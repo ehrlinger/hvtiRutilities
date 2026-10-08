@@ -265,6 +265,7 @@
     file.rename(restore$from, restore$to)
   }, add = TRUE)
   rows <- list()
+  parents_recorded <- FALSE
 
   for (name in targets) {
     contract <- .study_dataset(cfg, name)
@@ -305,8 +306,12 @@
     restore$to <- c(restore$to, step$restore$to)
     drop <- c(drop, step$drop)
     manifest$datasets[[hit]] <- step$entry
-    if (identical(contract$kind, "combined") && identical(step$action, "registered")) {
+    if (identical(contract$kind, "combined") && step$action %in% c("registered", "migrated")) {
       manifest$datasets[[hit]]$parent_versions <- .parent_versions(cfg, contract$parents, manifest)
+    } else if (identical(contract$kind, "combined") && is.null(entry$parent_versions)) {
+      # Nothing was recorded, so the parents' current versions are the best record there can be.
+      manifest$datasets[[hit]]$parent_versions <- .parent_versions(cfg, contract$parents, manifest)
+      parents_recorded <- TRUE
     }
     rows[[name]] <- .manifest_update_row(name, step$action, step$detail)
   }
@@ -318,18 +323,18 @@
     hit <- which(vapply(manifest$datasets, function(e) identical(e$file, contract$built), logical(1)))
     if (length(hit) != 1L) next
     stale <- .stale_parents(cfg, name, manifest$datasets[[hit]], manifest)
-    if (nrow(stale)) behind <- c(behind, trimws(conditionMessage(.parent_changed_condition(contract, stale))))
+    if (nrow(stale)) behind <- c(behind, .parent_changed_text(contract, stale, "update"))
   }
 
   out <- do.call(rbind, unname(rows))
-  if (any(out$action %in% c("registered", "migrated"))) {
+  if (parents_recorded || any(out$action %in% c("registered", "migrated"))) {
     .atomic_write(manifest_path, function(tmp) yaml::write_yaml(manifest, tmp))
   }
   committed <- TRUE
   # A legacy cache name can be another dataset's registered version; that file is never removed.
   unlink(drop[!basename(drop) %in% .recorded_version_names(manifest$datasets)])
   message(paste0(format(out$dataset), ": ", out$detail, collapse = "\n"))
-  for (b in behind) message(sub("^(\\S+) \\(", "\\1 is out of date (", b))
+  for (b in behind) message(b)
   if (any(out$action %in% c("registered", "migrated"))) {
     message("Commit manifest.yaml so the record of which version is current travels with the study.")
   }

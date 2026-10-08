@@ -262,7 +262,7 @@ read_built <- function(cfg = study_config(), refresh = FALSE,
   manifest_path <- file.path(cfg$root, "manifest.yaml")
 
   entry <- .manifest_entry(manifest_path, p)
-  if (identical(contract$kind, "combined")) {
+  if (identical(contract$kind, "combined") && !is.null(entry)) {
     stale <- .stale_parents(cfg, dataset, entry, yaml::read_yaml(manifest_path))
     if (nrow(stale)) message(.parent_changed_condition(contract, stale))
   }

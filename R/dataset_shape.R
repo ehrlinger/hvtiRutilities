@@ -92,11 +92,12 @@
 
 # The parents of a combined dataset whose version now differs from the one
 # recorded in its manifest entry. A parent recorded or found without a version
-# (NA) is never current. Zero rows when current, or when nothing was recorded.
+# (NA), or an entry that records no parent versions at all, is never current:
+# it reads as "unrecorded", so update_manifest() has something to clear.
 .stale_parents <- function(cfg, name, entry, manifest) {
   contract <- .study_dataset(cfg, name)
   empty <- data.frame(parent = character(), recorded = character(), current = character())
-  if (!identical(contract$kind, "combined") || is.null(entry$parent_versions)) return(empty)
+  if (!identical(contract$kind, "combined")) return(empty)
   rows <- lapply(contract$parents, function(p) {
     recorded <- as.character(entry$parent_versions[[p]] %||% NA_character_)
     current <- as.character(.dataset_version(cfg, p, manifest))
@@ -108,17 +109,26 @@
   if (!length(rows)) empty else do.call(rbind, rows)
 }
 
-.parent_changed_condition <- function(contract, stale) {
+# The words for one context, built from parts so each reads naturally:
+# "read" is a job that has just used the older data, "status" an audit line,
+# "update" a line in update_manifest()'s report. Each ends with the fix.
+.parent_changed_text <- function(contract, stale, context = c("read", "status", "update")) {
+  context <- match.arg(context)
   was <- paste0(stale$parent, " was ", stale$recorded, " and is now ", stale$current, collapse = "; ")
+  fix <- paste0("rebuild ", contract$built, " with the job or script that writes it, then run ",
+                "hvtiRutilities::update_manifest().")
+  switch(context,
+    read = paste0(contract$dataset, " (", contract$built, ") was built from older versions of its parents: ", was,
+                  ". This job used the older combined data. To update it, ", fix),
+    status = paste0("built from older versions of its parents: ", was, ". To update it, ", fix),
+    update = paste0(contract$dataset, " is out of date (", contract$built, "): built from older versions of its ",
+                    "parents: ", was, ". To update it, ", fix)
+  )
+}
+
+.parent_changed_condition <- function(contract, stale) {
   structure(
     class = c("hvtiRutilities_parent_changed", "hvtiRutilities_out_of_date", "message", "condition"),
-    list(
-      message = paste0(
-        contract$dataset, " (", contract$built, ") was built from older versions of its parents: ", was,
-        ". This job used the older combined data. To update it, rebuild ", contract$built,
-        " with the job or script that writes it, then run hvtiRutilities::update_manifest().\n"
-      ),
-      call = NULL
-    )
+    list(message = paste0(.parent_changed_text(contract, stale, "read"), "\n"), call = NULL)
   )
 }
