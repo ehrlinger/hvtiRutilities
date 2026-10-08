@@ -118,3 +118,104 @@ test_that("update_manifest re-checks the key on a rebuilt source", {
   withr::local_dir(root)
   expect_error(update_manifest(dataset = "echo"), "1 row repeats")
 })
+
+combined_study <- function(env = parent.frame()) {
+  root <- registered_shape_study(env)
+  data_dir <- study_dir("datasets", root)
+  utils::write.csv(data.frame(ccfid = c(1L, 1L, 2L), echo_date = c(10, 20, 10), dead = c(1L, 1L, 0L)),
+                   file.path(data_dir, "be.csv"), row.names = FALSE)
+  suppressMessages(register_data(root, "be.csv", dataset = "built_echo", role = "named", kind = "combined",
+                                 key = c("ccfid", "echo_date"), parents = c("study", "echo")))
+  root
+}
+
+rebuild <- function(root, file, data, when = "2026-10-08 12:00:00") {
+  path <- file.path(study_dir("datasets", root), file)
+  utils::write.csv(data, path, row.names = FALSE)
+  Sys.setFileTime(path, as.POSIXct(when, tz = "UTC"))
+}
+
+test_that("a combined dataset reads current until a parent is updated", {
+  root <- combined_study()
+  cfg <- study_config(root)
+  expect_no_message(read_built(cfg, dataset = "built_echo"))
+
+  rebuild(root, "built.csv", data.frame(ccfid = 1:4, dead = c(1L, 0L, 0L, 1L)))
+  withr::with_dir(root, suppressMessages(update_manifest(dataset = "study")))
+
+  expect_message(d <- read_built(study_config(root), dataset = "built_echo"), class = "hvtiRutilities_parent_changed")
+  expect_identical(nrow(d), 3L)
+})
+
+test_that("the parent-changed message names the parent versions and the update commands", {
+  cond <- .parent_changed_condition(
+    list(dataset = "built_echo", built = "be.csv"),
+    data.frame(parent = "study", recorded = "built_20260915.parquet", current = "built_20261008.parquet")
+  )
+  expect_s3_class(cond, "hvtiRutilities_out_of_date")
+  msg <- conditionMessage(cond)
+  expect_match(msg, "built_20260915.parquet", fixed = TRUE)
+  expect_match(msg, "built_20261008.parquet", fixed = TRUE)
+  expect_match(msg, "update_manifest()", fixed = TRUE)
+})
+
+test_that("a parent recorded without a version is out of date, never current", {
+  root <- combined_study()
+  cfg <- study_config(root)
+  manifest <- yaml::read_yaml(file.path(root, "manifest.yaml"))
+  i <- which(vapply(manifest$datasets, function(e) identical(e$file, "be.csv"), logical(1)))
+  manifest$datasets[[i]]$parent_versions$echo <- NA_character_
+
+  stale <- .stale_parents(cfg, "built_echo", manifest$datasets[[i]], manifest)
+  expect_identical(stale$parent, "echo")
+  expect_identical(stale$recorded, "unrecorded")
+
+  # also after a round trip through manifest.yaml
+  path <- withr::local_tempfile(fileext = ".yaml")
+  yaml::write_yaml(manifest, path)
+  again <- yaml::read_yaml(path)
+  expect_identical(.stale_parents(cfg, "built_echo", again$datasets[[i]], again)$parent, "echo")
+
+  # a parent with no manifest entry now is not current either
+  both_na <- manifest
+  both_na$datasets[[i]]$parent_versions$echo <- NA_character_
+  both_na$datasets <- Filter(function(e) !identical(e$file, "echo.csv"), both_na$datasets)
+  j <- which(vapply(both_na$datasets, function(e) identical(e$file, "be.csv"), logical(1)))
+  expect_identical(.stale_parents(cfg, "built_echo", both_na$datasets[[j]], both_na)$parent, "echo")
+})
+
+test_that("update_manifest() updates parents first and reports a combined dataset left behind", {
+  root <- combined_study()
+  rebuild(root, "built.csv", data.frame(ccfid = 1:4, dead = c(1L, 0L, 0L, 1L)))
+  withr::local_dir(root)
+
+  msgs <- character()
+  withCallingHandlers(update_manifest(), message = function(m) {
+    msgs <<- c(msgs, conditionMessage(m))
+    invokeRestart("muffleMessage")
+  })
+  expect_true(any(grepl("built_echo is out of date", msgs, fixed = TRUE)))
+  expect_true(any(grepl("registered built_", msgs, fixed = TRUE)))
+})
+
+test_that("re-registering a combined dataset records its parents' new versions", {
+  root <- combined_study()
+  rebuild(root, "built.csv", data.frame(ccfid = 1:4, dead = c(1L, 0L, 0L, 1L)))
+  rebuild(root, "be.csv", data.frame(ccfid = c(1L, 2L), echo_date = c(10, 10), dead = c(1L, 0L)))
+  withr::local_dir(root)
+  suppressMessages(update_manifest())
+
+  expect_no_message(read_built(study_config(root), dataset = "built_echo"))
+})
+
+test_that("study_status lists an out-of-date combined dataset", {
+  root <- combined_study()
+  rebuild(root, "built.csv", data.frame(ccfid = 1:4, dead = c(1L, 0L, 0L, 1L)))
+  withr::with_dir(root, suppressMessages(update_manifest(dataset = "study")))
+
+  checks <- study_status(root)$checks
+  row <- checks[checks$item == "out_of_date:built_echo", ]
+  expect_identical(row$status, "OUT OF DATE")
+  expect_match(row$detail, "update_manifest()", fixed = TRUE)
+  expect_output(print(study_status(root)), "out_of_date:built_echo")
+})

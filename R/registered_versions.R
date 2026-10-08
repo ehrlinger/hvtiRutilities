@@ -242,6 +242,8 @@
     .study_dataset(cfg, dataset)
     dataset
   }
+  kinds <- vapply(targets, function(n) .study_dataset(cfg, n)$kind %||% "", character(1))
+  targets <- c(targets[kinds != "combined"], targets[kinds == "combined"])
   if (!length(targets)) {
     stop("update_manifest(): the study at ", cfg$root, " has no registered dataset to update. ",
          "Register one with register_data().", call. = FALSE)
@@ -303,7 +305,20 @@
     restore$to <- c(restore$to, step$restore$to)
     drop <- c(drop, step$drop)
     manifest$datasets[[hit]] <- step$entry
+    if (identical(contract$kind, "combined") && identical(step$action, "registered")) {
+      manifest$datasets[[hit]]$parent_versions <- .parent_versions(cfg, contract$parents, manifest)
+    }
     rows[[name]] <- .manifest_update_row(name, step$action, step$detail)
+  }
+
+  behind <- character()
+  for (name in names(cfg$additional_datasets)) {
+    contract <- .study_dataset(cfg, name)
+    if (!identical(contract$kind, "combined")) next
+    hit <- which(vapply(manifest$datasets, function(e) identical(e$file, contract$built), logical(1)))
+    if (length(hit) != 1L) next
+    stale <- .stale_parents(cfg, name, manifest$datasets[[hit]], manifest)
+    if (nrow(stale)) behind <- c(behind, trimws(conditionMessage(.parent_changed_condition(contract, stale))))
   }
 
   out <- do.call(rbind, unname(rows))
@@ -314,6 +329,7 @@
   # A legacy cache name can be another dataset's registered version; that file is never removed.
   unlink(drop[!basename(drop) %in% .recorded_version_names(manifest$datasets)])
   message(paste0(format(out$dataset), ": ", out$detail, collapse = "\n"))
+  for (b in behind) message(sub("^(\\S+) \\(", "\\1 is out of date (", b))
   if (any(out$action %in% c("registered", "migrated"))) {
     message("Commit manifest.yaml so the record of which version is current travels with the study.")
   }

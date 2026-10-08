@@ -77,6 +77,21 @@
   )
 }
 
+# A combined dataset whose parents have moved on since it was built.
+.status_out_of_date <- function(cfg, dataset) {
+  contract <- tryCatch(.study_dataset(cfg, dataset), error = function(e) NULL)
+  if (is.null(contract) || !identical(contract$kind, "combined")) return(NULL)
+  manifest_path <- file.path(cfg$root, "manifest.yaml")
+  if (!file.exists(manifest_path)) return(NULL)
+  manifest <- yaml::read_yaml(manifest_path)
+  entry <- Filter(function(e) identical(e$file, contract$built), manifest$datasets)
+  if (!length(entry)) return(NULL)
+  stale <- .stale_parents(cfg, dataset, entry[[1L]], manifest)
+  if (!nrow(stale)) return(NULL)
+  .status_row(paste0("out_of_date:", dataset), "OUT OF DATE",
+              trimws(conditionMessage(.parent_changed_condition(contract, stale))))
+}
+
 .status_named_dataset <- function(cfg, dataset) {
   data_item <- paste0("dataset:", dataset)
   path <- tryCatch(built_path(cfg, dataset), error = function(e) e)
@@ -305,6 +320,11 @@
 #' \code{"UPDATE STATUS UNKNOWN"}, or \code{"FAIL"}. Legacy studies retain
 #' the five base rows and their existing dataset rows.
 #'
+#' A combined dataset built from parents that have since been updated adds an
+#' \code{out_of_date:<dataset>} row with status \code{"OUT OF DATE"}. Its detail
+#' names the parents' recorded and current versions and the commands that bring
+#' the combined data up to date.
+#'
 #' Unlike \code{\link{study_config}}, this function does \strong{not} walk up
 #' the directory tree. It asks whether \code{root} itself is a study root, so
 #' that a subdirectory of a study is never mistaken for one.
@@ -323,7 +343,7 @@
 #'   \code{"OK"}, \code{"MISSING"}, \code{"FAIL"}, \code{"UNVERIFIED"},
 #'   \code{"CURRENT"},
 #'   \code{"UPDATE AVAILABLE"}, \code{"UPDATE STATUS UNKNOWN"},
-#'   \code{"PENDING"}, \code{"CLOSED"}, or \code{"UNKNOWN"} -- and
+#'   \code{"OUT OF DATE"}, \code{"PENDING"}, \code{"CLOSED"}, or \code{"UNKNOWN"} -- and
 #'   \code{detail}). The five base rows are followed by release-aware update
 #'   rows, by dataset and update rows for each named dataset, and by the
 #'   \code{checkpoints} and \code{closure} rows when they apply.
@@ -404,7 +424,8 @@ study_status <- function(root = getwd()) {
   named_rows <- lapply(names(cfg$additional_datasets), function(dataset) {
     rbind(
       .status_named_dataset(cfg, dataset),
-      .status_update(cfg, dataset)
+      .status_update(cfg, dataset),
+      .status_out_of_date(cfg, dataset)
     )
   })
   if (length(named_rows)) {
@@ -439,6 +460,7 @@ print.study_status <- function(x, ...) {
     FAIL = "[!]",
     CURRENT = "[x]",
     "UPDATE AVAILABLE" = "[~]",
+    "OUT OF DATE" = "[~]",
     "UPDATE STATUS UNKNOWN" = "[?]",
     PENDING = "[~]",
     CLOSED = "[x]",

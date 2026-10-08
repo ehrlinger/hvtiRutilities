@@ -89,3 +89,36 @@
 .parent_versions <- function(cfg, parents, manifest) {
   stats::setNames(lapply(parents, function(p) .dataset_version(cfg, p, manifest)), parents)
 }
+
+# The parents of a combined dataset whose version now differs from the one
+# recorded in its manifest entry. A parent recorded or found without a version
+# (NA) is never current. Zero rows when current, or when nothing was recorded.
+.stale_parents <- function(cfg, name, entry, manifest) {
+  contract <- .study_dataset(cfg, name)
+  empty <- data.frame(parent = character(), recorded = character(), current = character())
+  if (!identical(contract$kind, "combined") || is.null(entry$parent_versions)) return(empty)
+  rows <- lapply(contract$parents, function(p) {
+    recorded <- as.character(entry$parent_versions[[p]] %||% NA_character_)
+    current <- as.character(.dataset_version(cfg, p, manifest))
+    if (!is.na(recorded) && !is.na(current) && identical(recorded, current)) return(NULL)
+    data.frame(parent = p, recorded = if (is.na(recorded)) "unrecorded" else recorded,
+               current = if (is.na(current)) "unregistered" else current)
+  })
+  rows <- Filter(Negate(is.null), rows)
+  if (!length(rows)) empty else do.call(rbind, rows)
+}
+
+.parent_changed_condition <- function(contract, stale) {
+  was <- paste0(stale$parent, " was ", stale$recorded, " and is now ", stale$current, collapse = "; ")
+  structure(
+    class = c("hvtiRutilities_parent_changed", "hvtiRutilities_out_of_date", "message", "condition"),
+    list(
+      message = paste0(
+        contract$dataset, " (", contract$built, ") was built from older versions of its parents: ", was,
+        ". This job used the older combined data. To update it, rebuild ", contract$built,
+        " with the job or script that writes it, then run hvtiRutilities::update_manifest().\n"
+      ),
+      call = NULL
+    )
+  )
+}
