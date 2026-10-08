@@ -301,6 +301,15 @@ update_manifest <- function(file,
 # Every row's label is distinct, because .cp_manifest_check() writes them as
 # YAML keys: an earlier version is named by its parquet (two can share a date)
 # and the PENDING row by "(source)".
+# Row count from a parquet footer. The file is opened and closed here rather
+# than left to a reader object, which holds it open until garbage collection;
+# on Windows an open file cannot be deleted or replaced.
+.parquet_num_rows <- function(path) {
+  f <- arrow::ReadableFile$create(path)
+  on.exit(f$close(), add = TRUE)
+  as.numeric(arrow::ParquetFileReader$create(f)$num_rows)
+}
+
 .verify_versioned_entry <- function(entry, resolve, strict = FALSE) {
   versions <- c(list(.history_record(entry)), if (is.list(entry$history)) entry$history else list())
   rows <- lapply(seq_along(versions), function(i) {
@@ -326,8 +335,7 @@ update_manifest <- function(file,
     }
     # The parquet footer holds the row count, so it is re-derived without reading the data.
     n_actual <- if (.arrow_available() && !is.null(v$n_rows)) {
-      tryCatch(as.numeric(arrow::ParquetFileReader$create(target, mmap = FALSE)$num_rows),
-               error = function(e) NA_real_)
+      tryCatch(.parquet_num_rows(target), error = function(e) NA_real_)
     } else {
       NA_real_
     }
