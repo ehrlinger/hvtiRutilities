@@ -89,7 +89,7 @@
     stale <- .stale_parents(cfg, dataset, entry[[1L]], manifest)
     if (!nrow(stale)) return(NULL)
     .status_row(paste0("out_of_date:", dataset), "OUT OF DATE", .parent_changed_text(contract, stale, "status"))
-  }, error = function(e) NULL)
+  }, error = function(e) .status_row(paste0("out_of_date:", dataset), "FAIL", conditionMessage(e)))
 }
 
 .status_named_dataset <- function(cfg, dataset) {
@@ -323,7 +323,11 @@
 #' A combined dataset built from parents that have since been updated adds an
 #' \code{out_of_date:<dataset>} row with status \code{"OUT OF DATE"}. Its detail
 #' names the parents' recorded and current versions and the commands that bring
-#' the combined data up to date.
+#' the combined data up to date. A combined dataset with no recorded parent
+#' versions is reported the same way, with the parent versions shown as
+#' \code{unrecorded}. If that check itself cannot run, for example because
+#' \code{manifest.yaml} cannot be parsed, the row has status \code{"FAIL"}
+#' and the error as its detail.
 #'
 #' Unlike \code{\link{study_config}}, this function does \strong{not} walk up
 #' the directory tree. It asks whether \code{root} itself is a study root, so

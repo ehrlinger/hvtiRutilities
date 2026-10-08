@@ -62,9 +62,14 @@
 #' \code{_r3} for another version on the same date), keeps every earlier
 #' version, records the change in \code{manifest.yaml}, and prints one line per
 #' dataset. Jobs read the new version from then on. Unchanged datasets are left
-#' alone. Name one with \code{dataset}. Release-aware datasets are skipped; use
-#' \code{\link{review_data_update}} and \code{\link{adopt_data_update}}. Needs
-#' the \pkg{arrow} package.
+#' alone. Datasets that are not combined are updated before the combined
+#' datasets built from them, and a combined dataset records its parents'
+#' versions when its own rebuilt source is registered. One whose parents have
+#' since been updated, or that records no parent versions, is listed as out of
+#' date in a message after the table until its source is rebuilt and
+#' \code{update_manifest()} is run again. Name one dataset with \code{dataset}.
+#' Release-aware datasets are skipped; use \code{\link{review_data_update}} and
+#' \code{\link{adopt_data_update}}. Needs the \pkg{arrow} package.
 #'
 #' \strong{A single file}: \code{update_manifest(file, ...)} records a SHA-256
 #' checksum, row count, extract date and optional provenance fields for one

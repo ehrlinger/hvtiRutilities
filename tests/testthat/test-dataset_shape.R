@@ -55,6 +55,12 @@ test_that("a cycle among parents stops with the datasets named", {
   expect_no_error(study_config(fine))
 })
 
+# Checksums of the files a failed registration must not touch.
+file_snapshot <- function(root) {
+  files <- file.path(root, c("_study.yml", "manifest.yaml"))
+  unname(tools::md5sum(files))
+}
+
 registered_shape_study <- function(env = parent.frame()) {
   testthat::skip_if_not_installed("arrow")
   root <- file.path(withr::local_tempdir(.local_envir = env), "study")
@@ -82,12 +88,29 @@ test_that("a repeating or missing key stops before anything is written", {
   data_dir <- study_dir("datasets", root)
   utils::write.csv(data.frame(ccfid = c(1L, 1L), lab = 1:2), file.path(data_dir, "labs.csv"), row.names = FALSE)
   before <- list.files(data_dir)
+  before_files <- file_snapshot(root)
 
   expect_error(register_data(root, "labs.csv", dataset = "labs", role = "named", kind = "ancillary", key = "ccfid"),
                "1 row repeats")
   expect_error(register_data(root, "labs.csv", dataset = "labs", role = "named", kind = "ancillary", key = "lab_date"),
                "lab_date")
   expect_identical(list.files(data_dir), before)
+  expect_identical(file_snapshot(root), before_files)
+})
+
+test_that("a registration that fails after the conversion leaves the study untouched", {
+  root <- registered_shape_study()
+  data_dir <- study_dir("datasets", root)
+  utils::write.csv(data.frame(ccfid = 1:2, lab = 3:4), file.path(data_dir, "labs.csv"), row.names = FALSE)
+  before_listing <- list.files(data_dir, recursive = TRUE)
+  before_files <- file_snapshot(root)
+
+  expect_error(register_data(root, "labs.csv", dataset = "labs", role = "named", kind = "combined",
+                             key = "ccfid", parents = "nope"), "nope")
+  expect_error(register_data(root, "labs.csv", dataset = "labs", role = "named", kind = "built", key = "ccfid"))
+
+  expect_identical(list.files(data_dir, recursive = TRUE), before_listing)
+  expect_identical(file_snapshot(root), before_files)
 })
 
 test_that("a combined dataset records its parents' versions in the manifest", {
@@ -284,11 +307,15 @@ test_that("each context words the out-of-date message for itself and ends with t
   expect_match(.parent_changed_text(contract, stale, "update"), "^built_echo is out of date")
 })
 
-test_that("a status audit does not throw when the manifest cannot be read", {
+test_that("a status audit does not throw when the manifest cannot be read, and reports the failure", {
   root <- combined_study()
   cfg <- study_config(root)
   writeLines("datasets: [unclosed", file.path(root, "manifest.yaml"))
-  expect_null(.status_out_of_date(cfg, "built_echo"))
+  row <- .status_out_of_date(cfg, "built_echo")
+  expect_identical(row$item, "out_of_date:built_echo")
+  expect_identical(row$status, "FAIL")
+  expect_true(nzchar(row$detail))
+  expect_no_error(study_status(root))
 })
 
 test_that("adopting a release for a combined dataset records its parents' versions", {
