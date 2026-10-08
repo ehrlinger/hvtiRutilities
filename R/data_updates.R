@@ -91,7 +91,7 @@
   if (!file.exists(path)) {
     stop("manifest.yaml is missing", call. = FALSE)
   }
-  manifest <- yaml::read_yaml(path)
+  manifest <- .read_manifest(path)
   entries <- manifest$datasets
   if (!is.list(entries)) {
     stop("manifest.yaml has no dataset entries", call. = FALSE)
@@ -633,7 +633,7 @@ adopt_data_update <- function(cfg = study_config(), dataset = "study",
   if (!file.exists(manifest_path)) {
     stop("adopt_data_update(): manifest.yaml is missing", call. = FALSE)
   }
-  manifest <- yaml::read_yaml(manifest_path)
+  manifest <- .read_manifest(manifest_path)
 
   data_dir <- study_dir("datasets", current_cfg$root)
   candidate_path <- .verify_catalog_file(review$candidate, data_dir)
@@ -709,7 +709,7 @@ adopt_data_update <- function(cfg = study_config(), dataset = "study",
   )
   on.exit(unlink(prepared[file.exists(prepared)]), add = TRUE)
   yaml::write_yaml(raw, prepared[[1L]])
-  yaml::write_yaml(manifest, prepared[[2L]])
+  .write_manifest(manifest, prepared[[2L]])
   .replace_study_pair(prepared, targets)
   study_status(current_cfg$root)
 }

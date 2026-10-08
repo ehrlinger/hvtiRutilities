@@ -25,6 +25,35 @@
   invisible(TRUE)
 }
 
+# A versioned entry keeps role: "primary", which hvtiRutilities 1.4.x reads as
+# "the data is <stem>.parquet". Finding none, 1.4.x reconverts the rebuilt
+# source and overwrites the entry's sha256 and n_rows, so a pinned study is
+# served unregistered data and this version then reports the intact
+# registered parquet as edited. A new role value is worse: 1.4.x treats it as
+# a source entry and flattens it, history and all. Every reader before 1.5.1
+# walks the datasets list with `e$file`, so a scalar line at its head stops
+# each of them before anything is read or written (measured against 1.4.4 on
+# 2026-10-08). The line is written whenever a versioned entry is present and
+# dropped by every read here.
+.manifest_guard <- paste0("hvtiRutilities 1.5.1 or later required: this manifest records registered dated versions, ",
+                          "which earlier versions would overwrite. Do not remove this line.")
+
+.read_manifest <- function(path) {
+  m <- yaml::read_yaml(path)
+  if (is.list(m) && is.list(m$datasets)) m$datasets <- Filter(Negate(is.character), m$datasets)
+  m
+}
+
+.guard_manifest <- function(manifest) {
+  if (!is.list(manifest) || !is.list(manifest$datasets)) return(manifest)
+  datasets <- Filter(Negate(is.character), manifest$datasets)
+  versioned <- any(vapply(datasets, .is_versioned, logical(1)))
+  manifest$datasets <- if (versioned) c(list(.manifest_guard), datasets) else datasets
+  manifest
+}
+
+.write_manifest <- function(manifest, path) yaml::write_yaml(.guard_manifest(manifest), path)
+
 .version_fields <- c("parquet", "sha256", "source_sha256", "extract_date", "n_rows", "n_cols",
                      "schema_sha256", "reader", "recovered_from")
 
@@ -201,10 +230,21 @@
 }
 
 # Register a rebuilt source as the next version; the current one moves to the
-# head of history. Unchanged sources are left alone.
+# head of history. An unchanged source keeps its version, but a stamp that no
+# longer matches it (a rewrite of the same bytes) is re-recorded, so later
+# reads settle it with a stat rather than a hash. Only update_manifest()
+# writes it; reads never write the manifest.
 .next_version <- function(entry, source_path, extract_date, reserved = character(), key = NULL) {
   if (!.source_changed(source_path, entry)) {
-    return(list(entry = entry, written = character(), action = "unchanged",
+    # A missing source is also "unchanged", and has no stamp to record.
+    restamped <- FALSE
+    if (file.exists(source_path)) {
+      stamp <- .source_stamp(source_path)
+      restamped <- !identical(as.numeric(entry$source_size), stamp$source_size) ||
+        !identical(entry$source_mtime, stamp$source_mtime)
+      entry[names(stamp)] <- stamp
+    }
+    return(list(entry = entry, written = character(), action = "unchanged", restamped = restamped,
                 detail = paste0("unchanged since ", entry$extract_date, " (", entry$parquet, ")")))
   }
   dir <- dirname(source_path)
@@ -259,7 +299,10 @@
     stop("update_manifest(): this study has no manifest.yaml, so no dataset is registered yet. ",
          "Register one with register_data().", call. = FALSE)
   }
-  manifest <- yaml::read_yaml(manifest_path)
+  manifest <- .read_manifest(manifest_path)
+  # A manifest written by 1.5.0 has versioned entries and no guard line; it
+  # gains one on this write, so a 1.4.x reader stops rather than rewrite it.
+  unguarded <- !identical(yaml::read_yaml(manifest_path)$datasets, .guard_manifest(manifest)$datasets)
   written <- character()
   # A recovered cache was renamed, not copied: it is the only copy of that
   # version, so a failed update renames it back rather than deleting it.
@@ -271,6 +314,7 @@
     file.rename(restore$from, restore$to)
   }, add = TRUE)
   rows <- list()
+  restamped <- FALSE
 
   for (name in targets) {
     contract <- .study_dataset(cfg, name)
@@ -319,6 +363,7 @@
     if (identical(contract$kind, "combined") && rebuilt) {
       manifest$datasets[[hit]]$parent_versions <- .parent_versions(cfg, contract$parents, manifest)
     }
+    restamped <- restamped || isTRUE(step$restamped)
     rows[[name]] <- .manifest_update_row(name, step$action, step$detail)
   }
 
@@ -333,15 +378,16 @@
   }
 
   out <- do.call(rbind, unname(rows))
-  if (any(out$action %in% c("registered", "migrated"))) {
-    .atomic_write(manifest_path, function(tmp) yaml::write_yaml(manifest, tmp))
+  changed <- any(out$action %in% c("registered", "migrated")) || unguarded
+  if (changed || restamped) {
+    .atomic_write(manifest_path, function(tmp) .write_manifest(manifest, tmp))
   }
   committed <- TRUE
   # A legacy cache name can be another dataset's registered version; that file is never removed.
   unlink(drop[!basename(drop) %in% .recorded_version_names(manifest$datasets)])
   message(paste0(format(out$dataset), ": ", out$detail, collapse = "\n"))
   for (b in behind) message(b)
-  if (any(out$action %in% c("registered", "migrated"))) {
+  if (changed) {
     message("Commit manifest.yaml so the record of which version is current travels with the study.")
   }
   invisible(out)

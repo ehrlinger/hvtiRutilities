@@ -73,7 +73,7 @@ test_that("nothing is recorded under the name built", {
   cfg <- study_config(root)
   expect_false("built" %in% names(cfg$additional_datasets))
   expect_identical(provenance_data("built", cfg = cfg)$dataset, "study")
-  manifest <- yaml::read_yaml(file.path(root, "manifest.yaml"))
+  manifest <- .read_manifest(file.path(root, "manifest.yaml"))
   recorded <- unlist(lapply(manifest$datasets, function(e) e$dataset))
   expect_false("built" %in% recorded)
   expect_null(yaml::read_yaml(file.path(root, "_study.yml"))$additional_datasets$built)

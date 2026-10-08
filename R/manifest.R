@@ -78,7 +78,8 @@
 #' appended. The manifest is intended to be committed to version control while
 #' the data files themselves are not. It refuses a file a study
 #' registers as dated versions, whose entry it would flatten; use the
-#' no-argument form for those.
+#' no-argument form for those. It also refuses one of those versions or its
+#' schema file, which is another dataset's registered data.
 #'
 #' Row counts are detected automatically for \strong{CSV} (\code{.csv}) files.
 #' For \strong{SAS} (\code{.sas7bdat}) and \strong{Excel} (\code{.xlsx},
@@ -244,7 +245,7 @@ update_manifest <- function(file,
   if (!is.null(reader))   entry$reader   <- reader
 
   manifest <- if (file.exists(manifest_path)) {
-    yaml::read_yaml(manifest_path)
+    .read_manifest(manifest_path)
   } else {
     list()
   }
@@ -258,6 +259,17 @@ update_manifest <- function(file,
   }
   if (!is.list(manifest$datasets)) {
     stop("Invalid manifest: 'datasets' field must be a list.")
+  }
+
+  # A registered version (or its schema sidecar) is another entry's data. A
+  # caller that wrote one under this name, such as an analysis set named
+  # built_20261008, has already replaced it, and recording it would hide that.
+  owner <- Filter(function(d) entry$file %in% .recorded_version_names(list(d)), manifest$datasets)
+  if (length(owner)) {
+    stop("update_manifest(): ", entry$file, " is a registered version of ", owner[[1L]]$file,
+         ", so it cannot be recorded as a file of its own. Nothing was written. If something has just written ",
+         "to it, the registered data were replaced: restore ", entry$file, " from backup, tell the study's ",
+         "data manager, and give the new file another name.", call. = FALSE)
   }
 
   existing <- vapply(
@@ -281,7 +293,7 @@ update_manifest <- function(file,
     if (verbose) message("Manifest entry added: ", entry$file)
   }
 
-  .atomic_write(manifest_path, function(tmp) yaml::write_yaml(manifest, tmp))
+  .atomic_write(manifest_path, function(tmp) .write_manifest(manifest, tmp))
   invisible(manifest)
 }
 
@@ -494,7 +506,7 @@ verify_manifest <- function(manifest_path = .default_manifest_path(),
     stop("Manifest file not found: ", manifest_path)
   }
 
-  manifest <- yaml::read_yaml(manifest_path)
+  manifest <- .read_manifest(manifest_path)
 
   if (is.null(data_dir)) {
     manifest_dir <- dirname(normalizePath(manifest_path))

@@ -124,7 +124,7 @@ test_that("a combined dataset records its parents' versions in the manifest", {
                                  key = c("ccfid", "echo_date"), parents = c("study", "echo")))
 
   expect_identical(study_config(root)$additional_datasets$built_echo$parents, c("study", "echo"))
-  m <- yaml::read_yaml(file.path(root, "manifest.yaml"))
+  m <- .read_manifest(file.path(root, "manifest.yaml"))
   e <- Filter(function(x) identical(x$file, "be.csv"), m$datasets)[[1L]]
   expect_match(e$parent_versions$study, "^built_[0-9]{8}[.]parquet$")
   expect_match(e$parent_versions$echo, "^echo_[0-9]{8}[.]parquet$")
@@ -190,7 +190,7 @@ test_that("the parent-changed message names the parent versions and the update c
 test_that("a parent recorded without a version is out of date, never current", {
   root <- combined_study()
   cfg <- study_config(root)
-  manifest <- yaml::read_yaml(file.path(root, "manifest.yaml"))
+  manifest <- .read_manifest(file.path(root, "manifest.yaml"))
   i <- which(vapply(manifest$datasets, function(e) identical(e$file, "be.csv"), logical(1)))
   manifest$datasets[[i]]$parent_versions$echo <- NA_character_
 
@@ -250,10 +250,10 @@ test_that("study_status lists an out-of-date combined dataset", {
 
 drop_parent_versions <- function(root) {
   path <- file.path(root, "manifest.yaml")
-  manifest <- yaml::read_yaml(path)
+  manifest <- .read_manifest(path)
   i <- which(vapply(manifest$datasets, function(e) identical(e$file, "be.csv"), logical(1)))
   manifest$datasets[[i]]$parent_versions <- NULL
-  yaml::write_yaml(manifest, path)
+  .write_manifest(manifest, path)
 }
 
 test_that("a combined dataset with no recorded parent versions stays out of date until it is rebuilt", {
@@ -283,7 +283,7 @@ test_that("a combined dataset with no recorded parent versions stays out of date
   rebuild(root, "be.csv", data.frame(ccfid = c(1L, 2L), echo_date = c(10, 10), dead = c(1L, 0L)))
   withr::with_dir(root, suppressMessages(update_manifest()))
   expect_no_message(read_built(study_config(root), dataset = "built_echo"))
-  m <- yaml::read_yaml(manifest_file)
+  m <- .read_manifest(manifest_file)
   e <- Filter(function(x) identical(x$file, "be.csv"), m$datasets)[[1L]]
   expect_named(e$parent_versions, c("study", "echo"))
 })
@@ -329,7 +329,7 @@ test_that("adopting a release for a combined dataset records its parents' versio
 
   suppressMessages(adopt_data_update(study_config(fx$root), dataset = "named_data",
                                      release_id = "surgery_cohort-20260921-r1"))
-  m <- yaml::read_yaml(file.path(fx$root, "manifest.yaml"))
+  m <- .read_manifest(file.path(fx$root, "manifest.yaml"))
   e <- Filter(function(x) identical(x$file, "cohort_20260921.csv"), m$datasets)[[1L]]
   expect_match(e$parent_versions$study, "^default_[0-9]{8}[.]parquet$")
 
@@ -395,4 +395,70 @@ test_that("migrating a legacy combined dataset whose source was rebuilt records 
   rebuild(root, "comb.csv", data.frame(id = 1:4, dead = c(1L, 0L, 0L, 1L)))
   withr::with_dir(root, suppressMessages(update_manifest()))
   expect_no_message(read_built(study_config(root), dataset = "comb"))
+})
+
+test_that("a combined dataset stays current when its legacy parent is migrated without a change", {
+  skip_if_not_installed("arrow")
+  root <- make_legacy_registered_study(withr::local_tempdir())
+  utils::write.csv(data.frame(id = 1:3, y = 1:3), file.path(study_dir("datasets", root), "comb.csv"),
+                   row.names = FALSE)
+  suppressMessages(register_data(root, "comb.csv", dataset = "comb", role = "named", kind = "combined",
+                                 parents = "study"))
+  expect_no_message(read_built(study_config(root), dataset = "comb"))
+
+  # The parent's source is untouched: migration changes its format, not its data.
+  msgs <- character()
+  out <- withr::with_dir(root, withCallingHandlers(update_manifest(), message = function(m) {
+    msgs <<- c(msgs, conditionMessage(m))
+    invokeRestart("muffleMessage")
+  }))
+  expect_identical(out$action[out$dataset == "study"], "migrated")
+  expect_false(any(grepl("is out of date", msgs, fixed = TRUE)))
+  expect_no_message(read_built(study_config(root), dataset = "comb"))
+  expect_identical(nrow(.stale_parents(study_config(root), "comb",
+                                       .manifest_entry(file.path(root, "manifest.yaml"), "comb.csv"),
+                                       .read_manifest(file.path(root, "manifest.yaml")))), 0L)
+
+  # A parent rebuilt after the migration is a real change.
+  rebuild(root, "built.csv", data.frame(id = 1:4, dead = c(1L, 0L, 0L, 1L), iv_dead = 1:4))
+  withr::with_dir(root, suppressMessages(update_manifest(dataset = "study")))
+  expect_message(read_built(study_config(root), dataset = "comb"), class = "hvtiRutilities_parent_changed")
+})
+
+test_that("parents may name the study dataset as built, as every other entry point accepts", {
+  root <- registered_shape_study()
+  data_dir <- study_dir("datasets", root)
+  utils::write.csv(data.frame(ccfid = 1:3, y = 1:3), file.path(data_dir, "c1.csv"), row.names = FALSE)
+
+  suppressMessages(register_data(root, "c1.csv", dataset = "c1", role = "named", kind = "combined",
+                                 parents = c("built", "echo")))
+
+  expect_identical(yaml::read_yaml(file.path(root, "_study.yml"))$additional_datasets$c1$parents, c("study", "echo"))
+  expect_named(.manifest_entry(file.path(root, "manifest.yaml"), "c1.csv")$parent_versions, c("study", "echo"))
+  expect_no_message(read_built(study_config(root), dataset = "c1"))
+
+  # A hand-written _study.yml naming built reads the same way.
+  raw <- yaml::read_yaml(file.path(root, "_study.yml"))
+  raw$additional_datasets$c1$parents <- c("built", "echo")
+  yaml::write_yaml(raw, file.path(root, "_study.yml"))
+  expect_identical(study_config(root)$additional_datasets$c1$parents, c("study", "echo"))
+})
+
+test_that("a bad parent stops register_data() by name before anything is converted", {
+  root <- registered_shape_study()
+  data_dir <- study_dir("datasets", root)
+  utils::write.csv(data.frame(ccfid = 1:3, y = 1:3), file.path(data_dir, "c1.csv"), row.names = FALSE)
+  before <- file_snapshot(root)
+  files <- list.files(data_dir)
+  converted <- FALSE
+  local_mocked_bindings(.write_version = function(...) {
+    converted <<- TRUE
+    stop("converted")
+  })
+
+  expect_error(register_data(root, "c1.csv", dataset = "c1", role = "named", kind = "combined", parents = "nope"),
+               "^register_data\\(\\): .*needs parents naming other registered datasets")
+  expect_false(converted)
+  expect_identical(file_snapshot(root), before)
+  expect_identical(list.files(data_dir), files)
 })

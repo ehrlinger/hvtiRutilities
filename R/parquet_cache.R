@@ -94,7 +94,7 @@
 # The manifest entry for one source file, or NULL.
 .manifest_entry <- function(manifest_path, file) {
   if (!file.exists(manifest_path)) return(NULL)
-  m <- yaml::read_yaml(manifest_path)
+  m <- .read_manifest(manifest_path)
   if (is.null(m$datasets)) return(NULL)
   for (e in m$datasets) if (identical(e$file, basename(file))) return(e)
   NULL
@@ -211,7 +211,7 @@
   # that parquet is another dataset's data, never read or written as a cache.
   # The source is read directly instead.
   if (file.exists(manifest)) {
-    if (!is.null(.cache_name_clash(path, yaml::read_yaml(manifest)$datasets))) return(reader(path))
+    if (!is.null(.cache_name_clash(path, .read_manifest(manifest)$datasets))) return(reader(path))
   }
 
   if (!refresh && .cache_valid(path, derived, entry)) {
@@ -317,7 +317,7 @@
 # was.
 .update_promoted_entry <- function(manifest_path, file, parquet, n_rows,
                                    n_cols, reader) {
-  m <- yaml::read_yaml(manifest_path)
+  m <- .read_manifest(manifest_path)
   m$datasets <- lapply(m$datasets, function(e) {
     if (identical(e$file, basename(file))) {
       e$sha256 <- digest::digest(parquet, algo = "sha256", file = TRUE)
@@ -327,14 +327,14 @@
     }
     e
   })
-  .atomic_write(manifest_path, function(tmp) yaml::write_yaml(m, tmp))
+  .atomic_write(manifest_path, function(tmp) .write_manifest(m, tmp))
   invisible(TRUE)
 }
 
 # The fast key lives beside the entry rather than inside update_manifest(),
 # whose contract is about identifying a dataset rather than about caching.
 .stamp_source_state <- function(manifest_path, file, info) {
-  m <- yaml::read_yaml(manifest_path)
+  m <- .read_manifest(manifest_path)
   m$datasets <- lapply(m$datasets, function(e) {
     if (identical(e$file, file)) {
       e$source_size  <- as.numeric(info$size)
@@ -342,6 +342,6 @@
     }
     e
   })
-  .atomic_write(manifest_path, function(tmp) yaml::write_yaml(m, tmp))
+  .atomic_write(manifest_path, function(tmp) .write_manifest(m, tmp))
   invisible(TRUE)
 }

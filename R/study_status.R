@@ -83,7 +83,7 @@
     contract <- .study_dataset(cfg, dataset)
     manifest_path <- file.path(cfg$root, "manifest.yaml")
     if (!identical(contract$kind, "combined") || !file.exists(manifest_path)) return(NULL)
-    manifest <- yaml::read_yaml(manifest_path)
+    manifest <- .read_manifest(manifest_path)
     entry <- Filter(function(e) identical(e$file, contract$built), manifest$datasets)
     if (!length(entry)) return(NULL)
     stale <- .stale_parents(cfg, dataset, entry[[1L]], manifest)
