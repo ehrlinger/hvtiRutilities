@@ -2,6 +2,13 @@
 
 ## New features
 
+* `job_census()` and `job_files()` read hvtiRtemplates' template-first job
+  names, `<prefix>[.<qualifier>].<subject>.<type>.qmd` and their
+  `.runner.R`, as scaffolded jobs. Before, the SAS-legacy parser claimed any
+  dotted name and counted them as SAS-era jobs.
+  Existing dotted job names of this shape are now read as scaffolded, and no
+  longer carry legacy qualifiers.
+
 * **Datasets have a kind and a key.** `register_data()` gains `kind`
   (`"built"`, `"subset"`, `"ancillary"` or `"combined"`), `key` (the columns
   that make each row unique, checked at registration and again when
@@ -93,13 +100,6 @@
   recomputes a cache that is stale. With `packages = "randomForestSRC"` the
   upgrade makes the cache stale. Without `packages` the key is unchanged, so
   existing caches stay valid; adding it to a call makes that cache stale once.
-
-* `job_census()` and `job_files()` read hvtiRtemplates' template-first job
-  names, `<prefix>[.<qualifier>].<subject>.<type>.qmd` and their
-  `.runner.R`, as scaffolded jobs. Before, the SAS-legacy parser claimed any
-  dotted name and counted them as SAS-era jobs.
-  Existing dotted job names of this shape are now read as scaffolded, and no
-  longer carry legacy qualifiers.
 
 ## Documentation
 
