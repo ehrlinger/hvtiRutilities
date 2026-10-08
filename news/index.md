@@ -1,5 +1,162 @@
 # Changelog
 
+## hvtiRutilities 1.5.1
+
+### New features
+
+- **Datasets have a kind and a key.**
+  [`register_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md)
+  gains `kind` (`"built"`, `"subset"`, `"ancillary"` or `"combined"`),
+  `key` (the columns that make each row unique, checked at registration
+  and again when
+  [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
+  registers a rebuilt source) and `parents` (for a combined dataset).
+  [`study_config()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md)
+  validates all three and rejects a cycle among parents. A combined
+  dataset records the versions of the datasets it was built from, when
+  it is registered. When one of them is updated,
+  [`read_built()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_built.md)
+  still reads it and signals `hvtiRutilities_parent_changed`, whose
+  message gives the commands to update it, and
+  [`study_status()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md)
+  and
+  [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
+  list it as out of date. A combined dataset with no recorded parent
+  versions is reported as out of date until it is rebuilt and
+  re-registered.
+  [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
+  updates every parent before the combined datasets built from it. If
+  the out-of-date check in
+  [`study_status()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md)
+  cannot run, the `out_of_date:<dataset>` row is `FAIL` with the error.
+
+- `"built"` is now a second name for the study dataset. Every function
+  that takes a `dataset` accepts it, and everything recorded (manifests,
+  provenance, status) still says `"study"`, so records made under either
+  name compare equal. `"built"` is reserved: a named dataset may not use
+  it, and a study that already registered an additional dataset called
+  `built` is asked to rename it.
+
+- [`job_census()`](https://ehrlinger.github.io/hvtiRutilities/reference/job_census.md)
+  and
+  [`job_files()`](https://ehrlinger.github.io/hvtiRutilities/reference/job_files.md)
+  read hvtiRtemplates’ template-first job names,
+  `<prefix>[.<qualifier>].<subject>.<type>.qmd` and their `.runner.R`,
+  as scaffolded jobs. Before, the SAS-legacy parser claimed any dotted
+  name and counted them as SAS-era jobs. Existing dotted job names of
+  this shape are now read as scaffolded, and no longer carry legacy
+  qualifiers.
+
+### Bug fixes
+
+- Registered versions are checked and protected more strictly. These fix
+  problems found in review of the dated-parquet registration that
+  shipped in 1.5.0.
+  - [`verify_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md)
+    re-derives each registered version’s row count from its parquet
+    footer and fails a mismatch. Under `strict = TRUE` it fails a
+    version whose count could not be re-derived, as it already did for
+    other files. A malformed `history:` entry, or a version with no
+    recorded schema checksum under `strict = TRUE`, now fails rather
+    than being skipped.
+  - A dated version name can no longer be another dataset’s read cache.
+    [`register_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md)
+    and
+    [`adopt_data_update()`](https://ehrlinger.github.io/hvtiRutilities/reference/adopt_data_update.md)
+    refuse a dataset whose cache name would be a registered version, and
+    the read cache never writes over one. Before, a dataset named like
+    `cohort_20260915.csv` could overwrite the registered version of
+    `cohort.csv`, and migrating it could delete that version.
+  - [`verify_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md)
+    and
+    [`study_status()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md)
+    give the pending source and each earlier version its own label,
+    e.g. `built.csv (source)` and `built.csv (built_20260915.parquet)`.
+    A checkpoint taken while a rebuilt source was pending wrote
+    duplicate keys to `CHECKPOINT.yml`, which could not then be read.
+  - A study registered before dated versions is dated, when migrated, as
+    a fresh registration would be: by `extract_date` when given,
+    otherwise by the source’s local modification date.
+  - The source is hashed between the two stability checks, so a rebuild
+    that lands while a version is being written is seen on the next
+    update rather than recorded as already registered.
+  - [`study_status()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md)
+    counts datasets rather than version files, and reports a dataset
+    whose source is gone as present when its registered version is
+    there, since that is what
+    [`read_built()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_built.md)
+    serves.
+    [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
+    on a study with no `manifest.yaml` names
+    [`register_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md).
+- [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
+  with no file reported “found none” for any error reading `_study.yml`,
+  so a study that exists but needs fixing was told it had no study. It
+  now says that only when no `_study.yml` is found, and passes any other
+  error on unchanged.
+
+### Internal
+
+- The `registered_versions` tests no longer print
+  [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)’s
+  closing reminder to commit `manifest.yaml`; it reached the test output
+  five times. `expect_message()` captures only the first matching
+  message, so in the five tests where a run registers or migrates a
+  dataset the reminder that follows the detail line escaped. Those calls
+  are now wrapped in
+  [`suppressMessages()`](https://rdrr.io/r/base/message.html), and each
+  still asserts its detail message.
+
+- A `manifest.yaml` that records a registered dated version now starts
+  its `datasets:` list with a line that makes hvtiRutilities 1.4.x, and
+  1.5.0, stop with an error instead of reading it. 1.4.x read such an
+  entry as a promoted dataset, reconverted the rebuilt source and
+  overwrote the entry, so a study pinned to 1.4.x was served
+  unregistered data and 1.5 then reported the intact registered version
+  as edited. A manifest written by 1.5.0 is read as it is and gains the
+  line the next time
+  [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
+  runs. Code that reads `manifest.yaml` directly must skip the line: it
+  is a character string, not an entry.
+
+- `register_data(catalog_dataset = , release_id = )` refuses a dataset
+  registered as dated versions, as `update_manifest(file)` already did.
+  It replaced the entry with a flat one, dropping every registered
+  version from the manifest and leaving their parquets unchecked.
+
+- A combined dataset registered on a parent that predates dated versions
+  no longer reads as out of date once
+  [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
+  converts that parent without a change to its data. The parent’s
+  checksum, recorded at registration, is recognised as the version it
+  was converted to.
+
+- `register_data(parents = )` and `_study.yml` accept `"built"` for the
+  study dataset, as every other argument naming a dataset does, and
+  record it as `"study"`. A parent that is not a registered dataset is
+  now named in the error, which names
+  [`register_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md)
+  rather than
+  [`study_config()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md)
+  and comes before the dataset is converted to parquet.
+
+- `update_manifest(file)` refuses a file that is another entry’s
+  registered version, current or earlier, or its schema sidecar.
+  Recording it replaced nothing on disk but hid that its caller had just
+  written over registered data; every job then failed the checksum with
+  no hint of why.
+
+- [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
+  re-records the size and modification time of a registered dataset’s
+  source that was rewritten with the same contents. Until then every
+  read,
+  [`verify_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md)
+  and
+  [`study_status()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md)
+  hashed the source again to find it unchanged. On a file system that
+  records whole seconds only, such as a network share, a hash is still
+  needed on each read, as it is for the read cache.
+
 ## hvtiRutilities 1.5.0
 
 ### Breaking changes
