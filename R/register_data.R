@@ -106,6 +106,14 @@
 #' (\code{catalog_dataset} and \code{release_id}) records the catalog's file as
 #' it is and converts nothing.
 #'
+#' A dataset is registered once: registering it again stops with "already
+#' registered". So a study whose datasets are already registered adds
+#' \code{kind}, \code{key} or \code{parents} by editing that dataset's entry in
+#' \code{_study.yml}, then running \code{\link{update_manifest}()}. The key is
+#' checked when the next version is registered. A combined dataset records its
+#' parents' versions only once its source has been rebuilt, and reads as out of
+#' date until then.
+#'
 #' @param root Character. Study root or a directory beneath it.
 #' @param built Character(1). Dataset filename within the logical
 #'   \code{datasets} directory, including its extension.

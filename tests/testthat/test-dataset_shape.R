@@ -86,12 +86,14 @@ test_that("registration records kind and key and checks the key", {
 test_that("a repeating or missing key stops before anything is written", {
   root <- registered_shape_study()
   data_dir <- study_dir("datasets", root)
-  utils::write.csv(data.frame(ccfid = c(1L, 1L), lab = 1:2), file.path(data_dir, "labs.csv"), row.names = FALSE)
+  utils::write.csv(data.frame(ccfid = c(918273L, 918273L), lab = 1:2), file.path(data_dir, "labs.csv"), row.names = FALSE)
   before <- list.files(data_dir)
   before_files <- file_snapshot(root)
 
-  expect_error(register_data(root, "labs.csv", dataset = "labs", role = "named", kind = "ancillary", key = "ccfid"),
-               "1 row repeats")
+  err <- expect_error(register_data(root, "labs.csv", dataset = "labs", role = "named", kind = "ancillary", key = "ccfid"),
+                      "1 row repeats")
+  # counts only: the message never names an identifier value
+  expect_no_match(conditionMessage(err), "918273", fixed = TRUE)
   expect_error(register_data(root, "labs.csv", dataset = "labs", role = "named", kind = "ancillary", key = "lab_date"),
                "lab_date")
   expect_identical(list.files(data_dir), before)
@@ -330,6 +332,22 @@ test_that("adopting a release for a combined dataset records its parents' versio
   m <- yaml::read_yaml(file.path(fx$root, "manifest.yaml"))
   e <- Filter(function(x) identical(x$file, "cohort_20260921.csv"), m$datasets)[[1L]]
   expect_match(e$parent_versions$study, "^default_[0-9]{8}[.]parquet$")
+
+  # once its parent moves on, the fix names the release commands, not update_manifest()
+  rebuild(fx$root, "default.csv", data.frame(dead = c(1L, 0L, 1L), iv_dead = 1:3))
+  withr::with_dir(fx$root, suppressMessages(update_manifest(dataset = "study")))
+  cond <- NULL
+  withCallingHandlers(
+    read_built(study_config(fx$root), dataset = "named_data"),
+    hvtiRutilities_parent_changed = function(m) {
+      cond <<- m
+      invokeRestart("muffleMessage")
+    },
+    message = function(m) invokeRestart("muffleMessage")
+  )
+  expect_match(conditionMessage(cond), "review_data_update()", fixed = TRUE)
+  expect_match(conditionMessage(cond), "adopt_data_update()", fixed = TRUE)
+  expect_no_match(conditionMessage(cond), "update_manifest()", fixed = TRUE)
 })
 
 test_that("update_manifest() updates a combined parent before a combined child declared ahead of it", {

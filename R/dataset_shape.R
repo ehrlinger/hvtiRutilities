@@ -123,12 +123,19 @@
 
 # The words for one context, built from parts so each reads naturally:
 # "read" is a job that has just used the older data, "status" an audit line,
-# "update" a line in update_manifest()'s report. Each ends with the fix.
+# "update" a line in update_manifest()'s report. Each ends with the fix, which
+# for a release-aware dataset is the release commands rather than update_manifest().
 .parent_changed_text <- function(contract, stale, context = c("read", "status", "update")) {
   context <- match.arg(context)
   was <- paste0(stale$parent, " was ", stale$recorded, " and is now ", stale$current, collapse = "; ")
-  fix <- paste0("rebuild ", contract$built, " with the job or script that writes it, then run ",
-                "hvtiRutilities::update_manifest().")
+  # update_manifest() skips a release-aware dataset: its versions come from adopted releases.
+  fix <- if (is.null(contract$release)) {
+    paste0("rebuild ", contract$built, " with the job or script that writes it, then run ",
+           "hvtiRutilities::update_manifest().")
+  } else {
+    paste0("publish a release rebuilt from the current parents, then review and adopt it with ",
+           "hvtiRutilities::review_data_update() and hvtiRutilities::adopt_data_update().")
+  }
   switch(context,
     read = paste0(contract$dataset, " (", contract$built, ") was built from older versions of its parents: ", was,
                   ". This job used the older combined data. To update it, ", fix),

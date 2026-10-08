@@ -13,10 +13,10 @@
   whose message gives the commands to update it, and `study_status()` and
   `update_manifest()` list it as out of date. A combined dataset with no
   recorded parent versions is reported as out of date until it is rebuilt and
-  re-registered. `update_manifest()` updates datasets that are not combined
-  before the combined datasets built from them. If the out-of-date check in
-  `study_status()` cannot run, the `out_of_date:<dataset>` row is now `FAIL`
-  with the error, instead of being left out.
+  re-registered. `update_manifest()` updates every parent before the combined
+  datasets built from it. If the out-of-date check in
+  `study_status()` cannot run, the `out_of_date:<dataset>` row is `FAIL`
+  with the error.
 
 ## Bug fixes
 

@@ -72,6 +72,14 @@ The date is the file's modification date unless \code{extract_date} is given.
 Conversion needs the \pkg{arrow} package. A release-aware registration
 (\code{catalog_dataset} and \code{release_id}) records the catalog's file as
 it is and converts nothing.
+
+A dataset is registered once: registering it again stops with "already
+registered". So a study whose datasets are already registered adds
+\code{kind}, \code{key} or \code{parents} by editing that dataset's entry in
+\code{_study.yml}, then running \code{\link{update_manifest}()}. The key is
+checked when the next version is registered. A combined dataset records its
+parents' versions only once its source has been rebuilt, and reads as out of
+date until then.
 }
 \seealso{
 \code{\link{study_setup}}, \code{\link{study_config}},
