@@ -20,6 +20,10 @@ Excel workbooks via
   .rds
 R serialized objects via readRDS()
 
+  .parquet
+Parquet files via arrow::read_parquet(); needs
+    the arrow package
+
 
 
 "><meta property="og:description" content="A convenience wrapper that detects the file type, reads the data with the
@@ -42,6 +46,10 @@ Excel workbooks via
 
   .rds
 R serialized objects via readRDS()
+
+  .parquet
+Parquet files via arrow::read_parquet(); needs
+    the arrow package
 
 
 
@@ -122,6 +130,10 @@ which package reads which format and ensures labels are preserved.</p>
 
   <dt><code>.rds</code></dt>
 <dd><p>R serialized objects via <code><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">readRDS()</a></code></p></dd>
+
+  <dt><code>.parquet</code></dt>
+<dd><p>Parquet files via <code><a href="https://arrow.apache.org/docs/r/reference/read_parquet.html" class="external-link">arrow::read_parquet()</a></code>; needs
+    the <span class="pkg">arrow</span> package</p></dd>
 
 
 </dl></div>

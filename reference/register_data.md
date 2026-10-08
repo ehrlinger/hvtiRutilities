@@ -5,6 +5,18 @@ dataset. The function derives row and column counts from the file and
 replaces `_study.yml` and `manifest.yaml` only after both updated files
 have been prepared successfully.
 
+Registration converts the file once to a dated parquet in the same
+folder, `<name>_YYYYMMDD.parquet`, with its column record beside it as
+`<name>_YYYYMMDD.schema.csv`. That parquet is what
+[`read_built`](https://ehrlinger.github.io/hvtiRutilities/reference/read_built.md)
+and the job templates read, so the source file may be rebuilt freely;
+run
+[`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
+to register a rebuilt file as a new version. The date is the file's
+modification date unless `extract_date` is given. Conversion needs the
+arrow package. A release-aware registration (`catalog_dataset` and
+`release_id`) records the catalog's file as it is and converts nothing.
+
 ## Usage
 
 ``` r

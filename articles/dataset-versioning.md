@@ -31,6 +31,34 @@ dated release and lets a study discover a later release without changing
 the release it already uses. We return to that workflow after the
 checksum example.
 
+## In a Study: Rebuild, Then Update
+
+Most of the time you do not call any of the functions below directly. A
+study registers its dataset once, and from then on the cycle is two
+steps.
+
+1.  Rebuild `datasets/built.sas7bdat` as often as you need. Jobs are not
+    affected: they read the registered version, a dated parquet such as
+    `built_20260915.parquet`, and
+    [`read_built()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_built.md)
+    says that a newer file is waiting.
+
+2.  When the rebuild is right, register it:
+
+    ``` r
+
+    hvtiRutilities::update_manifest()
+    ```
+
+    Run it from anywhere in the study. It converts the new file to
+    `built_20261007.parquet`, keeps every earlier version, and prints
+    what it did. Commit `manifest.yaml`.
+
+Every registered version stays on disk, so a manuscript revision can be
+reproduced from the version its paper used. The rest of this vignette
+explains the checksums underneath, and how to record a file outside a
+study.
+
 ## Setup
 
 ``` r
@@ -253,6 +281,7 @@ verify_manifest(
 #>    cohort_20240115.csv: SHA-256 mismatch
 #>   expected: f3db9dd8a47765003a2509c54068f8736b0fd8c2f0b0425808422cc11f0bdfcd
 #>   actual:   5557af305fedf53ed5ee74c6a0aace29e4974a549a2a44fc5ff8c173d40a4e1a
+#>   If this file was rebuilt on purpose, run hvtiRutilities::update_manifest() to register the new version.
 ```
 
 The error message names the affected file and shows both the expected
@@ -275,12 +304,13 @@ report <- verify_manifest(
 #>    cohort_20240115.csv: SHA-256 mismatch
 #>   expected: f3db9dd8a47765003a2509c54068f8736b0fd8c2f0b0425808422cc11f0bdfcd
 #>   actual:   5557af305fedf53ed5ee74c6a0aace29e4974a549a2a44fc5ff8c173d40a4e1a
+#>   If this file was rebuilt on purpose, run hvtiRutilities::update_manifest() to register the new version.
 
 report[report$status == "FAIL", c("file", "message")]
 #>                  file
 #> 1 cohort_20240115.csv
-#>                                                                                                                                                                        message
-#> 1 SHA-256 mismatch\n  expected: f3db9dd8a47765003a2509c54068f8736b0fd8c2f0b0425808422cc11f0bdfcd\n  actual:   5557af305fedf53ed5ee74c6a0aace29e4974a549a2a44fc5ff8c173d40a4e1a
+#>                                                                                                                                                                                                                                                                                   message
+#> 1 SHA-256 mismatch\n  expected: f3db9dd8a47765003a2509c54068f8736b0fd8c2f0b0425808422cc11f0bdfcd\n  actual:   5557af305fedf53ed5ee74c6a0aace29e4974a549a2a44fc5ff8c173d40a4e1a\n  If this file was rebuilt on purpose, run hvtiRutilities::update_manifest() to register the new version.
 ```
 
 ### Publishing a legitimate correction

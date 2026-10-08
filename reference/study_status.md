@@ -30,6 +30,12 @@ row adds *as of the last fetch*. When a closure or reopening tag in this
 copy is not on its `main`, the state cannot be determined and the row
 has status `"UNKNOWN"`.
 
+The `manifest.yaml` row is `"PENDING"` when a dataset registered as a
+dated parquet has had its source file rebuilt since registration. Jobs
+keep reading the registered version; the detail names the datasets and
+[`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md),
+which registers the rebuild.
+
 Release-aware datasets add an `update:<dataset>` row with status
 `"CURRENT"`, `"UPDATE AVAILABLE"`, `"UPDATE STATUS UNKNOWN"`, or
 `"FAIL"`. Legacy studies retain the five base rows and their existing
@@ -84,7 +90,7 @@ by dataset and update rows for each named dataset, and by the
 root <- file.path(tempdir(), "study-status-example")
 dir.create(root, showWarnings = FALSE)
 study_status(root)
-#> Study: /tmp/Rtmp9w1lHU/study-status-example
+#> Study: /tmp/RtmpNZobtw/study-status-example
 #> 
 #> [ ] _study.yml — no _study.yml at this root; recovery may be available with study-setup --recover; if its Tracker ID cannot be inferred, run study-setup 42 --recover
 #> [ ] renv.lock — no renv.lock; run renv::init() in the study project

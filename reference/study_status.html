@@ -24,6 +24,10 @@ study_close. This function never contacts the remote, so
 when one is configured that row adds as of the last fetch. When a
 closure or reopening tag in this copy is not on its main, the state
 cannot be determined and the row has status &quot;UNKNOWN&quot;.
+The manifest.yaml row is &quot;PENDING&quot; when a dataset registered
+as a dated parquet has had its source file rebuilt since registration. Jobs
+keep reading the registered version; the detail names the datasets and
+update_manifest(), which registers the rebuild.
 Release-aware datasets add an update:&amp;lt;dataset&amp;gt; row with status
 &quot;CURRENT&quot;, &quot;UPDATE AVAILABLE&quot;,
 &quot;UPDATE STATUS UNKNOWN&quot;, or &quot;FAIL&quot;. Legacy studies retain
@@ -61,6 +65,10 @@ study_close. This function never contacts the remote, so
 when one is configured that row adds as of the last fetch. When a
 closure or reopening tag in this copy is not on its main, the state
 cannot be determined and the row has status &quot;UNKNOWN&quot;.
+The manifest.yaml row is &quot;PENDING&quot; when a dataset registered
+as a dated parquet has had its source file rebuilt since registration. Jobs
+keep reading the registered version; the detail names the datasets and
+update_manifest(), which registers the rebuild.
 Release-aware datasets add an update:&amp;lt;dataset&amp;gt; row with status
 &quot;CURRENT&quot;, &quot;UPDATE AVAILABLE&quot;,
 &quot;UPDATE STATUS UNKNOWN&quot;, or &quot;FAIL&quot;. Legacy studies retain
@@ -156,6 +164,10 @@ status <code>"CLOSED"</code> and the outcome and date of the latest closure; see
 when one is configured that row adds <em>as of the last fetch</em>. When a
 closure or reopening tag in this copy is not on its <code>main</code>, the state
 cannot be determined and the row has status <code>"UNKNOWN"</code>.</p>
+<p>The <code>manifest.yaml</code> row is <code>"PENDING"</code> when a dataset registered
+as a dated parquet has had its source file rebuilt since registration. Jobs
+keep reading the registered version; the detail names the datasets and
+<code><a href="update_manifest.html">update_manifest()</a></code>, which registers the rebuild.</p>
 <p>Release-aware datasets add an <code>update:&lt;dataset&gt;</code> row with status
 <code>"CURRENT"</code>, <code>"UPDATE AVAILABLE"</code>,
 <code>"UPDATE STATUS UNKNOWN"</code>, or <code>"FAIL"</code>. Legacy studies retain
@@ -208,7 +220,7 @@ rather than silent.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">root</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"study-status-example"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="va">root</span>, showWarnings <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">study_status</span><span class="op">(</span><span class="va">root</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Study: /tmp/Rtmp9w1lHU/study-status-example</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Study: /tmp/RtmpNZobtw/study-status-example</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [ ] _study.yml — no _study.yml at this root; recovery may be available with study-setup --recover; if its Tracker ID cannot be inferred, run study-setup 42 --recover</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [ ] renv.lock — no renv.lock; run renv::init() in the study project</span>

@@ -2,7 +2,10 @@
 
 Records the authoritative physical file selected by `dataset`. For a
 manifest entry with `role: "primary"`, this is the promoted Parquet file
-rather than the retired source. The returned plain list contains the
+rather than the retired source, and for a dataset registered with
+[`register_data`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md)
+it is the registered version, the dated Parquet file, rather than the
+source it was converted from. The returned plain list contains the
 logical dataset name, a canonical study-relative path, its role, byte
 count, modification time, and SHA-256 hash.
 

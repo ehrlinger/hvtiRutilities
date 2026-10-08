@@ -31,6 +31,12 @@ Supported formats:
   R serialized objects via
   [`readRDS()`](https://rdrr.io/r/base/readRDS.html)
 
+- `.parquet`:
+
+  Parquet files via
+  [`arrow::read_parquet()`](https://arrow.apache.org/docs/r/reference/read_parquet.html);
+  needs the arrow package
+
 ## Usage
 
 ``` r

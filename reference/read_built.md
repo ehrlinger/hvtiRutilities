@@ -3,6 +3,14 @@
 Reads the dataset named in `_study.yml` and normalises its types so that
 both available read paths deliver the same frame.
 
+For a dataset registered with
+[`register_data`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md),
+the registered version (a dated parquet) is read, after its checksum is
+checked. If the source file has been rebuilt since, the registered
+version is still read and a message of class
+`hvtiRutilities_source_changed` says so and names
+[`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md).
+
 For a release-aware contract, the pinned release is verified before
 cache access. A later valid release emits a message of class
 `hvtiRutilities_update_available`; an unavailable catalog or invalid
@@ -47,7 +55,10 @@ read_built(
   that preserves `mtime`, a restored backup, a correction applied out of
   band. Errors if the manifest entry has `role: "primary"`: that role
   means the source has been retired and the parquet is authoritative, so
-  there is nothing to refresh from.
+  there is nothing to refresh from. It also errors for a dataset
+  registered as a dated parquet, and names
+  [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md),
+  which registers a rebuilt source.
 
 - dataset:
 
