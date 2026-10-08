@@ -290,8 +290,8 @@ update_manifest <- function(file,
 # labelled "<file> (<parquet>)", "<file> (source)" and "<file> (history)".
 .verify_row_dataset <- function(label) sub(" [(][^()]*[)]$", "", label)
 
-.verify_row <- function(file, status, message) {
-  data.frame(file = file, status = status, message = message, row_count_checked = FALSE,
+.verify_row <- function(file, status, message, checked = FALSE) {
+  data.frame(file = file, status = status, message = message, row_count_checked = checked,
              stringsAsFactors = FALSE)
 }
 
@@ -324,12 +324,34 @@ update_manifest <- function(file,
                                                ". The checksum matched; strict = TRUE requires every applicable ",
                                                "check to have run.")))
     }
+    # The parquet footer holds the row count, so it is re-derived without reading the data.
+    n_actual <- if (.arrow_available() && !is.null(v$n_rows)) {
+      tryCatch(as.numeric(arrow::ParquetFileReader$create(target, mmap = FALSE)$num_rows),
+               error = function(e) NA_real_)
+    } else {
+      NA_real_
+    }
+    if (!is.na(n_actual) && n_actual != v$n_rows) {
+      return(.verify_row(label, "FAIL", paste0(v$parquet, " holds ", n_actual, " rows but ", v$n_rows,
+                                               " were recorded.", restore)))
+    }
+    checked <- !is.na(n_actual)
+    if (strict && !checked) {
+      why <- if (is.null(v$n_rows)) {
+        "no row count is recorded for this version"
+      } else {
+        "the arrow package is not available to re-derive it"
+      }
+      return(.verify_row(label, "FAIL", paste0("Row count not verified: ", why, ". The checksum matched; ",
+                                               "strict = TRUE requires every applicable check to have run.")))
+    }
     msg <- if (is.null(v$n_rows)) {
       paste0("SHA-256 match (", v$parquet, "); no row count recorded")
     } else {
       paste0("SHA-256 match (", v$parquet, ", n = ", v$n_rows, ")")
     }
-    .verify_row(label, "OK", paste0(msg, if (is.null(v$schema_sha256)) "; schema not checked"))
+    .verify_row(label, "OK", paste0(msg, if (!checked) "; row count not re-derived",
+                                    if (is.null(v$schema_sha256)) "; schema not checked"), checked)
   })
   if (!is.null(entry$history) && !is.list(entry$history)) {
     rows[[length(rows) + 1L]] <- .verify_row(
@@ -378,8 +400,9 @@ update_manifest <- function(file,
 #' the message names which of the three it was.
 #'
 #' For a dataset registered with \code{\link{register_data}}, every registered
-#' version (the current dated parquet and each earlier one) is checked. A
-#' source file rebuilt since registration is reported with status
+#' version (the current dated parquet and each earlier one) is checked, and its
+#' row count is re-derived from the parquet footer when the arrow package is
+#' available. A source file rebuilt since registration is reported with status
 #' \code{"PENDING"} and never stops: jobs keep reading the registered version
 #' until \code{\link{update_manifest}()} registers the new one.
 #'

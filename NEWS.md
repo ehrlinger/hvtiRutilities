@@ -40,6 +40,10 @@
   file that is a registered dataset rather than dropping its versions.
   `study_status()` reports a dataset whose source is gone as present when its
   registered version is there, since that is what `read_built()` serves.
+  `verify_manifest()` re-derives each registered version's row count from its
+  parquet footer and fails a mismatch, and under `strict = TRUE` it fails a
+  version whose count could not be re-derived, as it already did for other
+  files.
 
 ## New features
 

@@ -582,8 +582,7 @@ test_that("CHECKPOINT.yml stays readable while a source is pending and versions 
   path <- withr::local_tempfile(fileext = ".yml")
   yaml::write_yaml(list(manifest_check = res), path)
   back <- yaml::read_yaml(path)$manifest_check$datasets
-  # A version's row count is not re-derived, so .cp_manifest_check() records it as unchecked.
-  expect_identical(back[["built.csv"]], "unchecked")
+  expect_identical(back[["built.csv"]], "OK")
   expect_identical(sum(unlist(back) == "PENDING"), 1L)
   expect_length(back, 5L)
 })
@@ -595,7 +594,7 @@ test_that("a pending source gets its own row label, so CHECKPOINT.yml has no dup
   path <- withr::local_tempfile(fileext = ".yml")
   yaml::write_yaml(list(manifest_check = res), path)
   expect_identical(yaml::read_yaml(path)$manifest_check$datasets,
-                   list(built.csv = "unchecked", `built.csv (source)` = "PENDING"))
+                   list(built.csv = "OK", `built.csv (source)` = "PENDING"))
 })
 
 # A dataset registered as cohort.csv on 2026-09-15 owns cohort_20260915.parquet,
@@ -888,10 +887,9 @@ test_that("a mixed study (versioned, legacy, release-aware) updates, verifies an
   expect_identical(sort(rep$status), c("OK", "OK", "OK", "PENDING"))
   row <- manifest_row()
   expect_identical(row$status, "PENDING")
-  # A registered version's row count is not re-derived, so it is counted as such and CHECKPOINT records it unchecked.
-  expect_match(row$detail, "^3 dataset entries verified by checksum [(]row count not re-derived for 1[)];")
+  expect_match(row$detail, "^3 dataset entries verified by checksum;")
   back <- checkpoint_back()
-  expect_identical(sort(unlist(back, use.names = FALSE)), c("OK", "OK", "PENDING", "unchecked"))
+  expect_identical(sort(unlist(back, use.names = FALSE)), c("OK", "OK", "OK", "PENDING"))
 
   # One update registers the rebuild, migrates the legacy entry, skips the release.
   out <- withr::with_dir(root, suppressMessages(update_manifest()))
@@ -909,4 +907,37 @@ test_that("a mixed study (versioned, legacy, release-aware) updates, verifies an
   expect_identical(read_all(), c(study = 5L, named_data = 3L, legacy = 4L))
   expect_identical(vapply(kept, sha, ""), before)
   expect_true(file.exists(file.path(dir, manifest_entry_for(root, "legacy.csv")$parquet)))
+})
+
+test_that("strict verify_manifest passes a version whose row count matches and fails an altered n_rows", {
+  root <- versioned_study()
+  manifest <- file.path(root, "manifest.yaml")
+  rep <- verify_manifest(manifest, strict = TRUE)
+  expect_identical(rep$status, "OK")
+  expect_true(all(rep$row_count_checked))
+  expect_no_match(rep$message, "not re-derived", fixed = TRUE)
+
+  m <- yaml::read_yaml(manifest)
+  m$datasets[[1L]]$n_rows <- 99L
+  yaml::write_yaml(m, manifest)
+  expect_error(verify_manifest(manifest), "rows but 99 were recorded")
+  expect_error(verify_manifest(manifest, strict = TRUE), "rows but 99 were recorded")
+})
+
+test_that("strict verify_manifest fails a version whose row count could not be re-derived", {
+  root <- versioned_study()
+  manifest <- file.path(root, "manifest.yaml")
+  local_mocked_bindings(.arrow_available = function() FALSE)
+  rep <- verify_manifest(manifest)
+  expect_identical(rep$status, "OK")
+  expect_false(rep$row_count_checked)
+  expect_match(rep$message, "row count not re-derived", fixed = TRUE)
+  expect_error(verify_manifest(manifest, strict = TRUE), "Row count not verified", fixed = TRUE)
+})
+
+test_that("a rebuilt source does not mask an altered parquet", {
+  root <- versioned_study()
+  rebuild_source(root)
+  cat("tamper", file = file.path(study_dir("datasets", root), "built_20260915.parquet"), append = TRUE)
+  expect_error(verify_manifest(file.path(root, "manifest.yaml")), "restore it from backup")
 })
