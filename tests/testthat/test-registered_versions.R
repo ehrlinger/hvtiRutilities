@@ -596,3 +596,110 @@ test_that("a pending source gets its own row label, so CHECKPOINT.yml has no dup
   expect_identical(yaml::read_yaml(path)$manifest_check$datasets,
                    list(built.csv = "unchecked", `built.csv (source)` = "PENDING"))
 })
+
+# A dataset registered as cohort.csv on 2026-09-15 owns cohort_20260915.parquet,
+# which is also the legacy read-cache name of a dataset whose file is
+# cohort_20260915.csv. Built by hand, as a study registered before the guards
+# existed would be.
+collision_study <- function(env = parent.frame()) {
+  testthat::skip_if_not_installed("arrow")
+  root <- file.path(withr::local_tempdir(.local_envir = env), "study")
+  suppressMessages(study_setup(root, "Collision fixture", 42L))
+  dir <- study_dir("datasets", root)
+  utils::write.csv(data.frame(id = 1:3, DEAD = c(1L, 0L, 0L)), file.path(dir, "cohort.csv"), row.names = FALSE)
+  Sys.setFileTime(file.path(dir, "cohort.csv"), as.POSIXct("2026-09-15 12:00:00", tz = "UTC"))
+  suppressMessages(register_data(root, "cohort.csv"))
+  legacy <- data.frame(id = 1:5, DEAD = 0L)
+  utils::write.csv(legacy, file.path(dir, "cohort_20260915.csv"), row.names = FALSE)
+  raw <- yaml::read_yaml(file.path(root, "_study.yml"))
+  raw$additional_datasets <- list(legacy = list(built = "cohort_20260915.csv"))
+  yaml::write_yaml(raw, file.path(root, "_study.yml"))
+  m <- yaml::read_yaml(file.path(root, "manifest.yaml"))
+  m$datasets <- c(m$datasets, list(.registration_manifest_entry(file.path(dir, "cohort_20260915.csv"), legacy,
+                                                                "2026-09-15", NULL)))
+  yaml::write_yaml(m, file.path(root, "manifest.yaml"))
+  root
+}
+
+test_that("a new version never takes another entry's read-cache name", {
+  skip_if_not_installed("arrow")
+  root <- make_legacy_registered_study(withr::local_tempdir(), file = "cohort_20260915.csv")
+  dir <- study_dir("datasets", root)
+  utils::write.csv(data.frame(id = 1:2), file.path(dir, "cohort.csv"), row.names = FALSE)
+  Sys.setFileTime(file.path(dir, "cohort.csv"), as.POSIXct("2026-09-15 12:00:00", tz = "UTC"))
+
+  suppressMessages(register_data(root, "cohort.csv", dataset = "cohort", role = "named"))
+
+  e <- manifest_entry_for(root, "cohort.csv")
+  expect_false(identical(e$parquet, "cohort_20260915.parquet"))
+  version <- file.path(dir, e$parquet)
+  before <- digest::digest(version, algo = "sha256", file = TRUE)
+  read_built(study_config(root))
+  expect_identical(digest::digest(version, algo = "sha256", file = TRUE), before)
+  expect_identical(nrow(read_built(study_config(root), dataset = "cohort")), 2L)
+})
+
+test_that("register_data refuses a file whose cache name is a registered version", {
+  root <- versioned_study()
+  dir <- study_dir("datasets", root)
+  utils::write.csv(data.frame(id = 1:2), file.path(dir, "built_20260915.csv"), row.names = FALSE)
+
+  expect_error(register_data(root, "built_20260915.csv", dataset = "other", role = "named"),
+               "is the registered version of built.csv")
+  expect_identical(sort(list.files(dir, pattern = "[.]parquet$")), "built_20260915.parquet")
+})
+
+test_that("register_data refuses a release whose cache name is a registered version", {
+  root <- release_collision_study("2026-09-20")
+  expect_identical(manifest_entry_for(root, "cohort.csv")$parquet, "cohort_20260920.parquet")
+  before <- readLines(file.path(root, "manifest.yaml"))
+
+  expect_error(
+    register_data(root, "cohort_20260920.csv", dataset = "named_data", role = "named",
+                  catalog_dataset = "surgery_cohort", release_id = "surgery_cohort-20260920-r1"),
+    "is the registered version of cohort.csv"
+  )
+  expect_identical(readLines(file.path(root, "manifest.yaml")), before)
+})
+
+test_that("adopt_data_update refuses a release whose cache name is a registered version", {
+  root <- release_collision_study("2026-09-21")
+  expect_identical(manifest_entry_for(root, "cohort.csv")$parquet, "cohort_20260921.parquet")
+  suppressMessages(register_data(root, "cohort_20260920.csv", dataset = "named_data", role = "named",
+                                 catalog_dataset = "surgery_cohort", release_id = "surgery_cohort-20260920-r1"))
+  before <- readLines(file.path(root, "manifest.yaml"))
+
+  expect_error(
+    withCallingHandlers(adopt_data_update(study_config(root), "named_data", "surgery_cohort-20260921-r1"),
+                        hvtiRutilities_update_available = function(m) invokeRestart("muffleMessage")),
+    "is the registered version of cohort.csv"
+  )
+  expect_identical(readLines(file.path(root, "manifest.yaml")), before)
+})
+
+test_that("the legacy read cache never writes over a registered version", {
+  root <- collision_study()
+  version <- file.path(study_dir("datasets", root), "cohort_20260915.parquet")
+  before <- digest::digest(version, algo = "sha256", file = TRUE)
+
+  d <- read_built(study_config(root), dataset = "legacy")
+
+  expect_identical(nrow(d), 5L)
+  expect_identical(digest::digest(version, algo = "sha256", file = TRUE), before)
+  expect_identical(nrow(read_built(study_config(root))), 3L)
+})
+
+test_that("migration never removes a file another entry registered", {
+  root <- collision_study()
+  dir <- study_dir("datasets", root)
+  version <- file.path(dir, c("cohort_20260915.parquet", "cohort_20260915.schema.csv"))
+  before <- vapply(version, digest::digest, "", algo = "sha256", file = TRUE)
+  withr::local_dir(root)
+
+  suppressMessages(update_manifest(dataset = "legacy"))
+
+  expect_true(all(file.exists(version)))
+  expect_identical(vapply(version, digest::digest, "", algo = "sha256", file = TRUE), before)
+  expect_true(.is_versioned(manifest_entry_for(root, "cohort_20260915.csv")))
+  expect_identical(verify_manifest()$status, c("OK", "OK"))
+})

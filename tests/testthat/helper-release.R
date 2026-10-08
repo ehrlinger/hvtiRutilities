@@ -129,3 +129,17 @@ withdraw_fixture_release <- function(fx, release_id, reason,
   yaml::write_yaml(catalog, fx$catalog_path)
   invisible(releases[[index]])
 }
+
+# A study whose default dataset cohort.csv was registered on `date`, beside the
+# release catalog fixture (cohort_20260920.csv, cohort_20260921.csv).
+release_collision_study <- function(date, env = parent.frame()) {
+  testthat::skip_if_not_installed("arrow")
+  root <- file.path(withr::local_tempdir(.local_envir = env), "study")
+  suppressMessages(study_setup(root, "Release collision", 42L))
+  fx <- write_release_fixture(root)
+  src <- file.path(fx$data_dir, "cohort.csv")
+  utils::write.csv(data.frame(id = 1:2), src, row.names = FALSE)
+  Sys.setFileTime(src, as.POSIXct(paste(date, "12:00:00"), tz = "UTC"))
+  suppressMessages(register_data(root, "cohort.csv"))
+  root
+}
