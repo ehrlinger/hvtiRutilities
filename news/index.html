@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.4.5</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,6 +55,24 @@
       <small>Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.5.0" id="hvtirutilities-150">hvtiRutilities 1.5.0<a class="anchor" aria-label="anchor" href="#hvtirutilities-150"></a></h2>
+<div class="section level3">
+<h3 id="breaking-changes-1-5-0">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-1-5-0"></a></h3>
+<ul><li>
+<strong>Registering a dataset converts it to a dated parquet, and <code><a href="../reference/update_manifest.html">update_manifest()</a></code> with no arguments registers a rebuilt one.</strong> <code><a href="../reference/register_data.html">register_data()</a></code> now writes <code>&lt;name&gt;_YYYYMMDD.parquet</code> and its column record beside the source, and jobs read that parquet. The source file (<code>built.sas7bdat</code>) may be rebuilt freely: <code><a href="../reference/read_built.html">read_built()</a></code> keeps reading the registered version and signals <code>hvtiRutilities_source_changed</code>, and <code><a href="../reference/verify_manifest.html">verify_manifest()</a></code> reports the dataset as <code>PENDING</code> rather than failing. Run <code><a href="../reference/update_manifest.html">update_manifest()</a></code> from anywhere in the study to register the rebuild as a new version; earlier versions are kept and still verified. A study registered before this release is converted on its first <code><a href="../reference/update_manifest.html">update_manifest()</a></code>; if its source was already overwritten, the previous version is recovered from the read cache where it still matches. <code><a href="../reference/verify_manifest.html">verify_manifest()</a></code> now defaults to the study’s manifest when run inside a study, and a checksum mismatch names <code><a href="../reference/update_manifest.html">update_manifest()</a></code>. Registration and update need the arrow package. <code><a href="../reference/read_clinical_data.html">read_clinical_data()</a></code> reads <code>.parquet</code> files, so a parquet source registers like any other format. <code><a href="../reference/provenance_data.html">provenance_data()</a></code> records the dated parquet as the file a job read, so a report names its own data version.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="new-features-1-5-0">New features<a class="anchor" aria-label="anchor" href="#new-features-1-5-0"></a></h3>
+<ul><li>
+<code><a href="../reference/cache_fit.html">cache_fit()</a></code> gains <code>packages =</code>, a character vector of package names whose versions join the cache key. The key records only the package that owns each function called in <code>code</code>, so a wrapper is keyed on itself: <code>gg_partial_rfsrc(forest, ...)</code> recorded ggRandomForests and not randomForestSRC, which computes the result. After a randomForestSRC upgrade that cache stayed valid, and <code>refit = TRUE</code> kept it, because <code>refit</code> only recomputes a cache that is stale. With <code>packages = "randomForestSRC"</code> the upgrade makes the cache stale. Without <code>packages</code> the key is unchanged, so existing caches stay valid; adding it to a call makes that cache stale once.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="documentation-1-5-0">Documentation<a class="anchor" aria-label="anchor" href="#documentation-1-5-0"></a></h3>
+<ul><li><p>Vignettes put the table of contents on the left and use the full width of the window, the same layout as the HVTI Quarto books and the hvtiRtemplates jobs. <code>vignettes/_quarto.yml</code> sets it once for every vignette, and <code>pkgdown/extra.css</code> gives the pkgdown site’s articles the same arrangement.</p></li>
+<li><p><code>DESCRIPTION</code> now declares the Quarto command line tool in <code>SystemRequirements</code>. The vignettes have always needed it to build; the field makes that visible to installers and to <code>R CMD check</code>.</p></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.4.5" id="hvtirutilities-145">hvtiRutilities 1.4.5<a class="anchor" aria-label="anchor" href="#hvtirutilities-145"></a></h2>
 <div class="section level3">

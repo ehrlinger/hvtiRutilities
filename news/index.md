@@ -1,5 +1,66 @@
 # Changelog
 
+## hvtiRutilities 1.5.0
+
+### Breaking changes
+
+- **Registering a dataset converts it to a dated parquet, and
+  [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
+  with no arguments registers a rebuilt one.**
+  [`register_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md)
+  now writes `<name>_YYYYMMDD.parquet` and its column record beside the
+  source, and jobs read that parquet. The source file (`built.sas7bdat`)
+  may be rebuilt freely:
+  [`read_built()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_built.md)
+  keeps reading the registered version and signals
+  `hvtiRutilities_source_changed`, and
+  [`verify_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md)
+  reports the dataset as `PENDING` rather than failing. Run
+  [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
+  from anywhere in the study to register the rebuild as a new version;
+  earlier versions are kept and still verified. A study registered
+  before this release is converted on its first
+  [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md);
+  if its source was already overwritten, the previous version is
+  recovered from the read cache where it still matches.
+  [`verify_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md)
+  now defaults to the study’s manifest when run inside a study, and a
+  checksum mismatch names
+  [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md).
+  Registration and update need the arrow package.
+  [`read_clinical_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_clinical_data.md)
+  reads `.parquet` files, so a parquet source registers like any other
+  format.
+  [`provenance_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/provenance_data.md)
+  records the dated parquet as the file a job read, so a report names
+  its own data version.
+
+### New features
+
+- [`cache_fit()`](https://ehrlinger.github.io/hvtiRutilities/reference/cache_fit.md)
+  gains `packages =`, a character vector of package names whose versions
+  join the cache key. The key records only the package that owns each
+  function called in `code`, so a wrapper is keyed on itself:
+  `gg_partial_rfsrc(forest, ...)` recorded ggRandomForests and not
+  randomForestSRC, which computes the result. After a randomForestSRC
+  upgrade that cache stayed valid, and `refit = TRUE` kept it, because
+  `refit` only recomputes a cache that is stale. With
+  `packages = "randomForestSRC"` the upgrade makes the cache stale.
+  Without `packages` the key is unchanged, so existing caches stay
+  valid; adding it to a call makes that cache stale once.
+
+### Documentation
+
+- Vignettes put the table of contents on the left and use the full width
+  of the window, the same layout as the HVTI Quarto books and the
+  hvtiRtemplates jobs. `vignettes/_quarto.yml` sets it once for every
+  vignette, and `pkgdown/extra.css` gives the pkgdown site’s articles
+  the same arrangement.
+
+- `DESCRIPTION` now declares the Quarto command line tool in
+  `SystemRequirements`. The vignettes have always needed it to build;
+  the field makes that visible to installers and to `R CMD check`.
+
 ## hvtiRutilities 1.4.5
 
 ### Breaking changes
