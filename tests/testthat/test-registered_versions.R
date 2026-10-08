@@ -952,3 +952,22 @@ test_that("update_manifest(file, ...) refuses a registered dataset and leaves ma
                "is registered as dated versions", fixed = TRUE)
   expect_identical(readBin(mpath, "raw", file.size(mpath)), before)
 })
+
+test_that("update_manifest(file) refuses a file that is another entry's registered version", {
+  skip_if_not_installed("arrow")
+  root <- make_registered_study(withr::local_tempdir())
+  mp <- file.path(root, "manifest.yaml")
+  dir <- study_dir("datasets", root)
+  first <- .manifest_entry(mp, "built.csv")$parquet
+  write_source_csv(dir, data.frame(dead = c(1L, 0L, 0L, 1L), iv_dead = 1:4))
+  withr::with_dir(root, suppressMessages(update_manifest(dataset = "study", extract_date = "2099-01-01")))
+  current <- .manifest_entry(mp, "built.csv")$parquet
+  before <- readLines(mp)
+
+  # current version, a version in history, and a version's schema sidecar
+  for (f in c(current, first, .version_schema_name(current))) {
+    expect_error(update_manifest(file.path(dir, f), manifest_path = mp, n_rows = 3L),
+                 "registered version of built.csv")
+  }
+  expect_identical(readLines(mp), before)
+})

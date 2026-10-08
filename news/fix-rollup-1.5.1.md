@@ -20,3 +20,7 @@
   `"study"`. A parent that is not a registered dataset is now named in the
   error, which names `register_data()` rather than `study_config()` and comes
   before the dataset is converted to parquet.
+- `update_manifest(file)` refuses a file that is another entry's registered
+  version, current or earlier, or its schema sidecar. Recording it replaced
+  nothing on disk but hid that its caller had just written over registered
+  data; every job then failed the checksum with no hint of why.

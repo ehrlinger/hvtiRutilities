@@ -260,6 +260,17 @@ update_manifest <- function(file,
     stop("Invalid manifest: 'datasets' field must be a list.")
   }
 
+  # A registered version (or its schema sidecar) is another entry's data. A
+  # caller that wrote one under this name, such as an analysis set named
+  # built_20261008, has already replaced it, and recording it would hide that.
+  owner <- Filter(function(d) entry$file %in% .recorded_version_names(list(d)), manifest$datasets)
+  if (length(owner)) {
+    stop("update_manifest(): ", entry$file, " is a registered version of ", owner[[1L]]$file,
+         ", so it cannot be recorded as a file of its own. Nothing was written. If something has just written ",
+         "to it, the registered data were replaced: restore ", entry$file, " from backup, tell the study's ",
+         "data manager, and give the new file another name.", call. = FALSE)
+  }
+
   existing <- vapply(
     manifest$datasets,
     function(d) identical(d$file, entry$file),
