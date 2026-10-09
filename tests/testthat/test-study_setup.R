@@ -237,3 +237,103 @@ test_that("study_setup rejects an abbreviated identity source", {
   )
   expect_false(dir.exists(root))
 })
+
+test_that("study_setup sets up the working directory when root is omitted", {
+  root <- file.path(withr::local_tempdir(), "here-study")
+  dir.create(root)
+  withr::local_dir(root)
+
+  suppressMessages(study_setup(study = "Here", study_tracker_id = 42L))
+
+  expect_true(file.exists(file.path(root, "_study.yml")))
+  expect_true(dir.exists(file.path(root, "00_datasets")))
+})
+
+test_that("an omitted root resolves to the enclosing study, not a nested one", {
+  root <- file.path(withr::local_tempdir(), "outer")
+  suppressMessages(study_setup(root, "Outer", 42L))
+  withr::local_dir(file.path(root, "30_analyses"))
+  local_mocked_bindings(.study_interactive = function() FALSE)
+
+  expect_error(study_setup(study = "Outer", study_tracker_id = 42L), "adopt = TRUE")
+  expect_false(file.exists(file.path(root, "30_analyses", "_study.yml")))
+
+  suppressMessages(study_setup(study = "Outer", study_tracker_id = 42L, adopt = TRUE))
+  expect_false(file.exists(file.path(root, "30_analyses", "_study.yml")))
+})
+
+test_that("an omitted root outside any study still refuses a folder with files", {
+  root <- file.path(withr::local_tempdir(), "busy")
+  dir.create(root)
+  writeLines("x", file.path(root, "notes.txt"))
+  withr::local_dir(root)
+
+  expect_error(study_setup(study = "Busy", study_tracker_id = 42L), "adopt = TRUE")
+  expect_false(file.exists(file.path(root, "_study.yml")))
+})
+
+test_that("a malformed _study.yml above the working directory is not taken as no study", {
+  root <- file.path(withr::local_tempdir(), "broken")
+  dir.create(file.path(root, "sub"), recursive = TRUE)
+  writeLines("study: [unclosed", file.path(root, "_study.yml"))
+  withr::local_dir(file.path(root, "sub"))
+
+  expect_error(study_setup(study = "Broken", study_tracker_id = 42L), "Parser error")
+  expect_false(file.exists(file.path(root, "sub", "_study.yml")))
+})
+
+test_that("study_setup asks before adopting an existing study when interactive", {
+  root <- file.path(withr::local_tempdir(), "asked")
+  suppressMessages(study_setup(root, "Asked", 42L))
+  file.remove(file.path(root, ".renvignore"))
+  before <- readLines(file.path(root, "_study.yml"))
+  asked <- character(0)
+  local_mocked_bindings(
+    .study_interactive = function() TRUE,
+    .study_ask_adopt = function(root) {
+      asked <<- c(asked, root)
+      TRUE
+    }
+  )
+
+  suppressMessages(study_setup(root, "Asked", 42L))
+
+  expect_length(asked, 1L)
+  expect_true(file.exists(file.path(root, ".renvignore")))
+  expect_identical(readLines(file.path(root, "_study.yml")), before)
+})
+
+test_that("declining the adopt prompt stops without writing", {
+  root <- file.path(withr::local_tempdir(), "declined")
+  suppressMessages(study_setup(root, "Declined", 42L))
+  file.remove(file.path(root, ".renvignore"))
+  local_mocked_bindings(
+    .study_interactive = function() TRUE,
+    .study_ask_adopt = function(root) FALSE
+  )
+
+  expect_error(study_setup(root, "Declined", 42L), "adopt = TRUE")
+  expect_false(file.exists(file.path(root, ".renvignore")))
+})
+
+test_that("study_setup does not ask when the existing study has another Tracker ID", {
+  root <- file.path(withr::local_tempdir(), "other-id")
+  suppressMessages(study_setup(root, "Other", 42L))
+  local_mocked_bindings(
+    .study_interactive = function() TRUE,
+    .study_ask_adopt = function(root) stop("should not ask")
+  )
+
+  expect_error(study_setup(root, "Other", 43L), "already exists for Study Tracker ID 42")
+})
+
+test_that("study_setup does not ask when not interactive", {
+  root <- file.path(withr::local_tempdir(), "batch")
+  suppressMessages(study_setup(root, "Batch", 42L))
+  local_mocked_bindings(
+    .study_interactive = function() FALSE,
+    .study_ask_adopt = function(root) stop("should not ask")
+  )
+
+  expect_error(study_setup(root, "Batch", 42L), "adopt = TRUE")
+})

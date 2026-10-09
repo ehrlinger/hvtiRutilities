@@ -5,7 +5,7 @@
 \title{Set up study identity and directories}
 \usage{
 study_setup(
-  root,
+  root = NULL,
   study,
   study_tracker_id,
   umbrella = NULL,
@@ -18,7 +18,11 @@ study_setup(
 )
 }
 \arguments{
-\item{root}{Character. Study root to create or adopt.}
+\item{root}{Character. Study root to create or adopt. When omitted, the
+study enclosing the working directory (found as \code{\link{study_root}}
+finds it) is used, or the working directory itself when no
+\code{_study.yml} lies above it. An empty working directory is set up as a
+new study.}
 
 \item{study}{Character(1). Study title.}
 
@@ -28,7 +32,10 @@ study_setup(
 
 \item{study_creation_date}{Optional Study Tracker creation date.}
 
-\item{adopt}{Logical. Permit additive setup in an existing root.}
+\item{adopt}{Logical. Permit additive setup in an existing root. When the
+root already holds a \code{_study.yml} for the same Study Tracker ID and
+the session is interactive, \code{study_setup()} asks whether to adopt it
+instead of stopping.}
 
 \item{identity_source}{Character(1). Where the identity values came
 from: \code{"tracker"} (the default), for a Study Tracker record, or

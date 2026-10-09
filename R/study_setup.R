@@ -58,6 +58,29 @@
   x
 }
 
+# The root study_setup() uses when none is given: the study enclosing the
+# working directory, or the working directory itself when there is none. Only
+# a missing _study.yml means "no study here"; any other study_config() error,
+# such as a malformed _study.yml above, is passed on.
+.study_setup_root <- function(start = getwd()) {
+  tryCatch(
+    study_config(start, require_data = FALSE)$root,
+    error = function(e) {
+      if (!grepl("no _study.yml found", conditionMessage(e), fixed = TRUE)) stop(e)
+      normalizePath(start, mustWork = TRUE)
+    }
+  )
+}
+
+# Wrapped so tests can stand in for an interactive session.
+.study_interactive <- function() interactive()
+
+.study_ask_adopt <- function(root) {
+  utils::askYesNo(paste0(root, " already has a _study.yml for this study. ",
+                         "Adopt it, adding only what is missing?"),
+                  default = FALSE)
+}
+
 #' Set up study identity and directories
 #'
 #' @description
@@ -74,12 +97,19 @@
 #' \code{\link{study_root}} agree on the study root. An existing project is
 #' left unchanged.
 #'
-#' @param root Character. Study root to create or adopt.
+#' @param root Character. Study root to create or adopt. When omitted, the
+#'   study enclosing the working directory (found as \code{\link{study_root}}
+#'   finds it) is used, or the working directory itself when no
+#'   \code{_study.yml} lies above it. An empty working directory is set up as a
+#'   new study.
 #' @param study Character(1). Study title.
 #' @param study_tracker_id Integer(1). Study Tracker topic ID.
 #' @param umbrella,owner,irb_number,cvir_no Optional identity values.
 #' @param study_creation_date Optional Study Tracker creation date.
-#' @param adopt Logical. Permit additive setup in an existing root.
+#' @param adopt Logical. Permit additive setup in an existing root. When the
+#'   root already holds a \code{_study.yml} for the same Study Tracker ID and
+#'   the session is interactive, \code{study_setup()} asks whether to adopt it
+#'   instead of stopping.
 #' @param identity_source Character(1). Where the identity values came
 #'   from: \code{"tracker"} (the default), for a Study Tracker record, or
 #'   \code{"manual"}, for values typed by hand while the Tracker was
@@ -95,7 +125,7 @@
 #'   \code{\link{study_dir}}
 #'
 #' @export
-study_setup <- function(root, study, study_tracker_id,
+study_setup <- function(root = NULL, study, study_tracker_id,
                         umbrella = NULL, owner = NULL,
                         irb_number = NULL, cvir_no = NULL,
                         study_creation_date = NULL, adopt = FALSE,
@@ -109,7 +139,8 @@ study_setup <- function(root, study, study_tracker_id,
     stop("study_setup(): identity_source must be \"tracker\" or ",
          "\"manual\"", call. = FALSE)
   }
-  root <- .study_scalar(root, "root", required = TRUE)
+  inferred <- is.null(root)
+  root <- if (inferred) .study_setup_root() else .study_scalar(root, "root", required = TRUE)
   study <- .study_scalar(study, "study", required = TRUE)
   tracker <- suppressWarnings(as.integer(study_tracker_id))
   if (length(tracker) != 1L || is.na(tracker) || tracker < 1L ||
@@ -142,16 +173,18 @@ study_setup <- function(root, study, study_tracker_id,
   } else {
     character(0)
   }
-  if (existed && length(entries) && !adopt) {
+  yml <- file.path(root, "_study.yml")
+  identity_exists <- file.exists(yml)
+  if (existed && length(entries) && !adopt && !identity_exists) {
     stop("study_setup(): root already contains files; use adopt = TRUE",
          call. = FALSE)
   }
-  if (existed && !length(entries) && !adopt) {
+  # An empty working directory the caller is standing in is the study they
+  # mean to create; an empty root named explicitly still needs adopt = TRUE.
+  if (existed && !length(entries) && !adopt && !inferred) {
     stop("study_setup(): root already exists; use adopt = TRUE",
          call. = FALSE)
   }
-  yml <- file.path(root, "_study.yml")
-  identity_exists <- file.exists(yml)
   if (identity_exists) {
     existing <- yaml::read_yaml(yml)
     existing_tracker <- suppressWarnings(
@@ -165,6 +198,11 @@ study_setup <- function(root, study, study_tracker_id,
       stop("study_setup(): _study.yml already exists for Study Tracker ID ",
            existing_tracker, call. = FALSE)
     }
+    if (!adopt && !(.study_interactive() && isTRUE(.study_ask_adopt(root)))) {
+      stop("study_setup(): ", root, " is already set up as a study; use adopt = TRUE ",
+           "to fill in what it is missing", call. = FALSE)
+    }
+    adopt <- TRUE
   }
 
   layout <- if (!existed || !length(entries)) {
