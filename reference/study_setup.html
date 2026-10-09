@@ -90,7 +90,7 @@ left unchanged.</p>
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">study_setup</span><span class="op">(</span></span>
-<span>  <span class="va">root</span>,</span>
+<span>  root <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">study</span>,</span>
 <span>  <span class="va">study_tracker_id</span>,</span>
 <span>  umbrella <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -108,7 +108,11 @@ left unchanged.</p>
 
 
 <dl><dt id="arg-root">root<a class="anchor" aria-label="anchor" href="#arg-root"></a></dt>
-<dd><p>Character. Study root to create or adopt.</p></dd>
+<dd><p>Character. Study root to create or adopt. When omitted, the
+study enclosing the working directory (found as <code><a href="study_root.html">study_root</a></code>
+finds it) is used, or the working directory itself when no
+<code>_study.yml</code> lies above it. An empty working directory is set up as a
+new study.</p></dd>
 
 
 <dt id="arg-study">study<a class="anchor" aria-label="anchor" href="#arg-study"></a></dt>
@@ -128,7 +132,10 @@ left unchanged.</p>
 
 
 <dt id="arg-adopt">adopt<a class="anchor" aria-label="anchor" href="#arg-adopt"></a></dt>
-<dd><p>Logical. Permit additive setup in an existing root.</p></dd>
+<dd><p>Logical. Permit additive setup in an existing root. When the
+root already holds a <code>_study.yml</code> for the same Study Tracker ID and
+the session is interactive, <code>study_setup()</code> asks whether to adopt it
+instead of stopping.</p></dd>
 
 
 <dt id="arg-identity-source">identity_source<a class="anchor" aria-label="anchor" href="#arg-identity-source"></a></dt>

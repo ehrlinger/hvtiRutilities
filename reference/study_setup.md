@@ -18,7 +18,7 @@ agree on the study root. An existing project is left unchanged.
 
 ``` r
 study_setup(
-  root,
+  root = NULL,
   study,
   study_tracker_id,
   umbrella = NULL,
@@ -35,7 +35,12 @@ study_setup(
 
 - root:
 
-  Character. Study root to create or adopt.
+  Character. Study root to create or adopt. When omitted, the study
+  enclosing the working directory (found as
+  [`study_root`](https://ehrlinger.github.io/hvtiRutilities/reference/study_root.md)
+  finds it) is used, or the working directory itself when no
+  `_study.yml` lies above it. An empty working directory is set up as a
+  new study.
 
 - study:
 
@@ -55,7 +60,10 @@ study_setup(
 
 - adopt:
 
-  Logical. Permit additive setup in an existing root.
+  Logical. Permit additive setup in an existing root. When the root
+  already holds a `_study.yml` for the same Study Tracker ID and the
+  session is interactive, `study_setup()` asks whether to adopt it
+  instead of stopping.
 
 - identity_source:
 

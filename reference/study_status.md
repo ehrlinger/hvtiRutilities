@@ -99,7 +99,7 @@ dataset, and by the `checkpoints` and `closure` rows when they apply.
 root <- file.path(tempdir(), "study-status-example")
 dir.create(root, showWarnings = FALSE)
 study_status(root)
-#> Study: /tmp/RtmpCCjAF3/study-status-example
+#> Study: /tmp/Rtmp0b6qh1/study-status-example
 #> 
 #> [ ] _study.yml — no _study.yml at this root; recovery may be available with study-setup --recover; if its Tracker ID cannot be inferred, run study-setup 42 --recover
 #> [ ] renv.lock — no renv.lock; run renv::init() in the study project
