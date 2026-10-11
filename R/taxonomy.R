@@ -140,7 +140,7 @@ hvti_taxonomy <- function() {
     c("si",    "Single imputation",         "datasets",      "mean imputation of missing covariates; one completed dataset"),
     c("mi",    "Multiple imputation",       "datasets",      "m completed datasets for pooled analysis; not a variant of si"),
     c("dc",    "Descriptive",               "descriptive",   "Table 1s, covariate summaries, balance tables"),
-    c("lg",    "Logit trends",              "descriptive",   "variable transformation and linearity checks"),
+    c("lg",    "Logit calibration",         "descriptive",   "variable transformation and linearity checks"),
     c("rg",    "Regression trends",         "descriptive",   "trend checks for continuous and polytomous outcomes"),
     c("ac",    "Actuarial",                 "distributions", "Kaplan-Meier / non-parametric life table"),
     c("hz",    "Hazard fit",                "distributions", "fits the underlying hazard distribution"),
