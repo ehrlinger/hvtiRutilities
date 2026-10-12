@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,6 +55,13 @@
       <small>Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.5.2" id="hvtirutilities-152">hvtiRutilities 1.5.2<a class="anchor" aria-label="anchor" href="#hvtirutilities-152"></a></h2>
+<ul><li><p><code><a href="../reference/study_setup.html">study_setup()</a></code> no longer needs <code>root</code>. When it is omitted, the study that encloses the working directory is used, as <code><a href="../reference/study_root.html">study_root()</a></code> finds it, or the working directory itself when no <code>_study.yml</code> lies above it; an empty working directory is set up as a new study. Run from a subfolder of an existing study, it therefore works on that study rather than creating one nested inside it. When the root already holds a <code>_study.yml</code> for the same Study Tracker ID, an interactive session is asked whether to adopt it instead of stopping with “use adopt = TRUE”; a batch session still stops, and a folder with other files but no <code>_study.yml</code> still needs <code>adopt = TRUE</code>.</p></li>
+<li><p><code><a href="../reference/hvti_taxonomy.html">hvti_taxonomy()</a></code> names the <code>lg</code> prefix “Logit calibration”, not “Logit trends”. The description, “variable transformation and linearity checks”, is unchanged: a survey of 847 SAS <code>lg</code> jobs found 97% calibrate a covariate against an event to choose its scale, and only a dozen model a calendar-year trend.</p></li>
+<li><p><code><a href="../reference/hvti_taxonomy.html">hvti_taxonomy()</a></code> describes <code>nd</code> as a non-linear mixed model of a repeated measure over temporal phases, and <code>np</code> as the figures of an <code>nd</code> fit (average curve, bootstrap bands, observed means). The old text, “distribution estimates stratified by group” and “non-linear distribution figures”, matched none of the 243 <code>nd</code> and 234 <code>np</code> studies a survey of the corpus read.</p></li>
+<li><p><code><a href="../reference/study_setup.html">study_setup()</a></code> gains <code>cleanup</code>, <code>renv</code> and <code>template_dir</code>, so one call, <code>study_setup(..., adopt = TRUE, cleanup = TRUE, renv = TRUE)</code>, leaves a legacy study ready to work in. <code>cleanup = TRUE</code> deletes the template copies a study was given when it was created: every <code>tp.*</code> file, every <code>binder.summaries.doc</code>, and every other file whose name and exact content match the template corpus at <code>template_dir</code> (default <code>/programs/development/template</code>). A study’s own file that shares a name with a corpus file but differs from it is kept, as are <code>.renvignore</code> and <code>.gitignore</code>, and folders the deletions leave empty are removed. Folders named <code>.git</code>, <code>.checkpoint</code> or <code>renv</code> are never entered, symbolic links are never followed or deleted, and a root that overlaps <code>template_dir</code> is refused. No backup is made; the corpus is the backup. <code>renv = TRUE</code> then initializes and snapshots the study’s renv environment in a separate R process, loading the study’s project explicitly; a complete, valid environment is kept and one interrupted after initialization is resumed. Both default to <code>FALSE</code>, so existing calls behave as before.</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.5.1" id="hvtirutilities-151">hvtiRutilities 1.5.1<a class="anchor" aria-label="anchor" href="#hvtirutilities-151"></a></h2>
 <div class="section level3">

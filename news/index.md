@@ -1,5 +1,54 @@
 # Changelog
 
+## hvtiRutilities 1.5.2
+
+- [`study_setup()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md)
+  no longer needs `root`. When it is omitted, the study that encloses
+  the working directory is used, as
+  [`study_root()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_root.md)
+  finds it, or the working directory itself when no `_study.yml` lies
+  above it; an empty working directory is set up as a new study. Run
+  from a subfolder of an existing study, it therefore works on that
+  study rather than creating one nested inside it. When the root already
+  holds a `_study.yml` for the same Study Tracker ID, an interactive
+  session is asked whether to adopt it instead of stopping with “use
+  adopt = TRUE”; a batch session still stops, and a folder with other
+  files but no `_study.yml` still needs `adopt = TRUE`.
+
+- [`hvti_taxonomy()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_taxonomy.md)
+  names the `lg` prefix “Logit calibration”, not “Logit trends”. The
+  description, “variable transformation and linearity checks”, is
+  unchanged: a survey of 847 SAS `lg` jobs found 97% calibrate a
+  covariate against an event to choose its scale, and only a dozen model
+  a calendar-year trend.
+
+- [`hvti_taxonomy()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_taxonomy.md)
+  describes `nd` as a non-linear mixed model of a repeated measure over
+  temporal phases, and `np` as the figures of an `nd` fit (average
+  curve, bootstrap bands, observed means). The old text, “distribution
+  estimates stratified by group” and “non-linear distribution figures”,
+  matched none of the 243 `nd` and 234 `np` studies a survey of the
+  corpus read.
+
+- [`study_setup()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md)
+  gains `cleanup`, `renv` and `template_dir`, so one call,
+  `study_setup(..., adopt = TRUE, cleanup = TRUE, renv = TRUE)`, leaves
+  a legacy study ready to work in. `cleanup = TRUE` deletes the template
+  copies a study was given when it was created: every `tp.*` file, every
+  `binder.summaries.doc`, and every other file whose name and exact
+  content match the template corpus at `template_dir` (default
+  `/programs/development/template`). A study’s own file that shares a
+  name with a corpus file but differs from it is kept, as are
+  `.renvignore` and `.gitignore`, and folders the deletions leave empty
+  are removed. Folders named `.git`, `.checkpoint` or `renv` are never
+  entered, symbolic links are never followed or deleted, and a root that
+  overlaps `template_dir` is refused. No backup is made; the corpus is
+  the backup. `renv = TRUE` then initializes and snapshots the study’s
+  renv environment in a separate R process, loading the study’s project
+  explicitly; a complete, valid environment is kept and one interrupted
+  after initialization is resumed. Both default to `FALSE`, so existing
+  calls behave as before.
+
 ## hvtiRutilities 1.5.1
 
 ### New features
