@@ -440,7 +440,7 @@ study_setup <- function(root = NULL, study, study_tracker_id,
          call. = FALSE)
   }
   if (identity_exists) {
-    existing <- yaml::read_yaml(yml)
+    existing <- .read_study_yml(yml, "study_setup")
     existing_tracker <- suppressWarnings(
       as.integer(existing$study_tracker_id)
     )

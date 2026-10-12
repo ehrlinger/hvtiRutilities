@@ -208,7 +208,7 @@ register_data <- function(root = getwd(), built, dataset = "study",
   }
 
   cfg <- study_config(root, require_data = FALSE)
-  raw <- yaml::read_yaml(cfg$file)
+  raw <- .read_study_yml(cfg$file, "register_data")
   existing <- if (role == "study" && !is.null(raw$built)) {
     list(
       built = raw$built,

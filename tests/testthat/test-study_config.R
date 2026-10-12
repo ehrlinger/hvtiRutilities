@@ -190,3 +190,50 @@ test_that("legacy study contracts remain release-unaware", {
   expect_null(cfg$release)
   expect_null(.study_dataset(cfg)$release)
 })
+
+# _study.yml that is not valid YAML (#213) -------------------------------------
+
+write_bad_study_yml <- function(root) {
+  # A hand-edited title with an unquoted ": " reads as a nested mapping.
+  writeLines(c("study: Grafting in non-isolated CABG: Was it the bottleneck?",
+               "study_tracker_id: 1387"), file.path(root, "_study.yml"))
+}
+
+test_that("study_config() names the cause when _study.yml is not valid YAML", {
+  root <- withr::local_tempdir()
+  write_bad_study_yml(root)
+
+  err <- expect_error(study_config(root, require_data = FALSE), class = "error")
+  msg <- conditionMessage(err)
+  expect_match(msg, "^study_config\\(\\): .*_study\\.yml is not valid YAML \\(line 1, column")
+  expect_match(msg, "must be quoted", fixed = TRUE)
+  expect_match(msg, "mapping values are not allowed", fixed = TRUE)
+})
+
+test_that("study_setup() names the cause when an existing _study.yml is not valid YAML", {
+  root <- withr::local_tempdir()
+  write_bad_study_yml(root)
+
+  expect_error(
+    study_setup(root, "Grafting", 1387L, adopt = TRUE),
+    "^study_setup\\(\\): .*_study\\.yml is not valid YAML \\(line 1, column"
+  )
+  expect_identical(readLines(file.path(root, "_study.yml"))[2], "study_tracker_id: 1387")
+})
+
+test_that("a quoted title with \": \" still reads", {
+  root <- withr::local_tempdir()
+  writeLines(c("study: 'Grafting in non-isolated CABG: Was it the bottleneck?'",
+               "study_tracker_id: 1387"), file.path(root, "_study.yml"))
+
+  cfg <- study_config(root, require_data = FALSE)
+  expect_identical(cfg$study, "Grafting in non-isolated CABG: Was it the bottleneck?")
+})
+
+test_that("the checkpoint reader names the cause when _study.yml is not valid YAML", {
+  root <- withr::local_tempdir()
+  write_bad_study_yml(root)
+
+  expect_error(.cp_study(root, "study_checkpoint"),
+               "^study_checkpoint\\(\\): .*_study\\.yml is not valid YAML")
+})
