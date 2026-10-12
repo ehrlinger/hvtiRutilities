@@ -95,7 +95,7 @@
   tolower(name) %in% c(".ds_store", "thumbs.db", "desktop.ini") || startsWith(name, "._")
 }
 
-# The template corpus (the folder studies were copied from, minus its .git):
+# The template corpus (the folder studies were copied from, minus any .git):
 # name, size and MD5 of every file other than tp.* (deleted by name alone),
 # desktop litter, and the .renvignore and .gitignore study_setup() relies on.
 .study_template_index <- function(template_dir) {
@@ -104,7 +104,7 @@
          "; pass template_dir", call. = FALSE)
   }
   rel <- list.files(template_dir, recursive = TRUE, all.files = TRUE, no.. = TRUE)
-  rel <- rel[!startsWith(rel, ".git/")]
+  rel <- rel[!vapply(strsplit(rel, "/", fixed = TRUE), function(p) ".git" %in% p, logical(1))]
   name <- basename(rel)
   keep <- !startsWith(name, "tp.") & !vapply(name, .study_litter, logical(1)) &
     !name %in% c(".renvignore", ".gitignore")
@@ -119,12 +119,35 @@
   nrow(same) > 0L && unname(tools::md5sum(full)) %in% same$md5
 }
 
+# The real path of a file or folder that may not exist yet: the nearest
+# existing ancestor resolved, the rest appended.
+.study_real_path <- function(path) {
+  path <- normalizePath(path, winslash = "/", mustWork = FALSE)
+  tail <- character(0)
+  while (!file.exists(path) && dirname(path) != path) {
+    tail <- c(basename(path), tail)
+    path <- dirname(path)
+  }
+  do.call(file.path, as.list(c(normalizePath(path, winslash = "/"), tail)))
+}
+
+# TRUE when one path is the other or lies inside it.
+.study_paths_overlap <- function(a, b) {
+  a <- .study_real_path(a)
+  b <- .study_real_path(b)
+  identical(a, b) || startsWith(a, paste0(b, "/")) || startsWith(b, paste0(a, "/"))
+}
+
 # unlink(), as a seam the tests can blank to stand in for a permission failure.
 .study_unlink <- function(paths, recursive = FALSE) unlink(paths, recursive = recursive)
 
+# Folders cleanup never enters or removes, at any depth: version control,
+# checkpoint state and renv libraries.
+.study_protected <- function(name) name %in% c(".git", ".checkpoint", "renv")
+
 # Relative paths of the template files to delete and the folders to check
-# afterwards. Symbolic links are never followed or deleted; version control,
-# checkpoint state and the renv library are never entered.
+# afterwards. Symbolic links are never followed or deleted, and protected
+# folders are never entered.
 .study_cleanup_scan <- function(root, index, rel = character(0)) {
   dir <- if (length(rel)) file.path(root, rel) else root
   found <- list(files = character(0), folders = character(0))
@@ -133,7 +156,7 @@
     full <- file.path(root, child)
     if (nzchar(Sys.readlink(full))) next
     if (dir.exists(full)) {
-      if (name == ".git" || (!length(rel) && name %in% c(".checkpoint", "renv"))) next
+      if (.study_protected(name)) next
       inner <- .study_cleanup_scan(root, index, child)
       found$files <- c(found$files, inner$files)
       found$folders <- c(found$folders, inner$folders,
@@ -157,8 +180,9 @@
   # A folder the deletions emptied goes (Old-Rplots, tp_ggplot, archive, by
   # whatever name), and so does an empty templates or old_RF_templates folder;
   # a top-level study folder never does. Deepest first, so a parent emptied by
-  # removing its children goes too. A folder goes only when nothing but
-  # desktop litter is left in it.
+  # removing its children goes too. A folder goes only when its own entries
+  # are desktop litter files: any folder left in it (one the cleanup did not
+  # empty, a protected one) or any symbolic link keeps it.
   held <- unique(unlist(lapply(dirname(found$files), function(d) {
     parts <- strsplit(d, "/", fixed = TRUE)[[1]]
     vapply(seq_along(parts), function(i) paste(parts[seq_len(i)], collapse = "/"),
@@ -171,8 +195,12 @@
   for (folder in folders) {
     full <- file.path(root, folder)
     if (!dir.exists(full)) next
-    rest <- list.files(full, recursive = TRUE, all.files = TRUE, no.. = TRUE)
-    if (all(vapply(basename(rest), .study_litter, logical(1)))) {
+    entries <- list.files(full, all.files = TRUE, no.. = TRUE)
+    litter_only <- all(vapply(entries, function(name) {
+      entry <- file.path(full, name)
+      .study_litter(name) && !nzchar(Sys.readlink(entry)) && !dir.exists(entry)
+    }, logical(1)))
+    if (litter_only) {
       .study_unlink(full, recursive = TRUE)
       if (dir.exists(full)) {
         stop("study_setup(): cleanup could not remove folder ", folder, call. = FALSE)
@@ -197,21 +225,37 @@
   list(status = if (is.null(status)) 0L else status, output = paste(out, collapse = "\n"))
 }
 
+# Which of the three pieces of a renv environment are present and sound: a
+# renv/ folder holding activate.R, a .Rprofile that sources it, and a
+# renv.lock that parses as a lockfile. A path that merely exists is not enough.
+.study_renv_parts <- function(root) {
+  lock <- file.path(root, "renv.lock")
+  profile <- file.path(root, ".Rprofile")
+  lock_ok <- !dir.exists(lock) && file.exists(lock) && isTRUE(tryCatch(
+    is.list(jsonlite::read_json(lock)$R), error = function(e) FALSE
+  ))
+  profile_ok <- !dir.exists(profile) && file.exists(profile) &&
+    any(grepl('source("renv/activate.R")', readLines(profile, warn = FALSE), fixed = TRUE))
+  c(renv = file.exists(file.path(root, "renv", "activate.R")),
+    .Rprofile = profile_ok, renv.lock = lock_ok)
+}
+
 # The study-setup command's renv step (qhsprograms study_setup/workflow.py):
 # keep a complete environment, resume one interrupted after init, refuse any
 # other partial one, otherwise init bare and snapshot.
 .study_init_renv <- function(root) {
-  core <- c("renv.lock", "renv", ".Rprofile")
+  core <- c("renv", ".Rprofile", "renv.lock")
+  sound <- .study_renv_parts(root)
+  if (all(sound)) return("retained")
   present <- file.exists(file.path(root, core))
-  if (all(present)) return("retained")
-  resumable <- setequal(core[present], c("renv", ".Rprofile"))
+  resumable <- all(sound[c("renv", ".Rprofile")]) && !present[3L]
   if (any(present) && !resumable) {
-    stop("study_setup(): partial renv environment; found ",
-         paste(core[present], collapse = ", "), "; missing ",
-         paste(core[!present], collapse = ", "), call. = FALSE)
+    stop("study_setup(): partial renv environment; sound: ",
+         if (any(sound)) paste(core[sound], collapse = ", ") else "none",
+         "; missing or invalid: ", paste(core[!sound], collapse = ", "), call. = FALSE)
   }
-  run <- function(expr, flags, what) {
-    result <- .study_rscript(expr, root, flags)
+  run <- function(expr, what) {
+    result <- .study_rscript(expr, root, "--vanilla")
     if (result$status != 0L) {
       detail <- trimws(result$output)
       stop("study_setup(): ", what, " failed: ",
@@ -219,12 +263,15 @@
     }
   }
   if (!resumable) {
-    run("renv::init(bare = TRUE, restart = FALSE)", "--vanilla", "renv initialization")
+    run("renv::init(bare = TRUE, restart = FALSE)", "renv initialization")
   }
-  if (!file.exists(file.path(root, "renv.lock"))) {
-    run("renv::snapshot(prompt = FALSE)", "--no-site-file", "renv snapshot")
-  }
-  if (!all(file.exists(file.path(root, core)))) {
+  # Load and snapshot this project explicitly: a child that relied on its
+  # startup loading .Rprofile could run with no project and the global
+  # library, and snapshot the wrong thing.
+  project <- deparse(normalizePath(root, winslash = "/"))
+  run(paste0("renv::load(", project, "); renv::snapshot(project = ", project,
+             ", prompt = FALSE)"), "renv snapshot")
+  if (!all(.study_renv_parts(root))) {
     stop("study_setup(): renv initialization finished without a complete environment",
          call. = FALSE)
   }
@@ -255,19 +302,25 @@
 #' corpus file but differs from it (an edited \code{references.bib}, say) is
 #' kept, as are \code{.renvignore} and \code{.gitignore}. These files are
 #' copied in when a study is created, months before any analysis, and the
-#' corpus they came from is kept centrally, so no backup is made. A folder the deletions leave holding nothing (desktop litter
-#' such as \code{Thumbs.db} aside) is removed, whatever its name, as is an empty
+#' corpus they came from is kept centrally, so no backup is made. A folder
+#' the deletions leave holding nothing (desktop litter such as
+#' \code{Thumbs.db} aside) is removed, whatever its name, as is an empty
 #' \code{templates} or \code{old_RF_templates*} folder; a folder still holding
-#' other files stays, and a top-level study folder is never removed. Symbolic links are not followed, and
-#' \code{.git}, \code{.checkpoint} and the \code{renv} library are not
-#' entered. A file that cannot be deleted stops the setup with an error.
+#' other files stays, as does one holding any folder the cleanup did not
+#' empty, and a top-level study folder is never removed. Symbolic links are
+#' neither followed nor deleted, and folders named \code{.git},
+#' \code{.checkpoint} or \code{renv} are never entered, at any depth. The
+#' root and \code{template_dir} must not overlap. A file that cannot be
+#' deleted stops the setup with an error.
 #'
 #' With \code{renv = TRUE}, the study's \code{renv} environment is set up
-#' after any cleanup, in a separate R process: a complete environment
-#' (\code{renv.lock}, \code{renv/} and \code{.Rprofile}) is kept, one
-#' interrupted after initialization is resumed at the snapshot, any other
-#' partial environment stops with an error, and otherwise
-#' \code{renv::init(bare = TRUE)} and \code{renv::snapshot()} create it. The
+#' after any cleanup, in a separate R process. A complete environment is
+#' kept: a \code{renv/} folder holding \code{activate.R}, a \code{.Rprofile}
+#' that sources it, and a \code{renv.lock} that parses as a lockfile. One
+#' interrupted after initialization (no lockfile yet) is resumed at the
+#' snapshot; any other partial or invalid environment stops with an error.
+#' Otherwise \code{renv::init(bare = TRUE)} creates it, and the project is
+#' loaded and snapshotted explicitly. The
 #' renv package must be installed.
 #'
 #' @param root Character. Study root to create or adopt. When omitted, the
@@ -356,6 +409,10 @@ study_setup <- function(root = NULL, study, study_tracker_id,
     if (!dir.exists(template_dir)) {
       stop("study_setup(): template corpus not found at ", template_dir,
            "; pass template_dir", call. = FALSE)
+    }
+    if (.study_paths_overlap(root, template_dir)) {
+      stop("study_setup(): the study root and template_dir overlap; cleanup would ",
+           "delete the corpus or the study", call. = FALSE)
     }
   }
 

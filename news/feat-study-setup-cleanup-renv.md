@@ -6,8 +6,11 @@
   match the template corpus at `template_dir` (default
   `/programs/development/template`). A study's own file that shares a name
   with a corpus file but differs from it is kept, as are `.renvignore` and
-  `.gitignore`, and folders the deletions leave empty are removed. No backup
-  is made; the corpus is the backup. `renv = TRUE` then initializes and
-  snapshots the study's renv environment in a separate R process, keeping a
-  complete environment and resuming one interrupted after initialization.
+  `.gitignore`, and folders the deletions leave empty are removed. Folders
+  named `.git`, `.checkpoint` or `renv` are never entered, symbolic links are
+  never followed or deleted, and a root that overlaps `template_dir` is
+  refused. No backup is made; the corpus is the backup. `renv = TRUE` then initializes and
+  snapshots the study's renv environment in a separate R process, loading
+  the study's project explicitly; a complete, valid environment is kept and
+  one interrupted after initialization is resumed.
   Both default to `FALSE`, so existing calls behave as before.

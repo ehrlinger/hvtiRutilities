@@ -89,19 +89,25 @@ corpus at \code{template_dir}. A study's own file that shares a name with a
 corpus file but differs from it (an edited \code{references.bib}, say) is
 kept, as are \code{.renvignore} and \code{.gitignore}. These files are
 copied in when a study is created, months before any analysis, and the
-corpus they came from is kept centrally, so no backup is made. A folder the deletions leave holding nothing (desktop litter
-such as \code{Thumbs.db} aside) is removed, whatever its name, as is an empty
+corpus they came from is kept centrally, so no backup is made. A folder
+the deletions leave holding nothing (desktop litter such as
+\code{Thumbs.db} aside) is removed, whatever its name, as is an empty
 \code{templates} or \code{old_RF_templates*} folder; a folder still holding
-other files stays, and a top-level study folder is never removed. Symbolic links are not followed, and
-\code{.git}, \code{.checkpoint} and the \code{renv} library are not
-entered. A file that cannot be deleted stops the setup with an error.
+other files stays, as does one holding any folder the cleanup did not
+empty, and a top-level study folder is never removed. Symbolic links are
+neither followed nor deleted, and folders named \code{.git},
+\code{.checkpoint} or \code{renv} are never entered, at any depth. The
+root and \code{template_dir} must not overlap. A file that cannot be
+deleted stops the setup with an error.
 
 With \code{renv = TRUE}, the study's \code{renv} environment is set up
-after any cleanup, in a separate R process: a complete environment
-(\code{renv.lock}, \code{renv/} and \code{.Rprofile}) is kept, one
-interrupted after initialization is resumed at the snapshot, any other
-partial environment stops with an error, and otherwise
-\code{renv::init(bare = TRUE)} and \code{renv::snapshot()} create it. The
+after any cleanup, in a separate R process. A complete environment is
+kept: a \code{renv/} folder holding \code{activate.R}, a \code{.Rprofile}
+that sources it, and a \code{renv.lock} that parses as a lockfile. One
+interrupted after initialization (no lockfile yet) is resumed at the
+snapshot; any other partial or invalid environment stops with an error.
+Otherwise \code{renv::init(bare = TRUE)} creates it, and the project is
+loaded and snapshotted explicitly. The
 renv package must be installed.
 }
 \seealso{

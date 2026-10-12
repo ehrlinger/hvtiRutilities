@@ -477,17 +477,31 @@ test_that("cleanup must be TRUE or FALSE", {
 
 # renv = TRUE -----------------------------------------------------------------
 
+write_renv_start <- function(root) {
+  dir.create(file.path(root, "renv"), showWarnings = FALSE)
+  writeLines("# activate", file.path(root, "renv", "activate.R"))
+  writeLines('source("renv/activate.R")', file.path(root, ".Rprofile"))
+}
+
+write_lock <- function(root) {
+  writeLines('{"R": {"Version": "4.6.0"}, "Packages": {}}', file.path(root, "renv.lock"))
+}
+
+snapshot_expr <- function(root) {
+  project <- deparse(normalizePath(root, winslash = "/"))
+  paste0("renv::load(", project, "); renv::snapshot(project = ", project, ", prompt = FALSE)")
+}
+
 fake_rscript <- function(calls, init_ok = TRUE, snapshot_ok = TRUE) {
   force(calls)
   function(expr, root, ...) {
     calls$exprs <- c(calls$exprs, expr)
     if (grepl("renv::init", expr, fixed = TRUE)) {
       if (!init_ok) return(list(status = 1L, output = "init exploded"))
-      dir.create(file.path(root, "renv"))
-      writeLines('source("renv/activate.R")', file.path(root, ".Rprofile"))
+      write_renv_start(root)
     } else {
       if (!snapshot_ok) return(list(status = 1L, output = "snapshot exploded"))
-      writeLines("{}", file.path(root, "renv.lock"))
+      write_lock(root)
     }
     list(status = 0L, output = "")
   }
@@ -508,7 +522,7 @@ test_that("renv = TRUE initializes a bare environment and snapshots it after cle
                         template_dir = local_corpus())
 
   expect_identical(calls$exprs, c("renv::init(bare = TRUE, restart = FALSE)",
-                                  "renv::snapshot(prompt = FALSE)"))
+                                  snapshot_expr(root)))
   expect_false(any(seen_tp))
   expect_identical(attr(status, "renv"), "initialized")
   expect_true(file.exists(file.path(root, "renv.lock")))
@@ -516,13 +530,12 @@ test_that("renv = TRUE initializes a bare environment and snapshots it after cle
 
 test_that("renv = TRUE keeps a complete environment and resumes an interrupted one", {
   root <- withr::local_tempdir()
-  for (p in c("renv")) dir.create(file.path(root, p))
-  writeLines("", file.path(root, ".Rprofile"))
+  write_renv_start(root)
   calls <- new.env()
   local_mocked_bindings(.study_rscript = fake_rscript(calls))
 
   status <- study_setup(root, "Legacy study", 42L, adopt = TRUE, renv = TRUE)
-  expect_identical(calls$exprs, "renv::snapshot(prompt = FALSE)")
+  expect_identical(calls$exprs, snapshot_expr(root))
   expect_identical(attr(status, "renv"), "initialized")
 
   calls$exprs <- NULL
@@ -533,13 +546,13 @@ test_that("renv = TRUE keeps a complete environment and resumes an interrupted o
 
 test_that("renv = TRUE stops on any other partial environment without running R", {
   root <- withr::local_tempdir()
-  writeLines("{}", file.path(root, "renv.lock"))
+  write_lock(root)
   calls <- new.env()
   local_mocked_bindings(.study_rscript = fake_rscript(calls))
 
   expect_error(
     study_setup(root, "Legacy study", 42L, adopt = TRUE, renv = TRUE),
-    "partial renv environment; found renv.lock; missing renv, .Rprofile"
+    "partial renv environment; sound: renv.lock; missing or invalid: renv, .Rprofile"
   )
   expect_null(calls$exprs)
 })
@@ -632,4 +645,125 @@ test_that("cleanup stops when the template corpus cannot be found", {
   )
   expect_true(file.exists(tp))
   expect_false(file.exists(file.path(root, "_study.yml")))
+})
+
+
+# Review of #211 ------------------------------------------------------------
+
+test_that("cleanup refuses a template_dir that overlaps the study, before writing", {
+  root <- withr::local_tempdir()
+  dir.create(file.path(root, "analyses"))
+  data <- write_file(root, "datasets/dataset.csv", "a,b")
+  inside <- file.path(root, "documents", "corpus")
+  dir.create(inside, recursive = TRUE)
+
+  for (corpus in c(root, inside, dirname(root))) {
+    expect_error(
+      study_setup(root, "Legacy study", 42L, adopt = TRUE, cleanup = TRUE, template_dir = corpus),
+      "overlap"
+    )
+  }
+  expect_true(file.exists(data))
+  expect_false(file.exists(file.path(root, "_study.yml")))
+})
+
+test_that("cleanup refuses an overlapping corpus for a root that does not exist yet", {
+  corpus <- withr::local_tempdir()
+  root <- file.path(corpus, "new", "study")
+  expect_error(
+    study_setup(root, "New study", 42L, cleanup = TRUE, template_dir = corpus),
+    "overlap"
+  )
+  expect_false(dir.exists(root))
+})
+
+test_that("cleanup never enters .checkpoint or renv folders at any depth", {
+  root <- withr::local_tempdir()
+  dir.create(file.path(root, "analyses"))
+  protected <- c("analyses/nested/.checkpoint/repo/tp.a.sas",
+                 "analyses/nested/renv/library/pkg/tp.b.R")
+  for (rel in protected) write_file(root, rel)
+
+  study_setup(root, "Legacy study", 42L, adopt = TRUE, cleanup = TRUE,
+              template_dir = local_corpus())
+
+  expect_true(all(file.exists(file.path(root, protected))))
+})
+
+test_that("cleanup keeps a folder holding a skipped symlink or an untouched empty folder", {
+  skip_on_os("windows")
+  root <- withr::local_tempdir()
+  dir.create(file.path(root, "analyses"))
+  outside <- withr::local_tempdir()
+  write_file(root, "analyses/work/tp.a.R")
+  file.symlink(outside, file.path(root, "analyses", "work", "link"))
+  write_file(root, "analyses/other/tp.b.R")
+  dir.create(file.path(root, "analyses", "other", "mine"))
+
+  status <- study_setup(root, "Legacy study", 42L, adopt = TRUE, cleanup = TRUE,
+                        template_dir = local_corpus())
+
+  expect_true(nzchar(Sys.readlink(file.path(root, "analyses", "work", "link"))))
+  expect_true(dir.exists(file.path(root, "analyses", "other", "mine")))
+  expect_length(attr(status, "cleanup")$removed_dirs, 0L)
+})
+
+test_that("a nested .git in the corpus is not template material", {
+  corpus <- withr::local_tempdir()
+  write_file(corpus, "graphs/templates/.git/config", "[core]")
+  root <- withr::local_tempdir()
+  dir.create(file.path(root, "analyses"))
+  config <- write_file(root, "analyses/config", "[core]")
+
+  study_setup(root, "Legacy study", 42L, adopt = TRUE, cleanup = TRUE, template_dir = corpus)
+
+  expect_true(file.exists(config))
+})
+
+test_that("renv = TRUE does not mistake mere paths for a complete environment", {
+  calls <- new.env()
+  local_mocked_bindings(.study_rscript = fake_rscript(calls))
+  cases <- list(
+    renv_file = function(root) {
+      writeLines("", file.path(root, "renv"))
+      writeLines('source("renv/activate.R")', file.path(root, ".Rprofile"))
+      write_lock(root)
+    },
+    empty_lock = function(root) {
+      write_renv_start(root)
+      file.create(file.path(root, "renv.lock"))
+    },
+    unrelated_profile = function(root) {
+      dir.create(file.path(root, "renv"))
+      writeLines("# activate", file.path(root, "renv", "activate.R"))
+      writeLines("options(digits = 4)", file.path(root, ".Rprofile"))
+      write_lock(root)
+    }
+  )
+  for (case in names(cases)) {
+    root <- withr::local_tempdir()
+    cases[[case]](root)
+    expect_error(study_setup(root, "Legacy study", 42L, adopt = TRUE, renv = TRUE),
+                 "partial renv environment", info = case)
+  }
+  expect_null(calls$exprs)
+})
+
+test_that("the real renv snapshot records the study's own library, not the caller's", {
+  skip_on_cran()
+  skip_if_not_installed("renv")
+  skip_if_not_installed("digest")
+  # A caller whose startup skips profiles hands the child no .Rprofile; the
+  # snapshot must still run in the study's project library, where digest is
+  # not installed, so the lockfile must not record it.
+  withr::local_envvar(R_PROFILE_USER = "", R_ENVIRON_USER = "")
+  root <- withr::local_tempdir()
+  write_file(root, "analyses/model.R", "library(digest)")
+
+  status <- study_setup(root, "Legacy study", 42L, adopt = TRUE, renv = TRUE)
+
+  expect_identical(attr(status, "renv"), "initialized")
+  lock <- jsonlite::read_json(file.path(root, "renv.lock"))
+  expect_false("digest" %in% names(lock$Packages))
+  expect_true(all(.study_renv_parts(root)))
 })
