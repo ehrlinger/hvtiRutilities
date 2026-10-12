@@ -8,7 +8,34 @@ the default or a named dataset exists.
 When the root holds no .Rproj file, one named for the root
 directory is written, so that opening the project and
 study_root agree on the study root. An existing project is
-left unchanged."><meta property="og:description" content="Creates the numbered directory structure for a new study and writes an
+left unchanged.
+With cleanup = TRUE, the template copies a legacy study carries are
+deleted before anything else reads the study, anywhere in it: every file
+whose name starts with tp., every binder.summaries.doc, and
+every other file whose name and exact content match a file in the template
+corpus at template_dir. A study's own file that shares a name with a
+corpus file but differs from it (an edited references.bib, say) is
+kept, as are .renvignore and .gitignore. These files are
+copied in when a study is created, months before any analysis, and the
+corpus they came from is kept centrally, so no backup is made. A folder
+the deletions leave holding nothing (desktop litter such as
+Thumbs.db aside) is removed, whatever its name, as is an empty
+templates or old_RF_templates* folder; a folder still holding
+other files stays, as does one holding any folder the cleanup did not
+empty, and a top-level study folder is never removed. Symbolic links are
+neither followed nor deleted, and folders named .git,
+.checkpoint or renv are never entered, at any depth. The
+root and template_dir must not overlap. A file that cannot be
+deleted stops the setup with an error.
+With renv = TRUE, the study's renv environment is set up
+after any cleanup, in a separate R process. A complete environment is
+kept: a renv/ folder holding activate.R, a .Rprofile
+that sources it, and a renv.lock that parses as a lockfile. One
+interrupted after initialization (no lockfile yet) is resumed at the
+snapshot; any other partial or invalid environment stops with an error.
+Otherwise renv::init(bare = TRUE) creates it, and the project is
+loaded and snapshotted explicitly. The
+renv package must be installed."><meta property="og:description" content="Creates the numbered directory structure for a new study and writes an
 identity-only _study.yml. With adopt = TRUE, an existing
 study keeps its legacy or numbered directory layout and every existing
 initialization file.
@@ -17,7 +44,34 @@ the default or a named dataset exists.
 When the root holds no .Rproj file, one named for the root
 directory is written, so that opening the project and
 study_root agree on the study root. An existing project is
-left unchanged."></head><body>
+left unchanged.
+With cleanup = TRUE, the template copies a legacy study carries are
+deleted before anything else reads the study, anywhere in it: every file
+whose name starts with tp., every binder.summaries.doc, and
+every other file whose name and exact content match a file in the template
+corpus at template_dir. A study's own file that shares a name with a
+corpus file but differs from it (an edited references.bib, say) is
+kept, as are .renvignore and .gitignore. These files are
+copied in when a study is created, months before any analysis, and the
+corpus they came from is kept centrally, so no backup is made. A folder
+the deletions leave holding nothing (desktop litter such as
+Thumbs.db aside) is removed, whatever its name, as is an empty
+templates or old_RF_templates* folder; a folder still holding
+other files stays, as does one holding any folder the cleanup did not
+empty, and a top-level study folder is never removed. Symbolic links are
+neither followed nor deleted, and folders named .git,
+.checkpoint or renv are never entered, at any depth. The
+root and template_dir must not overlap. A file that cannot be
+deleted stops the setup with an error.
+With renv = TRUE, the study's renv environment is set up
+after any cleanup, in a separate R process. A complete environment is
+kept: a renv/ folder holding activate.R, a .Rprofile
+that sources it, and a renv.lock that parses as a lockfile. One
+interrupted after initialization (no lockfile yet) is resumed at the
+snapshot; any other partial or invalid environment stops with an error.
+Otherwise renv::init(bare = TRUE) creates it, and the project is
+loaded and snapshotted explicitly. The
+renv package must be installed."></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -85,6 +139,33 @@ the default or a named dataset exists.</p>
 directory is written, so that opening the project and
 <code><a href="study_root.html">study_root</a></code> agree on the study root. An existing project is
 left unchanged.</p>
+<p>With <code>cleanup = TRUE</code>, the template copies a legacy study carries are
+deleted before anything else reads the study, anywhere in it: every file
+whose name starts with <code>tp.</code>, every <code>binder.summaries.doc</code>, and
+every other file whose name and exact content match a file in the template
+corpus at <code>template_dir</code>. A study's own file that shares a name with a
+corpus file but differs from it (an edited <code>references.bib</code>, say) is
+kept, as are <code>.renvignore</code> and <code>.gitignore</code>. These files are
+copied in when a study is created, months before any analysis, and the
+corpus they came from is kept centrally, so no backup is made. A folder
+the deletions leave holding nothing (desktop litter such as
+<code>Thumbs.db</code> aside) is removed, whatever its name, as is an empty
+<code>templates</code> or <code>old_RF_templates*</code> folder; a folder still holding
+other files stays, as does one holding any folder the cleanup did not
+empty, and a top-level study folder is never removed. Symbolic links are
+neither followed nor deleted, and folders named <code>.git</code>,
+<code>.checkpoint</code> or <code>renv</code> are never entered, at any depth. The
+root and <code>template_dir</code> must not overlap. A file that cannot be
+deleted stops the setup with an error.</p>
+<p>With <code>renv = TRUE</code>, the study's <code>renv</code> environment is set up
+after any cleanup, in a separate R process. A complete environment is
+kept: a <code>renv/</code> folder holding <code>activate.R</code>, a <code>.Rprofile</code>
+that sources it, and a <code>renv.lock</code> that parses as a lockfile. One
+interrupted after initialization (no lockfile yet) is resumed at the
+snapshot; any other partial or invalid environment stops with an error.
+Otherwise <code>renv::init(bare = TRUE)</code> creates it, and the project is
+loaded and snapshotted explicitly. The
+renv package must be installed.</p>
     </div>
 
     <div class="section level2">
@@ -99,7 +180,10 @@ left unchanged.</p>
 <span>  cvir_no <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  study_creation_date <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  adopt <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  identity_source <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"tracker"</span>, <span class="st">"manual"</span><span class="op">)</span></span>
+<span>  identity_source <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"tracker"</span>, <span class="st">"manual"</span><span class="op">)</span>,</span>
+<span>  cleanup <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  renv <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  template_dir <span class="op">=</span> <span class="st">"/programs/development/template"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -148,10 +232,31 @@ unavailable. A new <code>_study.yml</code> records it as
 <code>"manual"</code>. An existing <code>_study.yml</code> is not rewritten, so
 adoption keeps the recorded source.</p></dd>
 
+
+<dt id="arg-cleanup">cleanup<a class="anchor" aria-label="anchor" href="#arg-cleanup"></a></dt>
+<dd><p>Logical. Delete the study's <code>tp.*</code> template copies and
+<code>binder.summaries.doc</code>, and remove the template folders they leave
+empty. See Details.</p></dd>
+
+
+<dt id="arg-renv">renv<a class="anchor" aria-label="anchor" href="#arg-renv"></a></dt>
+<dd><p>Logical. Initialize and snapshot the study's <code>renv</code>
+environment. See Details.</p></dd>
+
+
+<dt id="arg-template-dir">template_dir<a class="anchor" aria-label="anchor" href="#arg-template-dir"></a></dt>
+<dd><p>Character(1). The template corpus studies were copied
+from, read when <code>cleanup = TRUE</code>. Setup stops with an error when it
+does not exist.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>An object of class <code>"study_status"</code>, returned visibly.</p>
+    <p>An object of class <code>"study_status"</code>, returned visibly. With
+  <code>cleanup = TRUE</code> it carries a <code>"cleanup"</code> attribute, a list of
+  the <code>deleted</code> files and <code>removed_dirs</code> folders, relative to the
+  root. With <code>renv = TRUE</code> it carries a <code>"renv"</code> attribute,
+  <code>"initialized"</code> or <code>"retained"</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

@@ -14,6 +14,33 @@ is written, so that opening the project and
 [`study_root`](https://ehrlinger.github.io/hvtiRutilities/reference/study_root.md)
 agree on the study root. An existing project is left unchanged.
 
+With `cleanup = TRUE`, the template copies a legacy study carries are
+deleted before anything else reads the study, anywhere in it: every file
+whose name starts with `tp.`, every `binder.summaries.doc`, and every
+other file whose name and exact content match a file in the template
+corpus at `template_dir`. A study's own file that shares a name with a
+corpus file but differs from it (an edited `references.bib`, say) is
+kept, as are `.renvignore` and `.gitignore`. These files are copied in
+when a study is created, months before any analysis, and the corpus they
+came from is kept centrally, so no backup is made. A folder the
+deletions leave holding nothing (desktop litter such as `Thumbs.db`
+aside) is removed, whatever its name, as is an empty `templates` or
+`old_RF_templates*` folder; a folder still holding other files stays, as
+does one holding any folder the cleanup did not empty, and a top-level
+study folder is never removed. Symbolic links are neither followed nor
+deleted, and folders named `.git`, `.checkpoint` or `renv` are never
+entered, at any depth. The root and `template_dir` must not overlap. A
+file that cannot be deleted stops the setup with an error.
+
+With `renv = TRUE`, the study's `renv` environment is set up after any
+cleanup, in a separate R process. A complete environment is kept: a
+`renv/` folder holding `activate.R`, a `.Rprofile` that sources it, and
+a `renv.lock` that parses as a lockfile. One interrupted after
+initialization (no lockfile yet) is resumed at the snapshot; any other
+partial or invalid environment stops with an error. Otherwise
+`renv::init(bare = TRUE)` creates it, and the project is loaded and
+snapshotted explicitly. The renv package must be installed.
+
 ## Usage
 
 ``` r
@@ -27,7 +54,10 @@ study_setup(
   cvir_no = NULL,
   study_creation_date = NULL,
   adopt = FALSE,
-  identity_source = c("tracker", "manual")
+  identity_source = c("tracker", "manual"),
+  cleanup = FALSE,
+  renv = FALSE,
+  template_dir = "/programs/development/template"
 )
 ```
 
@@ -74,9 +104,29 @@ study_setup(
   `"tracker"` and `FALSE` for `"manual"`. An existing `_study.yml` is
   not rewritten, so adoption keeps the recorded source.
 
+- cleanup:
+
+  Logical. Delete the study's `tp.*` template copies and
+  `binder.summaries.doc`, and remove the template folders they leave
+  empty. See Details.
+
+- renv:
+
+  Logical. Initialize and snapshot the study's `renv` environment. See
+  Details.
+
+- template_dir:
+
+  Character(1). The template corpus studies were copied from, read when
+  `cleanup = TRUE`. Setup stops with an error when it does not exist.
+
 ## Value
 
-An object of class `"study_status"`, returned visibly.
+An object of class `"study_status"`, returned visibly. With
+`cleanup = TRUE` it carries a `"cleanup"` attribute, a list of the
+`deleted` files and `removed_dirs` folders, relative to the root. With
+`renv = TRUE` it carries a `"renv"` attribute, `"initialized"` or
+`"retained"`.
 
 ## See also
 
