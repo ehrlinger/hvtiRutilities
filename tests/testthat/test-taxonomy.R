@@ -80,9 +80,10 @@ test_that("the relabelled non-linear and boosting rows are pinned", {
     bn = c("Bootstrap non-linear",
            "bootstrap confidence intervals for non-linear estimates"),
     nd = c("Non-linear distributions",
-           "distribution estimates stratified by group"),
+           "non-linear mixed model of a repeated measure over temporal phases"),
     nm = c("Non-linear model", "non-linear regression models"),
-    np = c("Non-linear plot", "non-linear distribution figures"),
+    np = c("Non-linear plot",
+           "figures of an nd fit: average curve, bootstrap bands, observed means"),
     nb = c("Boosting", "boosting models (Boostmtree, BoostMLR)")
   )
   for (p in names(want)) {
