@@ -25,6 +25,20 @@ affordances live in `CLAUDE.md`, which imports this file.
 - Not “it looks right”. A run that finished is not a run that is
   correct.
 
+## The standard of care
+
+**This package is not headed to CRAN, and it is held to the CRAN
+standard anyway.** The hvtiR packages are distributed internally to get
+feedback faster than a public release allows, not to lower the bar.
+
+- Before a release, audit against every chapter of the [CRAN
+  Cookbook](https://contributor.r-project.org/cran-cookbook/), run
+  `R CMD check --as-cran` with the manual and vignettes built, check
+  reverse dependencies within the hvtiR family and check URLs.
+- Every Cookbook or `--as-cran` finding is real work to do. Order
+  findings by effort and risk, never by “would CRAN care”, and never
+  offer “skip it, it’s internal” as an option.
+
 ## The automated gates
 
 Six workflows. Know what each one fails on before you push:
@@ -33,7 +47,7 @@ Six workflows. Know what each one fails on before you push:
 |----|----|
 | `R-CMD-check.yaml` | `R CMD check` on Linux (release, devel, oldrel-1), macOS, Windows |
 | `check-manual.yaml` | the PDF manual build — catches raw Unicode in `.Rd` that `--no-manual` skips |
-| `lint.yaml` | [`lintr::lint_package()`](https://lintr.r-lib.org/reference/lint.html), plus a **docs-current** job that runs `roxygenise()` and then `git diff --exit-code man/ NAMESPACE DESCRIPTION` |
+| `lint.yaml` | [`lintr::lint_package()`](https://lintr.r-lib.org/reference/lint.html) under `LINTR_ERROR_ON_LINT`, which is what makes it **fail** rather than merely report — see the 80/135 bullet below. Plus a **docs-current** job that runs `roxygenise()` and then `git diff --exit-code man/ NAMESPACE DESCRIPTION` |
 | `pkgdown.yaml` | the site build, including a topic missing from the reference index |
 | `house-style.yaml` | composes `.house-style-tools/compose-house-style.R` against `repos.yml`; it asserts the registry still contains this repo’s path rather than failing later with a misleading cause |
 | `test-coverage.yaml` | coverage upload |
@@ -60,9 +74,37 @@ the PR rather than landing quietly.
   `hvtiRtemplates` deliberately does the **opposite** and has no
   `reference:` section so pkgdown auto-indexes. Do not carry a habit
   across.
-- **Lines are 80 characters.** `lintr` enforces it. The package is not
-  lint-clean overall, so a green lint is not the bar — do not *add*
-  lints.
+- **Lines are 135 characters, and the package IS lint-clean.** Both
+  halves of this bullet changed on 2026-09-17, and the previous version
+  was wrong about the more important one. ⚠️ **`lintr` did NOT enforce
+  anything until then.** There was no `.lintr` file at all, so lintr
+  fell back to its defaults, and `lint_package()` *prints* its result
+  rather than failing on it — the step exited 0 while reporting **290
+  lints** on `main`, and every `lint.yaml` run in the repo’s history had
+  concluded `success`. The job could not have gone red. This is the same
+  failure shape as a green `R-CMD-check` hiding a skipped test: read
+  what a step *does*, never what its name or its check mark implies. The
+  repair was three parts. `lint.yaml` now sets `LINTR_ERROR_ON_LINT`, so
+  lintr’s print method calls `quit("no", 31L, FALSE)` on a non-empty
+  result. A `.lintr` sets the width to 135, because
+  [`hvti_taxonomy()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_taxonomy.md)
+  is a data table written as code whose column alignment is the only
+  thing making it readable, and it alone accounts for 45 of the 196
+  line-length lints; the widest line in the package is 132, the same
+  measurement hvtiRtemplates records for the same table. Of the 69 lints
+  left after that, **67 were fixed** in the source; the other two are a
+  standalone nested block that `brace_linter` cannot express, covered by
+  `allow_single_line = TRUE` rather than by touching the test. ⚠️ So **a
+  green lint IS now the bar**, and the old advice to merely not *add*
+  lints is withdrawn. `.lintr` grants exactly two exemptions,
+  `commented_code_linter` and `object_name_linter`, each with its
+  reasoning recorded in the file, and **no path exclusions at all**.
+  Keep it that way: a path key is invisible in a passing run, and
+  renaming nine files in hvtiRtemplates took its lint count from 0 to 86
+  in one step. ⚠️ `.lintr` is **DCF**, not R.
+  [`read.dcf()`](https://rdrr.io/r/base/dcf.html) parses it, so an
+  indented `#` inside the `linters:` value terminates the record and the
+  file fails to load. Comments go at column 0, above the key.
 - **`testthat` edition 3.** `DESCRIPTION` sets
   `Config/testthat/edition: 3`.
 - **`.Rbuildignore` excludes the session-tooling directories** —
@@ -70,14 +112,13 @@ the PR rather than landing quietly.
   tooling directories there when they appear; otherwise they land in the
   tarball as a NOTE. `ROADMAP.md` is listed for the same reason: it sits
   at the root but is not one of the files `R CMD check` expects there.
-- **`_study.yml` records the STUDY cohort, not a job’s cohort.**
-  [`cohort_counts()`](https://ehrlinger.github.io/hvtiRutilities/reference/cohort_counts.md)
-  derives from the whole built dataset. A job analysing a filtered
-  subset has a different N, so
-  [`assert_cohort()`](https://ehrlinger.github.io/hvtiRutilities/reference/assert_cohort.md)
-  gates the wrong number — it passes while the job runs on a cohort
-  nobody checked. Such a job must supply its own gate with counts from
-  its own reference.
+- **`_study.yml` records registered datasets, not a study-wide cohort.**
+  `cohort_counts(d, event, time)` observes that job’s cohort counts;
+  `assert_cohort(d, expected, event, time)` compares them with that
+  job’s reference. Reusing whole-dataset expected counts for a filtered
+  job can pass when the three totals match even though the actual
+  analysis cohort was never checked. Derive expected counts from the
+  job’s own reference.
 - **[`compare_parity()`](https://ehrlinger.github.io/hvtiRutilities/reference/compare_parity.md)’s
   `digits` is DECIMAL PLACES.** SAS commonly prints *significant
   figures*, so a flat `digits = 7` asserts a tolerance up to two orders
@@ -96,7 +137,19 @@ the PR rather than landing quietly.
   same uncommitted change lints as “no visible global function
   definition” until the package is installed. That warning is an
   artifact, not a defect; `R CMD check` does its own codetools pass and
-  is the real test.
+  is the real test. ⚠️ **This also means a local lint run overstates the
+  count unless you install first.** `lint.yaml` passes `local::.` to
+  `setup-r-dependencies` for exactly this reason, so CI does install.
+  Measured 2026-09-17: `.cache_key` and `.cache_key_diff` reported as
+  undefined from a bare working tree and resolved once the package was
+  installed. Run `R CMD INSTALL --no-docs .` before trusting a number
+  you intend to act on. ⚠️ It inspects **closures only**, which is why
+  bare `skip_if_not_installed()` passes 39 times in `tests/` and yet
+  flags twice. A call inside `test_that("...", { ... })` sits in an
+  unevaluated expression, not a function, so codetools never sees it;
+  the two that flagged were the suite’s only top-level helper *function
+  definitions*. Qualify `testthat::` in a helper closure rather than
+  reaching for an exclusion.
 - **`utils::` is used in several files while `utils` is not in
   `Imports`.** This is tolerated because `utils` is base-priority and
   attached by default. Do not “fix” it as drive-by work, and do not take
@@ -106,6 +159,29 @@ the PR rather than landing quietly.
   `n_rows` is absent. Awkward next to the word “compliance”; know it
   before relying on a green result.
 - `VignetteBuilder` is **quarto**, not `knitr`. Vignettes are `.qmd`.
+
+## Looking up a dependency’s API
+
+Read the installed documentation before calling a function from a
+dependency you have not used in this session. Arguments get renamed,
+defaults change and functions are deprecated between releases, so recall
+is not a reliable source. The version that matters is the one installed
+in the library the gates run against; the minimum in `DESCRIPTION` is
+the oldest version the code must still work with.
+
+- Version: `Rscript -e 'packageVersion("pkg")'`.
+- Help page as text:
+  `Rscript -e 'tools::Rd2txt(utils:::.getHelpFile(help("fn", package = "pkg")))'`.
+- Signature and exports: `args(pkg::fn)`, `getNamespaceExports("pkg")`.
+- What changed between versions: `news(package = "pkg")` or the
+  package’s `NEWS.md`.
+- The source, when the help page is thin: `pkg:::fn` prints it.
+
+pkgdown sites and CRAN pages describe the latest release, which may not
+be the installed one; confirm the version before relying on them. If the
+installed docs contradict what you expected, the docs win. If an
+argument you need does not exist, say so instead of substituting a
+guess.
 
 ## Change discipline
 
@@ -135,27 +211,33 @@ the PR rather than landing quietly.
 
 - **`main` is protected by a GitHub ruleset, and nothing in this repo
   records that.** A clone shows no trace of it, so it is stated here.
-  The ruleset is named `protect main` and enforces four rules on the
-  default branch: no deletion, no force-push, pull-request-only, and an
-  **automatic Copilot code review** on every PR. The rejection above
-  comes from the server, not a local hook.
+  The ruleset is named `protect main` and enforces five rules on the
+  default branch: no deletion, no force-push, pull-request-only, an
+  **automatic Copilot code review** on every PR, and **required status
+  checks**. The rejection above comes from the server, not a local hook.
 
   Because the file is the only record, it is the one thing here with no
   way to detect its own drift. **Verified against the live ruleset on
-  2026-09-02**; re-verify with
+  2026-09-23**; re-verify with
 
       gh api repos/ehrlinger/hvtiRutilities/rules/branches/main \
         --jq '.[] | {type, params: .parameters}'
 
-  ⚠️ **A PR needs one approving review, and the author cannot supply
-  it.** `required_approving_review_count` is **1**, so a PR sits at
-  `REVIEW_REQUIRED` / `mergeStateStatus=BLOCKED` until somebody else
-  approves. GitHub refuses self-approval, so an agent — or a solo
-  maintainer — cannot open a PR and merge it unassisted. Plan for the
-  wait rather than discovering it at merge time.
-  `require_extra_approval_for_unattributed_changes` is **true**, which
-  can ask for a second approval on commits GitHub cannot attribute to a
-  verified author.
+  **A PR needs zero approving reviews.**
+  `required_approving_review_count` is **0**, so a PR reaches
+  `mergeStateStatus=CLEAN` once its required checks pass, with no
+  approval at all. It was **1** until at least 2026-09-02; the change
+  applies across the family (see the table below). ⚠️ So `CLEAN` means
+  the checks passed, **not** that anyone reviewed the change. An agent
+  must still not merge its own PR: the maintainer merges, per the bullet
+  above. `require_extra_approval_for_unattributed_changes` is **true**,
+  which can still ask for an approval on commits GitHub cannot attribute
+  to a verified author.
+
+  The required status checks are the ten CI jobs `docs-current`,
+  `house-style`, `lint`, `pkgdown`, `test-coverage` and the five
+  `R CMD check` platforms. ⚠️ `check-manual` is **not** among them, so a
+  PDF-manual failure does not block a merge. Read its result yourself.
 
   `require_code_owner_review` is **false** here. Adding a `CODEOWNERS`
   file would not by itself change anything until that flag is turned on;
@@ -171,15 +253,17 @@ the PR rather than landing quietly.
   both `false`, so a human approval **survives** later pushes to the
   branch. Nothing re-gates after an approval lands.
 
-  ⚠️ **The family is not uniform — do not carry these facts to a sibling
-  repo unchecked.** All twelve `hvti*` repositories were checked on
-  2026-09-02:
+  ⚠️ **The family is not uniform. Do not carry these facts to a sibling
+  repo unchecked.** All fourteen `hvti*` repositories were checked on
+  2026-09-23 (approval count and code-owner flag only; the other rules
+  were read for this repo alone):
 
   | repos | state |
   |----|----|
-  | 10 of 12 | `protect main`, active, exactly as described above |
-  | `hvtiGraphics` | `protect main`, active, but **zero** approvals and `require_code_owner_review: true` — the only repo the previous version of this bullet actually described |
-  | `hvtiEDAreports` | ruleset named `main`, **`enforcement: disabled`**, and no classic branch protection, so nothing gates `main` there. Not tested by pushing — read from the API |
+  | 11 active repos | `protect main`, active, **zero** approvals, `require_code_owner_review: false`. `hvtiGraphics`, the odd one out on 2026-09-02, now matches |
+  | `hvtiBoostmtree` | **archived**; `protect main` still active with **one** approval |
+  | `hvtiEDAreports` | **archived**; ruleset named `main`, **`enforcement: disabled`** |
+  | `hvtiRforests` | empty repository: no branches and no ruleset |
 
 - Versions are **straight three digits** (`1.0.11`). Never a `.9000`
   suffix or a fourth digit.
@@ -189,13 +273,27 @@ the PR rather than landing quietly.
   consolidated into a release. Do not roll them.
 
 - **Bump when you name a version, not when you merge.** A pull request
-  lands without touching `Version:`. Its entry goes under a
-  `# hvtiRutilities (unreleased)` heading in `NEWS.md`, which you add
-  when it is not already there. A separate commit then renames that
-  heading to the new version and updates `DESCRIPTION`, at most once a
-  day. The heading is gone again after a bump, so the next change
-  re-adds it. `.claude/house-style.md` carries the rule and the
-  reasoning.
+  lands without touching `Version:` and without editing `NEWS.md`. Its
+  entry goes in a file of its own, `news/<branch>.md` with `/` in the
+  branch name replaced by `-`: the bullet or bullets exactly as they
+  will read in `NEWS.md`, and no heading. Two pull requests open at once
+  never touch the same file, so they no longer conflict at the top of
+  `NEWS.md`. A separate commit then moves `Version:` in `DESCRIPTION`,
+  at most once a day, and runs
+  `python3 .github/scripts/news.py collect`, which files the fragments
+  under `# hvtiRutilities X.Y.Z` in merge order and deletes them. The
+  `news-fragment` job in `lint.yaml` fails a pull request that ships
+  something and adds no fragment. `.claude/house-style.md` carries the
+  rule and the reasoning.
+
+- **A change that ships nothing gets no `news/` fragment and no bump.**
+  That is a pull request whose every changed file is left out of the
+  tarball `R CMD build` produces, meaning the base branch’s
+  `.Rbuildignore` excludes it: here `.github/`, `AGENTS.md` and
+  `CLAUDE.md` among others. One shipped file means the change ships, and
+  the usual rules apply. No user can observe a change that ships
+  nothing, so the pull request and its commit message are the record.
+  Read `.Rbuildignore` rather than judging by feel.
 
 ## Prose
 

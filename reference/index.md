@@ -56,6 +56,13 @@ versions
   : Describe a dataset's variables, in the style of SAS PROC CONTENTS
 - [`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
   : Summarise numeric variables, in the style of SAS PROC MEANS
+- [`proc_univariate()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_univariate.md)
+  : Summarise and test numeric variables, in the style of SAS PROC
+  UNIVARIATE
+- [`proc_freq()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_freq.md)
+  : Frequency tables, in the style of SAS PROC FREQ
+- [`followup_check()`](https://ehrlinger.github.io/hvtiRutilities/reference/followup_check.md)
+  : Check recorded follow-up before a time-related analysis
 - [`compare_datasets()`](https://ehrlinger.github.io/hvtiRutilities/reference/compare_datasets.md)
   : Compare two versions of a dataset
 
@@ -108,14 +115,29 @@ Compare an R result against its SAS reference under derived tolerances
 Initialize a study for reproducible analysis, and audit whether it is
 ready
 
-- [`study_init()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_init.md)
-  : Initialize a study for reproducible analysis
+- [`study_setup()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md)
+  : Set up study identity and directories
+- [`register_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md)
+  : Register a study dataset
 - [`study_status()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md)
   : Audit a study's reproducibility readiness
 - [`study_checklist()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checklist.md)
   : Render a study audit as a markdown checklist
 - [`preflight_report()`](https://ehrlinger.github.io/hvtiRutilities/reference/preflight_report.md)
   : Audit the analysis environment before running an analysis
+
+## Study Checkpoints
+
+Snapshot a study’s code at each checkpoint, record its documents by
+checksum, and record its closure
+
+- [`study_checkpoint()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checkpoint.md)
+  : Record a study checkpoint
+- [`study_checkpoint_push()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checkpoint_push.md)
+  : Push pending study checkpoints
+- [`study_close()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_close.md)
+  [`study_reopen()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_close.md)
+  : Close or reopen a study
 
 ## Study Manifest and Data Contract
 
@@ -124,6 +146,10 @@ reconcile its built dataset
 
 - [`study_config()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md)
   : Read the study manifest
+- [`study_abbreviations()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_abbreviations.md)
+  : The abbreviation list a study's labels use
+- [`add_abbreviation()`](https://ehrlinger.github.io/hvtiRutilities/reference/add_abbreviation.md)
+  : Add a phrase to a study's abbreviation list
 - [`study_root()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_root.md)
   : Locate the study root
 - [`sas_path()`](https://ehrlinger.github.io/hvtiRutilities/reference/sas_path.md)
@@ -132,21 +158,45 @@ reconcile its built dataset
   : Path to the study's built dataset
 - [`built_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/built_manifest.md)
   : Record the state of the built dataset
+- [`study_dir()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_dir.md)
+  : Resolve a directory in the study layout
 - [`read_built()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_built.md)
   : Read the study's built dataset
+- [`check_data_updates()`](https://ehrlinger.github.io/hvtiRutilities/reference/check_data_updates.md)
+  : Check a study for published dataset updates
+- [`review_data_update()`](https://ehrlinger.github.io/hvtiRutilities/reference/review_data_update.md)
+  : Review one published dataset release
+- [`adopt_data_update()`](https://ehrlinger.github.io/hvtiRutilities/reference/adopt_data_update.md)
+  : Adopt one published dataset release
 - [`cohort_counts()`](https://ehrlinger.github.io/hvtiRutilities/reference/cohort_counts.md)
   : Count the analysable cohort
 - [`assert_cohort()`](https://ehrlinger.github.io/hvtiRutilities/reference/assert_cohort.md)
-  : Assert the cohort matches the study manifest
+  : Assert the cohort matches a job-level expectation
 
 ## Provenance
 
 Record what produced a filed result, in a JSON sidecar beside it
 
+- [`provenance_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/provenance_data.md)
+  : Snapshot a registered data file for provenance
+- [`provenance_artifact()`](https://ehrlinger.github.io/hvtiRutilities/reference/provenance_artifact.md)
+  : Snapshot an input artifact for provenance
+- [`capture_provenance()`](https://ehrlinger.github.io/hvtiRutilities/reference/capture_provenance.md)
+  : Capture an explicit job provenance payload
+- [`publish_provenance()`](https://ehrlinger.github.io/hvtiRutilities/reference/publish_provenance.md)
+  : Publish captured provenance beside a completed output
 - [`record_provenance()`](https://ehrlinger.github.io/hvtiRutilities/reference/record_provenance.md)
-  : Write the provenance record for a rendered output
+  : Capture and publish provenance for an existing output
 - [`provenance_path()`](https://ehrlinger.github.io/hvtiRutilities/reference/provenance_path.md)
   : Name the provenance sidecar for an output
+
+## Caching
+
+Compute expensive results once and reload them only while their inputs
+are unchanged
+
+- [`cache_fit()`](https://ehrlinger.github.io/hvtiRutilities/reference/cache_fit.md)
+  : Cache an expensive computation, strictly
 
 ## Analysis Taxonomy
 
@@ -156,6 +206,8 @@ The two-letter prefix system inherited from the CORR analysis binder
   : Analysis prefix taxonomy
 - [`hvti_non_prefixes()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_non_prefixes.md)
   : Second fields that are not analysis prefixes
+- [`hvti_prefix_folds()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_prefix_folds.md)
+  : Legacy prefixes folded into a taxonomy prefix
 
 ## Corpus Inventory
 

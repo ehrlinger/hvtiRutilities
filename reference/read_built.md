@@ -3,6 +3,31 @@
 Reads the dataset named in `_study.yml` and normalises its types so that
 both available read paths deliver the same frame.
 
+For a dataset registered with
+[`register_data`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md),
+the registered version (a dated parquet) is read, after its checksum is
+checked. If the source file has been rebuilt since, the registered
+version is still read and a message of class
+`hvtiRutilities_source_changed` says so and names
+[`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md).
+
+A combined dataset (see
+[`register_data`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md))
+is still read when a dataset it was built from has been updated since. A
+message of class `hvtiRutilities_parent_changed`, which inherits
+`hvtiRutilities_out_of_date`, names the parents' recorded and current
+versions and the commands that update it. A combined dataset with no
+recorded parent versions is reported the same way, as `unrecorded`,
+until it is rebuilt and registered again.
+
+For a release-aware contract, the pinned release is verified before
+cache access. A later valid release emits a message of class
+`hvtiRutilities_update_available`; an unavailable catalog or invalid
+candidate emits `hvtiRutilities_update_status_unknown` and the pinned
+data are still read. A changed pinned release errors with class
+`hvtiRutilities_release_integrity`. A withdrawn pin errors with class
+`hvtiRutilities_withdrawn_release` unless `allow_withdrawn` is `TRUE`.
+
 The normalisation is not cosmetic.
 [`read_clinical_data`](https://ehrlinger.github.io/hvtiRutilities/reference/read_clinical_data.md)
 converts SAS 0/1 numerics to logical while
@@ -16,7 +41,12 @@ attribute because listings print labels rather than names.
 ## Usage
 
 ``` r
-read_built(cfg = study_config(), refresh = FALSE)
+read_built(
+  cfg = study_config(),
+  refresh = FALSE,
+  dataset = "study",
+  allow_withdrawn = FALSE
+)
 ```
 
 ## Arguments
@@ -34,7 +64,20 @@ read_built(cfg = study_config(), refresh = FALSE)
   that preserves `mtime`, a restored backup, a correction applied out of
   band. Errors if the manifest entry has `role: "primary"`: that role
   means the source has been retired and the parquet is authoritative, so
-  there is nothing to refresh from.
+  there is nothing to refresh from. It also errors for a dataset
+  registered as a dated parquet, and names
+  [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md),
+  which registers a rebuilt source.
+
+- dataset:
+
+  Character(1). Logical dataset name. Defaults to `"study"`. `"built"`
+  is a second name for `"study"`.
+
+- allow_withdrawn:
+
+  Logical. If `TRUE`, allow a deliberately pinned withdrawn release to
+  be read for revision work. The default is `FALSE`.
 
 ## Value
 
@@ -53,9 +96,7 @@ root <- file.path(tempdir(), "read-built-example")
 dir.create(file.path(root, "datasets"), recursive = TRUE,
            showWarnings = FALSE)
 yaml::write_yaml(
-  list(study = "Example", built = "example.csv",
-       cohort = list(n = 3L, n_events = 1L, n_censored = 2L,
-                     event = "dead", time = "iv_dead")),
+  list(study = "Example", built = "example.csv"),
   file.path(root, "_study.yml")
 )
 write.csv(data.frame(DEAD = c(1, 0, 0), IV_DEAD = 1:3),

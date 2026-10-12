@@ -29,6 +29,16 @@ re-derived; or the manifest records no count at all. The
 `row_count_checked` column is `TRUE` only in the first case, and the
 message names which of the three it was.
 
+For a dataset registered with
+[`register_data`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md),
+every registered version (the current dated parquet and each earlier
+one) is checked, and its row count is re-derived from the parquet footer
+when the arrow package is available. A source file rebuilt since
+registration is reported with status `"PENDING"` and never stops: jobs
+keep reading the registered version until
+[`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
+registers the new one.
+
 Call this function at the top of every analysis script or Quarto
 document to ensure data integrity before any results are generated.
 
@@ -36,7 +46,7 @@ document to ensure data integrity before any results are generated.
 
 ``` r
 verify_manifest(
-  manifest_path = "manifest.yaml",
+  manifest_path = .default_manifest_path(),
   data_dir = NULL,
   stop_on_error = TRUE,
   verbose = FALSE,
@@ -48,21 +58,22 @@ verify_manifest(
 
 - manifest_path:
 
-  Character. Path to the manifest YAML file. Defaults to
-  `"manifest.yaml"` in the current working directory.
+  Character. Path to the manifest YAML file. Defaults to the study's
+  `manifest.yaml` when run inside a study (a `_study.yml` here or
+  above), and to `"manifest.yaml"` in the working directory otherwise.
 
 - data_dir:
 
   Character. Directory holding the dataset files. When supplied, it is
-  used exactly as given. When `NULL` (default), each entry is resolved
-  individually: `datasets/` beneath the manifest's own directory is
-  preferred for that entry when the file actually exists there, matching
-  the layout
-  [`study_init`](https://ehrlinger.github.io/hvtiRutilities/reference/study_init.md)
-  creates, where `manifest.yaml` sits at the study root and datasets one
-  level down; otherwise the entry resolves beside the manifest, so a
-  flat layout is equally supported even when an unrelated `datasets/`
-  directory is also present.
+  used exactly as given. When `NULL` (default), the manifest directory
+  is inspected once. `00_datasets/` supports the numbered layout created
+  by
+  [`study_setup`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md),
+  `datasets/` supports an adopted legacy layout, and a manifest with
+  neither uses its own directory. Outside a study, an empty nested
+  directory does not displace files beside the manifest. Both dataset
+  directories together are a mixed layout and produce an error; entries
+  never fall back between layouts.
 
 - stop_on_error:
 

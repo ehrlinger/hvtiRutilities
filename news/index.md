@@ -1,5 +1,973 @@
 # Changelog
 
+## hvtiRutilities 1.5.2
+
+- [`study_setup()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md)
+  no longer needs `root`. When it is omitted, the study that encloses
+  the working directory is used, as
+  [`study_root()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_root.md)
+  finds it, or the working directory itself when no `_study.yml` lies
+  above it; an empty working directory is set up as a new study. Run
+  from a subfolder of an existing study, it therefore works on that
+  study rather than creating one nested inside it. When the root already
+  holds a `_study.yml` for the same Study Tracker ID, an interactive
+  session is asked whether to adopt it instead of stopping with “use
+  adopt = TRUE”; a batch session still stops, and a folder with other
+  files but no `_study.yml` still needs `adopt = TRUE`.
+
+- [`hvti_taxonomy()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_taxonomy.md)
+  names the `lg` prefix “Logit calibration”, not “Logit trends”. The
+  description, “variable transformation and linearity checks”, is
+  unchanged: a survey of 847 SAS `lg` jobs found 97% calibrate a
+  covariate against an event to choose its scale, and only a dozen model
+  a calendar-year trend.
+
+- [`hvti_taxonomy()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_taxonomy.md)
+  describes `nd` as a non-linear mixed model of a repeated measure over
+  temporal phases, and `np` as the figures of an `nd` fit (average
+  curve, bootstrap bands, observed means). The old text, “distribution
+  estimates stratified by group” and “non-linear distribution figures”,
+  matched none of the 243 `nd` and 234 `np` studies a survey of the
+  corpus read.
+
+- [`study_setup()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md)
+  gains `cleanup`, `renv` and `template_dir`, so one call,
+  `study_setup(..., adopt = TRUE, cleanup = TRUE, renv = TRUE)`, leaves
+  a legacy study ready to work in. `cleanup = TRUE` deletes the template
+  copies a study was given when it was created: every `tp.*` file, every
+  `binder.summaries.doc`, and every other file whose name and exact
+  content match the template corpus at `template_dir` (default
+  `/programs/development/template`). A study’s own file that shares a
+  name with a corpus file but differs from it is kept, as are
+  `.renvignore` and `.gitignore`, and folders the deletions leave empty
+  are removed. Folders named `.git`, `.checkpoint` or `renv` are never
+  entered, symbolic links are never followed or deleted, and a root that
+  overlaps `template_dir` is refused. No backup is made; the corpus is
+  the backup. `renv = TRUE` then initializes and snapshots the study’s
+  renv environment in a separate R process, loading the study’s project
+  explicitly; a complete, valid environment is kept and one interrupted
+  after initialization is resumed. Both default to `FALSE`, so existing
+  calls behave as before.
+
+## hvtiRutilities 1.5.1
+
+### New features
+
+- **Datasets have a kind and a key.**
+  [`register_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md)
+  gains `kind` (`"built"`, `"subset"`, `"ancillary"` or `"combined"`),
+  `key` (the columns that make each row unique, checked at registration
+  and again when
+  [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
+  registers a rebuilt source) and `parents` (for a combined dataset).
+  [`study_config()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md)
+  validates all three and rejects a cycle among parents. A combined
+  dataset records the versions of the datasets it was built from, when
+  it is registered. When one of them is updated,
+  [`read_built()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_built.md)
+  still reads it and signals `hvtiRutilities_parent_changed`, whose
+  message gives the commands to update it, and
+  [`study_status()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md)
+  and
+  [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
+  list it as out of date. A combined dataset with no recorded parent
+  versions is reported as out of date until it is rebuilt and
+  re-registered.
+  [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
+  updates every parent before the combined datasets built from it. If
+  the out-of-date check in
+  [`study_status()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md)
+  cannot run, the `out_of_date:<dataset>` row is `FAIL` with the error.
+
+- `"built"` is now a second name for the study dataset. Every function
+  that takes a `dataset` accepts it, and everything recorded (manifests,
+  provenance, status) still says `"study"`, so records made under either
+  name compare equal. `"built"` is reserved: a named dataset may not use
+  it, and a study that already registered an additional dataset called
+  `built` is asked to rename it.
+
+- [`job_census()`](https://ehrlinger.github.io/hvtiRutilities/reference/job_census.md)
+  and
+  [`job_files()`](https://ehrlinger.github.io/hvtiRutilities/reference/job_files.md)
+  read hvtiRtemplates’ template-first job names,
+  `<prefix>[.<qualifier>].<subject>.<type>.qmd` and their `.runner.R`,
+  as scaffolded jobs. Before, the SAS-legacy parser claimed any dotted
+  name and counted them as SAS-era jobs. Existing dotted job names of
+  this shape are now read as scaffolded, and no longer carry legacy
+  qualifiers.
+
+### Bug fixes
+
+- Registered versions are checked and protected more strictly. These fix
+  problems found in review of the dated-parquet registration that
+  shipped in 1.5.0.
+  - [`verify_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md)
+    re-derives each registered version’s row count from its parquet
+    footer and fails a mismatch. Under `strict = TRUE` it fails a
+    version whose count could not be re-derived, as it already did for
+    other files. A malformed `history:` entry, or a version with no
+    recorded schema checksum under `strict = TRUE`, now fails rather
+    than being skipped.
+  - A dated version name can no longer be another dataset’s read cache.
+    [`register_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md)
+    and
+    [`adopt_data_update()`](https://ehrlinger.github.io/hvtiRutilities/reference/adopt_data_update.md)
+    refuse a dataset whose cache name would be a registered version, and
+    the read cache never writes over one. Before, a dataset named like
+    `cohort_20260915.csv` could overwrite the registered version of
+    `cohort.csv`, and migrating it could delete that version.
+  - [`verify_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md)
+    and
+    [`study_status()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md)
+    give the pending source and each earlier version its own label,
+    e.g. `built.csv (source)` and `built.csv (built_20260915.parquet)`.
+    A checkpoint taken while a rebuilt source was pending wrote
+    duplicate keys to `CHECKPOINT.yml`, which could not then be read.
+  - A study registered before dated versions is dated, when migrated, as
+    a fresh registration would be: by `extract_date` when given,
+    otherwise by the source’s local modification date.
+  - The source is hashed between the two stability checks, so a rebuild
+    that lands while a version is being written is seen on the next
+    update rather than recorded as already registered.
+  - [`study_status()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md)
+    counts datasets rather than version files, and reports a dataset
+    whose source is gone as present when its registered version is
+    there, since that is what
+    [`read_built()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_built.md)
+    serves.
+    [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
+    on a study with no `manifest.yaml` names
+    [`register_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md).
+- [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
+  with no file reported “found none” for any error reading `_study.yml`,
+  so a study that exists but needs fixing was told it had no study. It
+  now says that only when no `_study.yml` is found, and passes any other
+  error on unchanged.
+
+### Internal
+
+- The `registered_versions` tests no longer print
+  [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)’s
+  closing reminder to commit `manifest.yaml`; it reached the test output
+  five times. `expect_message()` captures only the first matching
+  message, so in the five tests where a run registers or migrates a
+  dataset the reminder that follows the detail line escaped. Those calls
+  are now wrapped in
+  [`suppressMessages()`](https://rdrr.io/r/base/message.html), and each
+  still asserts its detail message.
+
+- A `manifest.yaml` that records a registered dated version now starts
+  its `datasets:` list with a line that makes hvtiRutilities 1.4.x, and
+  1.5.0, stop with an error instead of reading it. 1.4.x read such an
+  entry as a promoted dataset, reconverted the rebuilt source and
+  overwrote the entry, so a study pinned to 1.4.x was served
+  unregistered data and 1.5 then reported the intact registered version
+  as edited. A manifest written by 1.5.0 is read as it is and gains the
+  line the next time
+  [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
+  runs. Code that reads `manifest.yaml` directly must skip the line: it
+  is a character string, not an entry.
+
+- `register_data(catalog_dataset = , release_id = )` refuses a dataset
+  registered as dated versions, as `update_manifest(file)` already did.
+  It replaced the entry with a flat one, dropping every registered
+  version from the manifest and leaving their parquets unchecked.
+
+- A combined dataset registered on a parent that predates dated versions
+  no longer reads as out of date once
+  [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
+  converts that parent without a change to its data. The parent’s
+  checksum, recorded at registration, is recognised as the version it
+  was converted to.
+
+- `register_data(parents = )` and `_study.yml` accept `"built"` for the
+  study dataset, as every other argument naming a dataset does, and
+  record it as `"study"`. A parent that is not a registered dataset is
+  now named in the error, which names
+  [`register_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md)
+  rather than
+  [`study_config()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md)
+  and comes before the dataset is converted to parquet.
+
+- `update_manifest(file)` refuses a file that is another entry’s
+  registered version, current or earlier, or its schema sidecar.
+  Recording it replaced nothing on disk but hid that its caller had just
+  written over registered data; every job then failed the checksum with
+  no hint of why.
+
+- [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
+  re-records the size and modification time of a registered dataset’s
+  source that was rewritten with the same contents. Until then every
+  read,
+  [`verify_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md)
+  and
+  [`study_status()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md)
+  hashed the source again to find it unchanged. On a file system that
+  records whole seconds only, such as a network share, a hash is still
+  needed on each read, as it is for the read cache.
+
+## hvtiRutilities 1.5.0
+
+### Breaking changes
+
+- **Registering a dataset converts it to a dated parquet, and
+  [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
+  with no arguments registers a rebuilt one.**
+  [`register_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md)
+  now writes `<name>_YYYYMMDD.parquet` and its column record beside the
+  source, and jobs read that parquet. The source file (`built.sas7bdat`)
+  may be rebuilt freely:
+  [`read_built()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_built.md)
+  keeps reading the registered version and signals
+  `hvtiRutilities_source_changed`, and
+  [`verify_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md)
+  reports the dataset as `PENDING` rather than failing. Run
+  [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
+  from anywhere in the study to register the rebuild as a new version;
+  earlier versions are kept and still verified. A study registered
+  before this release is converted on its first
+  [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md);
+  if its source was already overwritten, the previous version is
+  recovered from the read cache where it still matches.
+  [`verify_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md)
+  now defaults to the study’s manifest when run inside a study, and a
+  checksum mismatch names
+  [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md).
+  Registration and update need the arrow package.
+  [`read_clinical_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_clinical_data.md)
+  reads `.parquet` files, so a parquet source registers like any other
+  format.
+  [`provenance_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/provenance_data.md)
+  records the dated parquet as the file a job read, so a report names
+  its own data version.
+
+### New features
+
+- [`cache_fit()`](https://ehrlinger.github.io/hvtiRutilities/reference/cache_fit.md)
+  gains `packages =`, a character vector of package names whose versions
+  join the cache key. The key records only the package that owns each
+  function called in `code`, so a wrapper is keyed on itself:
+  `gg_partial_rfsrc(forest, ...)` recorded ggRandomForests and not
+  randomForestSRC, which computes the result. After a randomForestSRC
+  upgrade that cache stayed valid, and `refit = TRUE` kept it, because
+  `refit` only recomputes a cache that is stale. With
+  `packages = "randomForestSRC"` the upgrade makes the cache stale.
+  Without `packages` the key is unchanged, so existing caches stay
+  valid; adding it to a call makes that cache stale once.
+
+### Documentation
+
+- Articles on the pkgdown site put the table of contents on the left and
+  use the full width of the window, through `pkgdown/extra.css`. The
+  installed vignettes are unchanged: the Quarto vignette engine renders
+  them in its own minimal format, which has no sidebar layout.
+
+- `DESCRIPTION` now declares the Quarto command line tool in
+  `SystemRequirements`. The vignettes have always needed it to build;
+  the field makes that visible to installers and to `R CMD check`.
+
+## hvtiRutilities 1.4.5
+
+### Breaking changes
+
+- Now requires R 4.4.0 or newer, up from 4.1.0, to match the rest of the
+  HVTI family. `hvtiR::install()` installs the members together, and
+  several already required 4.4.0, so on an older R the install failed
+  whatever this package declared.
+
+- [`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
+  now defaults to
+  `c("n", "mean", "std", "min", "p15", "median", "p85", "max")` rather
+  than SAS’s own five. The group reports the 15th and 85th percentiles
+  alongside the median in its descriptive summaries, not the quartiles,
+  so the default says what a report shows. It departs from SAS
+  `PROC MEANS`, which prints no percentiles unless asked: a parity
+  comparison must request the same statistics on both sides, either by
+  adding `P15 MEDIAN P85` to the SAS statement or by passing the SAS
+  job’s list to `stats`. A call that relied on the old default and
+  compares column for column needs
+  `stats = c("n", "mean", "std", "min", "max")`.
+
+- [`followup_check()`](https://ehrlinger.github.io/hvtiRutilities/reference/followup_check.md)’s
+  `means` tables report `p15` and `p85` in place of `p25` and `p75`, for
+  the same reason. A new `stats` argument chooses the statistics,
+  defaulting to
+  `c("n", "nmiss", "mean", "std", "min", "p15", "median", "p85", "max")`,
+  and is validated exactly as
+  [`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
+  validates its own. Code reading `$means$full$p25` or `$p75` now gets
+  `NULL`; pass `stats` with `"p25"` and `"p75"` to keep them.
+
+## hvtiRutilities 1.4.4
+
+### New features
+
+- Captured provenance now records which build of each package produced a
+  result, not only its version. A package installed from a git remote
+  gains a `sha` field holding the commit it was built from
+  (`RemoteSha`); CRAN and base packages are recorded as before. A
+  version number alone can cover more than one build: TemporalHazard
+  changed what `se.fit` means on its survival path inside version
+  1.2.11, so two jobs recording “TemporalHazard 1.2.11” could hold
+  different quantities with nothing to tell them apart.
+  [`publish_provenance()`](https://ehrlinger.github.io/hvtiRutilities/reference/publish_provenance.md)
+  accepts entries with or without `sha`, so sidecars written before this
+  change still validate, and rejects a `sha` that is not a hexadecimal
+  commit.
+
+### Bug fixes
+
+- [`job_files()`](https://ehrlinger.github.io/hvtiRutilities/reference/job_files.md),
+  and so
+  [`job_census()`](https://ehrlinger.github.io/hvtiRutilities/reference/job_census.md),
+  now reads the job names `hvtiRtemplates::add_job()` writes,
+  `<subject>-<type>-<prefix>[-<qualifier>].qmd`, as
+  `naming = "scaffolded"` with the qualifier carried. They came back
+  with `prefix = NA` before, so the census undercounted every scaffolded
+  job and would in time have reported a well-used prefix as unused. The
+  `-runner.R` that `add_job()` writes beside some reports shares its
+  report’s stem and counts as a file of that job, not a second job
+  ([\#170](https://github.com/ehrlinger/hvtiRutilities/issues/170)).
+
+- A checkpoint delivery stuck on “is not on main” now repairs itself
+  ([\#152](https://github.com/ehrlinger/hvtiRutilities/issues/152)). If
+  a session died after replaying unpushed snapshots onto the remote’s
+  `main` but before writing the log, the entry kept naming the
+  pre-replay commit, stayed pending on every retry, and held back every
+  later entry until `.checkpoint/log.yml` was edited by hand. Delivery
+  now finds the replayed commit, records the old commit as
+  `replayed_from`, and delivers as normal. It looks in three places:
+  another log entry already mapping the same old commit, the one commit
+  on `main` carrying the entry’s id, or the one carrying the id in the
+  old commit’s own message. The last covers a reopening, which tags an
+  existing commit. When none finds exactly one commit, the entry stays
+  pending with the manual-repair warning, as before. A hand repair
+  should set `replayed_from` as well as `git_commit`, so later entries
+  can heal from it.
+
+- Two sessions can no longer both take over the same stale checkpoint
+  lock. A lock more than 6 hours old was taken over by deleting and
+  recreating `.checkpoint/lock`, so two sessions judging it stale at the
+  same moment could both recreate it and both believe they held it,
+  letting their outbox writes interleave. The takeover now renames the
+  stale lock aside, which only one session can do; the other stops with
+  the usual “retry when it has finished” error. A session that finds it
+  renamed a lock another session had just taken puts it back and stops
+  with the same error. The refresh a long call makes between phases had
+  the same race and could write its old holder back over a session that
+  had just taken over. The holder now refreshes a lease file named for
+  its own token, in one step, and a session whose lock was taken over
+  stops with an error saying so instead of carrying on. A lock whose
+  setup or put-back fails part way no longer strands an empty
+  `.checkpoint/lock` that refused every session for six hours
+  ([\#154](https://github.com/ehrlinger/hvtiRutilities/issues/154)).
+
+- [`study_close()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_close.md),
+  [`study_reopen()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_close.md)
+  and
+  [`study_checkpoint()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checkpoint.md)
+  now see a closure made from another copy of the study
+  ([\#153](https://github.com/ehrlinger/hvtiRutilities/issues/153)).
+  Before deciding whether the study is closed, each one syncs with the
+  remote: it delivers pending entries, or fetches and fast-forwards when
+  nothing is pending. Closure state is the latest `closed-*` or
+  `reopened-*` event on `main`, counting local and remote tags once per
+  commit, rather than a count of local tags. The count read a study as
+  closed after it was reopened once two copies had each closed it. When
+  the remote cannot be reached, a message says that closure state is
+  from this copy’s last fetch and may be out of date, in either
+  direction. When a closure or reopening tag in this copy is not on its
+  `main`, which an interrupted delivery can leave behind, the state is
+  unknown:
+  [`study_close()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_close.md)
+  and
+  [`study_reopen()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_close.md)
+  stop and point to
+  [`study_checkpoint_push()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checkpoint_push.md),
+  and
+  [`study_checkpoint()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checkpoint.md)
+  warns and records.
+  [`study_status()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md)
+  never syncs. Its closure row says “as of the last fetch” when a remote
+  is configured, and shows `UNKNOWN` in that case.
+
+### Internal
+
+- The test suite runs with no warnings; it reported seven. Five came
+  from `verify_manifest(stop_on_error = FALSE)`, which reports failures
+  as a warning by design; those tests now assert it with
+  `expect_warning()`. The other two were the once-per-session
+  `convert_types` and `use_value_labels` deprecation notices, which
+  fired in whichever test first omitted the argument. A setup file now
+  marks both as spent; the dedicated tests that assert each notice still
+  reset the flag and see it.
+
+## hvtiRutilities 1.4.3
+
+### New features
+
+- The group default abbreviation list (`inst/extdata/abbreviations.yml`)
+  now holds a starter list of 39 entries, drawn from a census of the
+  labels in 705 studies’ built datasets. It is the group level of
+  [`study_abbreviations()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_abbreviations.md):
+  a job that passes that function’s result to
+  `label_map(abbreviations = )`, as the hvtiRtemplates EDA templates do,
+  uses it on its next render.
+  [`label_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)
+  itself still applies no list unless given one. A study overrides or
+  drops an entry in `_study.yml`. The entries:
+
+  - chambers and vessels: `LV`, `RV`, `LA`, `PA`, `RCA`, `IMA`;
+  - valves: `AV`, `MV`, `TV`, `PV`, and `R` for replacement and `r` for
+    repair (`AVR`, `AVr`, `MVR`, `MVr`, `TVR`, `TVr`, `PVr`). `PVR` is
+    left out: in cardiology it usually means pulmonary vascular
+    resistance;
+  - procedures and support: `CABG`, `PCI`, `CPB`, `IABP`, `CEA`;
+  - conditions: `CAD`, `CHD`, `HOCM`, `AF`, `CVA`, `TIA`, `COPD`,
+    `DSWI`, `NYHA`;
+  - echocardiography: `EF`, `LVIDd`, `LVIDs`, `RWT`;
+  - blood products and course: `FFP`, `RBC`, `LOS`, `Preop`.
+
+  Five entries also list a second spelling: “Coronary artery bypass
+  grafting”, “Cerebrovascular accident”, “Red blood cells”, and “Left
+  ventricular internal diameter” in diastole and systole.
+
+- An abbreviation list entry may name several spellings of one term,
+  separated by `|`: `Red blood cell | Red blood cells: RBC`. The
+  spellings share the abbreviation, and a key prints the first.
+  [`study_abbreviations()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_abbreviations.md)
+  returns one element per spelling, with an `expansion` attribute naming
+  the term, which
+  [`label_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)
+  uses for its key.
+
+- [`label_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)
+  records which abbreviations each variable’s label shows, as an
+  `abbreviations_by_key` attribute (`key`, `abbreviation`, `expansion`),
+  so a key printed under one section of a report lists only what that
+  section’s labels use. A text search of the labels could not tell a
+  label that says “SP” in its own words from one the list shortened.
+
+### Bug fixes
+
+- [`label_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)
+  reads overlapping phrases left to right. Phrases were applied longest
+  first, so in “Right coronary artery bypass graft” the longer “Coronary
+  artery bypass graft” won the overlap and the label read “Right CABG”.
+  The leftmost phrase now wins, and the longest one where two start
+  together: “RCA bypass graft”.
+- [`label_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)
+  no longer abbreviates a shared heading to initials that the
+  abbreviation list already gives another phrase. “Aortic valve
+  reoperation” became “AVR”, the list’s aortic valve replacement, so one
+  key listed `AVR` twice with two meanings. Such a heading now falls
+  through to the later steps, and the supplied list keeps its meaning.
+
+### Changes
+
+- [`study_abbreviations()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_abbreviations.md)
+  still refuses two entries whose abbreviations differ only in case,
+  with one exception: the house style’s `R` for replacement and `r` for
+  repair, so `AVR` and `AVr` coexist while `Pv` beside `PV` is refused.
+- [`label_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)
+  writes a word-like abbreviation such as `Preop` in the case of the
+  text it replaces: “Days from preoperative echocardiogram” becomes
+  “Days from preop echocardiogram”, not “Days from Preop”. Initialisms
+  (`LV`, `AVr`, `LVIDd`) keep the list’s spelling.
+
+## hvtiRutilities 1.4.2
+
+### New features
+
+- [`label_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)
+  keeps labels that differ distinct. Cutting each label to `label_max`
+  on its own could make two labels identical once their distinguishing
+  ends were cut off; a figure of `Surgical procedure: ...` panels became
+  unreadable, and nothing warned. Within one map, labels that differ in
+  `label_full` now always differ in `label`. A heading shared by labels
+  over the cap is abbreviated in all of them (`Surgical procedure`
+  becomes `SP`); cut labels that still collide keep both ends
+  (`Ascending aorta ... plus arch`); and a label that collides whatever
+  is done is shown whole, flagged in a new `over_cap` column. A new
+  `abbreviations` argument supplies a study’s own abbreviations, and the
+  abbreviations the labels show come back as an `abbreviations`
+  attribute, a key to print under the figure.
+  [`add_labels()`](https://ehrlinger.github.io/hvtiRutilities/reference/add_labels.md)
+  and
+  [`apply_label_overrides()`](https://ehrlinger.github.io/hvtiRutilities/reference/apply_label_overrides.md)
+  rebuild the whole map, so an added label keeps the guarantee. Design:
+  `dev/specs/2026-09-02-label-length-and-fallback-design.md` section
+  4.2.
+
+- [`study_abbreviations()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_abbreviations.md)
+  merges the three abbreviation lists a job’s labels draw on: a job’s
+  own entries (`extra`), the study’s `abbreviations:` mapping in
+  `_study.yml`, and a group default shipped in
+  `inst/extdata/abbreviations.yml`. A higher level replaces a lower
+  level’s entry for the same phrase, ignoring case, and `null` removes
+  one. The result carries a `source` attribute naming each entry’s
+  level, for a job’s provenance. Two phrases sharing an abbreviation are
+  an error naming both and their levels, and every bad entry is reported
+  in one error.
+  [`add_abbreviation()`](https://ehrlinger.github.io/hvtiRutilities/reference/add_abbreviation.md)
+  writes one entry to a study’s list, after checking it against the
+  merged list; like
+  [`register_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md),
+  it rewrites `_study.yml` whole, so comments there are not kept.
+  [`study_config()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md)
+  now validates the `abbreviations:` block. The group default ships
+  empty: its starter list comes from a census of labels across studies.
+  Design: `dev/specs/2026-09-25-study-abbreviations-design.md`.
+
+## hvtiRutilities 1.4.1
+
+### New features
+
+- [`followup_check()`](https://ehrlinger.github.io/hvtiRutilities/reference/followup_check.md)
+  checks an event indicator and its follow-up intervals before a
+  time-related analysis: cohort, event, censored and missing-event
+  counts; the missing, negative and zero intervals; a
+  [`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
+  table for each subset; and the suspicious rows, with identifiers only
+  on request. Every missing column is named in one error. It is the
+  `dc-gfup` template’s checks as a function, so that job and the EDA
+  report compute them once.
+
+- [`study_setup()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md)
+  gains `identity_source = c("tracker", "manual")`. A new `_study.yml`
+  records `identity_source` and `identity_verified`, which is `false`
+  for an identity typed by hand while Study Tracker was unavailable.
+  [`study_status()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md)
+  reports such an identity as `"UNVERIFIED"` on the `_study.yml` row, so
+  [`study_checklist()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checklist.md)
+  leaves its box unticked. A manifest written before these fields
+  existed is a Tracker identity and is still reported `"OK"`.
+  [`study_config()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md)
+  rejects any other value of either field.
+
+- [`study_checkpoint()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checkpoint.md)
+  commits an allow-listed snapshot of a study (its code, identity and
+  reproducibility files) to a private repository in `.checkpoint/repo/`,
+  tags it with a StudyTracker checkpoint kind such as
+  `manuscript_submitted-1`, records it in the outbox
+  `.checkpoint/log.yml`, and pushes it when `_study.yml` names a
+  `checkpoint: remote:`. Known data formats, credentials and symbolic
+  links are never committed, even through `include:` patterns, and
+  neither is anything under `00_datasets/` or `90_estimates/`. Files in
+  `50_documents/` other than `.qmd` and `.bib` sources are not committed
+  either: `CHECKPOINT.yml` records each one’s size and checksum, so a
+  tag still names the exact document that was submitted. A checkpoint is
+  committed locally first, so an unreachable remote never loses one;
+  [`study_checkpoint_push()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checkpoint_push.md)
+  retries. A study whose identity is unverified is committed but not
+  pushed. Two sessions cannot interleave on one study: each writing call
+  takes `.checkpoint/lock` and refreshes it between phases, and a lock
+  left by a crashed session is taken over after six hours.
+
+- [`study_close()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_close.md)
+  closes a study as published, not published, superseded or abandoned,
+  with a final snapshot tagged `closed-<outcome>-<n>`;
+  [`study_reopen()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_close.md)
+  reopens it.
+  [`study_status()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md)
+  reports checkpoints, pending deliveries and closure.
+
+- [`job_files()`](https://ehrlinger.github.io/hvtiRutilities/reference/job_files.md),
+  and so
+  [`job_census()`](https://ehrlinger.github.io/hvtiRutilities/reference/job_census.md),
+  skip any path with a `.git` or `.checkpoint` component, so a
+  checkpointed study’s `.checkpoint/repo` mirror is no longer counted as
+  a second study.
+
+### Internal
+
+- The `print.study_status()` visibility test now captures its printed
+  report, so the `study_status` test log no longer carries a stray
+  status block.
+- A `.cache_heads()` test quoted `pkg::fn(x)` as a fixture.
+  `R CMD check` read `pkg` as an undeclared test dependency and fetched
+  the CRAN and Bioconductor indexes to look it up, so a Bioconductor
+  outage failed the check with a WARNING. The fixture now uses
+  `digest::digest(x)`, a declared import, and the check no longer
+  reaches the network.
+
+## hvtiRutilities 1.4.0
+
+### Breaking changes
+
+- Registration is endpoint-neutral. Jobs supply cohort definitions
+  explicitly, and status, provenance, and release adoption no longer
+  require a study-wide cohort.
+  [`study_config()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md)
+  now identifies the malformed `population` field and its named dataset
+  directly.
+
+- Provenance capture now requires explicit data records.
+  [`provenance_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/provenance_data.md)
+  and
+  [`provenance_artifact()`](https://ehrlinger.github.io/hvtiRutilities/reference/provenance_artifact.md)
+  freeze the files a job actually reads;
+  [`capture_provenance()`](https://ehrlinger.github.io/hvtiRutilities/reference/capture_provenance.md)
+  freezes those records and the executing R session; and
+  [`publish_provenance()`](https://ehrlinger.github.io/hvtiRutilities/reference/publish_provenance.md)
+  binds that payload to an existing completed output through an atomic
+  sidecar replacement.
+  [`record_provenance()`](https://ehrlinger.github.io/hvtiRutilities/reference/record_provenance.md)
+  remains an existing-output convenience, but no longer accepts
+  `dataset=` or infers the currently registered data. Promoted
+  `role: primary` datasets snapshot their authoritative Parquet file,
+  publication deeply validates transported capture payloads, and failed
+  or interrupted cache replacement attempts to restore the prior cache
+  and sidecar as one pair, warning with the path of any backup that
+  cannot be restored.
+
+### Bug fixes
+
+- [`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
+  no longer corrupts a 2-distinct-value numeric column coded something
+  other than 0/1 – a SAS-style 1/2 sex code, say – into a single logical
+  value. [`as.logical()`](https://rdrr.io/r/base/logical.html) maps
+  every nonzero code to `TRUE`, so both categories silently became
+  `TRUE` and one was lost outright, with no error or warning. Only a
+  column whose two values are actually 0 and 1 converts to logical (or a
+  2-level factor when `binary_factor = TRUE`); any other
+  2-distinct-value coding now becomes a factor unconditionally,
+  preserving both categories. The 0/1 check is exact, not
+  [`all.equal()`](https://rdrr.io/r/base/all.equal.html)-with-tolerance,
+  which read a value merely close to 0 (`1e-9`, say) as 0 and would
+  still have collapsed two distinct categories.
+
+- [`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
+  no longer turns `NaN` into a nonmissing `"NaN"` factor level.
+  [`is.na()`](https://rdrr.io/r/base/NA.html) already treats `NaN` as
+  missing, but [`factor()`](https://rdrr.io/r/base/factor.html)’s own
+  `exclude` matching does not recognise it as equal to `NA`, so a raw
+  `NaN` survived as its own category instead of being dropped like the
+  `NA` next to it.
+
+- [`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
+  no longer merges two distinct numeric values into one factor level
+  when they happen to print identically (adjacent representable doubles
+  differing by a few ULPs, say).
+  [`factor()`](https://rdrr.io/r/base/factor.html)’s default numeric
+  handling formats levels via
+  [`as.character()`](https://rdrr.io/r/base/character.html) and only
+  then deduplicates; real SAS-coded categories are small whole numbers
+  this never touches, so ordinary labels are kept for that case, with a
+  higher-precision fallback only where a collision is actually detected.
+
+## hvtiRutilities 1.3.1
+
+### New features
+
+- [`check_data_updates()`](https://ehrlinger.github.io/hvtiRutilities/reference/check_data_updates.md),
+  [`review_data_update()`](https://ehrlinger.github.io/hvtiRutilities/reference/review_data_update.md)
+  and
+  [`adopt_data_update()`](https://ehrlinger.github.io/hvtiRutilities/reference/adopt_data_update.md)
+  add the consumer side of immutable dataset releases. A release-aware
+  [`read_built()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_built.md)
+  verifies the pinned bytes before cache access, reports a later
+  candidate without advancing the study, and stops on a changed or
+  withdrawn pin; `allow_withdrawn = TRUE` permits a deliberate
+  historical revision run.
+  [`study_status()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md)
+  adds one update row per release-aware dataset. Adoption replaces
+  `_study.yml` and `manifest.yaml` as a recoverable pair and leaves the
+  old dated file in place. Legacy study contracts keep their existing
+  read and status behavior. A published file changed in place now stops
+  before a cache refresh can record the changed bytes, including when
+  the producer catalog is missing or malformed. Review, adoption, and
+  registration reconcile the release catalog with the study manifest,
+  and same-day catalog revisions must be contiguous. Promoted
+  `role: primary` datasets verify their authoritative Parquet while
+  retaining the catalog’s source checksum, and release review
+  re-verifies both files after reading them.
+
+### Documentation
+
+- [`hvti_taxonomy()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_taxonomy.md)’s
+  note on the job catalog is brought up to date. The catalog left
+  `hvtiR` for `hvtiRtemplates` (`template_catalog()`), where it has no
+  `retire` disposition and no rows for `rf` or `rfsrc`, and
+  `hvtiR::jobs()` was removed in `hvtiR` 1.2.0. The demotion of `rf` and
+  `rfsrc` is now recorded only in this table, through the `umbrella`
+  column.
+
+- [`hvti_taxonomy()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_taxonomy.md)’s
+  documentation no longer describes the template ordinal and the
+  `FOLDER_ORDINAL` guard, both retired in `hvtiRtemplates` on
+  2026-09-03. It now says what does depend on this table: the folder
+  names, which every numbered study and template directory must use. Row
+  and folder order are free, because the directory digits are assigned
+  rather than derived from position.
+
+### Tests
+
+- A test now compares the folder names in
+  [`study_dir()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_dir.md)’s
+  layout map with `unique(hvti_taxonomy()$folder)`. Drift in either
+  direction used to pass unnoticed and now fails the test suite. A
+  folder added to the taxonomy and not to the map is one
+  [`study_dir()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_dir.md)
+  and `hvtiRtemplates::add_job()` refuse as unknown. A folder added to
+  the map and not to the taxonomy is the reverse:
+  [`study_dir()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_dir.md)
+  resolves it, but it names no taxonomy folder, so the job census
+  reports a job filed there as unplaced. The test compares names only,
+  because the directory digits are assigned rather than derived from row
+  order.
+  [`hvti_taxonomy()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_taxonomy.md)’s
+  documentation, which said no such test existed, is updated to match.
+
+## hvtiRutilities 1.3.0
+
+### New features
+
+- **[`hvti_taxonomy()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_taxonomy.md)
+  gains a logical `umbrella` column.** It is `TRUE` for `rf` and
+  `rfsrc`, the legacy umbrella prefixes no template is owed for, `FALSE`
+  for every other prefix, and `NA` for the artifact row that has no
+  prefix. The demotion was recorded only in those rows’ wording; a
+  consumer can now exempt them without hard-coding a list. ⚠️ This
+  changes the function’s output shape: code that asserts its exact
+  column set, or indexes columns by position, needs updating. The
+  template catalog in `hvtiRtemplates` reads it
+  (`hvtiRtemplates:dev/specs/2026-09-18-template-catalog-design.md`).
+
+## hvtiRutilities 1.2.1
+
+### New features
+
+- **[`hvti_taxonomy()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_taxonomy.md)
+  gains `rfr`, `sid` and `vt`, and the random forest family splits on
+  the outcome axis.** `rfs`, `rfc` and `rfr` name the survival,
+  classification and regression outcomes, matching the split
+  `bh`/`bl`/`bc`/`bn`/`bq`/`br` and `pm`/`rm`/`cm` already use; `rfc`
+  and `rfs` no longer describe themselves as “reporting”, which tangled
+  the fit-versus-report axis into a family that splits on outcome. `sid`
+  names unsupervised sidClustering with PAM over K, and `vt` names
+  virtual twins. `rf` and `rfsrc` are **demoted to legacy umbrella
+  rows**: they described the same set as each other on the package axis,
+  no template is written for either, and they stay in the table so a
+  census can still resolve the corpus that uses them, which is 131
+  studies and 2,295 jobs for `rfsrc` alone. They are deliberately not
+  added to
+  [`hvti_prefix_folds()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_prefix_folds.md),
+  because a fold is one-to-one and `rfsrc` spans all three outcomes. The
+  `rfc`/`rfs` folder contradiction is untouched and still owed its own
+  spec. This unblocks the `rf*` template batch in `hvtiRtemplates`,
+  whose job catalog rows for the three new prefixes were waiting on this
+  change.
+
+- **[`cache_fit()`](https://ehrlinger.github.io/hvtiRutilities/reference/cache_fit.md)
+  caches expensive computations strictly.** A random forest, varPro fit,
+  imputation, hazard model or partial dependence grid runs once and is
+  reloaded on later renders only while its code, every outside value it
+  reads, its packages’ versions and its seed are unchanged. Anything
+  else stops with an error of class `hvtiRutilities_stale_cache` that
+  lists what changed; `refit = TRUE` recomputes. Code is written inline,
+  as a [`{}`](https://rdrr.io/r/base/Paren.html) block, or passed as a
+  quoted call. `seed =` runs the computation under
+  [`withr::with_seed()`](https://withr.r-lib.org/reference/with_seed.html);
+  random number use without a seed is cached with a warning and recorded
+  as not reproducible. Writes are atomic, and inside a study a
+  provenance sidecar carries the key. `withr` moves from Suggests to
+  Imports.
+
+### Bug fixes
+
+- **The `lint` CI job could not fail, and now can.**
+  [`lintr::lint_package()`](https://lintr.r-lib.org/reference/lint.html)
+  returns a lints object and *prints* it, which is not the same as
+  failing on it, so the step exited 0 while reporting lints and every
+  `lint.yaml` run in the repo’s history concluded `success`. The package
+  also had no `.lintr`, so lintr fell back to its 80-character default
+  and reported 290 lints against a green check. `lint.yaml` now sets
+  `LINTR_ERROR_ON_LINT`, which makes lintr exit 31 on a non-empty
+  result.
+
+- **A `.lintr` records the line width as a decision rather than a
+  default.** 135 characters, because
+  [`hvti_taxonomy()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_taxonomy.md)
+  is a data table written as code whose column alignment is the only
+  thing making 45 of its rows readable, and the widest line in the
+  package is 132. Two linters are switched off with their reasoning in
+  the file: `commented_code_linter`, which reads `# WBC (K/uL)` as a
+  call and the expected-value arithmetic in the weighted `proc_means`
+  tests as commented-out code, and `object_name_linter`, which cannot be
+  satisfied for the exported
+  [`hvtiRutilities.news()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvtiRutilities.news.md)
+  or for R’s own `.Random.seed`. There are no path exclusions.
+
+- **67 of the remaining 69 lints were fixed rather than excluded**, so
+  the gate is green on its merits. 48 were indentation, and the rest
+  were small: braces around two multi-line function bodies and an
+  `if`/`else` with one bare branch, spaces after commas and around
+  named-argument `=`, one trailing space, and `testthat::` qualified in
+  the two test helper closures that `object_usage_linter` inspects. The
+  only name change is the function-local
+  `.MTIME_ROUNDTRIP_TOLERANCE_SECONDS`, shortened to
+  `.MTIME_ROUNDTRIP_TOL_SECONDS` to fit the 30-character limit. No
+  exported object, signature or behaviour changed.
+
+- **`brace_linter` gains `allow_single_line = TRUE`**, which accounts
+  for the last two lints. `test-cache_key.R` tests that a standalone
+  `{ a <- 1 }` nested in another block binds `a` for what follows, so
+  the block is the subject of the test; the linter’s default requires an
+  opening brace never to start a line, which a standalone block cannot
+  do in any layout. Measured: 2 lints single-line, 1 multi-line, 0 only
+  with this option. Every other brace rule stays in force and the test
+  is unchanged.
+
+### Documentation
+
+- [`hvti_taxonomy()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_taxonomy.md)’s
+  note on the job catalog’s `disposition: retire` is brought up to date.
+  It said `retire` could not mark the demoted `rf` and `rfsrc` because
+  `rfs`, `rfc` and `rfr` carried it too; those three moved to `scaffold`
+  in hvtiR’s catalog, so `retire` now holds exactly the two demoted
+  rows. The note says they coincide by decision, not by construction.
+
+- [`hvti_taxonomy()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_taxonomy.md)’s
+  documentation no longer says the job catalog’s `disposition: retire`
+  “says nothing about whether a template is owed”, nor that `rfr` is
+  templated. `hvtiR::jobs()` defines `retire` as a function that already
+  exists with no template owed, and whether `rfs`, `rfc` and `rfr` get
+  templates is still open. The point that stands is narrower: `retire`
+  does not mark the demoted `rf` and `rfsrc`, because the three outcome
+  rows carry it too.
+
+## hvtiRutilities 1.2.0
+
+### New features
+
+- **[`proc_univariate()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_univariate.md)
+  ports the SAS `PROC UNIVARIATE` output statistics.** Weighted and
+  decimal percentiles (`pctlpts`, `pctlpre`), `vardef`, `mu0`,
+  `stdmean`, and the tests for location (`t`, `msign`, `signrank`) and
+  normality (Shapiro-Wilk), checked against SAS 9.4 output. With
+  `weights` the quantiles are weighted, unlike
+  [`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md).
+  Statistics SAS leaves missing are `NA`. Normality above 2000
+  observations is `NA` with a warning, because SAS switches to a
+  Kolmogorov D test there, which is not ported. Non-positive weights are
+  an error.
+  [`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
+  now shares its statistic engine with
+  [`proc_univariate()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_univariate.md);
+  its results are unchanged.
+
+- **[`proc_freq()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_freq.md)
+  ports SAS `PROC FREQ` frequency tables.** One-way and n-way tables
+  with the `MISSING` and `LIST` options, cell, row and column
+  percentages, cumulative columns, and `WEIGHT`. Missing values sort
+  first and character levels by byte value, as in SAS. From three
+  variables on, a crosstab computes `Percent` within stratum and a list
+  table out of the grand total, so `list` changes the numbers, not only
+  the layout. Excluded missing rows are counted in
+  `attr(, "frequency_missing")`. Tests of association are not ported.
+  Blank character values and `NaN` count as missing, SAS special missing
+  values stay distinct, and codes sharing a value label form one row.
+
+- [`study_setup()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md)
+  writes `<study>.Rproj` when the root has no R project, so opening the
+  project, `here::here()` and
+  [`study_root()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_root.md)
+  name the same directory. An existing project is left alone.
+
+### Bug fixes
+
+- **[`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
+  now counts missing-weight rows in `nobs`, as SAS does.** With
+  `weights`, SAS `PROC MEANS` and `PROC UNIVARIATE` compute `NOBS` as
+  `N + NMISS` plus the observations excluded for a missing weight.
+  [`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
+  dropped those rows before counting, so `nobs` was too low. A class
+  level whose every weight is missing now keeps its row, with `n` of 0,
+  as SAS `PROC MEANS` prints it. Every other statistic is unchanged.
+
+- **[`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
+  weighted `stderr` now divides by the square root of the sum of the
+  weights, as SAS does.** It divided by the square root of the count, so
+  every weighted `stderr` was wrong unless the weights summed to the
+  count. Confirmed against SAS 9.4 `PROC MEANS` and `PROC UNIVARIATE`.
+
+- **[`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
+  returns a single observation as its own `mode`.** It returned `NA`, as
+  for any sample with no repeated value; SAS reports the value.
+
+- [`proc_freq()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_freq.md)
+  no longer returns `NA` frequencies and percentages when integer
+  weights sum past `.Machine$integer.max`. Weights are summed as
+  doubles, so a weighted `frequency_missing` is double for integer
+  weights too.
+
+## hvtiRutilities 1.1.12
+
+### New features
+
+- **Study setup now follows the study’s real sequence.**
+  [`study_setup()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md)
+  records Tracker identity and creates numbered folders before data
+  exist;
+  [`register_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md)
+  later adds the default study dataset or a distinctly named subset or
+  ancillary file. Existing bare-folder studies can be adopted without
+  moving their files, and all data and provenance helpers accept a named
+  dataset. The unused `study_init()` entry point has been removed.
+
+- **[`hvti_prefix_folds()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_prefix_folds.md)
+  records legacy prefixes that fold into another**, and
+  [`job_files()`](https://ehrlinger.github.io/hvtiRutilities/reference/job_files.md)
+  applies it: a folded file is reported under the prefix it folds into
+  and classed `known`, while `stem` keeps the name as written. The first
+  fold is `pm` into `lm`. A review of the job catalog on 2026-09-11
+  found that propensity work filed as `pm` belongs with the logistic
+  models in `lm`, so `pm` leaves
+  [`hvti_taxonomy()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_taxonomy.md)
+  and future censuses count its files as `lm`.
+
+### Bug fixes
+
+- **A missing `_study.yml` now points to the explicit recovery
+  command.**
+  [`study_config()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md)
+  tells the user to run `study-setup --recover`, with the Tracker-ID
+  form when the repository cannot identify the study.
+
+- **[`hvti_taxonomy()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_taxonomy.md)
+  relabels five prefixes** after a biostatistician’s review of the job
+  catalog, 2026-09-11. `bn`, `nd`, `nm` and `np` are non-linear, not
+  non-parametric: “Bootstrap non-linear”, “Non-linear distributions”,
+  “Non-linear model” and “Non-linear plot”, and the three descriptions
+  that said “nonparametric” now say “non-linear”. `nb` is “Boosting”,
+  not “Notebook”, and its description reads “boosting models
+  (Boostmtree, BoostMLR)”. Names and descriptions change; no prefix,
+  folder or order moves.
+
+## hvtiRutilities 1.1.11
+
+### New features
+
+- **[`hvti_taxonomy()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_taxonomy.md)
+  gains two imputation prefixes, `si` and `mi`**, both in the `datasets`
+  folder. They close §7 of the imputation package spec, which had been
+  open since 2026-09-03. 44 prefixes now, across 45 rows – the extra row
+  is `estimates`, an artifact kind carrying `prefix = NA`.
+
+  **Two prefixes, not one, and the split is the point.** 223 studies
+  call single mean imputation, 326 call multiple imputation, and 18 call
+  both. One prefix could not label those 18 unambiguously. `mi` is safe
+  only because it is paired: standing alone it reads as multiple
+  imputation to a statistician, which would misname the
+  single-imputation job.
+
+- **`vars` keeps “imputations” in its description, deliberately.** A job
+  that imputes as one step among several is `vars` – porting `vars.sas`
+  found mean imputation across 394 variables inside it. A job whose
+  whole purpose is imputation is `si` or `mi`. Removing the word would
+  have made the `vars` description less accurate, not more.
+
 ## hvtiRutilities 1.1.10
 
 ### New features
@@ -52,6 +1020,18 @@
   than expanding a readable report into thousands of rows.
 
 ## hvtiRutilities 1.1.9
+
+This set was judged minor-worthy when it landed (2026-09-03): it adds
+two exported functions,
+[`apply_value_labels()`](https://ehrlinger.github.io/hvtiRutilities/reference/apply_value_labels.md)
+and
+[`type_conversion_report()`](https://ehrlinger.github.io/hvtiRutilities/reference/type_conversion_report.md),
+and changes
+[`label_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)’s
+return to four columns. It shipped as a patch anyway, and the 1.2.0 name
+went to the SAS descriptive-procedure ports four versions later.
+Recorded here because the version number alone understates what this
+release contains.
 
 ### New features
 
@@ -732,10 +1712,9 @@ belongs with the `bh` work.
   [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md))
   rewrites it. The parquet cache preserves `extract_date`, `source` and
   `sort_key` specifically, because losing those would clobber values
-  [`study_init()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_init.md)
-  sets explicitly; no other field is preserved. This is unchanged in
-  this release — recorded here so it’s a known limitation rather than a
-  surprise.
+  `study_init()` sets explicitly; no other field is preserved. This is
+  unchanged in this release — recorded here so it’s a known limitation
+  rather than a surprise.
 
 ### Documentation
 
@@ -789,9 +1768,8 @@ belongs with the `bh` work.
 
 ### New features
 
-- [`study_init()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_init.md)
-  initializes a study for reproducible analysis: it writes the
-  `_study.yml` identity manifest that
+- `study_init()` initializes a study for reproducible analysis: it
+  writes the `_study.yml` identity manifest that
   [`study_config()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md)
   reads, and seeds a `manifest.yaml` pinning the built dataset’s
   SHA-256. The cohort counts are derived from the dataset rather than
@@ -863,11 +1841,10 @@ belongs with the `bh` work.
 ### Notes
 
 - No new dependencies.
-- [`study_init()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_init.md)
-  does not run `renv::init()`. A missing `renv.lock` is reported as an
-  open item instead: creating one restarts the R session and rewrites
-  `.Rprofile`, which a function that writes two YAML files has no
-  business doing.
+- `study_init()` does not run `renv::init()`. A missing `renv.lock` is
+  reported as an open item instead: creating one restarts the R session
+  and rewrites `.Rprofile`, which a function that writes two YAML files
+  has no business doing.
 - [`study_status()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md)
   reports a `manifest.yaml` entry as verified when its SHA-256 matches
   but its row count could not be re-derived, and says how many counts

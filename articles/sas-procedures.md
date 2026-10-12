@@ -1,4 +1,4 @@
-# PROC CONTENTS and PROC MEANS in R
+# PROC CONTENTS, MEANS, FREQ and UNIVARIATE in R
 
 ``` r
 
@@ -8,31 +8,40 @@ if (requireNamespace("hvtiRutilities", quietly = TRUE)) {
   pkgload::load_all(export_all = FALSE, helpers = FALSE, quiet = TRUE)
 }
 #> 
-#>  hvtiRutilities 1.1.10 
+#>  hvtiRutilities 1.5.2 
 #>  
 #>  Type hvtiRutilities.news() to see new features, changes, and bug fixes. 
 #> 
 ```
 
-## Two Procedures You Already Run
+## Four Procedures You Already Run
 
-Open a new extract in SAS and you almost certainly run two things before
-anything else. `PROC CONTENTS` to see what arrived: how many
+Open a new extract in SAS and you almost certainly run three things
+before anything else. `PROC CONTENTS` to see what arrived: how many
 observations, how many variables, what each one is called and how it is
-stored. Then `PROC MEANS` to see whether the numbers are plausible:
-means, ranges, how much is missing.
+stored. `PROC MEANS` to see whether the numbers are plausible: means,
+ranges, how much is missing. And `PROC FREQ` to see whether the
+categories look right: how many died, how the cohort splits across the
+groups you will compare.
 
-Neither is a modelling step. They are the sanity check you do before you
-trust the file enough to analyse it.
-[`proc_contents()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_contents.md)
-and
+None of them is a modelling step. They are the sanity check you do
+before you trust the file enough to analyse it.
+[`proc_contents()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_contents.md),
 [`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
-are those two habits, kept intact in R.
+and
+[`proc_freq()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_freq.md)
+are those three habits, kept intact in R.
+
+The fourth comes a little later. When a summary needs weights, a
+percentile such as the 2.5th, or a test against a null value, you reach
+for `PROC UNIVARIATE`, and
+[`proc_univariate()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_univariate.md)
+gives you its output data set.
 
 The point is not that R lacks a way to describe a data frame. It has
-several. The point is that you already know what these two tables should
-look like, and when the R version prints the same numbers in the same
-shape, you can tell at a glance whether the extract is right. A
+several. The point is that you already know what these three tables
+should look like, and when the R version prints the same numbers in the
+same shape, you can tell at a glance whether the extract is right. A
 different summary in a different layout makes you re-learn what “normal”
 looks like.
 
@@ -210,16 +219,30 @@ run;
 ```
 
 gives you N, mean, standard deviation, minimum, and maximum over every
-numeric variable. So does the R default:
+numeric variable, and no percentiles. The R default deliberately goes
+further. The group reports the 15th and 85th percentiles alongside the
+median, not the quartiles, so
+[`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
+adds `p15`, `median` and `p85` between the minimum and the maximum:
 
 ``` r
 
 proc_means(dta, vars = c("age", "bmi", "gfr_bs"))
-#>   variable                         label   n    mean       std  min   max
-#> 1      age        Age at surgery (years) 200 44.5890 14.595538  1.0  85.0
-#> 2      bmi       Body mass index (kg/m2) 200 26.7885  4.750479 15.0  41.8
-#> 3   gfr_bs Baseline eGFR (mL/min/1.73m2) 200 76.1505 19.392901 25.9 120.0
+#>   variable                         label   n    mean       std  min   p15
+#> 1      age        Age at surgery (years) 200 44.5890 14.595538  1.0 29.30
+#> 2      bmi       Body mass index (kg/m2) 200 26.7885  4.750479 15.0 21.90
+#> 3   gfr_bs Baseline eGFR (mL/min/1.73m2) 200 76.1505 19.392901 25.9 56.95
+#>   median   p85   max
+#> 1  44.75 60.55  85.0
+#> 2  26.65 31.75  41.8
+#> 3  75.75 96.30 120.0
 ```
+
+That makes the default a departure from SAS on purpose, and a parity
+check has to account for it. Name the same statistics on both sides: add
+`P15 MEDIAN P85` to the SAS statement, or pass the SAS job’s own list to
+`stats`, as
+`proc_means(dta, stats = c("n", "mean", "std", "min", "max"))`.
 
 Omit `vars` and every numeric column is analysed, matching SAS’s
 behaviour when you leave out the `VAR` statement. Ask for specific
@@ -367,6 +390,240 @@ proc_means(flags, vars = "complication", stats = c("n", "mean", "sum"))
 #> 1 complication complication 5  0.6   3
 ```
 
+## Do the Categories Look Right? `proc_freq()`
+
+The SAS step
+
+``` sas
+proc freq data=cohort;
+  table dead / missing;
+  table sex * dead;
+run;
+```
+
+is two calls in R, one per `TABLES` statement:
+
+``` r
+
+proc_freq(dta, "dead", missing = TRUE)
+#>   dead Frequency Percent Cum_Frequency Cum_Percent
+#> 1    0        92      46            92          46
+#> 2    1       108      54           200         100
+```
+
+``` r
+
+proc_freq(dta, c("sex", "dead"))
+#>      sex dead Frequency Percent Row_Percent Col_Percent
+#> 1 Female    0        34    17.0    44.15584    36.95652
+#> 2 Female    1        43    21.5    55.84416    39.81481
+#> 3   Male    0        58    29.0    47.15447    63.04348
+#> 4   Male    1        65    32.5    52.84553    60.18519
+```
+
+The result is always a data frame with one row per combination of
+levels, so you can filter or join it. For a crosstab, `Row_Percent` and
+`Col_Percent` replace the cumulative columns. Add `list = TRUE` for the
+`/ LIST` layout:
+
+``` r
+
+proc_freq(dta, c("sex", "dead"), list = TRUE)
+#>      sex dead Frequency Percent Cum_Frequency Cum_Percent
+#> 1 Female    0        34    17.0            34        17.0
+#> 2 Female    1        43    21.5            77        38.5
+#> 3   Male    0        58    29.0           135        67.5
+#> 4   Male    1        65    32.5           200       100.0
+```
+
+### Missing Values
+
+Without `missing = TRUE`, rows with a missing value in any table
+variable are left out of the table and out of every percentage, as in
+SAS. SAS prints how many it dropped as “Frequency Missing”.
+[`proc_freq()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_freq.md)
+keeps that count in an attribute, so it is not lost:
+
+``` r
+
+dta_na <- dta
+dta_na$nyha_class[c(3, 17, 40)] <- NA
+
+res <- proc_freq(dta_na, "nyha_class")
+res
+#>   nyha_class Frequency   Percent Cum_Frequency Cum_Percent
+#> 1          I        46 23.350254            46    23.35025
+#> 2         II        67 34.010152           113    57.36041
+#> 3        III        66 33.502538           179    90.86294
+#> 4         IV        18  9.137056           197   100.00000
+attr(res, "frequency_missing")
+#> [1] 3
+```
+
+With `missing = TRUE`, the missing level comes **first**, because SAS
+sorts missing below every other value.
+[`dplyr::count()`](https://dplyr.tidyverse.org/reference/count.html)
+puts `NA` last, which changes every cumulative column in a hand
+translation.
+
+### The Denominator Trap
+
+This is the
+[`proc_freq()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_freq.md)
+counterpart of the quartile trap: the numbers move and nothing warns
+you.
+
+For two variables, `Percent` is out of the table total whichever layout
+you ask for. From three variables on, a SAS crosstab prints one table
+per level of the first variable and computes `Percent` **within** that
+table. `/ LIST` computes it out of the grand total. Four patients show
+it:
+
+``` r
+
+d <- data.frame(site = c(1, 1, 1, 2),
+                arm  = c("x", "x", "y", "x"),
+                dead = c(0, 1, 0, 0))
+
+proc_freq(d, c("site", "arm", "dead"))
+#>   site arm dead Frequency   Percent Row_Percent Col_Percent
+#> 1    1   x    0         1  33.33333          50          50
+#> 2    1   x    1         1  33.33333          50         100
+#> 3    1   y    0         1  33.33333         100          50
+#> 4    2   x    0         1 100.00000         100         100
+
+proc_freq(d, c("site", "arm", "dead"), list = TRUE)
+#>   site arm dead Frequency Percent Cum_Frequency Cum_Percent
+#> 1    1   x    0         1      25             1          25
+#> 2    1   x    1         1      25             2          50
+#> 3    1   y    0         1      25             3          75
+#> 4    2   x    0         1      25             4         100
+```
+
+The same site 2 patient is 100 percent of the crosstab and 25 percent of
+the list. Both are what SAS prints; they answer different questions.
+Match the option in the SAS step you are reproducing.
+
+## Weighted Percentiles and Tests: `proc_univariate()`
+
+Most `PROC UNIVARIATE` steps in our SAS programs are not after the
+printed report. They write an `OUTPUT` data set with percentiles that
+`PROC MEANS` cannot give: weighted ones, and decimal points such as the
+2.5th and 97.5th for a bootstrap interval.
+
+``` sas
+proc univariate data=cohort noprint;
+  var age;
+  weight wt;
+  output out=pct pctlpts=2.5 16 50 84 97.5 pctlpre=p_;
+run;
+```
+
+In R, `pctlpts` and `pctlpre` are arguments, and each point becomes a
+column named the way SAS names it, with the decimal point turned into an
+underscore:
+
+``` r
+
+wdta <- dta
+wdta$wt <- ifelse(wdta$sex == "Female", 2, 1)
+
+proc_univariate(wdta, vars = "age", stats = c("n", "sumwgt"),
+                weights = "wt", pctlpts = c(2.5, 16, 50, 84, 97.5),
+                pctlpre = "p_")
+#>   variable                  label   n sumwgt p_2_5 p_16 p_50 p_84 p_97_5
+#> 1      age Age at surgery (years) 200    277  14.6 30.1   45 58.8   72.7
+```
+
+### Weighted Quantiles Follow a Different Rule
+
+With `weights`,
+[`proc_univariate()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_univariate.md)
+weights `median`, `q1`, `q3`, `qrange`, `pNN` and every `pctlpts`
+column.
+[`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
+does not, because `PROC MEANS` does not. The same call can therefore
+give two medians:
+
+``` r
+
+w4 <- data.frame(x = c(1, 2, 3, 4), wt = c(1, 3, 1, 1))
+
+proc_means(w4, vars = "x", stats = "median", weights = "wt")
+#>   variable label median
+#> 1        x     x    2.5
+
+proc_univariate(w4, vars = "x", stats = "median", weights = "wt")
+#>   variable label median
+#> 1        x     x      2
+```
+
+The weighted rule is not `QNTLDEF=5` with weights added. SAS sorts the
+values, accumulates the weights, and takes the first value whose running
+weight passes the target, here half of the total weight of 6. The
+running weights are 1, 4, 5 and 6, so the median is 2. When a running
+weight lands exactly on the target, SAS averages that value and the next
+one. `PCTLDEF=` has no effect under `WEIGHT`, and
+[`proc_univariate()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_univariate.md)
+has no argument for it.
+
+### `VARDEF` Changes More Than the Variance
+
+`vardef` is SAS `VARDEF=`, the divisor of the variance: `"df"` for the
+number of observations minus one, the default; `"n"` for the number of
+observations; `"wdf"` for the sum of the weights minus one; and
+`"weight"` for the sum of the weights. Several of our weighted steps use
+`VARDEF=WDF`. It changes `var`, `std` and `cv`, and it also changes what
+SAS is willing to compute. `t`, `probt` and `stdmean` are missing unless
+the divisor is `DF`, and `skewness` and `kurtosis` are missing under
+`WDF` and `WEIGHT`.
+[`proc_univariate()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_univariate.md)
+returns `NA` in the same places:
+
+``` r
+
+proc_univariate(wdta, vars = "age", weights = "wt",
+                stats = c("std", "stdmean", "skewness"), vardef = "wdf")
+#>   variable                  label      std stdmean skewness
+#> 1      age Age at surgery (years) 14.62749      NA       NA
+
+proc_univariate(wdta, vars = "age", weights = "wt",
+                stats = c("std", "stdmean", "skewness"))
+#>   variable                  label      std  stdmean   skewness
+#> 1      age Age at surgery (years) 17.22653 1.035042 -0.2823725
+```
+
+Under weights, `stdmean` divides the standard deviation by the square
+root of the sum of the weights, not of the number of observations.
+
+### Tests for Location and Normality
+
+`mu0` is SAS `MU0=`, the null value for the three location tests:
+
+``` r
+
+proc_univariate(dta, vars = "bmi", mu0 = 25,
+                stats = c("mean", "t", "probt", "msign", "probm",
+                          "signrank", "probs", "normal", "probn"))
+#>   variable                   label    mean        t        probt msign
+#> 1      bmi Body mass index (kg/m2) 26.7885 5.324349 2.722644e-07    29
+#>          probm signrank        probs    normal     probn
+#> 1 4.544338e-05     3978 3.971077e-07 0.9954021 0.8071198
+```
+
+`t` is Student’s t, `msign` the sign test and `signrank` the Wilcoxon
+signed rank test, with an exact p-value when 20 or fewer values differ
+from `mu0`. `normal` is the Shapiro-Wilk statistic.
+
+Three limits come from SAS. Under `weights`, SAS computes only the t
+test, so the sign, signed rank and normality columns are `NA`. Above
+2000 observations SAS replaces Shapiro-Wilk with a Kolmogorov D test,
+which is not ported, so `normal` and `probn` are `NA` there and the call
+warns once. And R’s
+[`shapiro.test()`](https://rdrr.io/r/stats/shapiro.test.html) implements
+a later revision of the algorithm than SAS does: `normal` agrees with
+SAS to about eight decimal places, and `probn` slightly less closely.
+
 ## Did the Extract Change? `compare_datasets()`
 
 `PROC CONTENTS` on the old file, `PROC CONTENTS` on the new one, then
@@ -429,6 +686,20 @@ so you can check the list rather than discover an entry mid-analysis.
 | Variables with no `VAR` statement | All numeric | All numeric (logicals excluded unless named) |
 | Missing class levels | Dropped unless `MISSING` | Dropped |
 | Class level order | `ORDER=INTERNAL` | Factor level order |
+| `PROC FREQ` missing values | Dropped unless `MISSING`; count printed | Dropped unless `missing = TRUE`; count in `attr(, "frequency_missing")` |
+| `PROC FREQ` level order | `ORDER=INTERNAL`, missing first | Same, missing first |
+| `PROC FREQ` percentages | Rounded for display | Unrounded |
+| `PROC FREQ` blank character values | Missing | Missing |
+| `PROC FREQ` codes sharing a value label | One row | One row, at the smallest code |
+| `PROC FREQ` unlabelled doubles | Grouped on the printed value | Grouped on the exact value |
+| `PROC FREQ` non-positive weights | Zero dropped, negative ignored | Error |
+| `PROC FREQ` tests (`CHISQ`, `FISHER`, …) | Available | Not ported |
+| `PROC UNIVARIATE` quantiles under `WEIGHT` | Weighted, `PCTLDEF=` ignored | Weighted, same rule |
+| `PROC UNIVARIATE` `PCTLDEF=` | 1 to 5 | 5 only |
+| `PROC UNIVARIATE` non-positive weights | Negative treated as zero, observation still counted | Error |
+| `PROC UNIVARIATE` normality above 2000 observations | Kolmogorov D | `NA`, with a warning |
+| `PROC UNIVARIATE` Shapiro-Wilk | Royston (1992) | Royston (1995), through [`shapiro.test()`](https://rdrr.io/r/stats/shapiro.test.html) |
+| `PROC UNIVARIATE` plots, printed tables, confidence limits, robust estimators | Available | Not ported |
 | `PROC CONTENTS` sort | Alphabetic by default | `order = "alpha"` by default |
 | `Len`, `Pos`, `Informat` | Reported | Omitted, not recoverable through `haven` |
 | Created / modified timestamps | Reported | Omitted, not recoverable through `haven` |
@@ -457,6 +728,25 @@ quartiles rather than a bare
 Declare ordered clinical scales as ordered factors so `class` output
 keeps its clinical sequence.
 
+Set `list` to match the SAS step you are reproducing; from three
+variables on it changes `Percent`, not just the layout.
+
+Read `attr(, "frequency_missing")` when you leave `missing = FALSE`.
+
+Use
+[`proc_univariate()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_univariate.md),
+not
+[`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md),
+for percentiles from a weighted step;
+[`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
+quantiles ignore the weights.
+
+Carry `VARDEF=` across as `vardef`, and expect `NA` where SAS leaves a
+statistic missing under it.
+
+Read an `NA` in `normal` above 2000 observations as “not computed”, not
+as a test result.
+
 Run
 [`compare_datasets()`](https://ehrlinger.github.io/hvtiRutilities/reference/compare_datasets.md)
 on every re-pull, and check `label_changes`, not just the column counts.
@@ -465,6 +755,8 @@ on every re-pull, and check `label_changes`, not just the column counts.
 
 - [`?proc_contents`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_contents.md),
   [`?proc_means`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md),
+  [`?proc_freq`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_freq.md),
+  [`?proc_univariate`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_univariate.md),
   [`?compare_datasets`](https://ehrlinger.github.io/hvtiRutilities/reference/compare_datasets.md)
 - [Dataset Version
   Tracking](https://ehrlinger.github.io/hvtiRutilities/articles/dataset-versioning.md)

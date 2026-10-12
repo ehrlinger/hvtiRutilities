@@ -64,11 +64,11 @@ tail(lmap, 4)
 #> 25    age_group Age Group (<40, 40-60, >60) Age Group (<40, 40-60, >60)
 #> 26    bsa_ratio                   BSA Ratio                   BSA Ratio
 #> 27   risk_score        Composite Risk Score        Composite Risk Score
-#>    truncated
-#> 24     FALSE
-#> 25     FALSE
-#> 26     FALSE
-#> 27     FALSE
+#>    truncated over_cap
+#> 24     FALSE    FALSE
+#> 25     FALSE    FALSE
+#> 26     FALSE    FALSE
+#> 27     FALSE    FALSE
 
 # --- Method 2: Label a data frame directly (preferred) ---
 dta$age_group <- cut(dta$age, breaks = c(0, 40, 60, Inf),

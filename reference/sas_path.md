@@ -1,8 +1,10 @@
 # Build a path under the study root
 
-Joins its arguments onto the study root. Use this instead of any literal
-path: the same study is mounted at different absolute paths on the
-analysis server and on a laptop.
+Joins its arguments onto the study root. A first component naming a
+logical study directory is resolved through the study's numbered or
+legacy layout. Other components are passed through unchanged. Use this
+instead of any literal path: the same study is mounted at different
+absolute paths on the analysis server and on a laptop.
 
 ## Usage
 
@@ -37,12 +39,10 @@ root <- file.path(tempdir(), "sas-path-example")
 dir.create(file.path(root, "datasets"), recursive = TRUE,
            showWarnings = FALSE)
 yaml::write_yaml(
-  list(study = "Example", built = "example.sas7bdat",
-       cohort = list(n = 10L, n_events = 4L, n_censored = 6L,
-                     event = "dead", time = "iv_dead")),
+  list(study = "Example", built = "example.sas7bdat"),
   file.path(root, "_study.yml")
 )
 sas_path("datasets", start = root)
-#> [1] "/tmp/Rtmpj3Xwn9/sas-path-example/datasets"
+#> [1] "/tmp/RtmpQIPpfJ/sas-path-example/datasets"
 unlink(root, recursive = TRUE)
 ```

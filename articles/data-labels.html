@@ -14,7 +14,8 @@
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><script src="data-labels_files/libs/quarto-html/popper.min.js"></script><script src="data-labels_files/libs/quarto-html/tippy.umd.min.js"></script><link href="data-labels_files/libs/quarto-html/tippy.css" rel="stylesheet">
 <link href="data-labels_files/libs/quarto-html/light-border.css" rel="stylesheet">
-<!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Data Label Handling Best Practices">
+<!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet">
+<meta property="og:title" content="Data Label Handling Best Practices">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -24,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.10</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -82,7 +83,7 @@
       <p class="author">John Ehrlinger</p>
       <p class="date">2026-10-12</p>
 
-      <small class="dont-index">Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/v1.1.10/vignettes/data-labels.qmd" class="external-link"><code>vignettes/data-labels.qmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/vignettes/data-labels.qmd" class="external-link"><code>vignettes/data-labels.qmd</code></a></small>
       <div class="d-none name"><code></code></div>
     </div>
 
@@ -103,7 +104,7 @@
 <span>  <span class="fu">pkgload</span><span class="fu">::</span><span class="fu"><a href="https://pkgload.r-lib.org/reference/load_all.html" class="external-link">load_all</a></span><span class="op">(</span>export_all <span class="op">=</span> <span class="cn">FALSE</span>, helpers <span class="op">=</span> <span class="cn">FALSE</span>, quiet <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;  hvtiRutilities 1.1.10 </span></span>
+<span><span class="co">#&gt;  hvtiRutilities 1.5.2 </span></span>
 <span><span class="co">#&gt;  </span></span>
 <span><span class="co">#&gt;  Type hvtiRutilities.news() to see new features, changes, and bug fixes. </span></span>
 <span><span class="co">#&gt; </span></span>
@@ -143,17 +144,17 @@
 <span><span class="co">#&gt; 8          age                Age at surgery (years)</span></span>
 <span><span class="co">#&gt; 9          sex                                   Sex</span></span>
 <span><span class="co">#&gt; 10         bmi               Body mass index (kg/m2)</span></span>
-<span><span class="co">#&gt;                                        label_full truncated</span></span>
-<span><span class="co">#&gt; 1                                      Patient ID     FALSE</span></span>
-<span><span class="co">#&gt; 2                  Calendar year for iv_opyrs = 0     FALSE</span></span>
-<span><span class="co">#&gt; 3  Observation interval (years) since origin_year      TRUE</span></span>
-<span><span class="co">#&gt; 4                 Follow-up time to death (years)     FALSE</span></span>
-<span><span class="co">#&gt; 5            Death indicator (1=dead, 0=censored)     FALSE</span></span>
-<span><span class="co">#&gt; 6                       Reoperation (1=yes, 0=no)     FALSE</span></span>
-<span><span class="co">#&gt; 7           Follow-up time to reoperation (years)     FALSE</span></span>
-<span><span class="co">#&gt; 8                          Age at surgery (years)     FALSE</span></span>
-<span><span class="co">#&gt; 9                                             Sex     FALSE</span></span>
-<span><span class="co">#&gt; 10                        Body mass index (kg/m2)     FALSE</span></span></code></pre></div>
+<span><span class="co">#&gt;                                        label_full truncated over_cap</span></span>
+<span><span class="co">#&gt; 1                                      Patient ID     FALSE    FALSE</span></span>
+<span><span class="co">#&gt; 2                  Calendar year for iv_opyrs = 0     FALSE    FALSE</span></span>
+<span><span class="co">#&gt; 3  Observation interval (years) since origin_year      TRUE    FALSE</span></span>
+<span><span class="co">#&gt; 4                 Follow-up time to death (years)     FALSE    FALSE</span></span>
+<span><span class="co">#&gt; 5            Death indicator (1=dead, 0=censored)     FALSE    FALSE</span></span>
+<span><span class="co">#&gt; 6                       Reoperation (1=yes, 0=no)     FALSE    FALSE</span></span>
+<span><span class="co">#&gt; 7           Follow-up time to reoperation (years)     FALSE    FALSE</span></span>
+<span><span class="co">#&gt; 8                          Age at surgery (years)     FALSE    FALSE</span></span>
+<span><span class="co">#&gt; 9                                             Sex     FALSE    FALSE</span></span>
+<span><span class="co">#&gt; 10                        Body mass index (kg/m2)     FALSE    FALSE</span></span></code></pre></div>
 </div>
 <p>The result is a two-column data frame: <code>key</code> (variable name) and <code>label</code> (descriptive text). Every column in the data gets an entry. Unlabeled columns fall back to the variable name itself.</p>
 <section class="level4"><h4 id="detecting-missing-labels">Detecting Missing Labels<a class="anchor" aria-label="anchor" href="#detecting-missing-labels"></a>
@@ -172,10 +173,10 @@
 <span><span class="co">#&gt; Warning: 3 of 3 variables (100%) lack descriptive labels. Consider adding a</span></span>
 <span><span class="co">#&gt; labels_overrides.yml or using add_labels().</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">lmap_csv</span><span class="op">)</span></span>
-<span><span class="co">#&gt;      key  label label_full truncated</span></span>
-<span><span class="co">#&gt; 1 pat_id pat_id     pat_id     FALSE</span></span>
-<span><span class="co">#&gt; 2    hgb    hgb        hgb     FALSE</span></span>
-<span><span class="co">#&gt; 3   egfr   egfr       egfr     FALSE</span></span></code></pre></div>
+<span><span class="co">#&gt;      key  label label_full truncated over_cap</span></span>
+<span><span class="co">#&gt; 1 pat_id pat_id     pat_id     FALSE    FALSE</span></span>
+<span><span class="co">#&gt; 2    hgb    hgb        hgb     FALSE    FALSE</span></span>
+<span><span class="co">#&gt; 3   egfr   egfr       egfr     FALSE    FALSE</span></span></code></pre></div>
 </div>
 <p>The warning is intentional: it prevents the common mistake of generating plots and tables with cryptic variable names like <code>hgb</code> and <code>egfr</code> and not noticing until a collaborator asks what they mean.</p>
 </section></section><section class="level3"><h3 id="phase-2-labeling-derived-variables">Phase 2: Labeling Derived Variables<a class="anchor" aria-label="anchor" href="#phase-2-labeling-derived-variables"></a>
@@ -213,9 +214,9 @@
 <span><span class="co">#&gt;          key                            label                       label_full</span></span>
 <span><span class="co">#&gt; 25 age_group             Age Group at Surgery             Age Group at Surgery</span></span>
 <span><span class="co">#&gt; 26    ef_low Reduced Ejection Fraction (&lt;40%) Reduced Ejection Fraction (&lt;40%)</span></span>
-<span><span class="co">#&gt;    truncated</span></span>
-<span><span class="co">#&gt; 25     FALSE</span></span>
-<span><span class="co">#&gt; 26     FALSE</span></span></code></pre></div>
+<span><span class="co">#&gt;    truncated over_cap</span></span>
+<span><span class="co">#&gt; 25     FALSE    FALSE</span></span>
+<span><span class="co">#&gt; 26     FALSE    FALSE</span></span></code></pre></div>
 </div>
 </section><section class="level4"><h4 id="method-b-update-the-label-map-for-reporting">Method B: Update the label map (for reporting)<a class="anchor" aria-label="anchor" href="#method-b-update-the-label-map-for-reporting"></a>
 </h4>
@@ -238,11 +239,11 @@
 <span><span class="co">#&gt; 25    age_group             Age Group at Surgery</span></span>
 <span><span class="co">#&gt; 26       ef_low Reduced Ejection Fraction (&lt;40%)</span></span>
 <span><span class="co">#&gt; 27   risk_score             Composite Risk Score</span></span>
-<span><span class="co">#&gt;                          label_full truncated</span></span>
-<span><span class="co">#&gt; 24                     Hypertension     FALSE</span></span>
-<span><span class="co">#&gt; 25             Age Group at Surgery     FALSE</span></span>
-<span><span class="co">#&gt; 26 Reduced Ejection Fraction (&lt;40%)     FALSE</span></span>
-<span><span class="co">#&gt; 27             Composite Risk Score     FALSE</span></span></code></pre></div>
+<span><span class="co">#&gt;                          label_full truncated over_cap</span></span>
+<span><span class="co">#&gt; 24                     Hypertension     FALSE    FALSE</span></span>
+<span><span class="co">#&gt; 25             Age Group at Surgery     FALSE    FALSE</span></span>
+<span><span class="co">#&gt; 26 Reduced Ejection Fraction (&lt;40%)     FALSE    FALSE</span></span>
+<span><span class="co">#&gt; 27             Composite Risk Score     FALSE    FALSE</span></span></code></pre></div>
 </div>
 </section><section class="level4"><h4 id="which-method-should-i-use">Which method should I use?<a class="anchor" aria-label="anchor" href="#which-method-should-i-use"></a>
 </h4>
@@ -295,11 +296,11 @@
 <span><span class="co"># Apply study-specific overrides</span></span>
 <span><span class="va">lmap</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/apply_label_overrides.html">apply_label_overrides</a></span><span class="op">(</span><span class="va">lmap</span>, overrides_file <span class="op">=</span> <span class="va">tmp_overrides</span><span class="op">)</span></span>
 <span><span class="va">lmap</span><span class="op">[</span><span class="va">lmap</span><span class="op">$</span><span class="va">key</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lvefvs_b"</span>, <span class="st">"hgb_bs"</span>, <span class="st">"gfr_bs"</span>, <span class="st">"nyha_class"</span><span class="op">)</span>, <span class="op">]</span></span>
-<span><span class="co">#&gt;           key                label           label_full truncated</span></span>
-<span><span class="co">#&gt; 11     hgb_bs    Hemoglobin (g/dL)    Hemoglobin (g/dL)     FALSE</span></span>
-<span><span class="co">#&gt; 14     gfr_bs eGFR (mL/min/1.73m2) eGFR (mL/min/1.73m2)     FALSE</span></span>
-<span><span class="co">#&gt; 15   lvefvs_b    Baseline LVEF (%)    Baseline LVEF (%)     FALSE</span></span>
-<span><span class="co">#&gt; 22 nyha_class           NYHA Class           NYHA Class     FALSE</span></span></code></pre></div>
+<span><span class="co">#&gt;           key                label           label_full truncated over_cap</span></span>
+<span><span class="co">#&gt; 11     hgb_bs    Hemoglobin (g/dL)    Hemoglobin (g/dL)     FALSE    FALSE</span></span>
+<span><span class="co">#&gt; 14     gfr_bs eGFR (mL/min/1.73m2) eGFR (mL/min/1.73m2)     FALSE    FALSE</span></span>
+<span><span class="co">#&gt; 15   lvefvs_b    Baseline LVEF (%)    Baseline LVEF (%)     FALSE    FALSE</span></span>
+<span><span class="co">#&gt; 22 nyha_class           NYHA Class           NYHA Class     FALSE    FALSE</span></span></code></pre></div>
 </div>
 <p>In a real project, <code>labels_overrides.yml</code> lives alongside <code>config.yml</code> in the project root and is committed to version control. Each study gets its own file; shared analysis code never contains hard-coded label replacements.</p>
 <section class="level4"><h4 id="example-labels_overrides-yml">Example <code>labels_overrides.yml</code>
@@ -480,17 +481,17 @@
 <span><span class="co">#&gt; 8          age                Age at surgery (years)</span></span>
 <span><span class="co">#&gt; 9          sex                                   Sex</span></span>
 <span><span class="co">#&gt; 10         bmi               Body mass index (kg/m2)</span></span>
-<span><span class="co">#&gt;                                        label_full truncated</span></span>
-<span><span class="co">#&gt; 1                                      Patient ID     FALSE</span></span>
-<span><span class="co">#&gt; 2                  Calendar year for iv_opyrs = 0     FALSE</span></span>
-<span><span class="co">#&gt; 3  Observation interval (years) since origin_year      TRUE</span></span>
-<span><span class="co">#&gt; 4                 Follow-up time to death (years)     FALSE</span></span>
-<span><span class="co">#&gt; 5            Death indicator (1=dead, 0=censored)     FALSE</span></span>
-<span><span class="co">#&gt; 6                       Reoperation (1=yes, 0=no)     FALSE</span></span>
-<span><span class="co">#&gt; 7           Follow-up time to reoperation (years)     FALSE</span></span>
-<span><span class="co">#&gt; 8                          Age at surgery (years)     FALSE</span></span>
-<span><span class="co">#&gt; 9                                             Sex     FALSE</span></span>
-<span><span class="co">#&gt; 10                        Body mass index (kg/m2)     FALSE</span></span></code></pre></div>
+<span><span class="co">#&gt;                                        label_full truncated over_cap</span></span>
+<span><span class="co">#&gt; 1                                      Patient ID     FALSE    FALSE</span></span>
+<span><span class="co">#&gt; 2                  Calendar year for iv_opyrs = 0     FALSE    FALSE</span></span>
+<span><span class="co">#&gt; 3  Observation interval (years) since origin_year      TRUE    FALSE</span></span>
+<span><span class="co">#&gt; 4                 Follow-up time to death (years)     FALSE    FALSE</span></span>
+<span><span class="co">#&gt; 5            Death indicator (1=dead, 0=censored)     FALSE    FALSE</span></span>
+<span><span class="co">#&gt; 6                       Reoperation (1=yes, 0=no)     FALSE    FALSE</span></span>
+<span><span class="co">#&gt; 7           Follow-up time to reoperation (years)     FALSE    FALSE</span></span>
+<span><span class="co">#&gt; 8                          Age at surgery (years)     FALSE    FALSE</span></span>
+<span><span class="co">#&gt; 9                                             Sex     FALSE    FALSE</span></span>
+<span><span class="co">#&gt; 10                        Body mass index (kg/m2)     FALSE    FALSE</span></span></code></pre></div>
 </div>
 </section><section class="level2"><h2 id="labels-and-r_data_types">Labels and <code>r_data_types()</code>
 <a class="anchor" aria-label="anchor" href="#labels-and-r_data_types"></a>
@@ -628,7 +629,7 @@
 <span><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; other attached packages:</span></span>
-<span><span class="co">#&gt; [1] labelled_2.16.1       hvtiRutilities_1.1.10</span></span>
+<span><span class="co">#&gt; [1] labelled_2.16.1      hvtiRutilities_1.5.2</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
 <span><span class="co">#&gt;  [1] vctrs_0.7.3      cli_3.6.6        knitr_1.52       rlang_1.3.0     </span></span>
