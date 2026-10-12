@@ -8,56 +8,22 @@ anything. Backfilled lab results, corrected ICD codes, and updated
 patient status all mean that re-running an extraction silently changes
 the underlying numbers.
 
-The standard defence starts with three habits:
+The standard defence is a three-step protocol:
 
-1.  **Name every dataset by its extract date**, such as
-    `cohort_20240115.csv` or `labs_20240801.sas7bdat`. Never overwrite
-    an existing dated file; a new pull gets a new filename.
+1.  **Name every dataset by its extract date** — `cohort_20240115.csv`,
+    `labs_20240801.sas7bdat`. Never overwrite an existing dated file; a
+    new pull gets a new filename.
 2.  **Record a SHA-256 checksum** the moment a file lands on disk. A
     single changed byte produces a completely different hash.
 3.  **Verify the checksums before every analysis run** so that any drift
     is caught immediately, before results are generated.
 
-For an ordinary file manifest, two functions implement those habits:
+`hvtiRutilities` provides two functions that implement this protocol:
 
 | Function | Purpose |
 |----|----|
 | [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md) | Register a dataset (or update its entry) in `manifest.yaml` |
 | [`verify_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md) | Check every registered dataset before an analysis runs |
-
-A registered study needs one more piece: a producer-owned release
-catalog. The catalog distinguishes a mutable draft from a published
-dated release and lets a study discover a later release without changing
-the release it already uses. We return to that workflow after the
-checksum example.
-
-## In a Study: Rebuild, Then Update
-
-Most of the time you do not call any of the functions below directly. A
-study registers its dataset once, and from then on the cycle is two
-steps.
-
-1.  Rebuild `datasets/built.sas7bdat` as often as you need. Jobs are not
-    affected: they read the registered version, a dated parquet such as
-    `built_20260915.parquet`, and
-    [`read_built()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_built.md)
-    says that a newer file is waiting.
-
-2.  When the rebuild is right, register it:
-
-    ``` r
-
-    hvtiRutilities::update_manifest()
-    ```
-
-    Run it from anywhere in the study. It converts the new file to
-    `built_20261007.parquet`, keeps every earlier version, and prints
-    what it did. Commit `manifest.yaml`.
-
-Every registered version stays on disk, so a manuscript revision can be
-reproduced from the version its paper used. The rest of this vignette
-explains the checksums underneath, and how to record a file outside a
-study.
 
 ## Setup
 
@@ -69,7 +35,7 @@ if (requireNamespace("hvtiRutilities", quietly = TRUE)) {
   pkgload::load_all(export_all = FALSE, helpers = FALSE, quiet = TRUE)
 }
 #> 
-#>  hvtiRutilities 1.5.2 
+#>  hvtiRutilities 1.1.10 
 #>  
 #>  Type hvtiRutilities.news() to see new features, changes, and bug fixes. 
 #> 
@@ -281,7 +247,6 @@ verify_manifest(
 #>    cohort_20240115.csv: SHA-256 mismatch
 #>   expected: f3db9dd8a47765003a2509c54068f8736b0fd8c2f0b0425808422cc11f0bdfcd
 #>   actual:   5557af305fedf53ed5ee74c6a0aace29e4974a549a2a44fc5ff8c173d40a4e1a
-#>   If this file was rebuilt on purpose, run hvtiRutilities::update_manifest() to register the new version.
 ```
 
 The error message names the affected file and shows both the expected
@@ -304,98 +269,38 @@ report <- verify_manifest(
 #>    cohort_20240115.csv: SHA-256 mismatch
 #>   expected: f3db9dd8a47765003a2509c54068f8736b0fd8c2f0b0425808422cc11f0bdfcd
 #>   actual:   5557af305fedf53ed5ee74c6a0aace29e4974a549a2a44fc5ff8c173d40a4e1a
-#>   If this file was rebuilt on purpose, run hvtiRutilities::update_manifest() to register the new version.
 
 report[report$status == "FAIL", c("file", "message")]
 #>                  file
 #> 1 cohort_20240115.csv
-#>                                                                                                                                                                                                                                                                                   message
-#> 1 SHA-256 mismatch\n  expected: f3db9dd8a47765003a2509c54068f8736b0fd8c2f0b0425808422cc11f0bdfcd\n  actual:   5557af305fedf53ed5ee74c6a0aace29e4974a549a2a44fc5ff8c173d40a4e1a\n  If this file was rebuilt on purpose, run hvtiRutilities::update_manifest() to register the new version.
+#>                                                                                                                                                                        message
+#> 1 SHA-256 mismatch\n  expected: f3db9dd8a47765003a2509c54068f8736b0fd8c2f0b0425808422cc11f0bdfcd\n  actual:   5557af305fedf53ed5ee74c6a0aace29e4974a549a2a44fc5ff8c173d40a4e1a
 ```
 
-### Publishing a legitimate correction
+### Updating the manifest after a legitimate re-pull
 
-A changed checksum tells you that the bytes moved. It does not tell you
-which bytes were correct, and an already overwritten file cannot be
-reconstructed from its checksum. Keep the mutable work under a draft
-name while the statistical programmer builds and validates it.
-Publishing is the boundary: `hvtiRdatabuild` writes an immutable dated
-file and adds its checksum, dimensions, release ID, and sequence to
-`dataset-catalog.yml`.
-
-A correction published on the same day gets a revision suffix such as
-`_r2` and a larger sequence. Revisions start at 1 for each extract date
-and increase without gaps in catalog order. Date order and filename
-order are not enough when two releases share a date, so consumers follow
-the catalog sequence.
-
-The rest of this vignette still needs its original temporary file. This
-reset is safe only because the fixture is disposable; it is not a
-recovery method for a study whose published file was overwritten.
+If a new extract is intentional — a corrected pull, an updated query —
+call
+[`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
+again with the same filename. The existing entry is replaced in place
+and the new checksum is recorded.
 
 ``` r
 
-write.csv(cohort, cohort_file, row.names = FALSE)
-```
-
-## From Published Release to Study Update
-
-Suppose a study is pinned to `surgery_cohort-20260920-r1` and the
-producer publishes `surgery_cohort-20260921-r1`. The study keeps reading
-the old release.
-[`study_status()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md)
-reports an `UPDATE AVAILABLE` row, and
-[`read_built()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_built.md)
-emits an update message once in the R session. Neither one silently
-advances the study. A revision run continues to read the release
-recorded by its Git revision. The pinned file is still checked against
-`manifest.yaml` when the producer catalog is missing or malformed; loss
-of update discovery never weakens the study’s local integrity check.
-Review and adoption require a literal release ID. `latest` is reserved
-and is never a release ID or an alias.
-
-The update has five steps:
-
-1.  Build and validate a mutable draft in `hvtiRdatabuild`.
-2.  Publish an immutable dated release through `hvtiRdatabuild`.
-3.  Let
-    [`study_status()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md)
-    or
-    [`read_built()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_built.md)
-    report the candidate.
-4.  Review that exact release ID with
-    [`review_data_update()`](https://ehrlinger.github.io/hvtiRutilities/reference/review_data_update.md).
-5.  Adopt the same ID with
-    [`adopt_data_update()`](https://ehrlinger.github.io/hvtiRutilities/reference/adopt_data_update.md)
-    after the review is accepted.
-
-``` r
-
-cfg <- study_config()
-
-check_data_updates(cfg)
-
-review_data_update(
-  cfg,
-  release_id = "surgery_cohort-20260921-r1"
+# Re-register after the legitimate change
+update_manifest(
+  file          = cohort_file,
+  manifest_path = manifest_path,
+  extract_date  = "2024-01-15",
+  source        = "Epic EMR, query v4.2, ICD mapping v3.2 — corrected age for pt 1"
 )
 
-adopt_data_update(
-  cfg,
-  release_id = "surgery_cohort-20260921-r1"
+# Verification now passes again
+verify_manifest(
+  manifest_path = manifest_path,
+  data_dir      = datasets_dir
 )
 ```
-
-Both review and adoption require an exact ID; `"latest"` is not an
-alias. Review verifies both files and shows row, column, type, and label
-changes. Adoption repeats those checks, then replaces `_study.yml` and
-`manifest.yaml` together. It leaves the old dated file in place.
-
-A producer may withdraw a release without deleting it. A study pinned to
-that release stops by default and reports the withdrawal reason. For a
-deliberate historical reproduction, `read_built(allow_withdrawn = TRUE)`
-reads the pinned bytes after their checksum passes. A withdrawn
-candidate cannot be adopted.
 
 ## A New Pull for a Different Project
 
@@ -424,10 +329,10 @@ The manifest now tracks all three files independently.
 ``` r
 
 m <- yaml::read_yaml(manifest_path)
-do.call(rbind, lapply(m$datasets, function(e) {
+do.call(rbind, lapply(m$datasets, function(e)
   data.frame(file = e$file, extract_date = e$extract_date,
              n_rows = e$n_rows, stringsAsFactors = FALSE)
-}))
+))
 #>                  file extract_date n_rows
 #> 1 cohort_20240115.csv   2024-01-15    200
 #> 2   labs_20240115.csv   2024-01-15    200
@@ -521,13 +426,25 @@ for more on inspecting an extract once you know it moved.
 
 | Stage | Action |
 |----|----|
-| **While building a release** | Validate a mutable draft; do not register it as a published study release |
-| **When the build is accepted** | Publish an immutable dated release through `hvtiRdatabuild` |
-| **When a study sees an update** | Review and adopt one exact release ID; commit the changed study contracts |
+| **On every data pull** | Run [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md) immediately and commit `manifest.yaml` to git |
 | **Top of every analysis script** | Call [`verify_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md) — before loading any data |
 | **At manuscript submission** | Tag the git commit; freeze `manifest.yaml`; do not re-pull data |
-| **For an unregistered legacy file** | Use [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md) to record its current bytes; a checksum cannot recover an overwritten version |
+| **For a new project or re-pull** | Use a new date-stamped filename; add a new [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md) entry |
 | **`.gitignore`** | Add `datasets/` — commit the manifest, not the data |
+
+## Summary
+
+- [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
+  records the SHA-256 checksum, row count, extract date, and optional
+  provenance fields for CSV, SAS, Excel, or any file type.
+- [`verify_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md)
+  checks every registered dataset before results are produced; one
+  changed byte triggers an immediate, informative error.
+- [`compare_datasets()`](https://ehrlinger.github.io/hvtiRutilities/reference/compare_datasets.md)
+  reports what moved between two pulls: row counts, added and dropped
+  columns, type changes, and label changes.
+- The combination makes dataset drift **detectable** and the audit trail
+  **reproducible** from first pull to manuscript submission.
 
 ## Session Information
 
@@ -555,7 +472,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] hvtiRutilities_1.5.2
+#> [1] hvtiRutilities_1.1.10
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] vctrs_0.7.3      cli_3.6.6        knitr_1.52       rlang_1.3.0     

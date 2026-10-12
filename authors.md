@@ -2,21 +2,21 @@
 
 ## Authors
 
-- **John Ehrlinger**. Author, maintainer, copyright holder.
+- **John Ehrlinger**. Author, maintainer.
 
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/ehrlinger/hvtiRutilities/blob/main/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/ehrlinger/hvtiRutilities/blob/v1.1.10/DESCRIPTION)
 
 Ehrlinger J (2026). *hvtiRutilities: A Collection of Utilities for Use
-by HVTI CORR Group at the Cleveland Clinic*. R package version 1.5.2,
+by HVTI CORR Group at the Cleveland Clinic*. R package version 1.1.10,
 <https://github.com/ehrlinger/hvtiRutilities>.
 
     @Manual{,
       title = {hvtiRutilities: A Collection of Utilities for Use by HVTI CORR Group at the Cleveland Clinic},
       author = {John Ehrlinger},
       year = {2026},
-      note = {R package version 1.5.2},
+      note = {R package version 1.1.10},
       url = {https://github.com/ehrlinger/hvtiRutilities},
     }

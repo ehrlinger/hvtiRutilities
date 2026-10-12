@@ -3,8 +3,8 @@
 Turns a
 [`study_status`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md)
 result into markdown: one checkbox per check, ticked where the check
-passed (`"OK"`) or the study is closed (`"CLOSED"`) and left open
-otherwise, with the detail alongside. File counts follow.
+passed and left open otherwise, with the detail alongside. File counts
+follow.
 
 ## Usage
 
@@ -19,7 +19,7 @@ study_checklist(status, path = NULL)
   An object of class `"study_status"`, from
   [`study_status`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md)
   or
-  [`study_setup`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md).
+  [`study_init`](https://ehrlinger.github.io/hvtiRutilities/reference/study_init.md).
 
 - path:
 
@@ -34,7 +34,7 @@ When `path` is `NULL`, a character vector of markdown lines. Otherwise
 ## See also
 
 [`study_status`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md),
-[`study_setup`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md)
+[`study_init`](https://ehrlinger.github.io/hvtiRutilities/reference/study_init.md)
 
 ## Examples
 
@@ -44,14 +44,15 @@ dir.create(root, showWarnings = FALSE)
 cat(study_checklist(study_status(root)), sep = "\n")
 #> # Study readiness
 #> 
-#> Study root: `/tmp/Rtmpuj5hFu/study-checklist-example`
+#> Study root: `/tmp/Rtmpj3Xwn9/study-checklist-example`
 #> 
 #> ## Checks
 #> 
-#> - [ ] **_study.yml** — no _study.yml at this root; recovery may be available with study-setup --recover; if its Tracker ID cannot be inferred, run study-setup 42 --recover
+#> - [ ] **_study.yml** — no _study.yml at this root; run study_init()
 #> - [ ] **renv.lock** — no renv.lock; run renv::init() in the study project
-#> - [ ] **manifest.yaml** — no manifest.yaml; register_data() creates it
+#> - [ ] **manifest.yaml** — no manifest.yaml; study_init() seeds one
 #> - [ ] **dataset** — requires a valid _study.yml
+#> - [ ] **cohort** — requires a valid _study.yml
 #> - [ ] **provenance** — no .qmd/.Rmd sources found; 0 sidecars
 #> 
 #> ## Counts

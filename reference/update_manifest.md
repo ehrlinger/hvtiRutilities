@@ -1,33 +1,11 @@
 # Create or update a dataset manifest file
 
-**In a study**, run with no arguments after rebuilding a registered
-dataset: `update_manifest()`. It finds the study from the working
-directory, converts every registered dataset whose source file has
-changed to a new dated parquet (`<name>_YYYYMMDD.parquet`, or `_r2`,
-`_r3` for another version on the same date), keeps every earlier
-version, records the change in `manifest.yaml`, and prints one line per
-dataset. Jobs read the new version from then on. Unchanged datasets are
-left alone. Datasets that are not combined are updated before the
-combined datasets built from them, and a combined dataset records its
-parents' versions when its own rebuilt source is registered. One whose
-parents have since been updated, or that records no parent versions, is
-listed as out of date in a message after the table until its source is
-rebuilt and `update_manifest()` is run again. Name one dataset with
-`dataset`. Release-aware datasets are skipped; use
-[`review_data_update`](https://ehrlinger.github.io/hvtiRutilities/reference/review_data_update.md)
-and
-[`adopt_data_update`](https://ehrlinger.github.io/hvtiRutilities/reference/adopt_data_update.md).
-Needs the arrow package.
-
-**A single file**: `update_manifest(file, ...)` records a SHA-256
-checksum, row count, extract date and optional provenance fields for one
-file in a `manifest.yaml`. If the manifest already contains an entry for
-the named file it is updated in place; otherwise a new entry is
-appended. The manifest is intended to be committed to version control
-while the data files themselves are not. It refuses a file a study
-registers as dated versions, whose entry it would flatten; use the
-no-argument form for those. It also refuses one of those versions or its
-schema file, which is another dataset's registered data.
+Records dataset metadata — including a SHA-256 checksum, row count,
+extract date, and optional provenance fields — into a `manifest.yaml`
+file. If the manifest already contains an entry for the named file it is
+updated in place; otherwise a new entry is appended. The manifest is
+intended to be committed to version control while the data files
+themselves are not.
 
 Row counts are detected automatically for **CSV** (`.csv`) files. For
 **SAS** (`.sas7bdat`) and **Excel** (`.xlsx`, `.xls`) files, automatic
@@ -51,8 +29,7 @@ update_manifest(
   schema_sha256 = NULL,
   role = c("source", "primary"),
   reader = NULL,
-  verbose = FALSE,
-  dataset = NULL
+  verbose = FALSE
 )
 ```
 
@@ -60,8 +37,7 @@ update_manifest(
 
 - file:
 
-  Character. Path to the dataset file. Omit it inside a study to
-  register every changed dataset; see the description.
+  Character. Path to the dataset file.
 
 - manifest_path:
 
@@ -71,9 +47,7 @@ update_manifest(
 - extract_date:
 
   Character or `Date`. The date the data were pulled from the source
-  system. Stored as `"YYYY-MM-DD"`. Defaults to today's date. With no
-  `file`, the date of the new version; defaults to the source file's
-  modification date.
+  system. Stored as `"YYYY-MM-DD"`. Defaults to today's date.
 
 - n_rows:
 
@@ -127,19 +101,9 @@ update_manifest(
   via [`message`](https://rdrr.io/r/base/message.html). Defaults to
   `FALSE` so that scripted or looped calls stay silent.
 
-- dataset:
-
-  Character(1) or `NULL`. With no `file`: the one registered dataset to
-  update; `NULL` updates every one that changed. `"built"` is a second
-  name for `"study"`. Ignored when `file` is given.
-
 ## Value
 
-With `file`, invisibly returns the updated manifest as a named list.
-With no `file`, invisibly returns a data frame with one row per dataset
-and columns `dataset`, `action` (`"registered"`, `"migrated"`,
-`"unchanged"`, `"skipped"` or `"missing"`, for a source that is not on
-disk and has no registered version) and `detail`.
+Invisibly returns the updated manifest as a named list.
 
 ## See also
 
@@ -149,9 +113,6 @@ disk and has no registered version) and `detail`.
 
 ``` r
 if (FALSE) { # \dontrun{
-# --- In a study, after rebuilding built.sas7bdat --------------------
-update_manifest()
-
 # --- CSV ------------------------------------------------------------
 update_manifest(
   file         = here::here("datasets", "cohort_20240115.csv"),

@@ -32,10 +32,12 @@ Character(1). The absolute path of the study root.
 root <- file.path(tempdir(), "study-root-example")
 dir.create(root, showWarnings = FALSE)
 yaml::write_yaml(
-  list(study = "Example", built = "example.sas7bdat"),
+  list(study = "Example", built = "example.sas7bdat",
+       cohort = list(n = 10L, n_events = 4L, n_censored = 6L,
+                     event = "dead", time = "iv_dead")),
   file.path(root, "_study.yml")
 )
 study_root(root)
-#> [1] "/tmp/Rtmpuj5hFu/study-root-example"
+#> [1] "/tmp/Rtmpj3Xwn9/study-root-example"
 unlink(root, recursive = TRUE)
 ```
