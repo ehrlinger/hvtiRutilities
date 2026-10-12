@@ -135,6 +135,21 @@
   invisible(raw)
 }
 
+# Reads a study's _study.yml. A parse error names the caller, the file, the
+# line and the usual cause: a hand-edited value holding ": " (a title, say)
+# reads as a nested mapping unless it is quoted (#213).
+.read_study_yml <- function(path, caller) {
+  tryCatch(yaml::read_yaml(path), error = function(e) {
+    detail <- conditionMessage(e)
+    where <- regmatches(detail, regexpr("line [0-9]+, column [0-9]+", detail))
+    stop(caller, "(): ", path, " is not valid YAML",
+         if (length(where)) paste0(" (", where, ")"),
+         ": a value containing \": \" or starting with a quote, #, [ or { must be ",
+         "quoted, e.g. study: '...'. The parser said: ",
+         sub("^\\([^)]*\\) ", "", detail), call. = FALSE)
+  })
+}
+
 #' Read the study manifest
 #'
 #' @description
@@ -203,7 +218,7 @@ study_config <- function(start = getwd(), require_data = TRUE) {
          call. = FALSE)
   }
 
-  raw <- yaml::read_yaml(found)
+  raw <- .read_study_yml(found, "study_config")
   .study_validate_identity(raw, found)
   raw$release <- .study_validate_release(raw$release, found, "study")
   raw$additional_datasets <- .study_validate_additional(

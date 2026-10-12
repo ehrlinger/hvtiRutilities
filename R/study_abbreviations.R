@@ -251,7 +251,7 @@ add_abbreviation <- function(phrase, abbreviation, start = getwd()) {
     stop("'abbreviation' must be one string, or NULL to remove a default.", call. = FALSE)
   }
   cfg <- study_config(start, require_data = FALSE)
-  raw <- yaml::read_yaml(cfg$file)
+  raw <- .read_study_yml(cfg$file, "add_abbreviation")
   entries <- raw$abbreviations
   if (is.null(entries)) entries <- list()
   entries <- entries[tolower(names(entries)) != tolower(phrase)]

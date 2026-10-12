@@ -628,7 +628,7 @@ adopt_data_update <- function(cfg = study_config(), dataset = "study",
     )
   }
 
-  raw <- yaml::read_yaml(current_cfg$file)
+  raw <- .read_study_yml(current_cfg$file, "adopt_data_update")
   manifest_path <- file.path(current_cfg$root, "manifest.yaml")
   if (!file.exists(manifest_path)) {
     stop("adopt_data_update(): manifest.yaml is missing", call. = FALSE)

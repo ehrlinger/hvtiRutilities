@@ -38,7 +38,7 @@
     stop(caller, "(): no _study.yml at ", root, "; run study_setup() first",
          call. = FALSE)
   }
-  raw <- yaml::read_yaml(yml)
+  raw <- .read_study_yml(yml, caller)
   st <- suppressWarnings(as.integer(.cp_or(raw$st_id, raw$study_tracker_id)))
   if (length(st) != 1L || is.na(st) || st < 1L) {
     stop(caller, "(): _study.yml has no valid st_id or study_tracker_id",
