@@ -543,6 +543,17 @@ the exact directories, file counts, and repository state are recorded, and a
 backup destination is chosen. Removal requires a distinct command and a
 second approval after the inventory is shown.
 
+**Amended 2026-10-12 (John).** Template copies are no longer held to that
+rule. `study_setup(cleanup = TRUE)` deletes them in the same call that adopts
+the study, with no inventory step and no per-study backup: every `tp.*` file,
+every `binder.summaries.doc`, and every other file whose name and exact
+content match the template corpus (`/programs/development/template`). They
+are copied in at study creation, months before any analysis, and the corpus is
+the backup. Folders the deletions empty go too. The rule above still governs
+`.git` and anything that is not a template copy; `study-cleanup` remains the
+inventory-first tool for those. `study_setup(renv = TRUE)` runs the
+`study-setup` command's renv step, so one call leaves an adopted study ready.
+
 Numbered-folder migration is Level 3 for legacy studies. It may rewrite paths
 in SAS and R work, so Level 1 adoption does not perform it. New studies begin
 with the numbered layout and need no migration.

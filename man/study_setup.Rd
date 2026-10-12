@@ -14,7 +14,10 @@ study_setup(
   cvir_no = NULL,
   study_creation_date = NULL,
   adopt = FALSE,
-  identity_source = c("tracker", "manual")
+  identity_source = c("tracker", "manual"),
+  cleanup = FALSE,
+  renv = FALSE,
+  template_dir = "/programs/development/template"
 )
 }
 \arguments{
@@ -45,9 +48,24 @@ unavailable. A new \code{_study.yml} records it as
 \code{TRUE} for \code{"tracker"} and \code{FALSE} for
 \code{"manual"}. An existing \code{_study.yml} is not rewritten, so
 adoption keeps the recorded source.}
+
+\item{cleanup}{Logical. Delete the study's \code{tp.*} template copies and
+\code{binder.summaries.doc}, and remove the template folders they leave
+empty. See Details.}
+
+\item{renv}{Logical. Initialize and snapshot the study's \code{renv}
+environment. See Details.}
+
+\item{template_dir}{Character(1). The template corpus studies were copied
+from, read when \code{cleanup = TRUE}. Setup stops with an error when it
+does not exist.}
 }
 \value{
-An object of class \code{"study_status"}, returned visibly.
+An object of class \code{"study_status"}, returned visibly. With
+  \code{cleanup = TRUE} it carries a \code{"cleanup"} attribute, a list of
+  the \code{deleted} files and \code{removed_dirs} folders, relative to the
+  root. With \code{renv = TRUE} it carries a \code{"renv"} attribute,
+  \code{"initialized"} or \code{"retained"}.
 }
 \description{
 Creates the numbered directory structure for a new study and writes an
@@ -62,6 +80,35 @@ When the root holds no \code{.Rproj} file, one named for the root
 directory is written, so that opening the project and
 \code{\link{study_root}} agree on the study root. An existing project is
 left unchanged.
+
+With \code{cleanup = TRUE}, the template copies a legacy study carries are
+deleted before anything else reads the study, anywhere in it: every file
+whose name starts with \code{tp.}, every \code{binder.summaries.doc}, and
+every other file whose name and exact content match a file in the template
+corpus at \code{template_dir}. A study's own file that shares a name with a
+corpus file but differs from it (an edited \code{references.bib}, say) is
+kept, as are \code{.renvignore} and \code{.gitignore}. These files are
+copied in when a study is created, months before any analysis, and the
+corpus they came from is kept centrally, so no backup is made. A folder
+the deletions leave holding nothing (desktop litter such as
+\code{Thumbs.db} aside) is removed, whatever its name, as is an empty
+\code{templates} or \code{old_RF_templates*} folder; a folder still holding
+other files stays, as does one holding any folder the cleanup did not
+empty, and a top-level study folder is never removed. Symbolic links are
+neither followed nor deleted, and folders named \code{.git},
+\code{.checkpoint} or \code{renv} are never entered, at any depth. The
+root and \code{template_dir} must not overlap. A file that cannot be
+deleted stops the setup with an error.
+
+With \code{renv = TRUE}, the study's \code{renv} environment is set up
+after any cleanup, in a separate R process. A complete environment is
+kept: a \code{renv/} folder holding \code{activate.R}, a \code{.Rprofile}
+that sources it, and a \code{renv.lock} that parses as a lockfile. One
+interrupted after initialization (no lockfile yet) is resumed at the
+snapshot; any other partial or invalid environment stops with an error.
+Otherwise \code{renv::init(bare = TRUE)} creates it, and the project is
+loaded and snapshotted explicitly. The
+renv package must be installed.
 }
 \seealso{
 \code{\link{study_status}}, \code{\link{study_config}},
