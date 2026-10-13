@@ -15,6 +15,23 @@
   entry
 }
 
+# Put moved files back after a failed step. A file that appeared at the destination meanwhile (a build wrote
+# a newer sidecar) is not overwritten: the moved file is kept beside it as "<to>.restored-<time>".
+.restore_files <- function(from, to) {
+  for (i in seq_along(from)) {
+    if (!file.exists(from[[i]])) next
+    if (file.exists(to[[i]])) {
+      kept <- paste0(to[[i]], ".restored-", format(Sys.time(), "%Y%m%d%H%M%S"))
+      file.rename(from[[i]], kept)
+      warning(basename(to[[i]]), " was written while this ran, so the copy this call moved, ", basename(from[[i]]),
+              ", was kept as ", basename(kept), " beside it.", call. = FALSE)
+    } else {
+      file.rename(from[[i]], to[[i]])
+    }
+  }
+  invisible(NULL)
+}
+
 .registration_rename <- function(from, to) {
   file.rename(from, to)
 }
@@ -360,7 +377,7 @@ register_data <- function(root = getwd(), built, dataset = "study",
   claim <- NULL
   if (is.null(release)) {
     claim <- .claim_build_record(path, version$source_sha256, version$parquet, "register_data")
-    on.exit(if (!registered) file.rename(claim$from, claim$to), add = TRUE)
+    on.exit(if (!registered) .restore_files(claim$from, claim$to), add = TRUE)
   }
   if (!is.null(parents)) entry$parent_versions <- .parent_versions(cfg, parents, list(datasets = prior))
   if (!is.null(release) &&

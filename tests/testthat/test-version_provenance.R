@@ -428,3 +428,52 @@ test_that("as_of offsets are bounded", {
     expect_false(.is_iso_timestamp(bad), info = bad)
   }
 })
+
+test_that("register_data keeps a sidecar written after the claim and files the claimed one beside it", {
+  s <- unregistered_study()
+  side <- write_build_sidecar(s$src, view = "older_v")
+  local_mocked_bindings(.replace_study_pair = function(...) {
+    write_build_sidecar(s$src, view = "newer_v")
+    stop("rename failed")
+  })
+  expect_warning(expect_error(suppressMessages(register_data(s$root, "built.csv")), "rename failed"), "restored-")
+  expect_identical(yaml::read_yaml(side)$view, "newer_v")
+  kept <- list.files(dirname(s$src), pattern = "^built[.]build[.]yml[.]restored-", full.names = TRUE)
+  expect_length(kept, 1L)
+  expect_identical(yaml::read_yaml(kept)$view, "older_v")
+})
+
+test_that("update_manifest keeps a sidecar written after the claim and files the claimed one beside it", {
+  root <- legacy_with_cache()
+  data_dir <- study_dir("datasets", root)
+  rebuild_source(root, data.frame(id = 1:5, dead = c(1L, 0L, 0L, 0L, 1L), iv_dead = 1:5))
+  src <- file.path(data_dir, "built.csv")
+  side <- write_build_sidecar(src, view = "older_v")
+  withr::local_dir(root)
+  local_mocked_bindings(.write_manifest = function(manifest, path) {
+    write_build_sidecar(src, view = "newer_v")
+    stop("disk full")
+  })
+  expect_warning(expect_error(suppressMessages(update_manifest()), "disk full"), "restored-")
+  expect_identical(yaml::read_yaml(side)$view, "newer_v")
+  kept <- list.files(data_dir, pattern = "^built[.]build[.]yml[.]restored-", full.names = TRUE)
+  expect_length(kept, 1L)
+  expect_identical(yaml::read_yaml(kept)$view, "older_v")
+})
+
+test_that("a promoted entry whose schema was edited is not migrated", {
+  root <- promoted_study()
+  dir <- study_dir("datasets", root)
+  schema <- file.path(dir, "built.schema.csv")
+  mp <- file.path(root, "manifest.yaml")
+  m <- .read_manifest(mp)
+  m$datasets[[1]]$schema_sha256 <- digest::digest(schema, algo = "sha256", file = TRUE)
+  yaml::write_yaml(m, mp)
+  cat("x\n", file = schema, append = TRUE)
+  out <- withr::with_dir(root, suppressMessages(update_manifest()))
+  expect_identical(out$action, "missing")
+  expect_match(out$detail, "built.schema.csv", fixed = TRUE)
+  expect_match(out$detail, "checksum", fixed = TRUE)
+  expect_false(file.exists(file.path(dir, "built_20260915.parquet")))
+  expect_true(file.exists(schema))
+})

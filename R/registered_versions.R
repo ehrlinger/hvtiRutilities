@@ -356,7 +356,7 @@
   committed <- FALSE
   on.exit(if (!committed) {
     unlink(written)
-    file.rename(restore$from, restore$to)
+    .restore_files(restore$from, restore$to)
   }, add = TRUE)
   rows <- list()
   provenance <- list()
@@ -530,7 +530,7 @@
       restore <- list(from = file.path(dirname(source_path), c(old$parquet, .version_schema_name(old$parquet))),
                       to = c(cache$parquet, cache$schema))
       # Until this function returns, its caller cannot undo the rename.
-      on.exit(if (!returned) file.rename(restore$from, restore$to), add = TRUE)
+      on.exit(if (!returned) .restore_files(restore$from, restore$to), add = TRUE)
       note <- paste0("previous version recovered from the read cache as ", old$parquet,
                      ", not from the original ", entry$file)
     }
@@ -541,7 +541,7 @@
   new_files <- file.path(dirname(source_path), c(version$parquet, .version_schema_name(version$parquet)))
   on.exit(if (!returned) unlink(new_files), add = TRUE)
   claim <- .claim_build_record(source_path, version$source_sha256, version$parquet, "update_manifest")
-  on.exit(if (!returned) file.rename(claim$from, claim$to), add = TRUE)
+  on.exit(if (!returned) .restore_files(claim$from, claim$to), add = TRUE)
   # The superseded cache is dropped once the manifest is written, so a failed
   # update leaves the legacy entry and its sidecar intact. Never a parquet
   # source, whose derived name is itself.
@@ -578,6 +578,11 @@
   }
   if (!identical(digest::digest(legacy$parquet, algo = "sha256", file = TRUE), entry$sha256)) {
     return(list(refused = paste0(basename(legacy$parquet),
+                                 " does not match its recorded checksum, so it was not registered as a dated version")))
+  }
+  if (!is.null(entry$schema_sha256) && file.exists(legacy$schema) &&
+        !identical(digest::digest(legacy$schema, algo = "sha256", file = TRUE), entry$schema_sha256)) {
+    return(list(refused = paste0(basename(legacy$schema),
                                  " does not match its recorded checksum, so it was not registered as a dated version")))
   }
   dir <- dirname(source_path)
