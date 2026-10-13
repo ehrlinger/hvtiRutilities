@@ -214,6 +214,13 @@ built_manifest <- function(cfg = study_config(), dataset = "study") {
 #' recorded parent versions is reported the same way, as \code{unrecorded},
 #' until it is rebuilt and registered again.
 #'
+#' Only a dated version is registered data. Any other read is a working read: it
+#' is allowed only in the interactive console and in jobs in the study's
+#' datasets or descriptive folder, and it signals a message of class
+#' \code{hvtiRutilities_working_read}. Review a rebuilt source with
+#' \code{\link{review_built}()} and register it with
+#' \code{\link{update_manifest}()}. The release branch below is deprecated.
+#'
 #' For a release-aware contract, the pinned release is verified before cache
 #' access. A later valid release emits a message of class
 #' \code{hvtiRutilities_update_available}; an unavailable catalog or invalid

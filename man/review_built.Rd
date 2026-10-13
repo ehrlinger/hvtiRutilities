@@ -31,8 +31,15 @@ version. It describes how the data changed; it does not certify that the
 new file is analytically or clinically correct.
 }
 \examples{
-\dontrun{
-review_built(study_config())
+if (requireNamespace("arrow", quietly = TRUE)) {
+  root <- file.path(tempdir(), "review-built-example")
+  suppressMessages(study_setup(root, "Example", 1L))
+  path <- file.path(study_dir("datasets", root), "example.csv")
+  write.csv(data.frame(DEAD = c(1, 0, 0), IV_DEAD = 1:3), path, row.names = FALSE)
+  suppressMessages(register_data(root, "example.csv"))
+  write.csv(data.frame(DEAD = c(1, 0, 0, 1), IV_DEAD = 1:4), path, row.names = FALSE)
+  review_built(study_config(root))
+  unlink(root, recursive = TRUE)
 }
 }
 \seealso{
