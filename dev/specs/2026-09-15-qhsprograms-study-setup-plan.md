@@ -197,7 +197,7 @@ Commit: `feat: add study-setup command shell`
 Given Tracker ID `42`, assert the link is exactly:
 
 ```text
-http://hviresearch.ccf.org/StudyTracker/index.php?page=Topic&topic_id=42
+<StudyTracker URL>/index.php?page=Topic&topic_id=<id>
 ```
 
 Assert output includes the study title, stable identity fields, a protocol
