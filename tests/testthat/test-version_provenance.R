@@ -227,3 +227,30 @@ test_that("a build record neither inflates study_status's entry count nor hides 
   expect_match(row$detail, "built.csv", fixed = TRUE)
   expect_no_match(row$detail, "built_20260915", fixed = TRUE)
 })
+
+test_that("a provenance row keyed by a sidecar name is an orphan, not a pass or a crash", {
+  root <- versioned_study()
+  mp <- file.path(root, "manifest.yaml")
+  m <- .read_manifest(mp)
+  schema <- .version_schema_name(m$datasets[[1]]$parquet)
+  m <- .set_version_provenance(m, schema, list(origin = "legacy"))
+  .write_manifest(m, mp)
+  expect_warning(rep <- verify_manifest(mp, stop_on_error = FALSE), "which no dataset records")
+  expect_identical(rep$status[rep$file == paste0(schema, " (provenance)")], "FAIL")
+})
+
+test_that("an invalid build record in a hand-edited manifest fails under the entry's label", {
+  s <- unregistered_study()
+  write_build_sidecar(s$src)
+  suppressMessages(register_data(s$root, "built.csv"))
+  mp <- file.path(s$root, "manifest.yaml")
+  for (bad in list(list(record = "", record_sha256 = strrep("a", 64)),
+                   list(record = "built_20260915.build.yml", record_sha256 = "nothex"),
+                   list(record = c("a", "b"), record_sha256 = strrep("a", 64)))) {
+    m <- .read_manifest(mp)
+    m$provenance[["built_20260915.parquet"]]$build <- bad
+    .write_manifest(m, mp)
+    expect_warning(rep <- verify_manifest(mp, stop_on_error = FALSE), "invalid build record")
+    expect_identical(rep$status[rep$file == "built.csv (build record)"], "FAIL")
+  }
+})

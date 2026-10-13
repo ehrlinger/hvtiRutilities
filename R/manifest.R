@@ -399,7 +399,6 @@ update_manifest <- function(file,
 .verify_build_records <- function(manifest, resolve) {
   rows <- if (is.list(manifest$provenance)) manifest$provenance else list()
   if (!length(rows)) return(NULL)
-  recorded <- .recorded_version_names(manifest$datasets)
   restore <- " It is the provenance of a registered version: restore it from backup, do not edit it."
   # Labelled "<entry file> (<record>)", like an earlier version, so .verify_row_dataset() maps the row to its entry.
   owner <- character()
@@ -410,13 +409,21 @@ update_manifest <- function(file,
     owner[p[!p %in% names(owner)]] <- e$file
   }
   out <- lapply(names(rows), function(parquet) {
-    if (!parquet %in% recorded) {
+    if (!parquet %in% names(owner)) {
       return(.verify_row(paste0(parquet, " (provenance)"), "FAIL",
                          paste0("manifest.yaml has provenance for ", parquet, ", which no dataset records. ",
                                 "Restore manifest.yaml from version control.")))
     }
     build <- rows[[parquet]]$build
     if (!is.list(build)) return(NULL)
+    valid <- is.character(build$record) && length(build$record) == 1L && !is.na(build$record) && nzchar(build$record) &&
+      is.character(build$record_sha256) && length(build$record_sha256) == 1L &&
+      grepl("^[0-9a-f]{64}$", build$record_sha256)
+    if (!valid) {
+      return(.verify_row(paste0(owner[[parquet]], " (build record)"), "FAIL",
+                         paste0("manifest.yaml records an invalid build record for ", parquet,
+                                ". Restore manifest.yaml from version control.")))
+    }
     label <- paste0(owner[[parquet]], " (", build$record, ")")
     target <- resolve(build$record)
     if (!file.exists(target)) return(.verify_row(label, "FAIL", paste0(build$record, " is missing.", restore)))
@@ -458,7 +465,9 @@ update_manifest <- function(file,
 #' verified.  The count was compared; the count is recorded but was not
 #' re-derived; or the manifest records no count at all.  The
 #' \code{row_count_checked} column is \code{TRUE} only in the first case, and
-#' the message names which of the three it was.
+#' the message names which of the three it was.  A build-record row (see
+#' below) sets \code{row_count_checked} to \code{TRUE} once its checksum is
+#' verified, because a record has no row count.
 #'
 #' For a dataset registered with \code{\link{register_data}}, every registered
 #' version (the current dated parquet and each earlier one) is checked, and its
@@ -508,7 +517,9 @@ update_manifest <- function(file,
 #' @return Invisibly returns a data frame with columns \code{file},
 #'   \code{status} (\code{"OK"} or \code{"FAIL"}), \code{message}, and
 #'   \code{row_count_checked} (logical; \code{TRUE} when the row count was
-#'   re-derived from the file and compared with the manifest).
+#'   re-derived from the file and compared with the manifest; also \code{TRUE}
+#'   for a build-record row whose checksum was verified, since a record has no
+#'   row count).
 #'
 #' @examples
 #' \dontrun{
