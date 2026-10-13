@@ -68,6 +68,7 @@ test_that("the source-changed condition names the fix and carries both classes",
   expect_s3_class(cond, "hvtiRutilities_out_of_date")
   expect_match(conditionMessage(cond), "update_manifest()", fixed = TRUE)
   expect_match(conditionMessage(cond), "built_20261007.parquet", fixed = TRUE)
+  expect_match(conditionMessage(cond), "review_built()", fixed = TRUE)
 })
 
 test_that("a versioned entry keeps extra fields and history, and history drops the stamp", {

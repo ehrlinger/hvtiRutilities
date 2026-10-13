@@ -221,7 +221,7 @@
       message = paste0(
         entry$file, " has changed since it was registered on ", entry$extract_date,
         ". This job used the registered version, ", entry$parquet,
-        ". Run hvtiRutilities::update_manifest() to register the new one.\n"
+        ". Review it with hvtiRutilities::review_built(), then run hvtiRutilities::update_manifest() to register it.\n"
       ),
       call = NULL
     )
