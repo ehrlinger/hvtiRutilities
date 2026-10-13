@@ -3,7 +3,7 @@
   when a build left a `<stem>.build.yml` describing exactly the file registered, and
   `origin: legacy` otherwise. `verify_manifest()` checks each build record.
 * `read_built(working = TRUE)`, or `HVTI_DATA=working`, reads the working dataset before it is
-  registered. Any read that is not of a dated version is a working read: it is allowed in the
+  registered. Any read that is not of a dated version is a working read (a dataset pinned to a catalog release is exempt until the release path is removed): it is allowed in the
   console and in datasets and descriptive jobs, stops in distribution, analysis and graph jobs,
   and signals `hvtiRutilities_working_read`. **A study still on a legacy registration stops in
   those jobs until `update_manifest()` converts it.**
