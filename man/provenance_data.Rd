@@ -4,7 +4,12 @@
 \alias{provenance_data}
 \title{Snapshot a registered data file for provenance}
 \usage{
-provenance_data(dataset = "study", cfg = study_config(), role = "analysis")
+provenance_data(
+  dataset = "study",
+  cfg = study_config(),
+  role = "analysis",
+  working = .hvti_working_default()
+)
 }
 \arguments{
 \item{dataset}{Character(1). Logical registered dataset name.
@@ -13,6 +18,9 @@ provenance_data(dataset = "study", cfg = study_config(), role = "analysis")
 \item{cfg}{List. A study manifest from \code{\link{study_config}}.}
 
 \item{role}{Character(1). The file's role in this job.}
+
+\item{working}{Logical. If \code{TRUE}, record the working source file, as
+\code{\link{read_built}(working = TRUE)} reads it.}
 }
 \value{
 A plain list containing one immutable-by-convention data record.

@@ -246,6 +246,13 @@ built_manifest <- function(cfg = study_config(), dataset = "study") {
 #' @param allow_withdrawn Logical. If \code{TRUE}, allow a deliberately pinned
 #'   withdrawn release to be read for revision work. The default is
 #'   \code{FALSE}.
+#' @param working Logical. If \code{TRUE}, read the working dataset as it stands
+#'   rather than its registered version, writing nothing. Defaults to
+#'   \code{TRUE} when the environment variable \code{HVTI_DATA} is
+#'   \code{"working"}. Any read that is not of a dated version is a working read:
+#'   it is allowed only in the interactive console and in jobs in the study's
+#'   datasets or descriptive folder, and signals a message of class
+#'   \code{hvtiRutilities_working_read}.
 #'
 #' @return A data frame with lower-cased names, no logical columns and no
 #'   \code{haven_labelled} columns.
@@ -255,22 +262,24 @@ built_manifest <- function(cfg = study_config(), dataset = "study") {
 #' @export
 #'
 #' @examples
-#' root <- file.path(tempdir(), "read-built-example")
-#' dir.create(file.path(root, "datasets"), recursive = TRUE,
-#'            showWarnings = FALSE)
-#' yaml::write_yaml(
-#'   list(study = "Example", built = "example.csv"),
-#'   file.path(root, "_study.yml")
-#' )
-#' write.csv(data.frame(DEAD = c(1, 0, 0), IV_DEAD = 1:3),
-#'           file.path(root, "datasets", "example.csv"), row.names = FALSE)
-#' names(read_built(study_config(root)))
-#' unlink(root, recursive = TRUE)
+#' if (requireNamespace("arrow", quietly = TRUE)) {
+#'   root <- file.path(tempdir(), "read-built-example")
+#'   suppressMessages(study_setup(root, "Example", 1L))
+#'   write.csv(data.frame(DEAD = c(1, 0, 0), IV_DEAD = 1:3),
+#'             file.path(study_dir("datasets", root), "example.csv"), row.names = FALSE)
+#'   suppressMessages(register_data(root, "example.csv"))
+#'   names(read_built(study_config(root)))
+#'   unlink(root, recursive = TRUE)
+#' }
 read_built <- function(cfg = study_config(), refresh = FALSE,
-                       dataset = "study", allow_withdrawn = FALSE) {
+                       dataset = "study", allow_withdrawn = FALSE,
+                       working = .hvti_working_default()) {
   if (!is.logical(allow_withdrawn) || length(allow_withdrawn) != 1L ||
         is.na(allow_withdrawn)) {
     stop("allow_withdrawn must be TRUE or FALSE", call. = FALSE)
+  }
+  if (!is.logical(working) || length(working) != 1L || is.na(working)) {
+    stop("working must be TRUE or FALSE", call. = FALSE)
   }
   dataset <- .canonical_dataset(dataset)
   contract <- .study_dataset(cfg, dataset)
@@ -281,6 +290,25 @@ read_built <- function(cfg = study_config(), refresh = FALSE,
   manifest_path <- file.path(cfg$root, "manifest.yaml")
 
   entry <- .manifest_entry(manifest_path, p)
+  # Only a dated version is registered data. Any other read serves the working
+  # file, so it passes the stage gate and is reported as a draft. A release-
+  # pinned contract is exempt while the release path is deprecated: it was
+  # verified against its catalog above, and that path keeps working until the
+  # removal release, which drops this exemption with it.
+  unregistered <- !.is_versioned(entry) && is.null(contract$release)
+  if (working || unregistered) {
+    .assert_working_stage(cfg, basename(p))
+    if (working) {
+      if (isTRUE(refresh)) {
+        stop("read_built(): refresh = TRUE does not apply to a working read: nothing is cached.", call. = FALSE)
+      }
+      if (!file.exists(p)) stop("read_built(): missing ", p, call. = FALSE)
+      raw <- read_clinical_data(p, convert_types = FALSE)
+      .assert_no_lowercase_collision(raw, p)
+      message(.working_read_condition(basename(p)))
+      return(.normalise_built(as.data.frame(raw)))
+    }
+  }
   if (identical(contract$kind, "combined") && !is.null(entry)) {
     stale <- .stale_parents(cfg, dataset, entry, .read_manifest(manifest_path))
     if (nrow(stale)) message(.parent_changed_condition(contract, stale))
@@ -331,5 +359,6 @@ read_built <- function(cfg = study_config(), refresh = FALSE,
   # yield two columns named foo and every downstream d$foo would silently take
   # the first. The check above already ruled this out for `d`; this just
   # applies it.
+  if (unregistered) message(.working_read_condition(basename(p)))
   .normalise_built(d)
 }

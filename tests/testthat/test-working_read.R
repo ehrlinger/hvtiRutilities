@@ -76,3 +76,77 @@ test_that("the working-read condition carries its class", {
   expect_s3_class(cnd, "hvtiRutilities_working_read")
   expect_match(conditionMessage(cnd), "Results from it are a draft")
 })
+
+test_that("a working read of a registered study reads the source and writes nothing", {
+  root <- versioned_study()
+  cfg <- study_config(root)
+  src <- built_path(cfg)
+  utils::write.csv(data.frame(id = 1:4, DEAD = c(1L, 0L, 0L, 1L)), src, row.names = FALSE)
+  before <- list(files = sort(list.files(dirname(src))),
+                 manifest = digest::digest(file.path(root, "manifest.yaml"), algo = "sha256", file = TRUE))
+  expect_message(d <- read_built(cfg, working = TRUE), class = "hvtiRutilities_working_read")
+  expect_identical(nrow(d), 4L)
+  expect_identical(names(d), c("id", "dead"))
+  expect_identical(sort(list.files(dirname(src))), before$files)
+  expect_identical(digest::digest(file.path(root, "manifest.yaml"), algo = "sha256", file = TRUE), before$manifest)
+  expect_identical(nrow(suppressMessages(read_built(cfg))), 3L)
+})
+
+test_that("HVTI_DATA=working switches the default and refresh is refused", {
+  root <- versioned_study()
+  cfg <- study_config(root)
+  withr::local_envvar(HVTI_DATA = "working")
+  expect_message(read_built(cfg), class = "hvtiRutilities_working_read")
+  expect_error(read_built(cfg, refresh = TRUE), "nothing is cached")
+  expect_no_message(read_built(cfg, working = FALSE), class = "hvtiRutilities_working_read")
+})
+
+test_that("an analysis job cannot read a study with no dated version, whatever HVTI_DATA says", {
+  root <- file.path(withr::local_tempdir(), "study")
+  suppressMessages(study_setup(root, "Unregistered", 42L))
+  utils::write.csv(data.frame(id = 1:3, DEAD = c(1L, 0L, 0L)),
+                   file.path(study_dir("datasets", root), "built.csv"), row.names = FALSE)
+  raw <- yaml::read_yaml(file.path(root, "_study.yml"))
+  raw$built <- "built.csv"
+  yaml::write_yaml(raw, file.path(root, "_study.yml"))
+  cfg <- study_config(root)
+  withr::local_envvar(HVTI_DATA = NA)
+  local_mocked_bindings(.is_interactive = function() FALSE,
+                        .job_file = function() file.path(study_dir("analyses", root), "km", "km.qmd"))
+  expect_error(read_built(cfg), "jobs read registered data only")
+
+  local_mocked_bindings(.job_file = function() file.path(study_dir("descriptive", root), "dc", "dc.qmd"))
+  expect_message(read_built(cfg), class = "hvtiRutilities_working_read")
+  # The cache wrote a role: source entry on that read; the dataset is still not registered.
+  local_mocked_bindings(.job_file = function() file.path(study_dir("analyses", root), "km", "km.qmd"))
+  expect_error(read_built(cfg), "jobs read registered data only")
+})
+
+test_that("a legacy role: source entry is gated until update_manifest() converts it", {
+  root <- versioned_study()
+  mp <- file.path(root, "manifest.yaml")
+  m <- .read_manifest(mp)
+  e <- m$datasets[[1]]
+  m$datasets[[1]] <- list(file = e$file, extract_date = e$extract_date, n_rows = e$n_rows,
+                          sha256 = e$source_sha256, role = "source", n_cols = e$n_cols)
+  m$provenance <- NULL
+  yaml::write_yaml(m, mp)
+  local_mocked_bindings(.is_interactive = function() FALSE,
+                        .job_file = function() file.path(study_dir("graphs", root), "g", "g.qmd"))
+  expect_error(read_built(study_config(root)), "update_manifest")
+})
+
+test_that("a release-pinned dataset keeps reading ungated while the release path is deprecated", {
+  fx <- suppressMessages(suppressWarnings(make_release_aware_study(withr::local_tempdir())))
+  local_mocked_bindings(.is_interactive = function() FALSE,
+                        .job_file = function() file.path(study_dir("analyses", fx$root), "km", "km.qmd"))
+  cfg <- suppressWarnings(study_config(fx$root), classes = "deprecatedWarning")
+  expect_no_message(read_built(cfg), class = "hvtiRutilities_working_read")
+})
+
+test_that("provenance_data records the source for a working read", {
+  root <- versioned_study()
+  cfg <- study_config(root)
+  expect_match(provenance_data(cfg = cfg)$path, "built_20260915[.]parquet$")
+  expect_match(provenance_data(cfg = cfg, working = TRUE)$path, "built[.]csv$")
+})

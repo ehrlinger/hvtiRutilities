@@ -8,7 +8,8 @@ read_built(
   cfg = study_config(),
   refresh = FALSE,
   dataset = "study",
-  allow_withdrawn = FALSE
+  allow_withdrawn = FALSE,
+  working = .hvti_working_default()
 )
 }
 \arguments{
@@ -30,6 +31,14 @@ It also errors for a dataset registered as a dated parquet, and names
 \item{allow_withdrawn}{Logical. If \code{TRUE}, allow a deliberately pinned
 withdrawn release to be read for revision work. The default is
 \code{FALSE}.}
+
+\item{working}{Logical. If \code{TRUE}, read the working dataset as it stands
+rather than its registered version, writing nothing. Defaults to
+\code{TRUE} when the environment variable \code{HVTI_DATA} is
+\code{"working"}. Any read that is not of a dated version is a working read:
+it is allowed only in the interactive console and in jobs in the study's
+datasets or descriptive folder, and signals a message of class
+\code{hvtiRutilities_working_read}.}
 }
 \value{
 A data frame with lower-cased names, no logical columns and no
@@ -71,17 +80,15 @@ vectors, keeping the SAS variable label as an attribute because listings
 print labels rather than names.
 }
 \examples{
-root <- file.path(tempdir(), "read-built-example")
-dir.create(file.path(root, "datasets"), recursive = TRUE,
-           showWarnings = FALSE)
-yaml::write_yaml(
-  list(study = "Example", built = "example.csv"),
-  file.path(root, "_study.yml")
-)
-write.csv(data.frame(DEAD = c(1, 0, 0), IV_DEAD = 1:3),
-          file.path(root, "datasets", "example.csv"), row.names = FALSE)
-names(read_built(study_config(root)))
-unlink(root, recursive = TRUE)
+if (requireNamespace("arrow", quietly = TRUE)) {
+  root <- file.path(tempdir(), "read-built-example")
+  suppressMessages(study_setup(root, "Example", 1L))
+  write.csv(data.frame(DEAD = c(1, 0, 0), IV_DEAD = 1:3),
+            file.path(study_dir("datasets", root), "example.csv"), row.names = FALSE)
+  suppressMessages(register_data(root, "example.csv"))
+  names(read_built(study_config(root)))
+  unlink(root, recursive = TRUE)
+}
 }
 \seealso{
 \code{\link{built_manifest}}, \code{\link{assert_cohort}}
