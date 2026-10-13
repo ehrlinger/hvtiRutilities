@@ -66,3 +66,10 @@ promoted_study <- function(env = parent.frame()) {
   unlink(file.path(dir, "built.csv"))
   root
 }
+
+# The suite mutes the working-read message (setup-working-context.R); a test
+# that asserts it, or its absence, restores the real signal.
+.real_signal_working_read <- hvtiRutilities:::.signal_working_read
+local_working_signal <- function(env = parent.frame()) {
+  testthat::local_mocked_bindings(.signal_working_read = .real_signal_working_read, .package = "hvtiRutilities", .env = env)
+}

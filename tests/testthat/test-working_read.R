@@ -78,6 +78,7 @@ test_that("the working-read condition carries its class", {
 })
 
 test_that("a working read of a registered study reads the source and writes nothing", {
+  local_working_signal()
   root <- versioned_study()
   cfg <- study_config(root)
   src <- built_path(cfg)
@@ -93,6 +94,7 @@ test_that("a working read of a registered study reads the source and writes noth
 })
 
 test_that("HVTI_DATA=working switches the default and refresh is refused", {
+  local_working_signal()
   root <- versioned_study()
   cfg <- study_config(root)
   withr::local_envvar(HVTI_DATA = "working")
@@ -102,6 +104,7 @@ test_that("HVTI_DATA=working switches the default and refresh is refused", {
 })
 
 test_that("an analysis job cannot read a study with no dated version, whatever HVTI_DATA says", {
+  local_working_signal()
   root <- file.path(withr::local_tempdir(), "study")
   suppressMessages(study_setup(root, "Unregistered", 42L))
   utils::write.csv(data.frame(id = 1:3, DEAD = c(1L, 0L, 0L)),
@@ -137,6 +140,7 @@ test_that("a legacy role: source entry is gated until update_manifest() converts
 })
 
 test_that("a release-pinned dataset keeps reading ungated while the release path is deprecated", {
+  local_working_signal()
   fx <- suppressMessages(suppressWarnings(make_release_aware_study(withr::local_tempdir())))
   local_mocked_bindings(.is_interactive = function() FALSE,
                         .job_file = function() file.path(study_dir("analyses", fx$root), "km", "km.qmd"))
@@ -149,4 +153,9 @@ test_that("provenance_data records the source for a working read", {
   cfg <- study_config(root)
   expect_match(provenance_data(cfg = cfg)$path, "built_20260915[.]parquet$")
   expect_match(provenance_data(cfg = cfg, working = TRUE)$path, "built[.]csv$")
+})
+
+test_that("the real .signal_working_read() emits the classed message", {
+  local_working_signal()
+  expect_message(.signal_working_read("built.csv"), class = "hvtiRutilities_working_read")
 })

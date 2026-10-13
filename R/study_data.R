@@ -305,7 +305,7 @@ read_built <- function(cfg = study_config(), refresh = FALSE,
       if (!file.exists(p)) stop("read_built(): missing ", p, call. = FALSE)
       raw <- read_clinical_data(p, convert_types = FALSE)
       .assert_no_lowercase_collision(raw, p)
-      message(.working_read_condition(basename(p)))
+      .signal_working_read(basename(p))
       return(.normalise_built(as.data.frame(raw)))
     }
   }
@@ -359,6 +359,6 @@ read_built <- function(cfg = study_config(), refresh = FALSE,
   # yield two columns named foo and every downstream d$foo would silently take
   # the first. The check above already ruled this out for `d`; this just
   # applies it.
-  if (unregistered) message(.working_read_condition(basename(p)))
+  if (unregistered) .signal_working_read(basename(p))
   .normalise_built(d)
 }

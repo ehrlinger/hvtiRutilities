@@ -77,3 +77,6 @@
          call = NULL)
   )
 }
+
+# The one place the message is signalled, so the test suite can stand in for it.
+.signal_working_read <- function(file) message(.working_read_condition(file))

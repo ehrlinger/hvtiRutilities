@@ -3,4 +3,5 @@
 # interactive console would; test-working_read.R mocks these bindings itself.
 testthat::local_mocked_bindings(.is_interactive = function() TRUE, .knitr_input = function() NULL,
                                 .command_args = function() character(),
+                                .signal_working_read = function(file) invisible(NULL),
                                 .package = "hvtiRutilities", .env = testthat::teardown_env())
