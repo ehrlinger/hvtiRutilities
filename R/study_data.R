@@ -301,7 +301,8 @@ read_built <- function(cfg = study_config(), refresh = FALSE,
   # removal release, which drops this exemption with it.
   unregistered <- !.is_versioned(entry) && is.null(contract$release)
   if (working || unregistered) {
-    .assert_working_stage(cfg, basename(p))
+    explicit <- !missing(working) && working
+    .assert_working_stage(cfg, basename(p), unregistered = unregistered, explicit = explicit, env = working && !explicit)
     if (working) {
       if (isTRUE(refresh)) {
         stop("read_built(): refresh = TRUE does not apply to a working read: nothing is cached.", call. = FALSE)

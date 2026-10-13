@@ -178,3 +178,30 @@ test_that("the stage gate sees a real Quarto render's job file", {
                      if (stage == "descriptive") "allowed" else "refused")
   }
 })
+
+test_that("the gate message names only the ways out that apply", {
+  root <- versioned_study()
+  cfg <- study_config(root)
+  local_mocked_bindings(.is_interactive = function() FALSE,
+                        .job_file = function() file.path(study_dir("analyses", root), "km", "km.qmd"))
+
+  withr::local_envvar(HVTI_DATA = "working")
+  env <- tryCatch(read_built(cfg), error = conditionMessage)
+  expect_match(env, "HVTI_DATA asks for the working file", fixed = TRUE)
+  expect_match(env, "Unset HVTI_DATA", fixed = TRUE)
+  expect_no_match(env, "has no dated version", fixed = TRUE)
+
+  withr::local_envvar(HVTI_DATA = NA)
+  arg <- tryCatch(read_built(cfg, working = TRUE), error = conditionMessage)
+  expect_match(arg, "without working = TRUE", fixed = TRUE)
+  expect_no_match(arg, "HVTI_DATA", fixed = TRUE)
+  expect_no_match(arg, "has no dated version", fixed = TRUE)
+
+  # unregistered: neither HVTI_DATA nor working = TRUE is the cause
+  yaml::write_yaml(list(datasets = list()), file.path(root, "manifest.yaml"))
+  none <- tryCatch(read_built(cfg), error = conditionMessage)
+  expect_match(none, "has no dated version", fixed = TRUE)
+  expect_match(none, "register_data()", fixed = TRUE)
+  expect_no_match(none, "HVTI_DATA", fixed = TRUE)
+  expect_no_match(none, "working = TRUE", fixed = TRUE)
+})

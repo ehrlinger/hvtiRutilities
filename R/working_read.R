@@ -45,7 +45,9 @@
   do.call(file.path, as.list(c(normalizePath(path, mustWork = FALSE), rest)))
 }
 
-.assert_working_stage <- function(cfg, built, caller = "read_built") {
+# `unregistered`: the dataset has no dated version. `explicit`: the caller passed working = TRUE.
+# `env`: HVTI_DATA made the read a working read. The message names only the causes and exits that apply.
+.assert_working_stage <- function(cfg, built, caller = "read_built", unregistered = TRUE, explicit = FALSE, env = FALSE) {
   job <- .job_file()
   if (is.null(job) && .is_interactive()) return(invisible(TRUE))
   allowed <- vapply(c("datasets", "descriptive"), function(k) basename(study_dir(k, cfg$root)), character(1))
@@ -65,9 +67,14 @@
   } else {
     paste0(stage, " jobs")
   }
-  stop(caller, "(): ", who, " read registered data only. ", built,
-       " has no dated version, or HVTI_DATA asks for the working file. Register it with register_data() ",
-       "or update_manifest(), or unset HVTI_DATA.", call. = FALSE)
+  why <- c(if (unregistered) paste0(built, " has no dated version"),
+           if (explicit) "working = TRUE asks for the working file",
+           if (env) "HVTI_DATA asks for the working file")
+  fix <- c(if (unregistered) "register it with register_data() or update_manifest()",
+           if (explicit) "call read_built() without working = TRUE",
+           if (env) "unset HVTI_DATA")
+  stop(caller, "(): ", who, " read registered data only. ", paste(why, collapse = " and "), ". ",
+       sub("^(.)", "\\U\\1", paste(fix, collapse = ", or "), perl = TRUE), ".", call. = FALSE)
 }
 
 .working_read_condition <- function(file) {
