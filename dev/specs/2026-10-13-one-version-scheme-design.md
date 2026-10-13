@@ -196,8 +196,8 @@ Code changes this implies, in `R/registered_versions.R` and `R/register_data.R`:
   and `.recover_cached_version()`, whose recovered version gets `origin: legacy`.
 - `.recorded_version_names()` adds each row's `build$record`, so `.reserved_names()` keeps a new
   version from taking a record's name.
-- A row whose parquet no entry records (a hand-edited manifest) is reported by
-  `verify_manifest()` and otherwise ignored.
+- A row whose parquet no entry records (a hand-edited manifest) is a `verify_manifest()` FAIL,
+  as a malformed `history:` already is.
 
 ### 4.5 Verification
 
@@ -220,7 +220,7 @@ argument wins over the variable.
 
 **The stage gate.** The gate is applied to **the data actually read**, not to the argument: it
 runs whenever the read would serve the working file, which is `working = TRUE` on any dataset,
-and **any** read of a dataset with no manifest entry (see "Every read of unregistered data" below). A working
+and **any** read of a dataset with no dated version (see "Every read of unregistered data" below). A working
 read is honoured when either:
 
 - **the session is interactive** (`interactive()` is `TRUE` and no render is running): the
@@ -256,24 +256,34 @@ registered version. Results from it are a draft." Sub-project F catches this cla
 report a draft, as templates already catch `hvtiRutilities_source_changed`.
 
 **Every read of unregistered data is a working read, gated and signalled.** A dataset with no
-entry in `manifest.yaml` has nothing registered, so whatever `working` says, reading it serves
-the working file. Such a read therefore passes the stage gate above and signals
+dated version has nothing registered, so whatever `working` says, reading it serves the working
+file. Such a read therefore passes the stage gate above and signals
 `hvtiRutilities_working_read`, so F marks it a draft. A default read (`working = FALSE`) keeps
 the existing cache path, so a datasets or descriptive job is not slowed; `working = TRUE` is the
 same read without the cache write. Without this, an analysis job could read unregistered data
 simply by leaving `HVTI_DATA` unset, and decision 5 would hold only for studies that had
 registered something.
 
-"Registered" here means the dataset has a manifest entry, versioned or not. A legacy entry
-(`role: source`, written before 1.5.0) records the file's SHA-256 and is registered data in the
-old scheme; it keeps today's read until its next `update_manifest()` migrates it, and the gate
-does not apply to it.
+"Registered" here means **a dated version** (decision 4), and nothing else. Amended
+2026-10-13 while planning: an earlier draft counted any manifest entry, and exempted legacy
+`role: source` entries, but `.cache_read()` writes a `role: source` entry on its first read of a
+dataset that has none (`R/parquet_cache.R`). That draft's gate closed itself: the first
+descriptive render created an entry, and analysis jobs then read the same unregistered file
+ungated. A cache-written entry and one written by a pre-1.5 `register_data()` have the same shape,
+so no test on the entry can tell them apart. John Ehrlinger chose the dated-version rule.
 
-⚠️ **This changes behaviour for studies that have registered nothing.** Today they render every
-stage from the working file. After A, their analysis, distribution and graph jobs stop with the
-gate's message until the dataset is registered, which is the architecture's order: register,
-then analyse. Measured on 2026-10-13, 3 of the 14 studies found have nothing registered
-(section 6). An additional dataset with no manifest entry is gated the same way.
+One exemption, for the deprecation release only: a dataset pinned to a catalog release is read
+ungated, because that path "keeps working and warns" until the removal release (section 7), and
+`read_built()` has already verified it against its catalog. The exemption is removed with the
+release path.
+
+⚠️ **This changes behaviour for every study not on dated versions.** Today they render every
+stage from the working file. After A, their distribution, analysis and graph jobs stop with the
+gate's message until the dataset has a dated version, which is the architecture's order:
+register, then analyse. Measured on 2026-10-13 (section 6), that is 13 of the 14 studies:
+3 with nothing registered, which run `register_data()`, and 10 legacy, for which one
+`update_manifest()` converts the entry and lifts the stop. The gate's message names both. An
+additional dataset not on dated versions is gated the same way.
 
 **Provenance.** `provenance_data()` gains the same `working =` argument and default. A working
 read records the source file (`datasets/built.sas7bdat`) where a registered read records the
@@ -340,13 +350,15 @@ only beside a `release:` contract, and none of the fourteen studies has one.
 |---|---|
 | `release:` contract, on the study dataset or an additional one | **0** |
 | `dataset-catalog.yml` anywhere | **0** |
-| registered as legacy (`role: source`) | 11 |
+| registered as legacy (`role: source`) | 10 |
 | registered as dated versions | 1 |
 | no dataset registered yet | 3 |
 
 So **A refuses rather than converts.** There is nothing to convert, and conversion code nobody
-runs is code nobody has tested. The eleven legacy studies need nothing from A: their next
-`update_manifest()` already migrates them through `.migrate_entry()`, and they read as `legacy`.
+runs is code nobody has tested. The ten legacy studies need no new conversion code: their next
+`update_manifest()` already migrates them through `.migrate_entry()`, and their versions read as
+`legacy`. Until they run it, section 5.1's gate stops their distribution, analysis and graph jobs
+with a message naming that command.
 
 The refusal, from the removal release on (section 7), is a `study_config()` stop: "_study.yml
 pins dataset '<name>' to catalog release <release_id>. Catalog releases were retired in
@@ -364,7 +376,8 @@ bumps only, and the minor digit is John Ehrlinger's decision.
   call `.Deprecated()` naming their replacement.
 - `register_data()` warns when `catalog_dataset` or `release_id` is supplied;
   `read_built()` warns when `allow_withdrawn` is supplied.
-- `study_config()` warns, once per session per study, when it reads a `release:` contract.
+- `study_config()` warns, once per session, when it reads a `release:` contract. (Once per study
+  was the first draft; planning found it would fire in nearly every release test.)
 - Base `.Deprecated()`, not lifecycle: no new dependency for a two-release window.
 
 **The removal release.** Removes the three functions and their print method, the two
@@ -410,9 +423,10 @@ New or changed, in `tests/testthat/`:
   allowed; `Rscript` honoured or refused by its `--file=` stage; non-interactive with no job file
   refused; one case under a real `quarto render` (skipped when Quarto is absent, and that skip
   reported). A **default** read (`HVTI_DATA` unset, `working = FALSE`) of a dataset with no
-  manifest entry: allowed and signalled from datasets and descriptive jobs, **stopped** from
-  distributions, analyses and graphs jobs and from a non-interactive script with no job file. A
-  legacy `role: source` entry is not gated.
+  dated version, whether it has no manifest entry or a legacy `role: source` one: allowed and
+  signalled from datasets and descriptive jobs, **stopped** from distributions, analyses and
+  graphs jobs and from a non-interactive script with no job file. A first descriptive read that
+  makes the cache write a `role: source` entry leaves the dataset gated.
   The read writes nothing (the datasets directory listing and manifest bytes are identical before
   and after). The condition class. `refresh = TRUE` with `working = TRUE` errors.
   `provenance_data(working = TRUE)` records the source path.
