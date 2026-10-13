@@ -79,15 +79,16 @@ two Table 1s that drift, the failure the architecture rejects for derivations in
 
 ### 4.1 Origin
 
-Every version record, current or in `history`, may carry `origin`:
+Every registered version, current or in `history`, has an `origin`, recorded in the manifest's
+`provenance:` map (section 4.4), not on the version record itself:
 
 | value | meaning |
 |---|---|
 | `legacy` | registered without a valid build record: a SAS build, a hand-written program, anything not cut by `bd` |
 | `bd` | registered with a build record that describes these exact bytes |
 
-A version written before this change has no `origin` and **reads as `legacy`**. Nothing is
-rewritten to add it. No other value is defined here; a new producer adds one under its own
+A version with no row in `provenance:` **reads as `legacy`**: every version written before this
+change, and any version an older hvtiRutilities writes later. Nothing is rewritten to add a row. No other value is defined here; a new producer adds one under its own
 design.
 
 ### 4.2 The sidecar
@@ -96,12 +97,12 @@ design.
 `<stem>` is `built` without its extension. When `register_data()` or `update_manifest()`
 converts `built`:
 
-1. **No sidecar:** the version records `origin: legacy`.
+1. **No sidecar:** the version's provenance row records `origin: legacy`.
 2. **A sidecar whose `built_sha256` equals the `source_sha256` just computed** for the file
    being converted: it is validated (section 4.3), then renamed to
    `<stem>_YYYYMMDD[_rN].build.yml`, beside the version's parquet and schema files and sharing
-   their name. The version records `origin: bd` and a `build:` block (section 4.4).
-3. **A sidecar whose `built_sha256` differs:** it describes another file. The version records
+   their name. The version's provenance row records `origin: bd` and a `build:` block (section 4.4).
+3. **A sidecar whose `built_sha256` differs:** it describes another file. The version's row records
    `origin: legacy`, the sidecar is left where it is, and the update report row says so: "<stem>.build.yml
    describes a different <built>, so this version is recorded as legacy". Loud, and it does not
    block the registration: `legacy` is the truthful record of what is known.
@@ -143,9 +144,13 @@ enforce what a rule says; D's design must forbid rules that list keys.
 
 ### 4.4 The manifest
 
-`manifest.yaml` is committed, so it carries pointers and hashes only:
+`manifest.yaml` is committed, so it carries pointers and hashes only. Provenance is a
+**top-level map keyed by parquet name**, beside `datasets:`, and the version records in
+`datasets:` are unchanged:
 
 ```yaml
+datasets:
+- hvtiRutilities 1.5.1 or later required: ...      # the existing guard line
 - file: built.sas7bdat
   role: primary
   parquet: built_20261013.parquet
@@ -156,33 +161,47 @@ enforce what a rule says; D's design must forbid rules that list keys.
   n_cols: <n>
   schema_sha256: <hash>
   reader: haven 2.5.5
-  origin: bd
-  build:
-    record: built_20261013.build.yml
-    record_sha256: <hash of the record>
-    job: 00_datasets/bd.qmd
-    view: <view name>
-    as_of: '2026-10-01T00:00:00Z'
-    cohort_sha256: <hash>
-    overlay_sha256: <hash or null>
   history:
     - parquet: built_20260915.parquet
       ...
-      origin: legacy
+provenance:
+  built_20261013.parquet:
+    origin: bd
+    build:
+      record: built_20261013.build.yml
+      record_sha256: <hash of the record>
+      job: 00_datasets/bd.qmd
+      view: <view name>
+      as_of: '2026-10-01T00:00:00Z'
+      cohort_sha256: <hash>
+      overlay_sha256: <hash or null>
+  built_20260915.parquet:
+    origin: legacy
 ```
 
-Code changes this implies, all in `R/registered_versions.R`:
+**Why a separate map, not fields on the version.** hvtiRutilities 1.5.1 and 1.5.2 are already
+installed and cannot be changed. Their `.entry_extra()` copies every field it does not know onto
+the next version it writes, and their `.history_record()` keeps only the fields they know. So an
+`origin: bd` on the entry would be **inherited by a later SAS rebuild that 1.5.2 registers**,
+which is false provenance, and the moved-to-history record would lose its own. The guard line
+stops only readers before 1.5.1. Those versions do rewrite `manifest$datasets` and keep every
+other top-level key, so a map keyed by parquet name survives an older reader intact. A version
+the older reader registers has no row, and reads as `legacy`, which is true.
 
-- `.version_fields` gains `origin` and `build`, so `.history_record()` carries both into
-  `history` and `.entry_extra()` no longer treats them as extra fields.
-- `.recorded_version_names()` adds each version's `build$record`, so `.reserved_names()` keeps a
-  new version from taking a record's name.
-- A `legacy` version records `origin: legacy` explicitly from this change on; only versions
-  written before it lack the field.
+Code changes this implies, in `R/registered_versions.R` and `R/register_data.R`:
+
+- `.version_fields`, `.history_record()` and `.entry_extra()` are **unchanged**.
+- Every writer of a version record writes its provenance row in the same manifest write:
+  `.write_version()`'s callers in `register_data()`, `.next_version()` and `.migrate_entry()`,
+  and `.recover_cached_version()`, whose recovered version gets `origin: legacy`.
+- `.recorded_version_names()` adds each row's `build$record`, so `.reserved_names()` keeps a new
+  version from taking a record's name.
+- A row whose parquet no entry records (a hand-edited manifest) is reported by
+  `verify_manifest()` and otherwise ignored.
 
 ### 4.5 Verification
 
-`verify_manifest()` checks every recorded build record, current and in `history`, against its
+`verify_manifest()` checks every build record named in `provenance:` against its
 `record_sha256`, as it already checks every recorded parquet. A missing or changed record
 **stops**, with a message naming the record and saying it is the provenance of a registered
 version and must be restored from backup, not edited.
@@ -201,16 +220,23 @@ argument wins over the variable.
 
 **The stage gate.** A working read is honoured when either:
 
-- **no render is running** (`knitr::current_input()` is `NULL`, or knitr is not installed): the
-  console or a plain script, where a stat programmer looks at `built` and no report results; or
-- **a render is running and the job file's first directory under the study root is the
-  `datasets` or `descriptive` folder of that study's layout**, resolved through
-  `.study_folders()` so it holds for numbered (`00_datasets`, `10_descriptive`) and adopted
-  (`datasets`, `descriptive`) studies alike.
+- **the session is interactive** (`interactive()` is `TRUE` and no render is running): the
+  console, where a stat programmer looks at `built` and no report results; or
+- **the job file's first directory under the study root is the `datasets` or `descriptive`
+  folder of that study's layout**, resolved through `.study_folders()` so it holds for numbered
+  (`00_datasets`, `10_descriptive`) and adopted (`datasets`, `descriptive`) studies alike. The
+  job file is `knitr::current_input(dir = TRUE)` during a render, and the `--file=` argument of
+  `commandArgs()` under `Rscript`.
+
+A non-interactive session whose job file cannot be found (a `source()` from a batch, an
+`R CMD BATCH`) is refused, so `HVTI_DATA=working Rscript 30_analyses/.../fit.R` cannot save
+estimates from unregistered data.
 
 Otherwise it stops: "<stage> jobs read registered data only. Register <built> with
 update_manifest(), or unset HVTI_DATA." A render of a file outside the study root is refused the
-same way. The gate is a proxy: nothing in the family knows who is rendering, and the stage a job
+same way. ⚠️ Under `quarto render`, knitr knits an intermediate
+file; the gate depends on that file sitting in the job's own directory, so it is tested under a
+real Quarto render (section 9), not only under knitr. The gate is a proxy: nothing in the family knows who is rendering, and the stage a job
 lives in is the honest stand-in for "a stat programmer building the dataset". It keeps
 `HVTI_DATA=working` from leaking into an analysis, distribution or graph render.
 
@@ -226,8 +252,11 @@ cache to refresh.
 registered version. Results from it are a draft." Sub-project F catches this class to mark the
 report a draft, as templates already catch `hvtiRutilities_source_changed`.
 
-**On a never-registered study** the working read is the same read the study already gets, minus
-the cache write, and it signals the same class.
+**Every read of unregistered data signals it.** On a dataset with no registered version, a
+default read (`working = FALSE`) still reads the working file through the existing cache path,
+and it now signals `hvtiRutilities_working_read` too, so F marks it a draft. That is the
+architecture's working state: a render against an unregistered `built` is a draft whatever the
+argument says. `working = TRUE` on such a dataset is the same read without the cache write.
 
 **Provenance.** `provenance_data()` gains the same `working =` argument and default. A working
 read records the source file (`datasets/built.sas7bdat`) where a registered read records the
@@ -247,11 +276,13 @@ Returns an object of class `built_review`, with a print method:
 | `dataset` | the canonical dataset name |
 | `registered` | the current version record from the manifest |
 | `working` | the source's `sha256`, `n_rows`, `n_cols` |
-| `changed` | whether the source differs from the registered version (`.source_changed()`) |
+| `changed` | whether the source differs from the registered version (`.source_changed()`, after the existence check below) |
 | `comparison` | `compare_datasets(<registered>, <working>)`, or `NULL` when `changed` is `FALSE` |
 
 It reads only, and the working side is read the same way as section 5.1's read, without the
-stage gate (a review is not a render of results). A dataset with no registered version stops
+stage gate (a review is not a render of results). A missing source **stops** before
+`.source_changed()` is consulted, because that helper returns `FALSE` for a missing file and the
+review would report a deleted `built` as unchanged. A dataset with no registered version stops
 with "nothing is registered to compare against; register it with register_data()". It
 describes drift; it does not certify the new file, the same caveat `review_data_update()`
 carried.
@@ -347,21 +378,27 @@ removed functions; the reverse-dependency check in the release gate is what prov
 
 New or changed, in `tests/testthat/`:
 
-- **Origin.** No sidecar gives `legacy`. A matching sidecar gives `bd`, the record renamed beside
+- **Origin.** Provenance rows are written beside every version, including a recovered one. No
+  sidecar gives `legacy`. A matching sidecar gives `bd`, the record renamed beside
   the parquet, `build:` copied, `record_sha256` correct. A mismatched sidecar gives `legacy`, a
   report row naming it, and the sidecar left in place. A record missing a required field, or
   with `derived_after_overlay: false`, stops and leaves no parquet, schema or record behind. A
-  failed manifest write renames the record back. A pre-change version reads as `legacy`.
-  `history` carries `origin` and `build`. A new version never takes a recorded record's name.
+  failed manifest write renames the record back. A version with no row reads as `legacy`.
+  **Compatibility:** a manifest with a `bd` row, updated by the installed 1.5.2 after a
+  rebuild, leaves the row on its own parquet, and the new version has no row and reads as
+  `legacy`. A new version never takes a recorded record's name.
 - **Verification.** `verify_manifest()` stops on a changed and on a missing record, current and
   in `history`.
 - **Working reads.** `HVTI_DATA` unset, empty, `working`, and a misspelling (stops); the argument
   overriding the variable. The stage gate for numbered and legacy layouts: datasets and
-  descriptive allowed, the other stages and a file outside the study refused; no render allowed.
+  descriptive allowed, the other stages and a file outside the study refused; interactive console
+  allowed; `Rscript` honoured or refused by its `--file=` stage; non-interactive with no job file
+  refused; one case under a real `quarto render` (skipped when Quarto is absent, and that skip
+  reported). A default read of an unregistered dataset signals the working class.
   The read writes nothing (the datasets directory listing and manifest bytes are identical before
   and after). The condition class. `refresh = TRUE` with `working = TRUE` errors.
   `provenance_data(working = TRUE)` records the source path.
-- **`review_built()`.** Unchanged source (no comparison), changed source (a `compare_datasets()`
+- **`review_built()`.** Missing source (stops), unchanged source (no comparison), changed source (a `compare_datasets()`
   result), a never-registered dataset (stops), the print method.
 - **Deprecation.** Each retired function and argument warns naming its replacement and still
   returns what it did; `study_config()` warns once on a `release:` contract.
