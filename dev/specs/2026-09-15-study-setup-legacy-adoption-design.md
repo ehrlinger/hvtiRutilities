@@ -371,7 +371,7 @@ The initial README contains:
 The established Tracker link is:
 
 ```text
-http://hviresearch.ccf.org/StudyTracker/index.php?page=Topic&topic_id=42
+<StudyTracker URL>/index.php?page=Topic&topic_id=<id>
 ```
 
 When the protocol arrives, a person adds the study objective or research

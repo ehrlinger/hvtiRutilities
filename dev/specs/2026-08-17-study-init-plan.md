@@ -1251,7 +1251,7 @@ hand after merge:
 
 ```r
 hvtiRutilities::study_status(
-  "/Volumes/qhsstudies/cardiac/valves/aortic/replacement/pericardial/lv_function/survival"
+  "/Volumes/qhsstudies/<study>"
 )
 ```
 

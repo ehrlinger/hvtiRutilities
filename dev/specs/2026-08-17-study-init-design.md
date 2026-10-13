@@ -17,7 +17,7 @@ is accepted, and record how the result reproduces. Examining a real study
 showed that close-out is the wrong end of the problem.
 
 The study examined is
-`/Volumes/qhsstudies/cardiac/valves/aortic/replacement/pericardial/lv_function/survival`.
+`/Volumes/qhsstudies/<study>`.
 Measured, not assumed:
 
 | Observation | Value |
