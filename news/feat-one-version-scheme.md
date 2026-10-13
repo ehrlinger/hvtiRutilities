@@ -13,3 +13,6 @@
   `adopt_data_update()`, `register_data(catalog_dataset =, release_id =)` and
   `read_built(allow_withdrawn =)` warn, and `study_config()` warns once on a `release:`
   contract. They will be removed in a later release.
+* `update_manifest()` in a study registers a dataset that `_study.yml` names but `manifest.yaml`
+  does not list (or a study with no `manifest.yaml`) as its first dated version, so a
+  hand-written `built:` no longer leaves `read_built()` and `register_data()` refusing each other.
