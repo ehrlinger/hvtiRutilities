@@ -364,3 +364,67 @@ test_that("a failed manifest write puts a promoted migration back", {
   expect_false(file.exists(file.path(dir, "built_20260915.schema.csv")))
   expect_identical(readLines(mp), before)
 })
+
+test_that("a provenance row with an origin this version does not know fails", {
+  root <- versioned_study()
+  mp <- file.path(root, "manifest.yaml")
+  m <- .read_manifest(mp)
+  m$provenance[["built_20260915.parquet"]] <- list(origin = "future")
+  .write_manifest(m, mp)
+  expect_warning(rep <- verify_manifest(mp, stop_on_error = FALSE), "does not know")
+  row <- rep[rep$file == "built_20260915.parquet (provenance)", ]
+  expect_identical(row$status, "FAIL")
+  expect_match(row$message, "future", fixed = TRUE)
+  expect_match(row$message, "pdate hvtiRutilities or restore manifest.yaml from version control", fixed = TRUE)
+})
+
+test_that("a bd provenance row without its build record fails, a legacy row without one stays silent", {
+  root <- versioned_study()
+  mp <- file.path(root, "manifest.yaml")
+  m <- .read_manifest(mp)
+  m$provenance[["built_20260915.parquet"]] <- list(origin = "bd")
+  .write_manifest(m, mp)
+  expect_warning(rep <- verify_manifest(mp, stop_on_error = FALSE), "without its build record")
+  expect_identical(rep$status[rep$file == "built.csv (built_20260915.parquet build record)"], "FAIL")
+
+  m$provenance[["built_20260915.parquet"]] <- list(origin = "legacy")
+  .write_manifest(m, mp)
+  rep <- verify_manifest(mp, stop_on_error = FALSE)
+  expect_false(any(rep$status == "FAIL"))
+  expect_false(any(grepl("provenance|build record", rep$file)))
+})
+
+test_that("provenance in a manifest with no datasets still fails", {
+  root <- versioned_study()
+  mp <- file.path(root, "manifest.yaml")
+  yaml::write_yaml(list(datasets = list(), provenance = list(ghost_20200101.parquet = list(origin = "legacy"))), mp)
+  expect_warning(rep <- verify_manifest(mp, stop_on_error = FALSE), "which no dataset records")
+  expect_identical(rep$status[rep$file == "ghost_20200101.parquet (provenance)"], "FAIL")
+  expect_error(verify_manifest(mp), "which no dataset records")
+
+  yaml::write_yaml(list(datasets = list()), mp)
+  rep <- verify_manifest(mp, verbose = FALSE)
+  expect_identical(nrow(rep), 0L)
+})
+
+test_that("an NA build record checksum fails instead of crashing", {
+  s <- unregistered_study()
+  write_build_sidecar(s$src)
+  suppressMessages(register_data(s$root, "built.csv"))
+  mp <- file.path(s$root, "manifest.yaml")
+  m <- .read_manifest(mp)
+  m$provenance[["built_20260915.parquet"]]$build$record_sha256 <- NA_character_
+  yaml::write_yaml(m, mp)
+  expect_warning(rep <- verify_manifest(mp, stop_on_error = FALSE), "invalid build record")
+  expect_identical(rep$status[rep$file == "built.csv (built_20260915.parquet build record)"], "FAIL")
+})
+
+test_that("as_of offsets are bounded", {
+  for (ok in c("2026-10-01T08:30:00-04:00", "2026-10-01T08:30:00+0530", "2026-10-01T08:30:00+14:00")) {
+    expect_true(.is_iso_timestamp(ok), info = ok)
+  }
+  for (bad in c("2026-10-01T08:30:00+99:99", "2026-10-01T08:30:00+24:00", "2026-10-01T08:30:00+05:60",
+                "2026-10-01T08:30:00+1500")) {
+    expect_false(.is_iso_timestamp(bad), info = bad)
+  }
+})

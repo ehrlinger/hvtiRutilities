@@ -38,7 +38,7 @@
 # The whole timestamp, not its prefix: the shape, then the calendar and clock
 # (strptime() returns NA for 2026-02-30 and for hour 25; measured 2026-10-13).
 .is_iso_timestamp <- function(x) {
-  shape <- "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}([.][0-9]+)?(Z|[+-][0-9]{2}:?[0-9]{2})$"
+  shape <- "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}([.][0-9]+)?(Z|[+-](0[0-9]|1[0-4]):?[0-5][0-9])$"
   is.character(x) && length(x) == 1L && !is.na(x) && grepl(shape, x) &&
     !is.na(as.POSIXct(substr(x, 1L, 19L), format = "%Y-%m-%dT%H:%M:%S", tz = "UTC"))
 }
