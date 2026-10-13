@@ -229,3 +229,26 @@ test_that("the gate offers HVTI_DATA and working = TRUE exits only for a dated v
   expect_match(msg, "register_data()", fixed = TRUE)
   expect_no_match(msg, "without working = TRUE", fixed = TRUE)
 })
+
+test_that(".job_file resolves a relative --file= against the launch directory, not the working directory", {
+  local_mocked_bindings(.knitr_input = function() NULL, .command_args = function() "--file=30_analyses/x.R")
+  launch <- withr::local_tempdir()
+  withr::local_envvar(PWD = launch)
+  expect_identical(.job_file(), file.path(launch, "30_analyses/x.R"))
+
+  # the bypass: a script that setwd()s must not move where it was launched from
+  elsewhere <- withr::local_tempdir()
+  withr::local_dir(elsewhere)
+  expect_identical(.job_file(), file.path(launch, "30_analyses/x.R"))
+
+  withr::local_envvar(PWD = NA)
+  expect_null(.job_file())
+  withr::local_envvar(PWD = "")
+  expect_null(.job_file())
+})
+
+test_that(".job_file leaves an absolute --file= alone", {
+  local_mocked_bindings(.knitr_input = function() NULL, .command_args = function() "--file=/abs/dir/x.R")
+  withr::local_envvar(PWD = NA)
+  expect_identical(.job_file(), "/abs/dir/x.R")
+})

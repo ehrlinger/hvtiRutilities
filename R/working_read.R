@@ -28,8 +28,14 @@
   if (!is.null(input)) return(input)
   arg <- grep("^--file=", .command_args(), value = TRUE)
   # R writes a space in the script's path as "~+~" (measured 2026-10-13).
-  if (length(arg)) return(gsub("~+~", " ", sub("^--file=", "", arg[[1L]]), fixed = TRUE))
-  NULL
+  if (!length(arg)) return(NULL)
+  file <- gsub("~+~", " ", sub("^--file=", "", arg[[1L]]), fixed = TRUE)
+  if (grepl("^(/|~|[A-Za-z]:[/\\\\]|\\\\\\\\)", file)) return(file)
+  # A relative path is relative to where the script was launched, which setwd() cannot change. PWD is
+  # that directory; without it the job cannot be placed, and the caller refuses it.
+  launch <- Sys.getenv("PWD", "")
+  if (!nzchar(launch)) return(NULL)
+  file.path(launch, file)
 }
 
 # Resolve symlinks (macOS /var -> /private/var, a symlinked mount) the same way
