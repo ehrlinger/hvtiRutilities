@@ -317,6 +317,34 @@ test_that("a failed manifest write renames the record back to its sidecar", {
   expect_false(file.exists(file.path(dirname(src), "built_20261001.parquet")))
 })
 
+test_that("a record with no built_sha256 is malformed, not stale", {
+  s <- unregistered_study()
+  write_build_sidecar(s$src, built_sha256 = NULL)
+  expect_error(register_data(s$root, "built.csv"), "built_sha256 must be a SHA-256")
+  expect_false(file.exists(file.path(s$root, "manifest.yaml")))
+})
+
+test_that("as_of must be a whole, real timestamp", {
+  expect_true(.is_iso_timestamp("2026-10-01T00:00:00Z"))
+  expect_true(.is_iso_timestamp("2026-10-01T08:30:00.5-04:00"))
+  for (bad in c("2026-99-99Tgarbage", "2026-02-30T00:00:00Z", "2026-10-01T25:00:00Z", "2026-10-01", NA)) {
+    expect_false(.is_iso_timestamp(bad), info = bad)
+  }
+})
+
+test_that("a sidecar rewritten during registration is put back and nothing is registered", {
+  s <- unregistered_study()
+  side <- write_build_sidecar(s$src)
+  local_mocked_bindings(.registration_rename = function(from, to) {
+    ok <- file.rename(from, to)
+    if (identical(basename(from), "built.build.yml")) cat("view: other\n", file = to, append = TRUE)
+    ok
+  })
+  expect_error(register_data(s$root, "built.csv"), "changed while it was being registered")
+  expect_true(file.exists(side))
+  expect_false(file.exists(file.path(s$root, "manifest.yaml")))
+})
+
 test_that("a new version never takes a recorded record's name", {
   expect_true("x_20260915.build.yml" %in% .recorded_version_names(list(list(file = "x.csv", parquet = "x_20260915.parquet"))))
 })
@@ -345,6 +373,14 @@ Append to `R/version_provenance.R`:
 
 .is_sha256 <- function(x) is.character(x) && length(x) == 1L && !is.na(x) && grepl("^[0-9a-f]{64}$", x)
 
+# The whole timestamp, not its prefix: the shape, then the calendar and clock
+# (strptime() returns NA for 2026-02-30 and for hour 25; measured 2026-10-13).
+.is_iso_timestamp <- function(x) {
+  shape <- "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}([.][0-9]+)?(Z|[+-][0-9]{2}:?[0-9]{2})$"
+  is.character(x) && length(x) == 1L && !is.na(x) && grepl(shape, x) &&
+    !is.na(as.POSIXct(substr(x, 1L, 19L), format = "%Y-%m-%dT%H:%M:%S", tz = "UTC"))
+}
+
 .validate_build_record <- function(rec, file, caller) {
   bad <- function(why) {
     stop(caller, "(): ", file, " is not a valid build record: ", why, ". Nothing was written.", call. = FALSE)
@@ -355,7 +391,7 @@ Append to `R/version_provenance.R`:
   if (!identical(rec$schema, 1L)) bad("schema must be 1")
   if (!text(rec$job)) bad("job must be the job file's study-relative path")
   if (!text(rec$view)) bad("missing view")
-  if (!text(rec$as_of) || !grepl("^[0-9]{4}-[0-9]{2}-[0-9]{2}T", rec$as_of)) bad("as_of must be an ISO 8601 timestamp")
+  if (!.is_iso_timestamp(rec$as_of)) bad("as_of must be an ISO 8601 timestamp, such as 2026-10-01T00:00:00Z")
   if (!.is_sha256(rec$cohort_sha256)) bad("cohort_sha256 must be a SHA-256")
   if (!is.null(rec$overlay_sha256) && !.is_sha256(rec$overlay_sha256)) bad("overlay_sha256 must be a SHA-256 or null")
   if (!is.logical(rec$derived_after_overlay) || length(rec$derived_after_overlay) != 1L ||
@@ -373,14 +409,22 @@ Append to `R/version_provenance.R`:
   none <- list(row = .legacy_row(), from = character(), to = character(), note = NULL)
   sidecar <- .build_sidecar_path(source_path)
   if (!file.exists(sidecar)) return(none)
-  rec <- tryCatch(yaml::read_yaml(sidecar), error = function(e) {
-    stop(caller, "(): ", basename(sidecar), " is not valid YAML (", conditionMessage(e), "). Nothing was written.",
-         call. = FALSE)
-  })
-  if (!is.list(rec)) {
-    stop(caller, "(): ", basename(sidecar), " is not a valid build record: it is not a mapping. Nothing was written.",
-         call. = FALSE)
+  fail <- function(why) {
+    stop(caller, "(): ", basename(sidecar), " ", why, ". Nothing was written.", call. = FALSE)
   }
+  # Read the bytes once and parse those bytes, so the record validated is the
+  # record whose hash is checked after the move: bd rewriting the sidecar
+  # between the read and the rename cannot pair one record's fields with
+  # another's checksum.
+  bytes <- readBin(sidecar, "raw", file.size(sidecar))
+  claimed_sha256 <- digest::digest(bytes, algo = "sha256", serialize = FALSE)
+  rec <- tryCatch(yaml::yaml.load(rawToChar(bytes)), error = function(e) {
+    fail(paste0("is not valid YAML (", conditionMessage(e), ")"))
+  })
+  if (!is.list(rec)) fail("is not a valid build record: it is not a mapping")
+  # A record without a valid built_sha256 is malformed, not stale: it must
+  # not fall through to the legacy branch below.
+  if (!.is_sha256(rec$built_sha256)) fail("is not a valid build record: built_sha256 must be a SHA-256")
   if (!identical(rec$built_sha256, source_sha256)) {
     none$note <- paste0(basename(sidecar), " describes a different ", basename(source_path),
                         ", so this version is recorded as legacy")
@@ -388,18 +432,19 @@ Append to `R/version_provenance.R`:
   }
   .validate_build_record(rec, basename(sidecar), caller)
   if (!isTRUE(rec$derived_after_overlay)) {
-    stop(caller, "(): ", basename(sidecar), " says its derivations were not recomputed after the corrections ",
-         "overlay was applied, so ", basename(source_path), " cannot be registered. Re-run the build. ",
-         "Nothing was written.", call. = FALSE)
+    fail(paste0("says its derivations were not recomputed after the corrections overlay was applied, so ",
+                basename(source_path), " cannot be registered. Re-run the build"))
   }
   dest <- file.path(dirname(source_path), .version_record_name(parquet))
-  if (file.exists(dest) || !file.rename(sidecar, dest)) {
-    stop(caller, "(): could not move ", basename(sidecar), " to ", basename(dest), ". Nothing was written.",
-         call. = FALSE)
+  # .registration_rename() (R/register_data.R) is file.rename() behind a binding tests can mock.
+  if (file.exists(dest) || !.registration_rename(sidecar, dest)) fail(paste0("could not be moved to ", basename(dest)))
+  if (!identical(digest::digest(dest, algo = "sha256", file = TRUE), claimed_sha256)) {
+    file.rename(dest, sidecar)
+    fail("changed while it was being registered. Wait for the build that writes it to finish, then run this again")
   }
   list(
     row = list(origin = "bd", build = list(
-      record = basename(dest), record_sha256 = digest::digest(dest, algo = "sha256", file = TRUE),
+      record = basename(dest), record_sha256 = claimed_sha256,
       job = rec$job, view = rec$view, as_of = rec$as_of,
       cohort_sha256 = rec$cohort_sha256, overlay_sha256 = rec$overlay_sha256
     )),
@@ -671,6 +716,12 @@ test_that("Rscript's --file names the job", {
   expect_identical(basename(.job_file()), "fit.R")
 })
 
+test_that("Rscript's encoding of spaces in --file is decoded", {
+  local_mocked_bindings(.knitr_input = function() NULL,
+                        .command_args = function() c("R", "--file=/studies/a~+~b/10_descriptive/dc.R"))
+  expect_identical(.job_file(), "/studies/a b/10_descriptive/dc.R")
+})
+
 test_that("paths resolve the same whether or not they exist", {
   root <- withr::local_tempdir()
   expect_identical(.real_path(file.path(root, "no", "such.qmd")),
@@ -722,7 +773,8 @@ Expected: FAIL, `could not find function ".hvti_working_default"`.
   input <- .knitr_input()
   if (!is.null(input)) return(input)
   arg <- grep("^--file=", .command_args(), value = TRUE)
-  if (length(arg)) return(sub("^--file=", "", arg[[1L]]))
+  # R writes a space in the script's path as "~+~" (measured 2026-10-13).
+  if (length(arg)) return(gsub("~+~", " ", sub("^--file=", "", arg[[1L]]), fixed = TRUE))
   NULL
 }
 
@@ -1018,6 +1070,161 @@ commit message how many were changed.
 ```bash
 git add R/study_data.R R/provenance.R tests/testthat/
 git commit -m "read_built() serves the working file only where the stage gate allows"
+```
+
+---
+
+### Task 5b: Migrate a promoted entry from its parquet
+
+The gate stops every non-dated read, and `update_manifest()` is the way out. But a legacy
+**promoted** entry (`role: primary`, no `parquet:`) whose source was retired takes the
+"not on disk; jobs keep reading built.parquet" branch of `.update_study_manifest()` and gets no
+dated version, so its analysis jobs would stay blocked. Measured 2026-10-13: no study on the share
+is in this state (the one `primary` entry is already dated), but the path must exist.
+
+**Files:**
+- Modify: `R/registered_versions.R` (new `.migrate_promoted_entry()`; the missing-source branch
+  of `.update_study_manifest()`)
+- Test: `tests/testthat/test-version_provenance.R`
+
+**Interfaces:**
+- Consumes: `.version_filename()`, `.reserved_names()`, `.versioned_entry()`, `.entry_extra()`,
+  `.legacy_row()`, `.derived_paths()` (existing and Task 1).
+- Produces: `.migrate_promoted_entry(entry, source_path, datasets)` → a step list
+  (`entry`, `restore`, `provenance`, `action = "migrated"`, `detail`) or `NULL` when the legacy
+  parquet is missing or does not match the entry's `sha256`.
+
+- [ ] **Step 1: Write the failing test**
+
+```r
+# A legacy promoted entry: the data is <stem>.parquet and the source is retired.
+promoted_study <- function(env = parent.frame()) {
+  root <- versioned_study(env)
+  dir <- study_dir("datasets", root)
+  file.rename(file.path(dir, "built_20260915.parquet"), file.path(dir, "built.parquet"))
+  file.rename(file.path(dir, "built_20260915.schema.csv"), file.path(dir, "built.schema.csv"))
+  mp <- file.path(root, "manifest.yaml")
+  e <- .read_manifest(mp)$datasets[[1]]
+  yaml::write_yaml(list(datasets = list(list(
+    file = "built.csv", role = "primary", sha256 = e$sha256, source_sha256 = e$source_sha256,
+    extract_date = e$extract_date, n_rows = e$n_rows, n_cols = e$n_cols, promoted_date = "2026-09-20"
+  ))), mp)
+  unlink(file.path(dir, "built.csv"))
+  root
+}
+
+test_that("a promoted entry with a retired source migrates from its parquet and lifts the gate", {
+  root <- promoted_study()
+  dir <- study_dir("datasets", root)
+  before <- digest::digest(file.path(dir, "built.parquet"), algo = "sha256", file = TRUE)
+  local_mocked_bindings(.is_interactive = function() FALSE,
+                        .job_file = function() file.path(study_dir("analyses", root), "km", "km.qmd"))
+  expect_error(read_built(study_config(root)), "jobs read registered data only")
+
+  out <- withr::with_dir(root, suppressMessages(update_manifest()))
+  expect_identical(out$action, "migrated")
+  e <- .read_manifest(file.path(root, "manifest.yaml"))$datasets[[1]]
+  expect_identical(e$parquet, "built_20260915.parquet")
+  expect_identical(e$recovered_from, "promoted")
+  expect_identical(e$sha256, before)
+  expect_identical(e$promoted_date, "2026-09-20")
+  expect_false(file.exists(file.path(dir, "built.parquet")))
+  expect_identical(nrow(read_built(study_config(root))), 3L)
+})
+
+test_that("a promoted parquet that does not match its hash is not migrated", {
+  root <- promoted_study()
+  cat("x", file = file.path(study_dir("datasets", root), "built.parquet"), append = TRUE)
+  out <- withr::with_dir(root, suppressMessages(update_manifest()))
+  expect_false(identical(out$action, "migrated"))
+  expect_false(file.exists(file.path(study_dir("datasets", root), "built_20260915.parquet")))
+})
+```
+
+- [ ] **Step 2: Run to verify it fails**
+
+Run: `Rscript -e 'devtools::test(filter = "version_provenance")'`
+Expected: FAIL, `out$action` is `"unchanged"`.
+
+- [ ] **Step 3: Implement**
+
+In `R/registered_versions.R`, after `.migrate_entry()`:
+
+```r
+# A legacy promoted entry (role: primary, no parquet:) whose source was retired
+# holds its data only in <stem>.parquet. Rename that file to a dated version:
+# it is the only copy, so it is moved, never rewritten, and only once its hash
+# matches the entry. The caller renames it back if the manifest write fails.
+.migrate_promoted_entry <- function(entry, source_path, datasets = list()) {
+  legacy <- .derived_paths(source_path)
+  if (!file.exists(legacy$parquet) ||
+        !identical(digest::digest(legacy$parquet, algo = "sha256", file = TRUE), entry$sha256)) {
+    return(NULL)
+  }
+  dir <- dirname(source_path)
+  date <- if (is.null(entry$extract_date)) .mtime_date(legacy$parquet) else entry$extract_date
+  name <- .version_filename(tools::file_path_sans_ext(entry$file), date, dir, .reserved_names(datasets))
+  parquet <- file.path(dir, name)
+  schema <- file.path(dir, .version_schema_name(name))
+  if (!file.rename(legacy$parquet, parquet)) return(NULL)
+  from <- parquet
+  to <- legacy$parquet
+  if (file.exists(legacy$schema)) {
+    if (!file.rename(legacy$schema, schema)) {
+      file.rename(parquet, legacy$parquet)
+      return(NULL)
+    }
+    from <- c(from, schema)
+    to <- c(to, legacy$schema)
+  }
+  version <- list(
+    parquet = name, sha256 = entry$sha256, source_sha256 = entry$source_sha256,
+    extract_date = format(as.Date(date), "%Y-%m-%d"),
+    n_rows = as.integer(entry$n_rows), n_cols = as.integer(entry$n_cols),
+    schema_sha256 = if (file.exists(schema)) digest::digest(schema, algo = "sha256", file = TRUE) else entry$schema_sha256,
+    reader = entry$reader, recovered_from = "promoted"
+  )
+  version <- Filter(Negate(is.null), version)
+  list(
+    entry = .versioned_entry(entry$file, version, extra = .entry_extra(entry)),
+    restore = list(from = from, to = to),
+    provenance = stats::setNames(list(.legacy_row()), name),
+    action = "migrated",
+    detail = paste0("registered ", name, " from the promoted ", basename(legacy$parquet),
+                    "; its source ", entry$file, " was retired")
+  )
+}
+```
+
+In `.update_study_manifest()`, at the top of the `if (!file.exists(source_path)) {` block:
+
+```r
+      promoted <- if (!.is_versioned(entry) && identical(entry$role, "primary")) {
+        .migrate_promoted_entry(entry, source_path, manifest$datasets)
+      }
+      if (!is.null(promoted)) {
+        restore$from <- c(restore$from, promoted$restore$from)
+        restore$to <- c(restore$to, promoted$restore$to)
+        provenance <- c(provenance, promoted$provenance)
+        manifest$datasets[[hit]] <- promoted$entry
+        rows[[name]] <- .manifest_update_row(name, promoted$action, promoted$detail)
+        next
+      }
+```
+
+`changed` already counts `"migrated"`, so the manifest is written; a failed write renames both
+files back through `restore`.
+
+- [ ] **Step 4: Run to verify it passes**
+
+Run: `Rscript -e 'devtools::test(filter = "version_provenance|registered_versions")'`
+Expected: PASS.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add R/registered_versions.R tests/testthat/test-version_provenance.R
+git commit -m "update_manifest() migrates a promoted entry whose source was retired"
 ```
 
 ---
@@ -1409,6 +1616,7 @@ test_that("the stage gate sees a real Quarto render's job file", {
 | 4.5 verification | 3 |
 | 5.1 default, gate, read, signal | 4, 5 |
 | 5.1 every non-dated read gated; provenance | 5 |
+| 5.1 the way out of the gate for a promoted legacy entry | 5b |
 | 5.2 `review_built()` | 6 |
 | 5.3 replacements; 7 deprecation release | 6, 7, 8 |
 | 9 tests | 1 to 7, 9 |
