@@ -671,6 +671,12 @@ test_that("Rscript's --file names the job", {
   expect_identical(basename(.job_file()), "fit.R")
 })
 
+test_that("paths resolve the same whether or not they exist", {
+  root <- withr::local_tempdir()
+  expect_identical(.real_path(file.path(root, "no", "such.qmd")),
+                   file.path(normalizePath(root), "no", "such.qmd"))
+})
+
 test_that("the working-read condition carries its class", {
   cnd <- .working_read_condition("built.csv")
   expect_s3_class(cnd, "hvtiRutilities_working_read")
@@ -714,10 +720,23 @@ Expected: FAIL, `could not find function ".hvti_working_default"`.
 # The job being run: the document knitr is rendering, else the script Rscript was given.
 .job_file <- function() {
   input <- .knitr_input()
-  if (!is.null(input)) return(normalizePath(input, mustWork = FALSE))
+  if (!is.null(input)) return(input)
   arg <- grep("^--file=", .command_args(), value = TRUE)
-  if (length(arg)) return(normalizePath(sub("^--file=", "", arg[[1L]]), mustWork = FALSE))
+  if (length(arg)) return(sub("^--file=", "", arg[[1L]]))
   NULL
+}
+
+# Resolve symlinks (macOS /var -> /private/var, a symlinked mount) the same way
+# for a path whether or not it exists: normalise its deepest existing ancestor
+# and re-append the rest. normalizePath() alone leaves a missing path as given.
+.real_path <- function(path) {
+  path <- path.expand(path)
+  rest <- character()
+  while (!file.exists(path) && !identical(dirname(path), path)) {
+    rest <- c(basename(path), rest)
+    path <- dirname(path)
+  }
+  do.call(file.path, as.list(c(normalizePath(path, mustWork = FALSE), rest)))
 }
 
 .assert_working_stage <- function(cfg, built, caller = "read_built") {
@@ -726,7 +745,8 @@ Expected: FAIL, `could not find function ".hvti_working_default"`.
   allowed <- vapply(c("datasets", "descriptive"), function(k) basename(study_dir(k, cfg$root)), character(1))
   stage <- NULL
   if (!is.null(job)) {
-    root <- normalizePath(cfg$root, mustWork = FALSE)
+    job <- .real_path(job)
+    root <- .real_path(cfg$root)
     if (startsWith(job, paste0(root, "/")) || startsWith(job, paste0(root, "\\"))) {
       stage <- strsplit(substring(job, nchar(root) + 2L), "[/\\\\]")[[1L]][[1L]]
     }
@@ -759,9 +779,14 @@ Expected: FAIL, `could not find function ".hvti_working_default"`.
 # The gate in read_built() refuses a non-interactive session with no job file,
 # which is what testthat is. Tests that are not about the gate read as the
 # interactive console would; test-working_read.R mocks these bindings itself.
-testthat::local_mocked_bindings(.is_interactive = function() TRUE, .job_file = function() NULL,
+testthat::local_mocked_bindings(.is_interactive = function() TRUE, .knitr_input = function() NULL,
+                                .command_args = function() character(),
                                 .package = "hvtiRutilities", .env = testthat::teardown_env())
 ```
+
+It mocks the inputs `.job_file()` reads, not `.job_file()` itself, so the `--file=` test can still
+call the real `.job_file()`. Mocking `.command_args` also matters under `R CMD check`, whose test
+run passes `--file=testthat.R`, a job file outside any study.
 
 A test's own `local_mocked_bindings()` call overrides these for that test only.
 
@@ -856,6 +881,14 @@ test_that("a legacy role: source entry is gated until update_manifest() converts
   expect_error(read_built(study_config(root)), "update_manifest")
 })
 
+test_that("a release-pinned dataset keeps reading ungated while the release path is deprecated", {
+  fx <- suppressMessages(suppressWarnings(make_release_aware_study(withr::local_tempdir())))
+  local_mocked_bindings(.is_interactive = function() FALSE,
+                        .job_file = function() file.path(study_dir("analyses", fx$root), "km", "km.qmd"))
+  cfg <- suppressWarnings(study_config(fx$root), classes = "deprecatedWarning")
+  expect_no_message(read_built(cfg), class = "hvtiRutilities_working_read")
+})
+
 test_that("provenance_data records the source for a working read", {
   root <- versioned_study()
   cfg <- study_config(root)
@@ -891,8 +924,12 @@ After `entry <- .manifest_entry(manifest_path, p)` and before the combined-paren
 
 ```r
   # Only a dated version is registered data. Any other read serves the working
-  # file, so it passes the stage gate and is reported as a draft.
-  if (working || !.is_versioned(entry)) {
+  # file, so it passes the stage gate and is reported as a draft. A release-
+  # pinned contract is exempt while the release path is deprecated: it was
+  # verified against its catalog above, and that path keeps working until the
+  # removal release, which drops this exemption with it.
+  unregistered <- !.is_versioned(entry) && is.null(contract$release)
+  if (working || unregistered) {
     .assert_working_stage(cfg, basename(p))
     if (working) {
       if (isTRUE(refresh)) {
@@ -910,11 +947,12 @@ After `entry <- .manifest_entry(manifest_path, p)` and before the combined-paren
 At the very end, replace `.normalise_built(d)` with
 
 ```r
-  message(.working_read_condition(basename(p)))
+  if (unregistered) message(.working_read_condition(basename(p)))
   .normalise_built(d)
 ```
 
-(the versioned branch returns earlier, so only non-dated reads reach this line).
+(the versioned branch returns earlier, and a release-pinned read reaches this line without the
+message).
 
 Roxygen: add, in Rd markup,
 
@@ -944,7 +982,10 @@ Example: the current example reads an unregistered CSV, which the gate refuses u
 #' }
 ```
 
-Check `study_setup()`'s signature (`args(study_setup)`) before committing the example.
+`study_setup(root, study, study_tracker_id)` with its defaults (`renv = FALSE`, `cleanup = FALSE`,
+`adopt = FALSE`) writes only under `root` and starts no git or renv process (read while planning,
+2026-10-13); every test fixture already relies on that. The example therefore writes only to
+`tempdir()`, as the Cookbook requires.
 
 - [ ] **Step 4: Implement `provenance_data()`**
 
@@ -1185,15 +1226,23 @@ In `tests/testthat/test-data_updates.R`, at the first call of each of `check_dat
 `review_data_update()` and `adopt_data_update()`, wrap it as
 `expect_warning(<call>, class = "deprecatedWarning")`; elsewhere in that file wrap calls in
 `suppressWarnings(<call>, classes = "deprecatedWarning")` so existing assertions keep their
-meaning. Add one test that `study_config()` warns once per study on a `release:` contract:
+meaning. Add one test that `study_config()` warns once per session on a `release:` contract:
 
 ```r
 test_that("study_config warns once on a release contract", {
   root <- suppressMessages(make_release_aware_study(withr::local_tempdir()))$root   # helper-release.R
-  rm(list = ls(.hvti_deprecated, pattern = "^release:"), envir = .hvti_deprecated)
+  spent <- .hvti_deprecated$release_contract
+  assign("release_contract", FALSE, envir = .hvti_deprecated)
+  withr::defer(assign("release_contract", spent, envir = .hvti_deprecated))
   expect_warning(study_config(root), class = "deprecatedWarning")
   expect_no_warning(study_config(root))
 })
+```
+
+In `tests/testthat/setup-deprecation-notices.R`, add `"release_contract"` to the `for (flag in ...)`
+vector and to the `rm(list = ...)` in its `withr::defer()`, so the notice is spent before any
+test runs, exactly as the two existing notices are. Every release fixture is a new temporary
+study, so a per-study flag would fire in nearly every release test.
 ```
 
 - [ ] **Step 2: Run to verify they fail**
@@ -1226,9 +1275,8 @@ In `R/version_provenance.R`:
 
 ```r
   if (!is.null(raw$release) || any(vapply(raw$additional_datasets, function(a) !is.null(a$release), logical(1)))) {
-    flag <- paste0("release:", found)
-    if (!isTRUE(.hvti_deprecated[[flag]])) {
-      assign(flag, TRUE, envir = .hvti_deprecated)
+    if (!isTRUE(.hvti_deprecated$release_contract)) {
+      assign("release_contract", TRUE, envir = .hvti_deprecated)
       warning(structure(class = c("deprecatedWarning", "warning", "condition"), list(
         message = paste0(found, " pins a dataset to a catalog release. Catalog releases are retired and will ",
                          "stop being read in a later release; remove the release: block and run update_manifest()."),

@@ -272,6 +272,11 @@ descriptive render created an entry, and analysis jobs then read the same unregi
 ungated. A cache-written entry and one written by a pre-1.5 `register_data()` have the same shape,
 so no test on the entry can tell them apart. John Ehrlinger chose the dated-version rule.
 
+One exemption, for the deprecation release only: a dataset pinned to a catalog release is read
+ungated, because that path "keeps working and warns" until the removal release (section 7), and
+`read_built()` has already verified it against its catalog. The exemption is removed with the
+release path.
+
 ⚠️ **This changes behaviour for every study not on dated versions.** Today they render every
 stage from the working file. After A, their distribution, analysis and graph jobs stop with the
 gate's message until the dataset has a dated version, which is the architecture's order:
@@ -371,7 +376,8 @@ bumps only, and the minor digit is John Ehrlinger's decision.
   call `.Deprecated()` naming their replacement.
 - `register_data()` warns when `catalog_dataset` or `release_id` is supplied;
   `read_built()` warns when `allow_withdrawn` is supplied.
-- `study_config()` warns, once per session per study, when it reads a `release:` contract.
+- `study_config()` warns, once per session, when it reads a `release:` contract. (Once per study
+  was the first draft; planning found it would fire in nearly every release test.)
 - Base `.Deprecated()`, not lifecycle: no new dependency for a two-release window.
 
 **The removal release.** Removes the three functions and their print method, the two
