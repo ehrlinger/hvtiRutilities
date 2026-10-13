@@ -466,7 +466,7 @@
   unlink(drop[!basename(drop) %in% .recorded_version_names(manifest$datasets)])
   message(paste0(format(out$dataset), ": ", out$detail, collapse = "\n"))
   for (b in behind) message(b)
-  if (changed) {
+  if (changed || restamped) {
     message("Commit manifest.yaml so the record of which version is current travels with the study.")
   }
   invisible(out)

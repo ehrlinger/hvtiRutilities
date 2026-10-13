@@ -1043,3 +1043,27 @@ test_that("update_manifest() re-stamps a touched but unchanged source, so later 
   expect_identical(e$source_size, as.numeric(file.info(src)$size))
   expect_identical(e$parquet, Filter(is.list, yaml::read_yaml(text = before)$datasets)[[1L]]$parquet)
 })
+
+test_that("update_manifest() asks for a commit when it only restamped the manifest", {
+  root <- versioned_study()
+  src <- file.path(study_dir("datasets", root), "built.csv")
+  before <- manifest_entry_for(root)
+  # The same bytes rewritten later: no new version, but the recorded stamp no longer matches.
+  Sys.setFileTime(src, as.POSIXct("2026-09-30 08:15:30.5", tz = "UTC"))
+  msgs <- character()
+  out <- withr::with_dir(root, withCallingHandlers(update_manifest(), message = function(m) {
+    msgs <<- c(msgs, conditionMessage(m))
+    invokeRestart("muffleMessage")
+  }))
+  expect_identical(out$action, "unchanged")
+  expect_false(identical(manifest_entry_for(root)$source_mtime, before$source_mtime))
+  expect_true(any(grepl("Commit manifest.yaml", msgs, fixed = TRUE)))
+
+  # Nothing to write the second time: no commit line.
+  msgs <- character()
+  withr::with_dir(root, withCallingHandlers(update_manifest(), message = function(m) {
+    msgs <<- c(msgs, conditionMessage(m))
+    invokeRestart("muffleMessage")
+  }))
+  expect_false(any(grepl("Commit manifest.yaml", msgs, fixed = TRUE)))
+})
