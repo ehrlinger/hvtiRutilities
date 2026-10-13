@@ -477,3 +477,49 @@ test_that("a promoted entry whose schema was edited is not migrated", {
   expect_false(file.exists(file.path(dir, "built_20260915.parquet")))
   expect_true(file.exists(schema))
 })
+
+test_that("a record without schema 1 is foreign: left in place, the version is legacy, and it says so", {
+  s <- unregistered_study()
+  side <- write_foreign_build_record(s$src)
+  before <- readBin(side, "raw", file.size(side))
+  expect_message(register_data(s$root, "built.csv"), "not a build record this version reads (no schema: 1)", fixed = TRUE)
+  expect_identical(readBin(side, "raw", file.size(side)), before)
+  row <- .version_provenance(.read_manifest(file.path(s$root, "manifest.yaml")), "built_20260915.parquet")
+  expect_identical(row$origin, "legacy")
+})
+
+test_that("a record with another schema number is foreign too", {
+  s <- unregistered_study()
+  side <- write_build_sidecar(s$src, schema = 2L)
+  expect_message(register_data(s$root, "built.csv"), "no schema: 1", fixed = TRUE)
+  expect_true(file.exists(side))
+})
+
+test_that("update_manifest() registers a rebuild beside a foreign record", {
+  root <- versioned_study()
+  src <- file.path(study_dir("datasets", root), "built.csv")
+  utils::write.csv(data.frame(id = 1:4, DEAD = c(1L, 0L, 0L, 1L)), src, row.names = FALSE)
+  side <- write_foreign_build_record(src)
+  out <- withr::with_dir(root, suppressMessages(update_manifest(extract_date = "2026-10-01")))
+  expect_identical(out$action, "registered")
+  expect_true(file.exists(side))
+  expect_match(out$detail, "no schema: 1", fixed = TRUE)
+})
+
+test_that("a release-aware study leaves the release path and registers beside bd's record", {
+  fx <- make_release_aware_study(withr::local_tempdir())
+  cfg <- study_config(fx$root)
+  data <- file.path(study_dir("datasets", fx$root), cfg$built)
+  expect_true(file.exists(data))
+  write_foreign_build_record(data)
+  yml <- file.path(fx$root, "_study.yml")
+  y <- yaml::read_yaml(yml)
+  y$release <- NULL
+  y$data$release <- NULL
+  yaml::write_yaml(y, yml)
+  out <- withr::with_dir(fx$root, suppressMessages(update_manifest()))
+  expect_false(any(out$action == "skipped"))
+  m <- .read_manifest(file.path(fx$root, "manifest.yaml"))
+  expect_identical(.version_provenance(m, manifest_entry_for(fx$root, cfg$built)$parquet)$origin, "legacy")
+  expect_match(paste(out$detail, collapse = " "), "no schema: 1", fixed = TRUE)
+})

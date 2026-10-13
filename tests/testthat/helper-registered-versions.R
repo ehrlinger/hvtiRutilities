@@ -73,3 +73,17 @@ promoted_study <- function(env = parent.frame()) {
 local_working_signal <- function(env = parent.frame()) {
   testthat::local_mocked_bindings(.signal_working_read = .real_signal_working_read, .package = "hvtiRutilities", .env = env)
 }
+
+# The record hvtiRtemplates' bd.qmd writes beside a build: top-level keys master, settings, attrition and
+# hvtiRtemplates, with no `schema` and no `built_sha256`. Synthetic values.
+write_foreign_build_record <- function(source) {
+  path <- .build_sidecar_path(source)
+  yaml::write_yaml(list(
+    master = list(view = "cardiac_master_v", n = 10L),
+    settings = list(cohort = "cohort", join_by = "id", keep = "dead", id = "id", key = "id", dataset_id = "ds",
+                    exclude = "x > 1"),
+    attrition = list(n_start = 10L, n_end = 4L),
+    hvtiRtemplates = "0.0.1"
+  ), path)
+  path
+}
