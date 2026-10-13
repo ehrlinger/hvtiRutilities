@@ -317,7 +317,10 @@ test_that("withdrawn pinned releases require an explicit override", {
     class = "hvtiRutilities_withdrawn_release"
   )
   expect_match(conditionMessage(condition), "surgery_cohort-20260921-r1")
-  suppressWarnings(expect_equal(nrow(suppressMessages(read_built(cfg, allow_withdrawn = TRUE))), 3L), classes = "deprecatedWarning")
+  expect_warning(
+    expect_equal(nrow(suppressMessages(read_built(cfg, allow_withdrawn = TRUE))), 3L),
+    "allow_withdrawn", class = "deprecatedWarning"
+  )
 })
 
 test_that("review_data_update compares an explicit valid candidate", {
