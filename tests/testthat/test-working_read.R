@@ -145,7 +145,8 @@ test_that("a release-pinned dataset keeps reading ungated while the release path
   local_mocked_bindings(.is_interactive = function() FALSE,
                         .job_file = function() file.path(study_dir("analyses", fx$root), "km", "km.qmd"))
   cfg <- suppressWarnings(study_config(fx$root), classes = "deprecatedWarning")
-  expect_no_message(read_built(cfg), class = "hvtiRutilities_working_read")
+  expect_no_message(suppressMessages(read_built(cfg), classes = "hvtiRutilities_update_available"),
+                    class = "hvtiRutilities_working_read")
 })
 
 test_that("provenance_data records the source for a working read", {
