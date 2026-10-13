@@ -1514,7 +1514,7 @@ text claims otherwise.
 ### Task 6: Study-side follow-up (no commit in this repo)
 
 **Files:**
-- Modify: `/Volumes/qhsstudies/vascular/thoracic-aorta/dissection/ascending/acute/preserve_root/analyses/R_hazard/R/study.R`
+- Modify: `/Volumes/qhsstudies/<study>/analyses/R_hazard/R/study.R`
 
 **Interfaces:**
 - Consumes: the new `read_clinical_data()` default (Task 2) and `read_built()`
@@ -1529,7 +1529,7 @@ file; do not commit there.
 Run:
 
 ```bash
-grep -n 'built:' "/Volumes/qhsstudies/vascular/thoracic-aorta/dissection/ascending/acute/preserve_root/_study.yml"
+grep -n 'built:' "/Volumes/qhsstudies/<study>/_study.yml"
 ```
 
 Expected: `built: built.sas7bdat`.
@@ -1554,7 +1554,7 @@ function: it still explains why no variable derivation happens on read.
 Run:
 
 ```bash
-cd "/Volumes/qhsstudies/vascular/thoracic-aorta/dissection/ascending/acute/preserve_root/analyses/R_hazard" && Rscript -e 'source("R/study.R"); d <- add_g_root3(read_preserve_root()); assert_cohort_gate(d); cat("gate passed, n =", nrow(d), "\n")'
+cd "/Volumes/qhsstudies/<study>/analyses/R_hazard" && Rscript -e 'source("R/study.R"); d <- add_g_root3(read_preserve_root()); assert_cohort_gate(d); cat("gate passed, n =", nrow(d), "\n")'
 ```
 
 Expected: `gate passed, n = 291`.
@@ -1565,7 +1565,7 @@ columns, so it passes either way — but `class(d$idead)` should now be numeric
 rather than logical. Confirm:
 
 ```bash
-cd "/Volumes/qhsstudies/vascular/thoracic-aorta/dissection/ascending/acute/preserve_root/analyses/R_hazard" && Rscript -e 'source("R/study.R"); d <- read_preserve_root(); cat("idead:", class(d$idead), " ic_dead:", class(d$ic_dead), "\n")'
+cd "/Volumes/qhsstudies/<study>/analyses/R_hazard" && Rscript -e 'source("R/study.R"); d <- read_preserve_root(); cat("idead:", class(d$idead), " ic_dead:", class(d$ic_dead), "\n")'
 ```
 
 Expected: `idead: numeric  ic_dead: numeric`.
@@ -1575,7 +1575,7 @@ Expected: `idead: numeric  ic_dead: numeric`.
 Run:
 
 ```bash
-ls -l "/Volumes/qhsstudies/vascular/thoracic-aorta/dissection/ascending/acute/preserve_root/datasets/built.parquet" "/Volumes/qhsstudies/vascular/thoracic-aorta/dissection/ascending/acute/preserve_root/datasets/built.schema.csv"
+ls -l "/Volumes/qhsstudies/<study>/datasets/built.parquet" "/Volumes/qhsstudies/<study>/datasets/built.schema.csv"
 ```
 
 Expected: both exist. The sidecar should have 880 lines — 879 variables plus a
