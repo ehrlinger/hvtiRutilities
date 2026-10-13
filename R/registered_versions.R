@@ -371,7 +371,7 @@
              "as a dated version.", call. = FALSE)
       }
       rows[[name]] <- .manifest_update_row(name, "skipped",
-                                          "release-aware; remove the release: block from _study.yml, then run update_manifest()")
+                                           "release-aware; remove the release: block from _study.yml, then run update_manifest()")
       next
     }
     hit <- which(vapply(manifest$datasets, function(e) identical(e$file, contract$built), logical(1)))
