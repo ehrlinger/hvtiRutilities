@@ -397,8 +397,13 @@ update_manifest <- function(file,
 # a missing or edited record FAILs like a missing parquet, and a row naming no
 # recorded version means manifest.yaml was edited by hand.
 .verify_build_records <- function(manifest, resolve) {
-  rows <- if (is.list(manifest$provenance)) manifest$provenance else list()
-  if (!length(rows)) return(NULL)
+  rows <- manifest$provenance
+  if (is.null(rows) || (is.list(rows) && !length(rows))) return(NULL)
+  if (!is.list(rows) || is.null(names(rows)) || !all(nzchar(names(rows)))) {
+    return(.verify_row("manifest.yaml (provenance)", "FAIL",
+                       paste0("provenance: in manifest.yaml is not a mapping of version to provenance, so the ",
+                              "provenance of its versions was not checked. Restore manifest.yaml from version control.")))
+  }
   restore <- " It is the provenance of a registered version: restore it from backup, do not edit it."
   # Labelled "<entry file> (<record>)", like an earlier version, so .verify_row_dataset() maps the row to its entry.
   owner <- character()
@@ -414,13 +419,18 @@ update_manifest <- function(file,
                          paste0("manifest.yaml has provenance for ", parquet, ", which no dataset records. ",
                                 "Restore manifest.yaml from version control.")))
     }
+    if (!is.list(rows[[parquet]])) {
+      return(.verify_row(paste0(parquet, " (provenance)"), "FAIL",
+                         paste0("manifest.yaml has provenance for ", parquet, " that is not a mapping. ",
+                                "Restore manifest.yaml from version control.")))
+    }
     build <- rows[[parquet]]$build
     if (!is.list(build)) return(NULL)
     valid <- is.character(build$record) && length(build$record) == 1L && !is.na(build$record) && nzchar(build$record) &&
       is.character(build$record_sha256) && length(build$record_sha256) == 1L &&
       grepl("^[0-9a-f]{64}$", build$record_sha256)
     if (!valid) {
-      return(.verify_row(paste0(owner[[parquet]], " (build record)"), "FAIL",
+      return(.verify_row(paste0(owner[[parquet]], " (", parquet, " build record)"), "FAIL",
                          paste0("manifest.yaml records an invalid build record for ", parquet,
                                 ". Restore manifest.yaml from version control.")))
     }

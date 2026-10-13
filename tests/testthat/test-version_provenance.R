@@ -251,7 +251,7 @@ test_that("an invalid build record in a hand-edited manifest fails under the ent
     m$provenance[["built_20260915.parquet"]]$build <- bad
     .write_manifest(m, mp)
     expect_warning(rep <- verify_manifest(mp, stop_on_error = FALSE), "invalid build record")
-    expect_identical(rep$status[rep$file == "built.csv (build record)"], "FAIL")
+    expect_identical(rep$status[rep$file == "built.csv (built_20260915.parquet build record)"], "FAIL")
   }
 })
 
@@ -298,4 +298,47 @@ test_that("each retired function and argument warns, naming its replacement", {
                  class = "deprecatedWarning")
   expect_warning(.deprecated_arg("register_data", "release_id", "a build record sidecar"),
                  "release_id.*a build record sidecar")
+})
+
+test_that("a scalar provenance row fails the manifest instead of crashing it", {
+  root <- versioned_study()
+  mp <- file.path(root, "manifest.yaml")
+  m <- .read_manifest(mp)
+  m$provenance <- list(built_20260915.parquet = "legacy")
+  .write_manifest(m, mp)
+  expect_warning(rep <- verify_manifest(mp, stop_on_error = FALSE), "manifest.yaml")
+  expect_identical(rep$status[rep$file == "built_20260915.parquet (provenance)"], "FAIL")
+  expect_match(rep$message[rep$file == "built_20260915.parquet (provenance)"], "version control", fixed = TRUE)
+  d <- study_status(root)$checks
+  expect_identical(d$status[d$item == "manifest.yaml"], "FAIL")
+})
+
+test_that("a provenance field that is not a mapping is one failing row", {
+  root <- versioned_study()
+  mp <- file.path(root, "manifest.yaml")
+  for (bad in list("legacy", list("a", "b"))) {
+    m <- .read_manifest(mp)
+    m$provenance <- bad
+    .write_manifest(m, mp)
+    expect_warning(rep <- verify_manifest(mp, stop_on_error = FALSE), "manifest.yaml")
+    expect_identical(rep$status[rep$file == "manifest.yaml (provenance)"], "FAIL")
+  }
+})
+
+test_that("two invalid build records of one entry get distinct labels", {
+  s <- unregistered_study()
+  write_build_sidecar(s$src)
+  suppressMessages(register_data(s$root, "built.csv"))
+  path <- rebuild_source(s$root)
+  write_build_sidecar(path)
+  withr::with_dir(s$root, suppressMessages(update_manifest()))
+  mp <- file.path(s$root, "manifest.yaml")
+  m <- .read_manifest(mp)
+  parquets <- names(m$provenance)
+  expect_length(parquets, 2L)
+  for (p in parquets) m$provenance[[p]]$build$record_sha256 <- "nothex"
+  .write_manifest(m, mp)
+  suppressWarnings(rep <- verify_manifest(mp, stop_on_error = FALSE))
+  bad <- rep$file[grepl("build record", rep$file)]
+  expect_length(unique(bad), 2L)
 })
