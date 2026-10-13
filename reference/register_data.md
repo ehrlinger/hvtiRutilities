@@ -85,11 +85,12 @@ register_data(
 
 - catalog_dataset, release_id:
 
-  Character(1) or `NULL`. Producer catalog dataset ID and exact
-  published release ID. Supply both to make the study contract
-  release-aware, or neither for a legacy registration. A dataset already
-  registered as dated versions cannot be moved to a release this way:
-  that would drop every registered version.
+  **Deprecated.** Catalog releases are retired; use a build record
+  sidecar and plain `register_data()`. Character(1) or `NULL`. Producer
+  catalog dataset ID and exact published release ID. Supply both to make
+  the study contract release-aware, or neither for a legacy
+  registration. A dataset already registered as dated versions cannot be
+  moved to a release this way: that would drop every registered version.
 
 - kind:
 

@@ -1,5 +1,8 @@
 # Review one published dataset release
 
+**Deprecated.** Catalog releases are retired; use
+[`review_built`](https://ehrlinger.github.io/hvtiRutilities/reference/review_built.md).
+
 Verifies the pinned release and one exact, newer candidate, then
 compares their structure. Review reads the source files directly; it
 does not write caches or change either study manifest. It describes data

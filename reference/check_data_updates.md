@@ -1,5 +1,10 @@
 # Check a study for published dataset updates
 
+**Deprecated.** Catalog releases are retired; use
+[`study_status`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md)
+or
+[`verify_manifest`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md).
+
 Compares each release-aware dataset contract with its producer-owned
 catalog. The check verifies the pinned release and every later published
 candidate without changing `_study.yml`, `manifest.yaml`, or any cache

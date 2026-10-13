@@ -20,6 +20,15 @@ versions and the commands that update it. A combined dataset with no
 recorded parent versions is reported the same way, as `unrecorded`,
 until it is rebuilt and registered again.
 
+Only a dated version is registered data. Any other read is a working
+read: it is allowed only in the interactive console and in jobs in the
+study's datasets or descriptive folder, and it signals a message of
+class `hvtiRutilities_working_read`. Review a rebuilt source with
+[`review_built()`](https://ehrlinger.github.io/hvtiRutilities/reference/review_built.md)
+and register it with
+[`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md).
+The release branch below is deprecated.
+
 For a release-aware contract, the pinned release is verified before
 cache access. A later valid release emits a message of class
 `hvtiRutilities_update_available`; an unavailable catalog or invalid
@@ -45,7 +54,8 @@ read_built(
   cfg = study_config(),
   refresh = FALSE,
   dataset = "study",
-  allow_withdrawn = FALSE
+  allow_withdrawn = FALSE,
+  working = .hvti_working_default()
 )
 ```
 
@@ -76,8 +86,19 @@ read_built(
 
 - allow_withdrawn:
 
-  Logical. If `TRUE`, allow a deliberately pinned withdrawn release to
-  be read for revision work. The default is `FALSE`.
+  **Deprecated.** A dated version is never withdrawn, so there is
+  nothing to allow. Logical. If `TRUE`, allow a deliberately pinned
+  withdrawn release to be read for revision work. The default is
+  `FALSE`.
+
+- working:
+
+  Logical. If `TRUE`, read the working dataset as it stands rather than
+  its registered version, writing nothing. Defaults to `TRUE` when the
+  environment variable `HVTI_DATA` is `"working"`. Any read that is not
+  of a dated version is a working read: it is allowed only in the
+  interactive console and in jobs in the study's datasets or descriptive
+  folder, and signals a message of class `hvtiRutilities_working_read`.
 
 ## Value
 
@@ -92,16 +113,13 @@ A data frame with lower-cased names, no logical columns and no
 ## Examples
 
 ``` r
-root <- file.path(tempdir(), "read-built-example")
-dir.create(file.path(root, "datasets"), recursive = TRUE,
-           showWarnings = FALSE)
-yaml::write_yaml(
-  list(study = "Example", built = "example.csv"),
-  file.path(root, "_study.yml")
-)
-write.csv(data.frame(DEAD = c(1, 0, 0), IV_DEAD = 1:3),
-          file.path(root, "datasets", "example.csv"), row.names = FALSE)
-names(read_built(study_config(root)))
-#> [1] "dead"    "iv_dead"
-unlink(root, recursive = TRUE)
+if (requireNamespace("arrow", quietly = TRUE)) {
+  root <- file.path(tempdir(), "read-built-example")
+  suppressMessages(study_setup(root, "Example", 1L))
+  write.csv(data.frame(DEAD = c(1, 0, 0), IV_DEAD = 1:3),
+            file.path(study_dir("datasets", root), "example.csv"), row.names = FALSE)
+  suppressMessages(register_data(root, "example.csv"))
+  names(read_built(study_config(root)))
+  unlink(root, recursive = TRUE)
+}
 ```

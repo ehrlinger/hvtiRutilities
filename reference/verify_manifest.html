@@ -22,7 +22,9 @@ report distinguishes them rather than reporting all three as simply
 verified.  The count was compared; the count is recorded but was not
 re-derived; or the manifest records no count at all.  The
 row_count_checked column is TRUE only in the first case, and
-the message names which of the three it was.
+the message names which of the three it was.  A build-record row (see
+below) sets row_count_checked to TRUE once its checksum is
+verified, because a record has no row count.
 For a dataset registered with register_data, every registered
 version (the current dated parquet and each earlier one) is checked, and its
 row count is re-derived from the parquet footer when the arrow package is
@@ -53,7 +55,9 @@ report distinguishes them rather than reporting all three as simply
 verified.  The count was compared; the count is recorded but was not
 re-derived; or the manifest records no count at all.  The
 row_count_checked column is TRUE only in the first case, and
-the message names which of the three it was.
+the message names which of the three it was.  A build-record row (see
+below) sets row_count_checked to TRUE once its checksum is
+verified, because a record has no row count.
 For a dataset registered with register_data, every registered
 version (the current dated parquet and each earlier one) is checked, and its
 row count is re-derived from the parquet footer when the arrow package is
@@ -142,7 +146,9 @@ report distinguishes them rather than reporting all three as simply
 verified.  The count was compared; the count is recorded but was not
 re-derived; or the manifest records no count at all.  The
 <code>row_count_checked</code> column is <code>TRUE</code> only in the first case, and
-the message names which of the three it was.</p>
+the message names which of the three it was.  A build-record row (see
+below) sets <code>row_count_checked</code> to <code>TRUE</code> once its checksum is
+verified, because a record has no row count.</p>
 <p>For a dataset registered with <code><a href="register_data.html">register_data</a></code>, every registered
 version (the current dated parquet and each earlier one) is checked, and its
 row count is re-derived from the parquet footer when the arrow package is
@@ -221,7 +227,9 @@ returned data frame.  Failures are reported through <code><a href="https://rdrr.
     <p>Invisibly returns a data frame with columns <code>file</code>,
   <code>status</code> (<code>"OK"</code> or <code>"FAIL"</code>), <code>message</code>, and
   <code>row_count_checked</code> (logical; <code>TRUE</code> when the row count was
-  re-derived from the file and compared with the manifest).</p>
+  re-derived from the file and compared with the manifest; also <code>TRUE</code>
+  for a build-record row whose checksum was verified, since a record has no
+  row count).</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

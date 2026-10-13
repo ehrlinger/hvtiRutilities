@@ -12,7 +12,12 @@ count, modification time, and SHA-256 hash.
 ## Usage
 
 ``` r
-provenance_data(dataset = "study", cfg = study_config(), role = "analysis")
+provenance_data(
+  dataset = "study",
+  cfg = study_config(),
+  role = "analysis",
+  working = .hvti_working_default()
+)
 ```
 
 ## Arguments
@@ -30,6 +35,12 @@ provenance_data(dataset = "study", cfg = study_config(), role = "analysis")
 - role:
 
   Character(1). The file's role in this job.
+
+- working:
+
+  Logical. If `TRUE`, record the working source file, as
+  [`read_built`](https://ehrlinger.github.io/hvtiRutilities/reference/read_built.md)`(working = TRUE)`
+  reads it.
 
 ## Value
 

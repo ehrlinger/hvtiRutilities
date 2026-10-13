@@ -162,6 +162,8 @@ reconcile its built dataset
   : Resolve a directory in the study layout
 - [`read_built()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_built.md)
   : Read the study's built dataset
+- [`review_built()`](https://ehrlinger.github.io/hvtiRutilities/reference/review_built.md)
+  : Review a rebuilt study dataset before registering it
 - [`check_data_updates()`](https://ehrlinger.github.io/hvtiRutilities/reference/check_data_updates.md)
   : Check a study for published dataset updates
 - [`review_data_update()`](https://ehrlinger.github.io/hvtiRutilities/reference/review_data_update.md)

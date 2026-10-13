@@ -27,7 +27,9 @@ report distinguishes them rather than reporting all three as simply
 verified. The count was compared; the count is recorded but was not
 re-derived; or the manifest records no count at all. The
 `row_count_checked` column is `TRUE` only in the first case, and the
-message names which of the three it was.
+message names which of the three it was. A build-record row (see below)
+sets `row_count_checked` to `TRUE` once its checksum is verified,
+because a record has no row count.
 
 For a dataset registered with
 [`register_data`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md),
@@ -112,7 +114,9 @@ verify_manifest(
 
 Invisibly returns a data frame with columns `file`, `status` (`"OK"` or
 `"FAIL"`), `message`, and `row_count_checked` (logical; `TRUE` when the
-row count was re-derived from the file and compared with the manifest).
+row count was re-derived from the file and compared with the manifest;
+also `TRUE` for a build-record row whose checksum was verified, since a
+record has no row count).
 
 ## See also
 
