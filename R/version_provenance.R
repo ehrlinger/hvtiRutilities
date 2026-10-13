@@ -51,7 +51,11 @@
   missing <- setdiff(.build_required, names(rec))
   if (length(missing)) bad(paste0("missing ", paste(missing, collapse = ", ")))
   if (!identical(rec[["schema", exact = TRUE]], 1L)) bad("schema must be 1")
-  if (!text(rec[["job", exact = TRUE]])) bad("job must be the job file's study-relative path")
+  job <- rec[["job", exact = TRUE]]
+  # Relative to the study, so it names the same job wherever the study is checked out.
+  if (!text(job) || grepl("^(/|~|[A-Za-z]:|\\\\)", job) || any(strsplit(job, "[/\\\\]")[[1L]] == "..")) {
+    bad("job must be the job file's study-relative path")
+  }
   if (!text(rec[["view", exact = TRUE]])) bad("missing view")
   if (!.is_iso_timestamp(rec[["as_of", exact = TRUE]])) bad("as_of must be an ISO 8601 timestamp, such as 2026-10-01T00:00:00Z")
   if (!.is_sha256(rec[["cohort_sha256", exact = TRUE]])) bad("cohort_sha256 must be a SHA-256")

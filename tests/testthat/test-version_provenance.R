@@ -614,3 +614,17 @@ test_that("a combined entry promoted before dated versions is not reported rebui
   expect_null(e$parent_versions)
   expect_identical(e$recovered_from, "promoted")
 })
+
+test_that("a schema-1 record whose job is absolute or climbs out of the study is invalid", {
+  s <- unregistered_study()
+  dir <- dirname(s$src)
+  for (job in c("/Users/someone/study/00_datasets/bd.qmd", "~/study/bd.qmd", "C:/study/bd.qmd", "..\\bd.qmd",
+                "../bd.qmd", "00_datasets/../../bd.qmd")) {
+    side <- write_build_sidecar(s$src, job = job)
+    expect_error(register_data(s$root, "built.csv"), "job must be the job file's study-relative path", info = job)
+    expect_true(file.exists(side))
+    expect_false(file.exists(file.path(s$root, "manifest.yaml")))
+  }
+  write_build_sidecar(s$src, job = "00_datasets/bd.qmd")
+  expect_no_error(suppressMessages(register_data(s$root, "built.csv")))
+})
