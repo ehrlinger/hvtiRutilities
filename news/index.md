@@ -51,6 +51,20 @@
 
 ## hvtiRutilities 1.5.1
 
+### Breaking changes
+
+- A `manifest.yaml` that records a registered dated version now starts
+  its `datasets:` list with a line that makes hvtiRutilities 1.4.x, and
+  1.5.0, stop with an error instead of reading it. 1.4.x read such an
+  entry as a promoted dataset, reconverted the rebuilt source and
+  overwrote the entry, so a study pinned to 1.4.x was served
+  unregistered data and 1.5 then reported the intact registered version
+  as edited. A manifest written by 1.5.0 is read as it is and gains the
+  line the next time
+  [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
+  runs. Code that reads `manifest.yaml` directly must skip the line: it
+  is a character string, not an entry.
+
 ### New features
 
 - **Datasets have a kind and a key.**
@@ -101,6 +115,7 @@
 - Registered versions are checked and protected more strictly. These fix
   problems found in review of the dated-parquet registration that
   shipped in 1.5.0.
+
   - [`verify_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md)
     re-derives each registered version’s row count from its parquet
     footer and fails a mismatch. Under `strict = TRUE` it fails a
@@ -138,35 +153,12 @@
     [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
     on a study with no `manifest.yaml` names
     [`register_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md).
+
 - [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
   with no file reported “found none” for any error reading `_study.yml`,
   so a study that exists but needs fixing was told it had no study. It
   now says that only when no `_study.yml` is found, and passes any other
   error on unchanged.
-
-### Internal
-
-- The `registered_versions` tests no longer print
-  [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)’s
-  closing reminder to commit `manifest.yaml`; it reached the test output
-  five times. `expect_message()` captures only the first matching
-  message, so in the five tests where a run registers or migrates a
-  dataset the reminder that follows the detail line escaped. Those calls
-  are now wrapped in
-  [`suppressMessages()`](https://rdrr.io/r/base/message.html), and each
-  still asserts its detail message.
-
-- A `manifest.yaml` that records a registered dated version now starts
-  its `datasets:` list with a line that makes hvtiRutilities 1.4.x, and
-  1.5.0, stop with an error instead of reading it. 1.4.x read such an
-  entry as a promoted dataset, reconverted the rebuilt source and
-  overwrote the entry, so a study pinned to 1.4.x was served
-  unregistered data and 1.5 then reported the intact registered version
-  as edited. A manifest written by 1.5.0 is read as it is and gains the
-  line the next time
-  [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
-  runs. Code that reads `manifest.yaml` directly must skip the line: it
-  is a character string, not an entry.
 
 - `register_data(catalog_dataset = , release_id = )` refuses a dataset
   registered as dated versions, as `update_manifest(file)` already did.
@@ -205,6 +197,18 @@
   hashed the source again to find it unchanged. On a file system that
   records whole seconds only, such as a network share, a hash is still
   needed on each read, as it is for the read cache.
+
+### Internal
+
+- The `registered_versions` tests no longer print
+  [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)’s
+  closing reminder to commit `manifest.yaml`; it reached the test output
+  five times. `expect_message()` captures only the first matching
+  message, so in the five tests where a run registers or migrates a
+  dataset the reminder that follows the detail line escaped. Those calls
+  are now wrapped in
+  [`suppressMessages()`](https://rdrr.io/r/base/message.html), and each
+  still asserts its detail message.
 
 ## hvtiRutilities 1.5.0
 

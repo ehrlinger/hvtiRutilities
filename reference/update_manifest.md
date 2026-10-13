@@ -17,7 +17,8 @@ rebuilt and `update_manifest()` is run again. Name one dataset with
 [`review_data_update`](https://ehrlinger.github.io/hvtiRutilities/reference/review_data_update.md)
 and
 [`adopt_data_update`](https://ehrlinger.github.io/hvtiRutilities/reference/adopt_data_update.md).
-Needs the arrow package.
+A key violation on one dataset stops the whole run and leaves every
+dataset as it was. Needs the arrow package.
 
 **A single file**: `update_manifest(file, ...)` records a SHA-256
 checksum, row count, extract date and optional provenance fields for one

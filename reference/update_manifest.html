@@ -13,7 +13,8 @@ since been updated, or that records no parent versions, is listed as out of
 date in a message after the table until its source is rebuilt and
 update_manifest() is run again. Name one dataset with dataset.
 Release-aware datasets are skipped; use review_data_update and
-adopt_data_update. Needs the arrow package.
+adopt_data_update. A key violation on one dataset stops the
+whole run and leaves every dataset as it was. Needs the arrow package.
 A single file: update_manifest(file, ...) records a SHA-256
 checksum, row count, extract date and optional provenance fields for one
 file in a manifest.yaml. If the manifest already contains an entry
@@ -44,7 +45,8 @@ since been updated, or that records no parent versions, is listed as out of
 date in a message after the table until its source is rebuilt and
 update_manifest() is run again. Name one dataset with dataset.
 Release-aware datasets are skipped; use review_data_update and
-adopt_data_update. Needs the arrow package.
+adopt_data_update. A key violation on one dataset stops the
+whole run and leaves every dataset as it was. Needs the arrow package.
 A single file: update_manifest(file, ...) records a SHA-256
 checksum, row count, extract date and optional provenance fields for one
 file in a manifest.yaml. If the manifest already contains an entry
@@ -133,7 +135,8 @@ since been updated, or that records no parent versions, is listed as out of
 date in a message after the table until its source is rebuilt and
 <code>update_manifest()</code> is run again. Name one dataset with <code>dataset</code>.
 Release-aware datasets are skipped; use <code><a href="review_data_update.html">review_data_update</a></code> and
-<code><a href="adopt_data_update.html">adopt_data_update</a></code>. Needs the <span class="pkg">arrow</span> package.</p>
+<code><a href="adopt_data_update.html">adopt_data_update</a></code>. A key violation on one dataset stops the
+whole run and leaves every dataset as it was. Needs the <span class="pkg">arrow</span> package.</p>
 <p><strong>A single file</strong>: <code>update_manifest(file, ...)</code> records a SHA-256
 checksum, row count, extract date and optional provenance fields for one
 file in a <code>manifest.yaml</code>. If the manifest already contains an entry
