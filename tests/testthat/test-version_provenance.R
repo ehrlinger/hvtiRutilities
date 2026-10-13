@@ -350,3 +350,17 @@ test_that("study_status does not count a build record as an earlier version", {
   d <- study_status(s$root)$checks
   expect_no_match(d$detail[d$item == "manifest.yaml"], "earlier versions", fixed = TRUE)
 })
+
+test_that("a failed manifest write puts a promoted migration back", {
+  root <- promoted_study()
+  dir <- study_dir("datasets", root)
+  mp <- file.path(root, "manifest.yaml")
+  before <- readLines(mp)
+  local_mocked_bindings(.write_manifest = function(...) stop("disk full"))
+  expect_error(withr::with_dir(root, suppressMessages(update_manifest())), "disk full")
+  expect_true(file.exists(file.path(dir, "built.parquet")))
+  expect_true(file.exists(file.path(dir, "built.schema.csv")))
+  expect_false(file.exists(file.path(dir, "built_20260915.parquet")))
+  expect_false(file.exists(file.path(dir, "built_20260915.schema.csv")))
+  expect_identical(readLines(mp), before)
+})
