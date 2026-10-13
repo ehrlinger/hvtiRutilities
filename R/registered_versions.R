@@ -270,6 +270,42 @@
   )
 }
 
+# A dataset the contract names that manifest.yaml does not list yet: register
+# its source as the first dated version, as register_data() does. The caller
+# appends the entry and rolls back `written` and `restore` if the write fails.
+.register_first_version <- function(contract, source_path, extract_date, datasets) {
+  clash <- .cache_name_clash(contract$built, datasets)
+  if (!is.null(clash)) {
+    stop("update_manifest(): ", contract$built, " would be read through ", basename(.derived_paths(contract$built)$parquet),
+         ", which is the registered version of ", clash$file, ". Nothing was written. Rename ", contract$built,
+         " and run update_manifest() again.", call. = FALSE)
+  }
+  stem <- tools::file_path_sans_ext(contract$built)
+  files <- vapply(datasets, function(e) if (is.character(e$file)) e$file[[1L]] else "", character(1))
+  if (stem %in% tools::file_path_sans_ext(files)) {
+    stop("update_manifest(): ", contract$built, " and ", files[match(stem, tools::file_path_sans_ext(files))],
+         " share the derived path stem '", stem, "'", call. = FALSE)
+  }
+  dir <- dirname(source_path)
+  date <- if (is.null(extract_date)) .mtime_date(source_path) else extract_date
+  version <- .write_version(source_path, dir, date, taken = .reserved_names(datasets), caller = "update_manifest",
+                            key = contract$key)
+  files <- file.path(dir, c(version$parquet, .version_schema_name(version$parquet)))
+  claimed <- FALSE
+  on.exit(if (!claimed) unlink(files), add = TRUE)
+  claim <- .claim_build_record(source_path, version$source_sha256, version$parquet, "update_manifest")
+  claimed <- TRUE
+  list(
+    entry = .versioned_entry(contract$built, version),
+    written = files,
+    restore = list(from = claim$from, to = claim$to),
+    provenance = stats::setNames(list(claim$row), version$parquet),
+    action = "registered",
+    detail = paste0("registered ", version$parquet, " (", version$n_rows, " rows, ", version$n_cols,
+                    " columns); first version", if (!is.null(claim$note)) paste0("; ", claim$note) else "")
+  )
+}
+
 .manifest_update_row <- function(dataset, action, detail) {
   data.frame(dataset = dataset, action = action, detail = detail, stringsAsFactors = FALSE)
 }
@@ -303,14 +339,15 @@
          "Register one with register_data().", call. = FALSE)
   }
   manifest_path <- file.path(cfg$root, "manifest.yaml")
-  if (!file.exists(manifest_path)) {
-    stop("update_manifest(): this study has no manifest.yaml, so no dataset is registered yet. ",
-         "Register one with register_data().", call. = FALSE)
-  }
-  manifest <- .read_manifest(manifest_path)
+  # A study that names a dataset but has no manifest yet is registered here,
+  # dataset by dataset, as register_data() would have.
+  has_manifest <- file.exists(manifest_path)
+  manifest <- if (has_manifest) .read_manifest(manifest_path) else list()
+  if (!is.list(manifest)) manifest <- list()
+  if (!is.list(manifest$datasets)) manifest$datasets <- list()
   # A manifest written by 1.5.0 has versioned entries and no guard line; it
   # gains one on this write, so a 1.4.x reader stops rather than rewrite it.
-  unguarded <- !identical(yaml::read_yaml(manifest_path)$datasets, .guard_manifest(manifest)$datasets)
+  unguarded <- has_manifest && !identical(yaml::read_yaml(manifest_path)$datasets, .guard_manifest(manifest)$datasets)
   written <- character()
   # A recovered cache was renamed, not copied: it is the only copy of that
   # version, so a failed update renames it back rather than deleting it.
@@ -338,44 +375,55 @@
       next
     }
     hit <- which(vapply(manifest$datasets, function(e) identical(e$file, contract$built), logical(1)))
-    if (length(hit) != 1L) {
-      stop("update_manifest(): ", contract$built, " has ", if (length(hit)) "more than one entry" else "no entry",
-           " in manifest.yaml. Register it with register_data().", call. = FALSE)
+    if (length(hit) > 1L) {
+      stop("update_manifest(): ", contract$built, " has more than one entry in manifest.yaml.", call. = FALSE)
     }
-    entry <- manifest$datasets[[hit]]
     source_path <- file.path(study_dir("datasets", cfg$root), contract$built)
-    if (!file.exists(source_path)) {
-      promoted <- if (!.is_versioned(entry) && identical(entry$role, "primary")) {
-        .migrate_promoted_entry(entry, source_path, manifest$datasets)
-      }
-      if (!is.null(promoted$refused)) {
-        rows[[name]] <- .manifest_update_row(name, "missing", paste0(promoted$refused, "; read_built() stops for it. ",
-                                                                     "Restore it from backup, then run update_manifest()"))
+    if (!length(hit)) {
+      if (!file.exists(source_path)) {
+        rows[[name]] <- .manifest_update_row(name, "missing", paste0(contract$built, " is not on disk and has no registered ",
+                                                                     "version, so read_built() stops for it. Restore it, ",
+                                                                     "then run update_manifest() to register it"))
         next
       }
-      if (!is.null(promoted)) {
-        restore$from <- c(restore$from, promoted$restore$from)
-        restore$to <- c(restore$to, promoted$restore$to)
-        provenance <- c(provenance, promoted$provenance)
-        manifest$datasets[[hit]] <- promoted$entry
-        rows[[name]] <- .manifest_update_row(name, promoted$action, promoted$detail)
-        next
-      }
-      reading <- .authoritative_path(entry, source_path)
-      rows[[name]] <- if (!identical(reading, source_path) && file.exists(reading)) {
-        .manifest_update_row(name, "unchanged", paste0(contract$built, " is not on disk; jobs keep reading ",
-                                                       basename(reading)))
-      } else {
-        .manifest_update_row(name, "missing", paste0(contract$built, " is not on disk and has no registered version, ",
-                                                     "so read_built() stops for it. Restore it, then run ",
-                                                     "update_manifest() to register it"))
-      }
-      next
-    }
-    step <- if (.is_versioned(entry)) {
-      .next_version(entry, source_path, extract_date, reserved = .reserved_names(manifest$datasets), key = contract$key)
+      step <- .register_first_version(contract, source_path, extract_date, manifest$datasets)
+      hit <- length(manifest$datasets) + 1L
+      entry <- list()
     } else {
-      .migrate_entry(entry, source_path, extract_date, datasets = manifest$datasets, key = contract$key)
+      entry <- manifest$datasets[[hit]]
+      if (!file.exists(source_path)) {
+        promoted <- if (!.is_versioned(entry) && identical(entry$role, "primary")) {
+          .migrate_promoted_entry(entry, source_path, manifest$datasets)
+        }
+        if (!is.null(promoted$refused)) {
+          rows[[name]] <- .manifest_update_row(name, "missing", paste0(promoted$refused, "; read_built() stops for it. ",
+                                                                       "Restore it from backup, then run update_manifest()"))
+          next
+        }
+        if (!is.null(promoted)) {
+          restore$from <- c(restore$from, promoted$restore$from)
+          restore$to <- c(restore$to, promoted$restore$to)
+          provenance <- c(provenance, promoted$provenance)
+          manifest$datasets[[hit]] <- promoted$entry
+          rows[[name]] <- .manifest_update_row(name, promoted$action, promoted$detail)
+          next
+        }
+        reading <- .authoritative_path(entry, source_path)
+        rows[[name]] <- if (!identical(reading, source_path) && file.exists(reading)) {
+          .manifest_update_row(name, "unchanged", paste0(contract$built, " is not on disk; jobs keep reading ",
+                                                         basename(reading)))
+        } else {
+          .manifest_update_row(name, "missing", paste0(contract$built, " is not on disk and has no registered version, ",
+                                                       "so read_built() stops for it. Restore it, then run ",
+                                                       "update_manifest() to register it"))
+        }
+        next
+      }
+      step <- if (.is_versioned(entry)) {
+        .next_version(entry, source_path, extract_date, reserved = .reserved_names(manifest$datasets), key = contract$key)
+      } else {
+        .migrate_entry(entry, source_path, extract_date, datasets = manifest$datasets, key = contract$key)
+      }
     }
     written <- c(written, step$written)
     restore$from <- c(restore$from, step$restore$from)

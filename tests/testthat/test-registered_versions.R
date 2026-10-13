@@ -779,16 +779,72 @@ test_that("study_status counts datasets, not registered versions", {
   expect_match(row$detail, "2 files", fixed = TRUE)
 })
 
-test_that("update_manifest() in a study with no manifest names register_data()", {
+test_that("update_manifest() registers a named dataset that has no manifest as its first version", {
+  skip_if_not_installed("arrow")
   root <- file.path(withr::local_tempdir(), "study")
   suppressMessages(study_setup(root, "Unregistered", 42L))
   raw <- yaml::read_yaml(file.path(root, "_study.yml"))
   raw$built <- "built.csv"
   yaml::write_yaml(raw, file.path(root, "_study.yml"))
-  utils::write.csv(data.frame(id = 1:3), file.path(study_dir("datasets", root), "built.csv"), row.names = FALSE)
+  src <- file.path(study_dir("datasets", root), "built.csv")
+  utils::write.csv(data.frame(id = 1:3), src, row.names = FALSE)
+  Sys.setFileTime(src, as.POSIXct("2026-09-15 12:00:00", tz = "UTC"))
+  cfg <- study_config(root)
+  local_mocked_bindings(.is_interactive = function() FALSE,
+                        .job_file = function() file.path(study_dir("analyses", root), "km", "km.qmd"))
+  expect_error(read_built(cfg), "jobs read registered data only")
+
+  out <- withr::with_dir(root, suppressMessages(update_manifest()))
+  expect_identical(out$action, "registered")
+  expect_match(out$detail, "first version", fixed = TRUE)
+  e <- manifest_entry_for(root)
+  expect_identical(e$parquet, "built_20260915.parquet")
+  expect_identical(.version_provenance(.read_manifest(file.path(root, "manifest.yaml")), e$parquet)$origin, "legacy")
+  expect_identical(nrow(read_built(cfg)), 3L)
+})
+
+test_that("update_manifest() registers a dataset that a manifest.yaml lacks, with its build record", {
+  s <- unregistered_study()
+  other <- file.path(study_dir("datasets", s$root), "other.csv")
+  utils::write.csv(data.frame(id = 1:2), other, row.names = FALSE)
+  suppressMessages(register_data(s$root, "other.csv", dataset = "other", role = "named"))
+  raw <- yaml::read_yaml(file.path(s$root, "_study.yml"))
+  raw$built <- "built.csv"
+  yaml::write_yaml(raw, file.path(s$root, "_study.yml"))
+  write_build_sidecar(s$src)
+  cfg <- study_config(s$root)
+  local_mocked_bindings(.is_interactive = function() FALSE,
+                        .job_file = function() file.path(study_dir("analyses", s$root), "km", "km.qmd"))
+  expect_error(read_built(cfg), "jobs read registered data only")
+
+  out <- withr::with_dir(s$root, suppressMessages(update_manifest(dataset = "study")))
+  expect_identical(out$action, "registered")
+  m <- .read_manifest(file.path(s$root, "manifest.yaml"))
+  expect_length(m$datasets, 2L)
+  expect_identical(.version_provenance(m, "built_20260915.parquet")$origin, "bd")
+  expect_true(file.exists(file.path(dirname(s$src), "built_20260915.build.yml")))
+  expect_false(file.exists(.build_sidecar_path(s$src)))
+  expect_identical(nrow(read_built(cfg)), 3L)
+})
+
+test_that("a first-version registration is undone when the manifest write fails", {
+  s <- unregistered_study()
+  raw <- yaml::read_yaml(file.path(s$root, "_study.yml"))
+  raw$built <- "built.csv"
+  yaml::write_yaml(raw, file.path(s$root, "_study.yml"))
+  side <- write_build_sidecar(s$src)
+  local_mocked_bindings(.write_manifest = function(...) stop("disk full"))
+  expect_error(withr::with_dir(s$root, suppressMessages(update_manifest())), "disk full")
+  expect_true(file.exists(side))
+  expect_identical(list.files(dirname(s$src), pattern = "^built_"), character())
+  expect_false(file.exists(file.path(s$root, "manifest.yaml")))
+})
+
+test_that("update_manifest() still stops for a study with no dataset contract", {
+  root <- file.path(withr::local_tempdir(), "study")
+  suppressMessages(study_setup(root, "No dataset", 42L))
   withr::local_dir(root)
-  expect_error(update_manifest(), "no manifest.yaml", fixed = TRUE)
-  expect_error(update_manifest(), "register_data()", fixed = TRUE)
+  expect_error(update_manifest(), "no registered dataset to update", fixed = TRUE)
 })
 
 test_that("study_status reports the registered version when the source is gone", {
