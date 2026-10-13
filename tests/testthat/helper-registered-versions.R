@@ -87,3 +87,13 @@ write_foreign_build_record <- function(source) {
   ), path)
   path
 }
+
+# A legacy promoted entry whose source is still on disk: the bytes registered (`changed = FALSE`), or a rebuild.
+promoted_study_with_source <- function(changed = FALSE, env = parent.frame()) {
+  root <- promoted_study(env)
+  data <- if (changed) data.frame(id = 1:4, DEAD = c(1L, 1L, 0L, 0L)) else data.frame(id = 1:3, DEAD = c(1L, 0L, 0L))
+  path <- file.path(study_dir("datasets", root), "built.csv")
+  utils::write.csv(data, path, row.names = FALSE)
+  Sys.setFileTime(path, as.POSIXct(if (changed) "2026-10-07 12:00:00" else "2026-09-15 12:00:00", tz = "UTC"))
+  root
+}

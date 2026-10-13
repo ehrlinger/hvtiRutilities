@@ -523,3 +523,94 @@ test_that("a release-aware study leaves the release path and registers beside bd
   expect_identical(.version_provenance(m, manifest_entry_for(fx$root, cfg$built)$parquet)$origin, "legacy")
   expect_match(paste(out$detail, collapse = " "), "no schema: 1", fixed = TRUE)
 })
+
+test_that("a promoted entry whose source is unchanged is registered from its parquet, not reported overwritten", {
+  root <- promoted_study_with_source()
+  dir <- study_dir("datasets", root)
+  src <- file.path(dir, "built.csv")
+  src_before <- digest::digest(src, algo = "sha256", file = TRUE)
+  before <- digest::digest(file.path(dir, "built.parquet"), algo = "sha256", file = TRUE)
+  expect_identical(src_before, .read_manifest(file.path(root, "manifest.yaml"))$datasets[[1]]$source_sha256)
+
+  out <- withr::with_dir(root, suppressMessages(update_manifest()))
+  expect_identical(out$action, "migrated")
+  expect_no_match(out$detail, "overwritten", fixed = TRUE)
+  expect_no_match(out$detail, "cannot be recovered", fixed = TRUE)
+  e <- .read_manifest(file.path(root, "manifest.yaml"))$datasets[[1]]
+  expect_identical(e$parquet, "built_20260915.parquet")
+  expect_identical(e$recovered_from, "promoted")
+  expect_identical(e$sha256, before)
+  expect_identical(e$promoted_date, "2026-09-20")
+  expect_null(e$history)
+  expect_identical(sort(list.files(dir, pattern = "[.]parquet$")), "built_20260915.parquet")
+  expect_identical(digest::digest(src, algo = "sha256", file = TRUE), src_before)
+  expect_false(.source_changed(src, e))
+  expect_identical(nrow(read_built(study_config(root))), 3L)
+})
+
+test_that("a promoted entry whose source was rebuilt keeps its parquet as the history version", {
+  root <- promoted_study_with_source(changed = TRUE)
+  dir <- study_dir("datasets", root)
+  before <- digest::digest(file.path(dir, "built.parquet"), algo = "sha256", file = TRUE)
+
+  out <- withr::with_dir(root, suppressMessages(update_manifest()))
+  expect_no_match(out$detail, "overwritten", fixed = TRUE)
+  expect_no_match(out$detail, "cannot be recovered", fixed = TRUE)
+  e <- .read_manifest(file.path(root, "manifest.yaml"))$datasets[[1]]
+  expect_identical(e$parquet, "built_20261007.parquet")
+  expect_identical(e$n_rows, 4L)
+  expect_length(e$history, 1L)
+  expect_identical(e$history[[1]]$parquet, "built_20260915.parquet")
+  expect_identical(e$history[[1]]$sha256, before)
+  expect_identical(e$history[[1]]$recovered_from, "promoted")
+  expect_identical(sort(list.files(dir, pattern = "[.]parquet$")), c("built_20260915.parquet", "built_20261007.parquet"))
+  expect_false(file.exists(file.path(dir, "built.parquet")))
+  expect_identical(nrow(read_built(study_config(root))), 4L)
+  m <- .read_manifest(file.path(root, "manifest.yaml"))
+  expect_identical(.version_provenance(m, "built_20260915.parquet")$origin, "legacy")
+})
+
+test_that("a promoted entry with no recorded source hash is treated as changed and keeps its parquet", {
+  root <- promoted_study_with_source()
+  mp <- file.path(root, "manifest.yaml")
+  m <- .read_manifest(mp)
+  m$datasets[[1]]$source_sha256 <- NULL
+  yaml::write_yaml(m, mp)
+  out <- withr::with_dir(root, suppressMessages(update_manifest()))
+  expect_no_match(out$detail, "overwritten", fixed = TRUE)
+  e <- .read_manifest(mp)$datasets[[1]]
+  expect_identical(e$history[[1]]$parquet, "built_20260915.parquet")
+})
+
+test_that("a promoted entry whose parquet fails its hash falls back and says what happened", {
+  root <- promoted_study_with_source(changed = TRUE)
+  dir <- study_dir("datasets", root)
+  cat("x", file = file.path(dir, "built.parquet"), append = TRUE)
+  out <- withr::with_dir(root, suppressMessages(update_manifest()))
+  expect_match(out$detail, "built.parquet does not match its recorded checksum", fixed = TRUE)
+  expect_no_match(out$detail, "was overwritten", fixed = TRUE)
+  e <- .read_manifest(file.path(root, "manifest.yaml"))$datasets[[1]]
+  expect_identical(e$parquet, "built_20261007.parquet")
+})
+
+test_that("a combined entry promoted before dated versions is not reported rebuilt when its source is unchanged", {
+  root <- legacy_combined_study()
+  dir <- study_dir("datasets", root)
+  suppressMessages(read_built(study_config(root), dataset = "comb"))
+  mp <- file.path(root, "manifest.yaml")
+  m <- .read_manifest(mp)
+  hit <- which(vapply(m$datasets, function(e) identical(e$file, "comb.csv"), logical(1)))
+  e <- m$datasets[[hit]]
+  m$datasets[[hit]] <- list(
+    file = "comb.csv", role = "primary", sha256 = digest::digest(file.path(dir, "comb.parquet"), algo = "sha256", file = TRUE),
+    source_sha256 = e$sha256, extract_date = e$extract_date, n_rows = e$n_rows, n_cols = e$n_cols,
+    schema_sha256 = digest::digest(file.path(dir, "comb.schema.csv"), algo = "sha256", file = TRUE),
+    promoted_date = "2026-09-20", kind = "combined"
+  )
+  yaml::write_yaml(m, mp)
+  out <- withr::with_dir(root, suppressMessages(update_manifest()))
+  expect_identical(out$action[out$dataset == "comb"], "migrated")
+  e <- manifest_entry_for(root, "comb.csv")
+  expect_null(e$parent_versions)
+  expect_identical(e$recovered_from, "promoted")
+})
