@@ -401,6 +401,14 @@ update_manifest <- function(file,
   if (!length(rows)) return(NULL)
   recorded <- .recorded_version_names(manifest$datasets)
   restore <- " It is the provenance of a registered version: restore it from backup, do not edit it."
+  # Labelled "<entry file> (<record>)", like an earlier version, so .verify_row_dataset() maps the row to its entry.
+  owner <- character()
+  for (e in if (is.list(manifest$datasets)) manifest$datasets else list()) {
+    if (!.is_versioned(e)) next
+    history <- if (is.list(e$history)) Filter(is.list, e$history) else list()
+    p <- c(e$parquet, unlist(lapply(history, function(h) if (is.character(h$parquet)) h$parquet)))
+    owner[p[!p %in% names(owner)]] <- e$file
+  }
   out <- lapply(names(rows), function(parquet) {
     if (!parquet %in% recorded) {
       return(.verify_row(paste0(parquet, " (provenance)"), "FAIL",
@@ -409,13 +417,13 @@ update_manifest <- function(file,
     }
     build <- rows[[parquet]]$build
     if (!is.list(build)) return(NULL)
-    label <- paste0(parquet, " (build record)")
+    label <- paste0(owner[[parquet]], " (", build$record, ")")
     target <- resolve(build$record)
     if (!file.exists(target)) return(.verify_row(label, "FAIL", paste0(build$record, " is missing.", restore)))
     if (!identical(digest::digest(target, algo = "sha256", file = TRUE), build$record_sha256)) {
       return(.verify_row(label, "FAIL", paste0(build$record, " does not match its recorded checksum.", restore)))
     }
-    .verify_row(label, "OK", paste0("SHA-256 match (", build$record, ")"))
+    .verify_row(label, "OK", paste0("SHA-256 match (", build$record, ")"), checked = TRUE)
   })
   do.call(rbind, out)
 }

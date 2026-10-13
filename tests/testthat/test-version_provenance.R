@@ -187,13 +187,13 @@ test_that("verify_manifest checks build records and stops on a changed or missin
   rec <- file.path(dirname(s$src), "built_20260915.build.yml")
 
   rep <- verify_manifest(mp, stop_on_error = FALSE)
-  expect_true(any(rep$file == "built_20260915.parquet (build record)" & rep$status == "OK"))
+  expect_true(any(rep$file == "built.csv (built_20260915.build.yml)" & rep$status == "OK"))
 
   cat("# edited\n", file = rec, append = TRUE)
   expect_error(verify_manifest(mp), "provenance of a registered version")
   unlink(rec)
-  rep <- verify_manifest(mp, stop_on_error = FALSE)
-  expect_identical(rep$status[rep$file == "built_20260915.parquet (build record)"], "FAIL")
+  expect_warning(rep <- verify_manifest(mp, stop_on_error = FALSE), "provenance of a registered version")
+  expect_identical(rep$status[rep$file == "built.csv (built_20260915.build.yml)"], "FAIL")
 })
 
 test_that("a provenance row for no recorded version fails", {
@@ -201,6 +201,29 @@ test_that("a provenance row for no recorded version fails", {
   mp <- file.path(root, "manifest.yaml")
   m <- .set_version_provenance(.read_manifest(mp), "ghost_20200101.parquet", list(origin = "legacy"))
   .write_manifest(m, mp)
-  rep <- verify_manifest(mp, stop_on_error = FALSE)
+  expect_warning(rep <- verify_manifest(mp, stop_on_error = FALSE), "which no dataset records")
   expect_identical(rep$status[rep$file == "ghost_20200101.parquet (provenance)"], "FAIL")
+})
+
+test_that("a build record neither inflates study_status's entry count nor hides its FAIL", {
+  s <- unregistered_study()
+  suppressMessages(register_data(s$root, "built.csv"))
+  count <- function() {
+    d <- study_status(s$root)$checks
+    d$detail[d$item == "manifest.yaml"]
+  }
+  before <- sub(" verified.*", "", count())
+
+  unlink(s$root, recursive = TRUE)
+  s <- unregistered_study()
+  write_build_sidecar(s$src)
+  suppressMessages(register_data(s$root, "built.csv"))
+  expect_identical(sub(" verified.*", "", count()), before)
+
+  cat("# edited\n", file = file.path(dirname(s$src), "built_20260915.build.yml"), append = TRUE)
+  d <- study_status(s$root)$checks
+  row <- d[d$item == "manifest.yaml", ]
+  expect_identical(row$status, "FAIL")
+  expect_match(row$detail, "built.csv", fixed = TRUE)
+  expect_no_match(row$detail, "built_20260915", fixed = TRUE)
 })
