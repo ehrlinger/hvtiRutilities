@@ -50,3 +50,19 @@ rebuild_source <- function(root, data = data.frame(id = 1:4, DEAD = c(1L, 1L, 0L
   Sys.setFileTime(path, as.POSIXct(when, tz = "UTC"))
   path
 }
+
+# A legacy promoted entry: the data is <stem>.parquet and the source is retired.
+promoted_study <- function(env = parent.frame()) {
+  root <- versioned_study(env)
+  dir <- study_dir("datasets", root)
+  file.rename(file.path(dir, "built_20260915.parquet"), file.path(dir, "built.parquet"))
+  file.rename(file.path(dir, "built_20260915.schema.csv"), file.path(dir, "built.schema.csv"))
+  mp <- file.path(root, "manifest.yaml")
+  e <- .read_manifest(mp)$datasets[[1]]
+  yaml::write_yaml(list(datasets = list(list(
+    file = "built.csv", role = "primary", sha256 = e$sha256, source_sha256 = e$source_sha256,
+    extract_date = e$extract_date, n_rows = e$n_rows, n_cols = e$n_cols, promoted_date = "2026-09-20"
+  ))), mp)
+  unlink(file.path(dir, "built.csv"))
+  root
+}

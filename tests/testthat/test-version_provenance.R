@@ -254,3 +254,30 @@ test_that("an invalid build record in a hand-edited manifest fails under the ent
     expect_identical(rep$status[rep$file == "built.csv (build record)"], "FAIL")
   }
 })
+
+test_that("a promoted entry with a retired source migrates from its parquet and lifts the gate", {
+  root <- promoted_study()
+  dir <- study_dir("datasets", root)
+  before <- digest::digest(file.path(dir, "built.parquet"), algo = "sha256", file = TRUE)
+  local_mocked_bindings(.is_interactive = function() FALSE,
+                        .job_file = function() file.path(study_dir("analyses", root), "km", "km.qmd"))
+  expect_error(read_built(study_config(root)), "jobs read registered data only")
+
+  out <- withr::with_dir(root, suppressMessages(update_manifest()))
+  expect_identical(out$action, "migrated")
+  e <- .read_manifest(file.path(root, "manifest.yaml"))$datasets[[1]]
+  expect_identical(e$parquet, "built_20260915.parquet")
+  expect_identical(e$recovered_from, "promoted")
+  expect_identical(e$sha256, before)
+  expect_identical(e$promoted_date, "2026-09-20")
+  expect_false(file.exists(file.path(dir, "built.parquet")))
+  expect_identical(nrow(read_built(study_config(root))), 3L)
+})
+
+test_that("a promoted parquet that does not match its hash is not migrated", {
+  root <- promoted_study()
+  cat("x", file = file.path(study_dir("datasets", root), "built.parquet"), append = TRUE)
+  out <- withr::with_dir(root, suppressMessages(update_manifest()))
+  expect_false(identical(out$action, "migrated"))
+  expect_false(file.exists(file.path(study_dir("datasets", root), "built_20260915.parquet")))
+})

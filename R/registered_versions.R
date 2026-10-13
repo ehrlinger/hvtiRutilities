@@ -343,6 +343,17 @@
     entry <- manifest$datasets[[hit]]
     source_path <- file.path(study_dir("datasets", cfg$root), contract$built)
     if (!file.exists(source_path)) {
+      promoted <- if (!.is_versioned(entry) && identical(entry$role, "primary")) {
+        .migrate_promoted_entry(entry, source_path, manifest$datasets)
+      }
+      if (!is.null(promoted)) {
+        restore$from <- c(restore$from, promoted$restore$from)
+        restore$to <- c(restore$to, promoted$restore$to)
+        provenance <- c(provenance, promoted$provenance)
+        manifest$datasets[[hit]] <- promoted$entry
+        rows[[name]] <- .manifest_update_row(name, promoted$action, promoted$detail)
+        next
+      }
       reading <- .authoritative_path(entry, source_path)
       rows[[name]] <- if (!identical(reading, source_path) && file.exists(reading)) {
         .manifest_update_row(name, "unchanged", paste0(contract$built, " is not on disk; jobs keep reading ",
@@ -498,5 +509,49 @@
     detail = paste0("registered ", version$parquet, " (", version$n_rows, " rows, ", version$n_cols, " columns)",
                     if (!is.null(note)) paste0("; ", note) else "",
                     if (!is.null(claim$note)) paste0("; ", claim$note) else "")
+  )
+}
+
+# A legacy promoted entry (role: primary, no parquet:) whose source was retired
+# holds its data only in <stem>.parquet. Rename that file to a dated version:
+# it is the only copy, so it is moved, never rewritten, and only once its hash
+# matches the entry. The caller renames it back if the manifest write fails.
+.migrate_promoted_entry <- function(entry, source_path, datasets = list()) {
+  legacy <- .derived_paths(source_path)
+  if (!file.exists(legacy$parquet) ||
+        !identical(digest::digest(legacy$parquet, algo = "sha256", file = TRUE), entry$sha256)) {
+    return(NULL)
+  }
+  dir <- dirname(source_path)
+  date <- if (is.null(entry$extract_date)) .mtime_date(legacy$parquet) else entry$extract_date
+  name <- .version_filename(tools::file_path_sans_ext(entry$file), date, dir, .reserved_names(datasets))
+  parquet <- file.path(dir, name)
+  schema <- file.path(dir, .version_schema_name(name))
+  if (!file.rename(legacy$parquet, parquet)) return(NULL)
+  from <- parquet
+  to <- legacy$parquet
+  if (file.exists(legacy$schema)) {
+    if (!file.rename(legacy$schema, schema)) {
+      file.rename(parquet, legacy$parquet)
+      return(NULL)
+    }
+    from <- c(from, schema)
+    to <- c(to, legacy$schema)
+  }
+  version <- list(
+    parquet = name, sha256 = entry$sha256, source_sha256 = entry$source_sha256,
+    extract_date = format(as.Date(date), "%Y-%m-%d"),
+    n_rows = as.integer(entry$n_rows), n_cols = as.integer(entry$n_cols),
+    schema_sha256 = if (file.exists(schema)) digest::digest(schema, algo = "sha256", file = TRUE) else entry$schema_sha256,
+    reader = entry$reader, recovered_from = "promoted"
+  )
+  version <- Filter(Negate(is.null), version)
+  list(
+    entry = .versioned_entry(entry$file, version, extra = .entry_extra(entry)),
+    restore = list(from = from, to = to),
+    provenance = stats::setNames(list(.legacy_row()), name),
+    action = "migrated",
+    detail = paste0("registered ", name, " from the promoted ", basename(legacy$parquet),
+                    "; its source ", entry$file, " was retired")
   )
 }
