@@ -22,3 +22,4 @@
 ^\.git$
 ^vignettes/\.quarto$
 ^news$
+^reports$

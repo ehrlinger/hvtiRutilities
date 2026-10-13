@@ -385,6 +385,8 @@ provenance_path <- function(path) {
 #'   \code{"built"} is a second name for \code{"study"}.
 #' @param cfg List. A study manifest from \code{\link{study_config}}.
 #' @param role Character(1). The file's role in this job.
+#' @param working Logical. If \code{TRUE}, record the working source file, as
+#'   \code{\link{read_built}(working = TRUE)} reads it.
 #'
 #' @return A plain list containing one immutable-by-convention data record.
 #'
@@ -393,13 +395,16 @@ provenance_path <- function(path) {
 #'
 #' @export
 provenance_data <- function(dataset = "study", cfg = study_config(),
-                            role = "analysis") {
+                            role = "analysis", working = .hvti_working_default()) {
+  if (!(is.logical(working) && length(working) == 1L && !is.na(working))) {
+    stop("working must be TRUE or FALSE", call. = FALSE)
+  }
   dataset <- .canonical_dataset(dataset)
   .provenance_role(role, "provenance_data")
   .study_dataset(cfg, dataset)
   source <- built_path(cfg, dataset)
   entry <- .manifest_entry(file.path(cfg$root, "manifest.yaml"), source)
-  authoritative <- .authoritative_path(entry, source)
+  authoritative <- if (isTRUE(working)) source else .authoritative_path(entry, source)
   resolved <- .provenance_relative_path(
     authoritative,
     cfg,

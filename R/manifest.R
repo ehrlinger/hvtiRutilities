@@ -393,6 +393,71 @@ update_manifest <- function(file,
   do.call(rbind, rows)
 }
 
+# Each version's build record (section 4.5 of the one-version-scheme design):
+# a missing or edited record FAILs like a missing parquet, and a row naming no
+# recorded version means manifest.yaml was edited by hand.
+.verify_build_records <- function(manifest, resolve) {
+  rows <- manifest$provenance
+  if (is.null(rows) || (is.list(rows) && !length(rows))) return(NULL)
+  if (!is.list(rows) || is.null(names(rows)) || !all(nzchar(names(rows)))) {
+    return(.verify_row("manifest.yaml (provenance)", "FAIL",
+                       paste0("provenance: in manifest.yaml is not a mapping of version to provenance, so the ",
+                              "provenance of its versions was not checked. Restore manifest.yaml from version control.")))
+  }
+  restore <- " It is the provenance of a registered version: restore it from backup, do not edit it."
+  # Labelled "<entry file> (<record>)", like an earlier version, so .verify_row_dataset() maps the row to its entry.
+  owner <- character()
+  for (e in if (is.list(manifest$datasets)) manifest$datasets else list()) {
+    if (!.is_versioned(e)) next
+    history <- if (is.list(e$history)) Filter(is.list, e$history) else list()
+    p <- c(e$parquet, unlist(lapply(history, function(h) if (is.character(h$parquet)) h$parquet)))
+    owner[p[!p %in% names(owner)]] <- e$file
+  }
+  out <- lapply(names(rows), function(parquet) {
+    if (!parquet %in% names(owner)) {
+      return(.verify_row(paste0(parquet, " (provenance)"), "FAIL",
+                         paste0("manifest.yaml has provenance for ", parquet, ", which no dataset records. ",
+                                "Restore manifest.yaml from version control.")))
+    }
+    if (!is.list(rows[[parquet]])) {
+      return(.verify_row(paste0(parquet, " (provenance)"), "FAIL",
+                         paste0("manifest.yaml has provenance for ", parquet, " that is not a mapping. ",
+                                "Restore manifest.yaml from version control.")))
+    }
+    origin <- rows[[parquet]]$origin
+    if (!(is.character(origin) && length(origin) == 1L && !is.na(origin) && origin %in% c("legacy", "bd"))) {
+      shown <- if (is.character(origin) && length(origin) == 1L && !is.na(origin)) paste0("'", origin, "'") else "an unreadable value"
+      return(.verify_row(paste0(parquet, " (provenance)"), "FAIL",
+                         paste0("manifest.yaml records origin ", shown, " for ", parquet,
+                                ", which this version of hvtiRutilities does not know. ",
+                                "Update hvtiRutilities or restore manifest.yaml from version control.")))
+    }
+    build <- rows[[parquet]]$build
+    if (!is.list(build)) {
+      if (identical(origin, "legacy")) return(NULL)
+      return(.verify_row(paste0(owner[[parquet]], " (", parquet, " build record)"), "FAIL",
+                         paste0("manifest.yaml records bd provenance for ", parquet,
+                                " without its build record. Restore manifest.yaml from version control.")))
+    }
+    valid <- is.character(build$record) && length(build$record) == 1L && !is.na(build$record) && nzchar(build$record) &&
+      is.character(build$record_sha256) && length(build$record_sha256) == 1L && !is.na(build$record_sha256) &&
+      grepl("^[0-9a-f]{64}$", build$record_sha256)
+    if (!valid) {
+      return(.verify_row(paste0(owner[[parquet]], " (", parquet, " build record)"), "FAIL",
+                         paste0("manifest.yaml records an invalid build record for ", parquet,
+                                ". Restore manifest.yaml from version control.")))
+    }
+    label <- paste0(owner[[parquet]], " (", build$record, ")")
+    target <- resolve(build$record)
+    if (!file.exists(target)) return(.verify_row(label, "FAIL", paste0(build$record, " is missing.", restore)))
+    if (!identical(digest::digest(target, algo = "sha256", file = TRUE), build$record_sha256)) {
+      return(.verify_row(label, "FAIL", paste0(build$record, " does not match its recorded checksum.", restore)))
+    }
+    .verify_row(label, "OK", paste0("SHA-256 match (", build$record, ")"), checked = TRUE)
+  })
+  do.call(rbind, out)
+}
+
 ## =============================================================================
 #' Verify all datasets listed in a manifest
 #'
@@ -423,7 +488,9 @@ update_manifest <- function(file,
 #' verified.  The count was compared; the count is recorded but was not
 #' re-derived; or the manifest records no count at all.  The
 #' \code{row_count_checked} column is \code{TRUE} only in the first case, and
-#' the message names which of the three it was.
+#' the message names which of the three it was.  A build-record row (see
+#' below) sets \code{row_count_checked} to \code{TRUE} once its checksum is
+#' verified, because a record has no row count.
 #'
 #' For a dataset registered with \code{\link{register_data}}, every registered
 #' version (the current dated parquet and each earlier one) is checked, and its
@@ -473,7 +540,9 @@ update_manifest <- function(file,
 #' @return Invisibly returns a data frame with columns \code{file},
 #'   \code{status} (\code{"OK"} or \code{"FAIL"}), \code{message}, and
 #'   \code{row_count_checked} (logical; \code{TRUE} when the row count was
-#'   re-derived from the file and compared with the manifest).
+#'   re-derived from the file and compared with the manifest; also \code{TRUE}
+#'   for a build-record row whose checksum was verified, since a record has no
+#'   row count).
 #'
 #' @examples
 #' \dontrun{
@@ -523,10 +592,13 @@ verify_manifest <- function(manifest_path = .default_manifest_path(),
 
   if (is.null(manifest$datasets) || length(manifest$datasets) == 0L) {
     if (verbose) message("Manifest contains no dataset entries.")
-    return(invisible(data.frame(file = character(), status = character(),
-                                message = character(),
-                                row_count_checked = logical(),
-                                stringsAsFactors = FALSE)))
+    # Provenance with no dataset to belong to is an orphan: check it rather than return early.
+    orphans <- .verify_build_records(manifest, function(file) file.path(dirname(manifest_path), file))
+    if (is.null(orphans)) {
+      orphans <- data.frame(file = character(), status = character(), message = character(),
+                            row_count_checked = logical(), stringsAsFactors = FALSE)
+    }
+    return(invisible(.report_verification(orphans, stop_on_error)))
   }
 
   if (is.null(data_dir)) {
@@ -778,7 +850,12 @@ verify_manifest <- function(manifest_path = .default_manifest_path(),
     results <- c(results, collisions)
   }
 
-  report <- do.call(rbind, results)
+  results <- c(results, list(.verify_build_records(manifest, resolve_entry)))
+  invisible(.report_verification(do.call(rbind, results), stop_on_error))
+}
+
+# Stop (or warn) on any FAIL row, then hand the report back.
+.report_verification <- function(report, stop_on_error) {
   failures <- report[report$status == "FAIL", , drop = FALSE]
 
   if (nrow(failures) > 0L) {
@@ -793,5 +870,5 @@ verify_manifest <- function(manifest_path = .default_manifest_path(),
     warning(msg, call. = FALSE)
   }
 
-  invisible(report)
+  report
 }

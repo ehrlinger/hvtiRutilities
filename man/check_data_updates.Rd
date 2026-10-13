@@ -21,6 +21,9 @@ An object of class \code{"data_update_report"}: a data frame with
   \code{"WITHDRAWN"}, or \code{"FAIL"}.
 }
 \description{
+\strong{Deprecated.} Catalog releases are retired; use
+\code{\link{study_status}} or \code{\link{verify_manifest}}.
+
 Compares each release-aware dataset contract with its producer-owned
 catalog. The check verifies the pinned release and every later published
 candidate without changing \code{_study.yml}, \code{manifest.yaml}, or any

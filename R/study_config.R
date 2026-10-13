@@ -225,6 +225,14 @@ study_config <- function(start = getwd(), require_data = TRUE) {
     raw$additional_datasets,
     found
   )
+  has_release <- !is.null(raw$release) ||
+    any(vapply(raw$additional_datasets, function(a) !is.null(a$release), logical(1)))
+  if (has_release && !isTRUE(.hvti_deprecated$release_contract)) {
+    assign("release_contract", TRUE, envir = .hvti_deprecated)
+    msg <- paste0(found, " pins a dataset to a catalog release. Catalog releases are retired and will ",
+                  "stop being read in a later release; remove the release: block and run update_manifest().")
+    warning(structure(class = c("deprecatedWarning", "warning", "condition"), list(message = msg, call = NULL)))
+  }
   raw <- .study_validate_shapes(raw, found)
   raw$abbreviations <- .study_validate_abbreviations(raw$abbreviations, found)
 

@@ -68,6 +68,7 @@ test_that("the source-changed condition names the fix and carries both classes",
   expect_s3_class(cond, "hvtiRutilities_out_of_date")
   expect_match(conditionMessage(cond), "update_manifest()", fixed = TRUE)
   expect_match(conditionMessage(cond), "built_20261007.parquet", fixed = TRUE)
+  expect_match(conditionMessage(cond), "review_built()", fixed = TRUE)
 })
 
 test_that("a versioned entry keeps extra fields and history, and history drops the stamp", {
@@ -80,23 +81,6 @@ test_that("a versioned entry keeps extra fields and history, and history drops t
   expect_length(e$history, 1L)
   expect_false(any(c("source_size", "source_mtime") %in% names(.history_record(e))))
 })
-
-# A registered study whose source was last modified on 2026-09-15.
-versioned_study <- function(env = parent.frame(), data = data.frame(id = 1:3, DEAD = c(1L, 0L, 0L))) {
-  testthat::skip_if_not_installed("arrow")
-  root <- file.path(withr::local_tempdir(.local_envir = env), "study")
-  suppressMessages(study_setup(root, "Versioned fixture", 42L))
-  path <- file.path(study_dir("datasets", root), "built.csv")
-  utils::write.csv(data, path, row.names = FALSE)
-  Sys.setFileTime(path, as.POSIXct("2026-09-15 12:00:00", tz = "UTC"))
-  suppressMessages(register_data(root, "built.csv"))
-  root
-}
-
-manifest_entry_for <- function(root, file = "built.csv") {
-  m <- .read_manifest(file.path(root, "manifest.yaml"))
-  Filter(function(e) identical(e$file, file), m$datasets)[[1L]]
-}
 
 test_that("register_data converts the dataset to a dated parquet", {
   root <- versioned_study()
@@ -250,13 +234,6 @@ test_that("study_status reports a rebuilt source as pending, not failed", {
   expect_match(row$detail, "rebuilt since registration: built.csv. Run", fixed = TRUE)
 })
 
-rebuild_source <- function(root, data = data.frame(id = 1:4, DEAD = c(1L, 1L, 0L, 0L)), when = "2026-10-07 12:00:00") {
-  path <- built_path(study_config(root))
-  utils::write.csv(data, path, row.names = FALSE)
-  Sys.setFileTime(path, as.POSIXct(when, tz = "UTC"))
-  path
-}
-
 test_that("update_manifest() outside a study says what it looked for", {
   withr::local_dir(withr::local_tempdir())
   expect_error(update_manifest(), "found none", fixed = TRUE)
@@ -340,7 +317,9 @@ test_that("update_manifest() keeps fields registration recorded", {
 test_that("update_manifest() refuses a release-aware dataset by name", {
   fx <- make_release_aware_study(withr::local_tempdir())
   withr::local_dir(fx$root)
-  expect_error(update_manifest(dataset = "study"), "review_data_update()", fixed = TRUE)
+  err <- expect_error(update_manifest(dataset = "study"), "release: block", fixed = TRUE)
+  expect_no_match(conditionMessage(err), "review_data_update", fixed = TRUE)
+  expect_no_match(conditionMessage(err), "adopt_data_update", fixed = TRUE)
 })
 
 test_that("update_manifest(file, ...) keeps its single-file behaviour", {
@@ -378,10 +357,12 @@ test_that("migration after an overwrite recovers the old version from the cache"
   withr::local_dir(root)
 
   suppressMessages(expect_message(out <- update_manifest(), "recovered from the read cache", fixed = TRUE))
+  m <- .read_manifest(file.path(root, "manifest.yaml"))
   e <- manifest_entry_for(root)
   expect_identical(e$parquet, "built_20261007.parquet")
   expect_identical(e$history[[1L]]$parquet, "built_20260915.parquet")
   expect_identical(e$history[[1L]]$recovered_from, "cache")
+  expect_identical(m$provenance[[e$history[[1L]]$parquet]], list(origin = "legacy"))
   expect_identical(verify_manifest()$status, c("OK", "OK"))
 })
 
@@ -654,26 +635,29 @@ test_that("register_data refuses a release whose cache name is a registered vers
   expect_identical(manifest_entry_for(root, "cohort.csv")$parquet, "cohort_20260920.parquet")
   before <- readLines(file.path(root, "manifest.yaml"))
 
-  expect_error(
+  suppressWarnings(expect_error(
     register_data(root, "cohort_20260920.csv", dataset = "named_data", role = "named",
                   catalog_dataset = "surgery_cohort", release_id = "surgery_cohort-20260920-r1"),
     "is the registered version of cohort.csv"
-  )
+  ), classes = "deprecatedWarning")
   expect_identical(readLines(file.path(root, "manifest.yaml")), before)
 })
 
 test_that("adopt_data_update refuses a release whose cache name is a registered version", {
   root <- release_collision_study("2026-09-21")
   expect_identical(manifest_entry_for(root, "cohort.csv")$parquet, "cohort_20260921.parquet")
-  suppressMessages(register_data(root, "cohort_20260920.csv", dataset = "named_data", role = "named",
-                                 catalog_dataset = "surgery_cohort", release_id = "surgery_cohort-20260920-r1"))
+  suppressWarnings(
+    suppressMessages(register_data(root, "cohort_20260920.csv", dataset = "named_data", role = "named",
+                                   catalog_dataset = "surgery_cohort", release_id = "surgery_cohort-20260920-r1")),
+    classes = "deprecatedWarning"
+  )
   before <- readLines(file.path(root, "manifest.yaml"))
 
-  expect_error(
+  suppressWarnings(expect_error(
     withCallingHandlers(adopt_data_update(study_config(root), "named_data", "surgery_cohort-20260921-r1"),
                         hvtiRutilities_update_available = function(m) invokeRestart("muffleMessage")),
     "is the registered version of cohort.csv"
-  )
+  ), classes = "deprecatedWarning")
   expect_identical(readLines(file.path(root, "manifest.yaml")), before)
 })
 
@@ -795,16 +779,72 @@ test_that("study_status counts datasets, not registered versions", {
   expect_match(row$detail, "2 files", fixed = TRUE)
 })
 
-test_that("update_manifest() in a study with no manifest names register_data()", {
+test_that("update_manifest() registers a named dataset that has no manifest as its first version", {
+  skip_if_not_installed("arrow")
   root <- file.path(withr::local_tempdir(), "study")
   suppressMessages(study_setup(root, "Unregistered", 42L))
   raw <- yaml::read_yaml(file.path(root, "_study.yml"))
   raw$built <- "built.csv"
   yaml::write_yaml(raw, file.path(root, "_study.yml"))
-  utils::write.csv(data.frame(id = 1:3), file.path(study_dir("datasets", root), "built.csv"), row.names = FALSE)
+  src <- file.path(study_dir("datasets", root), "built.csv")
+  utils::write.csv(data.frame(id = 1:3), src, row.names = FALSE)
+  Sys.setFileTime(src, as.POSIXct("2026-09-15 12:00:00", tz = "UTC"))
+  cfg <- study_config(root)
+  local_mocked_bindings(.is_interactive = function() FALSE,
+                        .job_file = function() file.path(study_dir("analyses", root), "km", "km.qmd"))
+  expect_error(read_built(cfg), "jobs read registered data only")
+
+  out <- withr::with_dir(root, suppressMessages(update_manifest()))
+  expect_identical(out$action, "registered")
+  expect_match(out$detail, "first version", fixed = TRUE)
+  e <- manifest_entry_for(root)
+  expect_identical(e$parquet, "built_20260915.parquet")
+  expect_identical(.version_provenance(.read_manifest(file.path(root, "manifest.yaml")), e$parquet)$origin, "legacy")
+  expect_identical(nrow(read_built(cfg)), 3L)
+})
+
+test_that("update_manifest() registers a dataset that a manifest.yaml lacks, with its build record", {
+  s <- unregistered_study()
+  other <- file.path(study_dir("datasets", s$root), "other.csv")
+  utils::write.csv(data.frame(id = 1:2), other, row.names = FALSE)
+  suppressMessages(register_data(s$root, "other.csv", dataset = "other", role = "named"))
+  raw <- yaml::read_yaml(file.path(s$root, "_study.yml"))
+  raw$built <- "built.csv"
+  yaml::write_yaml(raw, file.path(s$root, "_study.yml"))
+  write_build_sidecar(s$src)
+  cfg <- study_config(s$root)
+  local_mocked_bindings(.is_interactive = function() FALSE,
+                        .job_file = function() file.path(study_dir("analyses", s$root), "km", "km.qmd"))
+  expect_error(read_built(cfg), "jobs read registered data only")
+
+  out <- withr::with_dir(s$root, suppressMessages(update_manifest(dataset = "study")))
+  expect_identical(out$action, "registered")
+  m <- .read_manifest(file.path(s$root, "manifest.yaml"))
+  expect_length(m$datasets, 2L)
+  expect_identical(.version_provenance(m, "built_20260915.parquet")$origin, "bd")
+  expect_true(file.exists(file.path(dirname(s$src), "built_20260915.build.yml")))
+  expect_false(file.exists(.build_sidecar_path(s$src)))
+  expect_identical(nrow(read_built(cfg)), 3L)
+})
+
+test_that("a first-version registration is undone when the manifest write fails", {
+  s <- unregistered_study()
+  raw <- yaml::read_yaml(file.path(s$root, "_study.yml"))
+  raw$built <- "built.csv"
+  yaml::write_yaml(raw, file.path(s$root, "_study.yml"))
+  side <- write_build_sidecar(s$src)
+  local_mocked_bindings(.write_manifest = function(...) stop("disk full"))
+  expect_error(withr::with_dir(s$root, suppressMessages(update_manifest())), "disk full")
+  expect_true(file.exists(side))
+  expect_identical(list.files(dirname(s$src), pattern = "^built_"), character())
+  expect_false(file.exists(file.path(s$root, "manifest.yaml")))
+})
+
+test_that("update_manifest() still stops for a study with no dataset contract", {
+  root <- file.path(withr::local_tempdir(), "study")
+  suppressMessages(study_setup(root, "No dataset", 42L))
   withr::local_dir(root)
-  expect_error(update_manifest(), "no manifest.yaml", fixed = TRUE)
-  expect_error(update_manifest(), "register_data()", fixed = TRUE)
+  expect_error(update_manifest(), "no registered dataset to update", fixed = TRUE)
 })
 
 test_that("study_status reports the registered version when the source is gone", {
@@ -843,8 +883,11 @@ test_that("a mixed study (versioned, legacy, release-aware) updates, verifies an
   utils::write.csv(data.frame(id = 1:3, dead = c(1L, 0L, 0L)), file.path(dir, "built.csv"), row.names = FALSE)
   stamp(file.path(dir, "built.csv"), "2026-09-15 12:00:00")
   suppressMessages(register_data(root, "built.csv"))
-  suppressMessages(register_data(root, "cohort_20260920.csv", dataset = "named_data", role = "named",
-                                 catalog_dataset = "surgery_cohort", release_id = "surgery_cohort-20260920-r1"))
+  suppressWarnings(
+    suppressMessages(register_data(root, "cohort_20260920.csv", dataset = "named_data", role = "named",
+                                   catalog_dataset = "surgery_cohort", release_id = "surgery_cohort-20260920-r1")),
+    classes = "deprecatedWarning"
+  )
   legacy <- data.frame(id = 1:4, dead = c(0L, 1L, 0L, 1L))
   utils::write.csv(legacy, file.path(dir, "legacy.csv"), row.names = FALSE)
   stamp(file.path(dir, "legacy.csv"), "2026-09-10 12:00:00")

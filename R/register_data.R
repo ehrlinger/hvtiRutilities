@@ -15,6 +15,23 @@
   entry
 }
 
+# Put moved files back after a failed step. A file that appeared at the destination meanwhile (a build wrote
+# a newer sidecar) is not overwritten: the moved file is kept beside it as "<to>.restored-<time>".
+.restore_files <- function(from, to) {
+  for (i in seq_along(from)) {
+    if (!file.exists(from[[i]])) next
+    if (file.exists(to[[i]])) {
+      kept <- paste0(to[[i]], ".restored-", format(Sys.time(), "%Y%m%d%H%M%S"))
+      file.rename(from[[i]], kept)
+      warning(basename(to[[i]]), " was written while this ran, so the copy this call moved, ", basename(from[[i]]),
+              ", was kept as ", basename(kept), " beside it.", call. = FALSE)
+    } else {
+      file.rename(from[[i]], to[[i]])
+    }
+  }
+  invisible(NULL)
+}
+
 .registration_rename <- function(from, to) {
   file.rename(from, to)
 }
@@ -127,7 +144,8 @@
 #' @param source Character(1) or \code{NULL}. Data-source description.
 #' @param extract_date Character, \code{Date}, or \code{NULL}. Extraction
 #'   date. The file modification date is used when omitted.
-#' @param catalog_dataset,release_id Character(1) or \code{NULL}. Producer
+#' @param catalog_dataset,release_id \strong{Deprecated.} Catalog releases are retired;
+#'   use a build record sidecar and plain \code{register_data()}. Character(1) or \code{NULL}. Producer
 #'   catalog dataset ID and exact published release ID. Supply both to make
 #'   the study contract release-aware, or neither for a legacy registration.
 #'   A dataset already registered as dated versions cannot be moved to a
@@ -182,6 +200,10 @@ register_data <- function(root = getwd(), built, dataset = "study",
   }
   if (!is.null(release_id) && !.catalog_valid_release_id(release_id)) {
     stop("register_data(): release_id is invalid", call. = FALSE)
+  }
+  if (!is.null(release_id)) {
+    .deprecated_arg("register_data", "catalog_dataset, release_id",
+                    "a build record sidecar and plain register_data()")
   }
 
   parents <- .canonical_parents(parents)
@@ -352,6 +374,11 @@ register_data <- function(root = getwd(), built, dataset = "study",
   }
   registered <- FALSE
   on.exit(if (!registered) unlink(version_files), add = TRUE)
+  claim <- NULL
+  if (is.null(release)) {
+    claim <- .claim_build_record(path, version$source_sha256, version$parquet, "register_data")
+    on.exit(if (!registered) .restore_files(claim$from, claim$to), add = TRUE)
+  }
   if (!is.null(parents)) entry$parent_versions <- .parent_versions(cfg, parents, list(datasets = prior))
   if (!is.null(release) &&
         (!identical(entry$sha256, release$sha256) ||
@@ -374,6 +401,7 @@ register_data <- function(root = getwd(), built, dataset = "study",
          call. = FALSE)
   }
   if (is.null(manifest$datasets)) manifest$datasets <- list()
+  if (is.null(release)) manifest <- .set_version_provenance(manifest, version$parquet, claim$row)
   files <- vapply(
     manifest$datasets,
     function(item) {
@@ -427,5 +455,6 @@ register_data <- function(root = getwd(), built, dataset = "study",
   .replace_study_pair(prepared, targets)
   registered <- TRUE
 
+  if (!is.null(claim$note)) message(claim$note)
   study_status(cfg$root)
 }

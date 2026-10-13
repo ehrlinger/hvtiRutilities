@@ -56,7 +56,9 @@ returned data frame.  Failures are reported through \code{stop()} or
 Invisibly returns a data frame with columns \code{file},
   \code{status} (\code{"OK"} or \code{"FAIL"}), \code{message}, and
   \code{row_count_checked} (logical; \code{TRUE} when the row count was
-  re-derived from the file and compared with the manifest).
+  re-derived from the file and compared with the manifest; also \code{TRUE}
+  for a build-record row whose checksum was verified, since a record has no
+  row count).
 }
 \description{
 Reads a \code{manifest.yaml} produced by \code{\link{update_manifest}} and,
@@ -85,7 +87,9 @@ report distinguishes them rather than reporting all three as simply
 verified.  The count was compared; the count is recorded but was not
 re-derived; or the manifest records no count at all.  The
 \code{row_count_checked} column is \code{TRUE} only in the first case, and
-the message names which of the three it was.
+the message names which of the three it was.  A build-record row (see
+below) sets \code{row_count_checked} to \code{TRUE} once its checksum is
+verified, because a record has no row count.
 
 For a dataset registered with \code{\link{register_data}}, every registered
 version (the current dated parquet and each earlier one) is checked, and its
