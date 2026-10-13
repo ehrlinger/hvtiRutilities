@@ -57,6 +57,11 @@ as a dated parquet has had its source file rebuilt since registration. Jobs
 keep reading the registered version; the detail names the datasets and
 \code{\link{update_manifest}()}, which registers the rebuild.
 
+A dataset that \code{_study.yml} names and \code{manifest.yaml} does not register as a dated version adds a
+\code{dated_version:<dataset>} row with status \code{"PENDING"}: analysis, distribution, graph and
+document jobs stop when they read it. The detail names \code{\link{update_manifest}()}. A dataset pinned
+to a catalog release adds no such row.
+
 Release-aware datasets add an \code{update:<dataset>} row with status
 \code{"CURRENT"}, \code{"UPDATE AVAILABLE"},
 \code{"UPDATE STATUS UNKNOWN"}, or \code{"FAIL"}. Legacy studies retain
