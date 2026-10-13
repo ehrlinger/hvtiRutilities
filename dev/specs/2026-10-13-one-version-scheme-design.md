@@ -220,7 +220,7 @@ argument wins over the variable.
 
 **The stage gate.** The gate is applied to **the data actually read**, not to the argument: it
 runs whenever the read would serve the working file, which is `working = TRUE` on any dataset,
-and **any** read of a dataset with no manifest entry (section 5.1's last paragraphs). A working
+and **any** read of a dataset with no manifest entry (see "Every read of unregistered data" below). A working
 read is honoured when either:
 
 - **the session is interactive** (`interactive()` is `TRUE` and no render is running): the
