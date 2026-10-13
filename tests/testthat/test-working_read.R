@@ -159,3 +159,21 @@ test_that("the real .signal_working_read() emits the classed message", {
   local_working_signal()
   expect_message(.signal_working_read("built.csv"), class = "hvtiRutilities_working_read")
 })
+
+test_that("the stage gate sees a real Quarto render's job file", {
+  skip_if_not_installed("quarto")
+  skip_if(is.null(quarto::quarto_path()), "Quarto is not installed")
+  root <- versioned_study()
+  for (stage in c("descriptive", "analyses")) {
+    dir <- file.path(study_dir(stage, root), "probe")
+    dir.create(dir, recursive = TRUE)
+    writeLines(c("---", "title: probe", "---", "```{r}",
+                 sprintf("cfg <- hvtiRutilities::study_config(%s)", deparse(root)),
+                 "ok <- tryCatch({suppressMessages(hvtiRutilities::read_built(cfg, working = TRUE)); 'allowed'},",
+                 "  error = function(e) 'refused')",
+                 "writeLines(ok, 'result.txt')", "```"), file.path(dir, "probe.qmd"))
+    quarto::quarto_render(file.path(dir, "probe.qmd"), quiet = TRUE)
+    expect_identical(readLines(file.path(dir, "result.txt")),
+                     if (stage == "descriptive") "allowed" else "refused")
+  }
+})
