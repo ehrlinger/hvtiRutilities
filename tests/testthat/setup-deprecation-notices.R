@@ -1,4 +1,4 @@
-# Spend the two once-per-session deprecation notices before any test runs.
+# Spend the once-per-session deprecation notices before any test runs.
 #
 # read_clinical_data() warns once when 'convert_types' is omitted, and
 # r_data_types() warns once when 'use_value_labels' is omitted. Each notice is
@@ -14,11 +14,11 @@
 # depending on file order.
 local({
   env <- asNamespace("hvtiRutilities")$.hvti_deprecated
-  for (flag in c("convert_types", "use_value_labels")) {
+  for (flag in c("convert_types", "use_value_labels", "release_contract")) {
     assign(flag, TRUE, envir = env)
   }
   withr::defer(
-    rm(list = c("convert_types", "use_value_labels"), envir = env),
+    rm(list = c("convert_types", "use_value_labels", "release_contract"), envir = env),
     envir = testthat::teardown_env()
   )
 })

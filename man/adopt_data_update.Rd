@@ -19,6 +19,9 @@ ID.}
 The updated \code{\link{study_status}} object, returned visibly.
 }
 \description{
+\strong{Deprecated.} Catalog releases are retired; use
+\code{\link{update_manifest}}.
+
 Repeats the candidate review and replaces \code{_study.yml} and
 \code{manifest.yaml} as one recoverable pair. The old dated release and its
 cache files remain on disk. Adoption does not make a Git commit.

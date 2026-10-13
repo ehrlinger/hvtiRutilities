@@ -37,7 +37,7 @@
   contract <- tryCatch(.study_dataset(cfg, dataset), error = function(e) e)
   if (inherits(contract, "error") || is.null(contract$release)) return(NULL)
 
-  report <- check_data_updates(cfg, dataset)
+  report <- .check_data_updates(cfg, dataset)
   pinned_bad <- report$scope == "pinned" &
     report$status %in% c("FAIL", "WITHDRAWN")
   if (any(pinned_bad)) {

@@ -292,3 +292,10 @@ test_that("a promoted entry whose parquet is gone says read_built() stops", {
   expect_match(out$detail, "is not on disk")
   expect_match(out$detail, "read_built() stops for it", fixed = TRUE)
 })
+
+test_that("each retired function and argument warns, naming its replacement", {
+  expect_warning(.deprecated_arg("register_data", "release_id", "a build record sidecar"),
+                 class = "deprecatedWarning")
+  expect_warning(.deprecated_arg("register_data", "release_id", "a build record sidecar"),
+                 "release_id.*a build record sidecar")
+})

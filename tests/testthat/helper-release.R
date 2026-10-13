@@ -61,22 +61,22 @@ make_release_aware_study <- function(dir, pinned_sequence = 1L,
     default <- data.frame(dead = c(1L, 0L), iv_dead = 1:2)
     write.csv(default, file.path(fx$data_dir, "default.csv"), row.names = FALSE)
     register_data(root, "default.csv")
-    register_data(
+    suppressWarnings(register_data(
       root,
       release$file,
       dataset = "named_data",
       role = "named",
       catalog_dataset = "surgery_cohort",
       release_id = release$release_id
-    )
+    ), classes = "deprecatedWarning")
     fx$study_dataset <- "named_data"
   } else {
-    register_data(
+    suppressWarnings(register_data(
       root,
       release$file,
       catalog_dataset = "surgery_cohort",
       release_id = release$release_id
-    )
+    ), classes = "deprecatedWarning")
     fx$study_dataset <- "study"
   }
   fx

@@ -237,3 +237,12 @@ test_that("the checkpoint reader names the cause when _study.yml is not valid YA
   expect_error(.cp_study(root, "study_checkpoint"),
                "^study_checkpoint\\(\\): .*_study\\.yml is not valid YAML")
 })
+
+test_that("study_config warns once on a release contract", {
+  root <- suppressMessages(make_release_aware_study(withr::local_tempdir()))$root
+  spent <- .hvti_deprecated$release_contract
+  assign("release_contract", FALSE, envir = .hvti_deprecated)
+  withr::defer(assign("release_contract", spent, envir = .hvti_deprecated))
+  expect_warning(study_config(root), class = "deprecatedWarning")
+  expect_no_warning(study_config(root))
+})

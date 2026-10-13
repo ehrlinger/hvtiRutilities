@@ -24,6 +24,9 @@ An object of class \code{"data_update_review"} with
   }
 }
 \description{
+\strong{Deprecated.} Catalog releases are retired; use
+\code{\link{review_built}}.
+
 Verifies the pinned release and one exact, newer candidate, then compares
 their structure. Review reads the source files directly; it does not write
 caches or change either study manifest. It describes data drift, but it

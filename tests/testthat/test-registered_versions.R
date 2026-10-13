@@ -633,26 +633,29 @@ test_that("register_data refuses a release whose cache name is a registered vers
   expect_identical(manifest_entry_for(root, "cohort.csv")$parquet, "cohort_20260920.parquet")
   before <- readLines(file.path(root, "manifest.yaml"))
 
-  expect_error(
+  suppressWarnings(expect_error(
     register_data(root, "cohort_20260920.csv", dataset = "named_data", role = "named",
                   catalog_dataset = "surgery_cohort", release_id = "surgery_cohort-20260920-r1"),
     "is the registered version of cohort.csv"
-  )
+  ), classes = "deprecatedWarning")
   expect_identical(readLines(file.path(root, "manifest.yaml")), before)
 })
 
 test_that("adopt_data_update refuses a release whose cache name is a registered version", {
   root <- release_collision_study("2026-09-21")
   expect_identical(manifest_entry_for(root, "cohort.csv")$parquet, "cohort_20260921.parquet")
-  suppressMessages(register_data(root, "cohort_20260920.csv", dataset = "named_data", role = "named",
-                                 catalog_dataset = "surgery_cohort", release_id = "surgery_cohort-20260920-r1"))
+  suppressWarnings(
+    suppressMessages(register_data(root, "cohort_20260920.csv", dataset = "named_data", role = "named",
+                                   catalog_dataset = "surgery_cohort", release_id = "surgery_cohort-20260920-r1")),
+    classes = "deprecatedWarning"
+  )
   before <- readLines(file.path(root, "manifest.yaml"))
 
-  expect_error(
+  suppressWarnings(expect_error(
     withCallingHandlers(adopt_data_update(study_config(root), "named_data", "surgery_cohort-20260921-r1"),
                         hvtiRutilities_update_available = function(m) invokeRestart("muffleMessage")),
     "is the registered version of cohort.csv"
-  )
+  ), classes = "deprecatedWarning")
   expect_identical(readLines(file.path(root, "manifest.yaml")), before)
 })
 
@@ -822,8 +825,11 @@ test_that("a mixed study (versioned, legacy, release-aware) updates, verifies an
   utils::write.csv(data.frame(id = 1:3, dead = c(1L, 0L, 0L)), file.path(dir, "built.csv"), row.names = FALSE)
   stamp(file.path(dir, "built.csv"), "2026-09-15 12:00:00")
   suppressMessages(register_data(root, "built.csv"))
-  suppressMessages(register_data(root, "cohort_20260920.csv", dataset = "named_data", role = "named",
-                                 catalog_dataset = "surgery_cohort", release_id = "surgery_cohort-20260920-r1"))
+  suppressWarnings(
+    suppressMessages(register_data(root, "cohort_20260920.csv", dataset = "named_data", role = "named",
+                                   catalog_dataset = "surgery_cohort", release_id = "surgery_cohort-20260920-r1")),
+    classes = "deprecatedWarning"
+  )
   legacy <- data.frame(id = 1:4, dead = c(0L, 1L, 0L, 1L))
   utils::write.csv(legacy, file.path(dir, "legacy.csv"), row.names = FALSE)
   stamp(file.path(dir, "legacy.csv"), "2026-09-10 12:00:00")

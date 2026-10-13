@@ -284,12 +284,12 @@ test_that("register_data attaches a verified published release", {
   root <- registration_study()
   fx <- write_release_fixture(root)
 
-  register_data(
+  suppressWarnings(register_data(
     root,
     "cohort_20260920.csv",
     catalog_dataset = "surgery_cohort",
     release_id = "surgery_cohort-20260920-r1"
-  )
+  ), classes = "deprecatedWarning")
 
   cfg <- study_config(root)
   expect_identical(cfg$release, list(
@@ -308,7 +308,7 @@ test_that("release registration refuses a filename mismatch without writes", {
   write_release_fixture(root)
   before <- readLines(file.path(root, "_study.yml"))
 
-  expect_error(
+  suppressWarnings(expect_error(
     register_data(
       root,
       "cohort_20260921.csv",
@@ -316,7 +316,7 @@ test_that("release registration refuses a filename mismatch without writes", {
       release_id = "surgery_cohort-20260920-r1"
     ),
     "does not name"
-  )
+  ), classes = "deprecatedWarning")
   expect_identical(readLines(file.path(root, "_study.yml")), before)
   expect_false(file.exists(file.path(root, "manifest.yaml")))
 })
@@ -352,7 +352,7 @@ test_that("release registration rejects withdrawn or changed releases", {
     "Incorrect cohort"
   yaml::write_yaml(catalog, withdrawn$catalog_path)
 
-  expect_error(
+  suppressWarnings(expect_error(
     register_data(
       withdrawn_root,
       "cohort_20260920.csv",
@@ -360,12 +360,12 @@ test_that("release registration rejects withdrawn or changed releases", {
       release_id = "surgery_cohort-20260920-r1"
     ),
     "withdrawn"
-  )
+  ), classes = "deprecatedWarning")
 
   changed_root <- registration_study()
   changed <- write_release_fixture(changed_root)
   writeLines("changed", file.path(changed$data_dir, "cohort_20260920.csv"))
-  expect_error(
+  suppressWarnings(expect_error(
     register_data(
       changed_root,
       "cohort_20260920.csv",
@@ -373,7 +373,7 @@ test_that("release registration rejects withdrawn or changed releases", {
       release_id = "surgery_cohort-20260920-r1"
     ),
     class = "hvtiRutilities_release_integrity"
-  )
+  ), classes = "deprecatedWarning")
 })
 
 test_that("release registration reconciles catalog provenance", {
@@ -383,7 +383,7 @@ test_that("release registration reconciles catalog provenance", {
   catalog$datasets$surgery_cohort$releases[[1L]]$source <- "Synthetic registry"
   yaml::write_yaml(catalog, fx$catalog_path)
 
-  expect_error(
+  suppressWarnings(expect_error(
     register_data(
       root,
       "cohort_20260920.csv",
@@ -392,8 +392,8 @@ test_that("release registration reconciles catalog provenance", {
       release_id = "surgery_cohort-20260920-r1"
     ),
     "source disagrees"
-  )
-  expect_error(
+  ), classes = "deprecatedWarning")
+  suppressWarnings(expect_error(
     register_data(
       root,
       "cohort_20260920.csv",
@@ -402,16 +402,16 @@ test_that("release registration reconciles catalog provenance", {
       release_id = "surgery_cohort-20260920-r1"
     ),
     "extract_date disagrees"
-  )
+  ), classes = "deprecatedWarning")
 
-  expect_no_error(register_data(
+  suppressWarnings(expect_no_error(register_data(
     root,
     "cohort_20260920.csv",
     source = "Synthetic registry",
     extract_date = "2026-09-20",
     catalog_dataset = "surgery_cohort",
     release_id = "surgery_cohort-20260920-r1"
-  ))
+  )), classes = "deprecatedWarning")
 })
 
 test_that("release registration brackets the data read with integrity checks", {
@@ -431,7 +431,7 @@ test_that("release registration brackets the data read with integrity checks", {
     }
   )
 
-  expect_error(
+  suppressWarnings(expect_error(
     register_data(
       root,
       "cohort_20260920.csv",
@@ -439,7 +439,7 @@ test_that("release registration brackets the data read with integrity checks", {
       release_id = "surgery_cohort-20260920-r1"
     ),
     class = "hvtiRutilities_release_integrity"
-  )
+  ), classes = "deprecatedWarning")
   after <- readBin(
     file.path(root, "_study.yml"),
     "raw",
@@ -460,12 +460,12 @@ test_that("register_data attaches a release to a legacy registration once", {
   )
   unconvert_registration(root, "cohort_20260920.csv")
 
-  register_data(
+  suppressWarnings(register_data(
     root,
     "cohort_20260920.csv",
     catalog_dataset = "surgery_cohort",
     release_id = "surgery_cohort-20260920-r1"
-  )
+  ), classes = "deprecatedWarning")
 
   cfg <- study_config(root)
   expect_identical(cfg$population, "Synthetic cohort")
@@ -475,7 +475,7 @@ test_that("register_data attaches a release to a legacy registration once", {
   files <- vapply(manifest$datasets, function(x) x$file, character(1))
   expect_identical(sum(files == "cohort_20260920.csv"), 1L)
 
-  expect_error(
+  suppressWarnings(expect_error(
     register_data(
       root,
       "cohort_20260920.csv",
@@ -483,7 +483,7 @@ test_that("register_data attaches a release to a legacy registration once", {
       release_id = "surgery_cohort-20260920-r1"
     ),
     "already registered"
-  )
+  ), classes = "deprecatedWarning")
 })
 
 test_that("release migration keeps the same logical dataset and file", {
@@ -503,7 +503,7 @@ test_that("release migration keeps the same logical dataset and file", {
     args$catalog_dataset <- "surgery_cohort"
     args$release_id <- "surgery_cohort-20260920-r1"
 
-    expect_s3_class(do.call(register_data, args), "study_status")
+    suppressWarnings(expect_s3_class(do.call(register_data, args), "study_status"), classes = "deprecatedWarning")
   }
 })
 
@@ -522,7 +522,7 @@ test_that("release migration refuses a dataset registered as dated versions", {
     args$catalog_dataset <- "surgery_cohort"
     args$release_id <- "surgery_cohort-20260920-r1"
 
-    expect_error(do.call(register_data, args), "would drop every registered version")
+    suppressWarnings(expect_error(do.call(register_data, args), "would drop every registered version"), classes = "deprecatedWarning")
     expect_identical(lapply(file.path(root, c("_study.yml", "manifest.yaml")), readLines), before)
     expect_identical(list.files(study_dir("datasets", root)), files)
   }
@@ -547,14 +547,14 @@ test_that("named release migration preserves additive contract fields", {
   yaml::write_yaml(raw, path)
 
   expect_no_error(study_config(root, require_data = FALSE))
-  register_data(
+  suppressWarnings(register_data(
     root,
     "cohort_20260920.csv",
     dataset = "named_data",
     role = "named",
     catalog_dataset = "surgery_cohort",
     release_id = "surgery_cohort-20260920-r1"
-  )
+  ), classes = "deprecatedWarning")
 
   migrated <- yaml::read_yaml(path)$additional_datasets$named_data
   expect_identical(migrated$analysis_context, list(

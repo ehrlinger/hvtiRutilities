@@ -11,7 +11,7 @@ test_that("check_data_updates reports current and every later release", {
     pinned_sequence = 1L
   )
 
-  report <- check_data_updates(study_config(fx$root))
+  expect_warning(report <- check_data_updates(study_config(fx$root)), class = "deprecatedWarning")
 
   expect_s3_class(report, "data_update_report")
   expect_named(report, c(
@@ -39,7 +39,7 @@ test_that("same-day candidates follow sequence rather than filename order", {
     revision = 2L
   )
 
-  available <- check_data_updates(study_config(fx$root))
+  suppressWarnings(available <- check_data_updates(study_config(fx$root)), classes = "deprecatedWarning")
   available <- available[available$scope == "candidate", ]
 
   expect_identical(available$sequence, c(2L, 3L))
@@ -54,19 +54,21 @@ test_that("check_data_updates selects named data and all aware contracts", {
   )
   cfg <- study_config(fx$root)
 
-  named <- check_data_updates(cfg, dataset = "named_data")
-  all <- check_data_updates(cfg)
+  suppressWarnings(named <- check_data_updates(cfg, dataset = "named_data"), classes = "deprecatedWarning")
+  suppressWarnings(all <- check_data_updates(cfg), classes = "deprecatedWarning")
 
   expect_true(all(named$dataset == "named_data"))
   expect_true(all(all$dataset == "named_data"))
-  expect_error(check_data_updates(cfg, dataset = "not_registered"),
-               "unknown dataset")
+  suppressWarnings(
+    expect_error(check_data_updates(cfg, dataset = "not_registered"), "unknown dataset"),
+    classes = "deprecatedWarning"
+  )
 })
 
 test_that("legacy data has no update rows", {
   root <- make_registered_study(withr::local_tempdir())
 
-  report <- check_data_updates(study_config(root))
+  suppressWarnings(report <- check_data_updates(study_config(root)), classes = "deprecatedWarning")
 
   expect_s3_class(report, "data_update_report")
   expect_equal(nrow(report), 0L)
@@ -80,7 +82,7 @@ test_that("missing and malformed catalogs have distinct outcomes", {
   missing <- make_release_aware_study(withr::local_tempdir())
   unlink(missing$catalog_path)
 
-  unavailable <- check_data_updates(study_config(missing$root))
+  suppressWarnings(unavailable <- check_data_updates(study_config(missing$root)), classes = "deprecatedWarning")
   expect_identical(unavailable$scope, "catalog")
   expect_identical(unavailable$status, "UPDATE STATUS UNKNOWN")
 
@@ -89,7 +91,7 @@ test_that("missing and malformed catalogs have distinct outcomes", {
   catalog$format_version <- 2L
   yaml::write_yaml(catalog, malformed$catalog_path)
 
-  failed <- check_data_updates(study_config(malformed$root))
+  suppressWarnings(failed <- check_data_updates(study_config(malformed$root)), classes = "deprecatedWarning")
   expect_identical(failed$scope, "catalog")
   expect_identical(failed$status, "FAIL")
   expect_match(failed$detail, "format_version")
@@ -103,7 +105,7 @@ test_that("a withdrawn pinned release is visible", {
     "Incorrect cohort"
   yaml::write_yaml(catalog, fx$catalog_path)
 
-  report <- check_data_updates(study_config(fx$root))
+  suppressWarnings(report <- check_data_updates(study_config(fx$root)), classes = "deprecatedWarning")
 
   expect_identical(report$status[[1L]], "WITHDRAWN")
   expect_match(report$detail[[1L]], "Incorrect cohort")
@@ -113,14 +115,14 @@ test_that("candidate failures do not change a valid pinned result", {
   missing <- make_release_aware_study(withr::local_tempdir())
   unlink(file.path(missing$data_dir, "cohort_20260921.csv"))
 
-  missing_report <- check_data_updates(study_config(missing$root))
+  suppressWarnings(missing_report <- check_data_updates(study_config(missing$root)), classes = "deprecatedWarning")
   expect_identical(missing_report$status, c("CURRENT", "FAIL"))
   expect_identical(missing_report$scope, c("pinned", "candidate"))
 
   changed <- make_release_aware_study(withr::local_tempdir())
   writeLines("changed", file.path(changed$data_dir, "cohort_20260921.csv"))
 
-  changed_report <- check_data_updates(study_config(changed$root))
+  suppressWarnings(changed_report <- check_data_updates(study_config(changed$root)), classes = "deprecatedWarning")
   expect_identical(changed_report$status, c("CURRENT", "FAIL"))
   expect_match(changed_report$detail[[2L]], "changed in place")
 })
@@ -131,7 +133,7 @@ test_that("pinned identity disagreement fails the pin", {
   manifest$datasets[[1L]]$sha256 <- paste(rep("0", 64L), collapse = "")
   yaml::write_yaml(manifest, file.path(fx$root, "manifest.yaml"))
 
-  report <- check_data_updates(study_config(fx$root))
+  suppressWarnings(report <- check_data_updates(study_config(fx$root)), classes = "deprecatedWarning")
 
   expect_identical(report$scope, "pinned")
   expect_identical(report$status, "FAIL")
@@ -315,7 +317,7 @@ test_that("withdrawn pinned releases require an explicit override", {
     class = "hvtiRutilities_withdrawn_release"
   )
   expect_match(conditionMessage(condition), "surgery_cohort-20260921-r1")
-  expect_equal(nrow(suppressMessages(read_built(cfg, allow_withdrawn = TRUE))), 3L)
+  suppressWarnings(expect_equal(nrow(suppressMessages(read_built(cfg, allow_withdrawn = TRUE))), 3L), classes = "deprecatedWarning")
 })
 
 test_that("review_data_update compares an explicit valid candidate", {
@@ -323,10 +325,10 @@ test_that("review_data_update compares an explicit valid candidate", {
   manifest_path <- file.path(fx$root, "manifest.yaml")
   before <- readBin(manifest_path, "raw", n = file.info(manifest_path)$size)
 
-  review <- review_data_update(
+  expect_warning(review <- review_data_update(
     study_config(fx$root),
     release_id = "surgery_cohort-20260921-r1"
-  )
+  ), class = "deprecatedWarning")
 
   expect_s3_class(review, "data_update_review")
   expect_identical(review$pinned$release_id,
@@ -354,17 +356,17 @@ test_that("review requires a real newer release ID", {
   fx <- make_release_aware_study(withr::local_tempdir(), pinned_sequence = 1L)
   cfg <- study_config(fx$root)
 
-  expect_error(
+  suppressWarnings(expect_error(
     review_data_update(cfg, release_id = "latest"),
     "exact release ID"
-  )
-  expect_error(
+  ), classes = "deprecatedWarning")
+  suppressWarnings(expect_error(
     review_data_update(
       cfg,
       release_id = "surgery_cohort-20260920-r1"
     ),
     "newer"
-  )
+  ), classes = "deprecatedWarning")
 })
 
 test_that("review rejects a catalog release literally named latest", {
@@ -373,10 +375,10 @@ test_that("review rejects a catalog release literally named latest", {
   catalog$datasets$surgery_cohort$releases[[2L]]$release_id <- "latest"
   yaml::write_yaml(catalog, fx$catalog_path)
 
-  expect_error(
+  suppressWarnings(expect_error(
     review_data_update(study_config(fx$root), release_id = "latest"),
     "exact release ID"
-  )
+  ), classes = "deprecatedWarning")
 })
 
 test_that("review and adoption reconcile the pin with the manifest", {
@@ -393,20 +395,20 @@ test_that("review and adoption reconcile the pin with the manifest", {
   yaml::write_yaml(catalog, fx$catalog_path)
   before <- release_contract_bytes(fx$root)
 
-  expect_error(
+  suppressWarnings(expect_error(
     review_data_update(
       study_config(fx$root),
       release_id = "surgery_cohort-20260921-r1"
     ),
     class = "hvtiRutilities_release_integrity"
-  )
-  expect_error(
+  ), classes = "deprecatedWarning")
+  suppressWarnings(expect_error(
     adopt_data_update(
       study_config(fx$root),
       release_id = "surgery_cohort-20260921-r1"
     ),
     class = "hvtiRutilities_release_integrity"
-  )
+  ), classes = "deprecatedWarning")
   expect_identical(release_contract_bytes(fx$root), before)
 })
 
@@ -418,37 +420,37 @@ test_that("review rejects withdrawn candidates", {
     "Candidate withdrawn"
   )
 
-  expect_error(
+  suppressWarnings(expect_error(
     review_data_update(
       study_config(fx$root),
       release_id = "surgery_cohort-20260921-r1"
     ),
     "published"
-  )
+  ), classes = "deprecatedWarning")
 })
 
 test_that("review rejects missing and changed candidate bytes", {
   missing <- make_release_aware_study(withr::local_tempdir())
   unlink(file.path(missing$data_dir, "cohort_20260921.csv"))
-  expect_error(
+  suppressWarnings(expect_error(
     review_data_update(
       study_config(missing$root),
       release_id = "surgery_cohort-20260921-r1"
     ),
     "missing",
     class = "hvtiRutilities_release_integrity"
-  )
+  ), classes = "deprecatedWarning")
 
   changed <- make_release_aware_study(withr::local_tempdir())
   writeLines("changed", file.path(changed$data_dir, "cohort_20260921.csv"))
-  expect_error(
+  suppressWarnings(expect_error(
     review_data_update(
       study_config(changed$root),
       release_id = "surgery_cohort-20260921-r1"
     ),
     "changed in place",
     class = "hvtiRutilities_release_integrity"
-  )
+  ), classes = "deprecatedWarning")
 })
 
 test_that("review re-verifies each release after its direct read", {
@@ -466,14 +468,14 @@ test_that("review re-verifies each release after its direct read", {
       .package = "hvtiRutilities"
     )
 
-    expect_error(
+    suppressWarnings(expect_error(
       review_data_update(
         study_config(fx$root),
         release_id = "surgery_cohort-20260921-r1"
       ),
       class = "hvtiRutilities_release_integrity",
       info = target
-    )
+    ), classes = "deprecatedWarning")
   }
   run_case("cohort_20260920.csv")
   run_case("cohort_20260921.csv")
@@ -485,23 +487,23 @@ test_that("review checks observed dimensions against the catalog", {
   catalog$datasets$surgery_cohort$releases[[2L]]$n_rows <- 999L
   yaml::write_yaml(catalog, fx$catalog_path)
 
-  expect_error(
+  suppressWarnings(expect_error(
     review_data_update(
       study_config(fx$root),
       release_id = "surgery_cohort-20260921-r1"
     ),
     "dimensions.*999"
-  )
+  ), classes = "deprecatedWarning")
 })
 
 test_that("review of a named dataset has no cohort comparison", {
   fx <- make_release_aware_study(withr::local_tempdir(), named = TRUE)
 
-  review <- review_data_update(
+  suppressWarnings(review <- review_data_update(
     study_config(fx$root),
     dataset = "named_data",
     release_id = "surgery_cohort-20260921-r1"
-  )
+  ), classes = "deprecatedWarning")
 
   expect_named(
     review,
@@ -524,25 +526,25 @@ test_that("review permits a candidate without the former cohort event column", {
   catalog$datasets$surgery_cohort$releases[[2L]] <- release
   yaml::write_yaml(catalog, fx$catalog_path)
 
-  review <- review_data_update(
+  suppressWarnings(review <- review_data_update(
     study_config(fx$root),
     release_id = "surgery_cohort-20260921-r1"
-  )
+  ), classes = "deprecatedWarning")
 
   expect_false(any(c("cohort_old", "cohort_new") %in% names(review)))
 })
 
 test_that("adoption advances the default contract and manifest entry", {
   fx <- make_release_aware_study(withr::local_tempdir(), pinned_sequence = 1L)
-  review <- review_data_update(
+  suppressWarnings(review <- review_data_update(
     study_config(fx$root),
     release_id = "surgery_cohort-20260921-r1"
-  )
+  ), classes = "deprecatedWarning")
 
-  status <- adopt_data_update(
+  expect_warning(status <- adopt_data_update(
     study_config(fx$root),
     release_id = "surgery_cohort-20260921-r1"
-  )
+  ), class = "deprecatedWarning")
 
   expect_s3_class(status, "study_status")
   after <- study_config(fx$root)
@@ -566,11 +568,11 @@ test_that("adoption advances only the selected named contract", {
   )
   before <- yaml::read_yaml(file.path(fx$root, "_study.yml"))
 
-  status <- adopt_data_update(
+  suppressWarnings(status <- adopt_data_update(
     study_config(fx$root),
     dataset = "named_data",
     release_id = "surgery_cohort-20260921-r1"
-  )
+  ), classes = "deprecatedWarning")
 
   after <- yaml::read_yaml(file.path(fx$root, "_study.yml"))
   expect_identical(after$built, before$built)
@@ -597,20 +599,20 @@ test_that("a named release can be adopted before the default is registered", {
   root <- file.path(withr::local_tempdir(), "study")
   study_setup(root, "Named release fixture", 42L)
   fx <- write_release_fixture(root)
-  register_data(
+  suppressWarnings(register_data(
     root,
     "cohort_20260920.csv",
     dataset = "named_data",
     role = "named",
     catalog_dataset = "surgery_cohort",
     release_id = "surgery_cohort-20260920-r1"
-  )
+  ), classes = "deprecatedWarning")
 
-  adopt_data_update(
+  suppressWarnings(adopt_data_update(
     study_config(root, require_data = FALSE),
     dataset = "named_data",
     release_id = "surgery_cohort-20260921-r1"
-  )
+  ), classes = "deprecatedWarning")
 
   cfg <- study_config(root, require_data = FALSE)
   expect_null(cfg$built)
@@ -633,11 +635,11 @@ test_that("adoption retains additive release metadata", {
     }
     yaml::write_yaml(raw, path)
 
-    adopt_data_update(
+    suppressWarnings(adopt_data_update(
       study_config(fx$root),
       dataset = if (named) "named_data" else "study",
       release_id = "surgery_cohort-20260921-r1"
-    )
+    ), classes = "deprecatedWarning")
 
     after <- yaml::read_yaml(path)
     release <- if (named) {
@@ -691,11 +693,11 @@ test_that("adoption preserves additive study and dataset fields", {
     before <- raw
     yaml::write_yaml(raw, path)
 
-    adopt_data_update(
+    suppressWarnings(adopt_data_update(
       study_config(fx$root),
       dataset = if (named) "named_data" else "study",
       release_id = "surgery_cohort-20260921-r1"
-    )
+    ), classes = "deprecatedWarning")
 
     after <- yaml::read_yaml(path)
     expect_identical(after$future_identity, list(owner = "keep me"), info = as.character(named))
@@ -715,23 +717,23 @@ test_that("adoption preserves additive study and dataset fields", {
 test_that("adoption revalidates bytes changed after review", {
   fx <- make_release_aware_study(withr::local_tempdir(), pinned_sequence = 1L)
   cfg <- study_config(fx$root)
-  review_data_update(
+  suppressWarnings(review_data_update(
     cfg,
     release_id = "surgery_cohort-20260921-r1"
-  )
+  ), classes = "deprecatedWarning")
   before <- release_contract_bytes(fx$root)
   writeLines(
     "changed after review",
     file.path(fx$data_dir, "cohort_20260921.csv")
   )
 
-  expect_error(
+  suppressWarnings(expect_error(
     adopt_data_update(
       cfg,
       release_id = "surgery_cohort-20260921-r1"
     ),
     class = "hvtiRutilities_release_integrity"
-  )
+  ), classes = "deprecatedWarning")
   expect_identical(release_contract_bytes(fx$root), before)
 })
 
@@ -745,13 +747,13 @@ test_that("adoption rolls back both contracts when pair replacement fails", {
     }
   )
 
-  expect_error(
+  suppressWarnings(expect_error(
     adopt_data_update(
       study_config(fx$root),
       release_id = "surgery_cohort-20260921-r1"
     ),
     "prepared manifest"
-  )
+  ), classes = "deprecatedWarning")
   expect_identical(release_contract_bytes(fx$root), before)
 })
 
@@ -762,13 +764,13 @@ test_that("adoption requires exactly one old manifest entry", {
   manifest$datasets[[1L]]$file <- "other.csv"
   yaml::write_yaml(manifest, missing_path)
   before <- release_contract_bytes(missing$root)
-  expect_error(
+  suppressWarnings(expect_error(
     adopt_data_update(
       study_config(missing$root),
       release_id = "surgery_cohort-20260921-r1"
     ),
     "exactly one manifest entry"
-  )
+  ), classes = "deprecatedWarning")
   expect_identical(release_contract_bytes(missing$root), before)
 
   duplicate <- make_release_aware_study(withr::local_tempdir())
@@ -777,13 +779,13 @@ test_that("adoption requires exactly one old manifest entry", {
   manifest$datasets <- c(manifest$datasets, manifest$datasets)
   yaml::write_yaml(manifest, duplicate_path)
   before <- release_contract_bytes(duplicate$root)
-  expect_error(
+  suppressWarnings(expect_error(
     adopt_data_update(
       study_config(duplicate$root),
       release_id = "surgery_cohort-20260921-r1"
     ),
     "exactly one manifest entry"
-  )
+  ), classes = "deprecatedWarning")
   expect_identical(release_contract_bytes(duplicate$root), before)
 })
 
@@ -797,13 +799,13 @@ test_that("adoption rejects a candidate stem collision", {
   yaml::write_yaml(manifest, manifest_path)
   before <- release_contract_bytes(fx$root)
 
-  expect_error(
+  suppressWarnings(expect_error(
     adopt_data_update(
       study_config(fx$root),
       release_id = "surgery_cohort-20260921-r1"
     ),
     "derived path stem"
-  )
+  ), classes = "deprecatedWarning")
   expect_identical(release_contract_bytes(fx$root), before)
 })
 
@@ -814,20 +816,20 @@ test_that("adoption rejects withdrawn and non-newer candidates", {
     "surgery_cohort-20260921-r1",
     "Candidate withdrawn"
   )
-  expect_error(
+  suppressWarnings(expect_error(
     adopt_data_update(
       study_config(withdrawn$root),
       release_id = "surgery_cohort-20260921-r1"
     ),
     "published"
-  )
+  ), classes = "deprecatedWarning")
 
   old <- make_release_aware_study(withr::local_tempdir())
-  expect_error(
+  suppressWarnings(expect_error(
     adopt_data_update(
       study_config(old$root),
       release_id = "surgery_cohort-20260920-r1"
     ),
     "newer"
-  )
+  ), classes = "deprecatedWarning")
 })

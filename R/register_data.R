@@ -127,7 +127,8 @@
 #' @param source Character(1) or \code{NULL}. Data-source description.
 #' @param extract_date Character, \code{Date}, or \code{NULL}. Extraction
 #'   date. The file modification date is used when omitted.
-#' @param catalog_dataset,release_id Character(1) or \code{NULL}. Producer
+#' @param catalog_dataset,release_id \strong{Deprecated.} Catalog releases are retired;
+#'   use a build record sidecar and plain \code{register_data()}. Character(1) or \code{NULL}. Producer
 #'   catalog dataset ID and exact published release ID. Supply both to make
 #'   the study contract release-aware, or neither for a legacy registration.
 #'   A dataset already registered as dated versions cannot be moved to a
@@ -182,6 +183,10 @@ register_data <- function(root = getwd(), built, dataset = "study",
   }
   if (!is.null(release_id) && !.catalog_valid_release_id(release_id)) {
     stop("register_data(): release_id is invalid", call. = FALSE)
+  }
+  if (!is.null(release_id)) {
+    .deprecated_arg("register_data", "catalog_dataset, release_id",
+                    "a build record sidecar and plain register_data()")
   }
 
   parents <- .canonical_parents(parents)

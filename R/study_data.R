@@ -243,7 +243,8 @@ built_manifest <- function(cfg = study_config(), dataset = "study") {
 #'   \code{\link{update_manifest}()}, which registers a rebuilt source.
 #' @param dataset Character(1). Logical dataset name. Defaults to
 #'   \code{"study"}. \code{"built"} is a second name for \code{"study"}.
-#' @param allow_withdrawn Logical. If \code{TRUE}, allow a deliberately pinned
+#' @param allow_withdrawn \strong{Deprecated.} A dated version is never
+#'   withdrawn, so there is nothing to allow. Logical. If \code{TRUE}, allow a deliberately pinned
 #'   withdrawn release to be read for revision work. The default is
 #'   \code{FALSE}.
 #' @param working Logical. If \code{TRUE}, read the working dataset as it stands
@@ -277,6 +278,9 @@ read_built <- function(cfg = study_config(), refresh = FALSE,
   if (!is.logical(allow_withdrawn) || length(allow_withdrawn) != 1L ||
         is.na(allow_withdrawn)) {
     stop("allow_withdrawn must be TRUE or FALSE", call. = FALSE)
+  }
+  if (!missing(allow_withdrawn)) {
+    .deprecated_arg("read_built", "allow_withdrawn", "a dated version, which is never withdrawn,")
   }
   if (!is.logical(working) || length(working) != 1L || is.na(working)) {
     stop("working must be TRUE or FALSE", call. = FALSE)

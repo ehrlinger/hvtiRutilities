@@ -89,17 +89,26 @@ test_that("the release functions accept built and report study", {
   fx <- make_release_aware_study(withr::local_tempdir(), pinned_sequence = 1L)
   cfg <- study_config(fx$root)
 
-  expect_identical(check_data_updates(cfg, dataset = "built"), check_data_updates(cfg, dataset = "study"))
-  expect_true(all(check_data_updates(cfg, dataset = "built")$dataset == "study"))
+  suppressWarnings(
+    expect_identical(check_data_updates(cfg, dataset = "built"), check_data_updates(cfg, dataset = "study")),
+    classes = "deprecatedWarning"
+  )
+  suppressWarnings(expect_true(all(check_data_updates(cfg, dataset = "built")$dataset == "study")), classes = "deprecatedWarning")
 
-  review <- review_data_update(cfg, dataset = "built", release_id = "surgery_cohort-20260921-r1")
+  suppressWarnings(
+    review <- review_data_update(cfg, dataset = "built", release_id = "surgery_cohort-20260921-r1"),
+    classes = "deprecatedWarning"
+  )
   expect_identical(review$dataset, "study")
 })
 
 test_that("adopt_data_update(\"built\") advances the default contract, not a named one", {
   fx <- make_release_aware_study(withr::local_tempdir(), pinned_sequence = 1L)
 
-  status <- adopt_data_update(study_config(fx$root), dataset = "built", release_id = "surgery_cohort-20260921-r1")
+  suppressWarnings(
+    status <- adopt_data_update(study_config(fx$root), dataset = "built", release_id = "surgery_cohort-20260921-r1"),
+    classes = "deprecatedWarning"
+  )
 
   expect_s3_class(status, "study_status")
   after <- yaml::read_yaml(file.path(fx$root, "_study.yml"))

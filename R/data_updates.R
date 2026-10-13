@@ -314,6 +314,9 @@
 #' Check a study for published dataset updates
 #'
 #' @description
+#' \strong{Deprecated.} Catalog releases are retired; use
+#' \code{\link{study_status}} or \code{\link{verify_manifest}}.
+#'
 #' Compares each release-aware dataset contract with its producer-owned
 #' catalog. The check verifies the pinned release and every later published
 #' candidate without changing \code{_study.yml}, \code{manifest.yaml}, or any
@@ -342,6 +345,16 @@
 #' check_data_updates(cfg, dataset = "complete_cases")
 #' }
 check_data_updates <- function(cfg = study_config(), dataset = NULL) {
+  .Deprecated(
+    "study_status", package = "hvtiRutilities",
+    msg = paste0("check_data_updates() is deprecated: catalog releases are retired. Use study_status() or ",
+                 "verify_manifest(), whose PENDING rows report a rebuilt dataset.")
+  )
+  .check_data_updates(cfg, dataset)
+}
+
+# The body of check_data_updates(), callable by the package without a notice.
+.check_data_updates <- function(cfg, dataset = NULL) {
   datasets <- if (is.null(dataset)) {
     c("study", names(cfg$additional_datasets))
   } else {
@@ -357,7 +370,7 @@ check_data_updates <- function(cfg = study_config(), dataset = NULL) {
 }
 
 .enforce_release_read <- function(cfg, dataset, allow_withdrawn) {
-  report <- check_data_updates(cfg, dataset)
+  report <- .check_data_updates(cfg, dataset)
   pinned_failure <- report$scope == "pinned" & report$status == "FAIL"
   if (any(pinned_failure)) {
     .release_abort(
@@ -450,6 +463,9 @@ check_data_updates <- function(cfg = study_config(), dataset = NULL) {
 #' Review one published dataset release
 #'
 #' @description
+#' \strong{Deprecated.} Catalog releases are retired; use
+#' \code{\link{review_built}}.
+#'
 #' Verifies the pinned release and one exact, newer candidate, then compares
 #' their structure. Review reads the source files directly; it does not write
 #' caches or change either study manifest. It describes data drift, but it
@@ -482,6 +498,16 @@ check_data_updates <- function(cfg = study_config(), dataset = NULL) {
 #' }
 review_data_update <- function(cfg = study_config(), dataset = "study",
                                release_id) {
+  .Deprecated(
+    "review_built", package = "hvtiRutilities",
+    msg = paste0("review_data_update() is deprecated: catalog releases are retired. Use review_built(), ",
+                 "which compares a rebuilt dataset with its registered version.")
+  )
+  .review_data_update(cfg, dataset, release_id)
+}
+
+# The body of review_data_update(), callable by the package without a notice.
+.review_data_update <- function(cfg, dataset, release_id) {
   dataset <- .canonical_dataset(dataset)
   if (identical(release_id, "latest")) {
     stop(
@@ -581,6 +607,9 @@ print.data_update_review <- function(x, ...) {
 #' Adopt one published dataset release
 #'
 #' @description
+#' \strong{Deprecated.} Catalog releases are retired; use
+#' \code{\link{update_manifest}}.
+#'
 #' Repeats the candidate review and replaces \code{_study.yml} and
 #' \code{manifest.yaml} as one recoverable pair. The old dated release and its
 #' cache files remain on disk. Adoption does not make a Git commit.
@@ -611,8 +640,13 @@ print.data_update_review <- function(x, ...) {
 #' }
 adopt_data_update <- function(cfg = study_config(), dataset = "study",
                               release_id) {
+  .Deprecated(
+    "update_manifest", package = "hvtiRutilities",
+    msg = paste0("adopt_data_update() is deprecated: catalog releases are retired. Use update_manifest(), ",
+                 "which promotes a rebuilt dataset to a new dated version.")
+  )
   dataset <- .canonical_dataset(dataset)
-  review <- review_data_update(cfg, dataset, release_id)
+  review <- .review_data_update(cfg, dataset, release_id)
   current_cfg <- study_config(cfg$root, require_data = FALSE)
   original_contract <- .study_dataset(cfg, dataset)
   contract <- .study_dataset(current_cfg, dataset)

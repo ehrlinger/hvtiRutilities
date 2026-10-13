@@ -327,8 +327,11 @@ test_that("adopting a release for a combined dataset records its parents' versio
   raw$additional_datasets$named_data$parents <- "study"
   yaml::write_yaml(raw, file.path(fx$root, "_study.yml"))
 
-  suppressMessages(adopt_data_update(study_config(fx$root), dataset = "named_data",
-                                     release_id = "surgery_cohort-20260921-r1"))
+  suppressWarnings(
+    suppressMessages(adopt_data_update(study_config(fx$root), dataset = "named_data",
+                                       release_id = "surgery_cohort-20260921-r1")),
+    classes = "deprecatedWarning"
+  )
   m <- .read_manifest(file.path(fx$root, "manifest.yaml"))
   e <- Filter(function(x) identical(x$file, "cohort_20260921.csv"), m$datasets)[[1L]]
   expect_match(e$parent_versions$study, "^default_[0-9]{8}[.]parquet$")
