@@ -346,6 +346,11 @@
       promoted <- if (!.is_versioned(entry) && identical(entry$role, "primary")) {
         .migrate_promoted_entry(entry, source_path, manifest$datasets)
       }
+      if (!is.null(promoted$refused)) {
+        rows[[name]] <- .manifest_update_row(name, "missing", paste0(promoted$refused, "; read_built() stops for it. ",
+                                                                     "Restore it from backup, then run update_manifest()"))
+        next
+      }
       if (!is.null(promoted)) {
         restore$from <- c(restore$from, promoted$restore$from)
         restore$to <- c(restore$to, promoted$restore$to)
@@ -518,22 +523,27 @@
 # matches the entry. The caller renames it back if the manifest write fails.
 .migrate_promoted_entry <- function(entry, source_path, datasets = list()) {
   legacy <- .derived_paths(source_path)
-  if (!file.exists(legacy$parquet) ||
-        !identical(digest::digest(legacy$parquet, algo = "sha256", file = TRUE), entry$sha256)) {
-    return(NULL)
+  if (!file.exists(legacy$parquet)) {
+    return(list(refused = paste0(basename(legacy$parquet), " is not on disk, so there is nothing to register as a dated version")))
+  }
+  if (!identical(digest::digest(legacy$parquet, algo = "sha256", file = TRUE), entry$sha256)) {
+    return(list(refused = paste0(basename(legacy$parquet),
+                                 " does not match its recorded checksum, so it was not registered as a dated version")))
   }
   dir <- dirname(source_path)
   date <- if (is.null(entry$extract_date)) .mtime_date(legacy$parquet) else entry$extract_date
   name <- .version_filename(tools::file_path_sans_ext(entry$file), date, dir, .reserved_names(datasets))
   parquet <- file.path(dir, name)
   schema <- file.path(dir, .version_schema_name(name))
-  if (!file.rename(legacy$parquet, parquet)) return(NULL)
+  if (!file.rename(legacy$parquet, parquet)) {
+    return(list(refused = paste0(basename(legacy$parquet), " could not be renamed to ", name)))
+  }
   from <- parquet
   to <- legacy$parquet
   if (file.exists(legacy$schema)) {
     if (!file.rename(legacy$schema, schema)) {
       file.rename(parquet, legacy$parquet)
-      return(NULL)
+      return(list(refused = paste0(basename(legacy$schema), " could not be renamed to ", basename(schema))))
     }
     from <- c(from, schema)
     to <- c(to, legacy$schema)

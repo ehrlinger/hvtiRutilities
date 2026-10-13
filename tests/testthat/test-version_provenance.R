@@ -278,6 +278,17 @@ test_that("a promoted parquet that does not match its hash is not migrated", {
   root <- promoted_study()
   cat("x", file = file.path(study_dir("datasets", root), "built.parquet"), append = TRUE)
   out <- withr::with_dir(root, suppressMessages(update_manifest()))
-  expect_false(identical(out$action, "migrated"))
+  expect_identical(out$action, "missing")
+  expect_match(out$detail, "does not match its recorded checksum")
+  expect_match(out$detail, "read_built() stops for it", fixed = TRUE)
   expect_false(file.exists(file.path(study_dir("datasets", root), "built_20260915.parquet")))
+})
+
+test_that("a promoted entry whose parquet is gone says read_built() stops", {
+  root <- promoted_study()
+  unlink(file.path(study_dir("datasets", root), "built.parquet"))
+  out <- withr::with_dir(root, suppressMessages(update_manifest()))
+  expect_identical(out$action, "missing")
+  expect_match(out$detail, "is not on disk")
+  expect_match(out$detail, "read_built() stops for it", fixed = TRUE)
 })
