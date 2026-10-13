@@ -21,3 +21,95 @@
   manifest$provenance <- rows
   manifest
 }
+
+# bd writes <stem>.build.yml beside the working file; a registered version's
+# record shares the version's name.
+.build_sidecar_path <- function(source_path) {
+  file.path(dirname(source_path), paste0(tools::file_path_sans_ext(basename(source_path)), ".build.yml"))
+}
+
+.version_record_name <- function(parquet) sub("[.]parquet$", ".build.yml", parquet)
+
+.build_required <- c("schema", "built_sha256", "job", "view", "as_of", "cohort_sha256",
+                     "overlay_sha256", "derived_after_overlay")
+
+.is_sha256 <- function(x) is.character(x) && length(x) == 1L && !is.na(x) && grepl("^[0-9a-f]{64}$", x)
+
+# The whole timestamp, not its prefix: the shape, then the calendar and clock
+# (strptime() returns NA for 2026-02-30 and for hour 25; measured 2026-10-13).
+.is_iso_timestamp <- function(x) {
+  shape <- "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}([.][0-9]+)?(Z|[+-][0-9]{2}:?[0-9]{2})$"
+  is.character(x) && length(x) == 1L && !is.na(x) && grepl(shape, x) &&
+    !is.na(as.POSIXct(substr(x, 1L, 19L), format = "%Y-%m-%dT%H:%M:%S", tz = "UTC"))
+}
+
+.validate_build_record <- function(rec, file, caller) {
+  bad <- function(why) {
+    stop(caller, "(): ", file, " is not a valid build record: ", why, ". Nothing was written.", call. = FALSE)
+  }
+  text <- function(x) is.character(x) && length(x) == 1L && !is.na(x) && nzchar(x)
+  missing <- setdiff(.build_required, names(rec))
+  if (length(missing)) bad(paste0("missing ", paste(missing, collapse = ", ")))
+  if (!identical(rec$schema, 1L)) bad("schema must be 1")
+  if (!text(rec$job)) bad("job must be the job file's study-relative path")
+  if (!text(rec$view)) bad("missing view")
+  if (!.is_iso_timestamp(rec$as_of)) bad("as_of must be an ISO 8601 timestamp, such as 2026-10-01T00:00:00Z")
+  if (!.is_sha256(rec$cohort_sha256)) bad("cohort_sha256 must be a SHA-256")
+  if (!is.null(rec$overlay_sha256) && !.is_sha256(rec$overlay_sha256)) bad("overlay_sha256 must be a SHA-256 or null")
+  if (!is.logical(rec$derived_after_overlay) || length(rec$derived_after_overlay) != 1L ||
+        is.na(rec$derived_after_overlay)) {
+    bad("derived_after_overlay must be true or false")
+  }
+  invisible(rec)
+}
+
+# Claim the sidecar for the version just written from `source_path`. Only a
+# record whose built_sha256 is the hash of the bytes converted is claimed; a
+# record for other bytes is left where it is and the version is legacy. The
+# caller renames `from` back to `to` if its manifest write fails.
+.claim_build_record <- function(source_path, source_sha256, parquet, caller) {
+  none <- list(row = .legacy_row(), from = character(), to = character(), note = NULL)
+  sidecar <- .build_sidecar_path(source_path)
+  if (!file.exists(sidecar)) return(none)
+  fail <- function(why) {
+    stop(caller, "(): ", basename(sidecar), " ", why, ". Nothing was written.", call. = FALSE)
+  }
+  # Read the bytes once and parse those bytes, so the record validated is the
+  # record whose hash is checked after the move: bd rewriting the sidecar
+  # between the read and the rename cannot pair one record's fields with
+  # another's checksum.
+  bytes <- readBin(sidecar, "raw", file.size(sidecar))
+  claimed_sha256 <- digest::digest(bytes, algo = "sha256", serialize = FALSE)
+  rec <- tryCatch(yaml::yaml.load(rawToChar(bytes)), error = function(e) {
+    fail(paste0("is not valid YAML (", conditionMessage(e), ")"))
+  })
+  if (!is.list(rec)) fail("is not a valid build record: it is not a mapping")
+  # A record without a valid built_sha256 is malformed, not stale: it must
+  # not fall through to the legacy branch below.
+  if (!.is_sha256(rec$built_sha256)) fail("is not a valid build record: built_sha256 must be a SHA-256")
+  if (!identical(rec$built_sha256, source_sha256)) {
+    none$note <- paste0(basename(sidecar), " describes a different ", basename(source_path),
+                        ", so this version is recorded as legacy")
+    return(none)
+  }
+  .validate_build_record(rec, basename(sidecar), caller)
+  if (!isTRUE(rec$derived_after_overlay)) {
+    fail(paste0("says its derivations were not recomputed after the corrections overlay was applied, so ",
+                basename(source_path), " cannot be registered. Re-run the build"))
+  }
+  dest <- file.path(dirname(source_path), .version_record_name(parquet))
+  # .registration_rename() (R/register_data.R) is file.rename() behind a binding tests can mock.
+  if (file.exists(dest) || !.registration_rename(sidecar, dest)) fail(paste0("could not be moved to ", basename(dest)))
+  if (!identical(digest::digest(dest, algo = "sha256", file = TRUE), claimed_sha256)) {
+    file.rename(dest, sidecar)
+    fail("changed while it was being registered. Wait for the build that writes it to finish, then run this again")
+  }
+  list(
+    row = list(origin = "bd", build = list(
+      record = basename(dest), record_sha256 = claimed_sha256,
+      job = rec$job, view = rec$view, as_of = rec$as_of,
+      cohort_sha256 = rec$cohort_sha256, overlay_sha256 = rec$overlay_sha256
+    )),
+    from = dest, to = sidecar, note = NULL
+  )
+}

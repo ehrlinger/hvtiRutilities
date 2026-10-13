@@ -352,6 +352,11 @@ register_data <- function(root = getwd(), built, dataset = "study",
   }
   registered <- FALSE
   on.exit(if (!registered) unlink(version_files), add = TRUE)
+  claim <- NULL
+  if (is.null(release)) {
+    claim <- .claim_build_record(path, version$source_sha256, version$parquet, "register_data")
+    on.exit(if (!registered) file.rename(claim$from, claim$to), add = TRUE)
+  }
   if (!is.null(parents)) entry$parent_versions <- .parent_versions(cfg, parents, list(datasets = prior))
   if (!is.null(release) &&
         (!identical(entry$sha256, release$sha256) ||
@@ -374,7 +379,7 @@ register_data <- function(root = getwd(), built, dataset = "study",
          call. = FALSE)
   }
   if (is.null(manifest$datasets)) manifest$datasets <- list()
-  if (is.null(release)) manifest <- .set_version_provenance(manifest, version$parquet, .legacy_row())
+  if (is.null(release)) manifest <- .set_version_provenance(manifest, version$parquet, claim$row)
   files <- vapply(
     manifest$datasets,
     function(item) {
@@ -428,5 +433,6 @@ register_data <- function(root = getwd(), built, dataset = "study",
   .replace_study_pair(prepared, targets)
   registered <- TRUE
 
+  if (!is.null(claim$note)) message(claim$note)
   study_status(cfg$root)
 }

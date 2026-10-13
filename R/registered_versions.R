@@ -78,7 +78,7 @@
     if (!.is_versioned(e)) return(character())
     history <- if (is.list(e$history)) Filter(is.list, e$history) else list()
     p <- c(e$parquet, unlist(lapply(history, function(h) if (is.character(h$parquet)) h$parquet)))
-    c(p, .version_schema_name(p))
+    c(p, .version_schema_name(p), .version_record_name(p))
   })))
 }
 
@@ -110,9 +110,8 @@
   rev <- 1L
   repeat {
     name <- paste0(base, if (rev > 1L) paste0("_r", rev) else "", ".parquet")
-    free <- !name %in% taken && !.version_schema_name(name) %in% taken &&
-      !file.exists(file.path(dir, name)) &&
-      !file.exists(file.path(dir, .version_schema_name(name)))
+    side <- c(name, .version_schema_name(name), .version_record_name(name))
+    free <- !any(side %in% taken) && !any(file.exists(file.path(dir, side)))
     if (free) return(name)
     rev <- rev + 1L
   }
@@ -253,14 +252,21 @@
   taken <- c(reserved, entry$parquet, vapply(history, function(h) h$parquet, character(1)))
   date <- if (is.null(extract_date)) .mtime_date(source_path) else extract_date
   version <- .write_version(source_path, dir, date, taken, caller = "update_manifest", key = key)
+  files <- file.path(dir, c(version$parquet, .version_schema_name(version$parquet)))
+  claimed <- FALSE
+  on.exit(if (!claimed) unlink(files), add = TRUE)
+  claim <- .claim_build_record(source_path, version$source_sha256, version$parquet, "update_manifest")
+  claimed <- TRUE
   list(
     entry = .versioned_entry(entry$file, version, extra = .entry_extra(entry),
                              history = c(list(.history_record(entry)), history)),
-    written = file.path(dir, c(version$parquet, .version_schema_name(version$parquet))),
+    written = files,
+    restore = list(from = claim$from, to = claim$to),
+    provenance = stats::setNames(list(claim$row), version$parquet),
     action = "registered",
-    provenance = stats::setNames(list(.legacy_row()), version$parquet),
     detail = paste0("registered ", version$parquet, " (", version$n_rows, " rows, ", version$n_cols,
-                    " columns); previous version kept as ", entry$parquet)
+                    " columns); previous version kept as ", entry$parquet,
+                    if (!is.null(claim$note)) paste0("; ", claim$note) else "")
   )
 }
 
@@ -466,6 +472,9 @@
   date <- if (is.null(extract_date)) .mtime_date(source_path) else extract_date
   taken <- c(.reserved_names(datasets), vapply(history, function(h) h$parquet, character(1)))
   version <- .write_version(source_path, dirname(source_path), date, taken, caller = "update_manifest", key = key)
+  new_files <- file.path(dirname(source_path), c(version$parquet, .version_schema_name(version$parquet)))
+  on.exit(if (!returned) unlink(new_files), add = TRUE)
+  claim <- .claim_build_record(source_path, version$source_sha256, version$parquet, "update_manifest")
   # The superseded cache is dropped once the manifest is written, so a failed
   # update leaves the legacy entry and its sidecar intact. Never a parquet
   # source, whose derived name is itself.
@@ -477,15 +486,16 @@
   returned <- TRUE
   list(
     entry = .versioned_entry(entry$file, version, extra = .entry_extra(entry), history = history),
-    restore = restore,
+    restore = list(from = c(restore$from, claim$from), to = c(restore$to, claim$to)),
     drop = drop,
-    written = file.path(dirname(source_path), c(version$parquet, .version_schema_name(version$parquet))),
+    written = new_files,
     action = "migrated",
     provenance = c(
-      stats::setNames(list(.legacy_row()), version$parquet),
+      stats::setNames(list(claim$row), version$parquet),
       if (length(history)) stats::setNames(list(.legacy_row()), history[[1L]]$parquet)
     ),
     detail = paste0("registered ", version$parquet, " (", version$n_rows, " rows, ", version$n_cols, " columns)",
-                    if (!is.null(note)) paste0("; ", note) else "")
+                    if (!is.null(note)) paste0("; ", note) else "",
+                    if (!is.null(claim$note)) paste0("; ", claim$note) else "")
   )
 }
