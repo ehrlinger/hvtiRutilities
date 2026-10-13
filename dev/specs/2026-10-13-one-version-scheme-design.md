@@ -272,7 +272,7 @@ does not apply to it.
 ⚠️ **This changes behaviour for studies that have registered nothing.** Today they render every
 stage from the working file. After A, their analysis, distribution and graph jobs stop with the
 gate's message until the dataset is registered, which is the architecture's order: register,
-then analyse. Measured on 2026-10-13, 3 of the 9 studies found have nothing registered
+then analyse. Measured on 2026-10-13, 3 of the 14 studies found have nothing registered
 (section 6). An additional dataset with no manifest entry is gated the same way.
 
 **Provenance.** `provenance_data()` gains the same `working =` argument and default. A working
@@ -331,23 +331,21 @@ and is not touched.
 `/Volumes/qhsstudies` is an empty mount point), walked with shell globs (never `find`, which
 stalls over SMB) under `cardiac`, `general`, `thoracic` and `vascular`, reading the key names of
 each `_study.yml` and the `role` and presence of `parquet` in each `manifest.yaml` entry. No data
-file and no value was read. `_study.yml` was sought at depths 2 to 5 below the share root, where
-every study found sits, and `dataset-catalog.yml` at depths 2 to 5. A catalog would matter only
-beside a `release:` contract, and none of the nine studies has one.
-⚠️ A depth-6 glob was started and had not finished over SMB when this was written, so a study
-nested deeper than any found is not counted. The removal release's refusal message covers one
-if it exists.
+file and no value was read. `_study.yml` was sought at depths 2 to 6 below the share root, and
+`dataset-catalog.yml` at depths 2 to 6. The depth-6 glob took over 40 minutes over SMB and
+finished after this note was first merged (#215); this table includes it. A catalog would matter
+only beside a `release:` contract, and none of the fourteen studies has one.
 
 | state | studies |
 |---|---|
 | `release:` contract, on the study dataset or an additional one | **0** |
 | `dataset-catalog.yml` anywhere | **0** |
-| registered as legacy (`role: source`) | 6 |
+| registered as legacy (`role: source`) | 11 |
 | registered as dated versions | 1 |
 | no dataset registered yet | 3 |
 
 So **A refuses rather than converts.** There is nothing to convert, and conversion code nobody
-runs is code nobody has tested. The six legacy studies need nothing from A: their next
+runs is code nobody has tested. The eleven legacy studies need nothing from A: their next
 `update_manifest()` already migrates them through `.migrate_entry()`, and they read as `legacy`.
 
 The refusal, from the removal release on (section 7), is a `study_config()` stop: "_study.yml
