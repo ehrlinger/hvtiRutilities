@@ -393,6 +393,33 @@ update_manifest <- function(file,
   do.call(rbind, rows)
 }
 
+# Each version's build record (section 4.5 of the one-version-scheme design):
+# a missing or edited record FAILs like a missing parquet, and a row naming no
+# recorded version means manifest.yaml was edited by hand.
+.verify_build_records <- function(manifest, resolve) {
+  rows <- if (is.list(manifest$provenance)) manifest$provenance else list()
+  if (!length(rows)) return(NULL)
+  recorded <- .recorded_version_names(manifest$datasets)
+  restore <- " It is the provenance of a registered version: restore it from backup, do not edit it."
+  out <- lapply(names(rows), function(parquet) {
+    if (!parquet %in% recorded) {
+      return(.verify_row(paste0(parquet, " (provenance)"), "FAIL",
+                         paste0("manifest.yaml has provenance for ", parquet, ", which no dataset records. ",
+                                "Restore manifest.yaml from version control.")))
+    }
+    build <- rows[[parquet]]$build
+    if (!is.list(build)) return(NULL)
+    label <- paste0(parquet, " (build record)")
+    target <- resolve(build$record)
+    if (!file.exists(target)) return(.verify_row(label, "FAIL", paste0(build$record, " is missing.", restore)))
+    if (!identical(digest::digest(target, algo = "sha256", file = TRUE), build$record_sha256)) {
+      return(.verify_row(label, "FAIL", paste0(build$record, " does not match its recorded checksum.", restore)))
+    }
+    .verify_row(label, "OK", paste0("SHA-256 match (", build$record, ")"))
+  })
+  do.call(rbind, out)
+}
+
 ## =============================================================================
 #' Verify all datasets listed in a manifest
 #'
@@ -778,6 +805,7 @@ verify_manifest <- function(manifest_path = .default_manifest_path(),
     results <- c(results, collisions)
   }
 
+  results <- c(results, list(.verify_build_records(manifest, resolve_entry)))
   report <- do.call(rbind, results)
   failures <- report[report$status == "FAIL", , drop = FALSE]
 

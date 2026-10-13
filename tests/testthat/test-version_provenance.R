@@ -178,3 +178,29 @@ test_that("register_data puts the sidecar back when a later step fails", {
   expect_true(file.exists(side))
   expect_identical(list.files(dirname(s$src), pattern = "^built_"), character())
 })
+
+test_that("verify_manifest checks build records and stops on a changed or missing one", {
+  s <- unregistered_study()
+  write_build_sidecar(s$src)
+  suppressMessages(register_data(s$root, "built.csv"))
+  mp <- file.path(s$root, "manifest.yaml")
+  rec <- file.path(dirname(s$src), "built_20260915.build.yml")
+
+  rep <- verify_manifest(mp, stop_on_error = FALSE)
+  expect_true(any(rep$file == "built_20260915.parquet (build record)" & rep$status == "OK"))
+
+  cat("# edited\n", file = rec, append = TRUE)
+  expect_error(verify_manifest(mp), "provenance of a registered version")
+  unlink(rec)
+  rep <- verify_manifest(mp, stop_on_error = FALSE)
+  expect_identical(rep$status[rep$file == "built_20260915.parquet (build record)"], "FAIL")
+})
+
+test_that("a provenance row for no recorded version fails", {
+  root <- versioned_study()
+  mp <- file.path(root, "manifest.yaml")
+  m <- .set_version_provenance(.read_manifest(mp), "ghost_20200101.parquet", list(origin = "legacy"))
+  .write_manifest(m, mp)
+  rep <- verify_manifest(mp, stop_on_error = FALSE)
+  expect_identical(rep$status[rep$file == "ghost_20200101.parquet (provenance)"], "FAIL")
+})
