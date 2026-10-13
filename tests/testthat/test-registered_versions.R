@@ -317,7 +317,9 @@ test_that("update_manifest() keeps fields registration recorded", {
 test_that("update_manifest() refuses a release-aware dataset by name", {
   fx <- make_release_aware_study(withr::local_tempdir())
   withr::local_dir(fx$root)
-  expect_error(update_manifest(dataset = "study"), "review_data_update()", fixed = TRUE)
+  err <- expect_error(update_manifest(dataset = "study"), "remove the release: block", fixed = TRUE)
+  expect_no_match(conditionMessage(err), "review_data_update", fixed = TRUE)
+  expect_no_match(conditionMessage(err), "adopt_data_update", fixed = TRUE)
 })
 
 test_that("update_manifest(file, ...) keeps its single-file behaviour", {

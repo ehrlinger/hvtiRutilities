@@ -336,7 +336,7 @@ test_that("adopting a release for a combined dataset records its parents' versio
   e <- Filter(function(x) identical(x$file, "cohort_20260921.csv"), m$datasets)[[1L]]
   expect_match(e$parent_versions$study, "^default_[0-9]{8}[.]parquet$")
 
-  # once its parent moves on, the fix names the release commands, not update_manifest()
+  # once its parent moves on, the fix starts by removing the retired release: block
   rebuild(fx$root, "default.csv", data.frame(dead = c(1L, 0L, 1L), iv_dead = 1:3))
   withr::with_dir(fx$root, suppressMessages(update_manifest(dataset = "study")))
   cond <- NULL
@@ -348,9 +348,9 @@ test_that("adopting a release for a combined dataset records its parents' versio
     },
     message = function(m) invokeRestart("muffleMessage")
   )
-  expect_match(conditionMessage(cond), "review_data_update()", fixed = TRUE)
-  expect_match(conditionMessage(cond), "adopt_data_update()", fixed = TRUE)
-  expect_no_match(conditionMessage(cond), "update_manifest()", fixed = TRUE)
+  expect_match(conditionMessage(cond), "remove the release: block", fixed = TRUE)
+  expect_no_match(conditionMessage(cond), "review_data_update", fixed = TRUE)
+  expect_no_match(conditionMessage(cond), "adopt_data_update", fixed = TRUE)
 })
 
 test_that("update_manifest() updates a combined parent before a combined child declared ahead of it", {

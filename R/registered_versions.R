@@ -329,10 +329,12 @@
     contract <- .study_dataset(cfg, name)
     if (!is.null(contract$release)) {
       if (!is.null(dataset)) {
-        stop("update_manifest(): '", name, "' is a release-aware dataset. Review and adopt a published ",
-             "release with review_data_update() and adopt_data_update().", call. = FALSE)
+        stop("update_manifest(): '", name, "' is a release-aware dataset, and catalog releases are retired. ",
+             "Remove the release: block from _study.yml, then run update_manifest(), which registers the file ",
+             "as a dated version.", call. = FALSE)
       }
-      rows[[name]] <- .manifest_update_row(name, "skipped", "release-aware; use review_data_update() and adopt_data_update()")
+      rows[[name]] <- .manifest_update_row(name, "skipped",
+                                          "release-aware; remove the release: block from _study.yml, then run update_manifest()")
       next
     }
     hit <- which(vapply(manifest$datasets, function(e) identical(e$file, contract$built), logical(1)))
