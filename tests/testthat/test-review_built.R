@@ -37,3 +37,16 @@ test_that("a dataset with no dated version stops", {
   utils::write.csv(data.frame(id = 1:3), file.path(study_dir("datasets", root), "built.csv"), row.names = FALSE)
   expect_error(review_built(study_config(root)), "nothing is registered to compare against")
 })
+
+test_that("a source rewritten while it is being reviewed stops the review", {
+  root <- versioned_study()
+  cfg <- study_config(root)
+  src <- built_path(cfg)
+  real <- read_clinical_data
+  local_mocked_bindings(read_clinical_data = function(...) {
+    out <- real(...)
+    utils::write.csv(data.frame(id = 1:5, DEAD = 0L), src, row.names = FALSE)
+    out
+  })
+  expect_error(review_built(cfg), "changed while it was being reviewed")
+})

@@ -51,9 +51,17 @@ review_built <- function(cfg = study_config(), dataset = "study") {
          entry$parquet, ".", call. = FALSE)
   }
   changed <- .source_changed(p, entry)
+  before <- file.info(p)
   raw <- read_clinical_data(p, convert_types = FALSE)
   .assert_no_lowercase_collision(raw, p, "review_built")
   working <- .normalise_built(as.data.frame(raw))
+  working_sha256 <- digest::digest(p, algo = "sha256", file = TRUE)
+  after <- file.info(p)
+  if (!identical(as.numeric(before$size), as.numeric(after$size)) ||
+        !identical(as.numeric(before$mtime), as.numeric(after$mtime))) {
+    stop("review_built(): ", basename(p), " changed while it was being reviewed. Wait for the build that writes it ",
+         "to finish, then run this again.", call. = FALSE)
+  }
   comparison <- if (changed) {
     registered <- suppressMessages(.read_registered_version(p, entry),
                                    classes = "hvtiRutilities_source_changed")
@@ -61,7 +69,7 @@ review_built <- function(cfg = study_config(), dataset = "study") {
   }
   structure(
     list(dataset = dataset, registered = .history_record(entry),
-         working = list(sha256 = digest::digest(p, algo = "sha256", file = TRUE),
+         working = list(sha256 = working_sha256,
                         n_rows = nrow(working), n_cols = ncol(working)),
          changed = changed, comparison = comparison),
     class = "built_review"
