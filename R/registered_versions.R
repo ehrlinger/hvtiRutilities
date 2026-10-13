@@ -245,6 +245,7 @@
       entry[names(stamp)] <- stamp
     }
     return(list(entry = entry, written = character(), action = "unchanged", restamped = restamped,
+                provenance = list(),
                 detail = paste0("unchanged since ", entry$extract_date, " (", entry$parquet, ")")))
   }
   dir <- dirname(source_path)
@@ -257,6 +258,7 @@
                              history = c(list(.history_record(entry)), history)),
     written = file.path(dir, c(version$parquet, .version_schema_name(version$parquet))),
     action = "registered",
+    provenance = stats::setNames(list(.legacy_row()), version$parquet),
     detail = paste0("registered ", version$parquet, " (", version$n_rows, " rows, ", version$n_cols,
                     " columns); previous version kept as ", entry$parquet)
   )
@@ -314,6 +316,7 @@
     file.rename(restore$from, restore$to)
   }, add = TRUE)
   rows <- list()
+  provenance <- list()
   restamped <- FALSE
 
   for (name in targets) {
@@ -355,6 +358,7 @@
     restore$to <- c(restore$to, step$restore$to)
     drop <- c(drop, step$drop)
     manifest$datasets[[hit]] <- step$entry
+    provenance <- c(provenance, step$provenance)
     # Only a rebuilt source records current parent versions. Migrating an
     # unchanged legacy source is a format change, not a rebuild, so a combined
     # dataset stays out of date until it is rebuilt.
@@ -367,6 +371,7 @@
     rows[[name]] <- .manifest_update_row(name, step$action, step$detail)
   }
 
+  for (nm in names(provenance)) manifest <- .set_version_provenance(manifest, nm, provenance[[nm]])
   behind <- character()
   for (name in names(cfg$additional_datasets)) {
     contract <- .study_dataset(cfg, name)
@@ -476,6 +481,10 @@
     drop = drop,
     written = file.path(dirname(source_path), c(version$parquet, .version_schema_name(version$parquet))),
     action = "migrated",
+    provenance = c(
+      stats::setNames(list(.legacy_row()), version$parquet),
+      if (length(history)) stats::setNames(list(.legacy_row()), history[[1L]]$parquet)
+    ),
     detail = paste0("registered ", version$parquet, " (", version$n_rows, " rows, ", version$n_cols, " columns)",
                     if (!is.null(note)) paste0("; ", note) else "")
   )

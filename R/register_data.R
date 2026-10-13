@@ -374,6 +374,7 @@ register_data <- function(root = getwd(), built, dataset = "study",
          call. = FALSE)
   }
   if (is.null(manifest$datasets)) manifest$datasets <- list()
+  if (is.null(release)) manifest <- .set_version_provenance(manifest, version$parquet, .legacy_row())
   files <- vapply(
     manifest$datasets,
     function(item) {

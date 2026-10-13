@@ -81,23 +81,6 @@ test_that("a versioned entry keeps extra fields and history, and history drops t
   expect_false(any(c("source_size", "source_mtime") %in% names(.history_record(e))))
 })
 
-# A registered study whose source was last modified on 2026-09-15.
-versioned_study <- function(env = parent.frame(), data = data.frame(id = 1:3, DEAD = c(1L, 0L, 0L))) {
-  testthat::skip_if_not_installed("arrow")
-  root <- file.path(withr::local_tempdir(.local_envir = env), "study")
-  suppressMessages(study_setup(root, "Versioned fixture", 42L))
-  path <- file.path(study_dir("datasets", root), "built.csv")
-  utils::write.csv(data, path, row.names = FALSE)
-  Sys.setFileTime(path, as.POSIXct("2026-09-15 12:00:00", tz = "UTC"))
-  suppressMessages(register_data(root, "built.csv"))
-  root
-}
-
-manifest_entry_for <- function(root, file = "built.csv") {
-  m <- .read_manifest(file.path(root, "manifest.yaml"))
-  Filter(function(e) identical(e$file, file), m$datasets)[[1L]]
-}
-
 test_that("register_data converts the dataset to a dated parquet", {
   root <- versioned_study()
   data_dir <- study_dir("datasets", root)
@@ -378,10 +361,12 @@ test_that("migration after an overwrite recovers the old version from the cache"
   withr::local_dir(root)
 
   suppressMessages(expect_message(out <- update_manifest(), "recovered from the read cache", fixed = TRUE))
+  m <- .read_manifest(file.path(root, "manifest.yaml"))
   e <- manifest_entry_for(root)
   expect_identical(e$parquet, "built_20261007.parquet")
   expect_identical(e$history[[1L]]$parquet, "built_20260915.parquet")
   expect_identical(e$history[[1L]]$recovered_from, "cache")
+  expect_identical(m$provenance[[e$history[[1L]]$parquet]], list(origin = "legacy"))
   expect_identical(verify_manifest()$status, c("OK", "OK"))
 })
 
