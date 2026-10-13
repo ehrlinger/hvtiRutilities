@@ -218,7 +218,10 @@ accepted value. A typo (`HVTI_DATA=wroking`) must not quietly serve registered d
 who believes they are looking at the working file, nor the reverse. An explicit `working =`
 argument wins over the variable.
 
-**The stage gate.** A working read is honoured when either:
+**The stage gate.** The gate is applied to **the data actually read**, not to the argument: it
+runs whenever the read would serve the working file, which is `working = TRUE` on any dataset,
+and **any** read of a dataset with no manifest entry (section 5.1's last paragraphs). A working
+read is honoured when either:
 
 - **the session is interactive** (`interactive()` is `TRUE` and no render is running): the
   console, where a stat programmer looks at `built` and no report results; or
@@ -252,11 +255,25 @@ cache to refresh.
 registered version. Results from it are a draft." Sub-project F catches this class to mark the
 report a draft, as templates already catch `hvtiRutilities_source_changed`.
 
-**Every read of unregistered data signals it.** On a dataset with no registered version, a
-default read (`working = FALSE`) still reads the working file through the existing cache path,
-and it now signals `hvtiRutilities_working_read` too, so F marks it a draft. That is the
-architecture's working state: a render against an unregistered `built` is a draft whatever the
-argument says. `working = TRUE` on such a dataset is the same read without the cache write.
+**Every read of unregistered data is a working read, gated and signalled.** A dataset with no
+entry in `manifest.yaml` has nothing registered, so whatever `working` says, reading it serves
+the working file. Such a read therefore passes the stage gate above and signals
+`hvtiRutilities_working_read`, so F marks it a draft. A default read (`working = FALSE`) keeps
+the existing cache path, so a datasets or descriptive job is not slowed; `working = TRUE` is the
+same read without the cache write. Without this, an analysis job could read unregistered data
+simply by leaving `HVTI_DATA` unset, and decision 5 would hold only for studies that had
+registered something.
+
+"Registered" here means the dataset has a manifest entry, versioned or not. A legacy entry
+(`role: source`, written before 1.5.0) records the file's SHA-256 and is registered data in the
+old scheme; it keeps today's read until its next `update_manifest()` migrates it, and the gate
+does not apply to it.
+
+⚠️ **This changes behaviour for studies that have registered nothing.** Today they render every
+stage from the working file. After A, their analysis, distribution and graph jobs stop with the
+gate's message until the dataset is registered, which is the architecture's order: register,
+then analyse. Measured on 2026-10-13, 3 of the 9 studies found have nothing registered
+(section 6). An additional dataset with no manifest entry is gated the same way.
 
 **Provenance.** `provenance_data()` gains the same `working =` argument and default. A working
 read records the source file (`datasets/built.sas7bdat`) where a registered read records the
@@ -394,7 +411,10 @@ New or changed, in `tests/testthat/`:
   descriptive allowed, the other stages and a file outside the study refused; interactive console
   allowed; `Rscript` honoured or refused by its `--file=` stage; non-interactive with no job file
   refused; one case under a real `quarto render` (skipped when Quarto is absent, and that skip
-  reported). A default read of an unregistered dataset signals the working class.
+  reported). A **default** read (`HVTI_DATA` unset, `working = FALSE`) of a dataset with no
+  manifest entry: allowed and signalled from datasets and descriptive jobs, **stopped** from
+  distributions, analyses and graphs jobs and from a non-interactive script with no job file. A
+  legacy `role: source` entry is not gated.
   The read writes nothing (the datasets directory listing and manifest bytes are identical before
   and after). The condition class. `refresh = TRUE` with `working = TRUE` errors.
   `provenance_data(working = TRUE)` records the source path.
