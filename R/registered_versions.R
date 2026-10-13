@@ -637,6 +637,10 @@
     provenance = stats::setNames(list(.legacy_row()), name),
     action = "migrated",
     detail = paste0("registered ", name, " from the promoted ", basename(legacy$parquet),
-                    if (retired) paste0("; its source ", entry$file, " was retired") else paste0("; ", entry$file, " is unchanged since it was promoted"))
+                    if (retired) {
+                      paste0("; its source ", entry$file, " was retired")
+                    } else {
+                      paste0("; ", entry$file, " is unchanged since it was promoted")
+                    })
   )
 }
