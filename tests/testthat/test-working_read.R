@@ -205,3 +205,27 @@ test_that("the gate message names only the ways out that apply", {
   expect_no_match(none, "HVTI_DATA", fixed = TRUE)
   expect_no_match(none, "working = TRUE", fixed = TRUE)
 })
+
+test_that("provenance_data validates working like read_built()", {
+  cfg <- study_config(versioned_study())
+  for (bad in list(NA, "yes", c(TRUE, FALSE), NULL, 1L)) {
+    expect_error(provenance_data(cfg = cfg, working = bad), "working must be TRUE or FALSE")
+  }
+})
+
+test_that("the gate offers HVTI_DATA and working = TRUE exits only for a dated version", {
+  root <- versioned_study()
+  cfg <- study_config(root)
+  local_mocked_bindings(.is_interactive = function() FALSE,
+                        .job_file = function() file.path(study_dir("analyses", root), "km", "km.qmd"))
+  yaml::write_yaml(list(datasets = list()), file.path(root, "manifest.yaml"))
+  withr::local_envvar(HVTI_DATA = "working")
+  msg <- tryCatch(read_built(cfg), error = conditionMessage)
+  expect_match(msg, "register_data()", fixed = TRUE)
+  expect_no_match(msg, "nset HVTI_DATA", fixed = TRUE)
+  expect_no_match(msg, "without working = TRUE", fixed = TRUE)
+  withr::local_envvar(HVTI_DATA = NA)
+  msg <- tryCatch(read_built(cfg, working = TRUE), error = conditionMessage)
+  expect_match(msg, "register_data()", fixed = TRUE)
+  expect_no_match(msg, "without working = TRUE", fixed = TRUE)
+})

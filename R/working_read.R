@@ -67,12 +67,18 @@
   } else {
     paste0(stage, " jobs")
   }
-  why <- c(if (unregistered) paste0(built, " has no dated version"),
-           if (explicit) "working = TRUE asks for the working file",
-           if (env) "HVTI_DATA asks for the working file")
-  fix <- c(if (unregistered) "register it with register_data() or update_manifest()",
-           if (explicit) "call read_built() without working = TRUE",
-           if (env) "unset HVTI_DATA")
+  why <- if (unregistered) {
+    paste0(built, " has no dated version")
+  } else {
+    c(if (explicit) "working = TRUE asks for the working file", if (env) "HVTI_DATA asks for the working file")
+  }
+  # With a dated version the request is the only reason this is a working read, so the exits are to drop it.
+  # Without one, dropping the request still serves the working file: registering is the only way out.
+  fix <- if (unregistered) {
+    "register it with register_data() or update_manifest()"
+  } else {
+    c(if (explicit) "call read_built() without working = TRUE", if (env) "unset HVTI_DATA")
+  }
   stop(caller, "(): ", who, " read registered data only. ", paste(why, collapse = " and "), ". ",
        sub("^(.)", "\\U\\1", paste(fix, collapse = ", or "), perl = TRUE), ".", call. = FALSE)
 }

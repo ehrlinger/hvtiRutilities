@@ -396,6 +396,9 @@ provenance_path <- function(path) {
 #' @export
 provenance_data <- function(dataset = "study", cfg = study_config(),
                             role = "analysis", working = .hvti_working_default()) {
+  if (!(is.logical(working) && length(working) == 1L && !is.na(working))) {
+    stop("working must be TRUE or FALSE", call. = FALSE)
+  }
   dataset <- .canonical_dataset(dataset)
   .provenance_role(role, "provenance_data")
   .study_dataset(cfg, dataset)
