@@ -342,3 +342,11 @@ test_that("two invalid build records of one entry get distinct labels", {
   bad <- rep$file[grepl("build record", rep$file)]
   expect_length(unique(bad), 2L)
 })
+
+test_that("study_status does not count a build record as an earlier version", {
+  s <- unregistered_study()
+  write_build_sidecar(s$src)
+  suppressMessages(register_data(s$root, "built.csv"))
+  d <- study_status(s$root)$checks
+  expect_no_match(d$detail[d$item == "manifest.yaml"], "earlier versions", fixed = TRUE)
+})

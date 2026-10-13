@@ -148,6 +148,8 @@
 
   # A registered dataset reports one row per version; count datasets.
   datasets <- unique(.verify_row_dataset(rep$file))
+  # A build record is checked beside its version but is not a version.
+  nfiles <- sum(!grepl("[.]build[.]yml[)]$", rep$file))
   if (nrow(drift)) {
     failed <- unique(.verify_row_dataset(drift$file))
     .status_row("manifest.yaml", "FAIL",
@@ -161,7 +163,7 @@
     detail  <- paste0(length(datasets), " dataset entr",
                       if (length(datasets) == 1L) "y" else "ies",
                       " verified by checksum",
-                      if (nrow(rep) > length(datasets)) paste0(" (", nrow(rep), " files, counting earlier versions)"))
+                      if (nfiles > length(datasets)) paste0(" (", nfiles, " files, counting earlier versions)"))
     skipped <- sum(!rep$row_count_checked)
     if (skipped) {
       detail <- paste0(detail, " (row count not re-derived for ",
