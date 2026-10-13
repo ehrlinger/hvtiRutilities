@@ -73,3 +73,27 @@ promoted_study <- function(env = parent.frame()) {
 local_working_signal <- function(env = parent.frame()) {
   testthat::local_mocked_bindings(.signal_working_read = .real_signal_working_read, .package = "hvtiRutilities", .env = env)
 }
+
+# The record hvtiRtemplates' bd.qmd writes beside a build: top-level keys master, settings, attrition and
+# hvtiRtemplates, with no `schema` and no `built_sha256`. Synthetic values.
+write_foreign_build_record <- function(source) {
+  path <- .build_sidecar_path(source)
+  yaml::write_yaml(list(
+    master = list(view = "cardiac_master_v", n = 10L),
+    settings = list(cohort = "cohort", join_by = "id", keep = "dead", id = "id", key = "id", dataset_id = "ds",
+                    exclude = "x > 1"),
+    attrition = list(n_start = 10L, n_end = 4L),
+    hvtiRtemplates = "0.0.1"
+  ), path)
+  path
+}
+
+# A legacy promoted entry whose source is still on disk: the bytes registered (`changed = FALSE`), or a rebuild.
+promoted_study_with_source <- function(changed = FALSE, env = parent.frame()) {
+  root <- promoted_study(env)
+  data <- if (changed) data.frame(id = 1:4, DEAD = c(1L, 1L, 0L, 0L)) else data.frame(id = 1:3, DEAD = c(1L, 0L, 0L))
+  path <- file.path(study_dir("datasets", root), "built.csv")
+  utils::write.csv(data, path, row.names = FALSE)
+  Sys.setFileTime(path, as.POSIXct(if (changed) "2026-10-07 12:00:00" else "2026-09-15 12:00:00", tz = "UTC"))
+  root
+}

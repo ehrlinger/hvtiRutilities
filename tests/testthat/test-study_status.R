@@ -444,3 +444,36 @@ test_that("study_status reports checkpoints, pending pushes and closure", {
   expect_equal(cl$detail, "abandoned (2026-11-14)")
   expect_output(print(study_status(root)), "closure")
 })
+
+test_that("study_status reports a dataset with no dated version as PENDING, per dataset", {
+  skip_if_not_installed("arrow")
+  root <- file.path(withr::local_tempdir(), "study")
+  suppressMessages(study_setup(root, "Unversioned", 42L))
+  dir <- study_dir("datasets", root)
+  utils::write.csv(data.frame(id = 1:3, DEAD = c(1L, 0L, 0L)), file.path(dir, "built.csv"), row.names = FALSE)
+  utils::write.csv(data.frame(id = 1:3, z = 1:3), file.path(dir, "extra.csv"), row.names = FALSE)
+  raw <- yaml::read_yaml(file.path(root, "_study.yml"))
+  raw$built <- "built.csv"
+  raw$additional_datasets <- list(extra = list(built = "extra.csv"))
+  yaml::write_yaml(raw, file.path(root, "_study.yml"))
+
+  st <- study_status(root)
+  for (ds in c("study", "extra")) {
+    row <- check_for(st, paste0("dated_version:", ds))
+    expect_identical(row$status, "PENDING")
+    expect_match(row$detail, "has no dated version, so analysis, distribution, graph and document jobs stop when they read it",
+                 fixed = TRUE)
+    expect_match(row$detail, "Run hvtiRutilities::update_manifest().", fixed = TRUE)
+  }
+  expect_match(check_for(st, "dated_version:extra")$detail, "^extra[.]csv has no dated version")
+
+  withr::with_dir(root, suppressMessages(update_manifest()))
+  st <- study_status(root)
+  expect_false(any(grepl("^dated_version:", st$checks$item)))
+})
+
+test_that("study_status adds no dated_version row for a release-pinned dataset", {
+  fx <- suppressMessages(suppressWarnings(make_release_aware_study(withr::local_tempdir())))
+  st <- suppressWarnings(study_status(fx$root), classes = "deprecatedWarning")
+  expect_false(any(grepl("^dated_version:", st$checks$item)))
+})

@@ -51,7 +51,11 @@
   missing <- setdiff(.build_required, names(rec))
   if (length(missing)) bad(paste0("missing ", paste(missing, collapse = ", ")))
   if (!identical(rec[["schema", exact = TRUE]], 1L)) bad("schema must be 1")
-  if (!text(rec[["job", exact = TRUE]])) bad("job must be the job file's study-relative path")
+  job <- rec[["job", exact = TRUE]]
+  # Relative to the study, so it names the same job wherever the study is checked out.
+  if (!text(job) || grepl("^(/|~|[A-Za-z]:|\\\\)", job) || any(strsplit(job, "[/\\\\]")[[1L]] == "..")) {
+    bad("job must be the job file's study-relative path")
+  }
   if (!text(rec[["view", exact = TRUE]])) bad("missing view")
   if (!.is_iso_timestamp(rec[["as_of", exact = TRUE]])) bad("as_of must be an ISO 8601 timestamp, such as 2026-10-01T00:00:00Z")
   if (!.is_sha256(rec[["cohort_sha256", exact = TRUE]])) bad("cohort_sha256 must be a SHA-256")
@@ -85,7 +89,15 @@
     fail(paste0("is not valid YAML (", conditionMessage(e), ")"))
   })
   if (!is.list(rec)) fail("is not a valid build record: it is not a mapping")
-  # A record without a valid built_sha256 is malformed, not stale: it must
+  # A record that does not declare schema 1 is not one this version reads: hvtiRtemplates' bd.qmd writes
+  # <stem>.build.yml in another shape (master, settings, attrition). Leave it where it is and record the
+  # version as legacy, so removing a retired release: block does not strand update_manifest().
+  if (!identical(rec[["schema", exact = TRUE]], 1L)) {
+    none$note <- paste0(basename(sidecar), " is not a build record this version reads (no schema: 1), ",
+                        "so this version is recorded as legacy")
+    return(none)
+  }
+  # A schema-1 record without a valid built_sha256 is malformed, not stale: it must
   # not fall through to the legacy branch below.
   if (!.is_sha256(rec[["built_sha256", exact = TRUE]])) fail("is not a valid build record: built_sha256 must be a SHA-256")
   if (!identical(rec[["built_sha256", exact = TRUE]], source_sha256)) {

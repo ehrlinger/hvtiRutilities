@@ -92,6 +92,18 @@
   }, error = function(e) .status_row(paste0("out_of_date:", dataset), "FAIL", conditionMessage(e)))
 }
 
+# A dataset the study names that has no dated version: every job outside datasets and descriptive stops
+# when it reads it. A release-pinned dataset is exempt from the gate, so it is exempt here.
+.status_dated_version <- function(cfg, dataset) {
+  contract <- tryCatch(.study_dataset(cfg, dataset), error = function(e) NULL)
+  if (is.null(contract) || !is.null(contract$release) || is.null(contract$built)) return(NULL)
+  entry <- tryCatch(.manifest_entry(file.path(cfg$root, "manifest.yaml"), contract$built), error = function(e) NULL)
+  if (.is_versioned(entry)) return(NULL)
+  .status_row(paste0("dated_version:", dataset), "PENDING",
+              paste0(contract$built, " has no dated version, so analysis, distribution, graph and document jobs stop ",
+                     "when they read it. Run hvtiRutilities::update_manifest()."))
+}
+
 .status_named_dataset <- function(cfg, dataset) {
   data_item <- paste0("dataset:", dataset)
   path <- tryCatch(built_path(cfg, dataset), error = function(e) e)
@@ -317,6 +329,11 @@
 #' keep reading the registered version; the detail names the datasets and
 #' \code{\link{update_manifest}()}, which registers the rebuild.
 #'
+#' A dataset that \code{_study.yml} names and \code{manifest.yaml} does not register as a dated version adds a
+#' \code{dated_version:<dataset>} row with status \code{"PENDING"}: analysis, distribution, graph and
+#' document jobs stop when they read it. The detail names \code{\link{update_manifest}()}. A dataset pinned
+#' to a catalog release adds no such row.
+#'
 #' Release-aware datasets add an \code{update:<dataset>} row with status
 #' \code{"CURRENT"}, \code{"UPDATE AVAILABLE"},
 #' \code{"UPDATE STATUS UNKNOWN"}, or \code{"FAIL"}. Legacy studies retain
@@ -440,11 +457,19 @@ study_status <- function(root = getwd()) {
     named_rows <- NULL
   }
 
+  version_rows <- if (is.null(cfg)) {
+    NULL
+  } else {
+    do.call(rbind, lapply(c(if (!is.null(cfg$built)) "study", names(cfg$additional_datasets)),
+                          function(dataset) .status_dated_version(cfg, dataset)))
+  }
+
   out <- list(
     root   = root,
     checks = rbind(row_yml, row_lock, row_man, row_data,
                    default_update,
                    named_rows,
+                   version_rows,
                    .status_provenance(root),
                    .status_checkpoints(root)),
     counts = list(

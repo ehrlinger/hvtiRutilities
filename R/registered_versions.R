@@ -434,8 +434,10 @@
     # Only a rebuilt source records current parent versions. Migrating an
     # unchanged legacy source is a format change, not a rebuild, so a combined
     # dataset stays out of date until it is rebuilt.
+    # A promoted entry's sha256 is its parquet's, so its source is compared through source_sha256.
+    was <- if (!.is_versioned(entry) && identical(entry$role, "primary")) entry$source_sha256 else entry$sha256
     rebuilt <- identical(step$action, "registered") ||
-      (identical(step$action, "migrated") && !identical(entry$sha256, step$entry$source_sha256))
+      (identical(step$action, "migrated") && !identical(was, step$entry$source_sha256))
     if (identical(contract$kind, "combined") && rebuilt) {
       manifest$datasets[[hit]]$parent_versions <- .parent_versions(cfg, contract$parents, manifest)
     }
@@ -464,7 +466,7 @@
   unlink(drop[!basename(drop) %in% .recorded_version_names(manifest$datasets)])
   message(paste0(format(out$dataset), ": ", out$detail, collapse = "\n"))
   for (b in behind) message(b)
-  if (changed) {
+  if (changed || restamped) {
     message("Commit manifest.yaml so the record of which version is current travels with the study.")
   }
   invisible(out)
@@ -514,12 +516,30 @@
 # the new one anyway). In every case the new version is dated as a fresh
 # registration is: the caller's extract_date, else the source's modification date.
 .migrate_entry <- function(entry, source_path, extract_date, datasets = list(), key = NULL) {
-  unchanged <- identical(entry$sha256, digest::digest(source_path, algo = "sha256", file = TRUE))
+  source_sha256 <- digest::digest(source_path, algo = "sha256", file = TRUE)
   history <- list()
   note <- NULL
   restore <- list(from = character(), to = character())
   returned <- FALSE
-  if (!unchanged) {
+  # A promoted entry (role: primary) records the PARQUET's hash in sha256 and the source's in source_sha256, so
+  # the source is compared with source_sha256, and an absent source_sha256 counts as changed. The promoted
+  # parquet is the registered data: it is renamed to a dated version, never rebuilt from the source.
+  promoted <- identical(entry$role, "primary") && !identical(tolower(tools::file_ext(source_path)), "parquet")
+  unchanged <- if (promoted) identical(entry$source_sha256, source_sha256) else identical(entry$sha256, source_sha256)
+  if (promoted) {
+    kept <- .migrate_promoted_entry(entry, source_path, datasets, retired = FALSE)
+    if (!is.null(kept$refused)) {
+      note <- paste0(kept$refused, if (unchanged) "" else "; the previous version cannot be recovered")
+    } else if (unchanged) {
+      return(c(kept, list(written = character(), drop = character())))
+    } else {
+      history <- list(.history_record(kept$entry))
+      restore <- kept$restore
+      on.exit(if (!returned) .restore_files(restore$from, restore$to), add = TRUE)
+      note <- paste0("previous version kept as ", history[[1L]]$parquet, ", renamed from the promoted ",
+                     basename(.derived_paths(source_path)$parquet))
+    }
+  } else if (!unchanged) {
     old <- .recover_cached_version(entry, source_path, datasets)
     if (is.null(old)) {
       note <- paste0("the previous version cannot be recovered: ", entry$file,
@@ -545,7 +565,7 @@
   # The superseded cache is dropped once the manifest is written, so a failed
   # update leaves the legacy entry and its sidecar intact. Never a parquet
   # source, whose derived name is itself.
-  drop <- if (unchanged && !identical(tolower(tools::file_ext(source_path)), "parquet")) {
+  drop <- if (unchanged && !promoted && !identical(tolower(tools::file_ext(source_path)), "parquet")) {
     unlist(.derived_paths(source_path), use.names = FALSE)
   } else {
     character()
@@ -571,7 +591,7 @@
 # holds its data only in <stem>.parquet. Rename that file to a dated version:
 # it is the only copy, so it is moved, never rewritten, and only once its hash
 # matches the entry. The caller renames it back if the manifest write fails.
-.migrate_promoted_entry <- function(entry, source_path, datasets = list()) {
+.migrate_promoted_entry <- function(entry, source_path, datasets = list(), retired = TRUE) {
   legacy <- .derived_paths(source_path)
   if (!file.exists(legacy$parquet)) {
     return(list(refused = paste0(basename(legacy$parquet), " is not on disk, so there is nothing to register as a dated version")))
@@ -617,6 +637,10 @@
     provenance = stats::setNames(list(.legacy_row()), name),
     action = "migrated",
     detail = paste0("registered ", name, " from the promoted ", basename(legacy$parquet),
-                    "; its source ", entry$file, " was retired")
+                    if (retired) {
+                      paste0("; its source ", entry$file, " was retired")
+                    } else {
+                      paste0("; ", entry$file, " is unchanged since it was promoted")
+                    })
   )
 }

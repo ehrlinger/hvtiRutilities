@@ -62,7 +62,8 @@
     job <- .real_path(job)
     root <- .real_path(cfg$root)
     if (startsWith(job, paste0(root, "/")) || startsWith(job, paste0(root, "\\"))) {
-      stage <- strsplit(substring(job, nchar(root) + 2L), "[/\\\\]")[[1L]][[1L]]
+      parts <- strsplit(substring(job, nchar(root) + 2L), "[/\\\\]")[[1L]]
+      stage <- if (length(parts) > 1L) parts[[1L]] else ""
     }
   }
   if (!is.null(stage) && stage %in% allowed) return(invisible(TRUE))
@@ -70,6 +71,8 @@
     "A non-interactive session with no job file can"
   } else if (is.null(stage)) {
     paste0(basename(job), " is outside the study, so it can")
+  } else if (!nzchar(stage)) {
+    paste0(basename(job), " is at the study root, outside any stage folder, so it can")
   } else {
     paste0(stage, " jobs")
   }
@@ -81,7 +84,7 @@
   # With a dated version the request is the only reason this is a working read, so the exits are to drop it.
   # Without one, dropping the request still serves the working file: registering is the only way out.
   fix <- if (unregistered) {
-    "register it with register_data() or update_manifest()"
+    "register it with update_manifest()"
   } else {
     c(if (explicit) "call read_built() without working = TRUE", if (env) "unset HVTI_DATA")
   }
