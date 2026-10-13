@@ -42,10 +42,9 @@ For an ordinary file manifest, two functions implement those habits:
 | `update_manifest()` | Register a dataset (or update its entry) in `manifest.yaml` |
 | `verify_manifest()` | Check every registered dataset before an analysis runs |
 
-A registered study needs one more piece: a producer-owned release catalog.
-The catalog distinguishes a mutable draft from a published dated release and
-lets a study discover a later release without changing the release it already
-uses. We return to that workflow after the checksum example.
+A registered study keeps each version of its dataset as a dated file, so a
+later rebuild never replaces the one a paper used. We return to that workflow
+after the checksum example.
 
 ## In a Study: Rebuild, Then Update
 
@@ -263,73 +262,83 @@ report <- verify_manifest(
 report[report$status == "FAIL", c("file", "message")]
 ```
 
-### Publishing a legitimate correction
+### Correcting a file
 
 A changed checksum tells you that the bytes moved. It does not tell you which
 bytes were correct, and an already overwritten file cannot be reconstructed
-from its checksum. Keep the mutable work under a draft name while the
-statistical programmer builds and validates it. Publishing is the boundary:
-`hvtiRdatabuild` writes an immutable dated file and adds its checksum,
-dimensions, release ID, and sequence to `dataset-catalog.yml`.
-
-A correction published on the same day gets a revision suffix such as `_r2`
-and a larger sequence. Revisions start at 1 for each extract date and increase
-without gaps in catalog order. Date order and filename order are not enough
-when two releases share a date, so consumers follow the catalog sequence.
+from its checksum. Keep the mutable work under a working name while the
+statistical programmer builds and validates it, and register it as a dated
+file only when it is right. Registering is the boundary: a dated file is not
+rewritten afterwards.
 
 The rest of this vignette still needs its original temporary file. This reset
 is safe only because the fixture is disposable; it is not a recovery method
-for a study whose published file was overwritten.
+for a study whose registered file was overwritten.
 
 ```{r}
 write.csv(cohort, cohort_file, row.names = FALSE)
 ```
 
-## From Published Release to Study Update
+## Looking at a Rebuild Before Registering It
 
-Suppose a study is pinned to `surgery_cohort-20260920-r1` and the producer
-publishes `surgery_cohort-20260921-r1`. The study keeps reading the old release.
-`study_status()` reports an `UPDATE AVAILABLE` row, and `read_built()` emits an
-update message once in the R session. Neither one silently advances the study.
-A revision run continues to read the release recorded by its Git revision.
-The pinned file is still checked against `manifest.yaml` when the producer
-catalog is missing or malformed; loss of update discovery never weakens the
-study's local integrity check. Review and adoption require a literal release
-ID. `latest` is reserved and is never a release ID or an alias.
-
-The update has five steps:
-
-1. Build and validate a mutable draft in `hvtiRdatabuild`.
-2. Publish an immutable dated release through `hvtiRdatabuild`.
-3. Let `study_status()` or `read_built()` report the candidate.
-4. Review that exact release ID with `review_data_update()`.
-5. Adopt the same ID with `adopt_data_update()` after the review is accepted.
+After a rebuild, jobs keep reading the registered version. Before you register
+the new file, `review_built()` shows how it differs from the version jobs read.
+It reads both files and writes nothing.
 
 ```{r eval=FALSE}
-cfg <- study_config()
-
-check_data_updates(cfg)
-
-review_data_update(
-  cfg,
-  release_id = "surgery_cohort-20260921-r1"
-)
-
-adopt_data_update(
-  cfg,
-  release_id = "surgery_cohort-20260921-r1"
-)
+review_built(study_config())
 ```
 
-Both review and adoption require an exact ID; `"latest"` is not an alias.
-Review verifies both files and shows row, column, type, and label changes.
-Adoption repeats those checks, then replaces `_study.yml` and
-`manifest.yaml` together. It leaves the old dated file in place.
+When the working file is unchanged since the last registration, it says so.
+When it differs, it prints the comparison of rows, columns, types and labels
+and points to `update_manifest()`, which registers the file as the next
+version.
 
-A producer may withdraw a release without deleting it. A study pinned to that
-release stops by default and reports the withdrawal reason. For a deliberate
-historical reproduction, `read_built(allow_withdrawn = TRUE)` reads the pinned
-bytes after their checksum passes. A withdrawn candidate cannot be adopted.
+```{r eval=FALSE}
+hvtiRutilities::update_manifest()
+```
+
+`review_built()` describes how the data changed. It does not certify that the
+new file is correct; that judgement is yours.
+
+## Running a Job on the Working File
+
+Sometimes a job needs the rebuilt data before it has a dated version, for
+example a descriptive report you want to look at while the build is still being
+checked. `read_built(working = TRUE)` reads the working file, and so does
+setting `HVTI_DATA=working` for the render.
+
+```{sh eval=FALSE}
+HVTI_DATA=working quarto render 10_descriptive/table1.qmd
+```
+
+Any read that is not of a dated version is a working read, whether or not you
+asked for one. It is allowed in the interactive console and in jobs in the
+study's `datasets` and `descriptive` folders. In distribution, analysis and
+graph jobs it stops with a message that says to register the dataset or unset
+`HVTI_DATA`. A working read signals `hvtiRutilities_working_read`, a message
+that says the results are a draft. Treat the report that comes out as a draft
+too.
+
+A study still on a legacy registration, one with no dated version, has only
+its working file to read. Its analysis jobs stop until `update_manifest()`
+converts it to a dated version.
+
+## How a Version Was Produced
+
+Each registered version records where its data came from, under a
+`provenance:` map in `manifest.yaml` keyed by the parquet name.
+
+* `origin: bd` means a build left a build record, `<stem>.build.yml`, beside
+  the working file, and that record describes exactly the file registered.
+  `update_manifest()` moves it next to the dated parquet and the manifest
+  notes its name and checksum, with the job, view and as-of date it carries.
+* `origin: legacy` means there was no such record. Every version registered
+  before this scheme reads as legacy.
+
+`verify_manifest()` checks each build record against its recorded checksum.
+The record is a file beside the dataset on the share. It is not committed:
+only `manifest.yaml` goes into Git.
 
 ## A New Pull for a Different Project
 
@@ -424,9 +433,8 @@ an extract once you know it moved.
 
 | Stage | Action |
 |---|---|
-| **While building a release** | Validate a mutable draft; do not register it as a published study release |
-| **When the build is accepted** | Publish an immutable dated release through `hvtiRdatabuild` |
-| **When a study sees an update** | Review and adopt one exact release ID; commit the changed study contracts |
+| **While rebuilding** | Work on the working file; jobs keep reading the registered version |
+| **When the rebuild looks right** | Run `review_built()`, then `update_manifest()`; commit `manifest.yaml` |
 | **Top of every analysis script** | Call `verify_manifest()` — before loading any data |
 | **At manuscript submission** | Tag the git commit; freeze `manifest.yaml`; do not re-pull data |
 | **For an unregistered legacy file** | Use `update_manifest()` to record its current bytes; a checksum cannot recover an overwritten version |
