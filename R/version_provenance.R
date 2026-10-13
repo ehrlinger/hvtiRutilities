@@ -50,14 +50,15 @@
   text <- function(x) is.character(x) && length(x) == 1L && !is.na(x) && nzchar(x)
   missing <- setdiff(.build_required, names(rec))
   if (length(missing)) bad(paste0("missing ", paste(missing, collapse = ", ")))
-  if (!identical(rec$schema, 1L)) bad("schema must be 1")
-  if (!text(rec$job)) bad("job must be the job file's study-relative path")
-  if (!text(rec$view)) bad("missing view")
-  if (!.is_iso_timestamp(rec$as_of)) bad("as_of must be an ISO 8601 timestamp, such as 2026-10-01T00:00:00Z")
-  if (!.is_sha256(rec$cohort_sha256)) bad("cohort_sha256 must be a SHA-256")
-  if (!is.null(rec$overlay_sha256) && !.is_sha256(rec$overlay_sha256)) bad("overlay_sha256 must be a SHA-256 or null")
-  if (!is.logical(rec$derived_after_overlay) || length(rec$derived_after_overlay) != 1L ||
-        is.na(rec$derived_after_overlay)) {
+  if (!identical(rec[["schema", exact = TRUE]], 1L)) bad("schema must be 1")
+  if (!text(rec[["job", exact = TRUE]])) bad("job must be the job file's study-relative path")
+  if (!text(rec[["view", exact = TRUE]])) bad("missing view")
+  if (!.is_iso_timestamp(rec[["as_of", exact = TRUE]])) bad("as_of must be an ISO 8601 timestamp, such as 2026-10-01T00:00:00Z")
+  if (!.is_sha256(rec[["cohort_sha256", exact = TRUE]])) bad("cohort_sha256 must be a SHA-256")
+  overlay <- rec[["overlay_sha256", exact = TRUE]]
+  if (!is.null(overlay) && !.is_sha256(overlay)) bad("overlay_sha256 must be a SHA-256 or null")
+  if (!is.logical(rec[["derived_after_overlay", exact = TRUE]]) || length(rec[["derived_after_overlay", exact = TRUE]]) != 1L ||
+        is.na(rec[["derived_after_overlay", exact = TRUE]])) {
     bad("derived_after_overlay must be true or false")
   }
   invisible(rec)
@@ -86,14 +87,14 @@
   if (!is.list(rec)) fail("is not a valid build record: it is not a mapping")
   # A record without a valid built_sha256 is malformed, not stale: it must
   # not fall through to the legacy branch below.
-  if (!.is_sha256(rec$built_sha256)) fail("is not a valid build record: built_sha256 must be a SHA-256")
-  if (!identical(rec$built_sha256, source_sha256)) {
+  if (!.is_sha256(rec[["built_sha256", exact = TRUE]])) fail("is not a valid build record: built_sha256 must be a SHA-256")
+  if (!identical(rec[["built_sha256", exact = TRUE]], source_sha256)) {
     none$note <- paste0(basename(sidecar), " describes a different ", basename(source_path),
                         ", so this version is recorded as legacy")
     return(none)
   }
   .validate_build_record(rec, basename(sidecar), caller)
-  if (!isTRUE(rec$derived_after_overlay)) {
+  if (!isTRUE(rec[["derived_after_overlay", exact = TRUE]])) {
     fail(paste0("says its derivations were not recomputed after the corrections overlay was applied, so ",
                 basename(source_path), " cannot be registered. Re-run the build"))
   }
@@ -101,14 +102,17 @@
   # .registration_rename() (R/register_data.R) is file.rename() behind a binding tests can mock.
   if (file.exists(dest) || !.registration_rename(sidecar, dest)) fail(paste0("could not be moved to ", basename(dest)))
   if (!identical(digest::digest(dest, algo = "sha256", file = TRUE), claimed_sha256)) {
-    file.rename(dest, sidecar)
+    if (!file.rename(dest, sidecar)) {
+      stop(caller, "(): ", basename(sidecar), " changed while it was being registered and could not be moved back; ",
+           "it was left at ", dest, ". Nothing else was written.", call. = FALSE)
+    }
     fail("changed while it was being registered. Wait for the build that writes it to finish, then run this again")
   }
   list(
     row = list(origin = "bd", build = list(
       record = basename(dest), record_sha256 = claimed_sha256,
-      job = rec$job, view = rec$view, as_of = rec$as_of,
-      cohort_sha256 = rec$cohort_sha256, overlay_sha256 = rec$overlay_sha256
+      job = rec[["job", exact = TRUE]], view = rec[["view", exact = TRUE]], as_of = rec[["as_of", exact = TRUE]],
+      cohort_sha256 = rec[["cohort_sha256", exact = TRUE]], overlay_sha256 = rec[["overlay_sha256", exact = TRUE]]
     )),
     from = dest, to = sidecar, note = NULL
   )

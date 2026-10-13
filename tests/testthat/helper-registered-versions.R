@@ -43,3 +43,10 @@ unregistered_study <- function(env = parent.frame()) {
   Sys.setFileTime(src, as.POSIXct("2026-09-15 12:00:00", tz = "UTC"))
   list(root = root, src = src)
 }
+
+rebuild_source <- function(root, data = data.frame(id = 1:4, DEAD = c(1L, 1L, 0L, 0L)), when = "2026-10-07 12:00:00") {
+  path <- built_path(study_config(root))
+  utils::write.csv(data, path, row.names = FALSE)
+  Sys.setFileTime(path, as.POSIXct(when, tz = "UTC"))
+  path
+}

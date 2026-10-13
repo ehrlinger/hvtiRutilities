@@ -475,6 +475,7 @@
   new_files <- file.path(dirname(source_path), c(version$parquet, .version_schema_name(version$parquet)))
   on.exit(if (!returned) unlink(new_files), add = TRUE)
   claim <- .claim_build_record(source_path, version$source_sha256, version$parquet, "update_manifest")
+  on.exit(if (!returned) file.rename(claim$from, claim$to), add = TRUE)
   # The superseded cache is dropped once the manifest is written, so a failed
   # update leaves the legacy entry and its sidecar intact. Never a parquet
   # source, whose derived name is itself.

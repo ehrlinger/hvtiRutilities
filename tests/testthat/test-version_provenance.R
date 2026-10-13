@@ -140,3 +140,41 @@ test_that("a sidecar rewritten during registration is put back and nothing is re
 test_that("a new version never takes a recorded record's name", {
   expect_true("x_20260915.build.yml" %in% .recorded_version_names(list(list(file = "x.csv", parquet = "x_20260915.parquet"))))
 })
+
+test_that("migration claims a sidecar for the new version and leaves the recovered one legacy", {
+  root <- legacy_with_cache()
+  rebuild_source(root, data.frame(id = 1:5, dead = c(1L, 0L, 0L, 0L, 1L), iv_dead = 1:5))
+  src <- file.path(study_dir("datasets", root), "built.csv")
+  write_build_sidecar(src)
+  withr::local_dir(root)
+  suppressMessages(update_manifest())
+  m <- .read_manifest(file.path(root, "manifest.yaml"))
+  e <- manifest_entry_for(root)
+  expect_identical(.version_provenance(m, e$parquet)$origin, "bd")
+  expect_identical(.version_provenance(m, e$history[[1L]]$parquet)$origin, "legacy")
+  expect_false(file.exists(.build_sidecar_path(src)))
+  expect_true(file.exists(file.path(dirname(src), .version_record_name(e$parquet))))
+})
+
+test_that("a migration whose manifest write fails restores the cache and the sidecar", {
+  root <- legacy_with_cache()
+  data_dir <- study_dir("datasets", root)
+  cache <- file.path(data_dir, c("built.parquet", "built.schema.csv"))
+  rebuild_source(root, data.frame(id = 1:5, dead = c(1L, 0L, 0L, 0L, 1L), iv_dead = 1:5))
+  side <- write_build_sidecar(file.path(data_dir, "built.csv"))
+  withr::local_dir(root)
+  local_mocked_bindings(.write_manifest = function(manifest, path) stop("disk full"))
+  expect_error(suppressMessages(update_manifest()), "disk full")
+  expect_true(all(file.exists(cache)))
+  expect_true(file.exists(side))
+  expect_identical(list.files(data_dir, pattern = "_2026"), character())
+})
+
+test_that("register_data puts the sidecar back when a later step fails", {
+  s <- unregistered_study()
+  side <- write_build_sidecar(s$src)
+  local_mocked_bindings(.replace_study_pair = function(...) stop("rename failed"))
+  expect_error(suppressMessages(register_data(s$root, "built.csv")), "rename failed")
+  expect_true(file.exists(side))
+  expect_identical(list.files(dirname(s$src), pattern = "^built_"), character())
+})

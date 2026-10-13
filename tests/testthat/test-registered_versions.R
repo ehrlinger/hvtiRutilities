@@ -233,13 +233,6 @@ test_that("study_status reports a rebuilt source as pending, not failed", {
   expect_match(row$detail, "rebuilt since registration: built.csv. Run", fixed = TRUE)
 })
 
-rebuild_source <- function(root, data = data.frame(id = 1:4, DEAD = c(1L, 1L, 0L, 0L)), when = "2026-10-07 12:00:00") {
-  path <- built_path(study_config(root))
-  utils::write.csv(data, path, row.names = FALSE)
-  Sys.setFileTime(path, as.POSIXct(when, tz = "UTC"))
-  path
-}
-
 test_that("update_manifest() outside a study says what it looked for", {
   withr::local_dir(withr::local_tempdir())
   expect_error(update_manifest(), "found none", fixed = TRUE)
