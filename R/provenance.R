@@ -36,7 +36,15 @@
 # real commit, never as NA, so an entry is either the three base fields or
 # those plus `sha`, and a JSON round trip cannot turn a missing SHA into the
 # string "NA".
+#
+# A loaded namespace whose package has left the library path (a concurrent
+# install replacing it, say) yields NA from packageDescription(), not an
+# error, and packageVersion() fails outright. Either way the entry records
+# NA rather than aborting the caller.
 .package_entry <- function(package, description) {
+  if (!is.list(description)) {
+    description <- NULL
+  }
   source <- if (is.null(description)) {
     NA_character_
   } else if (!is.null(description$RemoteType)) {
@@ -50,7 +58,11 @@
   }
   entry <- list(
     package = package,
-    version = as.character(utils::packageVersion(package)),
+    version = tryCatch(
+      as.character(utils::packageVersion(package)),
+      warning = function(w) NA_character_,
+      error = function(e) NA_character_
+    ),
     source = source
   )
   git_remote <- !is.null(description) &&

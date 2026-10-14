@@ -234,6 +234,19 @@ test_that("a package installed from a git remote records its commit", {
   }
 })
 
+test_that("a package missing from the library path records NA, not an error", {
+  # packageDescription() returns NA, with a warning, for a namespace whose
+  # package is no longer on the library path.
+  for (description in list(NA, NULL)) {
+    expect_no_error(
+      entry <- hvtiRutilities:::.package_entry("hvtiNoSuchPackage", description)
+    )
+    expect_identical(entry$source, NA_character_)
+    expect_identical(entry$version, NA_character_)
+    expect_false("sha" %in% names(entry))
+  }
+})
+
 test_that("package entries describe the loaded copy, not the first on the path", {
   # withr is loaded by testthat. Put a decoy install of it first on the
   # library path, with a different version and a git SHA, and check that the
