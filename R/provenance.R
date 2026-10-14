@@ -36,7 +36,15 @@
 # real commit, never as NA, so an entry is either the three base fields or
 # those plus `sha`, and a JSON round trip cannot turn a missing SHA into the
 # string "NA".
+#
+# A loaded namespace whose package has left the library path (a concurrent
+# install replacing it, say) yields NA from packageDescription(), not an
+# error, and packageVersion() fails outright. Either way the entry records
+# NA rather than aborting the caller.
 .package_entry <- function(package, description) {
+  if (!is.list(description)) {
+    description <- NULL
+  }
   source <- if (is.null(description)) {
     NA_character_
   } else if (!is.null(description$RemoteType)) {
@@ -50,7 +58,11 @@
   }
   entry <- list(
     package = package,
-    version = as.character(utils::packageVersion(package)),
+    version = tryCatch(
+      as.character(utils::packageVersion(package)),
+      warning = function(w) NA_character_,
+      error = function(e) NA_character_
+    ),
     source = source
   )
   git_remote <- !is.null(description) &&
@@ -300,13 +312,15 @@
       if (has_sha) c(fields, "sha") else fields
     )
     sha_valid <- !has_sha || .provenance_sha_valid(entry$sha)
-    source_valid <- named && (
-      is.null(entry$source) ||
-        (is.character(entry$source) && length(entry$source) == 1L &&
-           (is.na(entry$source) || nzchar(entry$source)))
-    )
-    named && scalar(entry$package) && scalar(entry$version) && source_valid &&
-      sha_valid
+    # NA is a recorded "unknown": .package_entry() writes it for a loaded
+    # package that has left the library path.
+    text_or_na <- function(x) {
+      is.character(x) && length(x) == 1L && (is.na(x) || nzchar(x))
+    }
+    source_valid <- named &&
+      (is.null(entry$source) || text_or_na(entry$source))
+    named && scalar(entry$package) && text_or_na(entry$version) &&
+      source_valid && sha_valid
   }
   packages_valid <- is.list(payload$packages) && length(payload$packages) > 0L &&
     all(vapply(payload$packages, package_valid, logical(1)))

@@ -259,6 +259,34 @@ test_that("inside a study the default dir is used; provenance keeps key", {
   )
 })
 
+test_that("a loaded package missing from the library still caches", {
+  # A namespace whose package left the library path mid-session is recorded
+  # with NA version and source; publication must accept that, not discard
+  # the computed result.
+  loaded <- hvtiRutilities:::.loaded_packages
+  local_mocked_bindings(
+    .loaded_packages = function() {
+      missing <- hvtiRutilities:::.package_entry("hvtiNoSuchPackage", NA)
+      c(loaded(), list(missing))
+    },
+    .package = "hvtiRutilities"
+  )
+  root <- make_study_fixture(withr::local_tempdir())
+  dir.create(file.path(root, "estimates"))
+  expect_no_error(
+    cache_fit("s", sum(1:3), dir = file.path(root, "estimates"))
+  )
+  expect_true(file.exists(file.path(root, "estimates", "s.rds")))
+  record <- jsonlite::read_json(
+    file.path(root, "estimates", "s.provenance.json")
+  )
+  names <- vapply(record$packages, `[[`, "", "package")
+  missing <- record$packages[[which(names == "hvtiNoSuchPackage")]]
+  expect_null(missing$version)
+  expect_null(missing$source)
+  expect_false("sha" %in% names(missing))
+})
+
 test_that("outside a study no sidecar is written", {
   dir <- withr::local_tempdir()
   cache_fit("s", sum(1:3), dir = dir)
