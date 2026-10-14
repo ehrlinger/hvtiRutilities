@@ -312,13 +312,15 @@
       if (has_sha) c(fields, "sha") else fields
     )
     sha_valid <- !has_sha || .provenance_sha_valid(entry$sha)
-    source_valid <- named && (
-      is.null(entry$source) ||
-        (is.character(entry$source) && length(entry$source) == 1L &&
-           (is.na(entry$source) || nzchar(entry$source)))
-    )
-    named && scalar(entry$package) && scalar(entry$version) && source_valid &&
-      sha_valid
+    # NA is a recorded "unknown": .package_entry() writes it for a loaded
+    # package that has left the library path.
+    text_or_na <- function(x) {
+      is.character(x) && length(x) == 1L && (is.na(x) || nzchar(x))
+    }
+    source_valid <- named &&
+      (is.null(entry$source) || text_or_na(entry$source))
+    named && scalar(entry$package) && text_or_na(entry$version) &&
+      source_valid && sha_valid
   }
   packages_valid <- is.list(payload$packages) && length(payload$packages) > 0L &&
     all(vapply(payload$packages, package_valid, logical(1)))
