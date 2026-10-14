@@ -53,10 +53,23 @@ hvtiRutilities provides utility functions for working with clinical research dat
 
 ## Installation
 
-You can install the development version of hvtiRutilities from [GitHub](https://github.com/) with:
+hvtiRutilities is part of the HVTI R family. Install it with the rest of
+the family through [hvtiR](https://github.com/ehrlinger/hvtiR):
 
-``` r
+```r
 # install.packages("pak")
+pak::pak("ehrlinger/hvtiR")
+hvtiR::install()
+```
+
+`hvtiR::install()` installs every member in one call, so the versions the
+members require of one another resolve together. Update later with
+`hvtiR::update()`, from a fresh R session: it will not overwrite a package
+that is already loaded.
+
+To install hvtiRutilities on its own:
+
+```r
 pak::pak("ehrlinger/hvtiRutilities")
 ```
 
