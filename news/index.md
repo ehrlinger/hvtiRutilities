@@ -1,5 +1,16 @@
 # Changelog
 
+## hvtiRutilities 1.5.4
+
+- Recording provenance no longer aborts when a loaded package has left
+  the library path, as it can while another process reinstalls packages.
+  [`packageDescription()`](https://rdrr.io/r/utils/packageDescription.html)
+  returns `NA` for such a package rather than failing, and the package
+  entry then failed on `$`, so
+  [`cache_fit()`](https://ehrlinger.github.io/hvtiRutilities/reference/cache_fit.md)
+  discarded its computed result. The entry now records `NA` for the
+  package’s source and version and no commit.
+
 ## hvtiRutilities 1.5.3
 
 - A `_study.yml` that is not valid YAML now stops with a message that
