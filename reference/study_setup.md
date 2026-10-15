@@ -133,3 +133,50 @@ An object of class `"study_status"`, returned visibly. With
 [`study_status`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md),
 [`study_config`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md),
 [`study_dir`](https://ehrlinger.github.io/hvtiRutilities/reference/study_dir.md)
+
+## Examples
+
+``` r
+root <- file.path(tempdir(), "study-setup-example")
+study_setup(root, study = "Example", study_tracker_id = 1L)
+#> Study: /tmp/RtmpGN0zil/study-setup-example
+#> 
+#> [x] _study.yml — study: Example
+#> [ ] renv.lock — no renv.lock; run renv::init() in the study project
+#> [ ] manifest.yaml — no manifest.yaml; register_data() creates it
+#> [ ] dataset — no default dataset registered; run register_data()
+#> [ ] provenance — no .qmd/.Rmd sources found; 0 sidecars
+#> 
+#> 0 .R  |  0 .qmd/.Rmd  |  0 .sas  |  0 provenance sidecars
+list.files(root)
+#> [1] "00_datasets"               "10_descriptive"           
+#> [3] "20_distributions"          "30_analyses"              
+#> [5] "40_graphs"                 "50_documents"             
+#> [7] "90_estimates"              "_study.yml"               
+#> [9] "study-setup-example.Rproj"
+
+# Running it again on an existing study needs adopt = TRUE; nothing that
+# exists is overwritten.
+invisible(study_setup(root, study = "Example", study_tracker_id = 1L,
+                      adopt = TRUE))
+
+# cleanup = TRUE deletes the template copies a legacy study carries: tp.*
+# files, and files identical to one in the template corpus.
+corpus <- file.path(tempdir(), "template-corpus")
+dir.create(corpus)
+writeLines("# template", file.path(corpus, "readme.R"))
+invisible(file.copy(file.path(corpus, "readme.R"),
+                    file.path(root, "30_analyses")))
+writeLines("# template", file.path(root, "30_analyses", "tp.hazard.R"))
+done <- study_setup(root, study = "Example", study_tracker_id = 1L,
+                    adopt = TRUE, cleanup = TRUE, template_dir = corpus)
+attr(done, "cleanup")
+#> $deleted
+#> [1] "30_analyses/readme.R"    "30_analyses/tp.hazard.R"
+#> 
+#> $removed_dirs
+#> character(0)
+#> 
+
+unlink(c(root, corpus), recursive = TRUE)
+```
