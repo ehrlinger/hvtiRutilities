@@ -144,7 +144,7 @@ head(dict_clean, 10)
 #> bmi                                                    17 / 26.85 / 37.3
 
 # Write to CSV for documentation
-if (FALSE) { # \dontrun{
-write.csv(data_dictionary(dta), "data_dictionary.csv", row.names = FALSE)
-} # }
+out <- tempfile(fileext = ".csv")
+utils::write.csv(data_dictionary(dta), out, row.names = FALSE)
+unlink(out)
 ```

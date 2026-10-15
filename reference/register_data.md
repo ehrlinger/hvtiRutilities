@@ -131,7 +131,7 @@ utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
                  file.path(root, "00_datasets", "built.csv"),
                  row.names = FALSE)
 register_data(root, built = "built.csv", key = "ccfid")
-#> Study: /tmp/RtmpI99Mb2/register-data-example
+#> Study: /tmp/RtmpbXUXHr/register-data-example
 #> 
 #> [x] _study.yml — study: Example
 #> [ ] renv.lock — no renv.lock; run renv::init() in the study project

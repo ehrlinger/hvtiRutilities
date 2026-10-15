@@ -45,9 +45,31 @@ of `"CURRENT"`, `"UPDATE AVAILABLE"`, `"UPDATE STATUS UNKNOWN"`,
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-cfg <- study_config()
+root <- file.path(tempdir(), "check-data-updates-example")
+invisible(study_setup(root, study = "Example", study_tracker_id = 1L))
+utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
+                 file.path(root, "00_datasets", "built.csv"),
+                 row.names = FALSE)
+invisible(register_data(root, built = "built.csv"))
+cfg <- study_config(root)
+
+# Deprecated: it warns and names study_status() instead. A study registered
+# without a catalog release has nothing to report.
 check_data_updates(cfg)
-check_data_updates(cfg, dataset = "complete_cases")
-} # }
+#> Warning: check_data_updates() is deprecated: catalog releases are retired. Use study_status() or verify_manifest(), whose PENDING rows report a rebuilt dataset.
+#> [1] dataset              scope                pinned_release_id   
+#> [4] candidate_release_id sequence             file                
+#> [7] status               is_latest            detail              
+#> <0 rows> (or 0-length row.names)
+study_status(root)
+#> Study: /tmp/RtmpbXUXHr/check-data-updates-example
+#> 
+#> [x] _study.yml — study: Example
+#> [ ] renv.lock — no renv.lock; run renv::init() in the study project
+#> [x] manifest.yaml — 1 dataset entry verified by checksum
+#> [x] dataset — built.csv, registered as built_20261015.parquet
+#> [ ] provenance — no .qmd/.Rmd sources found; 0 sidecars
+#> 
+#> 0 .R  |  0 .qmd/.Rmd  |  0 .sas  |  0 provenance sidecars
+unlink(root, recursive = TRUE)
 ```

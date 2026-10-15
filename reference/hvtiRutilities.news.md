@@ -16,7 +16,6 @@ Invisibly returns NULL. Called for side effect of displaying NEWS.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-hvtiRutilities.news()
-} # }
+# Opens a pager, so only in an interactive session.
+if (interactive()) hvtiRutilities.news()
 ```
