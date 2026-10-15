@@ -28,3 +28,24 @@ POOL_MIN_STEM
 ## Format
 
 Character vectors, and an integer for `POOL_MIN_STEM`.
+
+## Examples
+
+``` r
+POOL_AFFIXES
+#> [1] "^ln_" "^in2" "^in_" "2$"  
+pool <- c("age", "age2", "crcl_pr", "ln_crcl_pr")
+concept_map(pool)
+#>     variable concept representative
+#> 1        age     age           TRUE
+#> 2       age2     age          FALSE
+#> 3    crcl_pr crcl_pr           TRUE
+#> 4 ln_crcl_pr crcl_pr          FALSE
+# A study whose trailing 2 does not mean "squared" drops that affix.
+concept_map(pool, affixes = setdiff(POOL_AFFIXES, "2$"))
+#>     variable concept representative
+#> 1        age     age           TRUE
+#> 2       age2    age2           TRUE
+#> 3    crcl_pr crcl_pr           TRUE
+#> 4 ln_crcl_pr crcl_pr          FALSE
+```

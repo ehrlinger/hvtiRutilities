@@ -68,3 +68,30 @@ warning that names the tag and points back here.
 ## See also
 
 [`study_checkpoint`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checkpoint.md)
+
+## Examples
+
+``` r
+# \donttest{
+if (nzchar(Sys.which("git"))) {
+  root <- file.path(tempdir(), "checkpoint-push-example")
+  invisible(study_setup(root, "Checkpoint example", 1267L))
+  # A throwaway identity, so the example commits on a machine with no
+  # git user configured.
+  withr::with_envvar(c(GIT_AUTHOR_NAME = "Example",
+                       GIT_AUTHOR_EMAIL = "example@example.org",
+                       GIT_COMMITTER_NAME = "Example",
+                       GIT_COMMITTER_EMAIL = "example@example.org"), {
+    invisible(study_checkpoint("abstract_submitted", root = root))
+    # No remote is configured, so nothing leaves the machine: the
+    # checkpoint stays pending, and the reason says why.
+    print(study_checkpoint_push(root))
+  })
+  unlink(root, recursive = TRUE)
+}
+#>         type                  tag     state     git      st
+#> 1 checkpoint abstract_submitted-1 committed pending pending
+#>                 reason
+#> 1 no remote configured
+# }
+```

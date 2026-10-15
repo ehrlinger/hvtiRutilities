@@ -59,3 +59,23 @@ A captured provenance payload as a plain list.
 
 [`publish_provenance`](https://ehrlinger.github.io/hvtiRutilities/reference/publish_provenance.md),
 [`record_provenance`](https://ehrlinger.github.io/hvtiRutilities/reference/record_provenance.md)
+
+## Examples
+
+``` r
+root <- file.path(tempdir(), "capture-provenance-example")
+invisible(study_setup(root, study = "Example", study_tracker_id = 1L))
+utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
+                 file.path(root, "00_datasets", "built.csv"),
+                 row.names = FALSE)
+invisible(register_data(root, built = "built.csv"))
+cfg <- study_config(root)
+
+payload <- capture_provenance("death-hz-ac",
+                              data = list(provenance_data(cfg = cfg)),
+                              cfg = cfg)
+names(payload)
+#> [1] "job"       "rendered"  "study"     "r"         "packages"  "renv_lock"
+#> [7] "data"      "artifacts"
+unlink(root, recursive = TRUE)
+```

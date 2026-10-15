@@ -31,3 +31,26 @@ Invisibly, the published record as a list.
 [`capture_provenance`](https://ehrlinger.github.io/hvtiRutilities/reference/capture_provenance.md),
 [`record_provenance`](https://ehrlinger.github.io/hvtiRutilities/reference/record_provenance.md),
 [`provenance_path`](https://ehrlinger.github.io/hvtiRutilities/reference/provenance_path.md)
+
+## Examples
+
+``` r
+root <- file.path(tempdir(), "publish-provenance-example")
+invisible(study_setup(root, study = "Example", study_tracker_id = 1L))
+utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
+                 file.path(root, "00_datasets", "built.csv"),
+                 row.names = FALSE)
+invisible(register_data(root, built = "built.csv"))
+cfg <- study_config(root)
+
+payload <- capture_provenance("death-hz-ac",
+                              data = list(provenance_data(cfg = cfg)),
+                              cfg = cfg)
+# Publish only once the output exists.
+out <- file.path(root, "40_graphs", "death-hz-ac.html")
+writeLines("<p>report</p>", out)
+invisible(publish_provenance(out, payload))
+file.exists(provenance_path(out))
+#> [1] TRUE
+unlink(root, recursive = TRUE)
+```

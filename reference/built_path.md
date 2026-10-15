@@ -41,6 +41,6 @@ yaml::write_yaml(
   file.path(root, "_study.yml")
 )
 built_path(study_config(root))
-#> [1] "/tmp/RtmpGN0zil/built-path-example/datasets/example.sas7bdat"
+#> [1] "/tmp/RtmpI99Mb2/built-path-example/datasets/example.sas7bdat"
 unlink(root, recursive = TRUE)
 ```

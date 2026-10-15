@@ -137,6 +137,33 @@ warning that names the tag and points back here.</p>
     <div class="dont-index"><p><code><a href="study_checkpoint.html">study_checkpoint</a></code></p></div>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
+<span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nchar.html" class="external-link">nzchar</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Sys.which.html" class="external-link">Sys.which</a></span><span class="op">(</span><span class="st">"git"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span>  <span class="va">root</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"checkpoint-push-example"</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/invisible.html" class="external-link">invisible</a></span><span class="op">(</span><span class="fu"><a href="study_setup.html">study_setup</a></span><span class="op">(</span><span class="va">root</span>, <span class="st">"Checkpoint example"</span>, <span class="fl">1267L</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="co"># A throwaway identity, so the example commits on a machine with no</span></span></span>
+<span class="r-in"><span>  <span class="co"># git user configured.</span></span></span>
+<span class="r-in"><span>  <span class="fu">withr</span><span class="fu">::</span><span class="fu"><a href="https://withr.r-lib.org/reference/with_envvar.html" class="external-link">with_envvar</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>GIT_AUTHOR_NAME <span class="op">=</span> <span class="st">"Example"</span>,</span></span>
+<span class="r-in"><span>                       GIT_AUTHOR_EMAIL <span class="op">=</span> <span class="st">"example@example.org"</span>,</span></span>
+<span class="r-in"><span>                       GIT_COMMITTER_NAME <span class="op">=</span> <span class="st">"Example"</span>,</span></span>
+<span class="r-in"><span>                       GIT_COMMITTER_EMAIL <span class="op">=</span> <span class="st">"example@example.org"</span><span class="op">)</span>, <span class="op">{</span></span></span>
+<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/invisible.html" class="external-link">invisible</a></span><span class="op">(</span><span class="fu"><a href="study_checkpoint.html">study_checkpoint</a></span><span class="op">(</span><span class="st">"abstract_submitted"</span>, root <span class="op">=</span> <span class="va">root</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span>    <span class="co"># No remote is configured, so nothing leaves the machine: the</span></span></span>
+<span class="r-in"><span>    <span class="co"># checkpoint stays pending, and the reason says why.</span></span></span>
+<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu">study_checkpoint_push</span><span class="op">(</span><span class="va">root</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="op">}</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/unlink.html" class="external-link">unlink</a></span><span class="op">(</span><span class="va">root</span>, recursive <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         type                  tag     state     git      st</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 checkpoint abstract_submitted-1 committed pending pending</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                 reason</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 no remote configured</span>
+<span class="r-in"><span><span class="co"># }</span></span></span>
+<span class="r-in"><span></span></span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

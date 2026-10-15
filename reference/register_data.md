@@ -121,3 +121,28 @@ An object of class `"study_status"`, returned visibly.
 [`study_setup`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md),
 [`study_config`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md),
 [`update_manifest`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
+
+## Examples
+
+``` r
+root <- file.path(tempdir(), "register-data-example")
+invisible(study_setup(root, study = "Example", study_tracker_id = 1L))
+utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
+                 file.path(root, "00_datasets", "built.csv"),
+                 row.names = FALSE)
+register_data(root, built = "built.csv", key = "ccfid")
+#> Study: /tmp/RtmpI99Mb2/register-data-example
+#> 
+#> [x] _study.yml — study: Example
+#> [ ] renv.lock — no renv.lock; run renv::init() in the study project
+#> [x] manifest.yaml — 1 dataset entry verified by checksum
+#> [x] dataset — built.csv, registered as built_20261015.parquet
+#> [ ] provenance — no .qmd/.Rmd sources found; 0 sidecars
+#> 
+#> 0 .R  |  0 .qmd/.Rmd  |  0 .sas  |  0 provenance sidecars
+# The CSV is kept; the registered version is a dated Parquet file.
+list.files(file.path(root, "00_datasets"))
+#> [1] "built.csv"                 "built_20261015.parquet"   
+#> [3] "built_20261015.schema.csv"
+unlink(root, recursive = TRUE)
+```
