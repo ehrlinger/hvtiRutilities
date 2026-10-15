@@ -20,6 +20,27 @@ to a previously captured payload, and writes the JSON sidecar through a
 same-directory temporary file and rename. Capture-session facts are not
 recomputed during publication.
 }
+\examples{
+\dontshow{if (requireNamespace("arrow", quietly = TRUE)) withAutoprint(\{ # examplesIf}
+root <- file.path(tempdir(), "publish-provenance-example")
+invisible(study_setup(root, study = "Example", study_tracker_id = 1L))
+utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
+                 file.path(root, "00_datasets", "built.csv"),
+                 row.names = FALSE)
+invisible(register_data(root, built = "built.csv"))
+cfg <- study_config(root)
+
+payload <- capture_provenance("death-hz-ac",
+                              data = list(provenance_data(cfg = cfg)),
+                              cfg = cfg)
+# Publish only once the output exists.
+out <- file.path(root, "40_graphs", "death-hz-ac.html")
+writeLines("<p>report</p>", out)
+invisible(publish_provenance(out, payload))
+file.exists(provenance_path(out))
+unlink(root, recursive = TRUE)
+\dontshow{\}) # examplesIf}
+}
 \seealso{
 \code{\link{capture_provenance}},
   \code{\link{record_provenance}}, \code{\link{provenance_path}}

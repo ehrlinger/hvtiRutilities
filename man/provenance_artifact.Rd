@@ -21,6 +21,21 @@ A plain list containing one immutable-by-convention artifact record.
 Records an existing artifact beneath the study root by canonical
 study-relative path, role, byte count, modification time, and SHA-256 hash.
 }
+\examples{
+\dontshow{if (requireNamespace("arrow", quietly = TRUE)) withAutoprint(\{ # examplesIf}
+root <- file.path(tempdir(), "provenance-artifact-example")
+invisible(study_setup(root, study = "Example", study_tracker_id = 1L))
+utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
+                 file.path(root, "00_datasets", "built.csv"),
+                 row.names = FALSE)
+invisible(register_data(root, built = "built.csv"))
+cfg <- study_config(root)
+
+writeLines("x <- 1", file.path(root, "30_analyses", "fit.R"))
+str(provenance_artifact("30_analyses/fit.R", role = "code", cfg = cfg))
+unlink(root, recursive = TRUE)
+\dontshow{\}) # examplesIf}
+}
 \seealso{
 \code{\link{provenance_data}},
   \code{\link{capture_provenance}}

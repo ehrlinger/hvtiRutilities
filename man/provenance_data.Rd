@@ -34,6 +34,21 @@ file, rather than the source it was converted from. The returned plain list cont
 logical dataset name, a canonical study-relative path, its role, byte count,
 modification time, and SHA-256 hash.
 }
+\examples{
+\dontshow{if (requireNamespace("arrow", quietly = TRUE)) withAutoprint(\{ # examplesIf}
+root <- file.path(tempdir(), "provenance-data-example")
+invisible(study_setup(root, study = "Example", study_tracker_id = 1L))
+utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
+                 file.path(root, "00_datasets", "built.csv"),
+                 row.names = FALSE)
+invisible(register_data(root, built = "built.csv"))
+cfg <- study_config(root)
+
+# The registered Parquet file, not the CSV it was converted from.
+str(provenance_data("study", cfg = cfg))
+unlink(root, recursive = TRUE)
+\dontshow{\}) # examplesIf}
+}
 \seealso{
 \code{\link{provenance_artifact}},
   \code{\link{capture_provenance}}

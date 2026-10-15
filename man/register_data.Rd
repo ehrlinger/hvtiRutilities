@@ -88,6 +88,19 @@ date until then. A release-aware dataset is skipped by
 adopted with \code{\link{adopt_data_update}()}, and its key is checked only at
 registration.
 }
+\examples{
+\dontshow{if (requireNamespace("arrow", quietly = TRUE)) withAutoprint(\{ # examplesIf}
+root <- file.path(tempdir(), "register-data-example")
+invisible(study_setup(root, study = "Example", study_tracker_id = 1L))
+utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
+                 file.path(root, "00_datasets", "built.csv"),
+                 row.names = FALSE)
+register_data(root, built = "built.csv", key = "ccfid")
+# The CSV is kept; the registered version is a dated Parquet file.
+list.files(file.path(root, "00_datasets"))
+unlink(root, recursive = TRUE)
+\dontshow{\}) # examplesIf}
+}
 \seealso{
 \code{\link{study_setup}}, \code{\link{study_config}},
   \code{\link{update_manifest}}

@@ -33,3 +33,10 @@ through the \code{affixes}, \code{plain_suffix} and \code{min_stem} arguments
 where they
 differ, rather than editing a copy of this package.
 }
+\examples{
+POOL_AFFIXES
+pool <- c("age", "age2", "crcl_pr", "ln_crcl_pr")
+concept_map(pool)
+# A study whose trailing 2 does not mean "squared" drops that affix.
+concept_map(pool, affixes = setdiff(POOL_AFFIXES, "2$"))
+}
