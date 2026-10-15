@@ -1,5 +1,47 @@
 # Changelog
 
+## hvtiRutilities 1.5.5
+
+- The README’s Installation section now leads with `hvtiR::install()`,
+  which installs the whole HVTI R family in one call, and then gives
+  `pak::pak("ehrlinger/hvtiRutilities")` for this package alone.
+
+- [`study_setup()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md)
+  has a help-page example: it sets up a throwaway study under
+  [`tempdir()`](https://rdrr.io/r/base/tempfile.html), adopts it again,
+  and runs `cleanup = TRUE` against a throwaway template corpus, then
+  removes both.
+
+- Help-page examples for
+  [`register_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md),
+  the provenance functions
+  ([`provenance_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/provenance_data.md),
+  [`provenance_artifact()`](https://ehrlinger.github.io/hvtiRutilities/reference/provenance_artifact.md),
+  [`capture_provenance()`](https://ehrlinger.github.io/hvtiRutilities/reference/capture_provenance.md),
+  [`publish_provenance()`](https://ehrlinger.github.io/hvtiRutilities/reference/publish_provenance.md),
+  [`record_provenance()`](https://ehrlinger.github.io/hvtiRutilities/reference/record_provenance.md)),
+  [`study_checkpoint_push()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checkpoint_push.md)
+  and the pool conventions (`POOL_AFFIXES` and friends). Each runs on a
+  throwaway study under
+  [`tempdir()`](https://rdrr.io/r/base/tempfile.html) and removes it;
+  the ones that register data run only when arrow is installed.
+
+- Seven help pages lose their `\dontrun{}` examples for ones that run:
+  [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
+  and
+  [`verify_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md)
+  register and check a CSV under
+  [`tempdir()`](https://rdrr.io/r/base/tempfile.html),
+  [`data_dictionary()`](https://ehrlinger.github.io/hvtiRutilities/reference/data_dictionary.md)
+  writes its CSV to a temporary file, the deprecated
+  [`check_data_updates()`](https://ehrlinger.github.io/hvtiRutilities/reference/check_data_updates.md),
+  [`review_data_update()`](https://ehrlinger.github.io/hvtiRutilities/reference/review_data_update.md)
+  and
+  [`adopt_data_update()`](https://ehrlinger.github.io/hvtiRutilities/reference/adopt_data_update.md)
+  show their deprecation on a throwaway study, and
+  [`hvtiRutilities.news()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvtiRutilities.news.md)
+  runs only in an interactive session.
+
 ## hvtiRutilities 1.5.4
 
 - Recording provenance no longer aborts when a loaded package has left

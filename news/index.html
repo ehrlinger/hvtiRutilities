@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.5</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,6 +55,13 @@
       <small>Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.5.5" id="hvtirutilities-155">hvtiRutilities 1.5.5<a class="anchor" aria-label="anchor" href="#hvtirutilities-155"></a></h2>
+<ul><li><p>The README’s Installation section now leads with <code>hvtiR::install()</code>, which installs the whole HVTI R family in one call, and then gives <code>pak::pak("ehrlinger/hvtiRutilities")</code> for this package alone.</p></li>
+<li><p><code><a href="../reference/study_setup.html">study_setup()</a></code> has a help-page example: it sets up a throwaway study under <code><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir()</a></code>, adopts it again, and runs <code>cleanup = TRUE</code> against a throwaway template corpus, then removes both.</p></li>
+<li><p>Help-page examples for <code><a href="../reference/register_data.html">register_data()</a></code>, the provenance functions (<code><a href="../reference/provenance_data.html">provenance_data()</a></code>, <code><a href="../reference/provenance_artifact.html">provenance_artifact()</a></code>, <code><a href="../reference/capture_provenance.html">capture_provenance()</a></code>, <code><a href="../reference/publish_provenance.html">publish_provenance()</a></code>, <code><a href="../reference/record_provenance.html">record_provenance()</a></code>), <code><a href="../reference/study_checkpoint_push.html">study_checkpoint_push()</a></code> and the pool conventions (<code>POOL_AFFIXES</code> and friends). Each runs on a throwaway study under <code><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir()</a></code> and removes it; the ones that register data run only when arrow is installed.</p></li>
+<li><p>Seven help pages lose their <code>\dontrun{}</code> examples for ones that run: <code><a href="../reference/update_manifest.html">update_manifest()</a></code> and <code><a href="../reference/verify_manifest.html">verify_manifest()</a></code> register and check a CSV under <code><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir()</a></code>, <code><a href="../reference/data_dictionary.html">data_dictionary()</a></code> writes its CSV to a temporary file, the deprecated <code><a href="../reference/check_data_updates.html">check_data_updates()</a></code>, <code><a href="../reference/review_data_update.html">review_data_update()</a></code> and <code><a href="../reference/adopt_data_update.html">adopt_data_update()</a></code> show their deprecation on a throwaway study, and <code><a href="../reference/hvtiRutilities.news.html">hvtiRutilities.news()</a></code> runs only in an interactive session.</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.5.4" id="hvtirutilities-154">hvtiRutilities 1.5.4<a class="anchor" aria-label="anchor" href="#hvtirutilities-154"></a></h2>
 <ul><li>Recording provenance no longer aborts when a loaded package has left the library path, as it can while another process reinstalls packages. <code><a href="https://rdrr.io/r/utils/packageDescription.html" class="external-link">packageDescription()</a></code> returns <code>NA</code> for such a package rather than failing, and the package entry then failed on <code>$</code>, so <code><a href="../reference/cache_fit.html">cache_fit()</a></code> discarded its computed result. The entry now records <code>NA</code> for the package’s source and version and no commit.</li>
