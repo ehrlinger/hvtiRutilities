@@ -362,6 +362,12 @@
 #' @seealso \code{\link{study_status}}, \code{\link{study_config}},
 #'   \code{\link{study_dir}}
 #'
+#' @examples
+#' root <- file.path(tempdir(), "study-setup-example")
+#' study_setup(root, study = "Example", study_tracker_id = 1L)
+#' list.files(root)
+#' unlink(root, recursive = TRUE)
+#'
 #' @export
 study_setup <- function(root = NULL, study, study_tracker_id,
                         umbrella = NULL, owner = NULL,

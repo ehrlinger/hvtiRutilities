@@ -110,6 +110,13 @@ Otherwise \code{renv::init(bare = TRUE)} creates it, and the project is
 loaded and snapshotted explicitly. The
 renv package must be installed.
 }
+\examples{
+root <- file.path(tempdir(), "study-setup-example")
+study_setup(root, study = "Example", study_tracker_id = 1L)
+list.files(root)
+unlink(root, recursive = TRUE)
+
+}
 \seealso{
 \code{\link{study_status}}, \code{\link{study_config}},
   \code{\link{study_dir}}
