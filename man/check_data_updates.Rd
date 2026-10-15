@@ -30,11 +30,21 @@ candidate without changing \code{_study.yml}, \code{manifest.yaml}, or any
 cache file. Legacy dataset contracts have no update rows.
 }
 \examples{
-\dontrun{
-cfg <- study_config()
+\dontshow{if (requireNamespace("arrow", quietly = TRUE)) withAutoprint(\{ # examplesIf}
+root <- file.path(tempdir(), "check-data-updates-example")
+invisible(study_setup(root, study = "Example", study_tracker_id = 1L))
+utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
+                 file.path(root, "00_datasets", "built.csv"),
+                 row.names = FALSE)
+invisible(register_data(root, built = "built.csv"))
+cfg <- study_config(root)
+
+# Deprecated: it warns and names study_status() instead. A study registered
+# without a catalog release has nothing to report.
 check_data_updates(cfg)
-check_data_updates(cfg, dataset = "complete_cases")
-}
+study_status(root)
+unlink(root, recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link{review_data_update}},

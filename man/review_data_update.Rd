@@ -33,12 +33,20 @@ caches or change either study manifest. It describes data drift, but it
 does not certify that a candidate is analytically or clinically correct.
 }
 \examples{
-\dontrun{
-review_data_update(
-  study_config(),
-  release_id = "surgery_cohort-20260921-r1"
-)
-}
+\dontshow{if (requireNamespace("arrow", quietly = TRUE)) withAutoprint(\{ # examplesIf}
+root <- file.path(tempdir(), "review-data-update-example")
+invisible(study_setup(root, study = "Example", study_tracker_id = 1L))
+utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
+                 file.path(root, "00_datasets", "built.csv"),
+                 row.names = FALSE)
+invisible(register_data(root, built = "built.csv"))
+cfg <- study_config(root)
+
+# Deprecated: it warns and names review_built() instead, then stops,
+# because this study is not pinned to a catalog release.
+try(review_data_update(cfg, release_id = "surgery_cohort-20260921-r1"))
+unlink(root, recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link{check_data_updates}},

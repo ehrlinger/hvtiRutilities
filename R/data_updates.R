@@ -338,12 +338,20 @@
 #'
 #' @export
 #'
-#' @examples
-#' \dontrun{
-#' cfg <- study_config()
+#' @examplesIf requireNamespace("arrow", quietly = TRUE)
+#' root <- file.path(tempdir(), "check-data-updates-example")
+#' invisible(study_setup(root, study = "Example", study_tracker_id = 1L))
+#' utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
+#'                  file.path(root, "00_datasets", "built.csv"),
+#'                  row.names = FALSE)
+#' invisible(register_data(root, built = "built.csv"))
+#' cfg <- study_config(root)
+#'
+#' # Deprecated: it warns and names study_status() instead. A study registered
+#' # without a catalog release has nothing to report.
 #' check_data_updates(cfg)
-#' check_data_updates(cfg, dataset = "complete_cases")
-#' }
+#' study_status(root)
+#' unlink(root, recursive = TRUE)
 check_data_updates <- function(cfg = study_config(), dataset = NULL) {
   .Deprecated(
     "study_status", package = "hvtiRutilities",
@@ -489,13 +497,19 @@ check_data_updates <- function(cfg = study_config(), dataset = NULL) {
 #'
 #' @export
 #'
-#' @examples
-#' \dontrun{
-#' review_data_update(
-#'   study_config(),
-#'   release_id = "surgery_cohort-20260921-r1"
-#' )
-#' }
+#' @examplesIf requireNamespace("arrow", quietly = TRUE)
+#' root <- file.path(tempdir(), "review-data-update-example")
+#' invisible(study_setup(root, study = "Example", study_tracker_id = 1L))
+#' utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
+#'                  file.path(root, "00_datasets", "built.csv"),
+#'                  row.names = FALSE)
+#' invisible(register_data(root, built = "built.csv"))
+#' cfg <- study_config(root)
+#'
+#' # Deprecated: it warns and names review_built() instead, then stops,
+#' # because this study is not pinned to a catalog release.
+#' try(review_data_update(cfg, release_id = "surgery_cohort-20260921-r1"))
+#' unlink(root, recursive = TRUE)
 review_data_update <- function(cfg = study_config(), dataset = "study",
                                release_id) {
   .Deprecated(
@@ -631,13 +645,19 @@ print.data_update_review <- function(x, ...) {
 #'
 #' @export
 #'
-#' @examples
-#' \dontrun{
-#' adopt_data_update(
-#'   study_config(),
-#'   release_id = "surgery_cohort-20260921-r1"
-#' )
-#' }
+#' @examplesIf requireNamespace("arrow", quietly = TRUE)
+#' root <- file.path(tempdir(), "adopt-data-update-example")
+#' invisible(study_setup(root, study = "Example", study_tracker_id = 1L))
+#' utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
+#'                  file.path(root, "00_datasets", "built.csv"),
+#'                  row.names = FALSE)
+#' invisible(register_data(root, built = "built.csv"))
+#' cfg <- study_config(root)
+#'
+#' # Deprecated: it warns and names update_manifest() instead, then stops,
+#' # because this study is not pinned to a catalog release.
+#' try(adopt_data_update(cfg, release_id = "surgery_cohort-20260921-r1"))
+#' unlink(root, recursive = TRUE)
 adopt_data_update <- function(cfg = study_config(), dataset = "study",
                               release_id) {
   .Deprecated(

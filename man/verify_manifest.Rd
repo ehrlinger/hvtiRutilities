@@ -102,24 +102,24 @@ Call this function at the top of every analysis script or Quarto document
 to ensure data integrity before any results are generated.
 }
 \examples{
-\dontrun{
-# --- Typical usage: top of every analysis script or .qmd -----------
-# Silent unless a check fails.
-hvtiRutilities::verify_manifest(here::here("manifest.yaml"))
+dir <- file.path(tempdir(), "verify-manifest-example")
+dir.create(dir)
+csv <- file.path(dir, "cohort_20240115.csv")
+utils::write.csv(data.frame(patient_id = 1:3, age = c(61, 70, 55)), csv,
+                 row.names = FALSE)
+manifest <- file.path(dir, "manifest.yaml")
+update_manifest(csv, manifest_path = manifest, extract_date = "2024-01-15")
 
-# --- Interactive use: report each passing entry ---------------------
-hvtiRutilities::verify_manifest(here::here("manifest.yaml"), verbose = TRUE)
-# cohort_20240115.csv    — SHA-256 match (n = 831)
-# labs_20240115.sas7bdat — SHA-256 match (n = 1204); row count not re-derived
-# adjudication_20240115.xlsx — SHA-256 match (n = 47); row count not re-derived
+# Silent unless a check fails; verbose = TRUE reports each passing entry.
+verify_manifest(manifest, verbose = TRUE)
 
-# --- Collect all failures instead of stopping on the first ---------
-report <- verify_manifest(
-  here::here("manifest.yaml"),
-  stop_on_error = FALSE
-)
-report[report$status == "FAIL", ]
-}
+# The file changes after registration. Collect failures instead of
+# stopping on the first.
+utils::write.csv(data.frame(patient_id = 1:4, age = c(61, 70, 55, 48)), csv,
+                 row.names = FALSE)
+report <- suppressWarnings(verify_manifest(manifest, stop_on_error = FALSE))
+report[, c("file", "status")]
+unlink(dir, recursive = TRUE)
 
 }
 \seealso{
