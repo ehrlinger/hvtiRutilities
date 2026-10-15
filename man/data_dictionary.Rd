@@ -45,9 +45,9 @@ dict_clean <- data_dictionary(dta_clean)
 head(dict_clean, 10)
 
 # Write to CSV for documentation
-\dontrun{
-write.csv(data_dictionary(dta), "data_dictionary.csv", row.names = FALSE)
-}
+out <- tempfile(fileext = ".csv")
+utils::write.csv(data_dictionary(dta), out, row.names = FALSE)
+unlink(out)
 }
 \seealso{
 \code{\link{proc_contents}} for the full SAS-style variable table,

@@ -14,7 +14,6 @@ Display the NEWS.md file for the hvtiRutilities package showing
 release notes and change history.
 }
 \examples{
-\dontrun{
-hvtiRutilities.news()
-}
+# Opens a pager, so only in an interactive session.
+if (interactive()) hvtiRutilities.news()
 }

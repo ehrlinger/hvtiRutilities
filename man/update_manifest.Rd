@@ -120,37 +120,17 @@ format, or when heavy counting is disabled, supply \code{n_rows}
 explicitly.
 }
 \examples{
-\dontrun{
-# --- In a study, after rebuilding built.sas7bdat --------------------
-update_manifest()
-
-# --- CSV ------------------------------------------------------------
-update_manifest(
-  file         = here::here("datasets", "cohort_20240115.csv"),
-  extract_date = "2024-01-15",
-  source       = "Epic EMR, query v4.2, ICD mapping v3.2",
-  sort_key     = "patient_id"
-)
-
-# --- SAS ------------------------------------------------------------
-# .sas7bdat files exported from SAS or pulled via SASConnect
-update_manifest(
-  file         = here::here("datasets", "labs_20240115.sas7bdat"),
-  extract_date = "2024-01-15",
-  source       = "SAS dataset from CORR registry, labs module v2.1",
-  sort_key     = "pat_id"
-)
-
-# --- Excel ----------------------------------------------------------
-update_manifest(
-  file         = here::here("datasets", "adjudication_20240115.xlsx"),
-  extract_date = "2024-01-15",
-  source       = "Clinical events committee adjudication log"
-)
-
-# --- Verify all three at once ---------------------------------------
-verify_manifest(here::here("manifest.yaml"))
-}
+dir <- file.path(tempdir(), "update-manifest-example")
+dir.create(dir)
+csv <- file.path(dir, "cohort_20240115.csv")
+utils::write.csv(data.frame(patient_id = 1:3, age = c(61, 70, 55)), csv,
+                 row.names = FALSE)
+manifest <- file.path(dir, "manifest.yaml")
+update_manifest(csv, manifest_path = manifest, extract_date = "2024-01-15",
+                source = "Synthetic example", sort_key = "patient_id")
+cat(readLines(manifest), sep = "\n")
+verify_manifest(manifest, verbose = TRUE)
+unlink(dir, recursive = TRUE)
 
 }
 \seealso{

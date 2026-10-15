@@ -31,12 +31,20 @@ The candidate must be named by its exact release ID. The value
 adopted release must be the same object.
 }
 \examples{
-\dontrun{
-adopt_data_update(
-  study_config(),
-  release_id = "surgery_cohort-20260921-r1"
-)
-}
+\dontshow{if (requireNamespace("arrow", quietly = TRUE)) withAutoprint(\{ # examplesIf}
+root <- file.path(tempdir(), "adopt-data-update-example")
+invisible(study_setup(root, study = "Example", study_tracker_id = 1L))
+utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
+                 file.path(root, "00_datasets", "built.csv"),
+                 row.names = FALSE)
+invisible(register_data(root, built = "built.csv"))
+cfg <- study_config(root)
+
+# Deprecated: it warns and names update_manifest() instead, then stops,
+# because this study is not pinned to a catalog release.
+try(adopt_data_update(cfg, release_id = "surgery_cohort-20260921-r1"))
+unlink(root, recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link{check_data_updates}},

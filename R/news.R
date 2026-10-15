@@ -8,9 +8,8 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
-#' hvtiRutilities.news()
-#' }
+#' # Opens a pager, so only in an interactive session.
+#' if (interactive()) hvtiRutilities.news()
 hvtiRutilities.news <- function() {
   news_file <- system.file("NEWS.md", package = "hvtiRutilities")
 
