@@ -19,6 +19,12 @@
 #' differ, rather than editing a copy of this package.
 #'
 #' @format Character vectors, and an integer for \code{POOL_MIN_STEM}.
+#' @examples
+#' POOL_AFFIXES
+#' pool <- c("age", "age2", "crcl_pr", "ln_crcl_pr")
+#' concept_map(pool)
+#' # A study whose trailing 2 does not mean "squared" drops that affix.
+#' concept_map(pool, affixes = setdiff(POOL_AFFIXES, "2$"))
 #' @rdname pool_conventions
 #' @export
 POOL_AFFIXES <- c("^ln_", "^in2", "^in_", "2$")

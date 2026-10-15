@@ -32,6 +32,25 @@ Invisibly, the published record as a list.
 Convenience wrapper for an output that already exists. It captures an
 explicit provenance payload and immediately publishes it beside the output.
 }
+\examples{
+\dontshow{if (requireNamespace("arrow", quietly = TRUE)) withAutoprint(\{ # examplesIf}
+root <- file.path(tempdir(), "record-provenance-example")
+invisible(study_setup(root, study = "Example", study_tracker_id = 1L))
+utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
+                 file.path(root, "00_datasets", "built.csv"),
+                 row.names = FALSE)
+invisible(register_data(root, built = "built.csv"))
+cfg <- study_config(root)
+
+out <- file.path(root, "40_graphs", "death-hz-ac.html")
+writeLines("<p>report</p>", out)
+rec <- record_provenance(out, data = list(provenance_data(cfg = cfg)),
+                         cfg = cfg)
+rec$output$file
+file.exists(provenance_path(out))
+unlink(root, recursive = TRUE)
+\dontshow{\}) # examplesIf}
+}
 \seealso{
 \code{\link{capture_provenance}},
   \code{\link{publish_provenance}}, \code{\link{provenance_path}}

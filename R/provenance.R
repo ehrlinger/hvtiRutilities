@@ -407,6 +407,19 @@ provenance_path <- function(path) {
 #' @seealso \code{\link{provenance_artifact}},
 #'   \code{\link{capture_provenance}}
 #'
+#' @examplesIf requireNamespace("arrow", quietly = TRUE)
+#' root <- file.path(tempdir(), "provenance-data-example")
+#' invisible(study_setup(root, study = "Example", study_tracker_id = 1L))
+#' utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
+#'                  file.path(root, "00_datasets", "built.csv"),
+#'                  row.names = FALSE)
+#' invisible(register_data(root, built = "built.csv"))
+#' cfg <- study_config(root)
+#'
+#' # The registered Parquet file, not the CSV it was converted from.
+#' str(provenance_data("study", cfg = cfg))
+#' unlink(root, recursive = TRUE)
+#'
 #' @export
 provenance_data <- function(dataset = "study", cfg = study_config(),
                             role = "analysis", working = .hvti_working_default()) {
@@ -449,6 +462,19 @@ provenance_data <- function(dataset = "study", cfg = study_config(),
 #' @seealso \code{\link{provenance_data}},
 #'   \code{\link{capture_provenance}}
 #'
+#' @examplesIf requireNamespace("arrow", quietly = TRUE)
+#' root <- file.path(tempdir(), "provenance-artifact-example")
+#' invisible(study_setup(root, study = "Example", study_tracker_id = 1L))
+#' utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
+#'                  file.path(root, "00_datasets", "built.csv"),
+#'                  row.names = FALSE)
+#' invisible(register_data(root, built = "built.csv"))
+#' cfg <- study_config(root)
+#'
+#' writeLines("x <- 1", file.path(root, "30_analyses", "fit.R"))
+#' str(provenance_artifact("30_analyses/fit.R", role = "code", cfg = cfg))
+#' unlink(root, recursive = TRUE)
+#'
 #' @export
 provenance_artifact <- function(path, role = "input", cfg = study_config()) {
   .provenance_role(role, "provenance_artifact")
@@ -488,6 +514,21 @@ provenance_artifact <- function(path, role = "input", cfg = study_config()) {
 #'
 #' @seealso \code{\link{publish_provenance}},
 #'   \code{\link{record_provenance}}
+#'
+#' @examplesIf requireNamespace("arrow", quietly = TRUE)
+#' root <- file.path(tempdir(), "capture-provenance-example")
+#' invisible(study_setup(root, study = "Example", study_tracker_id = 1L))
+#' utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
+#'                  file.path(root, "00_datasets", "built.csv"),
+#'                  row.names = FALSE)
+#' invisible(register_data(root, built = "built.csv"))
+#' cfg <- study_config(root)
+#'
+#' payload <- capture_provenance("death-hz-ac",
+#'                               data = list(provenance_data(cfg = cfg)),
+#'                               cfg = cfg)
+#' names(payload)
+#' unlink(root, recursive = TRUE)
 #'
 #' @export
 capture_provenance <- function(job, data, artifacts = list(), extra = list(),
@@ -546,6 +587,25 @@ capture_provenance <- function(job, data, artifacts = list(), extra = list(),
 #'
 #' @seealso \code{\link{capture_provenance}},
 #'   \code{\link{record_provenance}}, \code{\link{provenance_path}}
+#'
+#' @examplesIf requireNamespace("arrow", quietly = TRUE)
+#' root <- file.path(tempdir(), "publish-provenance-example")
+#' invisible(study_setup(root, study = "Example", study_tracker_id = 1L))
+#' utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
+#'                  file.path(root, "00_datasets", "built.csv"),
+#'                  row.names = FALSE)
+#' invisible(register_data(root, built = "built.csv"))
+#' cfg <- study_config(root)
+#'
+#' payload <- capture_provenance("death-hz-ac",
+#'                               data = list(provenance_data(cfg = cfg)),
+#'                               cfg = cfg)
+#' # Publish only once the output exists.
+#' out <- file.path(root, "40_graphs", "death-hz-ac.html")
+#' writeLines("<p>report</p>", out)
+#' invisible(publish_provenance(out, payload))
+#' file.exists(provenance_path(out))
+#' unlink(root, recursive = TRUE)
 #'
 #' @export
 publish_provenance <- function(path, payload) {
@@ -617,6 +677,23 @@ publish_provenance <- function(path, payload) {
 #'
 #' @seealso \code{\link{capture_provenance}},
 #'   \code{\link{publish_provenance}}, \code{\link{provenance_path}}
+#'
+#' @examplesIf requireNamespace("arrow", quietly = TRUE)
+#' root <- file.path(tempdir(), "record-provenance-example")
+#' invisible(study_setup(root, study = "Example", study_tracker_id = 1L))
+#' utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
+#'                  file.path(root, "00_datasets", "built.csv"),
+#'                  row.names = FALSE)
+#' invisible(register_data(root, built = "built.csv"))
+#' cfg <- study_config(root)
+#'
+#' out <- file.path(root, "40_graphs", "death-hz-ac.html")
+#' writeLines("<p>report</p>", out)
+#' rec <- record_provenance(out, data = list(provenance_data(cfg = cfg)),
+#'                          cfg = cfg)
+#' rec$output$file
+#' file.exists(provenance_path(out))
+#' unlink(root, recursive = TRUE)
 #'
 #' @export
 record_provenance <- function(path, data, artifacts = list(), extra = list(),
