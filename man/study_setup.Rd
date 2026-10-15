@@ -114,7 +114,25 @@ renv package must be installed.
 root <- file.path(tempdir(), "study-setup-example")
 study_setup(root, study = "Example", study_tracker_id = 1L)
 list.files(root)
-unlink(root, recursive = TRUE)
+
+# Running it again on an existing study needs adopt = TRUE; nothing that
+# exists is overwritten.
+invisible(study_setup(root, study = "Example", study_tracker_id = 1L,
+                      adopt = TRUE))
+
+# cleanup = TRUE deletes the template copies a legacy study carries: tp.*
+# files, and files identical to one in the template corpus.
+corpus <- file.path(tempdir(), "template-corpus")
+dir.create(corpus)
+writeLines("# template", file.path(corpus, "readme.R"))
+invisible(file.copy(file.path(corpus, "readme.R"),
+                    file.path(root, "30_analyses")))
+writeLines("# template", file.path(root, "30_analyses", "tp.hazard.R"))
+done <- study_setup(root, study = "Example", study_tracker_id = 1L,
+                    adopt = TRUE, cleanup = TRUE, template_dir = corpus)
+attr(done, "cleanup")
+
+unlink(c(root, corpus), recursive = TRUE)
 
 }
 \seealso{
