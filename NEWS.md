@@ -1,3 +1,27 @@
+# hvtiRutilities 1.5.5
+
+* The README's Installation section now leads with `hvtiR::install()`, which
+  installs the whole HVTI R family in one call, and then gives
+  `pak::pak("ehrlinger/hvtiRutilities")` for this package alone.
+
+* `study_setup()` has a help-page example: it sets up a throwaway study under
+  `tempdir()`, adopts it again, and runs `cleanup = TRUE` against a throwaway
+  template corpus, then removes both.
+
+* Help-page examples for `register_data()`, the provenance functions
+  (`provenance_data()`, `provenance_artifact()`, `capture_provenance()`,
+  `publish_provenance()`, `record_provenance()`), `study_checkpoint_push()` and
+  the pool conventions (`POOL_AFFIXES` and friends). Each runs on a throwaway
+  study under `tempdir()` and removes it; the ones that register data run only
+  when arrow is installed.
+
+* Seven help pages lose their `\dontrun{}` examples for ones that run:
+  `update_manifest()` and `verify_manifest()` register and check a CSV under
+  `tempdir()`, `data_dictionary()` writes its CSV to a temporary file, the
+  deprecated `check_data_updates()`, `review_data_update()` and
+  `adopt_data_update()` show their deprecation on a throwaway study, and
+  `hvtiRutilities.news()` runs only in an interactive session.
+
 # hvtiRutilities 1.5.4
 
 * Recording provenance no longer aborts when a loaded package has left the
