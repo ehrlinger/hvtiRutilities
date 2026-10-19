@@ -63,12 +63,24 @@ register_data(
 
 - dataset:
 
-  Character(1). Logical dataset name. `"study"` is reserved for the
-  default, and `"built"` is a second name for it.
+  Character(1). The dataset's name. Choose it only with
+  `role = "named"`; `role = "study"` requires the default,
+  `dataset = "study"`. A name starts with a lowercase letter and uses
+  only lowercase letters, digits and underscores. `"study"` and
+  `"built"` are reserved, `"built"` being a second name for the study
+  dataset. Read the dataset back with `read_built(dataset = "<name>")`.
 
 - role:
 
-  Character. Either `"study"` or `"named"`.
+  Character(1). Takes one value, which picks the slot the dataset fills.
+  `"study"`, the default when the argument is left out, registers the
+  study's single main dataset. It is recorded under `built:` in
+  `_study.yml` and read by
+  [`read_built()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_built.md)
+  with no arguments. A study has exactly one, so registering it a second
+  time stops with "already registered". `"named"` adds another dataset
+  under the name given in `dataset`. It is recorded under
+  `additional_datasets:` and read with `read_built(dataset = "<name>")`.
 
 - population:
 
@@ -116,6 +128,28 @@ register_data(
 
 An object of class `"study_status"`, returned visibly.
 
+## Where a subset goes
+
+A subset of the study dataset has three homes, and which to pick depends
+on who needs it.
+
+- A `WHERE` condition in one job writes no file. The job's
+  `hvtiRtemplates::read_job_data()` applies the condition and records
+  it. Use this for a subset that only one job analyses.
+
+- An analysis set from `hvtiRdatabuild::write_analysis_set()` is saved
+  as `00_datasets/<name>.parquet` with `<name>.set.yml` beside it, and
+  is derived from the study dataset only. A job reads it with
+  `DATASET <- "built"` and `ANALYSIS_SET <- "<name>"`. Use this for a
+  subset of the study dataset that several jobs share.
+
+- A separately registered dataset, `role = "named"` with
+  `kind = "subset"`, is for a subset built some other way, such as from
+  a second source or by a script outside the study's build.
+
+Exclusions that define the cohort itself belong in the build job
+(`hvtiRtemplates::build_cohort()`), not in a subset.
+
 ## See also
 
 [`study_setup`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md),
@@ -131,18 +165,41 @@ utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
                  file.path(root, "00_datasets", "built.csv"),
                  row.names = FALSE)
 register_data(root, built = "built.csv", key = "ccfid")
-#> Study: /tmp/RtmpA1Pvxl/register-data-example
+#> Study: /tmp/Rtmp7QxjMS/register-data-example
 #> 
 #> [x] _study.yml — study: Example
 #> [ ] renv.lock — no renv.lock; run renv::init() in the study project
 #> [x] manifest.yaml — 1 dataset entry verified by checksum
-#> [x] dataset — built.csv, registered as built_20261015.parquet
+#> [x] dataset — built.csv, registered as built_20261019.parquet
 #> [ ] provenance — no .qmd/.Rmd sources found; 0 sidecars
 #> 
 #> 0 .R  |  0 .qmd/.Rmd  |  0 .sas  |  0 provenance sidecars
 # The CSV is kept; the registered version is a dated Parquet file.
 list.files(file.path(root, "00_datasets"))
-#> [1] "built.csv"                 "built_20261015.parquet"   
-#> [3] "built_20261015.schema.csv"
+#> [1] "built.csv"                 "built_20261019.parquet"   
+#> [3] "built_20261019.schema.csv"
+unlink(root, recursive = TRUE)
+
+# An additional dataset is registered with role = "named", under a name of
+# its own, and read back by that name.
+root <- file.path(tempdir(), "register-data-named-example")
+invisible(study_setup(root, study = "Example", study_tracker_id = 1L))
+utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
+                 file.path(root, "00_datasets", "built.csv"),
+                 row.names = FALSE)
+invisible(register_data(root, built = "built.csv", key = "ccfid"))
+utils::write.csv(
+  data.frame(ccfid = c(1, 1, 2), echo_date = c("2020-01-05", "2020-06-01", "2020-02-10"),
+             lvef = c(55, 50, 60)),
+  file.path(root, "00_datasets", "echo.csv"),
+  row.names = FALSE
+)
+invisible(register_data(root, built = "echo.csv", dataset = "echo", role = "named",
+                        kind = "ancillary", key = c("ccfid", "echo_date")))
+read_built(study_config(root), dataset = "echo")
+#>   ccfid  echo_date lvef
+#> 1     1 2020-01-05   55
+#> 2     1 2020-06-01   50
+#> 3     2 2020-02-10   60
 unlink(root, recursive = TRUE)
 ```

@@ -62,12 +62,12 @@ check_data_updates(cfg)
 #> [7] status               is_latest            detail              
 #> <0 rows> (or 0-length row.names)
 study_status(root)
-#> Study: /tmp/RtmpA1Pvxl/check-data-updates-example
+#> Study: /tmp/Rtmp7QxjMS/check-data-updates-example
 #> 
 #> [x] _study.yml — study: Example
 #> [ ] renv.lock — no renv.lock; run renv::init() in the study project
 #> [x] manifest.yaml — 1 dataset entry verified by checksum
-#> [x] dataset — built.csv, registered as built_20261015.parquet
+#> [x] dataset — built.csv, registered as built_20261019.parquet
 #> [ ] provenance — no .qmd/.Rmd sources found; 0 sidecars
 #> 
 #> 0 .R  |  0 .qmd/.Rmd  |  0 .sas  |  0 provenance sidecars

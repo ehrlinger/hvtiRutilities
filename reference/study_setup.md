@@ -139,7 +139,7 @@ An object of class `"study_status"`, returned visibly. With
 ``` r
 root <- file.path(tempdir(), "study-setup-example")
 study_setup(root, study = "Example", study_tracker_id = 1L)
-#> Study: /tmp/RtmpA1Pvxl/study-setup-example
+#> Study: /tmp/Rtmp7QxjMS/study-setup-example
 #> 
 #> [x] _study.yml — study: Example
 #> [ ] renv.lock — no renv.lock; run renv::init() in the study project
