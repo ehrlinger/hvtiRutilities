@@ -25,10 +25,23 @@ register_data(
 \item{built}{Character(1). Dataset filename within the logical
 \code{datasets} directory, including its extension.}
 
-\item{dataset}{Character(1). Logical dataset name. \code{"study"} is
-reserved for the default, and \code{"built"} is a second name for it.}
+\item{dataset}{Character(1). The dataset's name. Choose it only with
+\code{role = "named"}; \code{role = "study"} requires the default,
+\code{dataset = "study"}. A name starts with a lowercase letter and uses
+only lowercase letters, digits and underscores. \code{"study"} and
+\code{"built"} are reserved, \code{"built"} being a second name for the
+study dataset. Read the dataset back with
+\code{read_built(dataset = "<name>")}.}
 
-\item{role}{Character. Either \code{"study"} or \code{"named"}.}
+\item{role}{Character(1). Takes one value, which picks the slot the dataset
+fills. \code{"study"}, the default when the argument is left out, registers
+the study's single main dataset. It is recorded under \code{built:} in
+\code{_study.yml} and read by \code{\link{read_built}()} with no
+arguments. A study has exactly one, so registering it a second time stops
+with "already registered". \code{"named"} adds another dataset under the
+name given in \code{dataset}. It is recorded under
+\code{additional_datasets:} and read with
+\code{read_built(dataset = "<name>")}.}
 
 \item{population}{Character(1) or \code{NULL}. Population description.}
 
@@ -88,6 +101,27 @@ date until then. A release-aware dataset is skipped by
 adopted with \code{\link{adopt_data_update}()}, and its key is checked only at
 registration.
 }
+\section{Where a subset goes}{
+
+A subset of the study dataset has three homes, and which to pick depends on
+who needs it.
+\itemize{
+  \item A \code{WHERE} condition in one job writes no file. The job's
+    \code{hvtiRtemplates::read_job_data()} applies the condition and records
+    it. Use this for a subset that only one job analyses.
+  \item An analysis set from \code{hvtiRdatabuild::write_analysis_set()} is
+    saved as \code{00_datasets/<name>.parquet} with \code{<name>.set.yml}
+    beside it, and is derived from the study dataset only. A job reads it with
+    \code{DATASET <- "built"} and \code{ANALYSIS_SET <- "<name>"}. Use this
+    for a subset of the study dataset that several jobs share.
+  \item A separately registered dataset, \code{role = "named"} with
+    \code{kind = "subset"}, is for a subset built some other way, such as
+    from a second source or by a script outside the study's build.
+}
+Exclusions that define the cohort itself belong in the build job
+(\code{hvtiRtemplates::build_cohort()}), not in a subset.
+}
+
 \examples{
 \dontshow{if (requireNamespace("arrow", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 root <- file.path(tempdir(), "register-data-example")
@@ -98,6 +132,25 @@ utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
 register_data(root, built = "built.csv", key = "ccfid")
 # The CSV is kept; the registered version is a dated Parquet file.
 list.files(file.path(root, "00_datasets"))
+unlink(root, recursive = TRUE)
+
+# An additional dataset is registered with role = "named", under a name of
+# its own, and read back by that name.
+root <- file.path(tempdir(), "register-data-named-example")
+invisible(study_setup(root, study = "Example", study_tracker_id = 1L))
+utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
+                 file.path(root, "00_datasets", "built.csv"),
+                 row.names = FALSE)
+invisible(register_data(root, built = "built.csv", key = "ccfid"))
+utils::write.csv(
+  data.frame(ccfid = c(1, 1, 2), echo_date = c("2020-01-05", "2020-06-01", "2020-02-10"),
+             lvef = c(55, 50, 60)),
+  file.path(root, "00_datasets", "echo.csv"),
+  row.names = FALSE
+)
+invisible(register_data(root, built = "echo.csv", dataset = "echo", role = "named",
+                        kind = "ancillary", key = c("ccfid", "echo_date")))
+read_built(study_config(root), dataset = "echo")
 unlink(root, recursive = TRUE)
 \dontshow{\}) # examplesIf}
 }
