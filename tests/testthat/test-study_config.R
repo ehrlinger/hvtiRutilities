@@ -215,7 +215,7 @@ test_that("study_setup() names the cause when an existing _study.yml is not vali
   write_bad_study_yml(root)
 
   expect_error(
-    study_setup(root, "Grafting", 1387L, adopt = TRUE),
+    study_setup(root, "Grafting", 1387L, adopt = TRUE, renv = FALSE, cleanup = FALSE),
     "^study_setup\\(\\): .*_study\\.yml is not valid YAML \\(line 1, column"
   )
   expect_identical(readLines(file.path(root, "_study.yml"))[2], "study_tracker_id: 1387")

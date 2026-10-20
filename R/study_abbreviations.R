@@ -132,7 +132,7 @@
 #'
 #' @examples
 #' root <- file.path(tempdir(), "abbrev-example")
-#' study_setup(root, "Abbreviation example", 1L)
+#' study_setup(root, "Abbreviation example", 1L, renv = FALSE)
 #' add_abbreviation("Surgical procedure", "SP", start = root)
 #' study_abbreviations(study_config(root, require_data = FALSE),
 #'                     extra = c("Left ventricular outflow tract" = "LVOT"))
@@ -239,7 +239,7 @@ study_abbreviations <- function(cfg = study_config(), extra = NULL, defaults = T
 #'
 #' @examples
 #' root <- file.path(tempdir(), "add-abbrev-example")
-#' study_setup(root, "Abbreviation example", 1L)
+#' study_setup(root, "Abbreviation example", 1L, renv = FALSE)
 #' add_abbreviation("Surgical procedure", "SP", start = root)
 #' add_abbreviation("Ejection fraction", NULL, start = root)
 #' unlink(root, recursive = TRUE)

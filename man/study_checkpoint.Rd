@@ -65,7 +65,7 @@ either is given: they must not contain patient information.
 \donttest{
 if (nzchar(Sys.which("git"))) {
   root <- file.path(tempdir(), "checkpoint-example")
-  study_setup(root, "Checkpoint example", 1267L)
+  study_setup(root, "Checkpoint example", 1267L, renv = FALSE)
   writeLines("x <- 1", file.path(root, "30_analyses", "fit.R"))
   # A throwaway identity, so the example commits on a machine with no
   # git user configured.

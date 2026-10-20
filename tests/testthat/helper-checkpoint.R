@@ -41,7 +41,7 @@ set_study_keys <- function(root, ...) {
 
 make_checkpoint_study <- function(dir) {
   root <- file.path(dir, "study")
-  study_setup(root, "Checkpoint fixture", 1267L)
+  study_setup(root, "Checkpoint fixture", 1267L, renv = FALSE)
   plant_files(root, c("30_analyses/fit.R", "renv.lock"))
   root
 }

@@ -28,6 +28,25 @@
   invisible(TRUE)
 }
 
+# Append the lines of `lines` not already in the file, exactly; create it if
+# absent. A user's own lines are never reordered or removed.
+.study_append_lines_missing <- function(lines, path) {
+  have <- if (file.exists(path)) readLines(path, warn = FALSE) else character(0)
+  add <- setdiff(lines, have)
+  if (!file.exists(path)) return(.study_write_lines_if_missing(lines, path))
+  if (length(add)) {
+    size <- file.size(path)
+    unterminated <- size > 0 && !identical(readBin(path, "raw", size)[size], as.raw(10L))
+    con <- file(path, "a")
+    on.exit(close(con), add = TRUE)
+    if (unterminated) writeLines("", con)
+    writeLines(add, con)
+  }
+  invisible(length(add) > 0L)
+}
+
+.renv_installed <- function() requireNamespace("renv", quietly = TRUE)
+
 .study_renvignore <- function() {
   c(
     ".checkpoint/",
@@ -40,6 +59,8 @@
     "90_estimates/",
     "estimates/",
     "templates/",
+    "old_RF_templates*/",
+    "tp.*",
     "*.sas",
     "*.log",
     "*.lst",
@@ -265,12 +286,17 @@
   if (!resumable) {
     run("renv::init(bare = TRUE, restart = FALSE)", "renv initialization")
   }
+  # Declared before init or resume alike: a study interrupted by an older
+  # version has no DESCRIPTION yet, and study_declare() is idempotent.
+  study_declare(root = root)
+  # Explicit mode: renv.lock is built from DESCRIPTION, never by scanning the
+  # study's code, so a template copy cleanup missed cannot reach the lockfile.
   # Load and snapshot this project explicitly: a child that relied on its
   # startup loading .Rprofile could run with no project and the global
   # library, and snapshot the wrong thing.
   project <- deparse(normalizePath(root, winslash = "/"))
-  run(paste0("renv::load(", project, "); renv::snapshot(project = ", project,
-             ", prompt = FALSE)"), "renv snapshot")
+  run(paste0("renv::load(", project, "); renv::settings$snapshot.type('explicit', project = ",
+             project, "); renv::snapshot(project = ", project, ", prompt = FALSE)"), "renv snapshot")
   if (!all(.study_renv_parts(root))) {
     stop("study_setup(): renv initialization finished without a complete environment",
          call. = FALSE)
@@ -281,7 +307,7 @@
 #' Set up study identity and directories
 #'
 #' @description
-#' Creates the numbered directory structure for a new study and writes an
+#' The usual entry point is \code{hvtiR::setup()}. Creates the numbered directory structure for a new study and writes an
 #' identity-only \code{_study.yml}. With \code{adopt = TRUE}, an existing
 #' study keeps its legacy or numbered directory layout and every existing
 #' initialization file.
@@ -319,9 +345,11 @@
 #' that sources it, and a \code{renv.lock} that parses as a lockfile. One
 #' interrupted after initialization (no lockfile yet) is resumed at the
 #' snapshot; any other partial or invalid environment stops with an error.
-#' Otherwise \code{renv::init(bare = TRUE)} creates it, and the project is
-#' loaded and snapshotted explicitly. The
-#' renv package must be installed.
+#' Otherwise the study \code{DESCRIPTION} is written (see
+#' \code{\link{study_declare}}), \code{renv::init(bare = TRUE)} creates the
+#' environment, and the project is loaded and snapshotted explicitly in
+#' explicit mode, so \code{renv.lock} comes from the \code{DESCRIPTION} and
+#' not from a scan of the study's code. The renv package must be installed.
 #'
 #' @param root Character. Study root to create or adopt. When omitted, the
 #'   study enclosing the working directory (found as \code{\link{study_root}}
@@ -346,12 +374,15 @@
 #'   adoption keeps the recorded source.
 #' @param cleanup Logical. Delete the study's \code{tp.*} template copies and
 #'   \code{binder.summaries.doc}, and remove the template folders they leave
-#'   empty. See Details.
+#'   empty. See Details. Defaults to \code{adopt}: adopting a study cleans it,
+#'   including an adoption accepted at the prompt. Pass \code{FALSE} to adopt
+#'   without cleaning.
 #' @param template_dir Character(1). The template corpus studies were copied
 #'   from, read when \code{cleanup = TRUE}. Setup stops with an error when it
 #'   does not exist.
 #' @param renv Logical. Initialize and snapshot the study's \code{renv}
-#'   environment. See Details.
+#'   environment. See Details. Defaults to \code{TRUE}; test suites that build
+#'   temporary studies should pass \code{FALSE}.
 #'
 #' @return An object of class \code{"study_status"}, returned visibly. With
 #'   \code{cleanup = TRUE} it carries a \code{"cleanup"} attribute, a list of
@@ -364,13 +395,13 @@
 #'
 #' @examples
 #' root <- file.path(tempdir(), "study-setup-example")
-#' study_setup(root, study = "Example", study_tracker_id = 1L)
+#' study_setup(root, study = "Example", study_tracker_id = 1L, renv = FALSE)
 #' list.files(root)
 #'
 #' # Running it again on an existing study needs adopt = TRUE; nothing that
 #' # exists is overwritten.
 #' invisible(study_setup(root, study = "Example", study_tracker_id = 1L,
-#'                       adopt = TRUE))
+#'                       adopt = TRUE, renv = FALSE, cleanup = FALSE))
 #'
 #' # cleanup = TRUE deletes the template copies a legacy study carries: tp.*
 #' # files, and files identical to one in the template corpus.
@@ -381,7 +412,8 @@
 #'                     file.path(root, "30_analyses")))
 #' writeLines("# template", file.path(root, "30_analyses", "tp.hazard.R"))
 #' done <- study_setup(root, study = "Example", study_tracker_id = 1L,
-#'                     adopt = TRUE, cleanup = TRUE, template_dir = corpus)
+#'                     adopt = TRUE, cleanup = TRUE, renv = FALSE,
+#'                     template_dir = corpus)
 #' attr(done, "cleanup")
 #'
 #' unlink(c(root, corpus), recursive = TRUE)
@@ -392,8 +424,11 @@ study_setup <- function(root = NULL, study, study_tracker_id,
                         irb_number = NULL, cvir_no = NULL,
                         study_creation_date = NULL, adopt = FALSE,
                         identity_source = c("tracker", "manual"),
-                        cleanup = FALSE, renv = FALSE,
+                        cleanup = adopt, renv = TRUE,
                         template_dir = "/programs/development/template") {
+  # cleanup defaults to the FINAL adopt, which the interactive prompt below may
+  # set. Validating it here would force the default with the caller's adopt.
+  cleanup_given <- !missing(cleanup)
   # Exact values only: match.arg() would accept an abbreviation such as
   # "man", and a provenance field should record what the caller meant.
   sources <- c("tracker", "manual")
@@ -422,24 +457,12 @@ study_setup <- function(root = NULL, study, study_tracker_id,
       "study_creation_date"
     )
   }
-  for (flag in c("adopt", "cleanup", "renv")) {
+  for (flag in c("adopt", if (cleanup_given) "cleanup", "renv")) {
     value <- get(flag)
     if (length(value) != 1L || is.na(value) || !is.logical(value)) {
       stop("study_setup(): ", flag, " must be TRUE or FALSE", call. = FALSE)
     }
   }
-  if (cleanup) {
-    template_dir <- .study_scalar(template_dir, "template_dir", required = TRUE)
-    if (!dir.exists(template_dir)) {
-      stop("study_setup(): template corpus not found at ", template_dir,
-           "; pass template_dir", call. = FALSE)
-    }
-    if (.study_paths_overlap(root, template_dir)) {
-      stop("study_setup(): the study root and template_dir overlap; cleanup would ",
-           "delete the corpus or the study", call. = FALSE)
-    }
-  }
-
   existed <- file.exists(root) || dir.exists(root)
   if (file.exists(root) && !dir.exists(root)) {
     stop("study_setup(): root is a file, not a directory: ", root,
@@ -481,6 +504,34 @@ study_setup <- function(root = NULL, study, study_tracker_id,
            "to fill in what it is missing", call. = FALSE)
     }
     adopt <- TRUE
+  }
+
+  if (!cleanup_given) cleanup <- adopt
+  if (cleanup) {
+    template_dir <- .study_scalar(template_dir, "template_dir", required = TRUE)
+    if (!dir.exists(template_dir)) {
+      stop("study_setup(): template corpus not found at ", template_dir,
+           "; pass template_dir, or cleanup = FALSE", call. = FALSE)
+    }
+    if (.study_paths_overlap(root, template_dir)) {
+      stop("study_setup(): the study root and template_dir overlap; cleanup would ",
+           "delete the corpus or the study", call. = FALSE)
+    }
+  }
+
+  if (renv && !all(.study_renv_parts(root))) {
+    if (!.renv_installed()) {
+      stop("study_setup(): the renv package is not installed; install it, or pass renv = FALSE",
+           call. = FALSE)
+    }
+    desc <- file.path(root, "DESCRIPTION")
+    if (file.exists(desc)) {
+      dcf <- read.dcf(desc)
+      if (!"Type" %in% colnames(dcf) || !identical(unname(dcf[1L, "Type"]), "Project")) {
+        stop("study_setup(): ", desc, " is a package DESCRIPTION, not a study project's; ",
+             "pass renv = FALSE", call. = FALSE)
+      }
+    }
   }
 
   layout <- if (!existed || !length(entries)) {
@@ -525,7 +576,7 @@ study_setup <- function(root = NULL, study, study_tracker_id,
     "RENV_CONFIG_CACHE_SYMLINKS=FALSE",
     file.path(root, ".Renviron")
   )
-  .study_write_lines_if_missing(
+  .study_append_lines_missing(
     .study_renvignore(),
     file.path(root, ".renvignore")
   )

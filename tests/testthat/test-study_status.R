@@ -415,7 +415,7 @@ test_that("study_status reports a source that disagrees with verification", {
 
 test_that("study_status adds no checkpoint row to a study without one", {
   root <- file.path(withr::local_tempdir(), "s")
-  study_setup(root, "No checkpoints", 7L)
+  study_setup(root, "No checkpoints", 7L, renv = FALSE)
   expect_false("checkpoints" %in% study_status(root)$checks$item)
 })
 
@@ -448,7 +448,7 @@ test_that("study_status reports checkpoints, pending pushes and closure", {
 test_that("study_status reports a dataset with no dated version as PENDING, per dataset", {
   skip_if_not_installed("arrow")
   root <- file.path(withr::local_tempdir(), "study")
-  suppressMessages(study_setup(root, "Unversioned", 42L))
+  suppressMessages(study_setup(root, "Unversioned", 42L, renv = FALSE))
   dir <- study_dir("datasets", root)
   utils::write.csv(data.frame(id = 1:3, DEAD = c(1L, 0L, 0L)), file.path(dir, "built.csv"), row.names = FALSE)
   utils::write.csv(data.frame(id = 1:3, z = 1:3), file.path(dir, "extra.csv"), row.names = FALSE)

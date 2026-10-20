@@ -340,7 +340,7 @@
 #'
 #' @examplesIf requireNamespace("arrow", quietly = TRUE)
 #' root <- file.path(tempdir(), "check-data-updates-example")
-#' invisible(study_setup(root, study = "Example", study_tracker_id = 1L))
+#' invisible(study_setup(root, study = "Example", study_tracker_id = 1L, renv = FALSE))
 #' utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
 #'                  file.path(root, "00_datasets", "built.csv"),
 #'                  row.names = FALSE)
@@ -499,7 +499,7 @@ check_data_updates <- function(cfg = study_config(), dataset = NULL) {
 #'
 #' @examplesIf requireNamespace("arrow", quietly = TRUE)
 #' root <- file.path(tempdir(), "review-data-update-example")
-#' invisible(study_setup(root, study = "Example", study_tracker_id = 1L))
+#' invisible(study_setup(root, study = "Example", study_tracker_id = 1L, renv = FALSE))
 #' utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
 #'                  file.path(root, "00_datasets", "built.csv"),
 #'                  row.names = FALSE)
@@ -647,7 +647,7 @@ print.data_update_review <- function(x, ...) {
 #'
 #' @examplesIf requireNamespace("arrow", quietly = TRUE)
 #' root <- file.path(tempdir(), "adopt-data-update-example")
-#' invisible(study_setup(root, study = "Example", study_tracker_id = 1L))
+#' invisible(study_setup(root, study = "Example", study_tracker_id = 1L, renv = FALSE))
 #' utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
 #'                  file.path(root, "00_datasets", "built.csv"),
 #'                  row.names = FALSE)

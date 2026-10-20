@@ -47,7 +47,7 @@ write_release_fixture <- function(root, releases = NULL,
 make_release_aware_study <- function(dir, pinned_sequence = 1L,
                                      named = FALSE) {
   root <- file.path(dir, "study")
-  study_setup(root, "Release-aware fixture", 42L)
+  study_setup(root, "Release-aware fixture", 42L, renv = FALSE)
   fx <- write_release_fixture(root)
   releases <- fx$catalog$datasets$surgery_cohort$releases
   hit <- vapply(releases, function(x) {
@@ -135,7 +135,7 @@ withdraw_fixture_release <- function(fx, release_id, reason,
 release_collision_study <- function(date, env = parent.frame()) {
   testthat::skip_if_not_installed("arrow")
   root <- file.path(withr::local_tempdir(.local_envir = env), "study")
-  suppressMessages(study_setup(root, "Release collision", 42L))
+  suppressMessages(study_setup(root, "Release collision", 42L, renv = FALSE))
   fx <- write_release_fixture(root)
   src <- file.path(fx$data_dir, "cohort.csv")
   utils::write.csv(data.frame(id = 1:2), src, row.names = FALSE)

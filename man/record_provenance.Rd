@@ -35,7 +35,7 @@ explicit provenance payload and immediately publishes it beside the output.
 \examples{
 \dontshow{if (requireNamespace("arrow", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 root <- file.path(tempdir(), "record-provenance-example")
-invisible(study_setup(root, study = "Example", study_tracker_id = 1L))
+invisible(study_setup(root, study = "Example", study_tracker_id = 1L, renv = FALSE))
 utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
                  file.path(root, "00_datasets", "built.csv"),
                  row.names = FALSE)

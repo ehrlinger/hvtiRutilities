@@ -15,8 +15,8 @@ study_setup(
   study_creation_date = NULL,
   adopt = FALSE,
   identity_source = c("tracker", "manual"),
-  cleanup = FALSE,
-  renv = FALSE,
+  cleanup = adopt,
+  renv = TRUE,
   template_dir = "/programs/development/template"
 )
 }
@@ -51,10 +51,13 @@ adoption keeps the recorded source.}
 
 \item{cleanup}{Logical. Delete the study's \code{tp.*} template copies and
 \code{binder.summaries.doc}, and remove the template folders they leave
-empty. See Details.}
+empty. See Details. Defaults to \code{adopt}: adopting a study cleans it,
+including an adoption accepted at the prompt. Pass \code{FALSE} to adopt
+without cleaning.}
 
 \item{renv}{Logical. Initialize and snapshot the study's \code{renv}
-environment. See Details.}
+environment. See Details. Defaults to \code{TRUE}; test suites that build
+temporary studies should pass \code{FALSE}.}
 
 \item{template_dir}{Character(1). The template corpus studies were copied
 from, read when \code{cleanup = TRUE}. Setup stops with an error when it
@@ -68,7 +71,7 @@ An object of class \code{"study_status"}, returned visibly. With
   \code{"initialized"} or \code{"retained"}.
 }
 \description{
-Creates the numbered directory structure for a new study and writes an
+The usual entry point is \code{hvtiR::setup()}. Creates the numbered directory structure for a new study and writes an
 identity-only \code{_study.yml}. With \code{adopt = TRUE}, an existing
 study keeps its legacy or numbered directory layout and every existing
 initialization file.
@@ -106,19 +109,21 @@ kept: a \code{renv/} folder holding \code{activate.R}, a \code{.Rprofile}
 that sources it, and a \code{renv.lock} that parses as a lockfile. One
 interrupted after initialization (no lockfile yet) is resumed at the
 snapshot; any other partial or invalid environment stops with an error.
-Otherwise \code{renv::init(bare = TRUE)} creates it, and the project is
-loaded and snapshotted explicitly. The
-renv package must be installed.
+Otherwise the study \code{DESCRIPTION} is written (see
+\code{\link{study_declare}}), \code{renv::init(bare = TRUE)} creates the
+environment, and the project is loaded and snapshotted explicitly in
+explicit mode, so \code{renv.lock} comes from the \code{DESCRIPTION} and
+not from a scan of the study's code. The renv package must be installed.
 }
 \examples{
 root <- file.path(tempdir(), "study-setup-example")
-study_setup(root, study = "Example", study_tracker_id = 1L)
+study_setup(root, study = "Example", study_tracker_id = 1L, renv = FALSE)
 list.files(root)
 
 # Running it again on an existing study needs adopt = TRUE; nothing that
 # exists is overwritten.
 invisible(study_setup(root, study = "Example", study_tracker_id = 1L,
-                      adopt = TRUE))
+                      adopt = TRUE, renv = FALSE, cleanup = FALSE))
 
 # cleanup = TRUE deletes the template copies a legacy study carries: tp.*
 # files, and files identical to one in the template corpus.
@@ -129,7 +134,8 @@ invisible(file.copy(file.path(corpus, "readme.R"),
                     file.path(root, "30_analyses")))
 writeLines("# template", file.path(root, "30_analyses", "tp.hazard.R"))
 done <- study_setup(root, study = "Example", study_tracker_id = 1L,
-                    adopt = TRUE, cleanup = TRUE, template_dir = corpus)
+                    adopt = TRUE, cleanup = TRUE, renv = FALSE,
+                    template_dir = corpus)
 attr(done, "cleanup")
 
 unlink(c(root, corpus), recursive = TRUE)

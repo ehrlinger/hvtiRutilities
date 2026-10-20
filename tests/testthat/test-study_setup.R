@@ -6,7 +6,8 @@ test_that("study_setup creates numbered identity state", {
     study = "Example study",
     study_tracker_id = 42L,
     umbrella = "Aorta program",
-    owner = "Analyst"
+    owner = "Analyst",
+    renv = FALSE
   )
 
   expect_s3_class(status, "study_status")
@@ -35,7 +36,7 @@ test_that("study_setup creates numbered identity state", {
 test_that("study_setup creates missing environment files", {
   root <- file.path(withr::local_tempdir(), "new-study")
 
-  study_setup(root, "Example study", 42L)
+  study_setup(root, "Example study", 42L, renv = FALSE)
 
   expect_identical(
     readLines(file.path(root, ".Renviron")),
@@ -53,7 +54,7 @@ test_that("study_setup adopts a legacy layout without replacing files", {
   dir.create(file.path(root, "datasets"))
   writeLines("keep me", file.path(root, ".Renviron"))
 
-  study_setup(root, "Legacy study", 42L, adopt = TRUE)
+  study_setup(root, "Legacy study", 42L, adopt = TRUE, renv = FALSE, cleanup = FALSE)
 
   expect_identical(readLines(file.path(root, ".Renviron")), "keep me")
   expect_true(all(dir.exists(file.path(
@@ -67,7 +68,7 @@ test_that("study_setup adopts a legacy layout without replacing files", {
 test_that("study_setup adopts an empty root with numbered directories", {
   root <- withr::local_tempdir()
 
-  study_setup(root, "Empty legacy study", 42L, adopt = TRUE)
+  study_setup(root, "Empty legacy study", 42L, adopt = TRUE, renv = FALSE, cleanup = FALSE)
 
   expect_true(dir.exists(file.path(root, "00_datasets")))
   expect_false(dir.exists(file.path(root, "datasets")))
@@ -77,7 +78,7 @@ test_that("study_setup refuses unsafe existing roots without writing", {
   root <- withr::local_tempdir()
   writeLines("existing", file.path(root, "work.R"))
 
-  expect_error(study_setup(root, "Example", 42L), "adopt")
+  expect_error(study_setup(root, "Example", 42L, renv = FALSE), "adopt")
   expect_false(file.exists(file.path(root, "_study.yml")))
   expect_false(file.exists(file.path(root, ".Renviron")))
 })
@@ -87,18 +88,18 @@ test_that("study_setup refuses a mixed layout without writing", {
   dir.create(file.path(root, "datasets"))
   dir.create(file.path(root, "30_analyses"))
 
-  expect_error(study_setup(root, "Example", 42L, adopt = TRUE), "mixed")
+  expect_error(study_setup(root, "Example", 42L, adopt = TRUE, renv = FALSE, cleanup = FALSE), "mixed")
   expect_false(file.exists(file.path(root, "_study.yml")))
   expect_false(file.exists(file.path(root, ".Renviron")))
 })
 
 test_that("study_setup refuses to replace study identity", {
   root <- file.path(withr::local_tempdir(), "new-study")
-  study_setup(root, "Example", 42L)
+  study_setup(root, "Example", 42L, renv = FALSE)
   before <- readLines(file.path(root, "_study.yml"))
 
   expect_error(
-    study_setup(root, "Other", 43L, adopt = TRUE),
+    study_setup(root, "Other", 43L, adopt = TRUE, renv = FALSE, cleanup = FALSE),
     "already exists"
   )
   expect_identical(readLines(file.path(root, "_study.yml")), before)
@@ -106,11 +107,11 @@ test_that("study_setup refuses to replace study identity", {
 
 test_that("study_setup resumes matching adoption without replacing identity", {
   root <- file.path(withr::local_tempdir(), "new-study")
-  study_setup(root, "Example", 42L)
+  study_setup(root, "Example", 42L, renv = FALSE)
   before <- readLines(file.path(root, "_study.yml"))
   file.remove(file.path(root, ".renvignore"))
 
-  study_setup(root, "Example", 42L, adopt = TRUE)
+  study_setup(root, "Example", 42L, adopt = TRUE, renv = FALSE, cleanup = FALSE)
 
   expect_identical(readLines(file.path(root, "_study.yml")), before)
   expect_true(file.exists(file.path(root, ".renvignore")))
@@ -127,7 +128,7 @@ test_that("study_setup writes an R project named for the study directory", {
   root <- file.path(tempfile("rproj-"), "bio_example")
   on.exit(unlink(dirname(root), recursive = TRUE), add = TRUE)
   suppressMessages(
-    study_setup(root, study = "Rproj test", study_tracker_id = 1L)
+    study_setup(root, study = "Rproj test", study_tracker_id = 1L, renv = FALSE)
   )
 
   proj <- file.path(root, "bio_example.Rproj")
@@ -139,7 +140,7 @@ test_that("study_setup leaves an existing R project alone", {
   root <- tempfile("rproj-existing-")
   on.exit(unlink(root, recursive = TRUE), add = TRUE)
   suppressMessages(
-    study_setup(root, study = "Rproj adopt", study_tracker_id = 2L)
+    study_setup(root, study = "Rproj adopt", study_tracker_id = 2L, renv = FALSE)
   )
   unlink(list.files(root, "[.]Rproj$", full.names = TRUE))
   writeLines(
@@ -149,7 +150,7 @@ test_that("study_setup leaves an existing R project alone", {
 
   suppressMessages(
     study_setup(
-      root, study = "Rproj adopt", study_tracker_id = 2L, adopt = TRUE
+      root, study = "Rproj adopt", study_tracker_id = 2L, adopt = TRUE, renv = FALSE, cleanup = FALSE
     )
   )
 
@@ -164,7 +165,7 @@ test_that("study_setup sees a hidden existing R project", {
   root <- tempfile("rproj-hidden-")
   on.exit(unlink(root, recursive = TRUE), add = TRUE)
   suppressMessages(
-    study_setup(root, study = "Rproj adopt", study_tracker_id = 3L)
+    study_setup(root, study = "Rproj adopt", study_tracker_id = 3L, renv = FALSE)
   )
   unlink(list.files(root, "[.]Rproj$", full.names = TRUE))
   writeLines(
@@ -174,7 +175,7 @@ test_that("study_setup sees a hidden existing R project", {
 
   suppressMessages(
     study_setup(
-      root, study = "Rproj adopt", study_tracker_id = 3L, adopt = TRUE
+      root, study = "Rproj adopt", study_tracker_id = 3L, adopt = TRUE, renv = FALSE, cleanup = FALSE
     )
   )
 
@@ -187,7 +188,7 @@ test_that("study_setup sees a hidden existing R project", {
 test_that("study_setup records a Tracker identity as verified by default", {
   root <- file.path(withr::local_tempdir(), "new-study")
 
-  study_setup(root, "Example study", 42L)
+  study_setup(root, "Example study", 42L, renv = FALSE)
 
   cfg <- study_config(root, require_data = FALSE)
   expect_identical(cfg$identity_source, "tracker")
@@ -198,7 +199,7 @@ test_that("study_setup records a manual identity as unverified", {
   root <- file.path(withr::local_tempdir(), "new-study")
 
   status <- study_setup(root, "Example study", 42L,
-                        identity_source = "manual")
+                        identity_source = "manual", renv = FALSE)
 
   cfg <- study_config(root, require_data = FALSE)
   expect_identical(cfg$identity_source, "manual")
@@ -211,7 +212,7 @@ test_that("study_setup rejects an unknown identity source without writing", {
   root <- file.path(withr::local_tempdir(), "new-study")
 
   expect_error(
-    study_setup(root, "Example study", 42L, identity_source = "typed"),
+    study_setup(root, "Example study", 42L, identity_source = "typed", renv = FALSE),
     "identity_source"
   )
   expect_false(dir.exists(root))
@@ -219,9 +220,9 @@ test_that("study_setup rejects an unknown identity source without writing", {
 
 test_that("adoption keeps an existing identity and its source", {
   root <- file.path(withr::local_tempdir(), "new-study")
-  study_setup(root, "Example study", 42L, identity_source = "manual")
+  study_setup(root, "Example study", 42L, identity_source = "manual", renv = FALSE)
 
-  study_setup(root, "Example study", 42L, adopt = TRUE)
+  study_setup(root, "Example study", 42L, adopt = TRUE, renv = FALSE, cleanup = FALSE)
 
   cfg <- study_config(root, require_data = FALSE)
   expect_identical(cfg$identity_source, "manual")
@@ -232,7 +233,7 @@ test_that("study_setup rejects an abbreviated identity source", {
   root <- file.path(withr::local_tempdir(), "new-study")
 
   expect_error(
-    study_setup(root, "Example study", 42L, identity_source = "man"),
+    study_setup(root, "Example study", 42L, identity_source = "man", renv = FALSE),
     "identity_source"
   )
   expect_false(dir.exists(root))
@@ -243,7 +244,7 @@ test_that("study_setup sets up the working directory when root is omitted", {
   dir.create(root)
   withr::local_dir(root)
 
-  suppressMessages(study_setup(study = "Here", study_tracker_id = 42L))
+  suppressMessages(study_setup(study = "Here", study_tracker_id = 42L, renv = FALSE))
 
   expect_true(file.exists(file.path(root, "_study.yml")))
   expect_true(dir.exists(file.path(root, "00_datasets")))
@@ -251,14 +252,14 @@ test_that("study_setup sets up the working directory when root is omitted", {
 
 test_that("an omitted root resolves to the enclosing study, not a nested one", {
   root <- file.path(withr::local_tempdir(), "outer")
-  suppressMessages(study_setup(root, "Outer", 42L))
+  suppressMessages(study_setup(root, "Outer", 42L, renv = FALSE))
   withr::local_dir(file.path(root, "30_analyses"))
   local_mocked_bindings(.study_interactive = function() FALSE)
 
-  expect_error(study_setup(study = "Outer", study_tracker_id = 42L), "adopt = TRUE")
+  expect_error(study_setup(study = "Outer", study_tracker_id = 42L, renv = FALSE), "adopt = TRUE")
   expect_false(file.exists(file.path(root, "30_analyses", "_study.yml")))
 
-  suppressMessages(study_setup(study = "Outer", study_tracker_id = 42L, adopt = TRUE))
+  suppressMessages(study_setup(study = "Outer", study_tracker_id = 42L, adopt = TRUE, renv = FALSE, cleanup = FALSE))
   expect_false(file.exists(file.path(root, "30_analyses", "_study.yml")))
 })
 
@@ -268,7 +269,7 @@ test_that("an omitted root outside any study still refuses a folder with files",
   writeLines("x", file.path(root, "notes.txt"))
   withr::local_dir(root)
 
-  expect_error(study_setup(study = "Busy", study_tracker_id = 42L), "adopt = TRUE")
+  expect_error(study_setup(study = "Busy", study_tracker_id = 42L, renv = FALSE), "adopt = TRUE")
   expect_false(file.exists(file.path(root, "_study.yml")))
 })
 
@@ -278,13 +279,13 @@ test_that("a malformed _study.yml above the working directory is not taken as no
   writeLines("study: [unclosed", file.path(root, "_study.yml"))
   withr::local_dir(file.path(root, "sub"))
 
-  expect_error(study_setup(study = "Broken", study_tracker_id = 42L), "Parser error")
+  expect_error(study_setup(study = "Broken", study_tracker_id = 42L, renv = FALSE), "Parser error")
   expect_false(file.exists(file.path(root, "sub", "_study.yml")))
 })
 
 test_that("study_setup asks before adopting an existing study when interactive", {
   root <- file.path(withr::local_tempdir(), "asked")
-  suppressMessages(study_setup(root, "Asked", 42L))
+  suppressMessages(study_setup(root, "Asked", 42L, renv = FALSE))
   file.remove(file.path(root, ".renvignore"))
   before <- readLines(file.path(root, "_study.yml"))
   asked <- character(0)
@@ -296,7 +297,7 @@ test_that("study_setup asks before adopting an existing study when interactive",
     }
   )
 
-  suppressMessages(study_setup(root, "Asked", 42L))
+  suppressMessages(study_setup(root, "Asked", 42L, renv = FALSE, cleanup = FALSE))
 
   expect_length(asked, 1L)
   expect_true(file.exists(file.path(root, ".renvignore")))
@@ -305,37 +306,37 @@ test_that("study_setup asks before adopting an existing study when interactive",
 
 test_that("declining the adopt prompt stops without writing", {
   root <- file.path(withr::local_tempdir(), "declined")
-  suppressMessages(study_setup(root, "Declined", 42L))
+  suppressMessages(study_setup(root, "Declined", 42L, renv = FALSE))
   file.remove(file.path(root, ".renvignore"))
   local_mocked_bindings(
     .study_interactive = function() TRUE,
     .study_ask_adopt = function(root) FALSE
   )
 
-  expect_error(study_setup(root, "Declined", 42L), "adopt = TRUE")
+  expect_error(study_setup(root, "Declined", 42L, renv = FALSE), "adopt = TRUE")
   expect_false(file.exists(file.path(root, ".renvignore")))
 })
 
 test_that("study_setup does not ask when the existing study has another Tracker ID", {
   root <- file.path(withr::local_tempdir(), "other-id")
-  suppressMessages(study_setup(root, "Other", 42L))
+  suppressMessages(study_setup(root, "Other", 42L, renv = FALSE))
   local_mocked_bindings(
     .study_interactive = function() TRUE,
     .study_ask_adopt = function(root) stop("should not ask")
   )
 
-  expect_error(study_setup(root, "Other", 43L), "already exists for Study Tracker ID 42")
+  expect_error(study_setup(root, "Other", 43L, renv = FALSE), "already exists for Study Tracker ID 42")
 })
 
 test_that("study_setup does not ask when not interactive", {
   root <- file.path(withr::local_tempdir(), "batch")
-  suppressMessages(study_setup(root, "Batch", 42L))
+  suppressMessages(study_setup(root, "Batch", 42L, renv = FALSE))
   local_mocked_bindings(
     .study_interactive = function() FALSE,
     .study_ask_adopt = function(root) stop("should not ask")
   )
 
-  expect_error(study_setup(root, "Batch", 42L), "adopt = TRUE")
+  expect_error(study_setup(root, "Batch", 42L, renv = FALSE), "adopt = TRUE")
 })
 
 # cleanup = TRUE --------------------------------------------------------------
@@ -363,7 +364,7 @@ test_that("cleanup deletes tp.* files and binder.summaries.doc anywhere in the s
   keep <- write_file(root, "analyses/analysis.sas", "keep")
 
   status <- study_setup(root, "Legacy study", 42L, adopt = TRUE, cleanup = TRUE,
-                        template_dir = local_corpus())
+                        template_dir = local_corpus(), renv = FALSE)
 
   expect_false(any(file.exists(file.path(root, tp))))
   expect_false(file.exists(file.path(root, "analyses/tp.run.sas")))
@@ -387,7 +388,7 @@ test_that("cleanup removes templates and old_RF_templates folders left empty", {
   keep <- write_file(root, "graphs/templates/my_plot.R", "keep")
 
   status <- study_setup(root, "Legacy study", 42L, adopt = TRUE, cleanup = TRUE,
-                        template_dir = local_corpus())
+                        template_dir = local_corpus(), renv = FALSE)
 
   expect_false(dir.exists(file.path(root, "analyses/templates")))
   expect_false(dir.exists(file.path(root, "analyses/old_RF_templates")))
@@ -413,7 +414,7 @@ test_that("cleanup removes any folder it empties, whatever its name", {
   write_file(root, "documents/binder.summaries.doc")
 
   status <- study_setup(root, "Legacy study", 42L, adopt = TRUE, cleanup = TRUE,
-                        template_dir = local_corpus())
+                        template_dir = local_corpus(), renv = FALSE)
 
   expect_false(dir.exists(file.path(root, "graphs/templates")))
   expect_true(dir.exists(file.path(root, "graphs")))
@@ -439,21 +440,10 @@ test_that("cleanup leaves renv, .git, .checkpoint and symlinked folders alone", 
   file.symlink(outside, file.path(root, "analyses", "linked"))
 
   study_setup(root, "Legacy study", 42L, adopt = TRUE, cleanup = TRUE,
-              template_dir = local_corpus())
+              template_dir = local_corpus(), renv = FALSE)
 
   expect_true(all(file.exists(file.path(root, protected))))
   expect_true(file.exists(outside_tp))
-})
-
-test_that("cleanup is off by default", {
-  root <- withr::local_tempdir()
-  dir.create(file.path(root, "analyses"))
-  tp <- write_file(root, "analyses/tp.hz.sas")
-
-  status <- study_setup(root, "Legacy study", 42L, adopt = TRUE)
-
-  expect_true(file.exists(tp))
-  expect_null(attr(status, "cleanup"))
 })
 
 test_that("cleanup stops loudly when a file cannot be deleted", {
@@ -464,14 +454,14 @@ test_that("cleanup stops loudly when a file cannot be deleted", {
 
   expect_error(
     study_setup(root, "Legacy study", 42L, adopt = TRUE, cleanup = TRUE,
-                template_dir = local_corpus()),
+                template_dir = local_corpus(), renv = FALSE),
     "could not delete 1 .*analyses/tp.hz.sas"
   )
 })
 
 test_that("cleanup must be TRUE or FALSE", {
   root <- file.path(withr::local_tempdir(), "new-study")
-  expect_error(study_setup(root, "Example", 42L, cleanup = NA), "cleanup must be TRUE or FALSE")
+  expect_error(study_setup(root, "Example", 42L, cleanup = NA, renv = FALSE), "cleanup must be TRUE or FALSE")
   expect_false(dir.exists(root))
 })
 
@@ -489,7 +479,8 @@ write_lock <- function(root) {
 
 snapshot_expr <- function(root) {
   project <- deparse(normalizePath(root, winslash = "/"))
-  paste0("renv::load(", project, "); renv::snapshot(project = ", project, ", prompt = FALSE)")
+  paste0("renv::load(", project, "); renv::settings$snapshot.type('explicit', project = ", project,
+         "); renv::snapshot(project = ", project, ", prompt = FALSE)")
 }
 
 fake_rscript <- function(calls, init_ok = TRUE, snapshot_ok = TRUE) {
@@ -528,18 +519,31 @@ test_that("renv = TRUE initializes a bare environment and snapshots it after cle
   expect_true(file.exists(file.path(root, "renv.lock")))
 })
 
+test_that("renv = TRUE declares the study before initializing it", {
+  root <- withr::local_tempdir()
+  calls <- new.env()
+  local_mocked_bindings(.study_rscript = fake_rscript(calls))
+  study_setup(root, "New study", 42L, adopt = TRUE, cleanup = FALSE, renv = TRUE)
+  expect_true(file.exists(file.path(root, "DESCRIPTION")))
+  expect_identical(unname(read.dcf(file.path(root, "DESCRIPTION"))[1L, "Type"]), "Project")
+})
+
+test_that(".renvignore covers template copies outside templates/", {
+  expect_true(all(c("tp.*", "old_RF_templates*/") %in% .study_renvignore()))
+})
+
 test_that("renv = TRUE keeps a complete environment and resumes an interrupted one", {
   root <- withr::local_tempdir()
   write_renv_start(root)
   calls <- new.env()
   local_mocked_bindings(.study_rscript = fake_rscript(calls))
 
-  status <- study_setup(root, "Legacy study", 42L, adopt = TRUE, renv = TRUE)
+  status <- study_setup(root, "Legacy study", 42L, adopt = TRUE, renv = TRUE, cleanup = FALSE)
   expect_identical(calls$exprs, snapshot_expr(root))
   expect_identical(attr(status, "renv"), "initialized")
 
   calls$exprs <- NULL
-  status <- study_setup(root, "Legacy study", 42L, adopt = TRUE, renv = TRUE)
+  status <- study_setup(root, "Legacy study", 42L, adopt = TRUE, renv = TRUE, cleanup = FALSE)
   expect_null(calls$exprs)
   expect_identical(attr(status, "renv"), "retained")
 })
@@ -551,7 +555,7 @@ test_that("renv = TRUE stops on any other partial environment without running R"
   local_mocked_bindings(.study_rscript = fake_rscript(calls))
 
   expect_error(
-    study_setup(root, "Legacy study", 42L, adopt = TRUE, renv = TRUE),
+    study_setup(root, "Legacy study", 42L, adopt = TRUE, renv = TRUE, cleanup = FALSE),
     "partial renv environment; sound: renv.lock; missing or invalid: renv, .Rprofile"
   )
   expect_null(calls$exprs)
@@ -560,21 +564,61 @@ test_that("renv = TRUE stops on any other partial environment without running R"
 test_that("renv = TRUE reports a failed init or snapshot", {
   root <- withr::local_tempdir()
   local_mocked_bindings(.study_rscript = fake_rscript(new.env(), init_ok = FALSE))
-  expect_error(study_setup(root, "Legacy study", 42L, adopt = TRUE, renv = TRUE),
+  expect_error(study_setup(root, "Legacy study", 42L, adopt = TRUE, renv = TRUE, cleanup = FALSE),
                "renv initialization failed: init exploded")
 
   root <- withr::local_tempdir()
   local_mocked_bindings(.study_rscript = fake_rscript(new.env(), snapshot_ok = FALSE))
-  expect_error(study_setup(root, "Legacy study", 42L, adopt = TRUE, renv = TRUE),
+  expect_error(study_setup(root, "Legacy study", 42L, adopt = TRUE, renv = TRUE, cleanup = FALSE),
                "renv snapshot failed: snapshot exploded")
 })
 
-test_that("renv is off by default", {
+legacy_study <- function(env = parent.frame()) {
+  root <- withr::local_tempdir(.local_envir = env)
+  dir.create(file.path(root, "analyses"))
+  write_file(root, "analyses/tp.hz.R")
+  root
+}
+
+test_that("cleanup follows adopt when not given", {
+  root <- legacy_study()
+  local_mocked_bindings(.study_rscript = fake_rscript(new.env()))
+  study_setup(root, "Legacy study", 42L, adopt = TRUE, template_dir = local_corpus())
+  expect_false(file.exists(file.path(root, "analyses/tp.hz.R")))
+})
+
+test_that("cleanup = FALSE overrides adopt", {
+  root <- legacy_study()
+  local_mocked_bindings(.study_rscript = fake_rscript(new.env()))
+  study_setup(root, "Legacy study", 42L, adopt = TRUE, cleanup = FALSE)
+  expect_true(file.exists(file.path(root, "analyses/tp.hz.R")))
+})
+
+test_that("an adopt accepted at the prompt cleans up too", {
+  root <- legacy_study()
+  study_setup(root, "Legacy study", 42L, adopt = TRUE, cleanup = FALSE, renv = FALSE)
+  write_file(root, "analyses/tp.hz.R")   # a template copy arriving after the first setup
+  local_mocked_bindings(.study_interactive = function() TRUE,
+                        .study_ask_adopt = function(root) TRUE,
+                        .study_rscript = fake_rscript(new.env()))
+  study_setup(root, "Legacy study", 42L, template_dir = local_corpus())
+  expect_false(file.exists(file.path(root, "analyses/tp.hz.R")))
+})
+
+test_that("an implied cleanup with no template corpus stops before writing", {
+  root <- legacy_study()
+  expect_error(study_setup(root, "Legacy study", 42L, adopt = TRUE, renv = FALSE,
+                           template_dir = file.path(tempdir(), "no-such-corpus")),
+               "template corpus not found")
+  expect_false(file.exists(file.path(root, "_study.yml")))
+})
+
+test_that("renv is on by default", {
   root <- withr::local_tempdir()
-  local_mocked_bindings(.study_rscript = function(expr, root, ...) stop("should not run"))
-  status <- study_setup(root, "Legacy study", 42L, adopt = TRUE)
-  expect_null(attr(status, "renv"))
-  expect_false(file.exists(file.path(root, "renv.lock")))
+  calls <- new.env()
+  local_mocked_bindings(.study_rscript = fake_rscript(calls))
+  study_setup(root, "New study", 42L, adopt = TRUE, cleanup = FALSE)
+  expect_true(any(grepl("renv::init", calls$exprs, fixed = TRUE)))
 })
 
 test_that("the renv child process does not inherit a disabled autoloader", {
@@ -605,7 +649,7 @@ test_that("cleanup deletes files whose name and content match the template corpu
   write_file(root, "config", "[core]")
 
   status <- study_setup(root, "Legacy study", 42L, adopt = TRUE, cleanup = TRUE,
-                        template_dir = corpus)
+                        template_dir = corpus, renv = FALSE)
 
   expect_setequal(attr(status, "cleanup")$deleted,
                   c("documents/methods-boosting.docx", "analyses/references.bib",
@@ -628,7 +672,7 @@ test_that("cleanup keeps a .renvignore or .gitignore identical to the corpus cop
   write_file(root, ".renvignore", "templates/")
   write_file(root, ".gitignore", "*.log")
 
-  study_setup(root, "Legacy study", 42L, adopt = TRUE, cleanup = TRUE, template_dir = corpus)
+  study_setup(root, "Legacy study", 42L, adopt = TRUE, cleanup = TRUE, template_dir = corpus, renv = FALSE)
 
   expect_true(all(file.exists(file.path(root, c(".renvignore", ".gitignore")))))
 })
@@ -640,7 +684,7 @@ test_that("cleanup stops when the template corpus cannot be found", {
   missing <- file.path(withr::local_tempdir(), "nowhere")
 
   expect_error(
-    study_setup(root, "Legacy study", 42L, adopt = TRUE, cleanup = TRUE, template_dir = missing),
+    study_setup(root, "Legacy study", 42L, adopt = TRUE, cleanup = TRUE, template_dir = missing, renv = FALSE),
     "template corpus not found"
   )
   expect_true(file.exists(tp))
@@ -659,7 +703,7 @@ test_that("cleanup refuses a template_dir that overlaps the study, before writin
 
   for (corpus in c(root, inside, dirname(root))) {
     expect_error(
-      study_setup(root, "Legacy study", 42L, adopt = TRUE, cleanup = TRUE, template_dir = corpus),
+      study_setup(root, "Legacy study", 42L, adopt = TRUE, cleanup = TRUE, template_dir = corpus, renv = FALSE),
       "overlap"
     )
   }
@@ -671,7 +715,7 @@ test_that("cleanup refuses an overlapping corpus for a root that does not exist 
   corpus <- withr::local_tempdir()
   root <- file.path(corpus, "new", "study")
   expect_error(
-    study_setup(root, "New study", 42L, cleanup = TRUE, template_dir = corpus),
+    study_setup(root, "New study", 42L, cleanup = TRUE, template_dir = corpus, renv = FALSE),
     "overlap"
   )
   expect_false(dir.exists(root))
@@ -685,7 +729,7 @@ test_that("cleanup never enters .checkpoint or renv folders at any depth", {
   for (rel in protected) write_file(root, rel)
 
   study_setup(root, "Legacy study", 42L, adopt = TRUE, cleanup = TRUE,
-              template_dir = local_corpus())
+              template_dir = local_corpus(), renv = FALSE)
 
   expect_true(all(file.exists(file.path(root, protected))))
 })
@@ -701,7 +745,7 @@ test_that("cleanup keeps a folder holding a skipped symlink or an untouched empt
   dir.create(file.path(root, "analyses", "other", "mine"))
 
   status <- study_setup(root, "Legacy study", 42L, adopt = TRUE, cleanup = TRUE,
-                        template_dir = local_corpus())
+                        template_dir = local_corpus(), renv = FALSE)
 
   expect_true(nzchar(Sys.readlink(file.path(root, "analyses", "work", "link"))))
   expect_true(dir.exists(file.path(root, "analyses", "other", "mine")))
@@ -715,7 +759,7 @@ test_that("a nested .git in the corpus is not template material", {
   dir.create(file.path(root, "analyses"))
   config <- write_file(root, "analyses/config", "[core]")
 
-  study_setup(root, "Legacy study", 42L, adopt = TRUE, cleanup = TRUE, template_dir = corpus)
+  study_setup(root, "Legacy study", 42L, adopt = TRUE, cleanup = TRUE, template_dir = corpus, renv = FALSE)
 
   expect_true(file.exists(config))
 })
@@ -743,7 +787,7 @@ test_that("renv = TRUE does not mistake mere paths for a complete environment", 
   for (case in names(cases)) {
     root <- withr::local_tempdir()
     cases[[case]](root)
-    expect_error(study_setup(root, "Legacy study", 42L, adopt = TRUE, renv = TRUE),
+    expect_error(study_setup(root, "Legacy study", 42L, adopt = TRUE, renv = TRUE, cleanup = FALSE),
                  "partial renv environment", info = case)
   }
   expect_null(calls$exprs)
@@ -760,10 +804,65 @@ test_that("the real renv snapshot records the study's own library, not the calle
   root <- withr::local_tempdir()
   write_file(root, "analyses/model.R", "library(digest)")
 
-  status <- study_setup(root, "Legacy study", 42L, adopt = TRUE, renv = TRUE)
+  status <- study_setup(root, "Legacy study", 42L, adopt = TRUE, renv = TRUE, cleanup = FALSE)
 
   expect_identical(attr(status, "renv"), "initialized")
   lock <- jsonlite::read_json(file.path(root, "renv.lock"))
   expect_false("digest" %in% names(lock$Packages))
   expect_true(all(.study_renv_parts(root)))
+  expect_match(paste(readLines(file.path(root, "renv", "settings.json")), collapse = ""),
+               '"snapshot.type": "explicit"', fixed = TRUE)
+})
+
+test_that("renv = TRUE stops before writing when renv is not installed", {
+  root <- file.path(withr::local_tempdir(), "new")
+  local_mocked_bindings(.renv_installed = function() FALSE)
+  expect_error(study_setup(root, "Study", 42L, adopt = TRUE, cleanup = FALSE, renv = TRUE),
+               "renv = FALSE")
+  expect_false(file.exists(root))
+})
+
+test_that("renv = TRUE stops before writing when the root has a package DESCRIPTION", {
+  root <- withr::local_tempdir()
+  writeLines(c("Package: foo", "Version: 1.0.0"), file.path(root, "DESCRIPTION"))
+  expect_error(study_setup(root, "Study", 42L, adopt = TRUE, cleanup = FALSE, renv = TRUE),
+               "renv = FALSE")
+  expect_false(file.exists(file.path(root, "_study.yml")))
+  expect_length(list.dirs(root, recursive = FALSE), 0L)
+})
+
+test_that("a retained renv environment skips the renv preflight", {
+  root <- withr::local_tempdir()
+  write_renv_start(root)
+  write_lock(root)
+  writeLines(c("Package: foo", "Version: 1.0.0"), file.path(root, "DESCRIPTION"))
+  local_mocked_bindings(.renv_installed = function() FALSE)
+  status <- study_setup(root, "Study", 42L, adopt = TRUE, cleanup = FALSE, renv = TRUE)
+  expect_identical(attr(status, "renv"), "retained")
+})
+
+test_that("an existing .renvignore gains the new lines and keeps the user's", {
+  root <- withr::local_tempdir()
+  writeLines(c("templates/", "mydir/"), file.path(root, ".renvignore"))
+  study_setup(root, "Study", 42L, adopt = TRUE, cleanup = FALSE, renv = FALSE)
+  got <- readLines(file.path(root, ".renvignore"))
+  expect_identical(got[1:2], c("templates/", "mydir/"))
+  expect_setequal(got, union(c("templates/", "mydir/"), .study_renvignore()))
+  expect_false(anyDuplicated(got) > 0L)
+})
+
+test_that("appending to a file with no trailing newline starts a new line", {
+  f <- withr::local_tempfile()
+  cat("templates/\nmydir/", file = f)
+  .study_append_lines_missing(c("templates/", "a/", "b/"), f)
+  expect_identical(readLines(f), c("templates/", "mydir/", "a/", "b/"))
+  expect_identical(readBin(f, "raw", file.size(f))[file.size(f)], as.raw(10L))
+})
+
+test_that("two successive appends leave clean lines", {
+  f <- withr::local_tempfile()
+  cat("x", file = f)
+  .study_append_lines_missing("a/", f)
+  .study_append_lines_missing(c("a/", "b/"), f)
+  expect_identical(readLines(f), c("x", "a/", "b/"))
 })

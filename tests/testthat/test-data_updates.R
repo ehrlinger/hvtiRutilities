@@ -600,7 +600,7 @@ test_that("adoption advances only the selected named contract", {
 
 test_that("a named release can be adopted before the default is registered", {
   root <- file.path(withr::local_tempdir(), "study")
-  study_setup(root, "Named release fixture", 42L)
+  study_setup(root, "Named release fixture", 42L, renv = FALSE)
   fx <- write_release_fixture(root)
   suppressWarnings(register_data(
     root,

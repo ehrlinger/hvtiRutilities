@@ -409,7 +409,7 @@ provenance_path <- function(path) {
 #'
 #' @examplesIf requireNamespace("arrow", quietly = TRUE)
 #' root <- file.path(tempdir(), "provenance-data-example")
-#' invisible(study_setup(root, study = "Example", study_tracker_id = 1L))
+#' invisible(study_setup(root, study = "Example", study_tracker_id = 1L, renv = FALSE))
 #' utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
 #'                  file.path(root, "00_datasets", "built.csv"),
 #'                  row.names = FALSE)
@@ -464,7 +464,7 @@ provenance_data <- function(dataset = "study", cfg = study_config(),
 #'
 #' @examplesIf requireNamespace("arrow", quietly = TRUE)
 #' root <- file.path(tempdir(), "provenance-artifact-example")
-#' invisible(study_setup(root, study = "Example", study_tracker_id = 1L))
+#' invisible(study_setup(root, study = "Example", study_tracker_id = 1L, renv = FALSE))
 #' utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
 #'                  file.path(root, "00_datasets", "built.csv"),
 #'                  row.names = FALSE)
@@ -517,7 +517,7 @@ provenance_artifact <- function(path, role = "input", cfg = study_config()) {
 #'
 #' @examplesIf requireNamespace("arrow", quietly = TRUE)
 #' root <- file.path(tempdir(), "capture-provenance-example")
-#' invisible(study_setup(root, study = "Example", study_tracker_id = 1L))
+#' invisible(study_setup(root, study = "Example", study_tracker_id = 1L, renv = FALSE))
 #' utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
 #'                  file.path(root, "00_datasets", "built.csv"),
 #'                  row.names = FALSE)
@@ -590,7 +590,7 @@ capture_provenance <- function(job, data, artifacts = list(), extra = list(),
 #'
 #' @examplesIf requireNamespace("arrow", quietly = TRUE)
 #' root <- file.path(tempdir(), "publish-provenance-example")
-#' invisible(study_setup(root, study = "Example", study_tracker_id = 1L))
+#' invisible(study_setup(root, study = "Example", study_tracker_id = 1L, renv = FALSE))
 #' utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
 #'                  file.path(root, "00_datasets", "built.csv"),
 #'                  row.names = FALSE)
@@ -680,7 +680,7 @@ publish_provenance <- function(path, payload) {
 #'
 #' @examplesIf requireNamespace("arrow", quietly = TRUE)
 #' root <- file.path(tempdir(), "record-provenance-example")
-#' invisible(study_setup(root, study = "Example", study_tracker_id = 1L))
+#' invisible(study_setup(root, study = "Example", study_tracker_id = 1L, renv = FALSE))
 #' utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
 #'                  file.path(root, "00_datasets", "built.csv"),
 #'                  row.names = FALSE)

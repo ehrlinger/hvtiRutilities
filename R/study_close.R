@@ -219,7 +219,7 @@
 #' \donttest{
 #' if (nzchar(Sys.which("git"))) {
 #'   root <- file.path(tempdir(), "close-example")
-#'   study_setup(root, "Close example", 1267L)
+#'   study_setup(root, "Close example", 1267L, renv = FALSE)
 #'   # A throwaway identity, so the example commits on a machine with no
 #'   # git user configured.
 #'   withr::with_envvar(c(GIT_AUTHOR_NAME = "Example",
