@@ -9,7 +9,10 @@ local_need <- function(installed = character(0), renv_root = NULL, interactive =
     .need_root = function(root) renv_root,
     .renv_active = function(root) !is.null(renv_root),
     .study_interactive = function() interactive,
-    .need_ask = function(pkgs, caller) { state$asked <- state$asked + 1L; answer },
+    .need_ask = function(pkgs, caller) {
+      state$asked <- state$asked + 1L
+      answer
+    },
     .need_install = function(pkgs, root) state$installed <- c(state$installed, pkgs),
     .need_snapshot = function(root) state$snapshots <- state$snapshots + 1L,
     .env = env
