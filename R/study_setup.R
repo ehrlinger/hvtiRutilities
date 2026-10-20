@@ -289,7 +289,7 @@
 #' Set up study identity and directories
 #'
 #' @description
-#' Creates the numbered directory structure for a new study and writes an
+#' The usual entry point is \code{hvtiR::setup()}. Creates the numbered directory structure for a new study and writes an
 #' identity-only \code{_study.yml}. With \code{adopt = TRUE}, an existing
 #' study keeps its legacy or numbered directory layout and every existing
 #' initialization file.
@@ -356,12 +356,15 @@
 #'   adoption keeps the recorded source.
 #' @param cleanup Logical. Delete the study's \code{tp.*} template copies and
 #'   \code{binder.summaries.doc}, and remove the template folders they leave
-#'   empty. See Details.
+#'   empty. See Details. Defaults to \code{adopt}: adopting a study cleans it,
+#'   including an adoption accepted at the prompt. Pass \code{FALSE} to adopt
+#'   without cleaning.
 #' @param template_dir Character(1). The template corpus studies were copied
 #'   from, read when \code{cleanup = TRUE}. Setup stops with an error when it
 #'   does not exist.
 #' @param renv Logical. Initialize and snapshot the study's \code{renv}
-#'   environment. See Details.
+#'   environment. See Details. Defaults to \code{TRUE}; test suites that build
+#'   temporary studies should pass \code{FALSE}.
 #'
 #' @return An object of class \code{"study_status"}, returned visibly. With
 #'   \code{cleanup = TRUE} it carries a \code{"cleanup"} attribute, a list of
@@ -403,8 +406,11 @@ study_setup <- function(root = NULL, study, study_tracker_id,
                         irb_number = NULL, cvir_no = NULL,
                         study_creation_date = NULL, adopt = FALSE,
                         identity_source = c("tracker", "manual"),
-                        cleanup = FALSE, renv = FALSE,
+                        cleanup = adopt, renv = TRUE,
                         template_dir = "/programs/development/template") {
+  # cleanup defaults to the FINAL adopt, which the interactive prompt below may
+  # set. Validating it here would force the default with the caller's adopt.
+  cleanup_given <- !missing(cleanup)
   # Exact values only: match.arg() would accept an abbreviation such as
   # "man", and a provenance field should record what the caller meant.
   sources <- c("tracker", "manual")
@@ -433,24 +439,12 @@ study_setup <- function(root = NULL, study, study_tracker_id,
       "study_creation_date"
     )
   }
-  for (flag in c("adopt", "cleanup", "renv")) {
+  for (flag in c("adopt", if (cleanup_given) "cleanup", "renv")) {
     value <- get(flag)
     if (length(value) != 1L || is.na(value) || !is.logical(value)) {
       stop("study_setup(): ", flag, " must be TRUE or FALSE", call. = FALSE)
     }
   }
-  if (cleanup) {
-    template_dir <- .study_scalar(template_dir, "template_dir", required = TRUE)
-    if (!dir.exists(template_dir)) {
-      stop("study_setup(): template corpus not found at ", template_dir,
-           "; pass template_dir", call. = FALSE)
-    }
-    if (.study_paths_overlap(root, template_dir)) {
-      stop("study_setup(): the study root and template_dir overlap; cleanup would ",
-           "delete the corpus or the study", call. = FALSE)
-    }
-  }
-
   existed <- file.exists(root) || dir.exists(root)
   if (file.exists(root) && !dir.exists(root)) {
     stop("study_setup(): root is a file, not a directory: ", root,
@@ -492,6 +486,19 @@ study_setup <- function(root = NULL, study, study_tracker_id,
            "to fill in what it is missing", call. = FALSE)
     }
     adopt <- TRUE
+  }
+
+  if (!cleanup_given) cleanup <- adopt
+  if (cleanup) {
+    template_dir <- .study_scalar(template_dir, "template_dir", required = TRUE)
+    if (!dir.exists(template_dir)) {
+      stop("study_setup(): template corpus not found at ", template_dir,
+           "; pass template_dir, or cleanup = FALSE", call. = FALSE)
+    }
+    if (.study_paths_overlap(root, template_dir)) {
+      stop("study_setup(): the study root and template_dir overlap; cleanup would ",
+           "delete the corpus or the study", call. = FALSE)
+    }
   }
 
   layout <- if (!existed || !length(entries)) {

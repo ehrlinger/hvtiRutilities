@@ -15,8 +15,8 @@ study_setup(
   study_creation_date = NULL,
   adopt = FALSE,
   identity_source = c("tracker", "manual"),
-  cleanup = FALSE,
-  renv = FALSE,
+  cleanup = adopt,
+  renv = TRUE,
   template_dir = "/programs/development/template"
 )
 }
@@ -51,10 +51,13 @@ adoption keeps the recorded source.}
 
 \item{cleanup}{Logical. Delete the study's \code{tp.*} template copies and
 \code{binder.summaries.doc}, and remove the template folders they leave
-empty. See Details.}
+empty. See Details. Defaults to \code{adopt}: adopting a study cleans it,
+including an adoption accepted at the prompt. Pass \code{FALSE} to adopt
+without cleaning.}
 
 \item{renv}{Logical. Initialize and snapshot the study's \code{renv}
-environment. See Details.}
+environment. See Details. Defaults to \code{TRUE}; test suites that build
+temporary studies should pass \code{FALSE}.}
 
 \item{template_dir}{Character(1). The template corpus studies were copied
 from, read when \code{cleanup = TRUE}. Setup stops with an error when it
@@ -68,7 +71,7 @@ An object of class \code{"study_status"}, returned visibly. With
   \code{"initialized"} or \code{"retained"}.
 }
 \description{
-Creates the numbered directory structure for a new study and writes an
+The usual entry point is \code{hvtiR::setup()}. Creates the numbered directory structure for a new study and writes an
 identity-only \code{_study.yml}. With \code{adopt = TRUE}, an existing
 study keeps its legacy or numbered directory layout and every existing
 initialization file.
