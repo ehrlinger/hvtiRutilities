@@ -1,5 +1,12 @@
 # Changelog
 
+## hvtiRutilities 1.5.7
+
+- [`study_need()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_need.md)
+  no longer records already-installed packages in the study
+  `DESCRIPTION` when the user declines installing a missing one, or the
+  install fails: a refusal leaves the study as it was.
+
 ## hvtiRutilities 1.5.6
 
 - The
