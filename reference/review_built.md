@@ -62,7 +62,7 @@ An object of class `"built_review"` with
 ``` r
 if (requireNamespace("arrow", quietly = TRUE)) {
   root <- file.path(tempdir(), "review-built-example")
-  suppressMessages(study_setup(root, "Example", 1L))
+  suppressMessages(study_setup(root, "Example", 1L, renv = FALSE))
   path <- file.path(study_dir("datasets", root), "example.csv")
   write.csv(data.frame(DEAD = c(1, 0, 0), IV_DEAD = 1:3), path, row.names = FALSE)
   suppressMessages(register_data(root, "example.csv"))

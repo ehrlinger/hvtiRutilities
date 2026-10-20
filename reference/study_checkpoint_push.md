@@ -75,7 +75,7 @@ warning that names the tag and points back here.
 # \donttest{
 if (nzchar(Sys.which("git"))) {
   root <- file.path(tempdir(), "checkpoint-push-example")
-  invisible(study_setup(root, "Checkpoint example", 1267L))
+  invisible(study_setup(root, "Checkpoint example", 1267L, renv = FALSE))
   # A throwaway identity, so the example commits on a machine with no
   # git user configured.
   withr::with_envvar(c(GIT_AUTHOR_NAME = "Example",

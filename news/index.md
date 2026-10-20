@@ -2004,10 +2004,11 @@ belongs with the `bh` work.
 ### Notes
 
 - No new dependencies.
-- `study_init()` does not run `renv::init()`. A missing `renv.lock` is
-  reported as an open item instead: creating one restarts the R session
-  and rewrites `.Rprofile`, which a function that writes two YAML files
-  has no business doing.
+- `study_init()` does not run
+  [`renv::init()`](https://rstudio.github.io/renv/reference/init.html).
+  A missing `renv.lock` is reported as an open item instead: creating
+  one restarts the R session and rewrites `.Rprofile`, which a function
+  that writes two YAML files has no business doing.
 - [`study_status()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md)
   reports a `manifest.yaml` entry as verified when its SHA-256 matches
   but its row count could not be re-derived, and says how many counts

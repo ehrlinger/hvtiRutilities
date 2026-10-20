@@ -55,7 +55,7 @@ A plain list containing one immutable-by-convention data record.
 
 ``` r
 root <- file.path(tempdir(), "provenance-data-example")
-invisible(study_setup(root, study = "Example", study_tracker_id = 1L))
+invisible(study_setup(root, study = "Example", study_tracker_id = 1L, renv = FALSE))
 utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
                  file.path(root, "00_datasets", "built.csv"),
                  row.names = FALSE)
@@ -66,10 +66,10 @@ cfg <- study_config(root)
 str(provenance_data("study", cfg = cfg))
 #> List of 6
 #>  $ dataset: chr "study"
-#>  $ path   : chr "00_datasets/built_20261019.parquet"
+#>  $ path   : chr "00_datasets/built_20261020.parquet"
 #>  $ role   : chr "analysis"
 #>  $ bytes  : num 1162
-#>  $ mtime  : chr "2026-10-19T17:12:12Z"
+#>  $ mtime  : chr "2026-10-20T15:59:12Z"
 #>  $ sha256 : chr "1e75d28bc8dd10e5d237dfef32334987a04322b3d6c6ec12c80a7810158a508a"
 unlink(root, recursive = TRUE)
 ```
