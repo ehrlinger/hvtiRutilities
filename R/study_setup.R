@@ -40,6 +40,8 @@
     "90_estimates/",
     "estimates/",
     "templates/",
+    "old_RF_templates*/",
+    "tp.*",
     "*.sas",
     "*.log",
     "*.lst",
@@ -263,14 +265,20 @@
     }
   }
   if (!resumable) {
+    study_declare(root = root)
     run("renv::init(bare = TRUE, restart = FALSE)", "renv initialization")
   }
+  # A study interrupted by an older version has no DESCRIPTION yet;
+  # study_declare() is idempotent.
+  study_declare(root = root)
+  # Explicit mode: renv.lock is built from DESCRIPTION, never by scanning the
+  # study's code, so a template copy cleanup missed cannot reach the lockfile.
   # Load and snapshot this project explicitly: a child that relied on its
   # startup loading .Rprofile could run with no project and the global
   # library, and snapshot the wrong thing.
   project <- deparse(normalizePath(root, winslash = "/"))
-  run(paste0("renv::load(", project, "); renv::snapshot(project = ", project,
-             ", prompt = FALSE)"), "renv snapshot")
+  run(paste0("renv::load(", project, "); renv::settings$snapshot.type('explicit', project = ",
+             project, "); renv::snapshot(project = ", project, ", prompt = FALSE)"), "renv snapshot")
   if (!all(.study_renv_parts(root))) {
     stop("study_setup(): renv initialization finished without a complete environment",
          call. = FALSE)
@@ -319,9 +327,11 @@
 #' that sources it, and a \code{renv.lock} that parses as a lockfile. One
 #' interrupted after initialization (no lockfile yet) is resumed at the
 #' snapshot; any other partial or invalid environment stops with an error.
-#' Otherwise \code{renv::init(bare = TRUE)} creates it, and the project is
-#' loaded and snapshotted explicitly. The
-#' renv package must be installed.
+#' Otherwise the study \code{DESCRIPTION} is written (see
+#' \code{\link{study_declare}}), \code{renv::init(bare = TRUE)} creates the
+#' environment, and the project is loaded and snapshotted explicitly in
+#' explicit mode, so \code{renv.lock} comes from the \code{DESCRIPTION} and
+#' not from a scan of the study's code. The renv package must be installed.
 #'
 #' @param root Character. Study root to create or adopt. When omitted, the
 #'   study enclosing the working directory (found as \code{\link{study_root}}

@@ -489,7 +489,8 @@ write_lock <- function(root) {
 
 snapshot_expr <- function(root) {
   project <- deparse(normalizePath(root, winslash = "/"))
-  paste0("renv::load(", project, "); renv::snapshot(project = ", project, ", prompt = FALSE)")
+  paste0("renv::load(", project, "); renv::settings$snapshot.type('explicit', project = ", project,
+         "); renv::snapshot(project = ", project, ", prompt = FALSE)")
 }
 
 fake_rscript <- function(calls, init_ok = TRUE, snapshot_ok = TRUE) {
@@ -526,6 +527,19 @@ test_that("renv = TRUE initializes a bare environment and snapshots it after cle
   expect_false(any(seen_tp))
   expect_identical(attr(status, "renv"), "initialized")
   expect_true(file.exists(file.path(root, "renv.lock")))
+})
+
+test_that("renv = TRUE declares the study before initializing it", {
+  root <- withr::local_tempdir()
+  calls <- new.env()
+  local_mocked_bindings(.study_rscript = fake_rscript(calls))
+  study_setup(root, "New study", 42L, adopt = TRUE, cleanup = FALSE, renv = TRUE)
+  expect_true(file.exists(file.path(root, "DESCRIPTION")))
+  expect_identical(unname(read.dcf(file.path(root, "DESCRIPTION"))[1L, "Type"]), "Project")
+})
+
+test_that(".renvignore covers template copies outside templates/", {
+  expect_true(all(c("tp.*", "old_RF_templates*/") %in% .study_renvignore()))
 })
 
 test_that("renv = TRUE keeps a complete environment and resumes an interrupted one", {

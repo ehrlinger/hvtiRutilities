@@ -106,9 +106,11 @@ kept: a \code{renv/} folder holding \code{activate.R}, a \code{.Rprofile}
 that sources it, and a \code{renv.lock} that parses as a lockfile. One
 interrupted after initialization (no lockfile yet) is resumed at the
 snapshot; any other partial or invalid environment stops with an error.
-Otherwise \code{renv::init(bare = TRUE)} creates it, and the project is
-loaded and snapshotted explicitly. The
-renv package must be installed.
+Otherwise the study \code{DESCRIPTION} is written (see
+\code{\link{study_declare}}), \code{renv::init(bare = TRUE)} creates the
+environment, and the project is loaded and snapshotted explicitly in
+explicit mode, so \code{renv.lock} comes from the \code{DESCRIPTION} and
+not from a scan of the study's code. The renv package must be installed.
 }
 \examples{
 root <- file.path(tempdir(), "study-setup-example")
