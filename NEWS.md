@@ -1,3 +1,7 @@
+# hvtiRutilities 1.5.7
+
+* `study_need()` no longer records already-installed packages in the study `DESCRIPTION` when the user declines installing a missing one, or the install fails: a refusal leaves the study as it was.
+
 # hvtiRutilities 1.5.6
 
 * The `register_data()` help page now says what `role` and `dataset` mean and how they go together: `role` takes one value, `"study"` for the study's single main dataset (the default) or `"named"` for another dataset under the name given in `dataset`. It also gains a "Where a subset goes" section comparing a job `WHERE`, an analysis set and a registered subset, and an example that registers a named ancillary dataset and reads it back.
