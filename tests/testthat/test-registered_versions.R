@@ -34,9 +34,10 @@ test_that(".write_version converts once and records the version", {
 test_that(".write_version stops before writing anything when arrow is absent", {
   dir <- withr::local_tempdir()
   src <- write_source_csv(dir)
-  local_mocked_bindings(.arrow_available = function() FALSE)
+  local_mocked_bindings(.arrow_available = function() FALSE, .package_installed = function(pkg) pkg != "arrow",
+                        .need_root = function(root) NULL)
 
-  expect_error(.write_version(src, dir, "2026-10-07"), "install.packages(\"arrow\")", fixed = TRUE)
+  expect_error(.write_version(src, dir, "2026-10-07"), "hvtiR::setup()", fixed = TRUE)
   expect_identical(list.files(dir), "built.csv")
 })
 
@@ -140,9 +141,10 @@ test_that("register_data without arrow stops and writes nothing", {
   path <- file.path(study_dir("datasets", root), "built.csv")
   utils::write.csv(data.frame(id = 1:2), path, row.names = FALSE)
   before <- yaml::read_yaml(file.path(root, "_study.yml"))
-  local_mocked_bindings(.arrow_available = function() FALSE)
+  local_mocked_bindings(.arrow_available = function() FALSE, .package_installed = function(pkg) pkg != "arrow",
+                        .need_root = function(root) NULL)
 
-  expect_error(register_data(root, "built.csv"), "install.packages(\"arrow\")", fixed = TRUE)
+  expect_error(register_data(root, "built.csv"), "hvtiR::setup()", fixed = TRUE)
   expect_identical(yaml::read_yaml(file.path(root, "_study.yml")), before)
   expect_identical(list.files(study_dir("datasets", root)), "built.csv")
 })
@@ -519,7 +521,8 @@ test_that("no package read of a parquet file memory-maps it", {
 })
 
 test_that("a missing arrow is described as a read when read_built() needs it", {
-  local_mocked_bindings(.arrow_available = function() FALSE)
+  local_mocked_bindings(.arrow_available = function() FALSE, .package_installed = function(pkg) pkg != "arrow",
+                        .need_root = function(root) NULL)
   expect_error(.require_arrow("read_built", "read"), "reading it needs the arrow package")
   expect_no_match(tryCatch(.require_arrow("read_built", "read"), error = conditionMessage), "Nothing was written")
   expect_error(.require_arrow("register_data"), "registering a dataset.*Nothing was written")

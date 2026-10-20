@@ -162,10 +162,7 @@ read_clinical_data <- function(file, convert_types = FALSE, ...,
     xls      = readxl::read_excel(file),
     rds      = readRDS(file),
     parquet  = {
-      if (!requireNamespace("arrow", quietly = TRUE)) {
-        stop("Reading '", file, "' needs the arrow package. Install it with install.packages(\"arrow\").",
-             call. = FALSE)
-      }
+      study_need("arrow", caller = "read_clinical_data")
       arrow::read_parquet(file, mmap = FALSE)
     },
     stop(

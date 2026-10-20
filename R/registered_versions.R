@@ -19,8 +19,8 @@
     } else {
       "the registered version of this dataset is a parquet file, and reading it needs the arrow package. "
     }
-    stop(caller, "(): ", why, "Install it with install.packages(\"arrow\") and run this again.",
-         if (action == "register") " Nothing was written." else "", call. = FALSE)
+    study_need("arrow", caller = caller,
+               note = trimws(paste0(why, if (action == "register") "Nothing was written." else "")))
   }
   invisible(TRUE)
 }
