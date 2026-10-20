@@ -35,3 +35,16 @@ test_that("study_declare refuses a package DESCRIPTION", {
   writeLines(c("Package: foo", "Version: 1.0.0"), file.path(root, "DESCRIPTION"))
   expect_error(study_declare("arrow", root), "not a study project DESCRIPTION")
 })
+
+test_that("study_declare keeps the other fields and the existing entries as written", {
+  root <- withr::local_tempdir()
+  writeLines(c("Type: Project", "Title: kept", "Imports: dplyr, tidyr", "Remotes: user/repo",
+               "Depends: arrow (>= 14)"), file.path(root, "DESCRIPTION"))
+  out <- study_declare(c("arrow", "hvtiRutilities"), root)
+  expect_identical(out, c("arrow", "hvtiRutilities"))
+  dcf <- read.dcf(file.path(root, "DESCRIPTION"))
+  expect_identical(unname(dcf[1L, "Depends"]), "arrow (>= 14), hvtiRutilities")
+  expect_identical(unname(dcf[1L, "Imports"]), "dplyr, tidyr")
+  expect_identical(unname(dcf[1L, "Remotes"]), "user/repo")
+  expect_identical(unname(dcf[1L, "Title"]), "kept")
+})

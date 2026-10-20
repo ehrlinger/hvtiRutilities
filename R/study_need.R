@@ -20,28 +20,39 @@
 #' @param only_in_renv Logical(1). Do nothing outside an active renv study.
 #' @return The names of the packages installed, invisibly.
 #' @export
+#' @examples
+#' # Nothing to install, and nothing written, outside a study:
+#' study_need("stats")
 study_need <- function(packages, root = NULL, caller = "study_need", note = NULL,
                        only_in_renv = FALSE) {
   root <- .need_root(root)
   in_renv <- !is.null(root) && .renv_active(root)
   if (only_in_renv && !in_renv) return(invisible(character(0)))
-  if (in_renv) study_declare(packages, root)
   missing <- packages[!vapply(packages, .package_installed, logical(1))]
+  # What is installed is declared now, so explicit-mode renv locks it. What is
+  # missing is declared only once it has been installed.
+  if (in_renv && length(setdiff(packages, missing))) study_declare(setdiff(packages, missing), root)
   if (!length(missing)) return(invisible(character(0)))
-  if (in_renv && .study_interactive() && isTRUE(.need_ask(missing, caller))) {
-    .need_install(missing, root)
-    still <- missing[!vapply(missing, .package_installed, logical(1))]
-    if (length(still)) {
-      stop(caller, "(): ", paste(still, collapse = ", "), " did not install; run hvtiR::setup() ",
-           "in the study project", call. = FALSE)
+  declined <- FALSE
+  if (in_renv && .study_interactive()) {
+    if (isTRUE(.need_ask(missing, caller))) {
+      .need_install(missing, root)
+      still <- missing[!vapply(missing, .package_installed, logical(1))]
+      if (length(still)) {
+        stop(caller, "(): ", paste(still, collapse = ", "), " did not install; run hvtiR::setup() ",
+             "in the study project to install everything the study needs.",
+             if (!is.null(note)) paste0(" ", note) else "", call. = FALSE)
+      }
+      study_declare(missing, root)
+      .need_snapshot(root)
+      return(invisible(missing))
     }
-    .need_snapshot(root)
-    return(invisible(missing))
+    declined <- TRUE
   }
   stop(caller, "(): needs ", paste(missing, collapse = ", "), ", which is not installed",
        if (in_renv) " in this study's library" else "",
-       ". Run hvtiR::setup() in the study project to install everything the study needs",
-       if (in_renv) ", or run this again interactively to install only this" else "", ".",
+       if (declined) ", and was not installed" else "",
+       ". Run hvtiR::setup() in the study project to install everything the study needs.",
        if (!is.null(note)) paste0(" ", note) else "", call. = FALSE)
 }
 
@@ -49,7 +60,10 @@ study_need <- function(packages, root = NULL, caller = "study_need", note = NULL
 
 .need_root <- function(root) {
   if (!is.null(root)) return(normalizePath(root, mustWork = TRUE))
-  tryCatch(study_root(), error = function(e) NULL)
+  tryCatch(study_root(), error = function(e) {
+    if (!grepl("no _study.yml found", conditionMessage(e), fixed = TRUE)) stop(e)
+    NULL
+  })
 }
 
 .renv_active <- function(root) {
@@ -64,6 +78,11 @@ study_need <- function(packages, root = NULL, caller = "study_need", note = NULL
                   default = TRUE)
 }
 
-.need_install <- function(pkgs, root) renv::install(pkgs, project = root, prompt = FALSE)
+# renv's own installer, not pak: the pak back end skips LinkingTo packages (cpp11,
+# say), after which renv::snapshot() validation aborts.
+.need_install <- function(pkgs, root) {
+  withr::with_envvar(c(RENV_CONFIG_PAK_ENABLED = "FALSE"),
+                     renv::install(pkgs, project = root, prompt = FALSE))
+}
 
 .need_snapshot <- function(root) renv::snapshot(project = root, prompt = FALSE)

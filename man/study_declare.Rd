@@ -21,8 +21,9 @@ to build the study's \code{renv.lock} in explicit mode. Declaring rather than
 letting renv scan the code means a stale template copy can never put a
 package into the lockfile.
 
-Names are only ever added. The file is rewritten only when the set changes,
-and a \code{DESCRIPTION} that is not a study project's (no
+Names are only ever added, and an entry already declared stays as written,
+version constraint included. Every other field of the file is kept. The file
+is rewritten only when the set changes, and a \code{DESCRIPTION} that is not a study project's (no
 \code{Type: Project}) is never edited.
 }
 \examples{

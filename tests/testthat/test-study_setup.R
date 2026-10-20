@@ -810,4 +810,43 @@ test_that("the real renv snapshot records the study's own library, not the calle
   lock <- jsonlite::read_json(file.path(root, "renv.lock"))
   expect_false("digest" %in% names(lock$Packages))
   expect_true(all(.study_renv_parts(root)))
+  expect_match(paste(readLines(file.path(root, "renv", "settings.json")), collapse = ""),
+               '"snapshot.type": "explicit"', fixed = TRUE)
+})
+
+test_that("renv = TRUE stops before writing when renv is not installed", {
+  root <- file.path(withr::local_tempdir(), "new")
+  local_mocked_bindings(.renv_installed = function() FALSE)
+  expect_error(study_setup(root, "Study", 42L, adopt = TRUE, cleanup = FALSE, renv = TRUE),
+               "renv = FALSE")
+  expect_false(file.exists(root))
+})
+
+test_that("renv = TRUE stops before writing when the root has a package DESCRIPTION", {
+  root <- withr::local_tempdir()
+  writeLines(c("Package: foo", "Version: 1.0.0"), file.path(root, "DESCRIPTION"))
+  expect_error(study_setup(root, "Study", 42L, adopt = TRUE, cleanup = FALSE, renv = TRUE),
+               "renv = FALSE")
+  expect_false(file.exists(file.path(root, "_study.yml")))
+  expect_length(list.dirs(root, recursive = FALSE), 0L)
+})
+
+test_that("a retained renv environment skips the renv preflight", {
+  root <- withr::local_tempdir()
+  write_renv_start(root)
+  write_lock(root)
+  writeLines(c("Package: foo", "Version: 1.0.0"), file.path(root, "DESCRIPTION"))
+  local_mocked_bindings(.renv_installed = function() FALSE)
+  status <- study_setup(root, "Study", 42L, adopt = TRUE, cleanup = FALSE, renv = TRUE)
+  expect_identical(attr(status, "renv"), "retained")
+})
+
+test_that("an existing .renvignore gains the new lines and keeps the user's", {
+  root <- withr::local_tempdir()
+  writeLines(c("templates/", "mydir/"), file.path(root, ".renvignore"))
+  study_setup(root, "Study", 42L, adopt = TRUE, cleanup = FALSE, renv = FALSE)
+  got <- readLines(file.path(root, ".renvignore"))
+  expect_identical(got[1:2], c("templates/", "mydir/"))
+  expect_setequal(got, union(c("templates/", "mydir/"), .study_renvignore()))
+  expect_false(anyDuplicated(got) > 0L)
 })

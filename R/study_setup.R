@@ -28,6 +28,18 @@
   invisible(TRUE)
 }
 
+# Append the lines of `lines` not already in the file, exactly; create it if
+# absent. A user's own lines are never reordered or removed.
+.study_append_lines_missing <- function(lines, path) {
+  have <- if (file.exists(path)) readLines(path, warn = FALSE) else character(0)
+  add <- setdiff(lines, have)
+  if (!file.exists(path)) return(.study_write_lines_if_missing(lines, path))
+  if (length(add)) cat(add, file = path, sep = "\n", append = TRUE)
+  invisible(length(add) > 0L)
+}
+
+.renv_installed <- function() requireNamespace("renv", quietly = TRUE)
+
 .study_renvignore <- function() {
   c(
     ".checkpoint/",
@@ -265,11 +277,10 @@
     }
   }
   if (!resumable) {
-    study_declare(root = root)
     run("renv::init(bare = TRUE, restart = FALSE)", "renv initialization")
   }
-  # A study interrupted by an older version has no DESCRIPTION yet;
-  # study_declare() is idempotent.
+  # Declared before init or resume alike: a study interrupted by an older
+  # version has no DESCRIPTION yet, and study_declare() is idempotent.
   study_declare(root = root)
   # Explicit mode: renv.lock is built from DESCRIPTION, never by scanning the
   # study's code, so a template copy cleanup missed cannot reach the lockfile.
@@ -501,6 +512,21 @@ study_setup <- function(root = NULL, study, study_tracker_id,
     }
   }
 
+  if (renv && !all(.study_renv_parts(root))) {
+    if (!.renv_installed()) {
+      stop("study_setup(): the renv package is not installed; install it, or pass renv = FALSE",
+           call. = FALSE)
+    }
+    desc <- file.path(root, "DESCRIPTION")
+    if (file.exists(desc)) {
+      dcf <- read.dcf(desc)
+      if (!"Type" %in% colnames(dcf) || !identical(unname(dcf[1L, "Type"]), "Project")) {
+        stop("study_setup(): ", desc, " is a package DESCRIPTION, not a study project's; ",
+             "pass renv = FALSE", call. = FALSE)
+      }
+    }
+  }
+
   layout <- if (!existed || !length(entries)) {
     "numbered"
   } else {
@@ -543,7 +569,7 @@ study_setup <- function(root = NULL, study, study_tracker_id,
     "RENV_CONFIG_CACHE_SYMLINKS=FALSE",
     file.path(root, ".Renviron")
   )
-  .study_write_lines_if_missing(
+  .study_append_lines_missing(
     .study_renvignore(),
     file.path(root, ".renvignore")
   )

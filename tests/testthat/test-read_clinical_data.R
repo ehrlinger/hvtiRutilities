@@ -196,3 +196,22 @@ test_that("the unsupported-format message lists parquet", {
   file.create(f)
   expect_error(read_clinical_data(f, convert_types = FALSE), ".parquet", fixed = TRUE)
 })
+
+test_that("reading parquet with arrow installed never touches the study DESCRIPTION", {
+  skip_if_not_installed("arrow")
+  root <- withr::local_tempdir()
+  suppressMessages(study_setup(root, "Read only", 42L, adopt = TRUE, cleanup = FALSE, renv = FALSE))
+  desc <- file.path(root, "DESCRIPTION")
+  writeLines(c("Package: foo", "Version: 1.0.0"), desc)   # not Type: Project
+  before <- readLines(desc)
+  Sys.chmod(desc, "0444")
+  f <- file.path(root, "x.parquet")
+  arrow::write_parquet(data.frame(id = 1:3), f)
+  withr::local_envvar(RENV_PROJECT = normalizePath(root))
+  withr::local_dir(root)
+
+  d <- read_clinical_data(f, convert_types = FALSE)
+
+  expect_identical(nrow(d), 3L)
+  expect_identical(readLines(desc), before)
+})

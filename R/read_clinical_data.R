@@ -162,7 +162,7 @@ read_clinical_data <- function(file, convert_types = FALSE, ...,
     xls      = readxl::read_excel(file),
     rds      = readRDS(file),
     parquet  = {
-      study_need("arrow", caller = "read_clinical_data")
+      if (!requireNamespace("arrow", quietly = TRUE)) study_need("arrow", caller = "read_clinical_data")
       arrow::read_parquet(file, mmap = FALSE)
     },
     stop(

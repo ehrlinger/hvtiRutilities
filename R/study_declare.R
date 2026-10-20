@@ -6,8 +6,9 @@
 #' letting renv scan the code means a stale template copy can never put a
 #' package into the lockfile.
 #'
-#' Names are only ever added. The file is rewritten only when the set changes,
-#' and a \code{DESCRIPTION} that is not a study project's (no
+#' Names are only ever added, and an entry already declared stays as written,
+#' version constraint included. Every other field of the file is kept. The file
+#' is rewritten only when the set changes, and a \code{DESCRIPTION} that is not a study project's (no
 #' \code{Type: Project}) is never edited.
 #'
 #' @param packages Character. Package names to declare.
@@ -22,22 +23,36 @@
 study_declare <- function(packages = character(0), root = NULL) {
   root <- if (is.null(root)) study_root() else normalizePath(root, mustWork = TRUE)
   path <- file.path(root, "DESCRIPTION")
-  have <- character(0)
+  record <- NULL
+  entries <- character(0)
   if (file.exists(path)) {
-    dcf <- read.dcf(path)
-    if (!"Type" %in% colnames(dcf) || !identical(unname(dcf[1L, "Type"]), "Project")) {
+    record <- read.dcf(path)
+    if (!"Type" %in% colnames(record) || !identical(unname(record[1L, "Type"]), "Project")) {
       stop("study_declare(): ", path, " is not a study project DESCRIPTION (no Type: Project); ",
            "refusing to edit it", call. = FALSE)
     }
-    if ("Depends" %in% colnames(dcf)) {
-      have <- trimws(strsplit(dcf[1L, "Depends"], ",", fixed = TRUE)[[1L]])
-      have <- sub("\\s*\\(.*$", "", have[nzchar(have)])
+    # Re-read verbatim so every field is written back as it was found.
+    record <- read.dcf(path, keep.white = colnames(record))
+    if ("Depends" %in% colnames(record)) {
+      entries <- trimws(strsplit(record[1L, "Depends"], ",", fixed = TRUE)[[1L]])
+      entries <- entries[nzchar(entries)]
     }
   }
-  all <- sort(unique(c(have, packages)))
-  if (file.exists(path) && setequal(all, have)) return(invisible(all))
-  fields <- matrix(c("Project", basename(root), paste(all, collapse = ", ")), nrow = 1L,
-                   dimnames = list(NULL, c("Type", "Title", "Depends")))
-  write.dcf(fields, path, width = 80L)
+  have <- sub("\\s*\\(.*$", "", entries)
+  new <- setdiff(unique(packages), have)
+  all <- sort(c(have, new))
+  if (!is.null(record) && !length(new)) return(invisible(all))
+  entries <- c(entries, new)
+  entries <- entries[order(c(have, new))]
+  depends <- paste(entries, collapse = ", ")
+  if (is.null(record)) {
+    record <- matrix(c("Project", basename(root), depends), nrow = 1L,
+                     dimnames = list(NULL, c("Type", "Title", "Depends")))
+  } else if ("Depends" %in% colnames(record)) {
+    record[1L, "Depends"] <- depends
+  } else {
+    record <- cbind(record, Depends = depends)
+  }
+  write.dcf(record, path, width = 80L, keep.white = colnames(record))
   invisible(all)
 }

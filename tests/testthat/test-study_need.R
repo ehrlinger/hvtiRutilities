@@ -55,3 +55,54 @@ test_that("an install that leaves the package missing stops", {
   local_mocked_bindings(.need_install = function(pkgs, root) invisible(NULL))
   expect_error(study_need("arrow"), "did not install")
 })
+
+test_that("a declined install declares nothing new, but an installed package is still declared", {
+  root <- withr::local_tempdir()
+  state <- local_need(installed = "stats", renv_root = root, interactive = TRUE, answer = FALSE)
+  expect_error(study_need(c("stats", "arrow"), caller = "register_data"), "not installed")
+  expect_identical(state$snapshots, 0L)
+  expect_identical(unname(read.dcf(file.path(root, "DESCRIPTION"))[1L, "Depends"]), "stats")
+})
+
+test_that("a failed install does not declare the missing package", {
+  root <- withr::local_tempdir()
+  local_need(renv_root = root, interactive = TRUE)
+  local_mocked_bindings(.need_install = function(pkgs, root) invisible(NULL))
+  expect_error(study_need("arrow"), "did not install")
+  expect_false(file.exists(file.path(root, "DESCRIPTION")))
+})
+
+test_that("the declined error names setup() and appends the note, without suggesting a retry", {
+  root <- withr::local_tempdir()
+  local_need(renv_root = root, interactive = TRUE, answer = FALSE)
+  err <- tryCatch(study_need("arrow", note = "Nothing was written."), error = conditionMessage)
+  expect_match(err, "was not installed")
+  expect_match(err, "hvtiR::setup()", fixed = TRUE)
+  expect_match(err, "Nothing was written.", fixed = TRUE)
+  expect_no_match(err, "interactively")
+})
+
+test_that("the did-not-install error appends the note", {
+  root <- withr::local_tempdir()
+  local_need(renv_root = root, interactive = TRUE)
+  local_mocked_bindings(.need_install = function(pkgs, root) invisible(NULL))
+  expect_error(study_need("arrow", note = "Nothing was written."), "Nothing was written")
+})
+
+test_that("only a no-study error means not in a study", {
+  local_mocked_bindings(study_root = function(...) stop("no _study.yml found above here"))
+  expect_null(.need_root(NULL))
+  local_mocked_bindings(study_root = function(...) stop("Parser error: broken"))
+  expect_error(.need_root(NULL), "Parser error")
+})
+
+test_that("the real installer runs with pak off", {
+  seen <- NULL
+  fake_install <- function(...) {
+    seen <<- Sys.getenv("RENV_CONFIG_PAK_ENABLED")
+    invisible()
+  }
+  local_mocked_bindings(install = fake_install, .package = "renv")
+  .need_install("arrow", tempdir())
+  expect_identical(seen, "FALSE")
+})

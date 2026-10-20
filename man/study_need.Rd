@@ -39,3 +39,7 @@ names \code{hvtiR::setup()}, which installs everything a study needs.
 An installed package is never upgraded, whatever its version: moving a
 study's package versions is \code{hvtiR::update()}'s job.
 }
+\examples{
+# Nothing to install, and nothing written, outside a study:
+study_need("stats")
+}
