@@ -295,7 +295,8 @@
   # startup loading .Rprofile could run with no project and the global
   # library, and snapshot the wrong thing.
   project <- deparse(normalizePath(root, winslash = "/"))
-  run(paste0("renv::load(", project, "); renv::settings$snapshot.type('explicit', project = ",
+  run(paste0("renv::load(", project, "); renv::settings$use.cache(FALSE, project = ", project,
+             "); renv::settings$snapshot.type('explicit', project = ",
              project, "); renv::snapshot(project = ", project, ", prompt = FALSE)"), "renv snapshot")
   if (!all(.study_renv_parts(root))) {
     stop("study_setup(): renv initialization finished without a complete environment",
@@ -349,7 +350,11 @@
 #' \code{\link{study_declare}}), \code{renv::init(bare = TRUE)} creates the
 #' environment, and the project is loaded and snapshotted explicitly in
 #' explicit mode, so \code{renv.lock} comes from the \code{DESCRIPTION} and
-#' not from a scan of the study's code. The renv package must be installed.
+#' not from a scan of the study's code. The study's \code{renv} does not use
+#' a per-user package cache (\code{use.cache} is \code{FALSE} in
+#' \code{renv/settings.json}), because the library is shared by the team and
+#' links into one person's cache that others cannot read break their installs.
+#' The renv package must be installed.
 #'
 #' @param root Character. Study root to create or adopt. When omitted, the
 #'   study enclosing the working directory (found as \code{\link{study_root}}

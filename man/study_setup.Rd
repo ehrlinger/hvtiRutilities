@@ -113,7 +113,11 @@ Otherwise the study \code{DESCRIPTION} is written (see
 \code{\link{study_declare}}), \code{renv::init(bare = TRUE)} creates the
 environment, and the project is loaded and snapshotted explicitly in
 explicit mode, so \code{renv.lock} comes from the \code{DESCRIPTION} and
-not from a scan of the study's code. The renv package must be installed.
+not from a scan of the study's code. The study's \code{renv} does not use
+a per-user package cache (\code{use.cache} is \code{FALSE} in
+\code{renv/settings.json}), because the library is shared by the team and
+links into one person's cache that others cannot read break their installs.
+The renv package must be installed.
 }
 \examples{
 root <- file.path(tempdir(), "study-setup-example")

@@ -479,7 +479,8 @@ write_lock <- function(root) {
 
 snapshot_expr <- function(root) {
   project <- deparse(normalizePath(root, winslash = "/"))
-  paste0("renv::load(", project, "); renv::settings$snapshot.type('explicit', project = ", project,
+  paste0("renv::load(", project, "); renv::settings$use.cache(FALSE, project = ", project,
+         "); renv::settings$snapshot.type('explicit', project = ", project,
          "); renv::snapshot(project = ", project, ", prompt = FALSE)")
 }
 
@@ -812,6 +813,8 @@ test_that("the real renv snapshot records the study's own library, not the calle
   expect_true(all(.study_renv_parts(root)))
   expect_match(paste(readLines(file.path(root, "renv", "settings.json")), collapse = ""),
                '"snapshot.type": "explicit"', fixed = TRUE)
+  expect_match(paste(readLines(file.path(root, "renv", "settings.json")), collapse = ""),
+               '"use.cache": false', fixed = TRUE)
 })
 
 test_that("renv = TRUE stops before writing when renv is not installed", {
