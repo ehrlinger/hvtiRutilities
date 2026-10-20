@@ -15,9 +15,9 @@
   action <- match.arg(action)
   if (!.arrow_available()) {
     why <- if (action == "register") {
-      "registering a dataset converts it to parquet, which needs the arrow package. "
+      "Registering a dataset converts it to parquet, which needs the arrow package. "
     } else {
-      "the registered version of this dataset is a parquet file, and reading it needs the arrow package. "
+      "The registered version of this dataset is a parquet file, and reading it needs the arrow package. "
     }
     study_need("arrow", caller = caller,
                note = trimws(paste0(why, if (action == "register") "Nothing was written." else "")))

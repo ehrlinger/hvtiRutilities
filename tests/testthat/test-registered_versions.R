@@ -525,7 +525,7 @@ test_that("a missing arrow is described as a read when read_built() needs it", {
                         .need_root = function(root) NULL)
   expect_error(.require_arrow("read_built", "read"), "reading it needs the arrow package")
   expect_no_match(tryCatch(.require_arrow("read_built", "read"), error = conditionMessage), "Nothing was written")
-  expect_error(.require_arrow("register_data"), "registering a dataset.*Nothing was written")
+  expect_error(.require_arrow("register_data"), "Registering a dataset.*Nothing was written")
 })
 
 test_that("a conversion failure during registration names register_data(), not read_built()", {
