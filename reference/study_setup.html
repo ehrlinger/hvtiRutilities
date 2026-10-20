@@ -37,7 +37,11 @@ Otherwise the study DESCRIPTION is written (see
 study_declare), renv::init(bare = TRUE) creates the
 environment, and the project is loaded and snapshotted explicitly in
 explicit mode, so renv.lock comes from the DESCRIPTION and
-not from a scan of the study's code. The renv package must be installed."><meta property="og:description" content="The usual entry point is hvtiR::setup(). Creates the numbered directory structure for a new study and writes an
+not from a scan of the study's code. The study's renv does not use
+a per-user package cache (use.cache is FALSE in
+renv/settings.json), because the library is shared by the team and
+links into one person's cache that others cannot read break their installs.
+The renv package must be installed."><meta property="og:description" content="The usual entry point is hvtiR::setup(). Creates the numbered directory structure for a new study and writes an
 identity-only _study.yml. With adopt = TRUE, an existing
 study keeps its legacy or numbered directory layout and every existing
 initialization file.
@@ -75,7 +79,11 @@ Otherwise the study DESCRIPTION is written (see
 study_declare), renv::init(bare = TRUE) creates the
 environment, and the project is loaded and snapshotted explicitly in
 explicit mode, so renv.lock comes from the DESCRIPTION and
-not from a scan of the study's code. The renv package must be installed."></head><body>
+not from a scan of the study's code. The study's renv does not use
+a per-user package cache (use.cache is FALSE in
+renv/settings.json), because the library is shared by the team and
+links into one person's cache that others cannot read break their installs.
+The renv package must be installed."></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -171,7 +179,11 @@ Otherwise the study <code>DESCRIPTION</code> is written (see
 <code><a href="study_declare.html">study_declare</a></code>), <code>renv::init(bare = TRUE)</code> creates the
 environment, and the project is loaded and snapshotted explicitly in
 explicit mode, so <code>renv.lock</code> comes from the <code>DESCRIPTION</code> and
-not from a scan of the study's code. The renv package must be installed.</p>
+not from a scan of the study's code. The study's <code>renv</code> does not use
+a per-user package cache (<code>use.cache</code> is <code>FALSE</code> in
+<code>renv/settings.json</code>), because the library is shared by the team and
+links into one person's cache that others cannot read break their installs.
+The renv package must be installed.</p>
     </div>
 
     <div class="section level2">
@@ -277,7 +289,7 @@ does not exist.</p></dd>
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">root</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"study-setup-example"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">study_setup</span><span class="op">(</span><span class="va">root</span>, study <span class="op">=</span> <span class="st">"Example"</span>, study_tracker_id <span class="op">=</span> <span class="fl">1L</span>, renv <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Study: /tmp/RtmpNASNGJ/study-setup-example</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Study: /tmp/RtmpgJQPDZ/study-setup-example</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [x] _study.yml — study: Example</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [ ] renv.lock — no renv.lock; run renv::init() in the study project</span>

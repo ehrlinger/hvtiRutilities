@@ -42,8 +42,11 @@ partial or invalid environment stops with an error. Otherwise the study
 [`study_declare`](https://ehrlinger.github.io/hvtiRutilities/reference/study_declare.md)),
 `renv::init(bare = TRUE)` creates the environment, and the project is
 loaded and snapshotted explicitly in explicit mode, so `renv.lock` comes
-from the `DESCRIPTION` and not from a scan of the study's code. The renv
-package must be installed.
+from the `DESCRIPTION` and not from a scan of the study's code. The
+study's `renv` does not use a per-user package cache (`use.cache` is
+`FALSE` in `renv/settings.json`), because the library is shared by the
+team and links into one person's cache that others cannot read break
+their installs. The renv package must be installed.
 
 ## Usage
 
@@ -146,7 +149,7 @@ An object of class `"study_status"`, returned visibly. With
 ``` r
 root <- file.path(tempdir(), "study-setup-example")
 study_setup(root, study = "Example", study_tracker_id = 1L, renv = FALSE)
-#> Study: /tmp/RtmpNASNGJ/study-setup-example
+#> Study: /tmp/RtmpgJQPDZ/study-setup-example
 #> 
 #> [x] _study.yml — study: Example
 #> [ ] renv.lock — no renv.lock; run renv::init() in the study project
