@@ -8,6 +8,9 @@
 #' interactive, and recorded in \code{renv.lock}. Otherwise the call stops and
 #' names \code{hvtiR::setup()}, which installs everything a study needs.
 #'
+#' Nothing is declared until every package is installed: if the user declines
+#' the install, or it fails, the study's \code{DESCRIPTION} is left as it was.
+#'
 #' An installed package is never upgraded, whatever its version: moving a
 #' study's package versions is \code{hvtiR::update()}'s job.
 #'
@@ -29,10 +32,12 @@ study_need <- function(packages, root = NULL, caller = "study_need", note = NULL
   in_renv <- !is.null(root) && .renv_active(root)
   if (only_in_renv && !in_renv) return(invisible(character(0)))
   missing <- packages[!vapply(packages, .package_installed, logical(1))]
-  # What is installed is declared now, so explicit-mode renv locks it. What is
-  # missing is declared only once it has been installed.
-  if (in_renv && length(setdiff(packages, missing))) study_declare(setdiff(packages, missing), root)
-  if (!length(missing)) return(invisible(character(0)))
+  # Nothing is declared until nothing is left to ask: a refusal or a failed
+  # install leaves the study's DESCRIPTION as it was.
+  if (!length(missing)) {
+    if (in_renv && length(packages)) study_declare(packages, root)
+    return(invisible(character(0)))
+  }
   declined <- FALSE
   if (in_renv && .study_interactive()) {
     if (isTRUE(.need_ask(missing, caller))) {
@@ -43,7 +48,7 @@ study_need <- function(packages, root = NULL, caller = "study_need", note = NULL
              "in the study project to install everything the study needs.",
              if (!is.null(note)) paste0(" ", note) else "", call. = FALSE)
       }
-      study_declare(missing, root)
+      study_declare(packages, root)
       .need_snapshot(root)
       return(invisible(missing))
     }

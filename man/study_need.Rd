@@ -36,6 +36,9 @@ installed into the study's library after one question, when the session is
 interactive, and recorded in \code{renv.lock}. Otherwise the call stops and
 names \code{hvtiR::setup()}, which installs everything a study needs.
 
+Nothing is declared until every package is installed: if the user declines
+the install, or it fails, the study's \code{DESCRIPTION} is left as it was.
+
 An installed package is never upgraded, whatever its version: moving a
 study's package versions is \code{hvtiR::update()}'s job.
 }

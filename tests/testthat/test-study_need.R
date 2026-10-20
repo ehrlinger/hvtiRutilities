@@ -59,12 +59,29 @@ test_that("an install that leaves the package missing stops", {
   expect_error(study_need("arrow"), "did not install")
 })
 
-test_that("a declined install declares nothing new, but an installed package is still declared", {
+test_that("a declined install declares nothing, installed packages included", {
   root <- withr::local_tempdir()
   state <- local_need(installed = "stats", renv_root = root, interactive = TRUE, answer = FALSE)
   expect_error(study_need(c("stats", "arrow"), caller = "register_data"), "not installed")
   expect_identical(state$snapshots, 0L)
-  expect_identical(unname(read.dcf(file.path(root, "DESCRIPTION"))[1L, "Depends"]), "stats")
+  expect_false(file.exists(file.path(root, "DESCRIPTION")))
+})
+
+test_that("a failed install declares nothing, installed packages included", {
+  root <- withr::local_tempdir()
+  local_need(installed = "stats", renv_root = root, interactive = TRUE)
+  local_mocked_bindings(.need_install = function(pkgs, root) invisible(NULL))
+  expect_error(study_need(c("stats", "arrow")), "did not install")
+  expect_false(file.exists(file.path(root, "DESCRIPTION")))
+})
+
+test_that("a successful install declares installed and newly installed packages", {
+  root <- withr::local_tempdir()
+  state <- local_need(installed = "stats", renv_root = root, interactive = TRUE)
+  study_need(c("stats", "arrow"))
+  expect_identical(state$snapshots, 1L)
+  depends <- unname(read.dcf(file.path(root, "DESCRIPTION"))[1L, "Depends"])
+  expect_setequal(trimws(strsplit(depends, ",", fixed = TRUE)[[1L]]), c("arrow", "stats"))
 })
 
 test_that("a failed install does not declare the missing package", {
