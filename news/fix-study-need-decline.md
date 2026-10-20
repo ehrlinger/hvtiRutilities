@@ -1,0 +1,1 @@
+- `study_need()` no longer records already-installed packages in the study `DESCRIPTION` when the user declines installing a missing one, or the install fails: a refusal leaves the study as it was.
