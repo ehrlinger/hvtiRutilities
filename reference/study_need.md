@@ -9,6 +9,10 @@ when the session is interactive, and recorded in `renv.lock`. Otherwise
 the call stops and names `hvtiR::setup()`, which installs everything a
 study needs.
 
+Nothing is declared until every package is installed: if the user
+declines the install, or it fails, the study's `DESCRIPTION` is left as
+it was.
+
 An installed package is never upgraded, whatever its version: moving a
 study's package versions is `hvtiR::update()`'s job.
 
