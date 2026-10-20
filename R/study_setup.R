@@ -34,7 +34,14 @@
   have <- if (file.exists(path)) readLines(path, warn = FALSE) else character(0)
   add <- setdiff(lines, have)
   if (!file.exists(path)) return(.study_write_lines_if_missing(lines, path))
-  if (length(add)) cat(add, file = path, sep = "\n", append = TRUE)
+  if (length(add)) {
+    size <- file.size(path)
+    unterminated <- size > 0 && !identical(readBin(path, "raw", size)[size], as.raw(10L))
+    con <- file(path, "a")
+    on.exit(close(con), add = TRUE)
+    if (unterminated) writeLines("", con)
+    writeLines(add, con)
+  }
   invisible(length(add) > 0L)
 }
 

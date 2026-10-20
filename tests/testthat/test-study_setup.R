@@ -850,3 +850,19 @@ test_that("an existing .renvignore gains the new lines and keeps the user's", {
   expect_setequal(got, union(c("templates/", "mydir/"), .study_renvignore()))
   expect_false(anyDuplicated(got) > 0L)
 })
+
+test_that("appending to a file with no trailing newline starts a new line", {
+  f <- withr::local_tempfile()
+  cat("templates/\nmydir/", file = f)
+  .study_append_lines_missing(c("templates/", "a/", "b/"), f)
+  expect_identical(readLines(f), c("templates/", "mydir/", "a/", "b/"))
+  expect_identical(readBin(f, "raw", file.size(f))[file.size(f)], as.raw(10L))
+})
+
+test_that("two successive appends leave clean lines", {
+  f <- withr::local_tempfile()
+  cat("x", file = f)
+  .study_append_lines_missing("a/", f)
+  .study_append_lines_missing(c("a/", "b/"), f)
+  expect_identical(readLines(f), c("x", "a/", "b/"))
+})
