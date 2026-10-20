@@ -4,7 +4,7 @@ local_need <- function(installed = character(0), renv_root = NULL, interactive =
   state$installed <- installed
   state$asked <- 0L
   state$snapshots <- 0L
-  local_mocked_bindings(
+  testthat::local_mocked_bindings(
     .package_installed = function(pkg) pkg %in% state$installed,
     .need_root = function(root) renv_root,
     .renv_active = function(root) !is.null(renv_root),
