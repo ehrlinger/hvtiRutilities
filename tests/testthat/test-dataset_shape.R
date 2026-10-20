@@ -64,7 +64,7 @@ file_snapshot <- function(root) {
 registered_shape_study <- function(env = parent.frame()) {
   testthat::skip_if_not_installed("arrow")
   root <- file.path(withr::local_tempdir(.local_envir = env), "study")
-  suppressMessages(study_setup(root, "Shape registration", 42L))
+  suppressMessages(study_setup(root, "Shape registration", 42L, renv = FALSE))
   data_dir <- study_dir("datasets", root)
   utils::write.csv(data.frame(ccfid = 1:3, dead = c(1L, 0L, 0L)), file.path(data_dir, "built.csv"), row.names = FALSE)
   utils::write.csv(data.frame(ccfid = c(1L, 1L, 2L, 9L), echo_date = c(10, 20, 10, 10), ef = c(50, 55, 60, 40)),

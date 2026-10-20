@@ -51,7 +51,7 @@ make_study_fixture <- function(dir,
 make_registered_study <- function(dir, ancillary = FALSE) {
   testthat::skip_if_not_installed("arrow")
   root <- file.path(dir, "study")
-  study_setup(root, "Registered fixture", 42L)
+  study_setup(root, "Registered fixture", 42L, renv = FALSE)
   data_dir <- study_dir("datasets", root)
 
   write.csv(
@@ -97,7 +97,7 @@ make_registered_study <- function(dir, ancillary = FALSE) {
 make_legacy_registered_study <- function(dir, file = "built.csv",
                                          data = data.frame(id = 1:3, dead = c(1L, 0L, 0L), iv_dead = 1:3)) {
   root <- file.path(dir, "study")
-  suppressMessages(study_setup(root, "Legacy fixture", 42L))
+  suppressMessages(study_setup(root, "Legacy fixture", 42L, renv = FALSE))
   path <- file.path(study_dir("datasets", root), file)
   utils::write.csv(data, path, row.names = FALSE)
   Sys.setFileTime(path, as.POSIXct("2026-09-15 12:00:00", tz = "UTC"))

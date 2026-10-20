@@ -11,7 +11,7 @@ test_that("HVTI_DATA accepts only 'working'", {
 
 stage_study <- function(env = parent.frame()) {
   root <- file.path(withr::local_tempdir(.local_envir = env), "study")
-  suppressMessages(study_setup(root, "Stage fixture", 42L))
+  suppressMessages(study_setup(root, "Stage fixture", 42L, renv = FALSE))
   study_config(root, require_data = FALSE)
 }
 
@@ -106,7 +106,7 @@ test_that("HVTI_DATA=working switches the default and refresh is refused", {
 test_that("an analysis job cannot read a study with no dated version, whatever HVTI_DATA says", {
   local_working_signal()
   root <- file.path(withr::local_tempdir(), "study")
-  suppressMessages(study_setup(root, "Unregistered", 42L))
+  suppressMessages(study_setup(root, "Unregistered", 42L, renv = FALSE))
   utils::write.csv(data.frame(id = 1:3, DEAD = c(1L, 0L, 0L)),
                    file.path(study_dir("datasets", root), "built.csv"), row.names = FALSE)
   raw <- yaml::read_yaml(file.path(root, "_study.yml"))

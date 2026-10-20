@@ -101,7 +101,7 @@ test_that("register_data converts the dataset to a dated parquet", {
 test_that("a parquet source is registered the same way, and is never the copy jobs read", {
   skip_if_not_installed("arrow")
   root <- file.path(withr::local_tempdir(), "study")
-  suppressMessages(study_setup(root, "Parquet source", 42L))
+  suppressMessages(study_setup(root, "Parquet source", 42L, renv = FALSE))
   data_dir <- study_dir("datasets", root)
   src <- file.path(data_dir, "built.parquet")
   arrow::write_parquet(data.frame(id = 1:3, dead = c(1L, 0L, 0L)), src)
@@ -121,7 +121,7 @@ test_that("a parquet source is registered the same way, and is never the copy jo
 test_that("a source already named with a date gets its own version name and is never overwritten", {
   skip_if_not_installed("arrow")
   root <- file.path(withr::local_tempdir(), "study")
-  suppressMessages(study_setup(root, "Dated source", 42L))
+  suppressMessages(study_setup(root, "Dated source", 42L, renv = FALSE))
   src <- file.path(study_dir("datasets", root), "built_20261007.parquet")
   arrow::write_parquet(data.frame(id = 1:2), src)
   Sys.setFileTime(src, as.POSIXct("2026-10-07 12:00:00", tz = "UTC"))
@@ -136,7 +136,7 @@ test_that("a source already named with a date gets its own version name and is n
 
 test_that("register_data without arrow stops and writes nothing", {
   root <- file.path(withr::local_tempdir(), "study")
-  suppressMessages(study_setup(root, "No arrow", 42L))
+  suppressMessages(study_setup(root, "No arrow", 42L, renv = FALSE))
   path <- file.path(study_dir("datasets", root), "built.csv")
   utils::write.csv(data.frame(id = 1:2), path, row.names = FALSE)
   before <- yaml::read_yaml(file.path(root, "_study.yml"))
@@ -270,7 +270,7 @@ test_that("update_manifest() registers a rebuilt source and keeps the old versio
 test_that("a rebuilt parquet source is updated the same way", {
   skip_if_not_installed("arrow")
   root <- file.path(withr::local_tempdir(), "study")
-  suppressMessages(study_setup(root, "Parquet update", 42L))
+  suppressMessages(study_setup(root, "Parquet update", 42L, renv = FALSE))
   src <- file.path(study_dir("datasets", root), "built.parquet")
   arrow::write_parquet(data.frame(id = 1:3), src)
   Sys.setFileTime(src, as.POSIXct("2026-09-15 12:00:00", tz = "UTC"))
@@ -304,7 +304,7 @@ test_that("a second update on the same date takes the next revision", {
 test_that("update_manifest() keeps fields registration recorded", {
   skip_if_not_installed("arrow")
   root <- file.path(withr::local_tempdir(), "study")
-  suppressMessages(study_setup(root, "Source field", 42L))
+  suppressMessages(study_setup(root, "Source field", 42L, renv = FALSE))
   path <- file.path(study_dir("datasets", root), "built.csv")
   utils::write.csv(data.frame(id = 1:2), path, row.names = FALSE)
   suppressMessages(register_data(root, "built.csv", source = "Synthetic"))
@@ -333,7 +333,7 @@ test_that("update_manifest(file, ...) keeps its single-file behaviour", {
 
 test_that("update_manifest() in a study with no registered dataset names register_data()", {
   root <- file.path(withr::local_tempdir(), "study")
-  suppressMessages(study_setup(root, "Empty study", 42L))
+  suppressMessages(study_setup(root, "Empty study", 42L, renv = FALSE))
   withr::local_dir(root)
   expect_error(update_manifest(), "register_data()", fixed = TRUE)
 })
@@ -369,7 +369,7 @@ test_that("migration after an overwrite recovers the old version from the cache"
 test_that("migrating a study whose source is built.parquet never touches the source", {
   skip_if_not_installed("arrow")
   root <- file.path(withr::local_tempdir(), "study")
-  suppressMessages(study_setup(root, "Legacy parquet", 42L))
+  suppressMessages(study_setup(root, "Legacy parquet", 42L, renv = FALSE))
   src <- file.path(study_dir("datasets", root), "built.parquet")
   arrow::write_parquet(data.frame(id = 1:3), src)
   Sys.setFileTime(src, as.POSIXct("2026-09-15 12:00:00", tz = "UTC"))
@@ -389,7 +389,7 @@ test_that("migrating a study whose source is built.parquet never touches the sou
 test_that("an overwritten parquet source is not mistaken for a cache", {
   skip_if_not_installed("arrow")
   root <- file.path(withr::local_tempdir(), "study")
-  suppressMessages(study_setup(root, "Legacy parquet overwritten", 42L))
+  suppressMessages(study_setup(root, "Legacy parquet overwritten", 42L, renv = FALSE))
   src <- file.path(study_dir("datasets", root), "built.parquet")
   arrow::write_parquet(data.frame(id = 1:3), src)
   raw <- yaml::read_yaml(file.path(root, "_study.yml"))
@@ -585,7 +585,7 @@ test_that("a pending source gets its own row label, so CHECKPOINT.yml has no dup
 collision_study <- function(env = parent.frame()) {
   testthat::skip_if_not_installed("arrow")
   root <- file.path(withr::local_tempdir(.local_envir = env), "study")
-  suppressMessages(study_setup(root, "Collision fixture", 42L))
+  suppressMessages(study_setup(root, "Collision fixture", 42L, renv = FALSE))
   dir <- study_dir("datasets", root)
   utils::write.csv(data.frame(id = 1:3, DEAD = c(1L, 0L, 0L)), file.path(dir, "cohort.csv"), row.names = FALSE)
   Sys.setFileTime(file.path(dir, "cohort.csv"), as.POSIXct("2026-09-15 12:00:00", tz = "UTC"))
@@ -782,7 +782,7 @@ test_that("study_status counts datasets, not registered versions", {
 test_that("update_manifest() registers a named dataset that has no manifest as its first version", {
   skip_if_not_installed("arrow")
   root <- file.path(withr::local_tempdir(), "study")
-  suppressMessages(study_setup(root, "Unregistered", 42L))
+  suppressMessages(study_setup(root, "Unregistered", 42L, renv = FALSE))
   raw <- yaml::read_yaml(file.path(root, "_study.yml"))
   raw$built <- "built.csv"
   yaml::write_yaml(raw, file.path(root, "_study.yml"))
@@ -842,7 +842,7 @@ test_that("a first-version registration is undone when the manifest write fails"
 
 test_that("update_manifest() still stops for a study with no dataset contract", {
   root <- file.path(withr::local_tempdir(), "study")
-  suppressMessages(study_setup(root, "No dataset", 42L))
+  suppressMessages(study_setup(root, "No dataset", 42L, renv = FALSE))
   withr::local_dir(root)
   expect_error(update_manifest(), "no registered dataset to update", fixed = TRUE)
 })
@@ -875,7 +875,7 @@ test_that("update_manifest() does not claim jobs keep reading a missing legacy s
 test_that("a mixed study (versioned, legacy, release-aware) updates, verifies and reports cleanly", {
   skip_if_not_installed("arrow")
   root <- file.path(withr::local_tempdir(), "study")
-  suppressMessages(study_setup(root, "Mixed fixture", 42L))
+  suppressMessages(study_setup(root, "Mixed fixture", 42L, renv = FALSE))
   dir <- study_dir("datasets", root)
   write_release_fixture(root)
   stamp <- function(path, when) Sys.setFileTime(path, as.POSIXct(when, tz = "UTC"))

@@ -9,7 +9,7 @@ write_source_csv <- function(dir, data = data.frame(id = 1:3, x = c(1.5, 2.5, 3.
 versioned_study <- function(env = parent.frame(), data = data.frame(id = 1:3, DEAD = c(1L, 0L, 0L))) {
   testthat::skip_if_not_installed("arrow")
   root <- file.path(withr::local_tempdir(.local_envir = env), "study")
-  suppressMessages(study_setup(root, "Versioned fixture", 42L))
+  suppressMessages(study_setup(root, "Versioned fixture", 42L, renv = FALSE))
   path <- file.path(study_dir("datasets", root), "built.csv")
   utils::write.csv(data, path, row.names = FALSE)
   Sys.setFileTime(path, as.POSIXct("2026-09-15 12:00:00", tz = "UTC"))
@@ -37,7 +37,7 @@ write_build_sidecar <- function(source, ..., built_sha256 = digest::digest(sourc
 unregistered_study <- function(env = parent.frame()) {
   testthat::skip_if_not_installed("arrow")
   root <- file.path(withr::local_tempdir(.local_envir = env), "study")
-  suppressMessages(study_setup(root, "Sidecar fixture", 42L))
+  suppressMessages(study_setup(root, "Sidecar fixture", 42L, renv = FALSE))
   src <- file.path(study_dir("datasets", root), "built.csv")
   utils::write.csv(data.frame(id = 1:3, DEAD = c(1L, 0L, 0L)), src, row.names = FALSE)
   Sys.setFileTime(src, as.POSIXct("2026-09-15 12:00:00", tz = "UTC"))

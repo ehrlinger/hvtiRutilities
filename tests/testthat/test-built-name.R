@@ -1,7 +1,7 @@
 built_name_study <- function(env = parent.frame()) {
   testthat::skip_if_not_installed("arrow")  # registration converts to parquet
   root <- file.path(withr::local_tempdir(.local_envir = env), "study")
-  suppressMessages(study_setup(root, "Built name", 42L))
+  suppressMessages(study_setup(root, "Built name", 42L, renv = FALSE))
   data_dir <- study_dir("datasets", root)
   utils::write.csv(data.frame(id = 1:3, dead = c(1L, 0L, 0L)), file.path(data_dir, "built.csv"), row.names = FALSE)
   suppressMessages(register_data(root, "built.csv"))
@@ -24,7 +24,7 @@ test_that("provenance records the canonical name", {
 test_that("the default dataset may be registered under either name", {
   skip_if_not_installed("arrow")
   root <- file.path(withr::local_tempdir(), "study")
-  suppressMessages(study_setup(root, "Register as built", 42L))
+  suppressMessages(study_setup(root, "Register as built", 42L, renv = FALSE))
   utils::write.csv(data.frame(id = 1:2), file.path(study_dir("datasets", root), "b.csv"), row.names = FALSE)
   suppressMessages(register_data(root, "b.csv", dataset = "built"))
   expect_identical(study_config(root)$built, "b.csv")

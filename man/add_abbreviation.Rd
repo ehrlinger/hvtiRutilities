@@ -33,7 +33,7 @@ whole, as \code{\link{register_data}} rewrites it, so comments in
 }
 \examples{
 root <- file.path(tempdir(), "add-abbrev-example")
-study_setup(root, "Abbreviation example", 1L)
+study_setup(root, "Abbreviation example", 1L, renv = FALSE)
 add_abbreviation("Surgical procedure", "SP", start = root)
 add_abbreviation("Ejection fraction", NULL, start = root)
 unlink(root, recursive = TRUE)

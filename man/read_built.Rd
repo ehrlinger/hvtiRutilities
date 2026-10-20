@@ -90,7 +90,7 @@ print labels rather than names.
 \examples{
 if (requireNamespace("arrow", quietly = TRUE)) {
   root <- file.path(tempdir(), "read-built-example")
-  suppressMessages(study_setup(root, "Example", 1L))
+  suppressMessages(study_setup(root, "Example", 1L, renv = FALSE))
   write.csv(data.frame(DEAD = c(1, 0, 0), IV_DEAD = 1:3),
             file.path(study_dir("datasets", root), "example.csv"), row.names = FALSE)
   suppressMessages(register_data(root, "example.csv"))

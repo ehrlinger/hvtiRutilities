@@ -12,7 +12,7 @@ old_reader_walk <- function(manifest_path) {
 # A study registered as a dated version, built on 2026-09-15.
 guard_study <- function(env = parent.frame()) {
   root <- file.path(withr::local_tempdir(.local_envir = env), "study")
-  suppressMessages(study_setup(root, "Guard fixture", 42L))
+  suppressMessages(study_setup(root, "Guard fixture", 42L, renv = FALSE))
   path <- file.path(study_dir("datasets", root), "built.csv")
   utils::write.csv(data.frame(id = 1:3, dead = c(1L, 0L, 0L), iv_dead = 1:3), path, row.names = FALSE)
   Sys.setFileTime(path, as.POSIXct("2026-09-15 12:00:00", tz = "UTC"))

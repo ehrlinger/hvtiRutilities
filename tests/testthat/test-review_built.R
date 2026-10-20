@@ -30,7 +30,7 @@ test_that("a missing source stops rather than reading as unchanged", {
 
 test_that("a dataset with no dated version stops", {
   root <- file.path(withr::local_tempdir(), "study")
-  suppressMessages(study_setup(root, "Nothing registered", 42L))
+  suppressMessages(study_setup(root, "Nothing registered", 42L, renv = FALSE))
   raw <- yaml::read_yaml(file.path(root, "_study.yml"))
   raw$built <- "built.csv"
   yaml::write_yaml(raw, file.path(root, "_study.yml"))
