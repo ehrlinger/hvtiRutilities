@@ -1,5 +1,44 @@
 # Changelog
 
+## hvtiRutilities 1.5.6
+
+- The
+  [`register_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md)
+  help page now says what `role` and `dataset` mean and how they go
+  together: `role` takes one value, `"study"` for the study’s single
+  main dataset (the default) or `"named"` for another dataset under the
+  name given in `dataset`. It also gains a “Where a subset goes” section
+  comparing a job `WHERE`, an analysis set and a registered subset, and
+  an example that registers a named ancillary dataset and reads it back.
+
+- [`study_setup()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md)
+  now cleans up template copies whenever it adopts a study (`cleanup`
+  defaults to `adopt`, including an adoption accepted at the prompt) and
+  sets up renv by default (`renv = TRUE`). Adopting a study where the
+  template corpus is absent now stops unless `template_dir` is given or
+  `cleanup = FALSE`.
+
+- renv environments are created in explicit mode: `renv.lock` is built
+  from the study’s `DESCRIPTION`, never by scanning its code, so stale
+  template copies cannot add packages to it. `.renvignore` also covers
+  `tp.*` and `old_RF_templates*/` for studies set up before.
+
+- New
+  [`study_declare()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_declare.md)
+  records the packages a study needs in its `DESCRIPTION`, and keeps
+  every other field and the existing entries as written.
+
+- `study_setup(renv = TRUE)` now stops before writing anything when renv
+  is not installed or the root has a package `DESCRIPTION`;
+  `renv = FALSE` is the way out.
+
+- New
+  [`study_need()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_need.md)
+  installs a missing package such as arrow into the study’s library and
+  records it, instead of stopping with an
+  [`install.packages()`](https://rdrr.io/r/utils/install.packages.html)
+  line. Outside a renv study it names `hvtiR::setup()`.
+
 ## hvtiRutilities 1.5.5
 
 - The README’s Installation section now leads with `hvtiR::install()`,

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.5</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.6</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,6 +55,15 @@
       <small>Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.5.6" id="hvtirutilities-156">hvtiRutilities 1.5.6<a class="anchor" aria-label="anchor" href="#hvtirutilities-156"></a></h2>
+<ul><li><p>The <code><a href="../reference/register_data.html">register_data()</a></code> help page now says what <code>role</code> and <code>dataset</code> mean and how they go together: <code>role</code> takes one value, <code>"study"</code> for the study’s single main dataset (the default) or <code>"named"</code> for another dataset under the name given in <code>dataset</code>. It also gains a “Where a subset goes” section comparing a job <code>WHERE</code>, an analysis set and a registered subset, and an example that registers a named ancillary dataset and reads it back.</p></li>
+<li><p><code><a href="../reference/study_setup.html">study_setup()</a></code> now cleans up template copies whenever it adopts a study (<code>cleanup</code> defaults to <code>adopt</code>, including an adoption accepted at the prompt) and sets up renv by default (<code>renv = TRUE</code>). Adopting a study where the template corpus is absent now stops unless <code>template_dir</code> is given or <code>cleanup = FALSE</code>.</p></li>
+<li><p>renv environments are created in explicit mode: <code>renv.lock</code> is built from the study’s <code>DESCRIPTION</code>, never by scanning its code, so stale template copies cannot add packages to it. <code>.renvignore</code> also covers <code>tp.*</code> and <code>old_RF_templates*/</code> for studies set up before.</p></li>
+<li><p>New <code><a href="../reference/study_declare.html">study_declare()</a></code> records the packages a study needs in its <code>DESCRIPTION</code>, and keeps every other field and the existing entries as written.</p></li>
+<li><p><code>study_setup(renv = TRUE)</code> now stops before writing anything when renv is not installed or the root has a package <code>DESCRIPTION</code>; <code>renv = FALSE</code> is the way out.</p></li>
+<li><p>New <code><a href="../reference/study_need.html">study_need()</a></code> installs a missing package such as arrow into the study’s library and records it, instead of stopping with an <code><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages()</a></code> line. Outside a renv study it names <code>hvtiR::setup()</code>.</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.5.5" id="hvtirutilities-155">hvtiRutilities 1.5.5<a class="anchor" aria-label="anchor" href="#hvtirutilities-155"></a></h2>
 <ul><li><p>The README’s Installation section now leads with <code>hvtiR::install()</code>, which installs the whole HVTI R family in one call, and then gives <code>pak::pak("ehrlinger/hvtiRutilities")</code> for this package alone.</p></li>
