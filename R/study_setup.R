@@ -364,13 +364,13 @@
 #'
 #' @examples
 #' root <- file.path(tempdir(), "study-setup-example")
-#' study_setup(root, study = "Example", study_tracker_id = 1L)
+#' study_setup(root, study = "Example", study_tracker_id = 1L, renv = FALSE)
 #' list.files(root)
 #'
 #' # Running it again on an existing study needs adopt = TRUE; nothing that
 #' # exists is overwritten.
 #' invisible(study_setup(root, study = "Example", study_tracker_id = 1L,
-#'                       adopt = TRUE))
+#'                       adopt = TRUE, renv = FALSE, cleanup = FALSE))
 #'
 #' # cleanup = TRUE deletes the template copies a legacy study carries: tp.*
 #' # files, and files identical to one in the template corpus.
@@ -381,7 +381,8 @@
 #'                     file.path(root, "30_analyses")))
 #' writeLines("# template", file.path(root, "30_analyses", "tp.hazard.R"))
 #' done <- study_setup(root, study = "Example", study_tracker_id = 1L,
-#'                     adopt = TRUE, cleanup = TRUE, template_dir = corpus)
+#'                     adopt = TRUE, cleanup = TRUE, renv = FALSE,
+#'                     template_dir = corpus)
 #' attr(done, "cleanup")
 #'
 #' unlink(c(root, corpus), recursive = TRUE)
