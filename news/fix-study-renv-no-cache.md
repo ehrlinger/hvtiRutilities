@@ -1,1 +1,0 @@
-* `study_setup(renv = TRUE)` now sets `use.cache` to `FALSE` in the study's `renv/settings.json`, so the shared study library holds real copies of its packages and not links into one person's private renv cache, which teammates cannot read and which made their installs fail.

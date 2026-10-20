@@ -1,3 +1,7 @@
+# hvtiRutilities 1.5.8
+
+* `study_setup(renv = TRUE)` now sets `use.cache` to `FALSE` in the study's `renv/settings.json`, so the shared study library holds real copies of its packages and not links into one person's private renv cache, which teammates cannot read and which made their installs fail.
+
 # hvtiRutilities 1.5.7
 
 * `study_need()` no longer records already-installed packages in the study `DESCRIPTION` when the user declines installing a missing one, or the install fails: a refusal leaves the study as it was.
