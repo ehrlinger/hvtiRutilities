@@ -1,5 +1,21 @@
 # Changelog
 
+## hvtiRutilities 1.5.9
+
+- New
+  [`study_update_identity()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_update_identity.md)
+  records a verified Study Tracker identity in an existing `_study.yml`:
+  it writes the record’s fields, sets `identity_source: tracker` and
+  `identity_verified: true`, keeps every other key (the data contract
+  included), refuses a record for another Study Tracker ID, and returns
+  the keys it changed. It is the write step of `study-setup --verify`,
+  which reads the Tracker and compares the record with the typed
+  identity first.
+- [`print()`](https://rdrr.io/r/base/print.html) of a
+  [`study_status()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md)
+  no longer fails with “subscript out of bounds” on a study whose
+  identity is `UNVERIFIED` (a manual identity); the row prints as `[~]`.
+
 ## hvtiRutilities 1.5.8
 
 - `study_setup(renv = TRUE)` now sets `use.cache` to `FALSE` in the

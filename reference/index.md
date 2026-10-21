@@ -117,6 +117,8 @@ ready
 
 - [`study_setup()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md)
   : Set up study identity and directories
+- [`study_update_identity()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_update_identity.md)
+  : Record a verified study identity
 - [`study_declare()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_declare.md)
   : Declare the packages a study needs
 - [`study_need()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_need.md)
