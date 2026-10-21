@@ -196,3 +196,11 @@ test_that("`umbrella` marks exactly the demoted rows, and agrees with their word
   worded <- !is.na(tx$prefix) & grepl("legacy umbrella", tx$description, fixed = TRUE)
   expect_identical(worded, tx$umbrella %in% TRUE)
 })
+
+test_that("vp names the VarPro screen, filed under analyses", {
+  tx <- hvti_taxonomy()
+  row <- tx[tx$prefix %in% "vp", ]
+  expect_identical(nrow(row), 1L)
+  expect_identical(row$folder, "analyses")
+  expect_false(row$umbrella)
+})
