@@ -494,6 +494,7 @@ print.study_status <- function(x, ...) {
     "OUT OF DATE" = "[~]",
     "UPDATE STATUS UNKNOWN" = "[?]",
     PENDING = "[~]",
+    UNVERIFIED = "[~]",
     CLOSED = "[x]",
     UNKNOWN = "[?]"
   )
