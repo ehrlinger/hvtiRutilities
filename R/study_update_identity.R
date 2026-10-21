@@ -7,6 +7,13 @@
   "study_creation_date"
 )
 
+# A Study Tracker ID is one positive whole number. Checked before any integer
+# coercion, which would truncate 42.9 to 42 and verify the wrong study.
+.study_whole_id <- function(x) {
+  is.numeric(x) && length(x) == 1L && !is.na(x) && is.finite(x) &&
+    x >= 1 && x == round(x)
+}
+
 #' Record a verified study identity
 #'
 #' @description
@@ -69,12 +76,16 @@ study_update_identity <- function(identity, start = getwd()) {
   if (is.null(identity$study) || !nzchar(trimws(identity$study))) {
     stop("study_update_identity(): 'study' is required.", call. = FALSE)
   }
+  id <- identity$study_tracker_id
+  if (!.study_whole_id(id)) {
+    stop("study_update_identity(): 'study_tracker_id' must be one positive ",
+         "whole number.", call. = FALSE)
+  }
 
   cfg <- study_config(start, require_data = FALSE)
   raw <- .read_study_yml(cfg$file, "study_update_identity")
-  id <- identity$study_tracker_id
-  if (is.null(id) || length(id) != 1L || is.na(id) ||
-        !identical(as.integer(id), as.integer(raw$study_tracker_id))) {
+  if (!.study_whole_id(raw$study_tracker_id) ||
+        id != raw$study_tracker_id) {
     stop("study_update_identity(): the record's Study Tracker ID ",
          format(id), " does not match ", cfg$file, " (",
          format(raw$study_tracker_id), ").", call. = FALSE)

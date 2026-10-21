@@ -56,6 +56,29 @@ test_that("study_update_identity refuses another study's record", {
   expect_identical(readLines(file.path(root, "_study.yml")), before)
 })
 
+test_that("study_update_identity rejects an ID that is not a whole number", {
+  root <- manual_study()
+  before <- readLines(file.path(root, "_study.yml"))
+
+  for (id in list(42.9, "42.9", "42", 42.0001, NA_integer_, c(42L, 42L),
+                  0L, Inf, NULL)) {
+    expect_error(
+      study_update_identity(list(study_tracker_id = id, study = "Other"),
+                            start = root),
+      "must be one positive whole number"
+    )
+  }
+  expect_identical(readLines(file.path(root, "_study.yml")), before)
+  expect_false(study_config(root, require_data = FALSE)$identity_verified)
+})
+
+test_that("study_update_identity accepts a whole-number double ID", {
+  root <- manual_study()
+  study_update_identity(list(study_tracker_id = 42, study = "Typed Title"),
+                        start = root)
+  expect_true(study_config(root, require_data = FALSE)$identity_verified)
+})
+
 test_that("study_update_identity rejects malformed records", {
   root <- manual_study()
   expect_error(study_update_identity("x", start = root), "named list")
