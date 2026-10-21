@@ -370,6 +370,14 @@ test_that("study_status reports a hand-entered identity as UNVERIFIED", {
   expect_match(row$detail, "study-setup --verify", fixed = TRUE)
 })
 
+test_that("print.study_status prints an UNVERIFIED identity", {
+  root <- make_study_fixture(withr::local_tempdir(), write_data = FALSE)
+  cat("identity_source: manual\nidentity_verified: false\n",
+      file = file.path(root, "_study.yml"), append = TRUE)
+
+  expect_output(print(study_status(root)), "[~] _study.yml", fixed = TRUE)
+})
+
 test_that("study_status reads a manifest without identity fields as verified", {
   root <- make_study_fixture(withr::local_tempdir(), write_data = FALSE)
 
