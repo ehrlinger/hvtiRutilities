@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.9</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.10</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,6 +55,11 @@
       <small>Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.5.10" id="hvtirutilities-1510">hvtiRutilities 1.5.10<a class="anchor" aria-label="anchor" href="#hvtirutilities-1510"></a></h2>
+<ul><li>
+<code><a href="../reference/hvti_taxonomy.html">hvti_taxonomy()</a></code> gains <code>vp</code>, a VarPro variable screen with coverage, noise and stability checks, for the <code>vp-fit</code> and <code>vp-explain</code> templates in hvtiRtemplates.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.5.9" id="hvtirutilities-159">hvtiRutilities 1.5.9<a class="anchor" aria-label="anchor" href="#hvtirutilities-159"></a></h2>
 <ul><li>New <code><a href="../reference/study_update_identity.html">study_update_identity()</a></code> records a verified Study Tracker identity in an existing <code>_study.yml</code>: it writes the record’s fields, sets <code>identity_source: tracker</code> and <code>identity_verified: true</code>, keeps every other key (the data contract included), refuses a record for another Study Tracker ID, and returns the keys it changed. It is the write step of <code>study-setup --verify</code>, which reads the Tracker and compares the record with the typed identity first.</li>

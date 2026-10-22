@@ -1,5 +1,12 @@
 # Changelog
 
+## hvtiRutilities 1.5.10
+
+- [`hvti_taxonomy()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_taxonomy.md)
+  gains `vp`, a VarPro variable screen with coverage, noise and
+  stability checks, for the `vp-fit` and `vp-explain` templates in
+  hvtiRtemplates.
+
 ## hvtiRutilities 1.5.9
 
 - New
