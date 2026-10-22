@@ -1,3 +1,7 @@
+# hvtiRutilities 1.5.10
+
+* `hvti_taxonomy()` gains `vp`, a VarPro variable screen with coverage, noise and stability checks, for the `vp-fit` and `vp-explain` templates in hvtiRtemplates.
+
 # hvtiRutilities 1.5.9
 
 * New `study_update_identity()` records a verified Study Tracker identity in an existing `_study.yml`: it writes the record's fields, sets `identity_source: tracker` and `identity_verified: true`, keeps every other key (the data contract included), refuses a record for another Study Tracker ID, and returns the keys it changed. It is the write step of `study-setup --verify`, which reads the Tracker and compares the record with the typed identity first.
