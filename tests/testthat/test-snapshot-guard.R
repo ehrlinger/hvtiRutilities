@@ -1,5 +1,6 @@
 snap_root <- function(r = "4.5.3",
-                      pkgs = c(boostmtree = "2.0.8", ggBoostedTrees = "0.10.0")) {
+                      pkgs = c(boostmtree = "2.0.8",
+                               ggBoostedTrees = "0.10.0")) {
   root <- withr::local_tempdir(.local_envir = parent.frame())
   lock <- list(R = list(Version = r),
                Packages = lapply(names(pkgs), function(p) {
@@ -79,7 +80,7 @@ test_that(".study_init_renv() guards before the child snapshot starts", {
   expect_error(.study_init_renv(root), "4[.]5[.]3.*4[.]6[.]1")
 })
 
-test_that("study_need() refuses from a mismatched R before it asks or installs", {
+test_that("study_need() refuses a mismatched R before asking or installing", {
   root <- snap_root("4.5.3")
   study <- root
   installs <- 0L
@@ -99,4 +100,11 @@ test_that("study_need() refuses from a mismatched R before it asks or installs",
   expect_error(study_need("arrow"), "4[.]5[.]3.*4[.]6[.]1")
   expect_identical(installs, 0L)
   expect_identical(asks, 0L)
+})
+
+test_that("a malformed R version in the lock passes like a missing one", {
+  for (bad in c("", "devel", "4")) {
+    expect_silent(guard_snapshot(snap_root(bad),
+                                 session = numeric_version("4.6.1")))
+  }
 })

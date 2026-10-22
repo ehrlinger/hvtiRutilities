@@ -51,6 +51,9 @@ guard_snapshot <- function(root, r_upgrade = FALSE, session = .session_r(),
   lock <- jsonlite::read_json(lock_file, simplifyVector = FALSE)
   want <- lock$R$Version
   if (!is.character(want) || length(want) != 1L) return(invisible(TRUE))
+  # A version renv could not have written ("", "devel", "4") is treated
+  # like a lock that records no R.
+  if (is.na(.major_minor(want))) return(invisible(TRUE))
   have <- as.character(session)
   if (identical(.major_minor(want), .major_minor(have))) {
     return(invisible(TRUE))
@@ -80,5 +83,8 @@ guard_snapshot <- function(root, r_upgrade = FALSE, session = .session_r(),
 }
 
 .major_minor <- function(v) {
-  paste(unlist(numeric_version(as.character(v)))[1:2], collapse = ".")
+  parts <- tryCatch(unlist(numeric_version(as.character(v))),
+                    error = function(e) NULL)
+  if (length(parts) < 2L) return(NA_character_)
+  paste(parts[1:2], collapse = ".")
 }
