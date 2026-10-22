@@ -9,7 +9,8 @@ study_need(
   root = NULL,
   caller = "study_need",
   note = NULL,
-  only_in_renv = FALSE
+  only_in_renv = FALSE,
+  r_upgrade = FALSE
 )
 }
 \arguments{
@@ -24,6 +25,12 @@ the question and the error.}
 \item{note}{Character(1) or \code{NULL}. Appended to the error.}
 
 \item{only_in_renv}{Logical(1). Do nothing outside an active renv study.}
+
+\item{r_upgrade}{Logical(1). Leave \code{FALSE}. The \code{renv.lock}
+snapshot that follows an install is refused from an R whose major.minor
+differs from the R the lockfile records (see
+\code{\link{guard_snapshot}}). Set \code{TRUE} only when you are
+deliberately moving the study to this session's R.}
 }
 \value{
 The names of the packages installed, invisibly.

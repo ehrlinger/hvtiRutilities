@@ -264,7 +264,7 @@
 # The study-setup command's renv step (qhsprograms study_setup/workflow.py):
 # keep a complete environment, resume one interrupted after init, refuse any
 # other partial one, otherwise init bare and snapshot.
-.study_init_renv <- function(root) {
+.study_init_renv <- function(root, r_upgrade = FALSE) {
   core <- c("renv", ".Rprofile", "renv.lock")
   sound <- .study_renv_parts(root)
   if (all(sound)) return("retained")
@@ -294,6 +294,9 @@
   # Load and snapshot this project explicitly: a child that relied on its
   # startup loading .Rprofile could run with no project and the global
   # library, and snapshot the wrong thing.
+  # The child below is Rscript from this session's R.home(), so this check
+  # sees the same R the snapshot would run under.
+  guard_snapshot(root, r_upgrade)
   project <- deparse(normalizePath(root, winslash = "/"))
   run(paste0("renv::load(", project, "); renv::settings$use.cache(FALSE, project = ", project,
              "); renv::settings$snapshot.type('explicit', project = ",
@@ -388,6 +391,11 @@
 #' @param renv Logical. Initialize and snapshot the study's \code{renv}
 #'   environment. See Details. Defaults to \code{TRUE}; test suites that build
 #'   temporary studies should pass \code{FALSE}.
+#' @param r_upgrade Logical(1). Leave \code{FALSE}. The renv snapshot is
+#'   refused from an R whose major.minor differs from the R recorded in the
+#'   study's \code{renv.lock} (see \code{\link{guard_snapshot}}), because it
+#'   would rewrite the lock's R and drop packages. Set \code{TRUE} only when
+#'   you are deliberately moving the study to this session's R.
 #'
 #' @return An object of class \code{"study_status"}, returned visibly. With
 #'   \code{cleanup = TRUE} it carries a \code{"cleanup"} attribute, a list of
@@ -430,7 +438,8 @@ study_setup <- function(root = NULL, study, study_tracker_id,
                         study_creation_date = NULL, adopt = FALSE,
                         identity_source = c("tracker", "manual"),
                         cleanup = adopt, renv = TRUE,
-                        template_dir = "/programs/development/template") {
+                        template_dir = "/programs/development/template",
+                        r_upgrade = FALSE) {
   # cleanup defaults to the FINAL adopt, which the interactive prompt below may
   # set. Validating it here would force the default with the caller's adopt.
   cleanup_given <- !missing(cleanup)
@@ -600,7 +609,7 @@ study_setup <- function(root = NULL, study, study_tracker_id,
 
   # Cleanup before renv: renv discovers dependencies by scanning the study.
   cleaned <- if (cleanup) .study_cleanup(root, template_dir)
-  renv_state <- if (renv) .study_init_renv(root)
+  renv_state <- if (renv) .study_init_renv(root, r_upgrade)
 
   status <- study_status(root)
   attr(status, "cleanup") <- cleaned

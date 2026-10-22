@@ -1,0 +1,80 @@
+snap_root <- function(r = "4.5.3",
+                      pkgs = c(boostmtree = "2.0.8", ggBoostedTrees = "0.10.0")) {
+  root <- withr::local_tempdir(.local_envir = parent.frame())
+  lock <- list(R = list(Version = r),
+               Packages = lapply(names(pkgs), function(p) {
+                 list(Package = p, Version = pkgs[[p]])
+               }))
+  names(lock$Packages) <- names(pkgs)
+  jsonlite::write_json(lock, file.path(root, "renv.lock"), auto_unbox = TRUE)
+  root
+}
+
+test_that("a snapshot from another R major.minor is refused, naming both", {
+  root <- snap_root("4.5.3")
+  expect_error(guard_snapshot(root, session = numeric_version("4.6.1")),
+               "4[.]5[.]3.*4[.]6[.]1")
+  expect_error(guard_snapshot(root, session = numeric_version("4.6.1")),
+               "/opt/R/4[.]5[.]3/bin/R")
+})
+
+test_that("r_upgrade = TRUE refuses while a locked package is missing", {
+  root <- snap_root("4.5.3")
+  lacks_boostmtree <- function(p) {
+    if (p == "boostmtree") NA_character_ else "0.10.0"
+  }
+  expect_error(
+    guard_snapshot(root, r_upgrade = TRUE, session = numeric_version("4.6.1"),
+                   installed = lacks_boostmtree),
+    "boostmtree.*renv::restore"
+  )
+})
+
+test_that("r_upgrade = TRUE passes once every locked package is installed", {
+  root <- snap_root("4.5.3")
+  expect_silent(guard_snapshot(root, r_upgrade = TRUE,
+                               session = numeric_version("4.6.1"),
+                               installed = function(p) "1.0"))
+})
+
+test_that("a patch difference, or no lock, passes", {
+  expect_silent(guard_snapshot(snap_root("4.5.1"),
+                               session = numeric_version("4.5.3")))
+  expect_silent(guard_snapshot(withr::local_tempdir(),
+                               session = numeric_version("4.6.1")))
+})
+
+test_that(".need_snapshot() never calls renv::snapshot from a mismatched R", {
+  root <- snap_root("4.5.3")
+  called <- FALSE
+  local_mocked_bindings(snapshot = function(...) called <<- TRUE,
+                        .package = "renv")
+  local_mocked_bindings(.session_r = function() numeric_version("4.6.1"))
+  expect_error(.need_snapshot(root), "4[.]5[.]3")
+  expect_false(called)
+})
+
+test_that(".need_snapshot() passes r_upgrade through to the guard", {
+  root <- snap_root("4.5.3", pkgs = c(stats = "1.0"))
+  called <- FALSE
+  local_mocked_bindings(snapshot = function(...) called <<- TRUE,
+                        .package = "renv")
+  local_mocked_bindings(.session_r = function() numeric_version("4.6.1"),
+                        .installed_version = function(p) "1.0")
+  .need_snapshot(root, r_upgrade = TRUE)
+  expect_true(called)
+})
+
+test_that(".study_init_renv() guards before the child snapshot starts", {
+  root <- withr::local_tempdir()
+  lock <- snap_root("4.5.3")
+  local_mocked_bindings(.session_r = function() numeric_version("4.6.1"))
+  local_mocked_bindings(study_declare = function(...) invisible(NULL))
+  local_mocked_bindings(.study_rscript = function(expr, root, flags) {
+    # The init step runs; the snapshot step must never be reached.
+    if (!grepl("renv::init", expr, fixed = TRUE)) stop("child snapshot ran")
+    file.copy(file.path(lock, "renv.lock"), file.path(root, "renv.lock"))
+    list(status = 0L, output = "")
+  })
+  expect_error(.study_init_renv(root), "4[.]5[.]3.*4[.]6[.]1")
+})

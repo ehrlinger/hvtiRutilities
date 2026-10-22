@@ -21,13 +21,18 @@
 #'   the question and the error.
 #' @param note Character(1) or \code{NULL}. Appended to the error.
 #' @param only_in_renv Logical(1). Do nothing outside an active renv study.
+#' @param r_upgrade Logical(1). Leave \code{FALSE}. The \code{renv.lock}
+#'   snapshot that follows an install is refused from an R whose major.minor
+#'   differs from the R the lockfile records (see
+#'   \code{\link{guard_snapshot}}). Set \code{TRUE} only when you are
+#'   deliberately moving the study to this session's R.
 #' @return The names of the packages installed, invisibly.
 #' @export
 #' @examples
 #' # Nothing to install, and nothing written, outside a study:
 #' study_need("stats")
 study_need <- function(packages, root = NULL, caller = "study_need", note = NULL,
-                       only_in_renv = FALSE) {
+                       only_in_renv = FALSE, r_upgrade = FALSE) {
   root <- .need_root(root)
   in_renv <- !is.null(root) && .renv_active(root)
   if (only_in_renv && !in_renv) return(invisible(character(0)))
@@ -49,7 +54,7 @@ study_need <- function(packages, root = NULL, caller = "study_need", note = NULL
              if (!is.null(note)) paste0(" ", note) else "", call. = FALSE)
       }
       study_declare(packages, root)
-      .need_snapshot(root)
+      .need_snapshot(root, r_upgrade)
       return(invisible(missing))
     }
     declined <- TRUE
@@ -90,4 +95,7 @@ study_need <- function(packages, root = NULL, caller = "study_need", note = NULL
                      renv::install(pkgs, project = root, prompt = FALSE))
 }
 
-.need_snapshot <- function(root) renv::snapshot(project = root, prompt = FALSE)
+.need_snapshot <- function(root, r_upgrade = FALSE) {
+  guard_snapshot(root, r_upgrade)
+  renv::snapshot(project = root, prompt = FALSE)
+}

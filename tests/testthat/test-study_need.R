@@ -14,7 +14,7 @@ local_need <- function(installed = character(0), renv_root = NULL, interactive =
       answer
     },
     .need_install = function(pkgs, root) state$installed <- c(state$installed, pkgs),
-    .need_snapshot = function(root) state$snapshots <- state$snapshots + 1L,
+    .need_snapshot = function(root, r_upgrade = FALSE) state$snapshots <- state$snapshots + 1L,
     .env = env
   )
   state
