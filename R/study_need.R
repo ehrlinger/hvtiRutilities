@@ -45,6 +45,8 @@ study_need <- function(packages, root = NULL, caller = "study_need", note = NULL
   }
   declined <- FALSE
   if (in_renv && .study_interactive()) {
+    # Refuse before asking or installing; .need_snapshot() checks again.
+    guard_snapshot(root, r_upgrade)
     if (isTRUE(.need_ask(missing, caller))) {
       .need_install(missing, root)
       still <- missing[!vapply(missing, .package_installed, logical(1))]

@@ -78,3 +78,25 @@ test_that(".study_init_renv() guards before the child snapshot starts", {
   })
   expect_error(.study_init_renv(root), "4[.]5[.]3.*4[.]6[.]1")
 })
+
+test_that("study_need() refuses from a mismatched R before it asks or installs", {
+  root <- snap_root("4.5.3")
+  study <- root
+  installs <- 0L
+  asks <- 0L
+  local_mocked_bindings(
+    .package_installed = function(pkg) FALSE,
+    .need_root = function(root) study,
+    .renv_active = function(root) TRUE,
+    .study_interactive = function() TRUE,
+    .need_ask = function(pkgs, caller) {
+      asks <<- asks + 1L
+      TRUE
+    },
+    .need_install = function(pkgs, root) installs <<- installs + 1L,
+    .session_r = function() numeric_version("4.6.1")
+  )
+  expect_error(study_need("arrow"), "4[.]5[.]3.*4[.]6[.]1")
+  expect_identical(installs, 0L)
+  expect_identical(asks, 0L)
+})
