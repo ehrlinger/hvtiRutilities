@@ -139,6 +139,7 @@ reference:
   - study_need
   - guard_snapshot
   - register_data
+  - declare_data
   - study_status
   - study_checklist
   - preflight_report

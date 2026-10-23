@@ -52,6 +52,64 @@ test_that("provenance_data snapshots a registered file with an explicit role", {
   )
 })
 
+test_that("a working read's provenance record says so, and a registered one is unchanged", {
+  root <- make_registered_study(withr::local_tempdir())
+  cfg <- study_config(root)
+
+  plain <- provenance_data(cfg = cfg, working = FALSE)
+  expect_false("working" %in% names(plain))
+  expect_identical(names(plain), c("dataset", "path", "role", "bytes", "mtime", "sha256"))
+
+  work <- provenance_data(cfg = cfg, working = TRUE)
+  expect_true(isTRUE(work$working))
+  expect_identical(work[names(work) != "working"][c("dataset", "role")],
+                   plain[c("dataset", "role")])
+})
+
+test_that("a declared but unregistered dataset's provenance record is a working record", {
+  root <- file.path(withr::local_tempdir(), "study")
+  suppressMessages(study_setup(root, "Declare fixture", 7L, renv = FALSE))
+  saveRDS(data.frame(ccfid = 1:3), file.path(study_dir("datasets", root), "study_cohort.rds"))
+  declare_data(root, built = "study_cohort.rds", key = "ccfid")
+  cfg <- study_config(root)
+  withr::local_envvar(HVTI_DATA = NA)
+  expect_true(isTRUE(provenance_data(cfg = cfg)$working))
+})
+
+test_that("a working data record survives capture and publish", {
+  root <- make_registered_study(withr::local_tempdir())
+  cfg <- study_config(root)
+  out <- make_output(root)
+  payload <- capture_provenance(
+    "death-hz-ac",
+    data = list(provenance_data(cfg = cfg, working = TRUE)),
+    artifacts = list(provenance_artifact(make_artifact(root), cfg = cfg)),
+    cfg = cfg
+  )
+  expect_true(isTRUE(payload$data[[1]]$working))
+  transported <- jsonlite::fromJSON(
+    jsonlite::toJSON(payload, auto_unbox = TRUE, null = "null", digits = NA),
+    simplifyVector = FALSE
+  )
+
+  publish_provenance(out, transported)
+  sidecar <- jsonlite::fromJSON(provenance_path(out), simplifyVector = FALSE)
+  expect_true(isTRUE(sidecar$data[[1]]$working))
+})
+
+test_that("a data record's working flag must be exactly TRUE when present", {
+  root <- make_registered_study(withr::local_tempdir())
+  cfg <- study_config(root)
+  base <- provenance_data(cfg = cfg, working = FALSE)
+  for (value in list(FALSE, NA, "yes")) {
+    bad <- c(base, list(working = value))
+    expect_error(
+      capture_provenance("death-hz-ac", data = list(bad), cfg = cfg),
+      "malformed data record 1"
+    )
+  }
+})
+
 test_that("provenance_data snapshots the authoritative file for a promoted dataset", {
   skip_if_not_installed("arrow")
   root <- make_study_fixture(withr::local_tempdir())

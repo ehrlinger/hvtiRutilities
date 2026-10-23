@@ -795,7 +795,7 @@ test_that("update_manifest() registers a named dataset that has no manifest as i
   cfg <- study_config(root)
   local_mocked_bindings(.is_interactive = function() FALSE,
                         .job_file = function() file.path(study_dir("analyses", root), "km", "km.qmd"))
-  expect_error(read_built(cfg), "jobs read registered data only")
+  expect_error(read_built(cfg), "runs under Rscript, so it can read registered data only")
 
   out <- withr::with_dir(root, suppressMessages(update_manifest()))
   expect_identical(out$action, "registered")
@@ -818,7 +818,7 @@ test_that("update_manifest() registers a dataset that a manifest.yaml lacks, wit
   cfg <- study_config(s$root)
   local_mocked_bindings(.is_interactive = function() FALSE,
                         .job_file = function() file.path(study_dir("analyses", s$root), "km", "km.qmd"))
-  expect_error(read_built(cfg), "jobs read registered data only")
+  expect_error(read_built(cfg), "runs under Rscript, so it can read registered data only")
 
   out <- withr::with_dir(s$root, suppressMessages(update_manifest(dataset = "study")))
   expect_identical(out$action, "registered")

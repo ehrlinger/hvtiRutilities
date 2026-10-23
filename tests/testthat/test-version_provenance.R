@@ -261,7 +261,7 @@ test_that("a promoted entry with a retired source migrates from its parquet and 
   before <- digest::digest(file.path(dir, "built.parquet"), algo = "sha256", file = TRUE)
   local_mocked_bindings(.is_interactive = function() FALSE,
                         .job_file = function() file.path(study_dir("analyses", root), "km", "km.qmd"))
-  expect_error(read_built(study_config(root)), "jobs read registered data only")
+  expect_error(read_built(study_config(root)), "runs under Rscript, so it can read registered data only")
 
   out <- withr::with_dir(root, suppressMessages(update_manifest()))
   expect_identical(out$action, "migrated")

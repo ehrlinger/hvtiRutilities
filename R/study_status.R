@@ -92,16 +92,16 @@
   }, error = function(e) .status_row(paste0("out_of_date:", dataset), "FAIL", conditionMessage(e)))
 }
 
-# A dataset the study names that has no dated version: every job outside datasets and descriptive stops
-# when it reads it. A release-pinned dataset is exempt from the gate, so it is exempt here.
+# A dataset the study names that has no dated version: a final render or Rscript job stops when it reads it; a draft may read it.
+# A release-pinned dataset is exempt from the gate, so it is exempt here.
 .status_dated_version <- function(cfg, dataset) {
   contract <- tryCatch(.study_dataset(cfg, dataset), error = function(e) NULL)
   if (is.null(contract) || !is.null(contract$release) || is.null(contract$built)) return(NULL)
   entry <- tryCatch(.manifest_entry(file.path(cfg$root, "manifest.yaml"), contract$built), error = function(e) NULL)
   if (.is_versioned(entry)) return(NULL)
   .status_row(paste0("dated_version:", dataset), "PENDING",
-              paste0(contract$built, " has no dated version, so analysis, distribution, graph and document jobs stop ",
-                     "when they read it. Run hvtiRutilities::update_manifest()."))
+              paste0(contract$built, " has no dated version, so a final render or an Rscript job stops when it reads it, ",
+                     "and a draft that reads it is marked a draft. Run hvtiRutilities::update_manifest()."))
 }
 
 .status_named_dataset <- function(cfg, dataset) {
@@ -330,9 +330,9 @@
 #' \code{\link{update_manifest}()}, which registers the rebuild.
 #'
 #' A dataset that \code{_study.yml} names and \code{manifest.yaml} does not register as a dated version adds a
-#' \code{dated_version:<dataset>} row with status \code{"PENDING"}: analysis, distribution, graph and
-#' document jobs stop when they read it. The detail names \code{\link{update_manifest}()}. A dataset pinned
-#' to a catalog release adds no such row.
+#' \code{dated_version:<dataset>} row with status \code{"PENDING"}: a final render or an
+#' \code{Rscript} job stops when it reads it, and a draft that reads it is marked a draft. The detail names
+#' \code{\link{update_manifest}()}. A dataset pinned to a catalog release adds no such row.
 #'
 #' Release-aware datasets add an \code{update:<dataset>} row with status
 #' \code{"CURRENT"}, \code{"UPDATE AVAILABLE"},

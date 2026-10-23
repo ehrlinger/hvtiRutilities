@@ -1,10 +1,11 @@
 # Reading the working dataset before it is registered. Design:
-# dev/specs/2026-10-13-one-version-scheme-design.md, section 5.1.
+# dev/specs/2026-10-13-one-version-scheme-design.md, section 5.1, and
+# dev/specs/2026-10-23-working-read-gate-design.md.
 #
 # Any read that is not of a dated version serves the working file, so the
 # gate applies to the data read, not to the `working` argument. It is honoured
-# in the interactive console and in jobs in the study's datasets or descriptive
-# folder; everywhere else the job must read registered data.
+# in the interactive console and in draft renders of jobs in any stage folder;
+# a final render or an Rscript job must read registered data.
 
 .hvti_working_default <- function() {
   value <- Sys.getenv("HVTI_DATA", "")
@@ -21,6 +22,10 @@
   if (!requireNamespace("knitr", quietly = TRUE)) return(NULL)
   knitr::current_input(dir = TRUE)
 }
+
+# A final render, as hvtiRtemplates' render_job(final = TRUE) marks one. Read with
+# .strict_render()'s parsing there, so the two packages cannot disagree on a value.
+.final_render <- function() !tolower(Sys.getenv("HVTI_TEMPLATE_STRICT")) %in% c("", "0", "false", "no")
 
 # The job being run: the document knitr is rendering, else the script Rscript was given.
 .job_file <- function() {
@@ -56,25 +61,29 @@
 .assert_working_stage <- function(cfg, built, caller = "read_built", unregistered = TRUE, explicit = FALSE, env = FALSE) {
   job <- .job_file()
   if (is.null(job) && .is_interactive()) return(invisible(TRUE))
-  allowed <- vapply(c("datasets", "descriptive"), function(k) basename(study_dir(k, cfg$root)), character(1))
-  stage <- NULL
+  rendering <- !is.null(.knitr_input())
+  where <- NULL
   if (!is.null(job)) {
     job <- .real_path(job)
     root <- .real_path(cfg$root)
     if (startsWith(job, paste0(root, "/")) || startsWith(job, paste0(root, "\\"))) {
       parts <- strsplit(substring(job, nchar(root) + 2L), "[/\\\\]")[[1L]]
-      stage <- if (length(parts) > 1L) parts[[1L]] else ""
+      where <- if (length(parts) > 1L) "stage" else "root"
     }
   }
-  if (!is.null(stage) && stage %in% allowed) return(invisible(TRUE))
+  # A draft render of a job in any folder below the study root may read the working file; nothing else may.
+  if (identical(where, "stage") && rendering && !.final_render()) return(invisible(TRUE))
+  final <- identical(where, "stage") && rendering
   who <- if (is.null(job)) {
     "A non-interactive session with no job file can"
-  } else if (is.null(stage)) {
+  } else if (is.null(where)) {
     paste0(basename(job), " is outside the study, so it can")
-  } else if (!nzchar(stage)) {
+  } else if (identical(where, "root")) {
     paste0(basename(job), " is at the study root, outside any stage folder, so it can")
+  } else if (final) {
+    paste0(basename(job), " is a final render, so it can")
   } else {
-    paste0(stage, " jobs")
+    paste0(basename(job), " runs under Rscript, so it can")
   }
   why <- if (unregistered) {
     paste0(built, " has no dated version")
@@ -84,7 +93,7 @@
   # With a dated version the request is the only reason this is a working read, so the exits are to drop it.
   # Without one, dropping the request still serves the working file: registering is the only way out.
   fix <- if (unregistered) {
-    "register it with update_manifest()"
+    c("register it with update_manifest()", if (final) "render a draft")
   } else {
     c(if (explicit) "call read_built() without working = TRUE", if (env) "unset HVTI_DATA")
   }

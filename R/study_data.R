@@ -215,8 +215,10 @@ built_manifest <- function(cfg = study_config(), dataset = "study") {
 #' until it is rebuilt and registered again.
 #'
 #' Only a dated version is registered data. Any other read is a working read: it
-#' is allowed only in the interactive console and in jobs in the study's
-#' datasets or descriptive folder, and it signals a message of class
+#' is allowed in the interactive console and in a draft render of a job in any
+#' stage folder of the study. It is refused in a final render (see below), in a
+#' script run with \code{Rscript}, and for a job at the study root or outside
+#' the study. A permitted working read signals a message of class
 #' \code{hvtiRutilities_working_read}. Review a rebuilt source with
 #' \code{\link{review_built}()} and register it with
 #' \code{\link{update_manifest}()}. The release branch below is deprecated.
@@ -238,6 +240,13 @@ built_manifest <- function(cfg = study_config(), dataset = "study") {
 #' vectors, keeping the SAS variable label as an attribute because listings
 #' print labels rather than names.
 #'
+#' A render counts as final when the environment variable
+#' \code{HVTI_TEMPLATE_STRICT} is set to anything but empty, \code{0},
+#' \code{false} or \code{no}, as hvtiRtemplates' \code{render_job(final = TRUE)}
+#' sets it. A final render, and a script run with \code{Rscript}, read
+#' registered data only. A draft render of a job in any stage folder may read
+#' the working file.
+#'
 #' @param cfg List. A study manifest from \code{\link{study_config}}.
 #' @param refresh Logical. If \code{TRUE}, force a re-read from the source and
 #'   a reconversion regardless of the manifest's role or cached stamp.
@@ -258,9 +267,13 @@ built_manifest <- function(cfg = study_config(), dataset = "study") {
 #'   rather than its registered version, writing nothing. Defaults to
 #'   \code{TRUE} when the environment variable \code{HVTI_DATA} is
 #'   \code{"working"}. Any read that is not of a dated version is a working read:
-#'   it is allowed only in the interactive console and in jobs in the study's
-#'   datasets or descriptive folder, and signals a message of class
-#'   \code{hvtiRutilities_working_read}.
+#'   it is allowed in the interactive console and in a draft render of a job in
+#'   any stage folder of the study. It is refused in a final render, where
+#'   \code{HVTI_TEMPLATE_STRICT} is set to anything but empty, \code{0},
+#'   \code{false} or \code{no}, as \code{render_job(final = TRUE)} sets it. It is
+#'   also refused in a script run with \code{Rscript}, and for a job at the study
+#'   root or outside the study. A permitted working read signals a message of
+#'   class \code{hvtiRutilities_working_read}.
 #'
 #' @return A data frame with lower-cased names, no logical columns and no
 #'   \code{haven_labelled} columns.

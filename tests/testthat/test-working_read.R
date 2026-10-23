@@ -15,42 +15,64 @@ stage_study <- function(env = parent.frame()) {
   study_config(root, require_data = FALSE)
 }
 
-test_that("the gate allows datasets and descriptive jobs and refuses the rest", {
+gate_case <- function(cfg, job, rendering, strict) {
+  withr::local_envvar(HVTI_TEMPLATE_STRICT = strict)
+  testthat::local_mocked_bindings(.is_interactive = function() FALSE, .job_file = function() job,
+                                  .knitr_input = function() if (rendering) job)
+  tryCatch(isTRUE(.assert_working_stage(cfg, "built.csv")), error = function(e) conditionMessage(e))
+}
+
+test_that("a draft render reads the working file in every stage folder", {
   cfg <- stage_study()
-  local_mocked_bindings(.is_interactive = function() FALSE)
-  for (stage in c("datasets", "descriptive")) {
-    job <- file.path(study_dir(stage, cfg$root), "job.qmd")
-    local_mocked_bindings(.job_file = function() job)
-    expect_true(.assert_working_stage(cfg, "built.csv"))
+  for (stage in c("datasets", "descriptive", "distributions", "analyses", "graphs")) {
+    job <- file.path(study_dir(stage, cfg$root), "job", "job.qmd")
+    for (strict in c("", "0", "false", "no", "FALSE")) expect_true(gate_case(cfg, job, TRUE, strict))
   }
-  for (stage in c("distributions", "analyses", "graphs")) {
-    job <- file.path(study_dir(stage, cfg$root), "fit", "fit.qmd")
-    local_mocked_bindings(.job_file = function() job)
-    expect_error(.assert_working_stage(cfg, "built.csv"),
-                 paste0(basename(study_dir(stage, cfg$root)), " jobs read registered data only"))
+})
+
+test_that("a final render reads registered data only, in every stage folder", {
+  cfg <- stage_study()
+  for (stage in c("datasets", "descriptive", "distributions", "analyses", "graphs")) {
+    job <- file.path(study_dir(stage, cfg$root), "job", "job.qmd")
+    for (strict in c("1", "true", "yes", "TRUE")) {
+      msg <- gate_case(cfg, job, TRUE, strict)
+      expect_match(msg, "job.qmd is a final render", fixed = TRUE)
+      expect_match(msg, "update_manifest()", fixed = TRUE)
+      expect_match(msg, "or render a draft", fixed = TRUE)
+    }
   }
-  local_mocked_bindings(.job_file = function() file.path(tempdir(), "elsewhere.qmd"))
-  expect_error(.assert_working_stage(cfg, "built.csv"), "outside the study")
-  local_mocked_bindings(.job_file = function() NULL)
+})
+
+test_that("an Rscript job is final, wherever it sits", {
+  cfg <- stage_study()
+  for (stage in c("datasets", "descriptive", "analyses")) {
+    job <- file.path(study_dir(stage, cfg$root), "fit.R")
+    msg <- gate_case(cfg, job, FALSE, "")
+    expect_match(msg, "fit.R runs under Rscript", fixed = TRUE)
+    expect_no_match(msg, "render a draft", fixed = TRUE)
+  }
+})
+
+test_that("a render outside the study or at its root is refused, draft or not", {
+  cfg <- stage_study()
+  expect_match(gate_case(cfg, file.path(tempdir(), "elsewhere.qmd"), TRUE, ""), "outside the study")
+  expect_match(gate_case(cfg, file.path(cfg$root, "top.qmd"), TRUE, ""), "at the study root")
+  local_mocked_bindings(.is_interactive = function() FALSE, .job_file = function() NULL)
   expect_error(.assert_working_stage(cfg, "built.csv"), "non-interactive session with no job file")
+})
+
+test_that("a legacy (bare-name) layout follows the same rule", {
+  root <- file.path(withr::local_tempdir(), "study")
+  dir.create(file.path(root, "analyses"), recursive = TRUE)
+  cfg <- list(root = root)
+  expect_true(gate_case(cfg, file.path(root, "analyses", "km.qmd"), TRUE, ""))
+  expect_match(gate_case(cfg, file.path(root, "analyses", "km.qmd"), TRUE, "1"), "final render")
 })
 
 test_that("the interactive console is allowed", {
   cfg <- stage_study()
   local_mocked_bindings(.is_interactive = function() TRUE, .job_file = function() NULL)
   expect_true(.assert_working_stage(cfg, "built.csv"))
-})
-
-test_that("a legacy (bare-name) layout is gated by the same stages", {
-  root <- file.path(withr::local_tempdir(), "study")
-  dir.create(file.path(root, "descriptive"), recursive = TRUE)
-  dir.create(file.path(root, "analyses"))
-  cfg <- list(root = root)
-  local_mocked_bindings(.is_interactive = function() FALSE,
-                        .job_file = function() file.path(root, "descriptive", "dc.qmd"))
-  expect_true(.assert_working_stage(cfg, "built.csv"))
-  local_mocked_bindings(.job_file = function() file.path(root, "analyses", "km.qmd"))
-  expect_error(.assert_working_stage(cfg, "built.csv"), "analyses jobs read registered data only")
 })
 
 test_that("Rscript's --file names the job", {
@@ -103,7 +125,7 @@ test_that("HVTI_DATA=working switches the default and refresh is refused", {
   expect_no_message(read_built(cfg, working = FALSE), class = "hvtiRutilities_working_read")
 })
 
-test_that("an analysis job cannot read a study with no dated version, whatever HVTI_DATA says", {
+test_that("an Rscript analysis job cannot read a study with no dated version, whatever HVTI_DATA says", {
   local_working_signal()
   root <- file.path(withr::local_tempdir(), "study")
   suppressMessages(study_setup(root, "Unregistered", 42L, renv = FALSE))
@@ -116,13 +138,15 @@ test_that("an analysis job cannot read a study with no dated version, whatever H
   withr::local_envvar(HVTI_DATA = NA)
   local_mocked_bindings(.is_interactive = function() FALSE,
                         .job_file = function() file.path(study_dir("analyses", root), "km", "km.qmd"))
-  expect_error(read_built(cfg), "jobs read registered data only")
+  expect_error(read_built(cfg), "runs under Rscript, so it can read registered data only")
 
-  local_mocked_bindings(.job_file = function() file.path(study_dir("descriptive", root), "dc", "dc.qmd"))
+  dc <- file.path(study_dir("descriptive", root), "dc", "dc.qmd")
+  local_mocked_bindings(.job_file = function() dc, .knitr_input = function() dc)
   expect_message(read_built(cfg), class = "hvtiRutilities_working_read")
   # The cache wrote a role: source entry on that read; the dataset is still not registered.
-  local_mocked_bindings(.job_file = function() file.path(study_dir("analyses", root), "km", "km.qmd"))
-  expect_error(read_built(cfg), "jobs read registered data only")
+  local_mocked_bindings(.job_file = function() file.path(study_dir("analyses", root), "km", "km.qmd"),
+                        .knitr_input = function() NULL)
+  expect_error(read_built(cfg), "runs under Rscript, so it can read registered data only")
 })
 
 test_that("a legacy role: source entry is gated until update_manifest() converts it", {
@@ -161,21 +185,26 @@ test_that("the real .signal_working_read() emits the classed message", {
   expect_message(.signal_working_read("built.csv"), class = "hvtiRutilities_working_read")
 })
 
-test_that("the stage gate sees a real Quarto render's job file", {
+test_that("a real Quarto render is a draft unless HVTI_TEMPLATE_STRICT is set", {
   skip_if_not_installed("quarto")
   skip_if(is.null(quarto::quarto_path()), "Quarto is not installed")
+  skip_if(pkgload::is_dev_package("hvtiRutilities"), "Quarto renders use the installed package")
   root <- versioned_study()
-  for (stage in c("descriptive", "analyses")) {
-    dir <- file.path(study_dir(stage, root), "probe")
+  probe <- function(stage, strict) {
+    dir <- file.path(study_dir(stage, root), paste0("probe", if (strict) "-final" else "-draft"))
     dir.create(dir, recursive = TRUE)
     writeLines(c("---", "title: probe", "---", "```{r}",
                  sprintf("cfg <- hvtiRutilities::study_config(%s)", deparse(root)),
                  "ok <- tryCatch({suppressMessages(hvtiRutilities::read_built(cfg, working = TRUE)); 'allowed'},",
                  "  error = function(e) 'refused')",
                  "writeLines(ok, 'result.txt')", "```"), file.path(dir, "probe.qmd"))
-    quarto::quarto_render(file.path(dir, "probe.qmd"), quiet = TRUE)
-    expect_identical(readLines(file.path(dir, "result.txt")),
-                     if (stage == "descriptive") "allowed" else "refused")
+    withr::with_envvar(c(HVTI_TEMPLATE_STRICT = if (strict) "1" else NA),
+                       quarto::quarto_render(file.path(dir, "probe.qmd"), quiet = TRUE))
+    readLines(file.path(dir, "result.txt"))
+  }
+  for (stage in c("descriptive", "analyses")) {
+    expect_identical(probe(stage, FALSE), "allowed")
+    expect_identical(probe(stage, TRUE), "refused")
   }
 })
 
