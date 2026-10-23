@@ -133,33 +133,23 @@ cache_fit <- function(name, code, seed = NULL, dir = study_dir("estimates"),
                       refit = FALSE, packages = NULL) {
   expr <- substitute(code)
   env  <- parent.frame()
-  .cache_check_args(name, seed, refit, dir)
-  .cache_check_packages(packages)
-  if (!is.null(seed)) seed <- as.integer(seed)
-  code <- .cache_resolve(expr, env)
-
-  if (!dir.exists(dir)) {
-    stop("cache_fit(): directory does not exist: ", dir, call. = FALSE)
-  }
-  path <- file.path(dir, paste0(name, ".rds"))
-  key  <- .cache_key(code, env, seed, as.character(packages))
-
-  if (file.exists(path)) {
-    stored <- tryCatch(readRDS(path), error = function(e) NULL)
-    if (!.cache_is_record(stored)) {
-      if (!refit) .cache_abort("unkeyed", name, path)
-    } else {
-      diff <- .cache_key_diff(stored$key, key)
-      if (length(diff) == 0L) {
-        message("cache_fit(): loaded '", name, "' from cache")
-        return(.cache_attach(stored$value, stored$key))
-      }
-      if (!refit) .cache_abort("stale", name, path, diff)
-    }
+  plan <- .cache_plan(name, expr, env, seed, dir, refit, packages)
+  switch(
+    plan$action,
+    load = {
+      message("cache_fit(): loaded '", name, "' from cache")
+      return(.cache_attach(plan$stored$value, plan$stored$key))
+    },
+    unkeyed = .cache_abort("unkeyed", name, plan$path),
+    stale   = .cache_abort("stale", name, plan$path, plan$diff)
+  )
+  if (plan$exists) {
     message("cache_fit(): recomputing '", name, "' (refit = TRUE)")
   }
 
-  run <- .cache_run(code, env, seed)
+  key <- plan$key
+  path <- plan$path
+  run <- .cache_run(plan$code, env, plan$seed)
   if (is.null(run$value)) {
     stop("cache_fit(): '", name, "' returned NULL; there is nothing to cache.",
          call. = FALSE)
@@ -170,6 +160,51 @@ cache_fit <- function(name, code, seed = NULL, dir = study_dir("estimates"),
   record <- list(hvtiRutilities_cache = 1L, key = key, value = run$value)
   .cache_write(record, path, key, dir)
   .cache_attach(run$value, key)
+}
+
+# The one decision cache_fit() and cache_would_fit() share, so the two can
+# never disagree: check the arguments, resolve the code, key it, and say what
+# a call would do with the file. `action` is "compute", "load" (the key
+# matches; `stored` holds the record), "stale" or "unkeyed" (cache_fit()
+# stops; `diff` lists a stale key's changes), or "kept". "kept" is returned
+# only when `read = FALSE`, for an existing file under refit = FALSE: every
+# outcome there loads or stops and none computes, so cache_would_fit() can
+# answer without reading what may be a large fit into memory. `exists` says
+# whether the file was there, which is when a computation is a recompute.
+.cache_plan <- function(name, expr, env, seed, dir, refit, packages,
+                        read = TRUE) {
+  .cache_check_args(name, seed, refit, dir)
+  .cache_check_packages(packages)
+  if (!is.null(seed)) seed <- as.integer(seed)
+  code <- .cache_resolve(expr, env)
+
+  if (!dir.exists(dir)) {
+    stop("cache_fit(): directory does not exist: ", dir, call. = FALSE)
+  }
+  path <- file.path(dir, paste0(name, ".rds"))
+  key  <- .cache_key(code, env, seed, as.character(packages))
+  plan <- list(action = "compute", code = code, seed = seed, path = path,
+               key = key, exists = file.exists(path))
+  if (!plan$exists) return(plan)
+  if (!read && !refit) {
+    plan$action <- "kept"
+    return(plan)
+  }
+
+  stored <- tryCatch(readRDS(path), error = function(e) NULL)
+  if (!.cache_is_record(stored)) {
+    if (!refit) plan$action <- "unkeyed"
+    return(plan)
+  }
+  diff <- .cache_key_diff(stored$key, key)
+  if (length(diff) == 0L) {
+    plan$action <- "load"
+    plan$stored <- stored
+  } else if (!refit) {
+    plan$action <- "stale"
+    plan$diff <- diff
+  }
+  plan
 }
 
 .cache_check_args <- function(name, seed, refit, dir) {

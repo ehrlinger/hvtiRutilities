@@ -666,3 +666,19 @@ test_that("a seed that cannot become an integer is refused", {
   out <- cache_fit("s", stats::runif(2), seed = -1024L, dir = dir)
   expect_length(out, 2L)
 })
+
+test_that("refit = TRUE on a stale or unkeyed file says it is recomputing", {
+  dir <- withr::local_tempdir()
+  d <- 1:10
+  cache_fit("s", sum(d), dir = dir)
+  d <- 1:11
+  expect_identical(
+    capture_messages(cache_fit("s", sum(d), dir = dir, refit = TRUE)),
+    "cache_fit(): recomputing 's' (refit = TRUE)\n"
+  )
+  saveRDS(42, file.path(dir, "old.rds"))
+  expect_identical(
+    capture_messages(cache_fit("old", sum(1:3), dir = dir, refit = TRUE)),
+    "cache_fit(): recomputing 'old' (refit = TRUE)\n"
+  )
+})
