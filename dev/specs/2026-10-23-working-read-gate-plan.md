@@ -10,6 +10,29 @@
 
 **Design:** `dev/specs/2026-10-23-working-read-gate-design.md` (approved 2026-10-23).
 
+## Amendments after review (2026-10-23)
+
+Codex reviewed this plan on PR #244, and execution of Part A surfaced one conflict. These
+override the task text below.
+
+- **A1 step 5:** the mutation as written is inert (fixtures sit at `<stage>/job/job.qmd`, numbered
+  folders). Mutate with `if (grepl("(datasets|descriptive)/", job)) return(invisible(TRUE))`
+  instead; the final-render tests must go red. Done this way in `e1f847f`.
+- **A2 is dropped.** Routing an entry-less read around `.cache_read()` broke ten `parquet_cache`
+  tests that pin the legacy first-read cache. John chose to keep that path (design 7.1).
+- **A3** must also update `.provenance_validate_record()` to accept an optional `working`, which
+  must be exactly `TRUE`, and keep it through canonicalisation. Without that, `capture_provenance()`
+  rejects the record as malformed. Add a capture round-trip test. Call
+  `provenance_data(cfg = cfg, ...)` by name: its first argument is `dataset`.
+- **A4** validates the completed contract with `.study_validate_shapes()` before writing. It
+  checks an existing contract before the file's existence, and writes an empty `manifest.yaml`
+  when the study has none (design 7.1).
+- **New Part C (hvtiRdatabuild):** `write_analysis_set()` stops on a working read (design 3.5).
+  Test: register a study, set `HVTI_DATA=working`, and expect the stop naming `update_manifest()`.
+  With it unset, the write succeeds. Released between Parts A and B.
+- **B4's end-to-end render** starts from a genuinely fresh `study_setup()` study, with no manifest
+  written by hand.
+
 ## Global Constraints
 
 - Final is `HVTI_TEMPLATE_STRICT` set to anything but `""`, `"0"`, `"false"` or `"no"` (case-insensitive), exactly as hvtiRtemplates' `.strict_render()` reads it.

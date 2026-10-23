@@ -154,6 +154,21 @@ A hand-off written before this design has no `working` field and is treated as r
 of those were saved by descriptive jobs from working data under the folder rule. That is the
 cost of not breaking every existing hand-off, and it is accepted (section 7.2).
 
+### 3.5 An analysis set is built from registered data only
+
+Found in review (Codex, PR #244), decided by John on 2026-10-23. `hvtiRdatabuild::write_analysis_set()`
+reads the study dataset through `read_built()`. Under `HVTI_DATA=working` in a draft, it built the
+set from the working file, while its sidecar's `.built_state()` fingerprinted the **registered**
+parent. A later final render then read the set through `read_job_data(analysis_set = )` with no
+check, so draft rows reached a final report looking registered.
+
+**Decided:** `write_analysis_set()` stops when its read of the study dataset is a working read
+(it catches `hvtiRutilities_working_read`), naming `update_manifest()`. An analysis set is a
+durable artifact other jobs reuse, so, like a final render, it is built from registered data. A
+draft can still read the working dataset directly through `read_job_data(dataset = )`. No
+sidecar format changes, and `read_job_data(analysis_set = )` needs no new gate, because no
+analysis set can hold working rows.
+
 ## 4. What it costs a user
 
 | doing | today | after |
@@ -164,6 +179,7 @@ cost of not breaking every existing hand-off, and it is accepted (section 7.2).
 | final descriptive on the working file | reads it | **refused**: register first |
 | final analysis on the working file | refused | refused (message names registering) |
 | final job reading a hand-off made from the working file | reads it | **refused**: register, rerun upstream |
+| `write_analysis_set()` on the working file | writes it, sidecar names the registered parent | **refused**: register first |
 | `Rscript` job in datasets or descriptive on the working file | reads it | **refused**: use the console or a draft render |
 
 Every new refusal ends in the same instruction: register with `update_manifest()`. No refusal
@@ -203,9 +219,10 @@ hvtiRtemplates:
 | hvtiRutilities | `.assert_working_stage()`: key on draft or final; drop the folder rule; new messages. `provenance_data()`: the `working` field. Document `HVTI_TEMPLATE_STRICT` as read by `read_built()` |
 | hvtiRtemplates `bd` | with `REGISTER = FALSE`, write `built:` and `key:` to `_study.yml` on the first render that finds no contract (section 7.1). Through an hvtiRutilities call, not by editing the YAML in the template |
 | hvtiRtemplates | `read_job_data()`: catch the condition, callout, `.run_mark_draft()`, `Note` row. `.read_handoff()` and `.read_bootstrap_artifact()`: the hand-off check. Raise the hvtiRutilities floor to the release that carries this. `render_job()`'s help says that `final = TRUE` also requires registered data |
+| hvtiRdatabuild | `write_analysis_set()`: stop on `hvtiRutilities_working_read` (3.5). Released after hvtiRutilities, before hvtiRtemplates |
 | hvtiRtemplates gallery | the per-template "before you run this" panel (layer 2 of publishing the runbooks) says "a draft can run on an unregistered build; a final render needs registered data" for every template, now that no folder differs |
 
-Release order is the usual one: hvtiRutilities first, then hvtiRtemplates with the new floor.
+Release order: hvtiRutilities, then hvtiRdatabuild, then hvtiRtemplates with the new floors.
 A hvtiRtemplates release before that floor would ask a gate that still refuses draft analyses.
 
 ## 7. Decided after the direction
@@ -222,7 +239,16 @@ new study, then, no job could read the first build, draft or not, until it had b
 once: the case "especially when we're building a dataset" names.
 
 **Decided:** `bd` with `REGISTER = FALSE` writes the contract, `built:` and `key:` in
-`_study.yml`, on the first render that finds none, and registers no version. The dataset is then
+`_study.yml`, on the first render that finds none, and registers no version. When the study has
+no `manifest.yaml` it also writes an empty one (`datasets: []`): a fresh `study_setup()` writes
+none, and every template calls `verify_manifest()` before it reads data, which stops on a missing
+file (found in review). An empty manifest registers nothing and verifies clean.
+
+The first read of a declared dataset takes the legacy read path. It writes the parquet cache
+and an unversioned manifest entry, as a study with `built:` and no manifest always has. The
+dataset stays unregistered (no dated version), so the gate and the draft marking apply.
+Registering it later reports `migrated`, which `bd` already treats as registering. Decided
+2026-10-23 over a no-write read, which would have changed that path for every legacy study. The dataset is then
 known but unregistered, so every read of it is a working read and goes through this gate.
 Registering stays a separate, deliberate step: a render with `REGISTER = TRUE`, or
 `update_manifest()`.
