@@ -1,3 +1,9 @@
+# hvtiRutilities 1.5.11
+
+* New `guard_snapshot()` refuses a `renv::snapshot()` taken from an R whose major.minor differs from the R recorded in the study's `renv.lock`, naming both versions and the R to start. A 4.6.1 session once snapshotted a 4.5.3 study, rewrote its lock to 4.6.1 and dropped `boostmtree` and `ggBoostedTrees`. `study_need()` and `study_setup()` call it before they snapshot, and gain `r_upgrade = FALSE` (last argument) for a deliberate move to a new R; even then the guard stops while a locked package is not installed.
+
+* New `cache_would_fit()` answers whether `cache_fit()` with the same arguments would compute or load, without computing anything, so a job can guard memory or cores only when a fit will actually run. It takes `cache_fit()`'s arguments exactly and reads the same internal decision, so the two cannot disagree. A stale or unkeyed file without `refit = TRUE` answers `FALSE`, since `cache_fit()` stops there before computing. `cache_fit()`'s behaviour and messages are unchanged.
+
 # hvtiRutilities 1.5.10
 
 * `hvti_taxonomy()` gains `vp`, a VarPro variable screen with coverage, noise and stability checks, for the `vp-fit` and `vp-explain` templates in hvtiRtemplates.

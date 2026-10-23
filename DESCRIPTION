@@ -1,8 +1,8 @@
 Package: hvtiRutilities
 Type: Package
 Title: A Collection of Utilities for Use by HVTI CORR Group at the Cleveland Clinic
-Version: 1.5.10
-Date: 2026-10-22
+Version: 1.5.11
+Date: 2026-10-23
 Authors@R: c(
     person(
       "John", "Ehrlinger",
