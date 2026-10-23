@@ -62,9 +62,11 @@
     !is.na(entry$parquet) && nzchar(entry$parquet)
 }
 
-# The file jobs read for this entry, beside its source.
+# The file jobs read for this entry, beside its source. A versioned entry's
+# parquet may be in the archive: a manifest restored from version control to
+# reproduce an earlier version names a file a later registration archived.
 .authoritative_path <- function(entry, source_path) {
-  if (.is_versioned(entry)) return(file.path(dirname(source_path), entry$parquet))
+  if (.is_versioned(entry)) return(.version_path(dirname(source_path), entry$parquet))
   if (identical(entry$role, "primary")) return(.derived_paths(source_path)$parquet)
   source_path
 }
@@ -88,11 +90,19 @@
 # archive: its parquet, schema and build record. Run after manifest.yaml is
 # written, so a failed update has nothing to undo; a file that cannot be moved
 # stays where .version_path() still finds it, and is named in a warning.
-.archive_history <- function(entry, dir) {
+# Two kinds of file stay put without a warning, because .version_path() still
+# finds them: a symlink, whose relative target would break once moved, and a
+# file another dataset in `datasets` reads as its source (or read cache), such
+# as a version's schema registered as a dictionary.
+.archive_history <- function(entry, dir, datasets = list()) {
   history <- if (is.list(entry$history)) Filter(is.list, entry$history) else list()
   p <- unlist(lapply(history, function(h) if (is.character(h$parquet)) h$parquet))
-  here <- file.path(dir, c(p, .version_schema_name(p), .version_record_name(p)))
-  here <- here[file.exists(here)]
+  owned <- unlist(lapply(datasets, function(e) {
+    if (is.character(e$file) && length(e$file) == 1L) c(e$file, basename(unlist(.derived_paths(e$file))))
+  }))
+  names <- setdiff(c(p, .version_schema_name(p), .version_record_name(p)), owned)
+  here <- file.path(dir, names)
+  here <- here[file.exists(here) & !nzchar(Sys.readlink(here))]
   if (!length(here)) return(invisible(character()))
   dir.create(.archive_dir(dir), showWarnings = FALSE)
   dest <- file.path(.archive_dir(dir), basename(here))
@@ -503,7 +513,7 @@
   committed <- TRUE
   # A legacy cache name can be another dataset's registered version; that file is never removed.
   unlink(drop[!basename(drop) %in% .recorded_version_names(manifest$datasets)])
-  for (a in archive) .archive_history(a$entry, a$dir)
+  for (a in archive) .archive_history(a$entry, a$dir, manifest$datasets)
   message(paste0(format(out$dataset), ": ", out$detail, collapse = "\n"))
   for (b in behind) message(b)
   if (changed || restamped) {

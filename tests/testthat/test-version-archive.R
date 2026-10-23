@@ -138,3 +138,52 @@ test_that("only a registered version is looked for in _archive/, never a source"
   rep <- verify_manifest(file.path(root, "manifest.yaml"))
   expect_false(any(grepl("(source)", rep$file, fixed = TRUE)))
 })
+
+test_that("a manifest restored to an earlier version reads that version from _archive/", {
+  root <- versioned_study()
+  mp <- file.path(root, "manifest.yaml")
+  earlier <- readLines(mp)
+  rebuild_source(root)
+  withr::with_dir(root, suppressMessages(update_manifest()))
+  expect_true(file.exists(file.path(study_dir("datasets", root), "_archive", "built_20260915.parquet")))
+
+  # Restoring the committed manifest is how an earlier accepted dataset is reproduced.
+  writeLines(earlier, mp)
+  d <- withCallingHandlers(read_built(study_config(root)), hvtiRutilities_out_of_date = function(m) invokeRestart("muffleMessage"))
+  expect_identical(nrow(d), 3L)
+  expect_identical(verify_manifest(mp, stop_on_error = FALSE)$status, c("OK", "PENDING"))
+})
+
+test_that("a symlinked version file is left in place, so its relative target still resolves", {
+  skip_on_os("windows")
+  root <- versioned_study()
+  dir <- study_dir("datasets", root)
+  for (f in version_files("built_20260915")) {
+    stored <- paste0("stored_", f)
+    file.rename(file.path(dir, f), file.path(dir, stored))
+    file.symlink(stored, file.path(dir, f))
+  }
+  expect_identical(verify_manifest(file.path(root, "manifest.yaml"))$status, "OK")
+  rebuild_source(root)
+  expect_no_warning(withr::with_dir(root, suppressMessages(update_manifest())))
+  expect_true(all(nzchar(Sys.readlink(file.path(dir, version_files("built_20260915"))))))
+  expect_false(any(file.exists(file.path(dir, "_archive", version_files("built_20260915")))))
+  expect_identical(verify_manifest(file.path(root, "manifest.yaml"))$status, c("OK", "OK"))
+})
+
+test_that("a version file another dataset reads as its source stays beside it", {
+  root <- versioned_study()
+  dir <- study_dir("datasets", root)
+  dictionary <- "built_20260915.schema.csv"
+  suppressMessages(register_data(root, built = dictionary, dataset = "dictionary", role = "named",
+                                 population = "Synthetic dictionary"))
+  before <- digest::digest(file.path(dir, dictionary), algo = "sha256", file = TRUE)
+  rebuild_source(root)
+  withr::with_dir(root, suppressMessages(update_manifest(dataset = "study")))
+
+  expect_true(file.exists(file.path(dir, "_archive", "built_20260915.parquet")))
+  expect_true(file.exists(file.path(dir, dictionary)))
+  expect_false(file.exists(file.path(dir, "_archive", dictionary)))
+  expect_identical(digest::digest(file.path(dir, dictionary), algo = "sha256", file = TRUE), before)
+  expect_true(all(verify_manifest(file.path(root, "manifest.yaml"))$status == "OK"))
+})
