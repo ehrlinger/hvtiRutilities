@@ -151,3 +151,41 @@ test_that("breaking the shared decision for one caller breaks agreement", {
     expect_false(identical(r$would, r$did), label = nm)
   }
 })
+
+test_that("readRDS() is never called for an existing file under refit = FALSE", {
+  dir <- withr::local_tempdir()
+  d <- 1:10
+  cache_fit("s", sum(d), dir = dir)
+  suppressMessages(trace("readRDS", quote(stop("readRDS was called")),
+                         where = baseenv(), print = FALSE))
+  withr::defer(suppressMessages(untrace("readRDS", where = baseenv())))
+  expect_false(cache_would_fit("s", sum(d), dir = dir))
+  expect_error(readRDS(file.path(dir, "s.rds")), "readRDS was called")
+})
+
+test_that("inside a function, a local variable in `code` keys as cache_fit()", {
+  dir <- withr::local_tempdir()
+  calls <- new.env()
+  calls$n <- 0L
+  counted <- function(x) {
+    calls$n <- calls$n + 1L
+    sum(x)
+  }
+  job <- function(n, refit = FALSE) {
+    local_d <- seq_len(n)
+    would <- cache_would_fit("loc", counted(local_d), dir = dir,
+                             refit = refit)
+    before <- calls$n
+    tryCatch(
+      suppressMessages(cache_fit("loc", counted(local_d), dir = dir,
+                                 refit = refit)),
+      hvtiRutilities_stale_cache = function(e) NULL
+    )
+    c(would = would, did = calls$n > before)
+  }
+  expect_identical(job(10), c(would = TRUE, did = TRUE))
+  expect_identical(job(10), c(would = FALSE, did = FALSE))
+  expect_identical(job(11), c(would = FALSE, did = FALSE))
+  expect_identical(job(11, refit = TRUE), c(would = TRUE, did = TRUE))
+  expect_identical(job(11, refit = TRUE), c(would = FALSE, did = FALSE))
+})
