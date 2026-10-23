@@ -109,16 +109,20 @@ Today a working read raises a message, which lands in the render log and not in 
 report on a working file looks like any other draft. Under this design, hvtiRtemplates'
 `read_job_data()` catches `hvtiRutilities_working_read` and does three things:
 
-1. **Prints a callout at the read**, at the point in the report where the data come in:
+1. **Opens the data table's notes with the warning**, in bold, beside the file the job read:
 
    > **Unregistered data.** This job read the working `<built>`, which has no registered
-   > version. Every number below is a draft. Register the build with `update_manifest()` and
+   > version, so every number here is a draft. Register the build with `update_manifest()` and
    > render again.
 
+   (The first draft of this note asked for a callout printed at the read. `read_job_data()`
+   returns data and does not print, so a callout there would mean editing every template's
+   chunk options. The table row and item 2's notice reach the same reader. Changed 2026-10-23
+   while planning.)
 2. **Marks the run a draft** with `.run_mark_draft()`, so the "About this run" table opens with
    the "This run ended as a draft" notice and the run facts read draft. The box under the title
    was printed before the read and cannot be taken back. This mechanism exists for exactly that.
-3. **Adds a `Note` row to the data table**, as a stale analysis set read in a draft does today.
+3. **Marks the provenance record** `working = TRUE`, so a hand-off saved from these rows carries it (3.4).
 
 The provenance record says so as well. `provenance_data(working = TRUE)` adds one field,
 `working = TRUE`, to the record it returns. A registered read's record is unchanged, so every

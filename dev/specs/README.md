@@ -26,6 +26,7 @@ condenses it; `plan` files carry none.
 
 | date | note | status |
 |---|---|---|
+| 2026-10-23 | [Working-read gate: implementation plan](2026-10-23-working-read-gate-plan.md) | plan for the design below; Part A here (four tasks), Part B in hvtiRtemplates (four tasks) |
 | 2026-10-23 | [The working-read gate: draft or final, not the folder](2026-10-23-working-read-gate-design.md) | design; approved 2026-10-23, section 7 included; amends decision 5 of the one-version-scheme design; not built |
 | 2026-10-13 | [One version scheme: implementation plan (deprecation release)](2026-10-13-one-version-scheme-plan.md) | plan for the design below; nine tasks; the removal release gets its own plan |
 | 2026-10-13 | [One version scheme for study datasets: dated versions with provenance, and working reads](2026-10-13-one-version-scheme-design.md) | design; approved 2026-10-13; sub-project A of hvtiRtemplates' dataset-creation design; retires the 2026-09-21 release contract |
