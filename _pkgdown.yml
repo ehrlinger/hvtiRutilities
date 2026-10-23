@@ -181,6 +181,7 @@ reference:
   desc: Compute expensive results once and reload them only while their inputs are unchanged
   contents:
   - cache_fit
+  - cache_would_fit
 
 - title: Analysis Taxonomy
   desc: The two-letter prefix system inherited from the CORR analysis binder
