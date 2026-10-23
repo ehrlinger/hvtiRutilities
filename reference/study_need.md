@@ -24,7 +24,8 @@ study_need(
   root = NULL,
   caller = "study_need",
   note = NULL,
-  only_in_renv = FALSE
+  only_in_renv = FALSE,
+  r_upgrade = FALSE
 )
 ```
 
@@ -51,6 +52,15 @@ study_need(
 - only_in_renv:
 
   Logical(1). Do nothing outside an active renv study.
+
+- r_upgrade:
+
+  Logical(1). Leave `FALSE`. The `renv.lock` snapshot that follows an
+  install is refused from an R whose major.minor differs from the R the
+  lockfile records (see
+  [`guard_snapshot`](https://ehrlinger.github.io/hvtiRutilities/reference/guard_snapshot.md)).
+  Set `TRUE` only when you are deliberately moving the study to this
+  session's R.
 
 ## Value
 

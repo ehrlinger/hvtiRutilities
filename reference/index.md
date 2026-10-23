@@ -123,6 +123,8 @@ ready
   : Declare the packages a study needs
 - [`study_need()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_need.md)
   : Install a package a study needs, or say how
+- [`guard_snapshot()`](https://ehrlinger.github.io/hvtiRutilities/reference/guard_snapshot.md)
+  : Refuse a renv snapshot taken from the wrong R
 - [`register_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md)
   : Register a study dataset
 - [`study_status()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md)

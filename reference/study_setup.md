@@ -64,7 +64,8 @@ study_setup(
   identity_source = c("tracker", "manual"),
   cleanup = adopt,
   renv = TRUE,
-  template_dir = "/programs/development/template"
+  template_dir = "/programs/development/template",
+  r_upgrade = FALSE
 )
 ```
 
@@ -130,6 +131,15 @@ study_setup(
   Character(1). The template corpus studies were copied from, read when
   `cleanup = TRUE`. Setup stops with an error when it does not exist.
 
+- r_upgrade:
+
+  Logical(1). Leave `FALSE`. The renv snapshot is refused from an R
+  whose major.minor differs from the R recorded in the study's
+  `renv.lock` (see
+  [`guard_snapshot`](https://ehrlinger.github.io/hvtiRutilities/reference/guard_snapshot.md)),
+  because it would rewrite the lock's R and drop packages. Set `TRUE`
+  only when you are deliberately moving the study to this session's R.
+
 ## Value
 
 An object of class `"study_status"`, returned visibly. With
@@ -149,7 +159,7 @@ An object of class `"study_status"`, returned visibly. With
 ``` r
 root <- file.path(tempdir(), "study-setup-example")
 study_setup(root, study = "Example", study_tracker_id = 1L, renv = FALSE)
-#> Study: /tmp/RtmpXB4Kaj/study-setup-example
+#> Study: /tmp/RtmpKtctbE/study-setup-example
 #> 
 #> [x] _study.yml — study: Example
 #> [ ] renv.lock — no renv.lock; run renv::init() in the study project
