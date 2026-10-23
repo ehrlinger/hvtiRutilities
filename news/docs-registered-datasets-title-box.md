@@ -1,0 +1,1 @@
+* `vignette("registered-datasets")` now says that the box under a report's title is written before the job reads its data, so on a working read (`HVTI_DATA=working`) it names the registered version while the data table's `Source` row and "About this run" name the working file; trust those two.
