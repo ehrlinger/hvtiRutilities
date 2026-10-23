@@ -5,10 +5,11 @@ articles:
   data-labels: data-labels.html
   dataset-versioning: dataset-versioning.html
   hvtiRutilities: hvtiRutilities.html
+  registered-datasets: registered-datasets.html
   reproducible-seeds: reproducible-seeds.html
   sas-procedures: sas-procedures.html
   survival-data: survival-data.html
-last_built: 2026-10-23T18:36Z
+last_built: 2026-10-23T19:12Z
 urls:
   reference: https://ehrlinger.github.io/hvtiRutilities/reference
   article: https://ehrlinger.github.io/hvtiRutilities/articles

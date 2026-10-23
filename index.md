@@ -202,6 +202,11 @@ lmap <- label_map(model_data)
   [`vignette("hvtiRutilities")`](https://ehrlinger.github.io/hvtiRutilities/articles/hvtiRutilities.md),
   [`vignette("sas-procedures")`](https://ehrlinger.github.io/hvtiRutilities/articles/sas-procedures.md),
   [`vignette("dataset-versioning")`](https://ehrlinger.github.io/hvtiRutilities/articles/dataset-versioning.md)
+- Running jobs on a study?
+  [`vignette("registered-datasets")`](https://ehrlinger.github.io/hvtiRutilities/articles/registered-datasets.md)
+  explains, for analysts, what registering a dataset does, why the
+  parquet files are named `<name>_YYYYMMDD_rN.parquet`, which version a
+  job reads, and how a report says so
 - For bug reports and feature requests: [GitHub
   Issues](https://github.com/ehrlinger/hvtiRutilities/issues)
 - For package news and changes: Run

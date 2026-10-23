@@ -11,6 +11,8 @@
   Practices](https://ehrlinger.github.io/hvtiRutilities/articles/data-labels.md):
 - [Dataset Version Tracking with
   manifest.yaml](https://ehrlinger.github.io/hvtiRutilities/articles/dataset-versioning.md):
+- [Registered Datasets: What an Analyst Needs to
+  Know](https://ehrlinger.github.io/hvtiRutilities/articles/registered-datasets.md):
 
 ### SAS Migration
 
