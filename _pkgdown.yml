@@ -135,6 +135,7 @@ reference:
   - study_update_identity
   - study_declare
   - study_need
+  - guard_snapshot
   - register_data
   - study_status
   - study_checklist

@@ -17,7 +17,8 @@ study_setup(
   identity_source = c("tracker", "manual"),
   cleanup = adopt,
   renv = TRUE,
-  template_dir = "/programs/development/template"
+  template_dir = "/programs/development/template",
+  r_upgrade = FALSE
 )
 }
 \arguments{
@@ -62,6 +63,12 @@ temporary studies should pass \code{FALSE}.}
 \item{template_dir}{Character(1). The template corpus studies were copied
 from, read when \code{cleanup = TRUE}. Setup stops with an error when it
 does not exist.}
+
+\item{r_upgrade}{Logical(1). Leave \code{FALSE}. The renv snapshot is
+refused from an R whose major.minor differs from the R recorded in the
+study's \code{renv.lock} (see \code{\link{guard_snapshot}}), because it
+would rewrite the lock's R and drop packages. Set \code{TRUE} only when
+you are deliberately moving the study to this session's R.}
 }
 \value{
 An object of class \code{"study_status"}, returned visibly. With
