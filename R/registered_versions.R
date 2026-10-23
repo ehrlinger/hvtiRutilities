@@ -62,14 +62,58 @@
     !is.na(entry$parquet) && nzchar(entry$parquet)
 }
 
-# The file jobs read for this entry, beside its source.
+# The file jobs read for this entry, beside its source. A versioned entry's
+# parquet may be in the archive: a manifest restored from version control to
+# reproduce an earlier version names a file a later registration archived.
 .authoritative_path <- function(entry, source_path) {
-  if (.is_versioned(entry)) return(file.path(dirname(source_path), entry$parquet))
+  if (.is_versioned(entry)) return(.version_path(dirname(source_path), entry$parquet))
   if (identical(entry$role, "primary")) return(.derived_paths(source_path)$parquet)
   source_path
 }
 
 .version_schema_name <- function(parquet) sub("[.]parquet$", ".schema.csv", parquet)
+
+# Earlier versions live in <datasets>/_archive/, which Quarto skips as it skips
+# every folder whose name starts with "_", so only the current version sits
+# beside the source. manifest.yaml records bare names, and a study registered
+# before 1.5.12 keeps its earlier versions beside the source until its next
+# registration moves them: the file beside the source wins, then the archive.
+.archive_dir <- function(dir) file.path(dir, "_archive")
+
+.version_path <- function(dir, name) {
+  here <- file.path(dir, name)
+  archived <- file.path(.archive_dir(dir), name)
+  ifelse(!file.exists(here) & file.exists(archived), archived, here)
+}
+
+# Move every earlier version of `entry` still beside its source into the
+# archive: its parquet, schema and build record. Run after manifest.yaml is
+# written, so a failed update has nothing to undo; a file that cannot be moved
+# stays where .version_path() still finds it, and is named in a warning.
+# Two kinds of file stay put without a warning, because .version_path() still
+# finds them: a symlink, whose relative target would break once moved, and a
+# file another dataset in `datasets` reads as its source (or read cache), such
+# as a version's schema registered as a dictionary.
+.archive_history <- function(entry, dir, datasets = list()) {
+  history <- if (is.list(entry$history)) Filter(is.list, entry$history) else list()
+  p <- unlist(lapply(history, function(h) if (is.character(h$parquet)) h$parquet))
+  owned <- unlist(lapply(datasets, function(e) {
+    if (is.character(e$file) && length(e$file) == 1L) c(e$file, basename(unlist(.derived_paths(e$file))))
+  }))
+  names <- setdiff(c(p, .version_schema_name(p), .version_record_name(p)), owned)
+  here <- file.path(dir, names)
+  here <- here[file.exists(here) & !nzchar(Sys.readlink(here))]
+  if (!length(here)) return(invisible(character()))
+  dir.create(.archive_dir(dir), showWarnings = FALSE)
+  dest <- file.path(.archive_dir(dir), basename(here))
+  moved <- vapply(seq_along(here), function(i) !file.exists(dest[[i]]) && file.rename(here[[i]], dest[[i]]), logical(1))
+  if (!all(moved)) {
+    warning("update_manifest(): could not move ", paste(basename(here[!moved]), collapse = ", "), " into ",
+            .archive_dir(dir), ". Jobs and verify_manifest() still find ", if (sum(!moved) > 1L) "them" else "it",
+            " where ", if (sum(!moved) > 1L) "they are" else "it is", ".", call. = FALSE)
+  }
+  invisible(dest[moved])
+}
 
 # Every parquet and schema file a versioned entry records, current or in history.
 .recorded_version_names <- function(datasets) {
@@ -104,14 +148,15 @@
 }
 
 # <stem>_YYYYMMDD.parquet, then _r2, _r3 for further versions on the same date.
-# A name is taken when it or its schema name is in `taken` or either file exists.
+# A name is taken when it or its schema name is in `taken` or either file
+# exists, beside the source or in the archive.
 .version_filename <- function(stem, extract_date, dir, taken = character()) {
   base <- paste0(stem, "_", format(as.Date(extract_date), "%Y%m%d"))
   rev <- 1L
   repeat {
     name <- paste0(base, if (rev > 1L) paste0("_r", rev) else "", ".parquet")
     side <- c(name, .version_schema_name(name), .version_record_name(name))
-    free <- !any(side %in% taken) && !any(file.exists(file.path(dir, side)))
+    free <- !any(side %in% taken) && !any(file.exists(file.path(c(dir, .archive_dir(dir)), rep(side, each = 2L))))
     if (free) return(name)
     rev <- rev + 1L
   }
@@ -361,6 +406,7 @@
   rows <- list()
   provenance <- list()
   restamped <- FALSE
+  archive <- list()
 
   for (name in targets) {
     contract <- .study_dataset(cfg, name)
@@ -442,6 +488,9 @@
       manifest$datasets[[hit]]$parent_versions <- .parent_versions(cfg, contract$parents, manifest)
     }
     restamped <- restamped || isTRUE(step$restamped)
+    if (step$action %in% c("registered", "migrated")) {
+      archive[[length(archive) + 1L]] <- list(entry = manifest$datasets[[hit]], dir = dirname(source_path))
+    }
     rows[[name]] <- .manifest_update_row(name, step$action, step$detail)
   }
 
@@ -464,6 +513,7 @@
   committed <- TRUE
   # A legacy cache name can be another dataset's registered version; that file is never removed.
   unlink(drop[!basename(drop) %in% .recorded_version_names(manifest$datasets)])
+  for (a in archive) .archive_history(a$entry, a$dir, manifest$datasets)
   message(paste0(format(out$dataset), ": ", out$detail, collapse = "\n"))
   for (b in behind) message(b)
   if (changed || restamped) {

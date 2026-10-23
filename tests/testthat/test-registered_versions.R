@@ -263,7 +263,7 @@ test_that("update_manifest() registers a rebuilt source and keeps the old versio
   e <- manifest_entry_for(root)
   expect_identical(e$parquet, "built_20261007.parquet")
   expect_identical(e$history[[1L]]$parquet, "built_20260915.parquet")
-  expect_true(file.exists(file.path(study_dir("datasets", root), "built_20260915.parquet")))
+  expect_true(file.exists(file.path(study_dir("datasets", root), "_archive", "built_20260915.parquet")))
   expect_identical(verify_manifest()$status, c("OK", "OK"))
   expect_no_message(d <- read_built(study_config(root)))
   expect_identical(nrow(d), 4L)
@@ -901,7 +901,8 @@ test_that("a mixed study (versioned, legacy, release-aware) updates, verifies an
   m$datasets <- c(m$datasets, list(.registration_manifest_entry(file.path(dir, "legacy.csv"), legacy, "2026-09-10", NULL)))
   yaml::write_yaml(m, file.path(root, "manifest.yaml"))
 
-  sha <- function(f) digest::digest(file.path(dir, f), algo = "sha256", file = TRUE)
+  # The earlier version moves into _archive/ unchanged.
+  sha <- function(f) digest::digest(.version_path(dir, f), algo = "sha256", file = TRUE)
   kept <- c("built_20260915.parquet", "built_20260915.schema.csv", "cohort_20260920.csv", "legacy.csv")
   before <- vapply(kept, sha, "")
   read_all <- function() {
@@ -1012,7 +1013,7 @@ test_that("update_manifest(file) refuses a file that is another entry's register
 
   # current version, a version in history, and a version's schema sidecar
   for (f in c(current, first, .version_schema_name(current))) {
-    expect_error(update_manifest(file.path(dir, f), manifest_path = mp, n_rows = 3L),
+    expect_error(update_manifest(.version_path(dir, f), manifest_path = mp, n_rows = 3L),
                  "registered version of built.csv")
   }
   expect_identical(readLines(mp), before)
