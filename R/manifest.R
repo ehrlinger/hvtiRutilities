@@ -60,8 +60,9 @@
 #' directory, converts every registered dataset whose source file has changed
 #' to a new dated parquet (\code{<name>_YYYYMMDD.parquet}, or \code{_r2},
 #' \code{_r3} for another version on the same date), keeps every earlier
-#' version, records the change in \code{manifest.yaml}, and prints one line per
-#' dataset. Jobs read the new version from then on. Unchanged datasets are left
+#' version in an \code{_archive/} folder beside the source, records the change
+#' in \code{manifest.yaml}, and prints one line per dataset. Jobs read the new
+#' version from then on. Unchanged datasets are left
 #' alone. Datasets that are not combined are updated before the combined
 #' datasets built from them, and a combined dataset records its parents'
 #' versions when its own rebuilt source is registered. One whose parents have
@@ -613,8 +614,11 @@ verify_manifest <- function(manifest_path = .default_manifest_path(),
     }
   }
 
+  # A registered version, current or earlier, may sit in the archive
+  # (.version_path()); a source or legacy file is only ever beside the manifest.
+  recorded <- .recorded_version_names(manifest$datasets)
   resolve_entry <- function(file) {
-    file.path(data_dir, file)
+    if (isTRUE(file %in% recorded)) .version_path(data_dir, file) else file.path(data_dir, file)
   }
 
   results <- lapply(manifest$datasets, function(entry) {
