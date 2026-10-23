@@ -75,7 +75,6 @@ test_that("the interactive console is allowed", {
   expect_true(.assert_working_stage(cfg, "built.csv"))
 })
 
-
 test_that("Rscript's --file names the job", {
   local_mocked_bindings(.knitr_input = function() NULL,
                         .command_args = function() c("/usr/lib/R/bin/exec/R", "--file=30_analyses/fit.R"))
@@ -126,7 +125,7 @@ test_that("HVTI_DATA=working switches the default and refresh is refused", {
   expect_no_message(read_built(cfg, working = FALSE), class = "hvtiRutilities_working_read")
 })
 
-test_that("an analysis job cannot read a study with no dated version, whatever HVTI_DATA says", {
+test_that("an Rscript analysis job cannot read a study with no dated version, whatever HVTI_DATA says", {
   local_working_signal()
   root <- file.path(withr::local_tempdir(), "study")
   suppressMessages(study_setup(root, "Unregistered", 42L, renv = FALSE))
@@ -189,6 +188,7 @@ test_that("the real .signal_working_read() emits the classed message", {
 test_that("a real Quarto render is a draft unless HVTI_TEMPLATE_STRICT is set", {
   skip_if_not_installed("quarto")
   skip_if(is.null(quarto::quarto_path()), "Quarto is not installed")
+  skip_if(pkgload::is_dev_package("hvtiRutilities"), "Quarto renders use the installed package")
   root <- versioned_study()
   probe <- function(stage, strict) {
     dir <- file.path(study_dir(stage, root), paste0("probe", if (strict) "-final" else "-draft"))

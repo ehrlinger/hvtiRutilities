@@ -58,9 +58,9 @@ keep reading the registered version; the detail names the datasets and
 \code{\link{update_manifest}()}, which registers the rebuild.
 
 A dataset that \code{_study.yml} names and \code{manifest.yaml} does not register as a dated version adds a
-\code{dated_version:<dataset>} row with status \code{"PENDING"}: analysis, distribution, graph and
-document jobs stop when they read it. The detail names \code{\link{update_manifest}()}. A dataset pinned
-to a catalog release adds no such row.
+\code{dated_version:<dataset>} row with status \code{"PENDING"}: a final render or an
+\code{Rscript} job stops when it reads it, and a draft that reads it is marked a draft. The detail names
+\code{\link{update_manifest}()}. A dataset pinned to a catalog release adds no such row.
 
 Release-aware datasets add an \code{update:<dataset>} row with status
 \code{"CURRENT"}, \code{"UPDATE AVAILABLE"},

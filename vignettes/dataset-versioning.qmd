@@ -319,13 +319,15 @@ it: that is a render with `HVTI_TEMPLATE_STRICT` set to anything but empty,
 `0`, `false` or `no`, as `render_job(final = TRUE)` sets it. It is also refused
 in a script run with `Rscript`, and for a job at the study root or outside the
 study. A refused read stops with a message that says to register the dataset
-or unset `HVTI_DATA`. A working read signals `hvtiRutilities_working_read`, a message
+or, in a final render, to render a draft. When a dated version exists and the
+working file was asked for (`working = TRUE` or `HVTI_DATA`), it says to drop
+that request instead. A working read signals `hvtiRutilities_working_read`, a message
 that says the results are a draft. Treat the report that comes out as a draft
 too.
 
 A study still on a legacy registration, one with no dated version, has only
-its working file to read. Its analysis jobs stop until `update_manifest()`
-converts it to a dated version.
+its working file to read. Its final renders stop, in every folder, until
+`update_manifest()` converts it to a dated version; drafts can still read it.
 
 ## How a Version Was Produced
 

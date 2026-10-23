@@ -66,6 +66,16 @@ test_that("a working read's provenance record says so, and a registered one is u
                    plain[c("dataset", "role")])
 })
 
+test_that("a declared but unregistered dataset's provenance record is a working record", {
+  root <- file.path(withr::local_tempdir(), "study")
+  suppressMessages(study_setup(root, "Declare fixture", 7L, renv = FALSE))
+  saveRDS(data.frame(ccfid = 1:3), file.path(study_dir("datasets", root), "study_cohort.rds"))
+  declare_data(root, built = "study_cohort.rds", key = "ccfid")
+  cfg <- study_config(root)
+  withr::local_envvar(HVTI_DATA = NA)
+  expect_true(isTRUE(provenance_data(cfg = cfg)$working))
+})
+
 test_that("a working data record survives capture and publish", {
   root <- make_registered_study(withr::local_tempdir())
   cfg <- study_config(root)

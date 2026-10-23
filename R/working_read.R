@@ -71,7 +71,7 @@
       where <- if (length(parts) > 1L) "stage" else "root"
     }
   }
-  # A draft render of a job in a stage folder may read the working file; nothing else may.
+  # A draft render of a job in any folder below the study root may read the working file; nothing else may.
   if (identical(where, "stage") && rendering && !.final_render()) return(invisible(TRUE))
   final <- identical(where, "stage") && rendering
   who <- if (is.null(job)) {

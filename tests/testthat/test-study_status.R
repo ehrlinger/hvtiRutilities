@@ -469,7 +469,8 @@ test_that("study_status reports a dataset with no dated version as PENDING, per 
   for (ds in c("study", "extra")) {
     row <- check_for(st, paste0("dated_version:", ds))
     expect_identical(row$status, "PENDING")
-    expect_match(row$detail, "has no dated version, so analysis, distribution, graph and document jobs stop when they read it",
+    expect_match(row$detail, paste0("has no dated version, so a final render or an Rscript job stops when it reads it, ",
+                                    "and a draft that reads it is marked a draft"),
                  fixed = TRUE)
     expect_match(row$detail, "Run hvtiRutilities::update_manifest().", fixed = TRUE)
   }

@@ -439,9 +439,11 @@ provenance_data <- function(dataset = "study", cfg = study_config(),
   }
   dataset <- .canonical_dataset(dataset)
   .provenance_role(role, "provenance_data")
-  .study_dataset(cfg, dataset)
+  contract <- .study_dataset(cfg, dataset)
   source <- built_path(cfg, dataset)
   entry <- .manifest_entry(file.path(cfg$root, "manifest.yaml"), source)
+  # read_built() treats a read of anything but a dated version, unless release-pinned, as a working read.
+  is_working <- isTRUE(working) || (!.is_versioned(entry) && is.null(contract$release))
   authoritative <- if (isTRUE(working)) source else .authoritative_path(entry, source)
   resolved <- .provenance_relative_path(
     authoritative,
@@ -455,7 +457,7 @@ provenance_data <- function(dataset = "study", cfg = study_config(),
   )
   c(list(dataset = dataset), snapshot["path"], list(role = role),
     snapshot[c("bytes", "mtime", "sha256")],
-    if (isTRUE(working)) list(working = TRUE))
+    if (is_working) list(working = TRUE))
 }
 
 #' Snapshot an input artifact for provenance
