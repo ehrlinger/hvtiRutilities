@@ -421,6 +421,8 @@ are unchanged
 
 - [`cache_fit()`](https://ehrlinger.github.io/hvtiRutilities/reference/cache_fit.md)
   : Cache an expensive computation, strictly
+- [`cache_would_fit()`](https://ehrlinger.github.io/hvtiRutilities/reference/cache_would_fit.md)
+  : Would cache_fit() compute, or load?
 
 ## Analysis Taxonomy
 
