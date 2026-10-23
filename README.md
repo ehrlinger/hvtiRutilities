@@ -176,6 +176,8 @@ lmap <- label_map(model_data)
 
 - Package documentation: `?r_data_types`, `?label_map`, `?proc_contents`, `?proc_means`
 - Vignettes: `vignette("hvtiRutilities")`, `vignette("sas-procedures")`, `vignette("dataset-versioning")`
+- Running jobs on a study? `vignette("registered-datasets")` explains, for analysts, what registering a dataset does, why
+  the parquet files are named `<name>_YYYYMMDD_rN.parquet`, which version a job reads, and how a report says so
 - For bug reports and feature requests: [GitHub Issues](https://github.com/ehrlinger/hvtiRutilities/issues)
 - For package news and changes: Run `hvtiRutilities.news()` in R
 
