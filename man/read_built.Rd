@@ -37,9 +37,13 @@ withdrawn release to be read for revision work. The default is
 rather than its registered version, writing nothing. Defaults to
 \code{TRUE} when the environment variable \code{HVTI_DATA} is
 \code{"working"}. Any read that is not of a dated version is a working read:
-it is allowed only in the interactive console and in jobs in the study's
-datasets or descriptive folder, and signals a message of class
-\code{hvtiRutilities_working_read}.}
+it is allowed in the interactive console and in a draft render of a job in
+any stage folder of the study. It is refused in a final render, where
+\code{HVTI_TEMPLATE_STRICT} is set to anything but empty, \code{0},
+\code{false} or \code{no}, as \code{render_job(final = TRUE)} sets it. It is
+also refused in a script run with \code{Rscript}, and for a job at the study
+root or outside the study. A permitted working read signals a message of
+class \code{hvtiRutilities_working_read}.}
 }
 \value{
 A data frame with lower-cased names, no logical columns and no
@@ -64,8 +68,10 @@ recorded parent versions is reported the same way, as \code{unrecorded},
 until it is rebuilt and registered again.
 
 Only a dated version is registered data. Any other read is a working read: it
-is allowed only in the interactive console and in jobs in the study's
-datasets or descriptive folder, and it signals a message of class
+is allowed in the interactive console and in a draft render of a job in any
+stage folder of the study. It is refused in a final render (see below), in a
+script run with \code{Rscript}, and for a job at the study root or outside
+the study. A permitted working read signals a message of class
 \code{hvtiRutilities_working_read}. Review a rebuilt source with
 \code{\link{review_built}()} and register it with
 \code{\link{update_manifest}()}. The release branch below is deprecated.

@@ -313,10 +313,13 @@ HVTI_DATA=working quarto render 10_descriptive/table1.qmd
 ```
 
 Any read that is not of a dated version is a working read, whether or not you
-asked for one. It is allowed in the interactive console and in jobs in the
-study's `datasets` and `descriptive` folders. In distribution, analysis and
-graph jobs it stops with a message that says to register the dataset or unset
-`HVTI_DATA`. A working read signals `hvtiRutilities_working_read`, a message
+asked for one. It is allowed in the interactive console and in a draft render of a job in
+any stage folder of the study. A final render refuses
+it: that is a render with `HVTI_TEMPLATE_STRICT` set to anything but empty,
+`0`, `false` or `no`, as `render_job(final = TRUE)` sets it. It is also refused
+in a script run with `Rscript`, and for a job at the study root or outside the
+study. A refused read stops with a message that says to register the dataset
+or unset `HVTI_DATA`. A working read signals `hvtiRutilities_working_read`, a message
 that says the results are a draft. Treat the report that comes out as a draft
 too.
 
