@@ -21,8 +21,10 @@ recorded parent versions is reported the same way, as `unrecorded`,
 until it is rebuilt and registered again.
 
 Only a dated version is registered data. Any other read is a working
-read: it is allowed only in the interactive console and in jobs in the
-study's datasets or descriptive folder, and it signals a message of
+read: it is allowed in the interactive console and in a draft render of
+a job in any stage folder of the study. It is refused in a final render
+(see below), in a script run with `Rscript`, and for a job at the study
+root or outside the study. A permitted working read signals a message of
 class `hvtiRutilities_working_read`. Review a rebuilt source with
 [`review_built()`](https://ehrlinger.github.io/hvtiRutilities/reference/review_built.md)
 and register it with
@@ -46,6 +48,12 @@ status vector outright — so without this the same document would run
 under one read path and fail under the other. Labelled vectors are
 likewise reduced to plain vectors, keeping the SAS variable label as an
 attribute because listings print labels rather than names.
+
+A render counts as final when the environment variable
+`HVTI_TEMPLATE_STRICT` is set to anything but empty, `0`, `false` or
+`no`, as hvtiRtemplates' `render_job(final = TRUE)` sets it. A final
+render, and a script run with `Rscript`, read registered data only. A
+draft render of a job in any stage folder may read the working file.
 
 ## Usage
 
@@ -96,9 +104,14 @@ read_built(
   Logical. If `TRUE`, read the working dataset as it stands rather than
   its registered version, writing nothing. Defaults to `TRUE` when the
   environment variable `HVTI_DATA` is `"working"`. Any read that is not
-  of a dated version is a working read: it is allowed only in the
-  interactive console and in jobs in the study's datasets or descriptive
-  folder, and signals a message of class `hvtiRutilities_working_read`.
+  of a dated version is a working read: it is allowed in the interactive
+  console and in a draft render of a job in any stage folder of the
+  study. It is refused in a final render, where `HVTI_TEMPLATE_STRICT`
+  is set to anything but empty, `0`, `false` or `no`, as
+  `render_job(final = TRUE)` sets it. It is also refused in a script run
+  with `Rscript`, and for a job at the study root or outside the study.
+  A permitted working read signals a message of class
+  `hvtiRutilities_working_read`.
 
 ## Value
 

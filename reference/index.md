@@ -127,6 +127,8 @@ ready
   : Refuse a renv snapshot taken from the wrong R
 - [`register_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md)
   : Register a study dataset
+- [`declare_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/declare_data.md)
+  : Name a study's working dataset without registering it
 - [`study_status()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md)
   : Audit a study's reproducibility readiness
 - [`study_checklist()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checklist.md)

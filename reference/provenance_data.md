@@ -44,7 +44,10 @@ provenance_data(
 
 ## Value
 
-A plain list containing one immutable-by-convention data record.
+A plain list containing one immutable-by-convention data record. A
+working read's record also carries `working = TRUE`. A registered read's
+record carries no `working` element, so records written before 1.5.12
+read the same.
 
 ## See also
 
@@ -69,7 +72,7 @@ str(provenance_data("study", cfg = cfg))
 #>  $ path   : chr "00_datasets/built_20261023.parquet"
 #>  $ role   : chr "analysis"
 #>  $ bytes  : num 1162
-#>  $ mtime  : chr "2026-10-23T19:12:58Z"
+#>  $ mtime  : chr "2026-10-23T22:21:27Z"
 #>  $ sha256 : chr "1e75d28bc8dd10e5d237dfef32334987a04322b3d6c6ec12c80a7810158a508a"
 unlink(root, recursive = TRUE)
 ```

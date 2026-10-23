@@ -38,8 +38,8 @@ which registers the rebuild.
 
 A dataset that `_study.yml` names and `manifest.yaml` does not register
 as a dated version adds a `dated_version:<dataset>` row with status
-`"PENDING"`: analysis, distribution, graph and document jobs stop when
-they read it. The detail names
+`"PENDING"`: a final render or an `Rscript` job stops when it reads it,
+and a draft that reads it is marked a draft. The detail names
 [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md).
 A dataset pinned to a catalog release adds no such row.
 
@@ -106,7 +106,7 @@ dataset, and by the `checkpoints` and `closure` rows when they apply.
 root <- file.path(tempdir(), "study-status-example")
 dir.create(root, showWarnings = FALSE)
 study_status(root)
-#> Study: /tmp/RtmpxFeAU1/study-status-example
+#> Study: /tmp/RtmpQkGEKB/study-status-example
 #> 
 #> [ ] _study.yml — no _study.yml at this root; recovery may be available with study-setup --recover; if its Tracker ID cannot be inferred, run study-setup 42 --recover
 #> [ ] renv.lock — no renv.lock; run renv::init() in the study project

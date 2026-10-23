@@ -14,8 +14,10 @@ versions and the commands that update it. A combined dataset with no
 recorded parent versions is reported the same way, as unrecorded,
 until it is rebuilt and registered again.
 Only a dated version is registered data. Any other read is a working read: it
-is allowed only in the interactive console and in jobs in the study's
-datasets or descriptive folder, and it signals a message of class
+is allowed in the interactive console and in a draft render of a job in any
+stage folder of the study. It is refused in a final render (see below), in a
+script run with Rscript, and for a job at the study root or outside
+the study. A permitted working read signals a message of class
 hvtiRutilities_working_read. Review a rebuilt source with
 review_built() and register it with
 update_manifest(). The release branch below is deprecated.
@@ -33,7 +35,13 @@ numeric, and downstream modelling code rejects a logical status vector
 outright — so without this the same document would run under one read path
 and fail under the other. Labelled vectors are likewise reduced to plain
 vectors, keeping the SAS variable label as an attribute because listings
-print labels rather than names."><meta property="og:description" content="Reads the dataset named in _study.yml and normalises its types so
+print labels rather than names.
+A render counts as final when the environment variable
+HVTI_TEMPLATE_STRICT is set to anything but empty, 0,
+false or no, as hvtiRtemplates' render_job(final = TRUE)
+sets it. A final render, and a script run with Rscript, read
+registered data only. A draft render of a job in any stage folder may read
+the working file."><meta property="og:description" content="Reads the dataset named in _study.yml and normalises its types so
 that both available read paths deliver the same frame.
 For a dataset registered with register_data, the registered
 version (a dated parquet) is read, after its checksum is checked. If the
@@ -48,8 +56,10 @@ versions and the commands that update it. A combined dataset with no
 recorded parent versions is reported the same way, as unrecorded,
 until it is rebuilt and registered again.
 Only a dated version is registered data. Any other read is a working read: it
-is allowed only in the interactive console and in jobs in the study's
-datasets or descriptive folder, and it signals a message of class
+is allowed in the interactive console and in a draft render of a job in any
+stage folder of the study. It is refused in a final render (see below), in a
+script run with Rscript, and for a job at the study root or outside
+the study. A permitted working read signals a message of class
 hvtiRutilities_working_read. Review a rebuilt source with
 review_built() and register it with
 update_manifest(). The release branch below is deprecated.
@@ -67,7 +77,13 @@ numeric, and downstream modelling code rejects a logical status vector
 outright — so without this the same document would run under one read path
 and fail under the other. Labelled vectors are likewise reduced to plain
 vectors, keeping the SAS variable label as an attribute because listings
-print labels rather than names."></head><body>
+print labels rather than names.
+A render counts as final when the environment variable
+HVTI_TEMPLATE_STRICT is set to anything but empty, 0,
+false or no, as hvtiRtemplates' render_job(final = TRUE)
+sets it. A final render, and a script run with Rscript, read
+registered data only. A draft render of a job in any stage folder may read
+the working file."></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -141,8 +157,10 @@ versions and the commands that update it. A combined dataset with no
 recorded parent versions is reported the same way, as <code>unrecorded</code>,
 until it is rebuilt and registered again.</p>
 <p>Only a dated version is registered data. Any other read is a working read: it
-is allowed only in the interactive console and in jobs in the study's
-datasets or descriptive folder, and it signals a message of class
+is allowed in the interactive console and in a draft render of a job in any
+stage folder of the study. It is refused in a final render (see below), in a
+script run with <code>Rscript</code>, and for a job at the study root or outside
+the study. A permitted working read signals a message of class
 <code>hvtiRutilities_working_read</code>. Review a rebuilt source with
 <code><a href="review_built.html">review_built()</a></code> and register it with
 <code><a href="update_manifest.html">update_manifest()</a></code>. The release branch below is deprecated.</p>
@@ -161,6 +179,12 @@ outright — so without this the same document would run under one read path
 and fail under the other. Labelled vectors are likewise reduced to plain
 vectors, keeping the SAS variable label as an attribute because listings
 print labels rather than names.</p>
+<p>A render counts as final when the environment variable
+<code>HVTI_TEMPLATE_STRICT</code> is set to anything but empty, <code>0</code>,
+<code>false</code> or <code>no</code>, as hvtiRtemplates' <code>render_job(final = TRUE)</code>
+sets it. A final render, and a script run with <code>Rscript</code>, read
+registered data only. A draft render of a job in any stage folder may read
+the working file.</p>
     </div>
 
     <div class="section level2">
@@ -211,9 +235,13 @@ withdrawn release to be read for revision work. The default is
 rather than its registered version, writing nothing. Defaults to
 <code>TRUE</code> when the environment variable <code>HVTI_DATA</code> is
 <code>"working"</code>. Any read that is not of a dated version is a working read:
-it is allowed only in the interactive console and in jobs in the study's
-datasets or descriptive folder, and signals a message of class
-<code>hvtiRutilities_working_read</code>.</p></dd>
+it is allowed in the interactive console and in a draft render of a job in
+any stage folder of the study. It is refused in a final render, where
+<code>HVTI_TEMPLATE_STRICT</code> is set to anything but empty, <code>0</code>,
+<code>false</code> or <code>no</code>, as <code>render_job(final = TRUE)</code> sets it. It is
+also refused in a script run with <code>Rscript</code>, and for a job at the study
+root or outside the study. A permitted working read signals a message of
+class <code>hvtiRutilities_working_read</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
