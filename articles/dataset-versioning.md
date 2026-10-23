@@ -49,13 +49,21 @@ steps.
     ```
 
     Run it from anywhere in the study. It converts the new file to
-    `built_20261007.parquet`, keeps every earlier version, and prints
-    what it did. Commit `manifest.yaml`.
+    `built_20261007.parquet`, moves the version it replaces into
+    `datasets/_archive/`, and prints what it did. Commit
+    `manifest.yaml`.
 
 Every registered version stays on disk, so a manuscript revision can be
-reproduced from the version its paper used. The rest of this vignette
-explains the checksums underneath, and how to record a file outside a
-study.
+reproduced from the version its paper used. Only the current one sits
+beside the source; the earlier ones, each with its `.schema.csv`, are in
+`_archive/`, which Quarto skips as it skips every folder whose name
+starts with `_`. `manifest.yaml` still records every version by name and
+checksum, and
+[`verify_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md)
+checks each one where it lies. A study registered before 1.5.12 keeps
+its earlier versions beside the source and works unchanged; its next
+registration moves them. The rest of this vignette explains the
+checksums underneath, and how to record a file outside a study.
 
 ## Setup
 

@@ -136,10 +136,10 @@
 <p>When the rebuild is right, register it:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">hvtiRutilities</span><span class="fu">::</span><span class="fu"><a href="../reference/update_manifest.html">update_manifest</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p>Run it from anywhere in the study. It converts the new file to <code>built_20261007.parquet</code>, keeps every earlier version, and prints what it did. Commit <code>manifest.yaml</code>.</p>
+<p>Run it from anywhere in the study. It converts the new file to <code>built_20261007.parquet</code>, moves the version it replaces into <code>datasets/_archive/</code>, and prints what it did. Commit <code>manifest.yaml</code>.</p>
 </li>
 </ol>
-<p>Every registered version stays on disk, so a manuscript revision can be reproduced from the version its paper used. The rest of this vignette explains the checksums underneath, and how to record a file outside a study.</p>
+<p>Every registered version stays on disk, so a manuscript revision can be reproduced from the version its paper used. Only the current one sits beside the source; the earlier ones, each with its <code>.schema.csv</code>, are in <code>_archive/</code>, which Quarto skips as it skips every folder whose name starts with <code>_</code>. <code>manifest.yaml</code> still records every version by name and checksum, and <code><a href="../reference/verify_manifest.html">verify_manifest()</a></code> checks each one where it lies. A study registered before 1.5.12 keeps its earlier versions beside the source and works unchanged; its next registration moves them. The rest of this vignette explains the checksums underneath, and how to record a file outside a study.</p>
 </section><section class="level2"><h2 id="setup">Setup<a class="anchor" aria-label="anchor" href="#setup"></a>
 </h2>
 <div class="cell">
