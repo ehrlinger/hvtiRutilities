@@ -24,6 +24,9 @@ provenance_data(
 }
 \value{
 A plain list containing one immutable-by-convention data record.
+  A working read's record also carries \code{working = TRUE}. A registered
+  read's record carries no \code{working} element, so records written before
+  1.5.12 read the same.
 }
 \description{
 Records the authoritative physical file selected by \code{dataset}. For a

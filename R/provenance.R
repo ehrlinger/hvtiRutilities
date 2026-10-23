@@ -216,7 +216,15 @@
     c("path", "role", "bytes", "mtime", "sha256")
   }
   label <- paste(kind, "record", index)
-  named <- .provenance_named_shape(record, fields)
+  # A data record may carry an optional `working = TRUE` from a working read.
+  has_working <- identical(kind, "data") && is.list(record) &&
+    "working" %in% names(record)
+  named <- if (has_working) {
+    .provenance_named_shape(record, c(fields, "working"))
+  } else {
+    .provenance_named_shape(record, fields)
+  }
+  valid_working <- !has_working || identical(record$working, TRUE)
   valid_role <- named && is.character(record$role) &&
     length(record$role) == 1L && !is.na(record$role) && nzchar(record$role)
   valid_bytes <- named && is.numeric(record$bytes) &&
@@ -233,14 +241,14 @@
        !is.na(record$dataset) && nzchar(record$dataset))
 
   if (!named || !valid_role || !valid_bytes || !valid_mtime ||
-        !valid_hash || !valid_dataset) {
+        !valid_hash || !valid_dataset || !valid_working) {
     stop(caller, "(): malformed ", label, ".", call. = FALSE)
   }
   if (!.provenance_record_path_valid(record$path)) {
     stop(caller, "(): ", label,
          " path must be a canonical study-relative path.", call. = FALSE)
   }
-  record[fields]
+  record[c(fields, if (has_working) "working")]
 }
 
 .provenance_validate_records <- function(records, kind,
@@ -403,6 +411,9 @@ provenance_path <- function(path) {
 #'   \code{\link{read_built}(working = TRUE)} reads it.
 #'
 #' @return A plain list containing one immutable-by-convention data record.
+#'   A working read's record also carries \code{working = TRUE}. A registered
+#'   read's record carries no \code{working} element, so records written before
+#'   1.5.12 read the same.
 #'
 #' @seealso \code{\link{provenance_artifact}},
 #'   \code{\link{capture_provenance}}
@@ -443,7 +454,8 @@ provenance_data <- function(dataset = "study", cfg = study_config(),
     "provenance_data"
   )
   c(list(dataset = dataset), snapshot["path"], list(role = role),
-    snapshot[c("bytes", "mtime", "sha256")])
+    snapshot[c("bytes", "mtime", "sha256")],
+    if (isTRUE(working)) list(working = TRUE))
 }
 
 #' Snapshot an input artifact for provenance
