@@ -77,8 +77,10 @@ guard_snapshot <- function(root, r_upgrade = FALSE, session = .session_r(),
 
 .session_r <- function() getRversion()
 
+# Only the active libraries count: packageVersion() without lib.loc can
+# answer from a namespace loaded out of a library the snapshot will not scan.
 .installed_version <- function(pkg) {
-  tryCatch(as.character(utils::packageVersion(pkg)),
+  tryCatch(as.character(utils::packageVersion(pkg, lib.loc = .libPaths())),
            error = function(e) NA_character_)
 }
 

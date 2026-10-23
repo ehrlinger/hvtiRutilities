@@ -108,3 +108,28 @@ test_that("a malformed R version in the lock passes like a missing one", {
                                  session = numeric_version("4.6.1")))
   }
 })
+
+test_that("the default lookup ignores a loaded package outside .libPaths()", {
+  skip_on_cran()
+  pkg <- "guardprobe"
+  src <- file.path(withr::local_tempdir(), pkg)
+  dir.create(src)
+  writeLines(c(paste("Package:", pkg), "Version: 1.0.0", "Title: Probe",
+               "Description: Probe.", "License: GPL-3", "Author: A B",
+               "Maintainer: A B <a@example.com>"),
+             file.path(src, "DESCRIPTION"))
+  writeLines("", file.path(src, "NAMESPACE"))
+  lib <- withr::local_tempdir()
+  status <- system2(file.path(R.home("bin"), "R"),
+                    c("CMD", "INSTALL", "--no-test-load", "-l", shQuote(lib),
+                      shQuote(src)), stdout = FALSE, stderr = FALSE)
+  skip_if(status != 0L, "could not install the probe package")
+  loadNamespace(pkg, lib.loc = lib)
+  withr::defer(unloadNamespace(pkg))
+  expect_false(lib %in% normalizePath(.libPaths()))
+  root <- snap_root("4.5.3", pkgs = c(guardprobe = "1.0.0"))
+  expect_error(
+    guard_snapshot(root, r_upgrade = TRUE, session = numeric_version("4.6.1")),
+    "guardprobe.*renv::restore"
+  )
+})
