@@ -1,8 +1,8 @@
 # The working-read gate: draft or final, not the folder
 
 **Date:** 2026-10-23
-**Status:** design. The direction (sections 3.1 to 3.4) was approved by John Ehrlinger on
-2026-10-23. Section 7 holds the questions still open. Not built.
+**Status:** design approved by John Ehrlinger on 2026-10-23: the direction (sections 3.1 to
+3.4) and both follow-on questions (section 7). Not built.
 **Amends:** section 5.1 of `2026-10-13-one-version-scheme-design.md` ("Working reads"), its
 decision 5 ("Who may read the working file?") only. The other decisions there still stand,
 the working read itself included.
@@ -148,7 +148,7 @@ lineage.
 
 A hand-off written before this design has no `working` field and is treated as registered. Some
 of those were saved by descriptive jobs from working data under the folder rule. That is the
-cost of not breaking every existing hand-off, and it is accepted here (section 7, question 2).
+cost of not breaking every existing hand-off, and it is accepted (section 7.2).
 
 ## 4. What it costs a user
 
@@ -185,6 +185,9 @@ hvtiRtemplates:
   is marked a draft, the data table has the `Note`.
 - `.read_handoff()` with a lineage carrying `working = TRUE`: stops in a final render with the
   message above; in a draft, marks the run a draft. A lineage without the field reads as today.
+- `bd` with `REGISTER = FALSE` on a study with no contract: `_study.yml` gains `built:` and
+  `key:`, the manifest is unchanged, and a following draft `dc-eda` reads the working file. A
+  second render does not rewrite the contract, and one with a different `DATASET_ID` stops.
 - One end-to-end draft render of an analysis template (`ac` is the cheapest) on an unregistered
   synthetic build, run under a real Quarto render: the gate depends on the job file knitr reports,
   which section 5.1 of the 2026-10-13 design notes differs under `quarto render`.
@@ -194,26 +197,44 @@ hvtiRtemplates:
 | package | change |
 |---|---|
 | hvtiRutilities | `.assert_working_stage()`: key on draft or final; drop the folder rule; new messages. `provenance_data()`: the `working` field. Document `HVTI_TEMPLATE_STRICT` as read by `read_built()` |
+| hvtiRtemplates `bd` | with `REGISTER = FALSE`, write `built:` and `key:` to `_study.yml` on the first render that finds no contract (section 7.1). Through an hvtiRutilities call, not by editing the YAML in the template |
 | hvtiRtemplates | `read_job_data()`: catch the condition, callout, `.run_mark_draft()`, `Note` row. `.read_handoff()` and `.read_bootstrap_artifact()`: the hand-off check. Raise the hvtiRutilities floor to the release that carries this. `render_job()`'s help says that `final = TRUE` also requires registered data |
 | hvtiRtemplates gallery | the per-template "before you run this" panel (layer 2 of publishing the runbooks) says "a draft can run on an unregistered build; a final render needs registered data" for every template, now that no folder differs |
 
 Release order is the usual one: hvtiRutilities first, then hvtiRtemplates with the new floor.
 A hvtiRtemplates release before that floor would ask a gate that still refuses draft analyses.
 
-## 7. Open questions
+## 7. Decided after the direction
 
-1. **A study that has never registered anything has no working file to name.** `read_built()`
-   resolves the file through the dataset's contract in `_study.yml` (`.study_dataset()`, then
-   `built_path()`). `bd` with `REGISTER = FALSE` writes `<DATASET_ID>.rds` and its build record
-   and touches neither `_study.yml` nor the manifest. So on a new study, the first build cannot
-   be read by any job, draft or not, until it has been registered once. That is the case
-   "especially when we're building a dataset" names.
-   **Recommended:** `bd` with `REGISTER = FALSE` writes the contract (`built:` and `key:` in
-   `_study.yml`) on its first render and registers no version. The dataset is then known but
-   unregistered, so every read of it is a working read and goes through this gate. Registering
-   stays a separate, deliberate step. The alternative, letting `HVTI_DATA=working` guess the
-   file from `datasets/`, makes the gate depend on a directory listing and is not recommended.
-2. **Hand-offs written before this design carry no `working` field** and pass 3.4 as
-   registered. Accept (recommended: the folder rule limited them to descriptive jobs, which
-   rarely hand off a fit), or refuse any final render reading a hand-off without the field,
-   which forces every downstream job in every study to be rerun once.
+Both questions were left open in the first draft of this note and decided by John on
+2026-10-23.
+
+### 7.1 `bd` names the working file on its first render
+
+**The problem.** `read_built()` finds the file through the dataset's contract in `_study.yml`
+(`.study_dataset()`, then `built_path()`). `bd` with `REGISTER = FALSE` wrote
+`<DATASET_ID>.rds` and its build record and touched neither `_study.yml` nor the manifest. On a
+new study, then, no job could read the first build, draft or not, until it had been registered
+once: the case "especially when we're building a dataset" names.
+
+**Decided:** `bd` with `REGISTER = FALSE` writes the contract, `built:` and `key:` in
+`_study.yml`, on the first render that finds none, and registers no version. The dataset is then
+known but unregistered, so every read of it is a working read and goes through this gate.
+Registering stays a separate, deliberate step: a render with `REGISTER = TRUE`, or
+`update_manifest()`.
+
+- A study that already has a contract keeps it. `bd` does not rewrite `built:` or `key:` once
+  set. A `DATASET_ID` that disagrees with the contract's `built:` stops, as it does today when
+  registering.
+- Writing the contract is not registering. `study_status()` reports such a dataset as having no
+  dated version, which it already flags.
+- **Rejected:** letting `HVTI_DATA=working` guess the file from a listing of `datasets/`. The
+  gate would then depend on what else happens to sit in that folder.
+
+### 7.2 Hand-offs written before this design are treated as registered
+
+**Decided:** a lineage record without the `working` field reads as registered, in a final render
+and a draft alike. The folder rule confined working reads to the datasets and descriptive
+folders, whose jobs rarely hand off a fit, so the exposure is small. The alternative, refusing a
+final render on any hand-off without the field, would force every downstream job in every study
+to be rerun once.
