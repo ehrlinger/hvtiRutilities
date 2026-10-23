@@ -96,9 +96,8 @@ It prints one line per dataset saying what it did:
 builtr: registered builtr_20261021_r3.parquet (5955 rows, 176 columns); previous version kept as builtr_20261021_r2.parquet
 ```
 
-A dataset whose SAS file has not changed is reported as unchanged, and nothing
-is written for it. The programmer then commits `manifest.yaml`, which is the
-only one of these files that goes into Git.
+A dataset whose SAS file has not changed is reported as unchanged, and no new
+version is written for it.
 
 ## Why Is It Named That Way?
 
@@ -114,10 +113,10 @@ all.
 
 That explains the two things people notice in the example.
 
-- `builtr_20261021_r3.parquet` was registered after 2026-10-21, yet still says
-  10-21. The SAS file was last written on the evening of 2026-10-21, and that
-  is the date it carries. Register the same file a week later and the name
-  would still say 10-21.
+- `builtr_20261021_r3.parquet` says 10-21 because `builtr.sas7bdat` was last
+  written on the evening of 2026-10-21. Had nobody registered it until a week
+  later, the name would still say 10-21, and so would every date the reports
+  give for it.
 - `builtr` reached `_r3` while `built` stopped at `_r2`. Each dataset counts
   its own versions. `builtr.sas7bdat` was rebuilt and registered three times
   with a 2026-10-21 date, `built.sas7bdat` twice.
@@ -139,10 +138,22 @@ is the study dataset. The package looks the name up in `manifest.yaml` and
 reads the version recorded there, after checking its checksum. For the
 example, that is `builtr_20261021_r3.parquet`.
 
-So your job always reads the latest registered version of the dataset it
-names, with no file name in your code. When the programmer registers
+So a job that reads a dataset reads its latest registered version, with no
+file name in your code. When the programmer registers
 `builtr_20261028.parquet` next week, your next render reads it, and you
 change nothing.
+
+Two kinds of job read something else, and say so in their reports.
+
+- A job that sets `ANALYSIS_SET <- "<name>"` reads that analysis set, a subset
+  saved from the study dataset by `hvtiRdatabuild::write_analysis_set()`.
+  Registering a new version of the study dataset makes the set out of date. A
+  draft render still reads the old set, with a note saying so; a final render
+  stops until the set is written again from the new version.
+- A job that reads another job's saved results, such as an `-explain` job
+  reading what its `-fit` job saved, uses the data that job read. Its "About
+  this run" table names that version under `Upstream`. Re-render the upstream
+  job first to carry new data through.
 
 That is also why nobody needs to open, copy, rename, move or delete a parquet
 file by hand. Every read checks the checksum of the version it reads, and most
@@ -163,7 +174,8 @@ Every rendered report names the version it read, in three places.
 - **The "About this run" table** at the end. Under ``Dataset `builtr` `` it
   lists the version file, the source file it came from, the rows and patients
   kept, the `WHERE` conditions, the first 12 characters of the version's
-  SHA-256, and a `Manifest` row that says `current` or `newer file waiting`.
+  SHA-256, and a `Manifest` row that says `current`, `newer file waiting`, or
+  `not in the manifest` (the file read is no registered version).
 
 The date that the box and the "About this run" table give as *registered* is
 the version's date, the one in its file name: the SAS file's date, as above.
@@ -178,7 +190,8 @@ run `update_manifest()`. Your job still reads `builtr_20261021_r3.parquet`.
 Its results are what they were, because the data it reads have not changed.
 
 The job tells you a newer file is waiting. The data table ends with a `Note`
-row:
+row (where, as everywhere in these reports, "registered on" gives the
+version's date, the SAS file's date, not the day it was registered):
 
 ```
 builtr.sas7bdat has changed since it was registered on 2026-10-21. This job used
@@ -204,9 +217,9 @@ HVTI_DATA=working quarto render 10_descriptive/table1.qmd
 
 That is allowed only in the interactive console and in jobs in the study's
 `datasets` and `descriptive` folders. It prints "Results from it are a draft",
-and you should treat the report that way. A distribution, analysis or graph
-job refuses a working read and stops, telling you to register the dataset or
-unset `HVTI_DATA`.
+and you should treat the report that way. A job anywhere else (distributions,
+analyses, graphs, documents) refuses a working read and stops, telling you to
+register the dataset or unset `HVTI_DATA`.
 
 ## Where Do the Older Versions Go?
 
@@ -226,6 +239,9 @@ starts with `_`.
   `_archive/`.
 - A study registered before that release needs nothing done. Its next
   registration moves every earlier version still beside the SAS file.
+- Two kinds of file stay beside the SAS file: a version file that is a
+  symbolic link, and one that another registered dataset reads as its source.
+  The package still finds them there.
 - `_archive/` is the package's to manage, as the `datasets` folder is. Do not
   move files into it or out of it yourself.
 - Verify an archived study with that release or a later one. An older
