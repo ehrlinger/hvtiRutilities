@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.10</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.11</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,6 +55,11 @@
       <small>Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.5.11" id="hvtirutilities-1511">hvtiRutilities 1.5.11<a class="anchor" aria-label="anchor" href="#hvtirutilities-1511"></a></h2>
+<ul><li><p>New <code><a href="../reference/guard_snapshot.html">guard_snapshot()</a></code> refuses a <code><a href="https://rstudio.github.io/renv/reference/snapshot.html" class="external-link">renv::snapshot()</a></code> taken from an R whose major.minor differs from the R recorded in the study’s <code>renv.lock</code>, naming both versions and the R to start. A 4.6.1 session once snapshotted a 4.5.3 study, rewrote its lock to 4.6.1 and dropped <code>boostmtree</code> and <code>ggBoostedTrees</code>. <code><a href="../reference/study_need.html">study_need()</a></code> and <code><a href="../reference/study_setup.html">study_setup()</a></code> call it before they snapshot, and gain <code>r_upgrade = FALSE</code> (last argument) for a deliberate move to a new R; even then the guard stops while a locked package is not installed.</p></li>
+<li><p>New <code><a href="../reference/cache_would_fit.html">cache_would_fit()</a></code> answers whether <code><a href="../reference/cache_fit.html">cache_fit()</a></code> with the same arguments would compute or load, without computing anything, so a job can guard memory or cores only when a fit will actually run. It takes <code><a href="../reference/cache_fit.html">cache_fit()</a></code>’s arguments exactly and reads the same internal decision, so the two cannot disagree. A stale or unkeyed file without <code>refit = TRUE</code> answers <code>FALSE</code>, since <code><a href="../reference/cache_fit.html">cache_fit()</a></code> stops there before computing. <code><a href="../reference/cache_fit.html">cache_fit()</a></code>’s behaviour and messages are unchanged.</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.5.10" id="hvtirutilities-1510">hvtiRutilities 1.5.10<a class="anchor" aria-label="anchor" href="#hvtirutilities-1510"></a></h2>
 <ul><li>

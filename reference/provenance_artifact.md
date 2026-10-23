@@ -52,7 +52,7 @@ str(provenance_artifact("30_analyses/fit.R", role = "code", cfg = cfg))
 #>  $ path  : chr "30_analyses/fit.R"
 #>  $ role  : chr "code"
 #>  $ bytes : num 7
-#>  $ mtime : chr "2026-10-23T13:05:53Z"
+#>  $ mtime : chr "2026-10-23T15:35:17Z"
 #>  $ sha256: chr "66b7dd2c95677966d7e30532fe17ac4642554f6ca9c4165274d8438fd9c5a283"
 unlink(root, recursive = TRUE)
 ```

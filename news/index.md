@@ -1,5 +1,38 @@
 # Changelog
 
+## hvtiRutilities 1.5.11
+
+- New
+  [`guard_snapshot()`](https://ehrlinger.github.io/hvtiRutilities/reference/guard_snapshot.md)
+  refuses a
+  [`renv::snapshot()`](https://rstudio.github.io/renv/reference/snapshot.html)
+  taken from an R whose major.minor differs from the R recorded in the
+  study’s `renv.lock`, naming both versions and the R to start. A 4.6.1
+  session once snapshotted a 4.5.3 study, rewrote its lock to 4.6.1 and
+  dropped `boostmtree` and `ggBoostedTrees`.
+  [`study_need()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_need.md)
+  and
+  [`study_setup()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md)
+  call it before they snapshot, and gain `r_upgrade = FALSE` (last
+  argument) for a deliberate move to a new R; even then the guard stops
+  while a locked package is not installed.
+
+- New
+  [`cache_would_fit()`](https://ehrlinger.github.io/hvtiRutilities/reference/cache_would_fit.md)
+  answers whether
+  [`cache_fit()`](https://ehrlinger.github.io/hvtiRutilities/reference/cache_fit.md)
+  with the same arguments would compute or load, without computing
+  anything, so a job can guard memory or cores only when a fit will
+  actually run. It takes
+  [`cache_fit()`](https://ehrlinger.github.io/hvtiRutilities/reference/cache_fit.md)’s
+  arguments exactly and reads the same internal decision, so the two
+  cannot disagree. A stale or unkeyed file without `refit = TRUE`
+  answers `FALSE`, since
+  [`cache_fit()`](https://ehrlinger.github.io/hvtiRutilities/reference/cache_fit.md)
+  stops there before computing.
+  [`cache_fit()`](https://ehrlinger.github.io/hvtiRutilities/reference/cache_fit.md)’s
+  behaviour and messages are unchanged.
+
 ## hvtiRutilities 1.5.10
 
 - [`hvti_taxonomy()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_taxonomy.md)
