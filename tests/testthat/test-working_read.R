@@ -186,21 +186,25 @@ test_that("the real .signal_working_read() emits the classed message", {
   expect_message(.signal_working_read("built.csv"), class = "hvtiRutilities_working_read")
 })
 
-test_that("the stage gate sees a real Quarto render's job file", {
+test_that("a real Quarto render is a draft unless HVTI_TEMPLATE_STRICT is set", {
   skip_if_not_installed("quarto")
   skip_if(is.null(quarto::quarto_path()), "Quarto is not installed")
   root <- versioned_study()
-  for (stage in c("descriptive", "analyses")) {
-    dir <- file.path(study_dir(stage, root), "probe")
+  probe <- function(stage, strict) {
+    dir <- file.path(study_dir(stage, root), paste0("probe", if (strict) "-final" else "-draft"))
     dir.create(dir, recursive = TRUE)
     writeLines(c("---", "title: probe", "---", "```{r}",
                  sprintf("cfg <- hvtiRutilities::study_config(%s)", deparse(root)),
                  "ok <- tryCatch({suppressMessages(hvtiRutilities::read_built(cfg, working = TRUE)); 'allowed'},",
                  "  error = function(e) 'refused')",
                  "writeLines(ok, 'result.txt')", "```"), file.path(dir, "probe.qmd"))
-    quarto::quarto_render(file.path(dir, "probe.qmd"), quiet = TRUE)
-    expect_identical(readLines(file.path(dir, "result.txt")),
-                     if (stage == "descriptive") "allowed" else "refused")
+    withr::with_envvar(c(HVTI_TEMPLATE_STRICT = if (strict) "1" else NA),
+                       quarto::quarto_render(file.path(dir, "probe.qmd"), quiet = TRUE))
+    readLines(file.path(dir, "result.txt"))
+  }
+  for (stage in c("descriptive", "analyses")) {
+    expect_identical(probe(stage, FALSE), "allowed")
+    expect_identical(probe(stage, TRUE), "refused")
   }
 })
 

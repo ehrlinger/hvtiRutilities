@@ -238,6 +238,13 @@ built_manifest <- function(cfg = study_config(), dataset = "study") {
 #' vectors, keeping the SAS variable label as an attribute because listings
 #' print labels rather than names.
 #'
+#' A render counts as final when the environment variable
+#' \code{HVTI_TEMPLATE_STRICT} is set to anything but empty, \code{0},
+#' \code{false} or \code{no}, as hvtiRtemplates' \code{render_job(final = TRUE)}
+#' sets it. A final render, and a script run with \code{Rscript}, read
+#' registered data only. A draft render of a job in any stage folder may read
+#' the working file.
+#'
 #' @param cfg List. A study manifest from \code{\link{study_config}}.
 #' @param refresh Logical. If \code{TRUE}, force a re-read from the source and
 #'   a reconversion regardless of the manifest's role or cached stamp.

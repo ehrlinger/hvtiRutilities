@@ -86,6 +86,13 @@ outright — so without this the same document would run under one read path
 and fail under the other. Labelled vectors are likewise reduced to plain
 vectors, keeping the SAS variable label as an attribute because listings
 print labels rather than names.
+
+A render counts as final when the environment variable
+\code{HVTI_TEMPLATE_STRICT} is set to anything but empty, \code{0},
+\code{false} or \code{no}, as hvtiRtemplates' \code{render_job(final = TRUE)}
+sets it. A final render, and a script run with \code{Rscript}, read
+registered data only. A draft render of a job in any stage folder may read
+the working file.
 }
 \examples{
 if (requireNamespace("arrow", quietly = TRUE)) {
