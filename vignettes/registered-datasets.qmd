@@ -237,11 +237,14 @@ a registered version, a *working read*:
 HVTI_DATA=working quarto render 10_descriptive/table1.qmd
 ```
 
-That is allowed only in the interactive console and in jobs in the study's
-`datasets` and `descriptive` folders. It prints "Results from it are a draft",
-and you should treat the report that way. A job anywhere else (distributions,
-analyses, graphs, documents) refuses a working read and stops, telling you to
-register the dataset or unset `HVTI_DATA`.
+A dataset that has never been registered is read this way too, whether or not
+you asked. A working read is allowed in the interactive console and in a draft
+render of a job in any stage folder. It prints "Results from it are a draft",
+and you should treat the report that way. A final render
+(`render_job(final = TRUE)`), a script run with `Rscript`, and a job at the
+study root or outside the study refuse it and stop. The message says to unset `HVTI_DATA` when a
+registered version exists, and to register the dataset with
+`update_manifest()` when none does.
 
 ## Where Do the Older Versions Go?
 
