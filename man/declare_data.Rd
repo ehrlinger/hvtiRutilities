@@ -15,9 +15,10 @@ declare_data(root = getwd(), built, key = NULL)
 \code{key:} unset.}
 }
 \value{
-\code{TRUE}, invisibly, when the contract was written;
+\code{TRUE}, invisibly, when the contract was written, or a
+  \code{key} was added to a declaration that had none;
   \code{FALSE}, invisibly, when \code{built} was already declared.
-  Stops when the study already declares a different file.
+  Stops when the study already declares a different file or a different key.
 }
 \description{
 Writes the study dataset's contract, \code{built:} and \code{key:}, to

@@ -18,9 +18,10 @@
 #' @param built The working file's name in the datasets folder, with its extension.
 #' @param key Columns that make a row unique, or \code{NULL} to leave
 #'   \code{key:} unset.
-#' @return \code{TRUE}, invisibly, when the contract was written;
+#' @return \code{TRUE}, invisibly, when the contract was written, or a
+#'   \code{key} was added to a declaration that had none;
 #'   \code{FALSE}, invisibly, when \code{built} was already declared.
-#'   Stops when the study already declares a different file.
+#'   Stops when the study already declares a different file or a different key.
 #' @examples
 #' root <- file.path(tempdir(), "declare-example")
 #' suppressMessages(study_setup(root, "Example", 1L, renv = FALSE))
@@ -41,9 +42,16 @@ declare_data <- function(root = getwd(), built, key = NULL) {
   manifest_path <- file.path(cfg$root, "manifest.yaml")
   if (!is.null(raw$built)) {
     if (identical(raw$built, built)) {
+      if (!is.null(key) && is.null(raw$key)) {
+        raw$key <- key
+        raw <- .study_validate_shapes(raw, cfg$file, caller = "declare_data")
+        .study_write_atomic(raw, cfg$file)
+        if (!file.exists(manifest_path)) .write_manifest(list(datasets = list()), manifest_path)
+        return(invisible(TRUE))
+      }
       if (!is.null(key) && !identical(as.character(raw$key), key)) {
         stop("declare_data(): _study.yml already declares ", built, " with key ",
-             if (is.null(raw$key)) "none" else paste(raw$key, collapse = ", "),
+             paste(raw$key, collapse = ", "),
              ". Change the key deliberately in _study.yml.", call. = FALSE)
       }
       # A study declared before declare_data() wrote a manifest still gets one.

@@ -242,7 +242,7 @@ you asked. A working read is allowed in the interactive console and in a draft
 render of a job in any stage folder. It prints "Results from it are a draft",
 and you should treat the report that way. A final render
 (`render_job(final = TRUE)`), a script run with `Rscript`, and a job at the
-study root refuse it and stop. The message says to unset `HVTI_DATA` when a
+study root or outside the study refuse it and stop. The message says to unset `HVTI_DATA` when a
 registered version exists, and to register the dataset with
 `update_manifest()` when none does.
 

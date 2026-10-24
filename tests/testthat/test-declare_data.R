@@ -79,9 +79,20 @@ test_that("re-declaring with a different key stops rather than ignoring it", {
   expect_identical(yaml::read_yaml(file.path(root, "_study.yml"))$key, "ccfid")
 })
 
-test_that("a draft read of a declared, unregistered dataset caches nothing and leaves the manifest empty", {
+test_that("re-declaring with a key records it when none was declared", {
+  root <- declare_fixture()
+  declare_data(root, built = "study_cohort.rds")
+  expect_true(declare_data(root, built = "study_cohort.rds", key = "ccfid"))
+  expect_identical(yaml::read_yaml(file.path(root, "_study.yml"))$key, "ccfid")
+})
+
+test_that("a draft render of a declared, unregistered dataset caches nothing and leaves the manifest empty", {
   root <- declare_fixture()
   declare_data(root, built = "study_cohort.rds", key = "ccfid")
+  job <- file.path(study_dir("analyses", root), "km", "km.qmd")
+  local_mocked_bindings(.is_interactive = function() FALSE, .job_file = function() job,
+                        .knitr_input = function() job)
+  withr::local_envvar(HVTI_TEMPLATE_STRICT = NA)
   dd <- study_dir("datasets", root)
   before <- list.files(dd, recursive = TRUE)
   d <- suppressMessages(read_built(study_config(root)))
