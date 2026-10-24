@@ -161,10 +161,9 @@ study’s data manager. Leave the files where the package puts them.
 
 ## Which Version Did a Report Use?
 
-Every rendered report names the version it read, in three places.
+Every rendered report names its data in three places. Two of them record
+the file the job read; the third is written before the read.
 
-- **The box under the title.** It reads something like
-  `` data `builtr` `builtr_20261021_r3.parquet`, registered 2026-10-21 ``.
 - **The data table**, captioned “The data this job read”. Its first row,
   `Source`, names the dataset and the version file,
   `` dataset `builtr` (builtr_20261021_r3.parquet) ``, followed by the
@@ -175,6 +174,15 @@ Every rendered report names the version it read, in three places.
   first 12 characters of the version’s SHA-256, and a `Manifest` row
   that says `current`, `newer file waiting`, or `not in the manifest`
   (the file read is no registered version).
+- **The box under the title.** It reads something like
+  `` data `builtr` `builtr_20261021_r3.parquet`, registered 2026-10-21 ``.
+  The box is printed before the job reads anything, so it names the
+  version the manifest records for the job’s `DATASET`, not the file the
+  job went on to read. The two agree except on a working read
+  (`HVTI_DATA=working`, below): the box still names the registered
+  version, while the `Source` row and “About this run” name the working
+  SAS file. When they disagree, believe the `Source` row and “About this
+  run”.
 
 The date that the box and the “About this run” table give as
 *registered* is the version’s date, the one in its file name: the SAS
@@ -258,7 +266,7 @@ folder whose name starts with `_`.
 | You want to | Do this |
 |----|----|
 | Read the data | Set `DATASET <- "<name>"` in the job; it reads the latest registered version |
-| Know which version a report used | Read the box under the title, the data table’s `Source` row, or “About this run” |
+| Know which version a report used | Read the data table’s `Source` row or “About this run”; the box under the title can differ on a working read |
 | Know whether newer data exist | Look for a `Note` row in the data table, or `newer file waiting` in “About this run” |
 | Get newer data into your job | Ask the programmer to review and register it with [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md), then re-render |
 | Tidy the `datasets` folder | Nothing; the package manages it |
