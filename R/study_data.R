@@ -323,9 +323,10 @@ read_built <- function(cfg = study_config(), refresh = FALSE,
   if (working || unregistered) {
     explicit <- !missing(working) && working
     .assert_working_stage(cfg, basename(p), unregistered = unregistered, explicit = explicit, env = working && !explicit)
-    # A dataset with no manifest entry at all is served uncached too: the legacy cache would add an
-    # unversioned entry whose SHA-256 the next rebuild breaks, and verify_manifest() would then fail.
-    if (working || is.null(entry)) {
+    # A draft render of a dataset with no manifest entry is served uncached too: the legacy cache would
+    # add an unversioned entry whose SHA-256 the next rebuild breaks, and verify_manifest() would then
+    # fail. The console keeps the legacy cache until that scheme is retired.
+    if (working || (is.null(entry) && !is.null(.knitr_input()))) {
       if (isTRUE(refresh)) {
         stop("read_built(): refresh = TRUE does not apply to a working read: nothing is cached.", call. = FALSE)
       }
