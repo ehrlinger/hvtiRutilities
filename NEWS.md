@@ -14,6 +14,12 @@
 
 * `vignette("registered-datasets")` follows the newer hvtiRtemplates report wording. The box under the title gives a registered version's date as `dated` and names the working file on a working read, and "About this run" has a `Version date` row. The vignette explains that an analysis set's `written` date is the day the set was cut, not its data's date, and that older reports, which say `registered`, are told apart by that label.
 
+* A draft render that reads a declared dataset never registered no longer writes a parquet cache and an unversioned `manifest.yaml` entry. That entry broke on the next rebuild, so `verify_manifest()` failed and every draft stopped until someone registered. The render now reads the working file, uncached, as a working read, so `refresh = TRUE` there stops: there is no cache to refresh. It reads the source in full on every render until the dataset is registered. A read in the console still uses the old parquet cache, as it did before 1.5.12, until that scheme is retired.
+
+* `declare_data()` writes the empty `manifest.yaml` even when `_study.yml` already names the file, so a study declared before 1.5.12 gets one. Declaring the same file again with a `key` records it when none was declared, and stops when it differs from the declared key instead of ignoring it.
+
+* `vignette("registered-datasets")` describes the working-read gate as it is: draft or final, in any stage folder, not the datasets and descriptive folders only.
+
 # hvtiRutilities 1.5.11
 
 * New `guard_snapshot()` refuses a `renv::snapshot()` taken from an R whose major.minor differs from the R recorded in the study's `renv.lock`, naming both versions and the R to start. A 4.6.1 session once snapshotted a 4.5.3 study, rewrote its lock to 4.6.1 and dropped `boostmtree` and `ggBoostedTrees`. `study_need()` and `study_setup()` call it before they snapshot, and gain `r_upgrade = FALSE` (last argument) for a deliberate move to a new R; even then the guard stops while a locked package is not installed.
