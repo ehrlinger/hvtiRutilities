@@ -162,20 +162,21 @@ built_20261013.parquet
 <p>That is also why nobody needs to open, copy, rename, move or delete a parquet file by hand. Every read checks the checksum of the version it reads, and most jobs run <code><a href="../reference/verify_manifest.html">verify_manifest()</a></code> before they read anything, which checks every registered version, current and earlier. A version that has been moved or edited fails those checks, and the job stops with a message to restore it and tell the study’s data manager. Leave the files where the package puts them.</p>
 </section><section class="level2"><h2 id="which-version-did-a-report-use">Which Version Did a Report Use?<a class="anchor" aria-label="anchor" href="#which-version-did-a-report-use"></a>
 </h2>
-<p>Every rendered report names its data in three places. Two of them record the file the job read; the third is written before the read.</p>
+<p>Every report rendered from a current job names the version it read in three places. (A job scaffolded before hvtiRtemplates 1.3.1 renders without the box and the “About this run” table.)</p>
 <ul>
+<li>
+<strong>The box under the title.</strong> It reads something like <code>data `builtr` `builtr_20261021_r3.parquet`, dated 2026-10-21</code>. On a working read (<code>HVTI_DATA=working</code>, below) it names the SAS file instead and adds “working read, not a registered version”. A job that sets <code>ANALYSIS_SET</code> names the analysis set instead, with the day the set was <code>written</code> (see below).</li>
 <li>
 <strong>The data table</strong>, captioned “The data this job read”. Its first row, <code>Source</code>, names the dataset and the version file, <code>dataset `builtr` (builtr_20261021_r3.parquet)</code>, followed by the rows read and kept.</li>
 <li>
-<strong>The “About this run” table</strong> at the end. Under <code>Dataset `builtr`</code> it lists the version file, the source file it came from, the rows and patients kept, the <code>WHERE</code> conditions, the first 12 characters of the version’s SHA-256, and a <code>Manifest</code> row that says <code>current</code>, <code>newer file waiting</code>, or <code>not in the manifest</code> (the file read is no registered version).</li>
-<li>
-<strong>The box under the title.</strong> It reads something like <code>data `builtr` `builtr_20261021_r3.parquet`, registered 2026-10-21</code>. The box is printed before the job reads anything, so it names the version the manifest records for the job’s <code>DATASET</code>, not the file the job went on to read. The two agree except on a working read (<code>HVTI_DATA=working</code>, below): the box still names the registered version, while the <code>Source</code> row and “About this run” name the working SAS file. When they disagree, believe the <code>Source</code> row and “About this run”.</li>
+<strong>The “About this run” table</strong> at the end. Under <code>Dataset `builtr`</code> it lists the version file, its <code>Version date</code>, the source file it came from, the rows and patients kept, the <code>WHERE</code> conditions, the first 12 characters of the version’s SHA-256, and a <code>Manifest</code> row that says <code>current</code>, <code>newer file waiting</code>, or <code>not in the manifest</code> (the file read is no registered version).</li>
 </ul>
-<p>The date that the box and the “About this run” table give as <em>registered</em> is the version’s date, the one in its file name: the SAS file’s date, as above. The same facts, with the full checksum, are written into the report’s embedded provenance record, so a figure can be traced back to the exact file months later.</p>
+<p>For a registered dataset, the <code>dated</code> date in the box and the <code>Version date</code> row give the version’s date, the one in its file name: the SAS file’s date, as above. An analysis set’s <code>written</code> date is something else: the day <code>write_analysis_set()</code> cut the set, which can be weeks after the version it was cut from. A set written today from <code>built_20260915.parquet</code> reads <code>written 2026-10-24</code>, which says nothing about how fresh the data are. The same facts, with the full checksum, are written into the report’s embedded provenance record, so a figure can be traced back to the exact file months later.</p>
+<p>Older reports word two of these differently, and their labels tell them apart. Their box says <code>registered 2026-10-21</code> where a newer one says <code>dated</code>, and their “About this run” table has a <code>Registered</code> row where a newer one has <code>Version date</code>. (Go by the labels, not by the hvtiRtemplates version at the end of the box: the version still read 1.5.0 for a while after the new labels arrived.) That date is the same version date, not the day the version was registered. Their box is also written before the job reads anything, so on a working read it still names the registered version while the <code>Source</code> row and “About this run” name the working SAS file. In such a report, believe the <code>Source</code> row and “About this run”.</p>
 </section><section class="level2"><h2 id="what-if-the-sas-file-changes-and-nobody-registers-it">What If the SAS File Changes and Nobody Registers It?<a class="anchor" aria-label="anchor" href="#what-if-the-sas-file-changes-and-nobody-registers-it"></a>
 </h2>
 <p>Suppose the programmer rebuilds <code>builtr.sas7bdat</code> on 2026-10-24 and does not run <code><a href="../reference/update_manifest.html">update_manifest()</a></code>. Your job still reads <code>builtr_20261021_r3.parquet</code>. Its results are what they were, because the data it reads have not changed.</p>
-<p>The job tells you a newer file is waiting. The data table ends with a <code>Note</code> row (where, as everywhere in these reports, “registered on” gives the version’s date, the SAS file’s date, not the day it was registered):</p>
+<p>The job tells you a newer file is waiting. The data table ends with a <code>Note</code> row. In it, “registered on” gives the version’s date, the SAS file’s date, not the day it was registered:</p>
 <pre><code>builtr.sas7bdat has changed since it was registered on 2026-10-21. This job used
 the registered version, builtr_20261021_r3.parquet. Review it with
 hvtiRutilities::review_built(), then run hvtiRutilities::update_manifest() to
@@ -214,7 +215,7 @@ register it.</code></pre>
 </tr>
 <tr class="even">
 <td>Know which version a report used</td>
-<td>Read the data table’s <code>Source</code> row or “About this run”; the box under the title can differ on a working read</td>
+<td>Read the box under the title, the data table’s <code>Source</code> row, or “About this run”</td>
 </tr>
 <tr class="odd">
 <td>Know whether newer data exist</td>
