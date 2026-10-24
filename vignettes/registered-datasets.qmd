@@ -172,9 +172,8 @@ and the "About this run" table.)
   ``data `builtr` `builtr_20261021_r3.parquet`, dated 2026-10-21``. On a
   working read (`HVTI_DATA=working`, below) it names the SAS file instead and
   adds "working read, not a registered version". A job that sets
-  `ANALYSIS_SET` names the analysis set instead, with the date it was
-  `written`. The box ends with the hvtiRtemplates version that rendered the
-  report.
+  `ANALYSIS_SET` names the analysis set instead, with the day the set was
+  `written` (see below).
 - **The data table**, captioned "The data this job read". Its first row,
   `Source`, names the dataset and the version file, ``dataset `builtr` (builtr_20261021_r3.parquet)``,
   followed by the rows read and kept.
@@ -185,14 +184,22 @@ and the "About this run" table.)
   `newer file waiting`, or `not in the manifest` (the file read is no
   registered version).
 
-The date in the box and in the `Version date` row is the version's date, the
-one in its file name: the SAS file's date, as above. The same facts, with the
-full checksum, are written into the report's embedded provenance record, so a
-figure can be traced back to the exact file months later.
+For a registered dataset, the `dated` date in the box and the `Version date`
+row give the version's date, the one in its file name: the SAS file's date, as
+above. An analysis set's `written` date is something else: the day
+`write_analysis_set()` cut the set, which can be weeks after the version it was
+cut from. A set written today from `built_20260915.parquet` reads
+`written 2026-10-24`, which says nothing about how fresh the data are. The same
+facts, with the full checksum, are written into the report's embedded
+provenance record, so a figure can be traced back to the exact file months
+later.
 
-Reports rendered with hvtiRtemplates 1.5.0 or earlier (the version at the end
-of the box tells you) word two of these differently. Their box says `registered 2026-10-21` and their "About this
-run" table has a `Registered` row. That date is the same version date, not the
+Older reports word two of these differently, and their labels tell them apart.
+Their box says `registered 2026-10-21` where a newer one says `dated`, and
+their "About this run" table has a `Registered` row where a newer one has
+`Version date`. (Go by the labels, not by the hvtiRtemplates version at the
+end of the box: the version still read 1.5.0 for a while after the new labels
+arrived.) That date is the same version date, not the
 day the version was registered. Their box is also written before the job
 reads anything, so on a working read it still names the registered version
 while the `Source` row and "About this run" name the working SAS file. In such
