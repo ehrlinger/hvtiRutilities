@@ -164,12 +164,17 @@ tell the study's data manager. Leave the files where the package puts them.
 
 ## Which Version Did a Report Use?
 
-Every rendered report names the version it read in three places.
+Every report rendered from a current job names the version it read in three
+places. (A job scaffolded before hvtiRtemplates 1.3.1 renders without the box
+and the "About this run" table.)
 
 - **The box under the title.** It reads something like
   ``data `builtr` `builtr_20261021_r3.parquet`, dated 2026-10-21``. On a
   working read (`HVTI_DATA=working`, below) it names the SAS file instead and
-  adds "working read, not a registered version".
+  adds "working read, not a registered version". A job that sets
+  `ANALYSIS_SET` names the analysis set instead, with the date it was
+  `written`. The box ends with the hvtiRtemplates version that rendered the
+  report.
 - **The data table**, captioned "The data this job read". Its first row,
   `Source`, names the dataset and the version file, ``dataset `builtr` (builtr_20261021_r3.parquet)``,
   followed by the rows read and kept.
@@ -185,8 +190,8 @@ one in its file name: the SAS file's date, as above. The same facts, with the
 full checksum, are written into the report's embedded provenance record, so a
 figure can be traced back to the exact file months later.
 
-Reports rendered with hvtiRtemplates 1.5.0 or earlier word two of these
-differently. Their box says `registered 2026-10-21` and their "About this
+Reports rendered with hvtiRtemplates 1.5.0 or earlier (the version at the end
+of the box tells you) word two of these differently. Their box says `registered 2026-10-21` and their "About this
 run" table has a `Registered` row. That date is the same version date, not the
 day the version was registered. Their box is also written before the job
 reads anything, so on a working read it still names the registered version
