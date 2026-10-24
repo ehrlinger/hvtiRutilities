@@ -30,9 +30,10 @@ declare_data(root = getwd(), built, key = NULL)
 
 ## Value
 
-`TRUE`, invisibly, when the contract was written; `FALSE`, invisibly,
-when `built` was already declared. Stops when the study already declares
-a different file.
+`TRUE`, invisibly, when the contract was written, or a `key` was added
+to a declaration that had none; `FALSE`, invisibly, when `built` was
+already declared. Stops when the study already declares a different file
+or a different key.
 
 ## Details
 
@@ -50,7 +51,7 @@ render with `REGISTER = FALSE`.
 ``` r
 root <- file.path(tempdir(), "declare-example")
 suppressMessages(study_setup(root, "Example", 1L, renv = FALSE))
-#> Study: /tmp/RtmpE17TJa/declare-example
+#> Study: /tmp/RtmptZRG62/declare-example
 #> 
 #> [x] _study.yml — study: Example
 #> [ ] renv.lock — no renv.lock; run renv::init() in the study project

@@ -100,9 +100,10 @@ in a draft render, refused in a final one. Register it with
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p><code>TRUE</code>, invisibly, when the contract was written;
+    <p><code>TRUE</code>, invisibly, when the contract was written, or a
+  <code>key</code> was added to a declaration that had none;
   <code>FALSE</code>, invisibly, when <code>built</code> was already declared.
-  Stops when the study already declares a different file.</p>
+  Stops when the study already declares a different file or a different key.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -118,7 +119,7 @@ with <code>REGISTER = FALSE</code>.</p>
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">root</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"declare-example"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">suppressMessages</a></span><span class="op">(</span><span class="fu"><a href="study_setup.html">study_setup</a></span><span class="op">(</span><span class="va">root</span>, <span class="st">"Example"</span>, <span class="fl">1L</span>, renv <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Study: /tmp/RtmpE17TJa/declare-example</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Study: /tmp/RtmptZRG62/declare-example</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [x] _study.yml — study: Example</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [ ] renv.lock — no renv.lock; run renv::init() in the study project</span>

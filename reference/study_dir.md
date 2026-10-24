@@ -38,6 +38,6 @@ root <- file.path(tempdir(), "numbered-study-layout")
 dir.create(file.path(root, "00_datasets"), recursive = TRUE,
            showWarnings = FALSE)
 study_dir("datasets", root)
-#> [1] "/tmp/RtmpE17TJa/numbered-study-layout/00_datasets"
+#> [1] "/tmp/RtmptZRG62/numbered-study-layout/00_datasets"
 unlink(root, recursive = TRUE)
 ```
