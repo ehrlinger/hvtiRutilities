@@ -1,0 +1,1 @@
+* `vignette("registered-datasets")` follows the report wording from hvtiRtemplates after 1.5.0. The box under the title gives the version date as `dated` and names the working file on a working read, and "About this run" has a `Version date` row. The vignette also explains how reports rendered with hvtiRtemplates 1.5.0 or earlier word these.
