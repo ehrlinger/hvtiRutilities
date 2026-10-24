@@ -38,8 +38,18 @@ declare_data <- function(root = getwd(), built, key = NULL) {
   }
   cfg <- study_config(root, require_data = FALSE)
   raw <- .read_study_yml(cfg$file, "declare_data")
+  manifest_path <- file.path(cfg$root, "manifest.yaml")
   if (!is.null(raw$built)) {
-    if (identical(raw$built, built)) return(invisible(FALSE))
+    if (identical(raw$built, built)) {
+      if (!is.null(key) && !identical(as.character(raw$key), key)) {
+        stop("declare_data(): _study.yml already declares ", built, " with key ",
+             if (is.null(raw$key)) "none" else paste(raw$key, collapse = ", "),
+             ". Change the key deliberately in _study.yml.", call. = FALSE)
+      }
+      # A study declared before declare_data() wrote a manifest still gets one.
+      if (!file.exists(manifest_path)) .write_manifest(list(datasets = list()), manifest_path)
+      return(invisible(FALSE))
+    }
     stop("declare_data(): _study.yml already declares ", raw$built, ", not ", built,
          ". A study has one study dataset; change it deliberately in _study.yml.", call. = FALSE)
   }
@@ -49,7 +59,6 @@ declare_data <- function(root = getwd(), built, key = NULL) {
   if (!is.null(key)) raw$key <- key
   raw <- .study_validate_shapes(raw, cfg$file, caller = "declare_data")
   .study_write_atomic(raw, cfg$file)
-  manifest_path <- file.path(cfg$root, "manifest.yaml")
   if (!file.exists(manifest_path)) .write_manifest(list(datasets = list()), manifest_path)
   invisible(TRUE)
 }

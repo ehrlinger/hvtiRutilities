@@ -63,3 +63,31 @@ test_that("an existing manifest is left untouched", {
   declare_data(root, built = "study_cohort.rds", key = "ccfid")
   expect_identical(readBin(mpath, "raw", file.size(mpath)), before)
 })
+
+test_that("a study declared before declare_data() wrote a manifest gets one on re-declaring", {
+  root <- declare_fixture()
+  declare_data(root, built = "study_cohort.rds", key = "ccfid")
+  unlink(file.path(root, "manifest.yaml"))
+  expect_false(declare_data(root, built = "study_cohort.rds"))
+  expect_length(yaml::read_yaml(file.path(root, "manifest.yaml"))$datasets, 0L)
+})
+
+test_that("re-declaring with a different key stops rather than ignoring it", {
+  root <- declare_fixture()
+  declare_data(root, built = "study_cohort.rds", key = "ccfid")
+  expect_error(declare_data(root, built = "study_cohort.rds", key = "mrn"), "with key ccfid")
+  expect_identical(yaml::read_yaml(file.path(root, "_study.yml"))$key, "ccfid")
+})
+
+test_that("a draft read of a declared, unregistered dataset caches nothing and leaves the manifest empty", {
+  root <- declare_fixture()
+  declare_data(root, built = "study_cohort.rds", key = "ccfid")
+  dd <- study_dir("datasets", root)
+  before <- list.files(dd, recursive = TRUE)
+  d <- suppressMessages(read_built(study_config(root)))
+  expect_identical(nrow(d), 3L)
+  expect_identical(list.files(dd, recursive = TRUE), before)
+  expect_length(yaml::read_yaml(file.path(root, "manifest.yaml"))$datasets, 0L)
+  saveRDS(data.frame(ccfid = 1:4), file.path(dd, "study_cohort.rds"))
+  expect_identical(nrow(suppressMessages(read_built(study_config(root)))), 4L)
+})

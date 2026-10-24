@@ -1,0 +1,3 @@
+* A draft read of a declared dataset that has never been registered no longer writes a parquet cache and an unversioned `manifest.yaml` entry. That entry broke on the next rebuild, so `verify_manifest()` failed and every draft stopped until someone registered. The read is now served from the working file, uncached, as a working read.
+* `declare_data()` writes the empty `manifest.yaml` even when `_study.yml` already names the file, so a study declared before 1.5.12 gets one. Declaring the same file with a different `key` now stops instead of ignoring the key.
+* `vignette("registered-datasets")` describes the working-read gate as it is: draft or final, in any stage folder, not the datasets and descriptive folders only.
