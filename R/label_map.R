@@ -791,7 +791,7 @@ apply_label_overrides <- function(data,
     return(data)
   }
 
-  overrides <- yaml::read_yaml(overrides_file)
+  overrides <- .read_label_yaml(overrides_file)
 
   if (!is.list(overrides) || length(overrides) == 0) {
     return(data)

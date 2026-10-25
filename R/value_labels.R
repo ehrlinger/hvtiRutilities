@@ -97,7 +97,7 @@ apply_value_labels <- function(data,
     return(data)
   }
 
-  decl <- yaml::read_yaml(value_labels_file)
+  decl <- .read_label_yaml(value_labels_file)
   if (!is.list(decl) || length(decl) == 0L) {
     return(data)
   }
@@ -142,6 +142,17 @@ apply_value_labels <- function(data,
   }
 
   data
+}
+
+## Read a study-authored label file with YAML 1.1 booleans kept as written.
+## The yaml package turns an unquoted No/Yes, y/n or on/off into a logical, in
+## keys as well as values, so `0: No` became a label named "FALSE" and a code
+## `Y:` became "TRUE". Label files hold text, never a flag, so every boolean
+## stays the string the author wrote. Not for config files such as _study.yml,
+## where `true` means TRUE.
+.read_label_yaml <- function(path) {
+  keep <- function(x) x
+  yaml::read_yaml(path, handlers = list("bool#yes" = keep, "bool#no" = keep))
 }
 
 ## Reserve the ordinal declaration's key without implementing it. Honouring

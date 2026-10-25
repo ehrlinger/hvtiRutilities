@@ -128,3 +128,38 @@ test_that("value_labels_file must be a single path", {
 test_that("data must be a data frame", {
   expect_error(apply_value_labels(1:3), "data frame")
 })
+
+# YAML 1.1 reads an unquoted No/Yes, y/n or on/off as a logical, in keys as
+# well as values. A label file holds text, so each must stay as written.
+test_that("an unquoted No/Yes stays text rather than becoming FALSE/TRUE", {
+  f <- yml("f:", "  0: No", "  1: Yes")
+  on.exit(unlink(f), add = TRUE)
+  d <- data.frame(f = c(0, 1, 0))
+
+  out <- apply_value_labels(d, f)
+
+  expect_equal(labelled::val_labels(out$f), c(No = 0, Yes = 1))
+  expect_equal(levels(r_data_types(out, use_value_labels = TRUE)$f),
+               c("No", "Yes"))
+})
+
+test_that("a quoted No/Yes gives the same labels", {
+  f <- yml("f:", "  0: 'No'", "  1: \"Yes\"")
+  on.exit(unlink(f), add = TRUE)
+  d <- data.frame(f = c(0, 1))
+
+  out <- apply_value_labels(d, f)
+
+  expect_equal(labelled::val_labels(out$f), c(No = 0, Yes = 1))
+})
+
+test_that("unquoted Y/N codes on a character column keep their spelling", {
+  f <- yml("g:", "  Y: Yes", "  N: No", "  on: On", "  off: Off")
+  on.exit(unlink(f), add = TRUE)
+  d <- data.frame(g = c("Y", "N", "on", "off"))
+
+  out <- apply_value_labels(d, f)
+
+  expect_equal(labelled::val_labels(out$g),
+               c(Yes = "Y", No = "N", On = "on", Off = "off"))
+})
