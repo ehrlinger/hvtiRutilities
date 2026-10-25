@@ -161,3 +161,17 @@ test_that("clean_labels is a working alias for apply_label_overrides", {
   )
   expect_equal(result$label[result$key == "age"], "Age (years)")
 })
+
+# YAML 1.1 reads an unquoted No or n as a logical. An override label is text,
+# and a key is a variable name, so both must stay as written.
+test_that("apply_label_overrides keeps an unquoted No label and a variable n", {
+  tmp <- tempfile(fileext = ".yml")
+  on.exit(unlink(tmp), add = TRUE)
+  writeLines(c("f: No", "n: Yes"), tmp)
+  dta <- data.frame(f = 1, n = 2)
+
+  out <- apply_label_overrides(dta, overrides_file = tmp)
+
+  expect_equal(labelled::var_label(out$f), "No")
+  expect_equal(labelled::var_label(out$n), "Yes")
+})
