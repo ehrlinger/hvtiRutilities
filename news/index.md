@@ -1,5 +1,20 @@
 # Changelog
 
+## hvtiRutilities 1.5.13
+
+- [`apply_value_labels()`](https://ehrlinger.github.io/hvtiRutilities/reference/apply_value_labels.md)
+  and
+  [`apply_label_overrides()`](https://ehrlinger.github.io/hvtiRutilities/reference/apply_label_overrides.md)
+  keep an unquoted `No`, `Yes`, `y`, `n`, `on` or `off` in a label file
+  as the text written. YAML 1.1 reads those as `FALSE` and `TRUE`, so
+  the declaration `0: No` / `1: Yes` had attached value labels named
+  `FALSE` and `TRUE`, and `r_data_types(use_value_labels = TRUE)` made
+  those the factor levels. Codes were affected too: `Y: Yes` on a
+  character column became the code `"TRUE"`, which matched nothing in
+  the data, and an override for a variable named `n` was silently lost.
+  Quoting the values, the old workaround, still works and is no longer
+  needed.
+
 ## hvtiRutilities 1.5.12
 
 - [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)

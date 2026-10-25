@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.12</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.13</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -56,6 +56,11 @@
       <small>Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.5.13" id="hvtirutilities-1513">hvtiRutilities 1.5.13<a class="anchor" aria-label="anchor" href="#hvtirutilities-1513"></a></h2>
+<ul><li>
+<code><a href="../reference/apply_value_labels.html">apply_value_labels()</a></code> and <code><a href="../reference/apply_label_overrides.html">apply_label_overrides()</a></code> keep an unquoted <code>No</code>, <code>Yes</code>, <code>y</code>, <code>n</code>, <code>on</code> or <code>off</code> in a label file as the text written. YAML 1.1 reads those as <code>FALSE</code> and <code>TRUE</code>, so the declaration <code>0: No</code> / <code>1: Yes</code> had attached value labels named <code>FALSE</code> and <code>TRUE</code>, and <code>r_data_types(use_value_labels = TRUE)</code> made those the factor levels. Codes were affected too: <code>Y: Yes</code> on a character column became the code <code>"TRUE"</code>, which matched nothing in the data, and an override for a variable named <code>n</code> was silently lost. Quoting the values, the old workaround, still works and is no longer needed.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.5.12" id="hvtirutilities-1512">hvtiRutilities 1.5.12<a class="anchor" aria-label="anchor" href="#hvtirutilities-1512"></a></h2>
 <ul><li><p><code><a href="../reference/update_manifest.html">update_manifest()</a></code> now moves the registered version it replaces into <code>datasets/_archive/</code>, with its <code>.schema.csv</code> and build record, so only the current version sits beside the source. <code>built_20261021.parquet</code>, <code>built_20261021_r2.parquet</code> and their schema files no longer pile up in <code>datasets/</code>; Quarto skips <code>_archive/</code> as it skips every folder starting with <code>_</code>, the convention <code>hvtiRtemplates::upgrade_job()</code> uses for a job’s backups. <code>manifest.yaml</code> is unchanged: it records bare names, and <code><a href="../reference/verify_manifest.html">verify_manifest()</a></code> finds each earlier version beside the source or in <code>_archive/</code> and checks it by SHA-256 as before. <code><a href="../reference/read_built.html">read_built()</a></code> does the same, so a <code>manifest.yaml</code> restored from version control to reproduce an earlier version still reads it after a later registration archived it. A version file that is a symlink, or that another registered dataset reads as its source (a version’s schema registered as a dictionary, say), stays beside the source. A study registered before this release needs no migration; its next registration moves every earlier version still beside the source. A move that fails, because a file of that name is already in <code>_archive/</code>, leaves the file where it is with a warning, and a new version never takes a name already in <code>_archive/</code>. Verify an archived study with this release or later: an older <code><a href="../reference/verify_manifest.html">verify_manifest()</a></code> looks only beside the source and reports the archived versions as missing.</p></li>
