@@ -50,7 +50,7 @@ Six workflows. Know what each one fails on before you push:
 | `lint.yaml` | [`lintr::lint_package()`](https://lintr.r-lib.org/reference/lint.html) under `LINTR_ERROR_ON_LINT`, which is what makes it **fail** rather than merely report — see the 80/135 bullet below. Plus a **docs-current** job that runs `roxygenise()` and then `git diff --exit-code man/ NAMESPACE DESCRIPTION` |
 | `pkgdown.yaml` | the site build, including a topic missing from the reference index |
 | `house-style.yaml` | composes `.house-style-tools/compose-house-style.R` against `repos.yml`; it asserts the registry still contains this repo’s path rather than failing later with a misleading cause |
-| `test-coverage.yaml` | coverage upload |
+| `test-coverage.yaml` | coverage upload. **Post-merge only** since 2026-10-26: it ran the whole suite a second time on every PR, and is not a required check |
 
 ## Generated files: never hand-edit
 
@@ -234,10 +234,11 @@ guess.
   which can still ask for an approval on commits GitHub cannot attribute
   to a verified author.
 
-  The required status checks are the ten CI jobs `docs-current`,
-  `house-style`, `lint`, `pkgdown`, `test-coverage` and the five
-  `R CMD check` platforms. ⚠️ `check-manual` is **not** among them, so a
-  PDF-manual failure does not block a merge. Read its result yourself.
+  The required status checks are six CI jobs, measured 2026-10-26:
+  `docs-current`, `house-style`, `lint`, `news-fragment`, `pkgdown` and
+  `ubuntu-latest (release)`. `test-coverage` was dropped that day when
+  coverage moved post-merge. ⚠️ `check-manual` is **not** among them, so
+  a PDF-manual failure does not block a merge. Read its result yourself.
 
   `require_code_owner_review` is **false** here. Adding a `CODEOWNERS`
   file would not by itself change anything until that flag is turned on;

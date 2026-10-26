@@ -51,7 +51,7 @@ render with `REGISTER = FALSE`.
 ``` r
 root <- file.path(tempdir(), "declare-example")
 suppressMessages(study_setup(root, "Example", 1L, renv = FALSE))
-#> Study: /tmp/RtmpAOUhZd/declare-example
+#> Study: /tmp/RtmpD3aJau/declare-example
 #> 
 #> [x] _study.yml — study: Example
 #> [ ] renv.lock — no renv.lock; run renv::init() in the study project

@@ -96,7 +96,7 @@
 </tr><tr><td><code>house-style.yaml</code></td>
 <td>composes <code>.house-style-tools/compose-house-style.R</code> against <code>repos.yml</code>; it asserts the registry still contains this repo’s path rather than failing later with a misleading cause</td>
 </tr><tr><td><code>test-coverage.yaml</code></td>
-<td>coverage upload</td>
+<td>coverage upload. <strong>Post-merge only</strong> since 2026-10-26: it ran the whole suite a second time on every PR, and is not a required check</td>
 </tr></tbody></table></div>
 <div class="section level2">
 <h2 id="generated-files-never-hand-edit">Generated files: never hand-edit<a class="anchor" aria-label="anchor" href="#generated-files-never-hand-edit"></a></h2>
@@ -162,7 +162,7 @@
 <pre><code>gh api repos/ehrlinger/hvtiRutilities/rules/branches/main \
   --jq '.[] | {type, params: .parameters}'</code></pre>
 <p><strong>A PR needs zero approving reviews.</strong> <code>required_approving_review_count</code> is <strong>0</strong>, so a PR reaches <code>mergeStateStatus=CLEAN</code> once its required checks pass, with no approval at all. It was <strong>1</strong> until at least 2026-09-02; the change applies across the family (see the table below). ⚠️ So <code>CLEAN</code> means the checks passed, <strong>not</strong> that anyone reviewed the change. An agent must still not merge its own PR: the maintainer merges, per the bullet above. <code>require_extra_approval_for_unattributed_changes</code> is <strong>true</strong>, which can still ask for an approval on commits GitHub cannot attribute to a verified author.</p>
-<p>The required status checks are the ten CI jobs <code>docs-current</code>, <code>house-style</code>, <code>lint</code>, <code>pkgdown</code>, <code>test-coverage</code> and the five <code>R CMD check</code> platforms. ⚠️ <code>check-manual</code> is <strong>not</strong> among them, so a PDF-manual failure does not block a merge. Read its result yourself.</p>
+<p>The required status checks are six CI jobs, measured 2026-10-26: <code>docs-current</code>, <code>house-style</code>, <code>lint</code>, <code>news-fragment</code>, <code>pkgdown</code> and <code>ubuntu-latest (release)</code>. <code>test-coverage</code> was dropped that day when coverage moved post-merge. ⚠️ <code>check-manual</code> is <strong>not</strong> among them, so a PDF-manual failure does not block a merge. Read its result yourself.</p>
 <p><code>require_code_owner_review</code> is <strong>false</strong> here. Adding a <code>CODEOWNERS</code> file would not by itself change anything until that flag is turned on; doing both changes who can approve what.</p>
 <p><strong>Copilot reviews on open and does not re-review when you push.</strong> <code>copilot_code_review.review_on_push</code> is <code>false</code>, so a review posted when the PR opened stays as posted after you fix what it found — pushing does not clear it, and re-requesting the reviewer through the API does not reliably re-trigger it. Say in the PR what you changed and why instead of waiting for a second pass. In the other direction, <code>dismiss_stale_reviews_on_push</code> and <code>require_last_push_approval</code> are both <code>false</code>, so a human approval <strong>survives</strong> later pushes to the branch. Nothing re-gates after an approval lands.</p>
 <p>⚠️ <strong>The family is not uniform. Do not carry these facts to a sibling repo unchecked.</strong> All fourteen <code>hvti*</code> repositories were checked on 2026-09-23 (approval count and code-owner flag only; the other rules were read for this repo alone):</p>
