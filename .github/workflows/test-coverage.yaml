@@ -6,16 +6,18 @@ on:
   # package, and no step in this workflow reads it from the checkout. A push
   # that touches only .claude therefore skips this run.
   #
-  # A pull request never skips it. This workflow reports a required status
-  # check in the `protect main` ruleset, and a required check whose workflow
-  # never starts never reports, so a .claude-only pull request waits on it
-  # forever and cannot merge. ehrlinger/hvtiR#65, a house-style recompose, sat
-  # at "Expected -- Waiting for status to be reported" for exactly that reason.
+  # Not on pull_request: coverage runs the whole suite a second time,
+  # instrumented, and took 35 to 50 minutes a run by October 2026, the last
+  # check every PR waited on. A coverage drop now shows on main, after the merge.
+  # test-coverage was removed from the ruleset's required checks on 2026-10-26 for
+  # this change. Make it required again and every PR waits on a check that never
+  # reports, as ehrlinger/hvtiR#65 did at "Expected -- Waiting for status to be
+  # reported".
   push:
     paths-ignore:
       - '.claude/**'
     branches: [main]
-  pull_request:
+  workflow_dispatch:
 
 name: test-coverage.yaml
 
