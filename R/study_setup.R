@@ -255,10 +255,48 @@
   lock_ok <- !dir.exists(lock) && file.exists(lock) && isTRUE(tryCatch(
     is.list(jsonlite::read_json(lock)$R), error = function(e) FALSE
   ))
-  profile_ok <- !dir.exists(profile) && file.exists(profile) &&
-    any(grepl('source("renv/activate.R")', readLines(profile, warn = FALSE), fixed = TRUE))
+  profile_ok <- !dir.exists(profile) && file.exists(profile) && .sources_renv_activate(profile)
   c(renv = file.exists(file.path(root, "renv", "activate.R")),
     .Rprofile = profile_ok, renv.lock = lock_ok)
+}
+
+# Whether a .Rprofile calls source() on activate.R. A study's own profile may
+# build the path, as in source(file.path(root, "renv", "activate.R")), possibly
+# across lines or through a variable assigned that path, so the file is parsed
+# rather than matched line by line: comments and strings then never count, and
+# neither does a path built but not sourced. A profile that does not parse
+# cannot run, so it is unsound.
+.sources_renv_activate <- function(profile) {
+  exprs <- tryCatch(parse(profile, keep.source = FALSE), error = function(e) NULL)
+  if (is.null(exprs)) return(FALSE)
+  calls <- list()
+  collect <- function(e) {
+    if (is.call(e)) {
+      calls[[length(calls) + 1L]] <<- e
+      lapply(as.list(e), collect)
+    }
+    invisible()
+  }
+  lapply(exprs, collect)
+  unqualify <- function(e) {
+    if (is.call(e) && identical(e[[1L]], as.name("::"))) e[[3L]] else e
+  }
+  mentions <- function(e, vars) {
+    if (is.character(e)) return(any(grepl("(^|/)activate\\.R$", e)))
+    if (is.symbol(e)) return(as.character(e) %in% vars)
+    is.call(e) && any(vapply(as.list(e)[-1L], mentions, logical(1L), vars = vars))
+  }
+  assigned <- Filter(function(e) {
+    as.character(unqualify(e[[1L]]))[1L] %in% c("<-", "=", "<<-") && is.symbol(e[[2L]]) &&
+      mentions(e[[3L]], character())
+  }, calls)
+  vars <- vapply(assigned, function(e) as.character(e[[2L]]), character(1L))
+  any(vapply(calls, function(e) {
+    fn <- unqualify(e[[1L]])
+    if (!is.symbol(fn) || !as.character(fn) %in% c("source", "sys.source")) return(FALSE)
+    file <- tryCatch(match.call(match.fun(as.character(fn)), e)$file, error = function(err) NULL)
+    !is.null(file) && mentions(file, vars)
+  }, logical(1L)))
 }
 
 # The study-setup command's renv step (qhsprograms study_setup/workflow.py):

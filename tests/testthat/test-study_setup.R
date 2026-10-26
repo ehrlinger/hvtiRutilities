@@ -783,6 +783,16 @@ test_that("renv = TRUE does not mistake mere paths for a complete environment", 
       writeLines("# activate", file.path(root, "renv", "activate.R"))
       writeLines("options(digits = 4)", file.path(root, ".Rprofile"))
       write_lock(root)
+    },
+    unsourced_path = function(root) {
+      write_renv_start(root)
+      writeLines('activate <- file.path("renv", "activate.R")', file.path(root, ".Rprofile"))
+      write_lock(root)
+    },
+    inline_comment = function(root) {
+      write_renv_start(root)
+      writeLines('options(digits = 4) # source("renv/activate.R")', file.path(root, ".Rprofile"))
+      write_lock(root)
     }
   )
   for (case in names(cases)) {
@@ -791,6 +801,68 @@ test_that("renv = TRUE does not mistake mere paths for a complete environment", 
     expect_error(study_setup(root, "Legacy study", 42L, adopt = TRUE, renv = TRUE, cleanup = FALSE),
                  "partial renv environment", info = case)
   }
+  expect_null(calls$exprs)
+})
+
+# Shaped like the custom .Rprofile of an adopted study: path-independent,
+# because knitr starts R in the book folder, and refusing renv under the wrong
+# R minor version. It activates renv through a built path, never the literal.
+custom_rprofile <- function(activate) {
+  c(
+    "local({",
+    "  root <- normalizePath(getwd())",
+    "  while (!file.exists(file.path(root, \"renv.lock\"))) {",
+    "    parent <- dirname(root)",
+    "    if (identical(parent, root)) return(invisible())",
+    "    root <- parent",
+    "  }",
+    "  # The study library is built for one R minor version; refuse any other.",
+    "  have <- paste(R.version$major, sub(\"[.].*\", \"\", R.version$minor), sep = \".\")",
+    "  if (!identical(have, \"4.5\")) {",
+    "    warning(\"renv not activated: the library is built for R 4.5\", call. = FALSE)",
+    "    return(invisible())",
+    "  }",
+    activate,
+    "})"
+  )
+}
+
+test_that("a .Rprofile is sound when it sources activate.R by a literal or a built path", {
+  sound <- list(
+    built = custom_rprofile('  Sys.setenv(RENV_PROJECT = root); source(file.path(root, "renv", "activate.R"))'),
+    literal = 'source("renv/activate.R")',
+    variable = c('activate <- file.path("renv", "activate.R")', "source(activate)"),
+    pasted = 'source(paste0(getwd(), "/renv/activate.R"))',
+    multiline = custom_rprofile(c("  Sys.setenv(RENV_PROJECT = root)", "  source(file.path(",
+                                  '    root, "renv",', '    "activate.R"', "  ))"))
+  )
+  unsound <- list(
+    no_activation = custom_rprofile("  Sys.setenv(RENV_PROJECT = root)"),
+    commented = c('# source("renv/activate.R")', "options(digits = 4)"),
+    commented_built = custom_rprofile('  #  source(file.path(root, "renv", "activate.R"))'),
+    inline_comment = 'options(digits = 4) # source(file.path("renv", "activate.R"))',
+    unused_path = 'activate <- file.path("renv", "activate.R")',
+    in_a_string = "message('source(\"renv/activate.R\")')",
+    unparseable = 'source("renv/activate.R"'
+  )
+  for (case in c(names(sound), names(unsound))) {
+    root <- withr::local_tempdir()
+    write_renv_start(root)
+    writeLines(c(sound, unsound)[[case]], file.path(root, ".Rprofile"))
+    expect_identical(.study_renv_parts(root)[[".Rprofile"]], case %in% names(sound), info = case)
+  }
+})
+
+test_that("renv = TRUE retains a study whose .Rprofile activates renv through a built path", {
+  calls <- new.env()
+  local_mocked_bindings(.study_rscript = fake_rscript(calls))
+  root <- withr::local_tempdir()
+  write_renv_start(root)
+  writeLines(custom_rprofile('  Sys.setenv(RENV_PROJECT = root); source(file.path(root, "renv", "activate.R"))'),
+             file.path(root, ".Rprofile"))
+  write_lock(root)
+  status <- study_setup(root, "Legacy study", 42L, adopt = TRUE, renv = TRUE, cleanup = FALSE)
+  expect_identical(attr(status, "renv"), "retained")
   expect_null(calls$exprs)
 })
 
