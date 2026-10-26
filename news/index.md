@@ -1,5 +1,23 @@
 # Changelog
 
+## hvtiRutilities 1.5.14
+
+- [`study_setup()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md)
+  accepts a study’s own `.Rprofile` that activates renv through a built
+  path, such as `source(file.path(root, "renv", "activate.R"))`, whether
+  written on one line or across several, or through a variable holding
+  that path. It had required the literal `source("renv/activate.R")`, so
+  `adopt = TRUE` stopped on studies whose path-independent `.Rprofile`
+  was written by hand, reporting a partial renv environment with
+  `.Rprofile` missing or invalid. The `.Rprofile` is now parsed rather
+  than searched line by line, so the check needs an actual
+  [`source()`](https://rdrr.io/r/base/source.html) call on `activate.R`:
+  a mention in a comment or a string, or a path built and never sourced,
+  does not count, and a `.Rprofile` that does not parse is refused. A
+  `.Rprofile` that never activates renv, the half-finished
+  [`renv::init()`](https://rstudio.github.io/renv/reference/init.html)
+  the check guards against, is still refused.
+
 ## hvtiRutilities 1.5.13
 
 - [`apply_value_labels()`](https://ehrlinger.github.io/hvtiRutilities/reference/apply_value_labels.md)

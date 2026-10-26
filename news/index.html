@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.13</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.14</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -56,6 +56,11 @@
       <small>Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.5.14" id="hvtirutilities-1514">hvtiRutilities 1.5.14<a class="anchor" aria-label="anchor" href="#hvtirutilities-1514"></a></h2>
+<ul><li>
+<code><a href="../reference/study_setup.html">study_setup()</a></code> accepts a study’s own <code>.Rprofile</code> that activates renv through a built path, such as <code>source(file.path(root, "renv", "activate.R"))</code>, whether written on one line or across several, or through a variable holding that path. It had required the literal <code>source("renv/activate.R")</code>, so <code>adopt = TRUE</code> stopped on studies whose path-independent <code>.Rprofile</code> was written by hand, reporting a partial renv environment with <code>.Rprofile</code> missing or invalid. The <code>.Rprofile</code> is now parsed rather than searched line by line, so the check needs an actual <code><a href="https://rdrr.io/r/base/source.html" class="external-link">source()</a></code> call on <code>activate.R</code>: a mention in a comment or a string, or a path built and never sourced, does not count, and a <code>.Rprofile</code> that does not parse is refused. A <code>.Rprofile</code> that never activates renv, the half-finished <code><a href="https://rstudio.github.io/renv/reference/init.html" class="external-link">renv::init()</a></code> the check guards against, is still refused.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.5.13" id="hvtirutilities-1513">hvtiRutilities 1.5.13<a class="anchor" aria-label="anchor" href="#hvtirutilities-1513"></a></h2>
 <ul><li>
