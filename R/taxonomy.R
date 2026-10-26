@@ -180,6 +180,7 @@ hvti_taxonomy <- function() {
     c("rfr",   "Random forest regression",  "analyses",      "random forest, regression outcome"),
     c("sid",   "Random forest clustering",  "analyses",      "unsupervised sidClustering forest with PAM over K"),
     c("vt",    "Virtual twins",             "analyses",      "per-arm forests, swapped-arm prediction, RMST difference"),
+    c("rhf",   "Random hazard forest",      "analyses",      "time-varying covariates, counting-process hazard"),
     c("vp",    "VarPro",                    "analyses",      "rule-based variable screen: coverage, noise and stability checks"),
     c("nb",    "Boosting",                  "analyses",      "boosting models (Boostmtree, BoostMLR)"),
     stringsAsFactors = FALSE

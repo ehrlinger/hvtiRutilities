@@ -115,17 +115,19 @@ test_that("the datasets folder holds the prefixes it is expected to", {
                   c("bd", "vars", "dt", "si", "mi"))
 })
 
-test_that("the forest family is the outcome rows, umbrellas, sid and vt", {
+test_that("the forest family is the outcome rows, umbrellas, sid, vt and rhf", {
   # The family splits on the OUTCOME axis. Pinning the set catches the two
   # ways it can regress: a fourth outcome row appearing without a spec, and
-  # `rfr`, `sid` or `vt` being dropped back out while the job catalog still
-  # carries rows for them -- which would fail hvtiRtemplates' direction-one
-  # guard in a different repository, far from the edit that caused it.
+  # `rfr`, `sid`, `vt` or `rhf` being dropped back out while the job catalog
+  # still carries rows for them -- which would fail hvtiRtemplates' direction-
+  # one guard in a different repository, far from the edit that caused it.
+  # `rhf` is matched on its own: "^rf" does not see it.
   tx <- hvti_taxonomy()
-  forest <- tx$prefix[grepl("^(rf|sid|vt)", tx$prefix) & !is.na(tx$prefix)]
-  expect_setequal(forest, c("rf", "rfsrc", "rfs", "rfc", "rfr", "sid", "vt"))
-  expect_true(all(tx$folder[match(c("rfs", "rfc", "rfr", "sid", "vt"),
+  forest <- tx$prefix[grepl("^(rf|rhf|sid|vt)", tx$prefix) & !is.na(tx$prefix)]
+  expect_setequal(forest, c("rf", "rfsrc", "rfs", "rfc", "rfr", "rhf", "sid", "vt"))
+  expect_true(all(tx$folder[match(c("rfs", "rfc", "rfr", "rhf", "sid", "vt"),
                                   tx$prefix)] == "analyses"))
+  expect_false(tx$umbrella[tx$prefix %in% "rhf"])
 })
 
 test_that("the outcome rows name their outcome and the umbrellas say so", {

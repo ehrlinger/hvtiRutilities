@@ -1,0 +1,1 @@
+* `hvti_taxonomy()` has an `rhf` row, "Random hazard forest", in `analyses`: random hazard forests on counting-process data with time-varying covariates. It is the prefix of the `rhf-fit` and `rhf-explain` templates in hvtiRtemplates.
