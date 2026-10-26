@@ -783,6 +783,16 @@ test_that("renv = TRUE does not mistake mere paths for a complete environment", 
       writeLines("# activate", file.path(root, "renv", "activate.R"))
       writeLines("options(digits = 4)", file.path(root, ".Rprofile"))
       write_lock(root)
+    },
+    unsourced_path = function(root) {
+      write_renv_start(root)
+      writeLines('activate <- file.path("renv", "activate.R")', file.path(root, ".Rprofile"))
+      write_lock(root)
+    },
+    inline_comment = function(root) {
+      write_renv_start(root)
+      writeLines('options(digits = 4) # source("renv/activate.R")', file.path(root, ".Rprofile"))
+      write_lock(root)
     }
   )
   for (case in names(cases)) {
@@ -822,12 +832,18 @@ test_that("a .Rprofile is sound when it sources activate.R by a literal or a bui
     built = custom_rprofile('  Sys.setenv(RENV_PROJECT = root); source(file.path(root, "renv", "activate.R"))'),
     literal = 'source("renv/activate.R")',
     variable = c('activate <- file.path("renv", "activate.R")', "source(activate)"),
-    pasted = 'source(paste0(getwd(), "/renv/activate.R"))'
+    pasted = 'source(paste0(getwd(), "/renv/activate.R"))',
+    multiline = custom_rprofile(c("  Sys.setenv(RENV_PROJECT = root)", "  source(file.path(",
+                                  '    root, "renv",', '    "activate.R"', "  ))"))
   )
   unsound <- list(
     no_activation = custom_rprofile("  Sys.setenv(RENV_PROJECT = root)"),
     commented = c('# source("renv/activate.R")', "options(digits = 4)"),
-    commented_built = custom_rprofile('  #  source(file.path(root, "renv", "activate.R"))')
+    commented_built = custom_rprofile('  #  source(file.path(root, "renv", "activate.R"))'),
+    inline_comment = 'options(digits = 4) # source(file.path("renv", "activate.R"))',
+    unused_path = 'activate <- file.path("renv", "activate.R")',
+    in_a_string = "message('source(\"renv/activate.R\")')",
+    unparseable = 'source("renv/activate.R"'
   )
   for (case in c(names(sound), names(unsound))) {
     root <- withr::local_tempdir()
