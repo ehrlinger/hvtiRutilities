@@ -62,7 +62,7 @@ check_data_updates(cfg)
 #> [7] status               is_latest            detail              
 #> <0 rows> (or 0-length row.names)
 study_status(root)
-#> Study: /tmp/RtmpD3aJau/check-data-updates-example
+#> Study: /tmp/Rtmpbdi2qe/check-data-updates-example
 #> 
 #> [x] _study.yml — study: Example
 #> [ ] renv.lock — no renv.lock; run renv::init() in the study project
