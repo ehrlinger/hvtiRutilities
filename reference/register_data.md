@@ -165,19 +165,19 @@ utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
                  file.path(root, "00_datasets", "built.csv"),
                  row.names = FALSE)
 register_data(root, built = "built.csv", key = "ccfid")
-#> Study: /tmp/RtmpYAF5Sf/register-data-example
+#> Study: /tmp/RtmpGalCoE/register-data-example
 #> 
 #> [x] _study.yml — study: Example
 #> [ ] renv.lock — no renv.lock; run renv::init() in the study project
 #> [x] manifest.yaml — 1 dataset entry verified by checksum
-#> [x] dataset — built.csv, registered as built_20261025.parquet
+#> [x] dataset — built.csv, registered as built_20261026.parquet
 #> [ ] provenance — no .qmd/.Rmd sources found; 0 sidecars
 #> 
 #> 0 .R  |  0 .qmd/.Rmd  |  0 .sas  |  0 provenance sidecars
 # The CSV is kept; the registered version is a dated Parquet file.
 list.files(file.path(root, "00_datasets"))
-#> [1] "built.csv"                 "built_20261025.parquet"   
-#> [3] "built_20261025.schema.csv"
+#> [1] "built.csv"                 "built_20261026.parquet"   
+#> [3] "built_20261026.schema.csv"
 unlink(root, recursive = TRUE)
 
 # An additional dataset is registered with role = "named", under a name of

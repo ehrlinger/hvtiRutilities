@@ -52,7 +52,7 @@ rewrites it, so comments in `_study.yml` are not kept.
 root <- file.path(tempdir(), "update-identity-example")
 study_setup(root, "Typed title", 42L, identity_source = "manual",
             renv = FALSE)
-#> Study: /tmp/RtmpYAF5Sf/update-identity-example
+#> Study: /tmp/RtmpGalCoE/update-identity-example
 #> 
 #> [~] _study.yml — study: Typed title; identity entered by hand, confirm it with study-setup --verify
 #> [ ] renv.lock — no renv.lock; run renv::init() in the study project
