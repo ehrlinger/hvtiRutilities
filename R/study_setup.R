@@ -249,14 +249,19 @@
 # Which of the three pieces of a renv environment are present and sound: a
 # renv/ folder holding activate.R, a .Rprofile that sources it, and a
 # renv.lock that parses as a lockfile. A path that merely exists is not enough.
+# A study's own .Rprofile may build the path to activate.R, as in
+# source(file.path(root, "renv", "activate.R")), so any uncommented line that
+# sources or builds a path to activate.R counts; one never naming it does not.
 .study_renv_parts <- function(root) {
   lock <- file.path(root, "renv.lock")
   profile <- file.path(root, ".Rprofile")
   lock_ok <- !dir.exists(lock) && file.exists(lock) && isTRUE(tryCatch(
     is.list(jsonlite::read_json(lock)$R), error = function(e) FALSE
   ))
-  profile_ok <- !dir.exists(profile) && file.exists(profile) &&
-    any(grepl('source("renv/activate.R")', readLines(profile, warn = FALSE), fixed = TRUE))
+  profile_ok <- !dir.exists(profile) && file.exists(profile) && any(grepl(
+    "source\\s*\\(.*activate\\.R|file\\.path\\(.*[\"']activate\\.R[\"']",
+    grep("^\\s*#", readLines(profile, warn = FALSE), value = TRUE, invert = TRUE)
+  ))
   c(renv = file.exists(file.path(root, "renv", "activate.R")),
     .Rprofile = profile_ok, renv.lock = lock_ok)
 }
