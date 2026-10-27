@@ -1,5 +1,13 @@
 # Changelog
 
+## hvtiRutilities 1.5.15
+
+- [`hvti_taxonomy()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_taxonomy.md)
+  has an `rhf` row, “Random hazard forest”, in `analyses`: random hazard
+  forests on counting-process data with time-varying covariates. It is
+  the prefix of the `rhf-fit` and `rhf-explain` templates in
+  hvtiRtemplates.
+
 ## hvtiRutilities 1.5.14
 
 - [`study_setup()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md)

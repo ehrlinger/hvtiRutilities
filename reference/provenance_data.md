@@ -69,10 +69,10 @@ cfg <- study_config(root)
 str(provenance_data("study", cfg = cfg))
 #> List of 6
 #>  $ dataset: chr "study"
-#>  $ path   : chr "00_datasets/built_20261026.parquet"
+#>  $ path   : chr "00_datasets/built_20261027.parquet"
 #>  $ role   : chr "analysis"
 #>  $ bytes  : num 1162
-#>  $ mtime  : chr "2026-10-26T19:20:55Z"
+#>  $ mtime  : chr "2026-10-27T17:02:58Z"
 #>  $ sha256 : chr "7d1471bddcd85ad6822ca576be95dba93fa3a2b2a272b1c4cca0b6c918bbcd7a"
 unlink(root, recursive = TRUE)
 ```
