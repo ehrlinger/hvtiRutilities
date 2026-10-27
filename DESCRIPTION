@@ -19,7 +19,7 @@ Description: Study and data utilities for the Cardiovascular Outcomes,
   Institute (HVTI) at the Cleveland Clinic. The package sets up a standard
   study directory layout and resolves paths within it; reads clinical data
   and converts variable types; manages variable and value labels; registers
-  datasets in a study data contract and records manifests, checksums and
+  datasets in a study data contract and records manifests, file hashes and
   provenance; caches expensive model fits; defines the analysis taxonomy that
   names jobs and their files; ports common 'SAS' procedures such as
   'PROC MEANS' and 'PROC FREQ' to R; and compares R results with 'SAS'
