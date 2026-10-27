@@ -1,6 +1,6 @@
 Package: hvtiRutilities
 Type: Package
-Title: A Collection of Utilities for Use by HVTI CORR Group at the Cleveland Clinic
+Title: Study and Data Utilities for the HVTI CORR Group
 Version: 1.5.15
 Date: 2026-10-27
 Authors@R: c(
@@ -14,8 +14,16 @@ License: GPL-3
 Encoding: UTF-8
 URL: https://github.com/ehrlinger/hvtiRutilities, https://ehrlinger.github.io/hvtiRutilities/
 BugReports: https://github.com/ehrlinger/hvtiRutilities/issues
-Description: R utilities for the clinical investigations statistics group within
-  The Heart & Vascular Institute at the Cleveland Clinic.
+Description: Study and data utilities for the Cardiovascular Outcomes,
+  Registries and Research (CORR) group of the Heart, Vascular and Thoracic
+  Institute (HVTI) at the Cleveland Clinic. The package sets up a standard
+  study directory layout and resolves paths within it; reads clinical data
+  and converts variable types; manages variable and value labels; registers
+  datasets in a study data contract and records manifests, checksums and
+  provenance; caches expensive model fits; defines the analysis taxonomy that
+  names jobs and their files; ports common 'SAS' procedures such as
+  'PROC MEANS' and 'PROC FREQ' to R; and compares R results with 'SAS'
+  reference output.
 Depends:
     R (>= 4.4.0)
 Imports:
