@@ -229,6 +229,20 @@ test_that("a seeded fit leaves the stream in one state, computed or loaded", {
   expect_identical(get(".Random.seed", envir = globalenv()), seeded)
 })
 
+test_that("a seeded fit that fails still leaves the stream seeded", {
+  dir <- withr::local_tempdir()
+  withr::local_seed(1)
+  set.seed(42)
+  seeded <- get(".Random.seed", envir = globalenv())
+  set.seed(7)
+  expect_error(cache_fit("r8", {
+    stats::runif(3)
+    stop("boom")
+  }, seed = 42, dir = dir), "boom")
+  expect_identical(get(".Random.seed", envir = globalenv()), seeded)
+  expect_false(file.exists(file.path(dir, "r8.rds")))
+})
+
 test_that("without a seed the code draws from the caller's stream", {
   dir <- withr::local_tempdir()
   withr::local_seed(1)

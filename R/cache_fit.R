@@ -79,11 +79,11 @@
 #' because there would be nothing to cache.
 #'
 #' When \code{seed} is given, \code{cache_fit()} calls \code{set.seed(seed)}
-#' before the code runs and again after it, and calls it once when the result
-#' is loaded instead. A computed and a loaded result therefore leave the global
-#' random number stream in the same state, the one \code{set.seed(seed)} sets,
-#' so code after \code{cache_fit()} draws the same numbers whether or not the
-#' cache was hit. Seed any later random step yourself rather than relying on
+#' before the code runs and again after it, even when it fails, and calls it
+#' once when the result is loaded instead. A computed and a loaded result
+#' therefore leave the global random number stream in the same state, the one
+#' \code{set.seed(seed)} sets, so code after \code{cache_fit()} draws the
+#' same numbers whether or not the cache was hit. Seed any later random step yourself rather than relying on
 #' that state. When \code{seed} is \code{NULL}, \code{cache_fit()} sets no
 #' seed: the code draws from the caller's stream, and a loaded result leaves
 #' the stream untouched. If that code consumes random numbers, the result is
@@ -222,8 +222,8 @@ cache_fit <- function(name, code, seed = NULL, dir = study_dir("estimates"),
   }
   # is.finite() rules out Inf and NaN, which satisfy `seed == round(seed)`,
   # and the range test rules out whole numbers that as.integer() would turn
-  # into NA. Either would reach set.seed() as NA, which is not the
-  # seed the caller asked for.
+  # into NA. Either would reach set.seed() as NA, which fails there with a
+  # message that does not name cache_fit() or its argument.
   if (!is.null(seed) && (!is.numeric(seed) || length(seed) != 1L ||
                            is.na(seed) || !is.finite(seed) ||
                            seed != round(seed) ||
@@ -289,17 +289,17 @@ cache_fit <- function(name, code, seed = NULL, dir = study_dir("estimates"),
 }
 
 # Runs the code in a child scope of the caller. With a seed, set.seed() runs
-# before the code and again after it, so a computation leaves the stream where
-# a cache hit does (cache_fit() seeds a hit too). Nothing saves or restores
-# .Random.seed in the global environment. Without a seed, compares .Random.seed
+# before the code and again on exit, error included, so a computation leaves
+# the stream where a cache hit does (cache_fit() seeds a hit too). Nothing
+# saves or restores .Random.seed in the global environment. Without a seed, compares .Random.seed
 # before and after to detect random number use anywhere in the computation,
 # including inside compiled package code.
 .cache_run <- function(code, env, seed) {
   scope <- new.env(parent = env)
   if (!is.null(seed)) {
     set.seed(seed)
+    on.exit(set.seed(seed), add = TRUE)
     value <- eval(code, envir = scope)
-    set.seed(seed)
     return(list(value = value, reproducible = TRUE))
   }
   before <- get0(".Random.seed", envir = globalenv(), inherits = FALSE)

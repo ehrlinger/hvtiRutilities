@@ -204,7 +204,9 @@ test_that("a seed gives the same data and end state whatever came before", {
 
 test_that("a seeded call leaves the stream seeded rather than removing it", {
   withr::local_preserve_seed()
-  rm(".Random.seed", envir = globalenv())
+  if (exists(".Random.seed", envir = globalenv(), inherits = FALSE)) {
+    rm(".Random.seed", envir = globalenv())
+  }
   generate_survival_data(n = 10, seed = 42)
   expect_true(exists(".Random.seed", envir = globalenv(), inherits = FALSE))
 })
