@@ -9,8 +9,9 @@ generate_survival_data(n = 500, seed = 1024)
 \arguments{
 \item{n}{Integer. Number of patients to simulate. Default \code{500}.}
 
-\item{seed}{Integer. Random seed passed to \code{\link{set.seed}} for
-reproducibility. Default \code{1024}.}
+\item{seed}{\code{NULL} or an integer passed to \code{\link{set.seed}}.
+Default \code{1024}. \code{NULL} draws from the caller's random number
+stream instead.}
 }
 \value{
 A \code{data.frame} with \code{n} rows and 24 columns:
@@ -75,8 +76,14 @@ outcome (\code{iv_dead}, \code{dead}) and 17 clinical predictors spanning
 demographics, pre-operative labs,
 cardiac function, and surgical variables.
 
-The global RNG state is saved and restored on exit, so calling this
-function does not affect subsequent random number generation in the session.
+With a \code{seed}, the function calls \code{set.seed(seed)} and draws from
+there, so the same \code{seed} and \code{n} always give the same data. The
+global stream is left where the simulation ended, as any seeded R code
+leaves it; set a seed again before later code that needs its own
+reproducible draws. With \code{seed = NULL} the function sets no seed and
+draws from the caller's stream, so
+\code{set.seed(s); generate_survival_data(seed = NULL)} reproduces
+\code{generate_survival_data(seed = s)}.
 }
 \examples{
 dta <- generate_survival_data(n = 200, seed = 42)

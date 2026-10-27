@@ -78,10 +78,18 @@
 #' The computation must return a value; a result of \code{NULL} is an error,
 #' because there would be nothing to cache.
 #'
-#' When \code{seed} is given, the code runs inside
-#' \code{\link[withr]{with_seed}}, which leaves the global random number stream
-#' as it was. When \code{seed} is \code{NULL} and the code consumes random
-#' numbers, the result is still saved, with a warning of class
+#' When \code{seed} is given, \code{cache_fit()} calls \code{set.seed(seed)}
+#' before the code runs and again after it, even when it fails, and calls it
+#' once when the result is loaded instead. If the code changes the generator
+#' with \code{\link{RNGkind}}, the kinds in use when \code{cache_fit()} was
+#' called are put back before that second call. A computed and a loaded result
+#' therefore leave the global random number stream in the same state, the one
+#' \code{set.seed(seed)} sets, so code after \code{cache_fit()} draws the
+#' same numbers whether or not the cache was hit. Seed any later random step yourself rather than relying on
+#' that state. When \code{seed} is \code{NULL}, \code{cache_fit()} sets no
+#' seed: the code draws from the caller's stream, and a loaded result leaves
+#' the stream untouched. If that code consumes random numbers, the result is
+#' still saved, with a warning of class
 #' \code{hvtiRutilities_nonreproducible_fit}, and the key records
 #' \code{reproducible = FALSE}.
 #'
@@ -138,6 +146,7 @@ cache_fit <- function(name, code, seed = NULL, dir = study_dir("estimates"),
     plan$action,
     load = {
       message("cache_fit(): loaded '", name, "' from cache")
+      if (!is.null(plan$seed)) set.seed(plan$seed)
       return(.cache_attach(plan$stored$value, plan$stored$key))
     },
     unkeyed = .cache_abort("unkeyed", name, plan$path),
@@ -215,8 +224,8 @@ cache_fit <- function(name, code, seed = NULL, dir = study_dir("estimates"),
   }
   # is.finite() rules out Inf and NaN, which satisfy `seed == round(seed)`,
   # and the range test rules out whole numbers that as.integer() would turn
-  # into NA. Either would reach withr::with_seed() as NA, which is not the
-  # seed the caller asked for.
+  # into NA. Either would reach set.seed() as NA, which fails there with a
+  # message that does not name cache_fit() or its argument.
   if (!is.null(seed) && (!is.numeric(seed) || length(seed) != 1L ||
                            is.na(seed) || !is.finite(seed) ||
                            seed != round(seed) ||
@@ -281,14 +290,32 @@ cache_fit <- function(name, code, seed = NULL, dir = study_dir("estimates"),
   value
 }
 
-# Runs the code in a child scope of the caller. With a seed, inside
-# withr::with_seed(), which restores the global stream afterwards. Without
-# one, compares .Random.seed before and after to detect random number use
-# anywhere in the computation, including inside compiled package code.
+# Reseeds under the generator kinds in `kinds`, restoring them only when they
+# changed. RNGkind() warns whenever sample.kind = "Rounding" is set, and the
+# caller already had that warning when they chose it.
+.cache_reseed <- function(seed, kinds) {
+  if (!identical(RNGkind(), kinds)) {
+    suppressWarnings(RNGkind(kinds[1L], kinds[2L], kinds[3L]))
+  }
+  set.seed(seed)
+}
+
+# Runs the code in a child scope of the caller. With a seed, set.seed() runs
+# before the code and again on exit, error included, so a computation leaves
+# the stream where a cache hit does (cache_fit() seeds a hit too). A hit never
+# runs the code, so it always seeds under the caller's generator kinds; the exit
+# handler first puts back the kinds the code found on entry, in case it changed
+# them (an RNGkind("L'Ecuyer-CMRG") for parallel work, say). Nothing saves or
+# restores .Random.seed in the global environment. Without a seed, compares
+# .Random.seed before and after to detect random number use anywhere in the
+# computation, including inside compiled package code.
 .cache_run <- function(code, env, seed) {
   scope <- new.env(parent = env)
   if (!is.null(seed)) {
-    value <- withr::with_seed(seed, eval(code, envir = scope))
+    kinds <- RNGkind()
+    set.seed(seed)
+    on.exit(.cache_reseed(seed, kinds), add = TRUE)
+    value <- eval(code, envir = scope)
     return(list(value = value, reproducible = TRUE))
   }
   before <- get0(".Random.seed", envir = globalenv(), inherits = FALSE)

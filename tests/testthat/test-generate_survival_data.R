@@ -178,15 +178,37 @@ test_that("different seeds produce different output", {
   expect_false(identical(dta_a$iv_dead, dta_b$iv_dead))
 })
 
-test_that("does not permanently alter the global RNG state", {
+test_that("seed = NULL draws from the caller's stream and sets no seed", {
+  withr::local_preserve_seed()
   set.seed(99)
-  x_before <- rnorm(5)
+  from_stream <- generate_survival_data(n = 50, seed = NULL)
+  expect_identical(from_stream, generate_survival_data(n = 50, seed = 99))
 
   set.seed(99)
-  generate_survival_data(n = 50, seed = 42)
-  x_after <- rnorm(5)
+  generate_survival_data(n = 50, seed = NULL)
+  after_null <- get(".Random.seed", envir = globalenv())
+  generate_survival_data(n = 50, seed = 99)
+  expect_identical(after_null, get(".Random.seed", envir = globalenv()))
+})
 
-  expect_equal(x_before, x_after)
+test_that("a seed gives the same data and end state whatever came before", {
+  withr::local_preserve_seed()
+  set.seed(1)
+  a <- generate_survival_data(n = 50, seed = 42)
+  end_a <- get(".Random.seed", envir = globalenv())
+  set.seed(2)
+  b <- generate_survival_data(n = 50, seed = 42)
+  expect_identical(a, b)
+  expect_identical(end_a, get(".Random.seed", envir = globalenv()))
+})
+
+test_that("a seeded call leaves the stream seeded rather than removing it", {
+  withr::local_preserve_seed()
+  if (exists(".Random.seed", envir = globalenv(), inherits = FALSE)) {
+    rm(".Random.seed", envir = globalenv())
+  }
+  generate_survival_data(n = 10, seed = 42)
+  expect_true(exists(".Random.seed", envir = globalenv(), inherits = FALSE))
 })
 
 # Variable labels ----
