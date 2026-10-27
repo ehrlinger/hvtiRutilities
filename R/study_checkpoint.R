@@ -323,7 +323,9 @@ print.study_checkpoint <- function(x, ...) {
 #' its tag exists, otherwise marked \code{abandoned}. Abandoned entries are
 #' never pushed.
 #'
-#' @param root Character. Study root. Defaults to \code{study_root()}.
+#' @param root Character. Study root. Defaults to the study that contains the working
+#'   directory, found by its \code{_study.yml}; outside a study the function
+#'   stops and writes nothing.
 #'
 #' @return A data frame, returned invisibly, with one row per logged event and
 #'   columns \code{type}, \code{tag}, \code{state}, \code{git}, \code{st} and

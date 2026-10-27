@@ -63,12 +63,14 @@ test_that("walk-up writers stop and write nothing outside a study", {
     study_update_identity = quote(study_update_identity(list(study = "x", study_tracker_id = 42L))),
     cache_fit             = quote(cache_fit("x", 1 + 1)),
     study_declare         = quote(study_declare("stats")),
+    update_manifest       = quote(update_manifest()),
     study_checkpoint      = quote(study_checkpoint("milestone", note = "x")),
+    study_checkpoint_push = quote(study_checkpoint_push()),
     study_close           = quote(study_close("published")),
     study_reopen          = quote(study_reopen("x"))
   )
   for (fn in names(calls)) {
-    expect_error(eval(calls[[fn]]), "no _study.yml found", info = fn)
+    expect_error(eval(calls[[fn]]), "_study.yml", fixed = TRUE, info = fn)
     expect_left_empty(here)
   }
 })
