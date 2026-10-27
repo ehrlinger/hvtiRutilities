@@ -4,10 +4,12 @@
 \alias{declare_data}
 \title{Name a study's working dataset without registering it}
 \usage{
-declare_data(root = getwd(), built, key = NULL)
+declare_data(root = study_root(), built, key = NULL)
 }
 \arguments{
-\item{root}{The study root.}
+\item{root}{The study root, or a directory beneath it. Defaults to the study that contains the working
+directory, found by its \code{_study.yml}; outside a study the function
+stops and writes nothing.}
 
 \item{built}{The working file's name in the datasets folder, with its extension.}
 

@@ -1,6 +1,6 @@
 # Write destinations: design and compatibility plan
 
-Status: **proposed, awaiting John's approval.** Nothing below is implemented.
+Status: **approved by John on 2026-10-27**, and implemented on `fix/write-destinations`.
 
 Finding 2 of the 1.5.15 release review (ehrlinger/hvtiRutilities#257,
 comment 6447632915) says that `update_manifest()` writes `manifest.yaml` into
@@ -52,14 +52,19 @@ cache (`cfg = study_config()`).
   `verify_manifest()` already use. Outside a study it **stops** with a message
   that names `manifest_path`, and nothing is written. Passing `manifest_path`
   works exactly as it does today. The no-file form still refuses
-  `manifest_path` when it is passed explicitly, so its argument check has to
-  test `!is.null()` rather than `!missing()`.
+  `manifest_path` whenever it is passed. Its `missing()` check is unchanged.
 - **`study_setup(root = NULL)`.** With `NULL`, it walks up for `_study.yml`
   and re-runs setup on the study it finds, as today. When there is no study
   above, it **stops** and asks for `root`. It no longer creates a study in
   the working directory unasked. Creating a study then always names its
-  directory: `study_setup(root = ".")` from an empty RStudio project still
-  works, because the caller said `"."`.
+  directory. To set up the current folder, call
+  `study_setup(root = ".", adopt = TRUE, ...)`. *Correction found during
+  implementation:* the approved text said `root = "."` alone would still work
+  in an empty folder. It does not. An existing root that is named explicitly
+  has always needed `adopt = TRUE`, and an RStudio project is never empty,
+  because it holds its `.Rproj`. Only the bare `getwd()` fallback had skipped
+  that check, and that fallback is the thing being removed. The new error
+  names both forms.
 
 ### Group 2: keep the walk-up, and say so in the signature
 
@@ -123,7 +128,7 @@ Measured against `origin/main` of each repository on 2026-10-27.
 | hvtiRutilities vignettes | every single-file call passes `manifest_path` | unchanged |
 | an analyst calling `update_manifest("x.csv")` outside a study | writes `./manifest.yaml` | **error** that names `manifest_path` |
 | an analyst calling `update_manifest("x.csv")` inside a study, from a subfolder | writes `<subfolder>/manifest.yaml`, a stray file the study never reads | writes the study's manifest. This is a fix |
-| an analyst calling `study_setup()` with no `root` in an empty folder | creates the study there | **error** that asks for `root`. hvtiRtemplates' study-setup article already tells users to pass `root = "."` |
+| an analyst calling `study_setup()` with no `root` in an empty folder | creates the study there | **error** that asks for `root`, or for `root = ".", adopt = TRUE`. hvtiRtemplates' study-setup article already shows that form |
 
 ## Deprecate or require?
 

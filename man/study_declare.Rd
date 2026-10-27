@@ -9,8 +9,9 @@ study_declare(packages = character(0), root = NULL)
 \arguments{
 \item{packages}{Character. Package names to declare.}
 
-\item{root}{Character(1). The study root; by default the study enclosing the
-working directory, as \code{\link{study_root}} finds it.}
+\item{root}{Character(1). The study root. Defaults to the study that contains the working
+directory, found by its \code{_study.yml}; outside a study the function
+stops and writes nothing.}
 }
 \value{
 The sorted declared package names, invisibly.

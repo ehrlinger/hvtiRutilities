@@ -14,7 +14,9 @@
 #' is left untouched. The \code{bd} template calls this on its first render
 #' with \code{REGISTER = FALSE}.
 #'
-#' @param root The study root.
+#' @param root The study root, or a directory beneath it. Defaults to the study that contains the working
+#'   directory, found by its \code{_study.yml}; outside a study the function
+#'   stops and writes nothing.
 #' @param built The working file's name in the datasets folder, with its extension.
 #' @param key Columns that make a row unique, or \code{NULL} to leave
 #'   \code{key:} unset.
@@ -29,7 +31,7 @@
 #' declare_data(root, built = "study_cohort.rds", key = "ccfid")
 #' unlink(root, recursive = TRUE)
 #' @export
-declare_data <- function(root = getwd(), built, key = NULL) {
+declare_data <- function(root = study_root(), built, key = NULL) {
   built <- .study_scalar(built, "built", TRUE, caller = "declare_data")
   if (!identical(basename(built), built) || !nzchar(tools::file_ext(built))) {
     stop("declare_data(): built must be one filename with its extension", call. = FALSE)

@@ -208,7 +208,9 @@
 #' @param attributes Optional named list of kind-specific details, each a
 #'   single value, for example \code{list(journal = "JTCVS")}.
 #' @param occurred_at Date the event happened. Defaults to today.
-#' @param root Character. Study root. Defaults to \code{study_root()}.
+#' @param root Character. Study root. Defaults to the study that contains the working
+#'   directory, found by its \code{_study.yml}; outside a study the function
+#'   stops and writes nothing.
 #'
 #' @return An object of class \code{"study_checkpoint"}, returned invisibly,
 #'   with the tag, commit, file count, skipped files and delivery states.

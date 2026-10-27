@@ -6,7 +6,7 @@
 \usage{
 update_manifest(
   file,
-  manifest_path = "manifest.yaml",
+  manifest_path = NULL,
   extract_date = Sys.Date(),
   n_rows = NULL,
   n_cols = NULL,
@@ -24,8 +24,11 @@ update_manifest(
 register every changed dataset; see the description.}
 
 \item{manifest_path}{Character. Path to the manifest YAML file.
-Created if it does not exist. Defaults to \code{"manifest.yaml"} in the
-current working directory.}
+Created if it does not exist. \code{NULL} (the default) writes the
+enclosing study's \code{manifest.yaml} at its root, the manifest the
+no-argument form and \code{\link{verify_manifest}} use. Outside a study
+there is no default: name the manifest, or the call stops and writes
+nothing.}
 
 \item{extract_date}{Character or \code{Date}. The date the data were pulled
 from the source system.  Stored as \code{"YYYY-MM-DD"}.  Defaults to

@@ -22,7 +22,9 @@ single value, for example \code{list(journal = "JTCVS")}.}
 
 \item{occurred_at}{Date the event happened. Defaults to today.}
 
-\item{root}{Character. Study root. Defaults to \code{study_root()}.}
+\item{root}{Character. Study root. Defaults to the study that contains the working
+directory, found by its \code{_study.yml}; outside a study the function
+stops and writes nothing.}
 }
 \value{
 An object of class \code{"study_checkpoint"}, returned invisibly,

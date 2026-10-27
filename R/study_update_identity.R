@@ -37,7 +37,9 @@
 #'   hold \code{umbrella}, \code{owner}, \code{irb_number}, \code{cvir_no} and
 #'   \code{study_creation_date}.
 #' @param start A directory inside the study; the study is found as
-#'   \code{\link{study_config}} finds it.
+#'   \code{\link{study_config}} finds it. Defaults to the study that contains the working
+#'   directory, found by its \code{_study.yml}; outside a study the function
+#'   stops and writes nothing.
 #'
 #' @return The names of the keys whose values changed, invisibly.
 #'
@@ -55,7 +57,7 @@
 #' )
 #' study_config(root, require_data = FALSE)$identity_verified
 #' unlink(root, recursive = TRUE)
-study_update_identity <- function(identity, start = getwd()) {
+study_update_identity <- function(identity, start = study_root()) {
   if (!is.list(identity) || is.null(names(identity))) {
     stop("study_update_identity(): 'identity' must be a named list.",
          call. = FALSE)

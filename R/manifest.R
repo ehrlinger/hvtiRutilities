@@ -95,8 +95,11 @@
 #' @param file Character. Path to the dataset file. Omit it inside a study to
 #'   register every changed dataset; see the description.
 #' @param manifest_path Character. Path to the manifest YAML file.
-#'   Created if it does not exist. Defaults to \code{"manifest.yaml"} in the
-#'   current working directory.
+#'   Created if it does not exist. \code{NULL} (the default) writes the
+#'   enclosing study's \code{manifest.yaml} at its root, the manifest the
+#'   no-argument form and \code{\link{verify_manifest}} use. Outside a study
+#'   there is no default: name the manifest, or the call stops and writes
+#'   nothing.
 #' @param extract_date Character or \code{Date}. The date the data were pulled
 #'   from the source system.  Stored as \code{"YYYY-MM-DD"}.  Defaults to
 #'   today's date. With no \code{file}, the date of the new version; defaults
@@ -158,7 +161,7 @@
 #' @seealso \code{\link{verify_manifest}}
 #' @export
 update_manifest <- function(file,
-                            manifest_path = "manifest.yaml",
+                            manifest_path = NULL,
                             extract_date  = Sys.Date(),
                             n_rows        = NULL,
                             n_cols        = NULL,
@@ -203,6 +206,7 @@ update_manifest <- function(file,
   if (!file.exists(file)) {
     stop("Dataset file not found: ", file)
   }
+  if (is.null(manifest_path)) manifest_path <- .single_manifest_path()
 
   sha256 <- digest::digest(file, algo = "sha256", file = TRUE)
 
@@ -277,6 +281,23 @@ update_manifest <- function(file,
 
   .atomic_write(manifest_path, function(tmp) .write_manifest(manifest, tmp))
   invisible(manifest)
+}
+
+# The single-file form's default: the enclosing study's manifest. Outside a
+# study there is none, so nothing is written into the working directory. Only
+# a missing _study.yml means "no study here"; any other study_config() error
+# is passed on.
+.single_manifest_path <- function() {
+  cfg <- tryCatch(study_config(require_data = FALSE), error = function(e) {
+    if (!grepl("no _study.yml found", conditionMessage(e), fixed = TRUE)) stop(e)
+    NULL
+  })
+  if (is.null(cfg)) {
+    stop("update_manifest(): no study contains the working directory, so there ",
+         "is no default manifest. Pass `manifest_path =` to name the manifest to ",
+         "write.", call. = FALSE)
+  }
+  file.path(cfg$root, "manifest.yaml")
 }
 
 # Inside a study, the study's manifest; elsewhere, manifest.yaml here. A job run

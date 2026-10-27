@@ -35,7 +35,9 @@ integer, a double or a string; required for \code{"superseded"}.}
 
 \item{closed_at, reopened_at}{Date of the event. Defaults to today.}
 
-\item{root}{Character. Study root. Defaults to \code{study_root()}.}
+\item{root}{Character. Study root. Defaults to the study that contains the working
+directory, found by its \code{_study.yml}; outside a study the function
+stops and writes nothing.}
 
 \item{new_lead}{Optional character(1), the username of a new study lead.}
 }

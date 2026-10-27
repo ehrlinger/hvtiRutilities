@@ -239,13 +239,18 @@ test_that("study_setup rejects an abbreviated identity source", {
   expect_false(dir.exists(root))
 })
 
-test_that("study_setup sets up the working directory when root is omitted", {
+test_that("study_setup needs root when no study contains the working directory", {
   root <- file.path(withr::local_tempdir(), "here-study")
   dir.create(root)
   withr::local_dir(root)
 
-  suppressMessages(study_setup(study = "Here", study_tracker_id = 42L, renv = FALSE))
+  expect_error(study_setup(study = "Here", study_tracker_id = 42L, renv = FALSE),
+               "no study contains the working directory")
+  expect_identical(list.files(root, all.files = TRUE, no.. = TRUE), character(0))
 
+  # Naming the current folder sets it up.
+  suppressMessages(study_setup(".", study = "Here", study_tracker_id = 42L,
+                               adopt = TRUE, cleanup = FALSE, renv = FALSE))
   expect_true(file.exists(file.path(root, "_study.yml")))
   expect_true(dir.exists(file.path(root, "00_datasets")))
 })
@@ -263,13 +268,14 @@ test_that("an omitted root resolves to the enclosing study, not a nested one", {
   expect_false(file.exists(file.path(root, "30_analyses", "_study.yml")))
 })
 
-test_that("an omitted root outside any study still refuses a folder with files", {
+test_that("an omitted root outside any study refuses a folder with files", {
   root <- file.path(withr::local_tempdir(), "busy")
   dir.create(root)
   writeLines("x", file.path(root, "notes.txt"))
   withr::local_dir(root)
 
-  expect_error(study_setup(study = "Busy", study_tracker_id = 42L, renv = FALSE), "adopt = TRUE")
+  expect_error(study_setup(study = "Busy", study_tracker_id = 42L, renv = FALSE),
+               "no study contains the working directory")
   expect_false(file.exists(file.path(root, "_study.yml")))
 })
 

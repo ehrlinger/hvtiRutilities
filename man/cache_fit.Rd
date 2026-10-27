@@ -22,8 +22,9 @@ variable holding a quoted call.}
 
 \item{seed}{\code{NULL} or a single whole number.}
 
-\item{dir}{Character(1). An existing directory. Defaults to the study's
-estimates folder.}
+\item{dir}{Character(1). An existing directory. Defaults to the estimates
+folder of the study that contains the working directory, found by its
+\code{_study.yml}; outside a study the function stops and writes nothing.}
 
 \item{refit}{Logical(1). \code{TRUE} recomputes and overwrites the file only
 when it is stale or unkeyed; a valid cache is still loaded, not

@@ -12,8 +12,9 @@
 #' \code{Type: Project}) is never edited.
 #'
 #' @param packages Character. Package names to declare.
-#' @param root Character(1). The study root; by default the study enclosing the
-#'   working directory, as \code{\link{study_root}} finds it.
+#' @param root Character(1). The study root. Defaults to the study that contains the working
+#'   directory, found by its \code{_study.yml}; outside a study the function
+#'   stops and writes nothing.
 #' @return The sorted declared package names, invisibly.
 #' @export
 #' @examples
