@@ -11,7 +11,7 @@ no_study_dir <- function(env = parent.frame()) {
 }
 
 expect_left_empty <- function(dir) {
-  expect_identical(list.files(dir, all.files = TRUE, no.. = TRUE), character(0))
+  testthat::expect_identical(list.files(dir, all.files = TRUE, no.. = TRUE), character(0))
 }
 
 test_that("update_manifest(file) needs manifest_path outside a study", {
