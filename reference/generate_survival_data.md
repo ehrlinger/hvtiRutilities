@@ -21,9 +21,9 @@ generate_survival_data(n = 500, seed = 1024)
 
 - seed:
 
-  Integer. Random seed passed to
-  [`set.seed`](https://rdrr.io/r/base/Random.html) for reproducibility.
-  Default `1024`.
+  `NULL` or an integer passed to
+  [`set.seed`](https://rdrr.io/r/base/Random.html). Default `1024`.
+  `NULL` draws from the caller's random number stream instead.
 
 ## Value
 
@@ -146,9 +146,13 @@ The returned data frame includes the five columns excluded from
 clinical predictors spanning demographics, pre-operative labs, cardiac
 function, and surgical variables.
 
-The global RNG state is saved and restored on exit, so calling this
-function does not affect subsequent random number generation in the
-session.
+With a `seed`, the function calls `set.seed(seed)` and draws from there,
+so the same `seed` and `n` always give the same data. The global stream
+is left where the simulation ended, as any seeded R code leaves it; set
+a seed again before later code that needs its own reproducible draws.
+With `seed = NULL` the function sets no seed and draws from the caller's
+stream, so `set.seed(s); generate_survival_data(seed = NULL)` reproduces
+`generate_survival_data(seed = s)`.
 
 ## See also
 

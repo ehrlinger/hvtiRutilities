@@ -207,11 +207,17 @@ code = same results, always. - Inserting or removing a random call
 sequence shifts.
 
 R also stores the generator state in `.Random.seed` in the global
-environment. The `hvtiRutilities` function
+environment. A package function should change it only when the caller
+asks it to, by passing a seed. `hvtiRutilities` follows that rule.
 [`generate_survival_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/generate_survival_data.md)
-demonstrates best practice by saving and restoring `.Random.seed` via
-[`on.exit()`](https://rdrr.io/r/base/on.exit.html), so the function does
-not alter the caller’s RNG state.
+calls `set.seed(seed)` when it is given a seed, and with `seed = NULL`
+it sets nothing and draws from the caller’s stream.
+[`cache_fit()`](https://ehrlinger.github.io/hvtiRutilities/reference/cache_fit.md)
+does the same with its `seed`, and also seeds a cache hit, so a loaded
+result leaves the stream in the same state as a computed one. Neither
+saves or restores `.Random.seed` behind the caller’s back, so after a
+seeded call the stream sits wherever that call left it. Seed the next
+random step yourself.
 
 ### SAS
 

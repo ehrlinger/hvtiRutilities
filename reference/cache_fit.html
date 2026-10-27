@@ -195,10 +195,18 @@ makes its cache stale once, with the package reported as
 they are for functions called in <code>code</code>.</p>
 <p>The computation must return a value; a result of <code>NULL</code> is an error,
 because there would be nothing to cache.</p>
-<p>When <code>seed</code> is given, the code runs inside
-<code><a href="https://withr.r-lib.org/reference/with_seed.html" class="external-link">with_seed</a></code>, which leaves the global random number stream
-as it was. When <code>seed</code> is <code>NULL</code> and the code consumes random
-numbers, the result is still saved, with a warning of class
+<p>When <code>seed</code> is given, <code>cache_fit()</code> calls <code>set.seed(seed)</code>
+before the code runs and again after it, even when it fails, and calls it
+once when the result is loaded instead. If the code changes the generator
+with <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">RNGkind</a></code>, the kinds in use when <code>cache_fit()</code> was
+called are put back before that second call. A computed and a loaded result
+therefore leave the global random number stream in the same state, the one
+<code>set.seed(seed)</code> sets, so code after <code>cache_fit()</code> draws the
+same numbers whether or not the cache was hit. Seed any later random step yourself rather than relying on
+that state. When <code>seed</code> is <code>NULL</code>, <code>cache_fit()</code> sets no
+seed: the code draws from the caller's stream, and a loaded result leaves
+the stream untouched. If that code consumes random numbers, the result is
+still saved, with a warning of class
 <code>hvtiRutilities_nonreproducible_fit</code>, and the key records
 <code>reproducible = FALSE</code>.</p>
 <p>A stale file stops with an error of class

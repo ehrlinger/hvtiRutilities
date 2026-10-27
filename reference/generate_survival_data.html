@@ -84,8 +84,9 @@ compatible with <code>haven</code> and <code><a href="label_map.html">hvtiRutili
 
 
 <dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
-<dd><p>Integer. Random seed passed to <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></code> for
-reproducibility. Default <code>1024</code>.</p></dd>
+<dd><p><code>NULL</code> or an integer passed to <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></code>.
+Default <code>1024</code>. <code>NULL</code> draws from the caller's random number
+stream instead.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -191,8 +192,14 @@ modelled via a logistic function of bypass time and NYHA class.</p>
 outcome (<code>iv_dead</code>, <code>dead</code>) and 17 clinical predictors spanning
 demographics, pre-operative labs,
 cardiac function, and surgical variables.</p>
-<p>The global RNG state is saved and restored on exit, so calling this
-function does not affect subsequent random number generation in the session.</p>
+<p>With a <code>seed</code>, the function calls <code>set.seed(seed)</code> and draws from
+there, so the same <code>seed</code> and <code>n</code> always give the same data. The
+global stream is left where the simulation ended, as any seeded R code
+leaves it; set a seed again before later code that needs its own
+reproducible draws. With <code>seed = NULL</code> the function sets no seed and
+draws from the caller's stream, so
+<code>set.seed(s); generate_survival_data(seed = NULL)</code> reproduces
+<code>generate_survival_data(seed = s)</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
