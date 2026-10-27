@@ -117,10 +117,16 @@ they are for functions called in \code{code}.
 The computation must return a value; a result of \code{NULL} is an error,
 because there would be nothing to cache.
 
-When \code{seed} is given, the code runs inside
-\code{\link[withr]{with_seed}}, which leaves the global random number stream
-as it was. When \code{seed} is \code{NULL} and the code consumes random
-numbers, the result is still saved, with a warning of class
+When \code{seed} is given, \code{cache_fit()} calls \code{set.seed(seed)}
+before the code runs and again after it, and calls it once when the result
+is loaded instead. A computed and a loaded result therefore leave the global
+random number stream in the same state, the one \code{set.seed(seed)} sets,
+so code after \code{cache_fit()} draws the same numbers whether or not the
+cache was hit. Seed any later random step yourself rather than relying on
+that state. When \code{seed} is \code{NULL}, \code{cache_fit()} sets no
+seed: the code draws from the caller's stream, and a loaded result leaves
+the stream untouched. If that code consumes random numbers, the result is
+still saved, with a warning of class
 \code{hvtiRutilities_nonreproducible_fit}, and the key records
 \code{reproducible = FALSE}.
 

@@ -202,16 +202,47 @@ test_that("a non-scalar-character dir gives a clear `dir` error", {
   expect_error(cache_fit("a", sum(1), dir = NA_character_), "`dir`")
 })
 
-test_that("a seed reproduces the result and leaves the global stream alone", {
+test_that("a seed reproduces the result", {
   dir <- withr::local_tempdir()
   withr::local_seed(1)
   n <- 5
-  before <- get(".Random.seed", envir = globalenv())
   a <- cache_fit("r1", stats::runif(n), seed = 42, dir = dir)
-  expect_identical(get(".Random.seed", envir = globalenv()), before)
   b <- cache_fit("r2", stats::runif(n), seed = 42, dir = dir)
   expect_identical(as.vector(a), as.vector(b))
   expect_true(attr(a, "hvtiRutilities_cache_key")$reproducible)
+})
+
+test_that("a seeded fit leaves the stream in one state, computed or loaded", {
+  dir <- withr::local_tempdir()
+  withr::local_seed(1)
+  n <- 5
+  set.seed(42)
+  seeded <- get(".Random.seed", envir = globalenv())
+
+  set.seed(7)
+  suppressMessages(cache_fit("r6", stats::runif(n), seed = 42, dir = dir))
+  expect_identical(get(".Random.seed", envir = globalenv()), seeded)
+
+  set.seed(8)
+  expect_message(cache_fit("r6", stats::runif(n), seed = 42, dir = dir),
+                 "loaded")
+  expect_identical(get(".Random.seed", envir = globalenv()), seeded)
+})
+
+test_that("without a seed the code draws from the caller's stream", {
+  dir <- withr::local_tempdir()
+  withr::local_seed(1)
+  n <- 5
+  set.seed(42)
+  expected <- stats::runif(n)
+  set.seed(42)
+  x <- suppressWarnings(cache_fit("r7", stats::runif(n), dir = dir))
+  expect_identical(as.vector(x), expected)
+  after_compute <- get(".Random.seed", envir = globalenv())
+
+  # A load draws nothing and sets no seed, so the stream is where it was.
+  expect_message(cache_fit("r7", stats::runif(n), dir = dir), "loaded")
+  expect_identical(get(".Random.seed", envir = globalenv()), after_compute)
 })
 
 test_that("RNG use without a seed warns and is recorded as not reproducible", {

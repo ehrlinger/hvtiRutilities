@@ -23,12 +23,19 @@
 #' demographics, pre-operative labs,
 #' cardiac function, and surgical variables.
 #'
-#' The global RNG state is saved and restored on exit, so calling this
-#' function does not affect subsequent random number generation in the session.
+#' With a \code{seed}, the function calls \code{set.seed(seed)} and draws from
+#' there, so the same \code{seed} and \code{n} always give the same data. The
+#' global stream is left where the simulation ended, as any seeded R code
+#' leaves it; set a seed again before later code that needs its own
+#' reproducible draws. With \code{seed = NULL} the function sets no seed and
+#' draws from the caller's stream, so
+#' \code{set.seed(s); generate_survival_data(seed = NULL)} reproduces
+#' \code{generate_survival_data(seed = s)}.
 #'
 #' @param n Integer. Number of patients to simulate. Default \code{500}.
-#' @param seed Integer. Random seed passed to \code{\link{set.seed}} for
-#'   reproducibility. Default \code{1024}.
+#' @param seed \code{NULL} or an integer passed to \code{\link{set.seed}}.
+#'   Default \code{1024}. \code{NULL} draws from the caller's random number
+#'   stream instead.
 #'
 #' @return A \code{data.frame} with \code{n} rows and 24 columns:
 #' \describe{
@@ -92,20 +99,7 @@
 #' model_data <- dta[, !names(dta) %in% c("ccfid", "reop", "iv_reop",
 #'   "origin_year", "iv_opyrs")]
 generate_survival_data <- function(n = 500, seed = 1024) {
-  # Save and restore global RNG state to avoid side effects on the session
-  old_rng_state <- if (exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) {
-    .GlobalEnv$.Random.seed
-  } else {
-    NULL
-  }
-  on.exit({
-    if (is.null(old_rng_state)) {
-      suppressWarnings(rm(".Random.seed", envir = .GlobalEnv, inherits = FALSE))
-    } else {
-      assign(".Random.seed", old_rng_state, envir = .GlobalEnv)
-    }
-  }, add = TRUE)
-  set.seed(seed)
+  if (!is.null(seed)) set.seed(seed)
 
   ## ---- Patient IDs ----
   ccfid <- paste0("PT", formatC(seq_len(n), width = 5, flag = "0"))
