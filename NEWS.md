@@ -1,3 +1,7 @@
+# hvtiRutilities 1.5.15
+
+* `hvti_taxonomy()` has an `rhf` row, "Random hazard forest", in `analyses`: random hazard forests on counting-process data with time-varying covariates. It is the prefix of the `rhf-fit` and `rhf-explain` templates in hvtiRtemplates.
+
 # hvtiRutilities 1.5.14
 
 * `study_setup()` accepts a study's own `.Rprofile` that activates renv through a built path, such as `source(file.path(root, "renv", "activate.R"))`, whether written on one line or across several, or through a variable holding that path. It had required the literal `source("renv/activate.R")`, so `adopt = TRUE` stopped on studies whose path-independent `.Rprofile` was written by hand, reporting a partial renv environment with `.Rprofile` missing or invalid. The `.Rprofile` is now parsed rather than searched line by line, so the check needs an actual `source()` call on `activate.R`: a mention in a comment or a string, or a path built and never sourced, does not count, and a `.Rprofile` that does not parse is refused. A `.Rprofile` that never activates renv, the half-finished `renv::init()` the check guards against, is still refused.
