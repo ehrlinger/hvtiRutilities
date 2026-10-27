@@ -243,6 +243,40 @@ test_that("a seeded fit that fails still leaves the stream seeded", {
   expect_false(file.exists(file.path(dir, "r8.rds")))
 })
 
+test_that("a seeded fit that switches generators leaves the caller's", {
+  dir <- withr::local_tempdir()
+  withr::local_seed(1)
+  entry <- RNGkind()
+  withr::defer(suppressWarnings(RNGkind(entry[1], entry[2], entry[3])))
+  set.seed(42)
+  seeded <- get(".Random.seed", envir = globalenv())
+  # Uniform, normal and sample kinds all change inside the computation.
+  switch_kinds <- quote({
+    suppressWarnings(RNGkind("L'Ecuyer-CMRG", "Box-Muller", "Rounding"))
+    stats::runif(3)
+  })
+  failing <- quote({
+    suppressWarnings(RNGkind("L'Ecuyer-CMRG", "Box-Muller", "Rounding"))
+    stop("boom")
+  })
+
+  set.seed(7)
+  suppressMessages(cache_fit("r9", switch_kinds, seed = 42, dir = dir))
+  expect_identical(RNGkind(), entry)
+  expect_identical(get(".Random.seed", envir = globalenv()), seeded)
+
+  set.seed(8)
+  expect_message(cache_fit("r9", switch_kinds, seed = 42, dir = dir),
+                 "loaded")
+  expect_identical(RNGkind(), entry)
+  expect_identical(get(".Random.seed", envir = globalenv()), seeded)
+
+  set.seed(9)
+  expect_error(cache_fit("r10", failing, seed = 42, dir = dir), "boom")
+  expect_identical(RNGkind(), entry)
+  expect_identical(get(".Random.seed", envir = globalenv()), seeded)
+})
+
 test_that("without a seed the code draws from the caller's stream", {
   dir <- withr::local_tempdir()
   withr::local_seed(1)

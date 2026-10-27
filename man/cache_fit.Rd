@@ -119,7 +119,9 @@ because there would be nothing to cache.
 
 When \code{seed} is given, \code{cache_fit()} calls \code{set.seed(seed)}
 before the code runs and again after it, even when it fails, and calls it
-once when the result is loaded instead. A computed and a loaded result
+once when the result is loaded instead. If the code changes the generator
+with \code{\link{RNGkind}}, the kinds in use when \code{cache_fit()} was
+called are put back before that second call. A computed and a loaded result
 therefore leave the global random number stream in the same state, the one
 \code{set.seed(seed)} sets, so code after \code{cache_fit()} draws the
 same numbers whether or not the cache was hit. Seed any later random step yourself rather than relying on
