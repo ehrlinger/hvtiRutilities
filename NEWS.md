@@ -1,3 +1,9 @@
+# hvtiRutilities 1.5.17
+
+* New `proc_print()`, the targeted print of a build check: SAS `PROC PRINT` with a `WHERE`, for several conditions at once. Each condition is written `condition ~ "Label"`, the shape of a `bd` job's `EXCLUDE` rules. It returns one row per condition with `n` (rows matching) and `n_missing` (rows for which the condition was `NA`), and writes the matching rows, limited to `var` and `max_rows`, to `stderr()`, as are any warnings and messages a condition raises. knitr and Quarto do not capture `stderr()`, so an interactive session shows the rows and a rendered report carries only the counts. A test knits a report and asserts that no row reaches it. Answers the targeted-print half of hvtiRdatabuild#71, for the `dt` data check template.
+
+* `proc_print()` gains `console = TRUE`. `console = FALSE` writes nothing, neither the matching rows nor the warnings a condition raises, and returns only the counts, so its output can be switched off as the CRAN Cookbook asks of console output.
+
 # hvtiRutilities 1.5.16
 
 * `DESCRIPTION` now says what the package does. The `Description` field names the main facilities (study layout and paths, data import and type conversion, labels, the study data contract with manifests, file hashes and provenance, fit caching, the analysis taxonomy, and the 'SAS' procedure ports and parity checks) and spells out HVTI (Heart, Vascular and Thoracic Institute) and CORR (Cardiovascular Outcomes, Registries and Research). The `Title` is shortened to "Study and Data Utilities for the HVTI CORR Group", under the 65-character limit in Writing R Extensions. This answers the CRAN Cookbook's DESCRIPTION and General Issues chapters.
