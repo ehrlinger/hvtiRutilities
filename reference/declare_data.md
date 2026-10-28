@@ -11,14 +11,16 @@ when it is ready.
 ## Usage
 
 ``` r
-declare_data(root = getwd(), built, key = NULL)
+declare_data(root = study_root(), built, key = NULL)
 ```
 
 ## Arguments
 
 - root:
 
-  The study root.
+  The study root, or a directory beneath it. Defaults to the study that
+  contains the working directory, found by its `_study.yml`; outside a
+  study the function stops and writes nothing.
 
 - built:
 
@@ -51,7 +53,7 @@ render with `REGISTER = FALSE`.
 ``` r
 root <- file.path(tempdir(), "declare-example")
 suppressMessages(study_setup(root, "Example", 1L, renv = FALSE))
-#> Study: /tmp/Rtmpv0rOAn/declare-example
+#> Study: /tmp/RtmpHG0epi/declare-example
 #> 
 #> [x] _study.yml — study: Example
 #> [ ] renv.lock — no renv.lock; run renv::init() in the study project

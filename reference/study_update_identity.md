@@ -8,7 +8,7 @@ Every other key, including the data contract (`built`, `cohort`,
 ## Usage
 
 ``` r
-study_update_identity(identity, start = getwd())
+study_update_identity(identity, start = study_root())
 ```
 
 ## Arguments
@@ -24,7 +24,9 @@ study_update_identity(identity, start = getwd())
 
   A directory inside the study; the study is found as
   [`study_config`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md)
-  finds it.
+  finds it. Defaults to the study that contains the working directory,
+  found by its `_study.yml`; outside a study the function stops and
+  writes nothing.
 
 ## Value
 
@@ -52,7 +54,7 @@ rewrites it, so comments in `_study.yml` are not kept.
 root <- file.path(tempdir(), "update-identity-example")
 study_setup(root, "Typed title", 42L, identity_source = "manual",
             renv = FALSE)
-#> Study: /tmp/Rtmpv0rOAn/update-identity-example
+#> Study: /tmp/RtmpHG0epi/update-identity-example
 #> 
 #> [~] _study.yml — study: Typed title; identity entered by hand, confirm it with study-setup --verify
 #> [ ] renv.lock — no renv.lock; run renv::init() in the study project

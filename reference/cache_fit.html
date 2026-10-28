@@ -110,8 +110,9 @@ variable holding a quoted call.</p></dd>
 
 
 <dt id="arg-dir">dir<a class="anchor" aria-label="anchor" href="#arg-dir"></a></dt>
-<dd><p>Character(1). An existing directory. Defaults to the study's
-estimates folder.</p></dd>
+<dd><p>Character(1). An existing directory. Defaults to the estimates
+folder of the study that contains the working directory, found by its
+<code>_study.yml</code>; outside a study the function stops and writes nothing.</p></dd>
 
 
 <dt id="arg-refit">refit<a class="anchor" aria-label="anchor" href="#arg-refit"></a></dt>

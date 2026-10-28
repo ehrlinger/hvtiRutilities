@@ -76,9 +76,10 @@ study_setup(
   Character. Study root to create or adopt. When omitted, the study
   enclosing the working directory (found as
   [`study_root`](https://ehrlinger.github.io/hvtiRutilities/reference/study_root.md)
-  finds it) is used, or the working directory itself when no
-  `_study.yml` lies above it. An empty working directory is set up as a
-  new study.
+  finds it) is used. Outside a study there is no default:
+  `study_setup()` stops and writes nothing, so a new study always names
+  its directory. Use `root = "."` with `adopt = TRUE` to set up the
+  current folder.
 
 - study:
 
@@ -159,7 +160,7 @@ An object of class `"study_status"`, returned visibly. With
 ``` r
 root <- file.path(tempdir(), "study-setup-example")
 study_setup(root, study = "Example", study_tracker_id = 1L, renv = FALSE)
-#> Study: /tmp/Rtmpv0rOAn/study-setup-example
+#> Study: /tmp/RtmpHG0epi/study-setup-example
 #> 
 #> [x] _study.yml — study: Example
 #> [ ] renv.lock — no renv.lock; run renv::init() in the study project

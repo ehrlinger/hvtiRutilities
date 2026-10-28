@@ -44,8 +44,9 @@ study_checkpoint(
 
 - root:
 
-  Character. Study root. Defaults to
-  [`study_root()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_root.md).
+  Character. Study root. Defaults to the study that contains the working
+  directory, found by its `_study.yml`; outside a study the function
+  stops and writes nothing.
 
 ## Value
 

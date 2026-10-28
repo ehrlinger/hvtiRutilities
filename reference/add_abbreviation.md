@@ -8,7 +8,7 @@ phrase from the group default list.
 ## Usage
 
 ``` r
-add_abbreviation(phrase, abbreviation, start = getwd())
+add_abbreviation(phrase, abbreviation, start = study_root())
 ```
 
 ## Arguments
@@ -25,7 +25,9 @@ add_abbreviation(phrase, abbreviation, start = getwd())
 
   A directory inside the study; the study is found as
   [`study_config`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md)
-  finds it.
+  finds it. Defaults to the study that contains the working directory,
+  found by its `_study.yml`; outside a study the function stops and
+  writes nothing.
 
 ## Value
 
@@ -50,7 +52,7 @@ rewrites it, so comments in `_study.yml` are not kept.
 ``` r
 root <- file.path(tempdir(), "add-abbrev-example")
 study_setup(root, "Abbreviation example", 1L, renv = FALSE)
-#> Study: /tmp/Rtmpv0rOAn/add-abbrev-example
+#> Study: /tmp/RtmpHG0epi/add-abbrev-example
 #> 
 #> [x] _study.yml — study: Abbreviation example
 #> [ ] renv.lock — no renv.lock; run renv::init() in the study project

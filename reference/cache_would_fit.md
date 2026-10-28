@@ -39,8 +39,9 @@ cache_would_fit(
 
 - dir:
 
-  Character(1). An existing directory. Defaults to the study's estimates
-  folder.
+  Character(1). An existing directory. Defaults to the estimates folder
+  of the study that contains the working directory, found by its
+  `_study.yml`; outside a study the function stops and writes nothing.
 
 - refit:
 

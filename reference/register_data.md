@@ -35,7 +35,7 @@ and its key is checked only at registration.
 
 ``` r
 register_data(
-  root = getwd(),
+  root = study_root(),
   built,
   dataset = "study",
   role = c("study", "named"),
@@ -54,7 +54,9 @@ register_data(
 
 - root:
 
-  Character. Study root or a directory beneath it.
+  Character. Study root or a directory beneath it. Defaults to the study
+  that contains the working directory, found by its `_study.yml`;
+  outside a study the function stops and writes nothing.
 
 - built:
 
@@ -165,19 +167,19 @@ utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
                  file.path(root, "00_datasets", "built.csv"),
                  row.names = FALSE)
 register_data(root, built = "built.csv", key = "ccfid")
-#> Study: /tmp/Rtmpv0rOAn/register-data-example
+#> Study: /tmp/RtmpHG0epi/register-data-example
 #> 
 #> [x] _study.yml — study: Example
 #> [ ] renv.lock — no renv.lock; run renv::init() in the study project
 #> [x] manifest.yaml — 1 dataset entry verified by checksum
-#> [x] dataset — built.csv, registered as built_20261027.parquet
+#> [x] dataset — built.csv, registered as built_20261028.parquet
 #> [ ] provenance — no .qmd/.Rmd sources found; 0 sidecars
 #> 
 #> 0 .R  |  0 .qmd/.Rmd  |  0 .sas  |  0 provenance sidecars
 # The CSV is kept; the registered version is a dated Parquet file.
 list.files(file.path(root, "00_datasets"))
-#> [1] "built.csv"                 "built_20261027.parquet"   
-#> [3] "built_20261027.schema.csv"
+#> [1] "built.csv"                 "built_20261028.parquet"   
+#> [3] "built_20261028.schema.csv"
 unlink(root, recursive = TRUE)
 
 # An additional dataset is registered with role = "named", under a name of

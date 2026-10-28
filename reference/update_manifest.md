@@ -44,7 +44,7 @@ set. For any other format, or when heavy counting is disabled, supply
 ``` r
 update_manifest(
   file,
-  manifest_path = "manifest.yaml",
+  manifest_path = NULL,
   extract_date = Sys.Date(),
   n_rows = NULL,
   n_cols = NULL,
@@ -68,7 +68,13 @@ update_manifest(
 - manifest_path:
 
   Character. Path to the manifest YAML file. Created if it does not
-  exist. Defaults to `"manifest.yaml"` in the current working directory.
+  exist. `NULL` (the default) writes the enclosing study's
+  `manifest.yaml` at its root, the manifest the no-argument form and
+  [`verify_manifest`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md)
+  use, and only for a file in the study's datasets folder, where that
+  manifest's entries are resolved. Outside a study, or for a file
+  anywhere else, there is no default: name the manifest, or the call
+  stops and writes nothing.
 
 - extract_date:
 

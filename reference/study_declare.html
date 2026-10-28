@@ -96,8 +96,9 @@ is rewritten only when the set changes, and a <code>DESCRIPTION</code> that is n
 
 
 <dt id="arg-root">root<a class="anchor" aria-label="anchor" href="#arg-root"></a></dt>
-<dd><p>Character(1). The study root; by default the study enclosing the
-working directory, as <code><a href="study_root.html">study_root</a></code> finds it.</p></dd>
+<dd><p>Character(1). The study root. Defaults to the study that contains the working
+directory, found by its <code>_study.yml</code>; outside a study the function
+stops and writes nothing.</p></dd>
 
 </dl></div>
     <div class="section level2">

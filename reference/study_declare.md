@@ -25,10 +25,9 @@ study_declare(packages = character(0), root = NULL)
 
 - root:
 
-  Character(1). The study root; by default the study enclosing the
-  working directory, as
-  [`study_root`](https://ehrlinger.github.io/hvtiRutilities/reference/study_root.md)
-  finds it.
+  Character(1). The study root. Defaults to the study that contains the
+  working directory, found by its `_study.yml`; outside a study the
+  function stops and writes nothing.
 
 ## Value
 
