@@ -75,7 +75,7 @@ SAS <code>PROC PRINT; WHERE</code> steps would.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">proc_print</span><span class="op">(</span><span class="va">data</span>, <span class="va">where</span>, var <span class="op">=</span> <span class="cn">NULL</span>, max_rows <span class="op">=</span> <span class="fl">25L</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">proc_print</span><span class="op">(</span><span class="va">data</span>, <span class="va">where</span>, var <span class="op">=</span> <span class="cn">NULL</span>, max_rows <span class="op">=</span> <span class="fl">25L</span>, console <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -100,6 +100,12 @@ rows, SAS <code>VAR</code>. <code>NULL</code> prints every column.</p></dd>
 <dt id="arg-max-rows">max_rows<a class="anchor" aria-label="anchor" href="#arg-max-rows"></a></dt>
 <dd><p>A single positive whole number. At most this many matching
 rows are printed per condition; the count is always the full count.</p></dd>
+
+
+<dt id="arg-console">console<a class="anchor" aria-label="anchor" href="#arg-console"></a></dt>
+<dd><p>A single <code>TRUE</code> or <code>FALSE</code>. <code>FALSE</code> writes
+nothing, neither rows nor the warnings a condition raises, and only
+returns the counts.</p></dd>
 
 </dl></div>
     <div class="section level2">

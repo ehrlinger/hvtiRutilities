@@ -9,7 +9,7 @@ several SAS `PROC PRINT; WHERE` steps would.
 ## Usage
 
 ``` r
-proc_print(data, where, var = NULL, max_rows = 25L)
+proc_print(data, where, var = NULL, max_rows = 25L, console = TRUE)
 ```
 
 ## Arguments
@@ -32,6 +32,11 @@ proc_print(data, where, var = NULL, max_rows = 25L)
 
   A single positive whole number. At most this many matching rows are
   printed per condition; the count is always the full count.
+
+- console:
+
+  A single `TRUE` or `FALSE`. `FALSE` writes nothing, neither rows nor
+  the warnings a condition raises, and only returns the counts.
 
 ## Value
 
