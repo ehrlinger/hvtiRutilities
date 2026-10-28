@@ -61,6 +61,9 @@ versions
   UNIVARIATE
 - [`proc_freq()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_freq.md)
   : Frequency tables, in the style of SAS PROC FREQ
+- [`proc_print()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_print.md)
+  : Targeted prints of matching rows, in the style of SAS PROC PRINT
+  with WHERE
 - [`followup_check()`](https://ehrlinger.github.io/hvtiRutilities/reference/followup_check.md)
   : Check recorded follow-up before a time-related analysis
 - [`compare_datasets()`](https://ehrlinger.github.io/hvtiRutilities/reference/compare_datasets.md)
