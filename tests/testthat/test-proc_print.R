@@ -111,3 +111,20 @@ test_that("var and max_rows are validated", {
   expect_error(proc_print(d, dead == 1 ~ "Died", max_rows = 0), "'max_rows'")
   expect_error(proc_print(d, dead == 1 ~ "Died", max_rows = 1.5), "'max_rows'")
 })
+
+test_that("console = FALSE writes nothing and still counts", {
+  d <- fixture()
+  err <- capture.output(
+    out <- capture.output(
+      res <- proc_print(d, list({
+        warning(id[[2]])
+        age > 100
+      } ~ "Warns", dead == 1 ~ "Died"), console = FALSE)
+    ),
+    type = "message"
+  )
+  expect_length(err, 0L)
+  expect_length(out, 0L)
+  expect_identical(res$n, c(1L, 2L))
+  expect_error(proc_print(d, dead == 1 ~ "Died", console = NA), "'console' must be a single TRUE or FALSE")
+})

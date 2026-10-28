@@ -1,0 +1,1 @@
+* `proc_print()` gains `console = TRUE`. `console = FALSE` writes nothing, neither the matching rows nor the warnings a condition raises, and returns only the counts, so its output can be switched off as the CRAN Cookbook asks of console output.
