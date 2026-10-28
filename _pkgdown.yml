@@ -99,6 +99,7 @@ reference:
   - proc_means
   - proc_univariate
   - proc_freq
+  - proc_print
   - followup_check
   - compare_datasets
 
