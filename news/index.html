@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.16</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.17</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -56,6 +56,11 @@
       <small>Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.5.17" id="hvtirutilities-1517">hvtiRutilities 1.5.17<a class="anchor" aria-label="anchor" href="#hvtirutilities-1517"></a></h2>
+<ul><li><p>New <code><a href="../reference/proc_print.html">proc_print()</a></code>, the targeted print of a build check: SAS <code>PROC PRINT</code> with a <code>WHERE</code>, for several conditions at once. Each condition is written <code>condition ~ "Label"</code>, the shape of a <code>bd</code> job’s <code>EXCLUDE</code> rules. It returns one row per condition with <code>n</code> (rows matching) and <code>n_missing</code> (rows for which the condition was <code>NA</code>), and writes the matching rows, limited to <code>var</code> and <code>max_rows</code>, to <code><a href="https://rdrr.io/r/base/showConnections.html" class="external-link">stderr()</a></code>, as are any warnings and messages a condition raises. knitr and Quarto do not capture <code><a href="https://rdrr.io/r/base/showConnections.html" class="external-link">stderr()</a></code>, so an interactive session shows the rows and a rendered report carries only the counts. A test knits a report and asserts that no row reaches it. Answers the targeted-print half of hvtiRdatabuild#71, for the <code>dt</code> data check template.</p></li>
+<li><p><code><a href="../reference/proc_print.html">proc_print()</a></code> gains <code>console = TRUE</code>. <code>console = FALSE</code> writes nothing, neither the matching rows nor the warnings a condition raises, and returns only the counts, so its output can be switched off as the CRAN Cookbook asks of console output.</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.5.16" id="hvtirutilities-1516">hvtiRutilities 1.5.16<a class="anchor" aria-label="anchor" href="#hvtirutilities-1516"></a></h2>
 <ul><li><p><code>DESCRIPTION</code> now says what the package does. The <code>Description</code> field names the main facilities (study layout and paths, data import and type conversion, labels, the study data contract with manifests, file hashes and provenance, fit caching, the analysis taxonomy, and the ‘SAS’ procedure ports and parity checks) and spells out HVTI (Heart, Vascular and Thoracic Institute) and CORR (Cardiovascular Outcomes, Registries and Research). The <code>Title</code> is shortened to “Study and Data Utilities for the HVTI CORR Group”, under the 65-character limit in Writing R Extensions. This answers the CRAN Cookbook’s DESCRIPTION and General Issues chapters.</p></li>

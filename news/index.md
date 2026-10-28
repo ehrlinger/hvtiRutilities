@@ -1,5 +1,29 @@
 # Changelog
 
+## hvtiRutilities 1.5.17
+
+- New
+  [`proc_print()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_print.md),
+  the targeted print of a build check: SAS `PROC PRINT` with a `WHERE`,
+  for several conditions at once. Each condition is written
+  `condition ~ "Label"`, the shape of a `bd` job’s `EXCLUDE` rules. It
+  returns one row per condition with `n` (rows matching) and `n_missing`
+  (rows for which the condition was `NA`), and writes the matching rows,
+  limited to `var` and `max_rows`, to
+  [`stderr()`](https://rdrr.io/r/base/showConnections.html), as are any
+  warnings and messages a condition raises. knitr and Quarto do not
+  capture [`stderr()`](https://rdrr.io/r/base/showConnections.html), so
+  an interactive session shows the rows and a rendered report carries
+  only the counts. A test knits a report and asserts that no row reaches
+  it. Answers the targeted-print half of hvtiRdatabuild#71, for the `dt`
+  data check template.
+
+- [`proc_print()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_print.md)
+  gains `console = TRUE`. `console = FALSE` writes nothing, neither the
+  matching rows nor the warnings a condition raises, and returns only
+  the counts, so its output can be switched off as the CRAN Cookbook
+  asks of console output.
+
 ## hvtiRutilities 1.5.16
 
 - `DESCRIPTION` now says what the package does. The `Description` field
