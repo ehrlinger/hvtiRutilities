@@ -4,7 +4,7 @@
 \alias{proc_print}
 \title{Targeted prints of matching rows, in the style of SAS PROC PRINT with WHERE}
 \usage{
-proc_print(data, where, var = NULL, max_rows = 25L)
+proc_print(data, where, var = NULL, max_rows = 25L, console = TRUE)
 }
 \arguments{
 \item{data}{A data frame.}
@@ -18,6 +18,10 @@ rows, SAS \code{VAR}. \code{NULL} prints every column.}
 
 \item{max_rows}{A single positive whole number. At most this many matching
 rows are printed per condition; the count is always the full count.}
+
+\item{console}{A single \code{TRUE} or \code{FALSE}. \code{FALSE} writes
+nothing, neither rows nor the warnings a condition raises, and only
+returns the counts.}
 }
 \value{
 A data frame with one row per condition and the columns

@@ -36,6 +36,9 @@
 #'   rows, SAS \code{VAR}. \code{NULL} prints every column.
 #' @param max_rows A single positive whole number. At most this many matching
 #'   rows are printed per condition; the count is always the full count.
+#' @param console A single \code{TRUE} or \code{FALSE}. \code{FALSE} writes
+#'   nothing, neither rows nor the warnings a condition raises, and only
+#'   returns the counts.
 #'
 #' @return A data frame with one row per condition and the columns
 #'   \code{label}, \code{n} (rows matching) and \code{n_missing} (rows for
@@ -55,11 +58,12 @@
 #'   where = list(age > 80 ~ "Older than 80",
 #'                dead == 1 & iv_dead < 1 ~ "Death in the first year"),
 #'   var = c("age", "dead", "iv_dead"))
-proc_print <- function(data, where, var = NULL, max_rows = 25L) {
+proc_print <- function(data, where, var = NULL, max_rows = 25L, console = TRUE) {
   if (!is.data.frame(data)) {
     stop("'data' must be a data frame.", call. = FALSE)
   }
   where <- .print_conditions(where)
+  .check_flag(console, "console")
   if (!is.null(var)) {
     if (!is.character(var) || length(var) == 0L || anyNA(var)) {
       stop("'var' must be NULL or a non-empty character vector of column names.",
@@ -77,11 +81,13 @@ proc_print <- function(data, where, var = NULL, max_rows = 25L) {
   n <- integer(length(where))
   n_missing <- integer(length(where))
   for (i in seq_along(where)) {
-    hit <- .eval_print_condition(where[[i]], data, labels[[i]])
+    hit <- .eval_print_condition(where[[i]], data, labels[[i]], console)
     n[[i]] <- sum(hit %in% TRUE)
     n_missing[[i]] <- sum(is.na(hit))
-    .print_matches(data[hit %in% TRUE, shown, drop = FALSE], labels[[i]],
-                   n[[i]], n_missing[[i]], max_rows)
+    if (console) {
+      .print_matches(data[hit %in% TRUE, shown, drop = FALSE], labels[[i]],
+                     n[[i]], n_missing[[i]], max_rows)
+    }
   }
   data.frame(label = labels, n = n, n_missing = n_missing,
              stringsAsFactors = FALSE)
@@ -118,10 +124,12 @@ proc_print <- function(data, where, var = NULL, max_rows = 25L) {
 ## messages raised while evaluating can quote one too (a parse failure lists
 ## the value it could not read), so they go to stderr() with the rows and
 ## never reach a knitted report.
-.eval_print_condition <- function(f, data, label) {
+.eval_print_condition <- function(f, data, label, console = TRUE) {
   to_console <- function(cnd, restart) {
-    cat("proc_print(): condition \"", label, "\": ", conditionMessage(cnd),
-        if (inherits(cnd, "message")) "" else "\n", sep = "", file = stderr())
+    if (console) {
+      cat("proc_print(): condition \"", label, "\": ", conditionMessage(cnd),
+          if (inherits(cnd, "message")) "" else "\n", sep = "", file = stderr())
+    }
     invokeRestart(restart)
   }
   hit <- tryCatch(
