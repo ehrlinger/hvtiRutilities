@@ -111,8 +111,9 @@
 #' @param code The computation: an inline call or \code{\{\}} block, or a
 #'   variable holding a quoted call.
 #' @param seed \code{NULL} or a single whole number.
-#' @param dir Character(1). An existing directory. Defaults to the study's
-#'   estimates folder.
+#' @param dir Character(1). An existing directory. Defaults to the estimates
+#'   folder of the study that contains the working directory, found by its
+#'   \code{_study.yml}; outside a study the function stops and writes nothing.
 #' @param refit Logical(1). \code{TRUE} recomputes and overwrites the file only
 #'   when it is stale or unkeyed; a valid cache is still loaded, not
 #'   recomputed, regardless of \code{refit}.

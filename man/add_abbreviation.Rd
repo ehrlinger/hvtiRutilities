@@ -4,7 +4,7 @@
 \alias{add_abbreviation}
 \title{Add a phrase to a study's abbreviation list}
 \usage{
-add_abbreviation(phrase, abbreviation, start = getwd())
+add_abbreviation(phrase, abbreviation, start = study_root())
 }
 \arguments{
 \item{phrase}{The phrase, as it appears in labels.}
@@ -12,7 +12,9 @@ add_abbreviation(phrase, abbreviation, start = getwd())
 \item{abbreviation}{Its abbreviation, or \code{NULL} to remove a default.}
 
 \item{start}{A directory inside the study; the study is found as
-\code{\link{study_config}} finds it.}
+\code{\link{study_config}} finds it. Defaults to the study that contains the working
+directory, found by its \code{_study.yml}; outside a study the function
+stops and writes nothing.}
 }
 \value{
 The study's abbreviation list after the change, invisibly, as a

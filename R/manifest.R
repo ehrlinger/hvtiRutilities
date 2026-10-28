@@ -95,8 +95,12 @@
 #' @param file Character. Path to the dataset file. Omit it inside a study to
 #'   register every changed dataset; see the description.
 #' @param manifest_path Character. Path to the manifest YAML file.
-#'   Created if it does not exist. Defaults to \code{"manifest.yaml"} in the
-#'   current working directory.
+#'   Created if it does not exist. \code{NULL} (the default) writes the
+#'   enclosing study's \code{manifest.yaml} at its root, the manifest the
+#'   no-argument form and \code{\link{verify_manifest}} use, and only for a
+#'   file in the study's datasets folder, where that manifest's entries are
+#'   resolved. Outside a study, or for a file anywhere else, there is no
+#'   default: name the manifest, or the call stops and writes nothing.
 #' @param extract_date Character or \code{Date}. The date the data were pulled
 #'   from the source system.  Stored as \code{"YYYY-MM-DD"}.  Defaults to
 #'   today's date. With no \code{file}, the date of the new version; defaults
@@ -158,7 +162,7 @@
 #' @seealso \code{\link{verify_manifest}}
 #' @export
 update_manifest <- function(file,
-                            manifest_path = "manifest.yaml",
+                            manifest_path = NULL,
                             extract_date  = Sys.Date(),
                             n_rows        = NULL,
                             n_cols        = NULL,
@@ -203,6 +207,7 @@ update_manifest <- function(file,
   if (!file.exists(file)) {
     stop("Dataset file not found: ", file)
   }
+  if (is.null(manifest_path)) manifest_path <- .single_manifest_path(file)
 
   sha256 <- digest::digest(file, algo = "sha256", file = TRUE)
 
@@ -277,6 +282,36 @@ update_manifest <- function(file,
 
   .atomic_write(manifest_path, function(tmp) .write_manifest(manifest, tmp))
   invisible(manifest)
+}
+
+# The single-file form's default: the enclosing study's manifest. Outside a
+# study there is none, so nothing is written into the working directory. Only
+# a missing _study.yml means "no study here"; any other study_config() error
+# is passed on.
+#
+# An entry records only basename(file), and verify_manifest() resolves a study
+# manifest's entries in the datasets folder it picks the same way below. A
+# file anywhere else would be recorded under the name of a different file, and
+# could replace that file's entry, so it needs an explicit manifest_path.
+.single_manifest_path <- function(file) {
+  cfg <- tryCatch(study_config(require_data = FALSE), error = function(e) {
+    if (!grepl("no _study.yml found", conditionMessage(e), fixed = TRUE)) stop(e)
+    NULL
+  })
+  if (is.null(cfg)) {
+    stop("update_manifest(): no study contains the working directory, so there ",
+         "is no default manifest. Pass `manifest_path =` to name the manifest to ",
+         "write.", call. = FALSE)
+  }
+  candidates <- file.path(cfg$root, c("00_datasets", "datasets"))
+  data_dir <- c(candidates[dir.exists(candidates)], cfg$root)[[1L]]
+  if (!identical(normalizePath(dirname(file), mustWork = TRUE),
+                 normalizePath(data_dir, mustWork = TRUE))) {
+    stop("update_manifest(): ", file, " is not in the study's datasets folder (",
+         data_dir, "), where the study manifest would look for it. Pass ",
+         "`manifest_path =` to record it in a manifest of its own.", call. = FALSE)
+  }
+  file.path(cfg$root, "manifest.yaml")
 }
 
 # Inside a study, the study's manifest; elsewhere, manifest.yaml here. A job run

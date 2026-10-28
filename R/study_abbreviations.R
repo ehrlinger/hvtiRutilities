@@ -228,7 +228,9 @@ study_abbreviations <- function(cfg = study_config(), extra = NULL, defaults = T
 #' @param phrase The phrase, as it appears in labels.
 #' @param abbreviation Its abbreviation, or \code{NULL} to remove a default.
 #' @param start A directory inside the study; the study is found as
-#'   \code{\link{study_config}} finds it.
+#'   \code{\link{study_config}} finds it. Defaults to the study that contains the working
+#'   directory, found by its \code{_study.yml}; outside a study the function
+#'   stops and writes nothing.
 #'
 #' @return The study's abbreviation list after the change, invisibly, as a
 #'   named list.
@@ -243,7 +245,7 @@ study_abbreviations <- function(cfg = study_config(), extra = NULL, defaults = T
 #' add_abbreviation("Surgical procedure", "SP", start = root)
 #' add_abbreviation("Ejection fraction", NULL, start = root)
 #' unlink(root, recursive = TRUE)
-add_abbreviation <- function(phrase, abbreviation, start = getwd()) {
+add_abbreviation <- function(phrase, abbreviation, start = study_root()) {
   if (!is.character(phrase) || length(phrase) != 1L || is.na(phrase) || !nzchar(phrase)) {
     stop("'phrase' must be one non-empty string.", call. = FALSE)
   }

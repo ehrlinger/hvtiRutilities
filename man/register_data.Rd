@@ -5,7 +5,7 @@
 \title{Register a study dataset}
 \usage{
 register_data(
-  root = getwd(),
+  root = study_root(),
   built,
   dataset = "study",
   role = c("study", "named"),
@@ -20,7 +20,9 @@ register_data(
 )
 }
 \arguments{
-\item{root}{Character. Study root or a directory beneath it.}
+\item{root}{Character. Study root or a directory beneath it. Defaults to the study that contains the working
+directory, found by its \code{_study.yml}; outside a study the function
+stops and writes nothing.}
 
 \item{built}{Character(1). Dataset filename within the logical
 \code{datasets} directory, including its extension.}

@@ -134,7 +134,9 @@
 #' adopted with \code{\link{adopt_data_update}()}, and its key is checked only at
 #' registration.
 #'
-#' @param root Character. Study root or a directory beneath it.
+#' @param root Character. Study root or a directory beneath it. Defaults to the study that contains the working
+#'   directory, found by its \code{_study.yml}; outside a study the function
+#'   stops and writes nothing.
 #' @param built Character(1). Dataset filename within the logical
 #'   \code{datasets} directory, including its extension.
 #' @param dataset Character(1). The dataset's name. Choose it only with
@@ -230,7 +232,7 @@
 #' unlink(root, recursive = TRUE)
 #'
 #' @export
-register_data <- function(root = getwd(), built, dataset = "study",
+register_data <- function(root = study_root(), built, dataset = "study",
                           role = c("study", "named"),
                           population = NULL, source = NULL,
                           extract_date = NULL,

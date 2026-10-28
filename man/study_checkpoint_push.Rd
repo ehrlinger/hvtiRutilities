@@ -7,7 +7,9 @@
 study_checkpoint_push(root = study_root())
 }
 \arguments{
-\item{root}{Character. Study root. Defaults to \code{study_root()}.}
+\item{root}{Character. Study root. Defaults to the study that contains the working
+directory, found by its \code{_study.yml}; outside a study the function
+stops and writes nothing.}
 }
 \value{
 A data frame, returned invisibly, with one row per logged event and

@@ -4,7 +4,7 @@
 \alias{study_update_identity}
 \title{Record a verified study identity}
 \usage{
-study_update_identity(identity, start = getwd())
+study_update_identity(identity, start = study_root())
 }
 \arguments{
 \item{identity}{A named list from the Study Tracker record. It must hold
@@ -13,7 +13,9 @@ hold \code{umbrella}, \code{owner}, \code{irb_number}, \code{cvir_no} and
 \code{study_creation_date}.}
 
 \item{start}{A directory inside the study; the study is found as
-\code{\link{study_config}} finds it.}
+\code{\link{study_config}} finds it. Defaults to the study that contains the working
+directory, found by its \code{_study.yml}; outside a study the function
+stops and writes nothing.}
 }
 \value{
 The names of the keys whose values changed, invisibly.

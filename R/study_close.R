@@ -207,7 +207,9 @@
 #'   integer, a double or a string; required for \code{"superseded"}.
 #' @param closed_at,reopened_at Date of the event. Defaults to today.
 #' @param new_lead Optional character(1), the username of a new study lead.
-#' @param root Character. Study root. Defaults to \code{study_root()}.
+#' @param root Character. Study root. Defaults to the study that contains the working
+#'   directory, found by its \code{_study.yml}; outside a study the function
+#'   stops and writes nothing.
 #'
 #' @return An object of class \code{"study_checkpoint"}, returned invisibly.
 #'

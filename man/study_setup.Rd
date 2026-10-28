@@ -24,9 +24,10 @@ study_setup(
 \arguments{
 \item{root}{Character. Study root to create or adopt. When omitted, the
 study enclosing the working directory (found as \code{\link{study_root}}
-finds it) is used, or the working directory itself when no
-\code{_study.yml} lies above it. An empty working directory is set up as a
-new study.}
+finds it) is used. Outside a study there is no default:
+\code{study_setup()} stops and writes nothing, so a new study always names
+its directory. Use \code{root = "."} with \code{adopt = TRUE} to set up
+the current folder.}
 
 \item{study}{Character(1). Study title.}
 

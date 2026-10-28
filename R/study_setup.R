@@ -80,15 +80,18 @@
 }
 
 # The root study_setup() uses when none is given: the study enclosing the
-# working directory, or the working directory itself when there is none. Only
-# a missing _study.yml means "no study here"; any other study_config() error,
-# such as a malformed _study.yml above, is passed on.
+# working directory. With no study above there is no default, so a new study is
+# never created in the working directory unasked. Only a missing _study.yml
+# means "no study here"; any other study_config() error, such as a malformed
+# _study.yml above, is passed on.
 .study_setup_root <- function(start = getwd()) {
   tryCatch(
     study_config(start, require_data = FALSE)$root,
     error = function(e) {
       if (!grepl("no _study.yml found", conditionMessage(e), fixed = TRUE)) stop(e)
-      normalizePath(start, mustWork = TRUE)
+      stop("study_setup(): no study contains the working directory, so there is no ",
+           "default root. Pass `root =` to name the study to create, or ",
+           "`root = \".\", adopt = TRUE` to set up the current folder.", call. = FALSE)
     }
   )
 }
@@ -399,9 +402,10 @@
 #'
 #' @param root Character. Study root to create or adopt. When omitted, the
 #'   study enclosing the working directory (found as \code{\link{study_root}}
-#'   finds it) is used, or the working directory itself when no
-#'   \code{_study.yml} lies above it. An empty working directory is set up as a
-#'   new study.
+#'   finds it) is used. Outside a study there is no default:
+#'   \code{study_setup()} stops and writes nothing, so a new study always names
+#'   its directory. Use \code{root = "."} with \code{adopt = TRUE} to set up
+#'   the current folder.
 #' @param study Character(1). Study title.
 #' @param study_tracker_id Integer(1). Study Tracker topic ID.
 #' @param umbrella,owner,irb_number,cvir_no Optional identity values.
@@ -490,8 +494,7 @@ study_setup <- function(root = NULL, study, study_tracker_id,
     stop("study_setup(): identity_source must be \"tracker\" or ",
          "\"manual\"", call. = FALSE)
   }
-  inferred <- is.null(root)
-  root <- if (inferred) .study_setup_root() else .study_scalar(root, "root", required = TRUE)
+  root <- if (is.null(root)) .study_setup_root() else .study_scalar(root, "root", required = TRUE)
   study <- .study_scalar(study, "study", required = TRUE)
   tracker <- suppressWarnings(as.integer(study_tracker_id))
   if (length(tracker) != 1L || is.na(tracker) || tracker < 1L ||
@@ -532,9 +535,7 @@ study_setup <- function(root = NULL, study, study_tracker_id,
     stop("study_setup(): root already contains files; use adopt = TRUE",
          call. = FALSE)
   }
-  # An empty working directory the caller is standing in is the study they
-  # mean to create; an empty root named explicitly still needs adopt = TRUE.
-  if (existed && !length(entries) && !adopt && !inferred) {
+  if (existed && !length(entries) && !adopt) {
     stop("study_setup(): root already exists; use adopt = TRUE",
          call. = FALSE)
   }
