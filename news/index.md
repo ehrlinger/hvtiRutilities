@@ -1,5 +1,100 @@
 # Changelog
 
+## hvtiRutilities 1.5.16
+
+- `DESCRIPTION` now says what the package does. The `Description` field
+  names the main facilities (study layout and paths, data import and
+  type conversion, labels, the study data contract with manifests, file
+  hashes and provenance, fit caching, the analysis taxonomy, and the
+  ‘SAS’ procedure ports and parity checks) and spells out HVTI (Heart,
+  Vascular and Thoracic Institute) and CORR (Cardiovascular Outcomes,
+  Registries and Research). The `Title` is shortened to “Study and Data
+  Utilities for the HVTI CORR Group”, under the 65-character limit in
+  Writing R Extensions. This answers the CRAN Cookbook’s DESCRIPTION and
+  General Issues chapters.
+
+- [`generate_survival_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/generate_survival_data.md)
+  and
+  [`cache_fit()`](https://ehrlinger.github.io/hvtiRutilities/reference/cache_fit.md)
+  no longer save, restore or remove `.Random.seed` in the global
+  environment, which the CRAN Cookbook forbids. Each now calls
+  [`set.seed()`](https://rdrr.io/r/base/Random.html) only when it is
+  given a seed.
+
+  - `generate_survival_data(seed = NULL)` used to call `set.seed(NULL)`,
+    which reseeds from the clock. It now sets no seed and draws from the
+    caller’s stream, so
+    `set.seed(s); generate_survival_data(seed = NULL)` gives the same
+    data as `generate_survival_data(seed = s)`. The default stays
+    `seed = 1024`.
+  - After a seeded
+    [`generate_survival_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/generate_survival_data.md)
+    call, the stream is left where the simulation ended rather than put
+    back as it was.
+  - A seeded
+    [`cache_fit()`](https://ehrlinger.github.io/hvtiRutilities/reference/cache_fit.md)
+    calls `set.seed(seed)` before the computation and again after it
+    (even when it fails), and once on a cache hit. If the computation
+    changes the generator with
+    [`RNGkind()`](https://rdrr.io/r/base/Random.html), the caller’s
+    kinds are put back before that second call. Computed and loaded
+    results therefore leave the stream in the same state, so code after
+    the call draws the same numbers whether or not the cache was hit. It
+    used
+    [`withr::with_seed()`](https://withr.r-lib.org/reference/with_seed.html),
+    which restored the caller’s stream. An unseeded
+    [`cache_fit()`](https://ehrlinger.github.io/hvtiRutilities/reference/cache_fit.md)
+    is unchanged: it draws from the caller’s stream and warns if the
+    computation used random numbers.
+  - Code that relied on either function leaving the stream as it found
+    it should set its own seed before its next random step. The
+    hvtiRtemplates templates already seed every random call where it
+    runs.
+
+- Breaking: no exported function writes into the working directory by
+  default any more, as the CRAN Cookbook’s code chapter asks.
+
+  - `update_manifest(file)` now defaults to `manifest_path = NULL`,
+    which means the manifest at the root of the study that contains the
+    working directory, the same file the no-argument form and
+    [`verify_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md)
+    use. That default applies only to a file in the study’s datasets
+    folder, where the study manifest’s entries are resolved; for a file
+    anywhere else, and outside a study, it stops and asks for
+    `manifest_path` instead of writing `./manifest.yaml`. An entry
+    records only the file’s name, so a same-named file elsewhere would
+    otherwise replace a registered dataset’s entry. Inside a study it no
+    longer leaves a stray `manifest.yaml` in a subfolder, such as a
+    job’s folder while Quarto renders it.
+  - [`study_setup()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md)
+    with no `root` re-runs setup on the study that contains the working
+    directory, as before. Outside a study it now stops and writes
+    nothing, instead of creating a study in the working directory. To
+    set up the current folder, call
+    `study_setup(root = ".", adopt = TRUE, ...)`.
+  - The writers that find their study by walking up to its `_study.yml`
+    are unchanged, and outside a study they still stop and write
+    nothing.
+    [`declare_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/declare_data.md)
+    and
+    [`register_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md)
+    now spell their `root` default as
+    [`study_root()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_root.md)
+    rather than [`getwd()`](https://rdrr.io/r/base/getwd.html), and
+    [`add_abbreviation()`](https://ehrlinger.github.io/hvtiRutilities/reference/add_abbreviation.md)
+    and
+    [`study_update_identity()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_update_identity.md)
+    their `start` default; each resolves to the same study as before.
+    Their help pages, and those of
+    [`cache_fit()`](https://ehrlinger.github.io/hvtiRutilities/reference/cache_fit.md),
+    [`study_declare()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_declare.md),
+    [`study_checkpoint()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checkpoint.md),
+    [`study_checkpoint_push()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checkpoint_push.md),
+    [`study_close()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_close.md)
+    and
+    [`study_reopen()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_close.md),
+    now say so.
+
 ## hvtiRutilities 1.5.15
 
 - [`hvti_taxonomy()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_taxonomy.md)

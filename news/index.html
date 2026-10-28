@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.15</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.16</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -56,6 +56,26 @@
       <small>Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.5.16" id="hvtirutilities-1516">hvtiRutilities 1.5.16<a class="anchor" aria-label="anchor" href="#hvtirutilities-1516"></a></h2>
+<ul><li><p><code>DESCRIPTION</code> now says what the package does. The <code>Description</code> field names the main facilities (study layout and paths, data import and type conversion, labels, the study data contract with manifests, file hashes and provenance, fit caching, the analysis taxonomy, and the ‘SAS’ procedure ports and parity checks) and spells out HVTI (Heart, Vascular and Thoracic Institute) and CORR (Cardiovascular Outcomes, Registries and Research). The <code>Title</code> is shortened to “Study and Data Utilities for the HVTI CORR Group”, under the 65-character limit in Writing R Extensions. This answers the CRAN Cookbook’s DESCRIPTION and General Issues chapters.</p></li>
+<li>
+<p><code><a href="../reference/generate_survival_data.html">generate_survival_data()</a></code> and <code><a href="../reference/cache_fit.html">cache_fit()</a></code> no longer save, restore or remove <code>.Random.seed</code> in the global environment, which the CRAN Cookbook forbids. Each now calls <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code> only when it is given a seed.</p>
+<ul><li>
+<code>generate_survival_data(seed = NULL)</code> used to call <code>set.seed(NULL)</code>, which reseeds from the clock. It now sets no seed and draws from the caller’s stream, so <code>set.seed(s); generate_survival_data(seed = NULL)</code> gives the same data as <code>generate_survival_data(seed = s)</code>. The default stays <code>seed = 1024</code>.</li>
+<li>After a seeded <code><a href="../reference/generate_survival_data.html">generate_survival_data()</a></code> call, the stream is left where the simulation ended rather than put back as it was.</li>
+<li>A seeded <code><a href="../reference/cache_fit.html">cache_fit()</a></code> calls <code>set.seed(seed)</code> before the computation and again after it (even when it fails), and once on a cache hit. If the computation changes the generator with <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">RNGkind()</a></code>, the caller’s kinds are put back before that second call. Computed and loaded results therefore leave the stream in the same state, so code after the call draws the same numbers whether or not the cache was hit. It used <code><a href="https://withr.r-lib.org/reference/with_seed.html" class="external-link">withr::with_seed()</a></code>, which restored the caller’s stream. An unseeded <code><a href="../reference/cache_fit.html">cache_fit()</a></code> is unchanged: it draws from the caller’s stream and warns if the computation used random numbers.</li>
+<li>Code that relied on either function leaving the stream as it found it should set its own seed before its next random step. The hvtiRtemplates templates already seed every random call where it runs.</li>
+</ul></li>
+<li>
+<p>Breaking: no exported function writes into the working directory by default any more, as the CRAN Cookbook’s code chapter asks.</p>
+<ul><li>
+<code>update_manifest(file)</code> now defaults to <code>manifest_path = NULL</code>, which means the manifest at the root of the study that contains the working directory, the same file the no-argument form and <code><a href="../reference/verify_manifest.html">verify_manifest()</a></code> use. That default applies only to a file in the study’s datasets folder, where the study manifest’s entries are resolved; for a file anywhere else, and outside a study, it stops and asks for <code>manifest_path</code> instead of writing <code>./manifest.yaml</code>. An entry records only the file’s name, so a same-named file elsewhere would otherwise replace a registered dataset’s entry. Inside a study it no longer leaves a stray <code>manifest.yaml</code> in a subfolder, such as a job’s folder while Quarto renders it.</li>
+<li>
+<code><a href="../reference/study_setup.html">study_setup()</a></code> with no <code>root</code> re-runs setup on the study that contains the working directory, as before. Outside a study it now stops and writes nothing, instead of creating a study in the working directory. To set up the current folder, call <code>study_setup(root = ".", adopt = TRUE, ...)</code>.</li>
+<li>The writers that find their study by walking up to its <code>_study.yml</code> are unchanged, and outside a study they still stop and write nothing. <code><a href="../reference/declare_data.html">declare_data()</a></code> and <code><a href="../reference/register_data.html">register_data()</a></code> now spell their <code>root</code> default as <code><a href="../reference/study_root.html">study_root()</a></code> rather than <code><a href="https://rdrr.io/r/base/getwd.html" class="external-link">getwd()</a></code>, and <code><a href="../reference/add_abbreviation.html">add_abbreviation()</a></code> and <code><a href="../reference/study_update_identity.html">study_update_identity()</a></code> their <code>start</code> default; each resolves to the same study as before. Their help pages, and those of <code><a href="../reference/cache_fit.html">cache_fit()</a></code>, <code><a href="../reference/study_declare.html">study_declare()</a></code>, <code><a href="../reference/study_checkpoint.html">study_checkpoint()</a></code>, <code><a href="../reference/study_checkpoint_push.html">study_checkpoint_push()</a></code>, <code><a href="../reference/study_close.html">study_close()</a></code> and <code><a href="../reference/study_close.html">study_reopen()</a></code>, now say so.</li>
+</ul></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.5.15" id="hvtirutilities-1515">hvtiRutilities 1.5.15<a class="anchor" aria-label="anchor" href="#hvtirutilities-1515"></a></h2>
 <ul><li>
