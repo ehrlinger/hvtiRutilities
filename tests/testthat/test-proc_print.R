@@ -63,6 +63,26 @@ test_that("a knitted report carries the counts and none of the rows", {
   expect_false(any(grepl("PRINTME", html, fixed = TRUE)))
 })
 
+test_that("a warning or message from a condition goes to stderr, not the knitted report", {
+  skip_if_not_installed("knitr")
+  rmd <- withr::local_tempfile(fileext = ".Rmd")
+  md <- withr::local_tempfile(fileext = ".md")
+  writeLines(c(
+    "```{r}",
+    "proc_print(d, where = list({ warning(id[[2]]); age > 100 } ~ \"Warns\",",
+    "                           { message(id[[3]]); dead == 1 } ~ \"Says\"), var = \"age\")",
+    "```"
+  ), rmd)
+  env <- new.env(parent = asNamespace("hvtiRutilities"))
+  env$d <- fixture()
+  err <- capture.output(invisible(knitr::knit(rmd, md, envir = env, quiet = TRUE)), type = "message")
+  html <- readLines(md)
+  expect_true(any(grepl("Warns", html, fixed = TRUE)))
+  expect_false(any(grepl("PRINTME", html, fixed = TRUE)))
+  expect_true(any(grepl("PRINTME-B2", err, fixed = TRUE)))
+  expect_true(any(grepl("PRINTME-C3", err, fixed = TRUE)))
+})
+
 test_that("malformed conditions are refused", {
   d <- fixture()
   expect_error(proc_print(d, list(TRUE)), "condition 1 is not written")

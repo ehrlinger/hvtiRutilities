@@ -50,7 +50,9 @@ evaluates to \code{NA} for a row does not match it; those rows are counted
 in \code{n_missing}, so a check that cannot be decided for some patients
 says so instead of reading as clean. A condition that fails is an error
 naming its label. The error does not repeat R's own message, which can
-quote a data value.
+quote a data value. Warnings and messages raised while a condition is
+evaluated (a date parser listing the value it could not read, say) go to
+\code{stderr()} with the rows, for the same reason.
 }
 \examples{
 dta <- generate_survival_data(n = 200, seed = 42)

@@ -24,7 +24,9 @@
 #' in \code{n_missing}, so a check that cannot be decided for some patients
 #' says so instead of reading as clean. A condition that fails is an error
 #' naming its label. The error does not repeat R's own message, which can
-#' quote a data value.
+#' quote a data value. Warnings and messages raised while a condition is
+#' evaluated (a date parser listing the value it could not read, say) go to
+#' \code{stderr()} with the rows, for the same reason.
 #'
 #' @param data A data frame.
 #' @param where A list of conditions, each \code{condition ~ "Label"} with a
@@ -65,8 +67,8 @@ proc_print <- function(data, where, var = NULL, max_rows = 25L) {
     }
     .check_columns(var, data)
   }
-  if (!is.numeric(max_rows) || length(max_rows) != 1L || is.na(max_rows) ||
-      max_rows < 1 || max_rows != round(max_rows)) {
+  bad_rows <- !is.numeric(max_rows) || length(max_rows) != 1L || is.na(max_rows)
+  if (bad_rows || max_rows < 1 || max_rows != round(max_rows)) {
     stop("'max_rows' must be a single positive whole number.", call. = FALSE)
   }
   shown <- if (is.null(var)) names(data) else var
@@ -96,8 +98,8 @@ proc_print <- function(data, where, var = NULL, max_rows = 25L) {
     f <- where[[i]]
     ok <- inherits(f, "formula") && length(f) == 3L
     label <- if (ok) f[[3L]] else NULL
-    if (!ok || !is.character(label) || length(label) != 1L || is.na(label) ||
-        !nzchar(label)) {
+    ok <- ok && is.character(label) && length(label) == 1L
+    if (!ok || is.na(label) || !nzchar(label)) {
       stop("'where' condition ", i, " is not written condition ~ \"Label\". ",
            "Give every condition a quoted label.", call. = FALSE)
     }
@@ -112,10 +114,24 @@ proc_print <- function(data, where, var = NULL, max_rows = 25L) {
 }
 
 ## Internal: evaluate one condition to a logical vector, one value per row.
-## R's error message is withheld: it can quote a data value.
+## R's error message is withheld: it can quote a data value. Warnings and
+## messages raised while evaluating can quote one too (a parse failure lists
+## the value it could not read), so they go to stderr() with the rows and
+## never reach a knitted report.
 .eval_print_condition <- function(f, data, label) {
-  hit <- tryCatch(eval(f[[2L]], data, environment(f)),
-                  error = function(e) structure(list(), class = "print_failed"))
+  to_console <- function(cnd, restart) {
+    cat("proc_print(): condition \"", label, "\": ", conditionMessage(cnd),
+        if (inherits(cnd, "message")) "" else "\n", sep = "", file = stderr())
+    invokeRestart(restart)
+  }
+  hit <- tryCatch(
+    withCallingHandlers(
+      eval(f[[2L]], data, environment(f)),
+      warning = function(w) to_console(w, "muffleWarning"),
+      message = function(m) to_console(m, "muffleMessage")
+    ),
+    error = function(e) structure(list(), class = "print_failed")
+  )
   if (inherits(hit, "print_failed")) {
     stop("proc_print(): condition \"", label, "\" could not be evaluated. ",
          "Check the column names it uses.", call. = FALSE)
