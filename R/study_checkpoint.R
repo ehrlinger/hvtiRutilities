@@ -93,6 +93,16 @@
 # back as it was and, once the entry exists, marks it abandoned.
 .cp_snapshot <- function(root, study, tag_fn, entry, caller, held = NULL) {
   repo <- .cp_repo_init(root, study$remote)
+  # Milestones belong on main, and the commit and tag below land wherever
+  # HEAD points. Render commits never move it, so anything else was done by
+  # hand; stop before writing rather than tag another branch.
+  head_ref <- .cp_git(repo, c("symbolic-ref", "-q", "HEAD"))
+  if (!head_ref$ok || !identical(head_ref$out[1], "refs/heads/main")) {
+    stop(caller, "(): .checkpoint/repo is not on main (HEAD is ",
+         if (head_ref$ok) head_ref$out[1] else "detached", "). Run ",
+         "`git -C .checkpoint/repo checkout main` and try again.",
+         call. = FALSE)
+  }
   tag <- tag_fn(repo)
   sel <- .cp_select(root, study$include)
   .cp_lock_touch(held)

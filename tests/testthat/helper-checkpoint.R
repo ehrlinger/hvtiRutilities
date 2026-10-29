@@ -52,6 +52,11 @@ make_bare_remote <- function(dir, name = "remote.git") {
   bare
 }
 
+# The render ref this copy of the study commits to.
+render_ref <- function(root) {
+  git_out(.cp_repo_path(root), c("config", "--get", "hvti.renderref"))[1]
+}
+
 git_out <- function(repo, args) {
   suppressWarnings(system2("git", shQuote(c("-C", repo, args)),
                            stdout = TRUE, stderr = TRUE))

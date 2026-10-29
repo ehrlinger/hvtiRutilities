@@ -150,6 +150,8 @@ reference:
   contents:
   - study_checkpoint
   - study_checkpoint_push
+  - study_render_commit
+  - study_render_record
   - study_close
 
 - title: Study Manifest and Data Contract
