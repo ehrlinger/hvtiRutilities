@@ -52,9 +52,10 @@ make_bare_remote <- function(dir, name = "remote.git") {
   bare
 }
 
-# The render ref this copy of the study commits to.
-render_ref <- function(root) {
-  git_out(.cp_repo_path(root), c("config", "--get", "hvti.renderref"))[1]
+# The render ref ("source" or "records") this copy of the study commits to.
+render_ref <- function(root, which = "source") {
+  id <- git_out(.cp_repo_path(root), c("config", "--get", "hvti.renderid"))[1]
+  paste0("refs/renders/", id, "/", which)
 }
 
 git_out <- function(repo, args) {

@@ -87,15 +87,13 @@
   invisible(log)
 }
 
-# Select, copy, describe, log, commit, tag and complete the log entry.
-# `tag_fn(repo)` names the tag, so checkpoints, closures and the unnumbered
-# workspace_created share one transaction. Any failure puts the repository
-# back as it was and, once the entry exists, marks it abandoned.
-.cp_snapshot <- function(root, study, tag_fn, entry, caller, held = NULL) {
-  repo <- .cp_repo_init(root, study$remote)
-  # Milestones belong on main, and the commit and tag below land wherever
-  # HEAD points. Render commits never move it, so anything else was done by
-  # hand; stop before writing rather than tag another branch.
+# Milestones belong on main: the commits and tags land wherever HEAD points,
+# and reconciliation and sync reset it. Render commits never move it, so
+# anything else was done by hand. Each entry point calls this before any of
+# them writes; a study with no repository yet gets one on main.
+.cp_check_main <- function(root, caller) {
+  repo <- .cp_repo_path(root)
+  if (!.cp_has_repo(repo)) return(invisible(TRUE))
   head_ref <- .cp_git(repo, c("symbolic-ref", "-q", "HEAD"))
   if (!head_ref$ok || !identical(head_ref$out[1], "refs/heads/main")) {
     stop(caller, "(): .checkpoint/repo is not on main (HEAD is ",
@@ -103,6 +101,16 @@
          "`git -C .checkpoint/repo checkout main` and try again.",
          call. = FALSE)
   }
+  invisible(TRUE)
+}
+
+# Select, copy, describe, log, commit, tag and complete the log entry.
+# `tag_fn(repo)` names the tag, so checkpoints, closures and the unnumbered
+# workspace_created share one transaction. Any failure puts the repository
+# back as it was and, once the entry exists, marks it abandoned.
+.cp_snapshot <- function(root, study, tag_fn, entry, caller, held = NULL) {
+  repo <- .cp_repo_init(root, study$remote)
+  .cp_check_main(root, caller)
   tag <- tag_fn(repo)
   sel <- .cp_select(root, study$include)
   .cp_lock_touch(held)
@@ -254,6 +262,7 @@ study_checkpoint <- function(kind, note = NULL, attributes = NULL,
   root <- normalizePath(root, mustWork = TRUE)
   held <- .cp_lock(root, "study_checkpoint")
   on.exit(.cp_unlock(held), add = TRUE)
+  .cp_check_main(root, "study_checkpoint")
   .cp_reconcile(root)
   study <- .cp_study(root, "study_checkpoint")
   row <- .cp_kind_check(.cp_kinds(root), kind, "study_checkpoint")

@@ -241,6 +241,7 @@ study_close <- function(outcome, reason = NULL, publication = NULL,
   root <- normalizePath(root, mustWork = TRUE)
   held <- .cp_lock(root, "study_close")
   on.exit(.cp_unlock(held), add = TRUE)
+  .cp_check_main(root, "study_close")
   .cp_reconcile(root)
   study <- .cp_study(root, "study_close")
   if (length(outcome) != 1L || is.na(outcome) || !outcome %in% .cp_outcomes()) {
@@ -298,6 +299,7 @@ study_reopen <- function(reason, new_lead = NULL, reopened_at = Sys.Date(),
   root <- normalizePath(root, mustWork = TRUE)
   held <- .cp_lock(root, "study_reopen")
   on.exit(.cp_unlock(held), add = TRUE)
+  .cp_check_main(root, "study_reopen")
   .cp_reconcile(root)
   study <- .cp_study(root, "study_reopen")
   if (missing(reason) || !is.character(reason) || length(reason) != 1L ||

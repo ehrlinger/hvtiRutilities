@@ -16,13 +16,13 @@ study_render_record(
 \arguments{
 \item{render_id}{Character(1). The render's identifier; names the record.}
 
-\item{commit}{Character(1). The commit from
+\item{commit}{Character(1). The 40-character commit from
 \code{\link{study_render_commit}} that the outputs print.}
 
 \item{job}{Character(1). The job rendered, relative to the study root.}
 
-\item{outputs}{Character. Paths of the published files, absolute or
-relative to the study root; each must exist.}
+\item{outputs}{Character. Paths of the published files inside the study,
+absolute or relative to the study root; each must exist.}
 
 \item{extra}{List. Further fields for the record. Default \code{list()}.}
 
@@ -32,18 +32,27 @@ relative to the study root; each must exist.}
 Invisibly, the record as a list.
 }
 \description{
-Adds a render record to this copy's render ref, tying every output a
-render published to the commit its figures print. Records accumulate, so a
-figure copied into a manuscript can be traced after its job is rendered
+Adds a render record to this copy's render records ref, tying every output
+a render published to the commit its figures print. Records accumulate, so
+a figure copied into a manuscript can be traced after its job is rendered
 again.
 }
 \details{
 The record is written as \code{.hvti-renders/<render_id>.json} in a new
-commit on the render ref, and every later render commit carries it, so
-the ref's tip holds every record. It names \code{commit}, \code{job}, the
-time, \code{extra} (typically the render's provenance) and, for each file
-in \code{outputs}, its path relative to the study root and its sha256. A
-render that fails should publish nothing and record nothing.
+commit on \code{refs/renders/<id>/records}, and every later record commit
+carries it, so the ref's tip holds every record. A \code{render_id} already
+recorded stops the call; a record is never replaced. The record names
+\code{commit}, \code{job}, the time, \code{extra} (typically the render's
+provenance) and, for each file in \code{outputs}, its path relative to the
+study root and its sha256. A render that fails should publish nothing and
+record nothing.
+
+Everything is checked before the ref moves. \code{commit} must be on this
+copy's render source ref, which holds only source snapshots that passed
+their checks, and \code{job} must be in it. Each output must be a regular
+file inside the study: an absolute path elsewhere, a \code{..} escape or a
+symbolic link that resolves outside the study stops the call. An output
+that disappears or changes while it is hashed stops it too.
 }
 \examples{
 \donttest{
