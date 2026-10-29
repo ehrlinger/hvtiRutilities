@@ -205,7 +205,10 @@
 #' over 50 MB) stops the call rather than returning a commit from which the
 #' job cannot be recovered, and so does a job that is not a code file. A
 #' file that changes, or is replaced by a symbolic link, while the snapshot is
-#' taken stops the call before the ref moves. Files are committed byte for
+#' taken stops the call before the ref moves. The check runs after hashing,
+#' since base R cannot open a file without following a link: a swap undone
+#' before it, to a target of exactly the same size, is not detected. Files are
+#' committed byte for
 #' byte, without line-ending conversion, and an executable file keeps its
 #' executable bit.
 #'
