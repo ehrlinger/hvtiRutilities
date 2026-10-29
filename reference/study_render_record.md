@@ -1,9 +1,9 @@
 # Record what a render published
 
-Adds a render record to this copy's render ref, tying every output a
-render published to the commit its figures print. Records accumulate, so
-a figure copied into a manuscript can be traced after its job is
-rendered again.
+Adds a render record to this copy's render records ref, tying every
+output a render published to the commit its figures print. Records
+accumulate, so a figure copied into a manuscript can be traced after its
+job is rendered again.
 
 ## Usage
 
@@ -26,7 +26,7 @@ study_render_record(
 
 - commit:
 
-  Character(1). The commit from
+  Character(1). The 40-character commit from
   [`study_render_commit`](https://ehrlinger.github.io/hvtiRutilities/reference/study_render_commit.md)
   that the outputs print.
 
@@ -36,8 +36,8 @@ study_render_record(
 
 - outputs:
 
-  Character. Paths of the published files, absolute or relative to the
-  study root; each must exist.
+  Character. Paths of the published files inside the study, absolute or
+  relative to the study root; each must exist.
 
 - extra:
 
@@ -56,11 +56,23 @@ Invisibly, the record as a list.
 ## Details
 
 The record is written as `.hvti-renders/<render_id>.json` in a new
-commit on the render ref, and every later render commit carries it, so
-the ref's tip holds every record. It names `commit`, `job`, the time,
-`extra` (typically the render's provenance) and, for each file in
-`outputs`, its path relative to the study root and its sha256. A render
-that fails should publish nothing and record nothing.
+commit on `refs/renders/<id>/records`, and every later record commit
+carries it, so the ref's tip holds every record. A `render_id` already
+recorded stops the call; a record is never replaced. The record names
+`commit`, `job`, the time, `extra` (typically the render's provenance)
+and, for each file in `outputs`, its path relative to the study root and
+its sha256. A render that fails should publish nothing and record
+nothing.
+
+Everything is checked before the ref moves. `commit` must be on a render
+source ref in this repository, which holds only source snapshots that
+passed their checks: this copy's, or one it inherited, so a render that
+straddles a move of the study still records. `job` must be a code file
+in that commit. Each output must be a regular file inside the study (not
+a folder, named pipe, socket or device): an absolute path elsewhere, a
+`..` escape or a symbolic link that resolves outside the study stops the
+call. An output that disappears or changes while it is hashed stops it
+too.
 
 ## See also
 

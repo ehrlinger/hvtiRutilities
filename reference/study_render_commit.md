@@ -3,9 +3,10 @@
 Commits the same allow-listed snapshot
 [`study_checkpoint`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checkpoint.md)
 takes (code, identity and reproducibility files; never data or outputs)
-to this copy's render ref in the private repository `.checkpoint/repo/`,
-and returns the commit. A render calls it before the job runs, so each
-figure can print the commit of the code that drew it.
+to this copy's render source ref in the private repository
+`.checkpoint/repo/`, and returns the commit. A render calls it before
+the job runs, so each figure can print the commit of the code that drew
+it.
 
 ## Usage
 
@@ -33,15 +34,25 @@ Invisibly, the 40-character commit ID.
 The job must be in the commit, as the bytes on disk: a job the
 allow-list leaves out (a symbolic link, a file under a data or estimates
 folder or one over 50 MB) stops the call rather than returning a commit
-from which the job cannot be recovered.
+from which the job cannot be recovered, and so does a job that is not a
+code file. A file that changes, or is replaced by a symbolic link, while
+the snapshot is taken stops the call before the ref moves. The check
+runs after hashing, since base R cannot open a file without following a
+link: a swap undone before it, to a target of exactly the same size, is
+not detected. Files are committed byte for byte, without line-ending
+conversion, and an executable file keeps its executable bit.
 
 A study whose snapshot is unchanged since the last render commit gets
-that commit back, so re-rendering adds no history. The ref is
-`refs/renders/<id>`, one per copy of the study and outside
-`refs/heads/`; it is not tagged or pushed, and `main`, its tags, `HEAD`
-and the checkpoint working tree are never touched. The call takes the
-checkpoint lock, so it stops while a checkpoint or another render holds
-it.
+that commit back, so re-rendering adds no history and an unchanged job
+always prints the same commit. The ref is `refs/renders/<id>/source`,
+outside `refs/heads/`; records go to a separate ref (see
+[`study_render_record`](https://ehrlinger.github.io/hvtiRutilities/reference/study_render_record.md)).
+The ID belongs to this copy of the study at this path on this host: a
+study copied or moved elsewhere gets a new one, and keeps the refs it
+brought with it. Nothing is tagged or pushed, and `main`, its tags,
+`HEAD` and the checkpoint working tree are never touched. The call takes
+the checkpoint lock, so it stops while a checkpoint or another render
+holds it.
 
 The commit only proves what the job was when the render began. A render
 that publishes outputs must also show that the code it executed matches
@@ -71,6 +82,6 @@ if (nzchar(Sys.which("git"))) {
   })
   unlink(root, recursive = TRUE)
 }
-#> [1] "2082f56"
+#> [1] "4f657c3"
 # }
 ```
