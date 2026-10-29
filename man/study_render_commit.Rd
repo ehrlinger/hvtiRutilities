@@ -18,23 +18,33 @@ Invisibly, the 40-character commit ID.
 \description{
 Commits the same allow-listed snapshot \code{\link{study_checkpoint}} takes
 (code, identity and reproducibility files; never data or outputs) to this
-copy's render ref in the private repository \code{.checkpoint/repo/}, and
-returns the commit. A render calls it before the job runs, so each figure
-can print the commit of the code that drew it.
+copy's render source ref in the private repository \code{.checkpoint/repo/},
+and returns the commit. A render calls it before the job runs, so each
+figure can print the commit of the code that drew it.
 }
 \details{
 The job must be in the commit, as the bytes on disk: a job the allow-list
 leaves out (a symbolic link, a file under a data or estimates folder or one
 over 50 MB) stops the call rather than returning a commit from which the
-job cannot be recovered.
+job cannot be recovered, and so does a job that is not a code file. A
+file that changes, or is replaced by a symbolic link, while the snapshot is
+taken stops the call before the ref moves. The check runs after hashing,
+since base R cannot open a file without following a link: a swap undone
+before it, to a target of exactly the same size, is not detected. Files are
+committed byte for
+byte, without line-ending conversion, and an executable file keeps its
+executable bit.
 
 A study whose snapshot is unchanged since the last render commit gets that
-commit back, so re-rendering adds no history. The ref is
-\code{refs/renders/<id>}, one per copy of the study and outside
-\code{refs/heads/}; it is not tagged or pushed, and \code{main}, its tags,
-\code{HEAD} and the checkpoint working tree are never touched. The call
-takes the checkpoint lock, so it stops while a checkpoint or another render
-holds it.
+commit back, so re-rendering adds no history and an unchanged job always
+prints the same commit. The ref is \code{refs/renders/<id>/source}, outside
+\code{refs/heads/}; records go to a separate ref (see
+\code{\link{study_render_record}}). The ID belongs to this copy of the study
+at this path on this host: a study copied or moved elsewhere gets a new one,
+and keeps the refs it brought with it. Nothing is tagged or pushed, and
+\code{main}, its tags, \code{HEAD} and the checkpoint working tree are never
+touched. The call takes the checkpoint lock, so it stops while a checkpoint
+or another render holds it.
 
 The commit only proves what the job was when the render began. A render
 that publishes outputs must also show that the code it executed matches
