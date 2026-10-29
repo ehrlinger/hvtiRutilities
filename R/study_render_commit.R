@@ -79,6 +79,58 @@
   blobs
 }
 
+# The size of each blob in `blobs`.
+.cp_blob_sizes <- function(repo, blobs) {
+  ids <- tempfile("cp-ids-")
+  on.exit(unlink(ids), add = TRUE)
+  writeLines(blobs, ids, useBytes = TRUE)
+  as.numeric(.cp_git_stdin(repo, c("cat-file", "--batch-check=%(objectsize)"),
+                           ids))
+}
+
+# Check that every captured file is still a regular file in its place under
+# root, neither a symbolic link nor reached through one, unchanged since
+# `before` (file.info() taken before hashing), and that its blob has its
+# size. git hash-object follows a link and base R cannot open a file without
+# following one, so this is checked after the fact: a selected file swapped
+# for a link while it was hashed stops the call here. Only a swap undone
+# before this check, to a target of the same size, could pass it.
+.cp_render_check_capture <- function(repo, root, rel, blobs, before) {
+  after <- file.info(file.path(root, rel), extra_cols = FALSE)
+  bad <- .cp_symlinked(root, rel) | is.na(after$size) | after$isdir |
+    after$size != before$size |
+    as.numeric(after$mtime) != as.numeric(before$mtime) |
+    .cp_blob_sizes(repo, blobs) != before$size
+  bad[is.na(bad)] <- TRUE
+  if (any(bad)) {
+    stop("study_render_commit(): changed, or replaced by a symbolic link, ",
+         "while being committed: ", paste(rel[bad], collapse = ", "),
+         "; render again", call. = FALSE)
+  }
+  invisible(TRUE)
+}
+
+# A render job is a code file the allow-list commits, named in the commit by
+# a regular file, so neither a folder nor a file such as _study.yml can be
+# attributed as one.
+.cp_render_job_ok <- function(repo, commit, job) {
+  if (!tolower(tools::file_ext(job)) %in% .cp_code_ext()) return(FALSE)
+  res <- .cp_git(repo, c("ls-tree", commit, "--", job))
+  res$ok && length(res$out) == 1L &&
+    grepl("^100(644|755) blob [0-9a-f]{40}\t", res$out) &&
+    identical(sub("^[^\t]*\t", "", res$out), job)
+}
+
+# TRUE when `commit` is on a render source ref in this repository: this
+# copy's, or one it inherited from the copy it was moved or copied from, so a
+# render that straddles a move can still be recorded. Record commits live on
+# the records refs and never match.
+.cp_render_source_has <- function(repo, commit) {
+  res <- .cp_git(repo, c("for-each-ref", "--format=%(refname)",
+                         "--contains", commit, "refs/renders/"))
+  res$ok && any(grepl("^refs/renders/[^/]+/source$", res$out))
+}
+
 # Git's mode for each file: 100755 when its owner may execute it, so a
 # recovered study can still run a script its job invoked directly.
 .cp_file_modes <- function(files) {
@@ -151,9 +203,11 @@
 #' The job must be in the commit, as the bytes on disk: a job the allow-list
 #' leaves out (a symbolic link, a file under a data or estimates folder or one
 #' over 50 MB) stops the call rather than returning a commit from which the
-#' job cannot be recovered, and so does a job that changes while the snapshot
-#' is taken. Files are committed byte for byte, without line-ending
-#' conversion, and an executable file keeps its executable bit.
+#' job cannot be recovered, and so does a job that is not a code file. A
+#' file that changes, or is replaced by a symbolic link, while the snapshot is
+#' taken stops the call before the ref moves. Files are committed byte for
+#' byte, without line-ending conversion, and an executable file keeps its
+#' executable bit.
 #'
 #' A study whose snapshot is unchanged since the last render commit gets that
 #' commit back, so re-rendering adds no history and an unchanged job always
@@ -206,14 +260,21 @@ study_render_commit <- function(job, root = study_root()) {
     warning("study_render_commit(): skipped over the 50 MB cap: ",
             paste(sel$skipped$path, collapse = ", "), call. = FALSE)
   }
+  if (!tolower(tools::file_ext(job)) %in% .cp_code_ext()) {
+    stop("study_render_commit(): ", job, " is not a code file a render ",
+         "could run", call. = FALSE)
+  }
   if (!job %in% sel$files) {
     stop("study_render_commit(): ", job, " is not in the study's snapshot ",
          "(missing, a symbolic link, under a data or estimates folder, or ",
          "over 50 MB), so no commit could recover it", call. = FALSE)
   }
   files <- file.path(rc$root, sel$files)
-  tree <- .cp_tree_with(rc$repo, NA_character_, .cp_file_modes(files),
-                        .cp_hash_files(rc$repo, files), sel$files)
+  before <- file.info(files, extra_cols = FALSE)
+  blobs <- .cp_hash_files(rc$repo, files)
+  .cp_render_check_capture(rc$repo, rc$root, sel$files, blobs, before)
+  tree <- .cp_tree_with(rc$repo, NA_character_, .cp_file_modes(files), blobs,
+                        sel$files)
   # Checked before the ref moves, so a failed snapshot is never on it.
   on_disk <- .cp_hash_files(rc$repo, file.path(rc$root, job))
   if (!identical(.cp_blob_at(rc$repo, tree, job), on_disk)) {
@@ -248,10 +309,12 @@ study_render_commit <- function(job, root = study_root()) {
 #' study root and its sha256. A render that fails should publish nothing and
 #' record nothing.
 #'
-#' Everything is checked before the ref moves. \code{commit} must be on this
-#' copy's render source ref, which holds only source snapshots that passed
-#' their checks, and \code{job} must be in it. Each output must be a regular
-#' file inside the study: an absolute path elsewhere, a \code{..} escape or a
+#' Everything is checked before the ref moves. \code{commit} must be on a
+#' render source ref in this repository, which holds only source snapshots
+#' that passed their checks: this copy's, or one it inherited, so a render
+#' that straddles a move of the study still records. \code{job} must be a
+#' code file in that commit. Each output must be a regular file inside the
+#' study (not a folder, named pipe, socket or device): an absolute path elsewhere, a \code{..} escape or a
 #' symbolic link that resolves outside the study stops the call. An output
 #' that disappears or changes while it is hashed stops it too.
 #'
@@ -310,20 +373,27 @@ study_render_record <- function(render_id, commit, job, outputs,
   }
   rc <- .cp_render_open(root, caller)
   on.exit(.cp_unlock(rc$held), add = TRUE)
-  source_tip <- .cp_commit_of(rc$repo, rc$refs$source)
-  if (is.na(source_tip) ||
-        !.cp_git(rc$repo, c("merge-base", "--is-ancestor", commit,
-                            source_tip))$ok) {
+  if (!.cp_render_source_has(rc$repo, commit)) {
     stop("study_render_record(): ", commit, " is not a render commit of ",
-         "this copy of the study", call. = FALSE)
+         "this study", call. = FALSE)
   }
-  if (is.na(.cp_blob_at(rc$repo, commit, job))) {
-    stop("study_render_record(): ", job, " is not in render commit ", commit,
-         call. = FALSE)
+  if (!.cp_render_job_ok(rc$repo, commit, job)) {
+    stop("study_render_record(): ", job, " is not a render job in commit ",
+         commit, call. = FALSE)
   }
   cfg <- list(root = rc$root)
   paths <- lapply(outputs, .provenance_relative_path, cfg = cfg,
                   caller = caller)
+  # A named pipe, socket or device would block the hash below while the lock
+  # is held; there are none on Windows.
+  if (.Platform$OS.type != "windows") {
+    for (p in paths) {
+      if (system2("test", c("-f", shQuote(p$absolute))) != 0L) {
+        stop("study_render_record(): output must be a regular file: ",
+             p$relative, call. = FALSE)
+      }
+    }
+  }
   records_tip <- .cp_commit_of(rc$repo, rc$refs$records)
   record_path <- paste0(.cp_records_dir(), "/", render_id, ".json")
   if (!is.na(records_tip) &&

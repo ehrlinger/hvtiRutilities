@@ -182,10 +182,10 @@ test_that("a record needs a source commit that holds its job (review 1)", {
 
   expect_error(study_render_record("r1", first, "30_analyses/other.R", fig,
                                    root = root),
-               "not in render commit")
+               "not a render job")
   expect_error(study_render_record("r1", second, "30_analyses/none.R", fig,
                                    root = root),
-               "not in render commit")
+               "not a render job")
   study_render_record("r1", second, "30_analyses/other.R", fig, root = root)
   study_render_record("r2", first, "30_analyses/fit.R", fig, root = root)
   forged <- git_out(.cp_repo_path(root),
@@ -351,20 +351,17 @@ test_that("an output that vanishes or changes while hashed is not recorded (revi
   repo <- .cp_repo_path(root)
   records <- function() .cp_commit_of(repo, render_ref(root, "records"))
 
-  real_path <- .provenance_relative_path
-  local_mocked_bindings(.provenance_relative_path = function(...) {
-    out <- real_path(...)
-    unlink(out$absolute)
-    out
-  })
+  real_digest <- digest::digest
+  local_mocked_bindings(digest = function(...) {
+    unlink(fig)
+    real_digest(...)
+  }, .package = "digest")
   expect_error(study_render_record("r1", sha, "30_analyses/fit.R", fig,
                                    root = root),
-               "readable regular file")
+               "could not hash")
   expect_true(is.na(records()))
-  local_mocked_bindings(.provenance_relative_path = real_path)
 
   writeLines("figure", fig)
-  real_digest <- digest::digest
   local_mocked_bindings(digest = function(...) {
     hash <- real_digest(...)
     cat("more\n", file = fig, append = TRUE)
@@ -428,4 +425,88 @@ test_that("checkpoint, close and reopen stop off main before writing (Copilot)",
   expect_error(study_reopen("new PI", root = root), "not on main")
   expect_identical(git_out(repo, c("tag", "-l")), tags)
   expect_identical(git_out(repo, c("rev-parse", "HEAD"))[1], head)
+})
+
+test_that("a file swapped for a symbolic link while hashed is not committed (review 2.1)", {
+  skip_if_no_git()
+  skip_on_os("windows")
+  local_git_env()
+  dir <- withr::local_tempdir()
+  root <- make_checkpoint_study(dir)
+  writeLines("helper <- 1", file.path(root, "30_analyses", "helper.R"))
+  first <- study_render_commit("30_analyses/fit.R", root = root)
+  outside <- file.path(dir, "outside.R")
+  writeLines("outside <- 'protected'", outside)
+  repo <- .cp_repo_path(root)
+  real <- .cp_hash_files
+  for (swapped in c("30_analyses/fit.R", "30_analyses/helper.R")) {
+    writeLines(paste("# edit", swapped), file.path(root, "30_analyses", "fit.R"),
+               sep = "\n")
+    target <- file.path(root, swapped)
+    saved <- readLines(target)
+    local_mocked_bindings(.cp_hash_files = function(repo, files) {
+      if (length(files) > 1L) {
+        unlink(target)
+        file.symlink(outside, target)
+      }
+      real(repo, files)
+    })
+    expect_error(study_render_commit("30_analyses/fit.R", root = root),
+                 "replaced by a symbolic link")
+    expect_identical(git_out(repo, c("rev-parse", render_ref(root)))[1], first)
+    unlink(target)
+    writeLines(saved, target)
+  }
+})
+
+test_that("a record's job must be a code file in its commit (review 2.2)", {
+  skip_if_no_git()
+  local_git_env()
+  root <- make_checkpoint_study(withr::local_tempdir())
+  fig <- file.path(root, "30_analyses", "fit.png")
+  writeLines("figure", fig)
+  sha <- study_render_commit("30_analyses/fit.R", root = root)
+  for (job in c("30_analyses", "_study.yml", "30_analyses/")) {
+    expect_error(study_render_record("r1", sha, job, fig, root = root),
+                 "not a render job")
+  }
+  expect_error(study_render_commit("_study.yml", root = root),
+               "not a code file")
+  expect_true(is.na(.cp_commit_of(.cp_repo_path(root),
+                                  render_ref(root, "records"))))
+})
+
+test_that("a named pipe output stops the record without hashing (review 2.3)", {
+  skip_if_no_git()
+  skip_on_os("windows")
+  skip_if_not(nzchar(Sys.which("mkfifo")), "mkfifo is not available")
+  local_git_env()
+  root <- make_checkpoint_study(withr::local_tempdir())
+  sha <- study_render_commit("30_analyses/fit.R", root = root)
+  pipe <- file.path(root, "30_analyses", "fit.png")
+  system2("mkfifo", shQuote(pipe))
+  expect_error(study_render_record("r1", sha, "30_analyses/fit.R",
+                                   "30_analyses/fit.png", root = root),
+               "regular file")
+})
+
+test_that("a render that straddles a move of the study still records (review 2.4)", {
+  skip_if_no_git()
+  local_git_env()
+  dir <- withr::local_tempdir()
+  root <- make_checkpoint_study(dir)
+  writeLines("figure", file.path(root, "30_analyses", "fit.png"))
+  sha <- study_render_commit("30_analyses/fit.R", root = root)
+  old_ref <- render_ref(root)
+  moved <- file.path(dir, "moved")
+  expect_true(file.rename(root, moved))
+  rec <- study_render_record("r1", sha, "30_analyses/fit.R",
+                             "30_analyses/fit.png", root = moved)
+  expect_identical(rec$commit, sha)
+  expect_false(identical(render_ref(moved), old_ref))
+  repo <- .cp_repo_path(moved)
+  shown <- git_out(repo, c("show", paste0(render_ref(moved, "records"),
+                                          ":.hvti-renders/r1.json")))
+  expect_identical(jsonlite::fromJSON(paste(shown, collapse = "\n"))$commit,
+                   sha)
 })

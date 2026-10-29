@@ -26,9 +26,11 @@ figure can print the commit of the code that drew it.
 The job must be in the commit, as the bytes on disk: a job the allow-list
 leaves out (a symbolic link, a file under a data or estimates folder or one
 over 50 MB) stops the call rather than returning a commit from which the
-job cannot be recovered, and so does a job that changes while the snapshot
-is taken. Files are committed byte for byte, without line-ending
-conversion, and an executable file keeps its executable bit.
+job cannot be recovered, and so does a job that is not a code file. A
+file that changes, or is replaced by a symbolic link, while the snapshot is
+taken stops the call before the ref moves. Files are committed byte for
+byte, without line-ending conversion, and an executable file keeps its
+executable bit.
 
 A study whose snapshot is unchanged since the last render commit gets that
 commit back, so re-rendering adds no history and an unchanged job always

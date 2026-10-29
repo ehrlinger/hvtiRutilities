@@ -47,10 +47,12 @@ provenance) and, for each file in \code{outputs}, its path relative to the
 study root and its sha256. A render that fails should publish nothing and
 record nothing.
 
-Everything is checked before the ref moves. \code{commit} must be on this
-copy's render source ref, which holds only source snapshots that passed
-their checks, and \code{job} must be in it. Each output must be a regular
-file inside the study: an absolute path elsewhere, a \code{..} escape or a
+Everything is checked before the ref moves. \code{commit} must be on a
+render source ref in this repository, which holds only source snapshots
+that passed their checks: this copy's, or one it inherited, so a render
+that straddles a move of the study still records. \code{job} must be a
+code file in that commit. Each output must be a regular file inside the
+study (not a folder, named pipe, socket or device): an absolute path elsewhere, a \code{..} escape or a
 symbolic link that resolves outside the study stops the call. An output
 that disappears or changes while it is hashed stops it too.
 }
