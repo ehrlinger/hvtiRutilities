@@ -4,11 +4,11 @@
 \alias{study_render_commit}
 \title{Commit the study's code before a render}
 \usage{
-study_render_commit(job = NULL, root = study_root())
+study_render_commit(job, root = study_root())
 }
 \arguments{
-\item{job}{Character(1) or \code{NULL}. The job being rendered, relative to
-the study root; it names the commit. Default \code{NULL}.}
+\item{job}{Character(1). The job being rendered, relative to the study
+root.}
 
 \item{root}{Character(1). The study root. Default \code{study_root()}.}
 }
@@ -17,19 +17,29 @@ Invisibly, the 40-character commit ID.
 }
 \description{
 Commits the same allow-listed snapshot \code{\link{study_checkpoint}} takes
-(code, identity and reproducibility files; never data or outputs) to the
-branch \code{renders} of the private repository in
-\code{.checkpoint/repo/}, and returns the commit. A render calls it before
-the job runs, so each figure can print the commit of the code that drew it
-and the job can later be shown as it ran.
+(code, identity and reproducibility files; never data or outputs) to this
+copy's render ref in the private repository \code{.checkpoint/repo/}, and
+returns the commit. A render calls it before the job runs, so each figure
+can print the commit of the code that drew it.
 }
 \details{
+The job must be in the commit, as the bytes on disk: a job the allow-list
+leaves out (a symbolic link, a file under a data or estimates folder or one
+over 50 MB) stops the call rather than returning a commit from which the
+job cannot be recovered.
+
 A study whose snapshot is unchanged since the last render commit gets that
-commit back, so re-rendering adds no history. The commit is local: it is not
-tagged and not pushed, and \code{main}, its tags and the checkpoint working
-tree are left as they were. It takes the checkpoint lock, so it stops when a
-checkpoint or another render holds it; the caller decides whether the render
-goes on without a commit.
+commit back, so re-rendering adds no history. The ref is
+\code{refs/renders/<id>}, one per copy of the study and outside
+\code{refs/heads/}; it is not tagged or pushed, and \code{main}, its tags,
+\code{HEAD} and the checkpoint working tree are never touched. The call
+takes the checkpoint lock, so it stops while a checkpoint or another render
+holds it.
+
+The commit only proves what the job was when the render began. A render
+that publishes outputs must also show that the code it executed matches
+the commit, and record what it published with
+\code{\link{study_render_record}}.
 }
 \examples{
 \donttest{
@@ -50,5 +60,5 @@ if (nzchar(Sys.which("git"))) {
 }
 }
 \seealso{
-\code{\link{study_checkpoint}}
+\code{\link{study_render_record}}, \code{\link{study_checkpoint}}
 }
