@@ -19,7 +19,3 @@
   source commit of this copy that holds the job; outputs must be regular files
   inside the study, hashed stably; and a `render_id` already recorded stops
   the call rather than replacing the record.
-
-* `study_checkpoint()`, `study_close()` and `study_reopen()` stop when
-  `.checkpoint/repo` is not on `main`, before reconciliation or the sync with
-  the remote can write, rather than tagging or resetting another branch.
