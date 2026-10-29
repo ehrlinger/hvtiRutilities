@@ -261,19 +261,19 @@ who needs it.</p><ul><li><p>A <code>WHERE</code> condition in one job writes no 
 <span class="r-in"><span>                 <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">root</span>, <span class="st">"00_datasets"</span>, <span class="st">"built.csv"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>                 row.names <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">register_data</span><span class="op">(</span><span class="va">root</span>, built <span class="op">=</span> <span class="st">"built.csv"</span>, key <span class="op">=</span> <span class="st">"ccfid"</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Study: /tmp/Rtmp3MgToa/register-data-example</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Study: /tmp/Rtmp0kaW0l/register-data-example</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [x] _study.yml — study: Example</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [ ] renv.lock — no renv.lock; run renv::init() in the study project</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [x] manifest.yaml — 1 dataset entry verified by checksum</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [x] dataset — built.csv, registered as built_20261028.parquet</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [x] dataset — built.csv, registered as built_20261029.parquet</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [ ] provenance — no .qmd/.Rmd sources found; 0 sidecars</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 0 .R  |  0 .qmd/.Rmd  |  0 .sas  |  0 provenance sidecars</span>
 <span class="r-in"><span><span class="co"># The CSV is kept; the registered version is a dated Parquet file.</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/list.files.html" class="external-link">list.files</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">root</span>, <span class="st">"00_datasets"</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "built.csv"                 "built_20261028.parquet"   </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [3] "built_20261028.schema.csv"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "built.csv"                 "built_20261029.parquet"   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [3] "built_20261029.schema.csv"</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/unlink.html" class="external-link">unlink</a></span><span class="op">(</span><span class="va">root</span>, recursive <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># An additional dataset is registered with role = "named", under a name of</span></span></span>

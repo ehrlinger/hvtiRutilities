@@ -89,7 +89,7 @@
 <td>the PDF manual build — catches raw Unicode in <code>.Rd</code> that <code>--no-manual</code> skips</td>
 </tr><tr><td><code>lint.yaml</code></td>
 <td>
-<code><a href="https://lintr.r-lib.org/reference/lint.html" class="external-link">lintr::lint_package()</a></code> under <code>LINTR_ERROR_ON_LINT</code>, which is what makes it <strong>fail</strong> rather than merely report — see the 80/135 bullet below. Plus a <strong>docs-current</strong> job that runs <code>roxygenise()</code> and then <code>git diff --exit-code man/ NAMESPACE DESCRIPTION</code>
+<code>lintr::lint_package()</code> under <code>LINTR_ERROR_ON_LINT</code>, which is what makes it <strong>fail</strong> rather than merely report — see the 80/135 bullet below. Plus a <strong>docs-current</strong> job that runs <code>roxygenise()</code> and then <code>git diff --exit-code man/ NAMESPACE DESCRIPTION</code>
 </td>
 </tr><tr><td><code>pkgdown.yaml</code></td>
 <td>the site build, including a topic missing from the reference index</td>

@@ -1311,14 +1311,13 @@
 ### Bug fixes
 
 - **The `lint` CI job could not fail, and now can.**
-  [`lintr::lint_package()`](https://lintr.r-lib.org/reference/lint.html)
-  returns a lints object and *prints* it, which is not the same as
-  failing on it, so the step exited 0 while reporting lints and every
-  `lint.yaml` run in the repo’s history concluded `success`. The package
-  also had no `.lintr`, so lintr fell back to its 80-character default
-  and reported 290 lints against a green check. `lint.yaml` now sets
-  `LINTR_ERROR_ON_LINT`, which makes lintr exit 31 on a non-empty
-  result.
+  `lintr::lint_package()` returns a lints object and *prints* it, which
+  is not the same as failing on it, so the step exited 0 while reporting
+  lints and every `lint.yaml` run in the repo’s history concluded
+  `success`. The package also had no `.lintr`, so lintr fell back to its
+  80-character default and reported 290 lints against a green check.
+  `lint.yaml` now sets `LINTR_ERROR_ON_LINT`, which makes lintr exit 31
+  on a non-empty result.
 
 - **A `.lintr` records the line width as a decision rather than a
   default.** 135 characters, because

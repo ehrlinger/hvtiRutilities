@@ -148,6 +148,10 @@ checksum, and record its closure
   : Record a study checkpoint
 - [`study_checkpoint_push()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checkpoint_push.md)
   : Push pending study checkpoints
+- [`study_render_commit()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_render_commit.md)
+  : Commit the study's code before a render
+- [`study_render_record()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_render_record.md)
+  : Record what a render published
 - [`study_close()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_close.md)
   [`study_reopen()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_close.md)
   : Close or reopen a study

@@ -40,11 +40,11 @@ would otherwise get a second `R` row reporting it as not found.
 ``` r
 preflight_report()
 #>         component found    version
-#> 1               R  TRUE      4.6.1
+#> 1               R  TRUE      4.6.2
 #> 2  TemporalHazard FALSE           
 #> 3  hvtiRutilities  TRUE     1.5.17
 #> 4           haven  TRUE      2.5.5
-#> 5        survival  TRUE      3.8.6
+#> 5        survival  TRUE     3.8.12
 #> 6       hvtiPlotR FALSE           
 #> 7        testthat  TRUE      3.3.2
 #> 8          quarto  TRUE      1.5.1

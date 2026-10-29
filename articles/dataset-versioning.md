@@ -551,7 +551,7 @@ for more on inspecting an extract once you know it moved.
 ``` r
 
 sessionInfo()
-#> R version 4.6.1 (2026-06-24)
+#> R version 4.6.2 (2026-10-29)
 #> Platform: x86_64-pc-linux-gnu
 #> Running under: Ubuntu 24.04.5 LTS
 #> 
@@ -579,8 +579,8 @@ sessionInfo()
 #>  [5] xfun_0.62        otel_0.2.0       forcats_1.0.1    haven_2.5.5     
 #>  [9] generics_0.1.4   jsonlite_2.0.0   glue_1.8.1       htmltools_0.5.9 
 #> [13] hms_1.1.4        rmarkdown_2.32   evaluate_1.0.5   tibble_3.3.1    
-#> [17] fastmap_1.2.0    yaml_2.3.12      lifecycle_1.0.5  compiler_4.6.1  
+#> [17] fastmap_1.2.0    yaml_2.3.12      lifecycle_1.0.5  compiler_4.6.2  
 #> [21] dplyr_1.2.1      pkgconfig_2.0.3  labelled_2.16.1  digest_0.6.39   
 #> [25] R6_2.6.1         tidyselect_1.2.1 pillar_1.11.1    magrittr_2.0.5  
-#> [29] tools_4.6.1
+#> [29] tools_4.6.2
 ```
