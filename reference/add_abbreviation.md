@@ -52,7 +52,7 @@ rewrites it, so comments in `_study.yml` are not kept.
 ``` r
 root <- file.path(tempdir(), "add-abbrev-example")
 study_setup(root, "Abbreviation example", 1L, renv = FALSE)
-#> Study: /tmp/RtmpYqUmVG/add-abbrev-example
+#> Study: /tmp/RtmpQ0wEa6/add-abbrev-example
 #> 
 #> [x] _study.yml — study: Abbreviation example
 #> [ ] renv.lock — no renv.lock; run renv::init() in the study project

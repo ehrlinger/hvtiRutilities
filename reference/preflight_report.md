@@ -42,7 +42,7 @@ preflight_report()
 #>         component found    version
 #> 1               R  TRUE      4.6.2
 #> 2  TemporalHazard FALSE           
-#> 3  hvtiRutilities  TRUE     1.5.17
+#> 3  hvtiRutilities  TRUE     1.5.18
 #> 4           haven  TRUE      2.5.5
 #> 5        survival  TRUE     3.8.12
 #> 6       hvtiPlotR FALSE           
