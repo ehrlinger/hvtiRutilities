@@ -1,8 +1,8 @@
 Package: hvtiRutilities
 Type: Package
 Title: Study and Data Utilities for the HVTI CORR Group
-Version: 1.5.17
-Date: 2026-10-28
+Version: 1.5.18
+Date: 2026-10-30
 Authors@R: c(
     person(
       "John", "Ehrlinger",
