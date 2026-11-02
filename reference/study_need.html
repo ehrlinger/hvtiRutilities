@@ -7,6 +7,13 @@ interactive, and recorded in renv.lock. Otherwise the call stops and
 names hvtiR::setup(), which installs everything a study needs.
 Nothing is declared until every package is installed: if the user declines
 the install, or it fails, the study's DESCRIPTION is left as it was.
+A package that is installed but absent from renv.lock is declared and
+recorded too, because a restore would not bring it back otherwise. Recording
+takes one question, since the snapshot also moves every other package in the
+lock to the version in the library. The caller already has what it needs, so
+when the package cannot be recorded (the session is not interactive, the
+question is declined, guard_snapshot refuses, or the snapshot
+fails) the call warns and carries on. Base packages, which renv never locks, are left out.
 An installed package is never upgraded, whatever its version: moving a
 study's package versions is hvtiR::update()'s job."><meta property="og:description" content="Called where a function needs a package the study may not have, such as
 arrow for registered data. In the study's active renv project the
@@ -16,6 +23,13 @@ interactive, and recorded in renv.lock. Otherwise the call stops and
 names hvtiR::setup(), which installs everything a study needs.
 Nothing is declared until every package is installed: if the user declines
 the install, or it fails, the study's DESCRIPTION is left as it was.
+A package that is installed but absent from renv.lock is declared and
+recorded too, because a restore would not bring it back otherwise. Recording
+takes one question, since the snapshot also moves every other package in the
+lock to the version in the library. The caller already has what it needs, so
+when the package cannot be recorded (the session is not interactive, the
+question is declined, guard_snapshot refuses, or the snapshot
+fails) the call warns and carries on. Base packages, which renv never locks, are left out.
 An installed package is never upgraded, whatever its version: moving a
 study's package versions is hvtiR::update()'s job."></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -84,6 +98,13 @@ interactive, and recorded in <code>renv.lock</code>. Otherwise the call stops an
 names <code>hvtiR::setup()</code>, which installs everything a study needs.</p>
 <p>Nothing is declared until every package is installed: if the user declines
 the install, or it fails, the study's <code>DESCRIPTION</code> is left as it was.</p>
+<p>A package that is installed but absent from <code>renv.lock</code> is declared and
+recorded too, because a restore would not bring it back otherwise. Recording
+takes one question, since the snapshot also moves every other package in the
+lock to the version in the library. The caller already has what it needs, so
+when the package cannot be recorded (the session is not interactive, the
+question is declined, <code><a href="guard_snapshot.html">guard_snapshot</a></code> refuses, or the snapshot
+fails) the call warns and carries on. Base packages, which renv never locks, are left out.</p>
 <p>An installed package is never upgraded, whatever its version: moving a
 study's package versions is <code>hvtiR::update()</code>'s job.</p>
     </div>
@@ -127,8 +148,8 @@ the question and the error.</p></dd>
 
 
 <dt id="arg-r-upgrade">r_upgrade<a class="anchor" aria-label="anchor" href="#arg-r-upgrade"></a></dt>
-<dd><p>Logical(1). Leave <code>FALSE</code>. The <code>renv.lock</code>
-snapshot that follows an install is refused from an R whose major.minor
+<dd><p>Logical(1). Leave <code>FALSE</code>. A <code>renv.lock</code>
+snapshot is refused from an R whose major.minor
 differs from the R the lockfile records (see
 <code><a href="guard_snapshot.html">guard_snapshot</a></code>). Set <code>TRUE</code> only when you are
 deliberately moving the study to this session's R.</p></dd>

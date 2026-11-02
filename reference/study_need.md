@@ -13,6 +13,16 @@ Nothing is declared until every package is installed: if the user
 declines the install, or it fails, the study's `DESCRIPTION` is left as
 it was.
 
+A package that is installed but absent from `renv.lock` is declared and
+recorded too, because a restore would not bring it back otherwise.
+Recording takes one question, since the snapshot also moves every other
+package in the lock to the version in the library. The caller already
+has what it needs, so when the package cannot be recorded (the session
+is not interactive, the question is declined,
+[`guard_snapshot`](https://ehrlinger.github.io/hvtiRutilities/reference/guard_snapshot.md)
+refuses, or the snapshot fails) the call warns and carries on. Base
+packages, which renv never locks, are left out.
+
 An installed package is never upgraded, whatever its version: moving a
 study's package versions is `hvtiR::update()`'s job.
 
@@ -55,9 +65,8 @@ study_need(
 
 - r_upgrade:
 
-  Logical(1). Leave `FALSE`. The `renv.lock` snapshot that follows an
-  install is refused from an R whose major.minor differs from the R the
-  lockfile records (see
+  Logical(1). Leave `FALSE`. A `renv.lock` snapshot is refused from an R
+  whose major.minor differs from the R the lockfile records (see
   [`guard_snapshot`](https://ehrlinger.github.io/hvtiRutilities/reference/guard_snapshot.md)).
   Set `TRUE` only when you are deliberately moving the study to this
   session's R.
