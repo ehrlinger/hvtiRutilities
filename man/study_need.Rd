@@ -51,8 +51,8 @@ recorded too, because a restore would not bring it back otherwise. Recording
 takes one question, since the snapshot also moves every other package in the
 lock to the version in the library. The caller already has what it needs, so
 when the package cannot be recorded (the session is not interactive, the
-question is declined, or \code{\link{guard_snapshot}} refuses) the call warns
-and carries on. Base packages, which renv never locks, are left out.
+question is declined, \code{\link{guard_snapshot}} refuses, or the snapshot
+fails) the call warns and carries on. Base packages, which renv never locks, are left out.
 
 An installed package is never upgraded, whatever its version: moving a
 study's package versions is \code{hvtiR::update()}'s job.

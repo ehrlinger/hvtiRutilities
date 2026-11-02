@@ -16,8 +16,8 @@
 #' takes one question, since the snapshot also moves every other package in the
 #' lock to the version in the library. The caller already has what it needs, so
 #' when the package cannot be recorded (the session is not interactive, the
-#' question is declined, or \code{\link{guard_snapshot}} refuses) the call warns
-#' and carries on. Base packages, which renv never locks, are left out.
+#' question is declined, \code{\link{guard_snapshot}} refuses, or the snapshot
+#' fails) the call warns and carries on. Base packages, which renv never locks, are left out.
 #'
 #' An installed package is never upgraded, whatever its version: moving a
 #' study's package versions is \code{hvtiR::update()}'s job.
@@ -107,35 +107,42 @@ study_need <- function(packages, root = NULL, caller = "study_need", note = NULL
   absent <- .need_unlocked(packages, root)
   if (!length(absent)) return(invisible(NULL))
   why <- if (.study_interactive()) {
-    tryCatch({
-      guard_snapshot(root, r_upgrade)
-      NULL
-    }, error = conditionMessage)
+    .need_try_record(absent, root, caller, r_upgrade)
   } else {
     "This session is not interactive."
   }
-  if (is.null(why)) {
-    if (isTRUE(.need_ask_record(absent, caller))) {
-      .need_snapshot(root, r_upgrade)
-      return(invisible(NULL))
-    }
-    why <- "You declined to record it."
+  if (!is.null(why)) {
+    warning(caller, "(): installed but not in renv.lock: ", paste(absent, collapse = ", "),
+            ". renv::restore() will not bring back what the lock lacks. ", why, call. = FALSE)
   }
-  warning(caller, "(): ", paste(absent, collapse = ", "), " is installed but not in renv.lock, so ",
-          "renv::restore() will not bring it back. ", why, call. = FALSE)
   invisible(NULL)
 }
 
+# NULL when the lock now holds them, otherwise why it does not.
+.need_try_record <- function(absent, root, caller, r_upgrade) {
+  tryCatch({
+    guard_snapshot(root, r_upgrade)
+    if (!isTRUE(.need_ask_record(absent, caller))) return("You declined to record it.")
+    .need_snapshot(root, r_upgrade)
+    if (length(.need_unlocked(absent, root))) "The snapshot did not record it."
+  }, error = conditionMessage)
+}
+
+# An unreadable lock holds nothing we can count on; guard_snapshot() names the fault.
 .need_unlocked <- function(packages, root) {
   lock_file <- file.path(root, "renv.lock")
-  locked <- if (file.exists(lock_file)) names(jsonlite::read_json(lock_file, simplifyVector = FALSE)$Packages)
+  locked <- if (file.exists(lock_file)) {
+    tryCatch(names(jsonlite::read_json(lock_file, simplifyVector = FALSE)$Packages),
+             error = function(e) NULL)
+  }
   setdiff(packages, c(locked, tools::standard_package_names()$base))
 }
 
 .need_ask_record <- function(pkgs, caller) {
   utils::askYesNo(paste0(caller, "() needs ", paste(pkgs, collapse = ", "),
-                         ", which is installed but not in renv.lock. Record it now? ",
-                         "The snapshot also moves other locked packages to their installed versions."),
+                         ": installed, but not in renv.lock. Record now? The snapshot also moves other ",
+                         "locked packages to their installed versions, and drops any the library ",
+                         "or DESCRIPTION no longer holds."),
                   default = TRUE)
 }
 
