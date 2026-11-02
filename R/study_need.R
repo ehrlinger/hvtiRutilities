@@ -11,6 +11,14 @@
 #' Nothing is declared until every package is installed: if the user declines
 #' the install, or it fails, the study's \code{DESCRIPTION} is left as it was.
 #'
+#' A package that is installed but absent from \code{renv.lock} is declared and
+#' recorded too, because a restore would not bring it back otherwise. Recording
+#' takes one question, since the snapshot also moves every other package in the
+#' lock to the version in the library. The caller already has what it needs, so
+#' when the package cannot be recorded (the session is not interactive, the
+#' question is declined, or \code{\link{guard_snapshot}} refuses) the call warns
+#' and carries on. Base packages, which renv never locks, are left out.
+#'
 #' An installed package is never upgraded, whatever its version: moving a
 #' study's package versions is \code{hvtiR::update()}'s job.
 #'
@@ -21,8 +29,8 @@
 #'   the question and the error.
 #' @param note Character(1) or \code{NULL}. Appended to the error.
 #' @param only_in_renv Logical(1). Do nothing outside an active renv study.
-#' @param r_upgrade Logical(1). Leave \code{FALSE}. The \code{renv.lock}
-#'   snapshot that follows an install is refused from an R whose major.minor
+#' @param r_upgrade Logical(1). Leave \code{FALSE}. A \code{renv.lock}
+#'   snapshot is refused from an R whose major.minor
 #'   differs from the R the lockfile records (see
 #'   \code{\link{guard_snapshot}}). Set \code{TRUE} only when you are
 #'   deliberately moving the study to this session's R.
@@ -40,7 +48,10 @@ study_need <- function(packages, root = NULL, caller = "study_need", note = NULL
   # Nothing is declared until nothing is left to ask: a refusal or a failed
   # install leaves the study's DESCRIPTION as it was.
   if (!length(missing)) {
-    if (in_renv && length(packages)) study_declare(packages, root)
+    if (in_renv && length(packages)) {
+      study_declare(packages, root)
+      .need_record(packages, root, caller, r_upgrade)
+    }
     return(invisible(character(0)))
   }
   declined <- FALSE
@@ -87,6 +98,44 @@ study_need <- function(packages, root = NULL, caller = "study_need", note = NULL
 .need_ask <- function(pkgs, caller) {
   utils::askYesNo(paste0(caller, "() needs ", paste(pkgs, collapse = ", "),
                          ". Install into this study's library and record it in renv.lock?"),
+                  default = TRUE)
+}
+
+# Writes the lock only from a person's session: a batch render is no place to move
+# the study's recorded versions, and two renders could write it at once.
+.need_record <- function(packages, root, caller, r_upgrade = FALSE) {
+  absent <- .need_unlocked(packages, root)
+  if (!length(absent)) return(invisible(NULL))
+  why <- if (.study_interactive()) {
+    tryCatch({
+      guard_snapshot(root, r_upgrade)
+      NULL
+    }, error = conditionMessage)
+  } else {
+    "This session is not interactive."
+  }
+  if (is.null(why)) {
+    if (isTRUE(.need_ask_record(absent, caller))) {
+      .need_snapshot(root, r_upgrade)
+      return(invisible(NULL))
+    }
+    why <- "You declined to record it."
+  }
+  warning(caller, "(): ", paste(absent, collapse = ", "), " is installed but not in renv.lock, so ",
+          "renv::restore() will not bring it back. ", why, call. = FALSE)
+  invisible(NULL)
+}
+
+.need_unlocked <- function(packages, root) {
+  lock_file <- file.path(root, "renv.lock")
+  locked <- if (file.exists(lock_file)) names(jsonlite::read_json(lock_file, simplifyVector = FALSE)$Packages)
+  setdiff(packages, c(locked, tools::standard_package_names()$base))
+}
+
+.need_ask_record <- function(pkgs, caller) {
+  utils::askYesNo(paste0(caller, "() needs ", paste(pkgs, collapse = ", "),
+                         ", which is installed but not in renv.lock. Record it now? ",
+                         "The snapshot also moves other locked packages to their installed versions."),
                   default = TRUE)
 }
 

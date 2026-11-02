@@ -26,8 +26,8 @@ the question and the error.}
 
 \item{only_in_renv}{Logical(1). Do nothing outside an active renv study.}
 
-\item{r_upgrade}{Logical(1). Leave \code{FALSE}. The \code{renv.lock}
-snapshot that follows an install is refused from an R whose major.minor
+\item{r_upgrade}{Logical(1). Leave \code{FALSE}. A \code{renv.lock}
+snapshot is refused from an R whose major.minor
 differs from the R the lockfile records (see
 \code{\link{guard_snapshot}}). Set \code{TRUE} only when you are
 deliberately moving the study to this session's R.}
@@ -45,6 +45,14 @@ names \code{hvtiR::setup()}, which installs everything a study needs.
 
 Nothing is declared until every package is installed: if the user declines
 the install, or it fails, the study's \code{DESCRIPTION} is left as it was.
+
+A package that is installed but absent from \code{renv.lock} is declared and
+recorded too, because a restore would not bring it back otherwise. Recording
+takes one question, since the snapshot also moves every other package in the
+lock to the version in the library. The caller already has what it needs, so
+when the package cannot be recorded (the session is not interactive, the
+question is declined, or \code{\link{guard_snapshot}} refuses) the call warns
+and carries on. Base packages, which renv never locks, are left out.
 
 An installed package is never upgraded, whatever its version: moving a
 study's package versions is \code{hvtiR::update()}'s job.
