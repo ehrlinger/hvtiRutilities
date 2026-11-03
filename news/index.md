@@ -1,5 +1,20 @@
 # Changelog
 
+## hvtiRutilities 1.5.19
+
+- [`study_need()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_need.md)
+  now records a package that is already installed but absent from
+  `renv.lock`. It used to declare the package and stop there, so the
+  study looked reproducible and
+  [`renv::restore()`](https://rstudio.github.io/renv/reference/restore.html)
+  would not bring the package back. An interactive session is asked once
+  and snapshots. A batch session, a declined question, a refusal from
+  [`guard_snapshot()`](https://ehrlinger.github.io/hvtiRutilities/reference/guard_snapshot.md)
+  or a failed snapshot warns instead; none of them stops the caller,
+  which already has the package, and only a snapshot that ran can have
+  written the lock. A package the lock holds, or a base package, changes
+  nothing and is not asked about.
+
 ## hvtiRutilities 1.5.18
 
 - New

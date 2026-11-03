@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.18</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.19</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -56,6 +56,11 @@
       <small>Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.5.19" id="hvtirutilities-1519">hvtiRutilities 1.5.19<a class="anchor" aria-label="anchor" href="#hvtirutilities-1519"></a></h2>
+<ul><li>
+<code><a href="../reference/study_need.html">study_need()</a></code> now records a package that is already installed but absent from <code>renv.lock</code>. It used to declare the package and stop there, so the study looked reproducible and <code><a href="https://rstudio.github.io/renv/reference/restore.html" class="external-link">renv::restore()</a></code> would not bring the package back. An interactive session is asked once and snapshots. A batch session, a declined question, a refusal from <code><a href="../reference/guard_snapshot.html">guard_snapshot()</a></code> or a failed snapshot warns instead; none of them stops the caller, which already has the package, and only a snapshot that ran can have written the lock. A package the lock holds, or a base package, changes nothing and is not asked about.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.5.18" id="hvtirutilities-1518">hvtiRutilities 1.5.18<a class="anchor" aria-label="anchor" href="#hvtirutilities-1518"></a></h2>
 <ul><li><p>New <code><a href="../reference/study_render_commit.html">study_render_commit()</a></code> commits the study’s allow-listed code snapshot, the one <code><a href="../reference/study_checkpoint.html">study_checkpoint()</a></code> takes, before a render and returns the commit, so each figure can print the commit of the code that drew it. The job must be a code file in the commit as the bytes on disk, and a file that changes or is swapped for a symbolic link while it is captured stops the call before anything is committed. Files are committed byte for byte, with no line-ending conversion, and keep their executable bit. Commits go to <code>refs/renders/&lt;id&gt;/source</code> in <code>.checkpoint/repo/</code>, which holds only source snapshots, so an unchanged study always gets the same commit back. <code>&lt;id&gt;</code> belongs to this copy of the study at this path on this host: a copied or moved study gets a new one and keeps the refs it brought. Nothing touches <code>main</code>, its tags, <code>HEAD</code> or the working tree, and nothing is tagged or pushed yet.</p></li>
