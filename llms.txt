@@ -285,6 +285,8 @@ versions
   with WHERE
 - [`followup_check()`](https://ehrlinger.github.io/hvtiRutilities/reference/followup_check.md)
   : Check recorded follow-up before a time-related analysis
+- [`duplicate_keys()`](https://ehrlinger.github.io/hvtiRutilities/reference/duplicate_keys.md)
+  : Find rows that repeat a key, and choose which to keep
 - [`compare_datasets()`](https://ehrlinger.github.io/hvtiRutilities/reference/compare_datasets.md)
   : Compare two versions of a dataset
 
