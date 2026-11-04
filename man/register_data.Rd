@@ -25,7 +25,12 @@ directory, found by its \code{_study.yml}; outside a study the function
 stops and writes nothing.}
 
 \item{built}{Character(1). Dataset filename within the logical
-\code{datasets} directory, including its extension.}
+\code{datasets} directory, including its extension. A path into that
+folder is accepted too, such as \code{"00_datasets/built.csv"} (what
+file-name completion gives from the study root) or an absolute path, and
+is recorded by its file name alone. A relative path is read against the
+working directory, then the study root. A file in any other folder is
+refused.}
 
 \item{dataset}{Character(1). The dataset's name. Choose it only with
 \code{role = "named"}; \code{role = "study"} requires the default,

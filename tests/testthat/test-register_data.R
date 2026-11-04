@@ -566,3 +566,96 @@ test_that("named release migration preserves additive contract fields", {
     release_id = "surgery_cohort-20260920-r1"
   ))
 })
+
+# #272: file-name completion inside a string works from the working directory,
+# so it gives "00_datasets/built.csv", not "built.csv". A path into the study's
+# data folder must register exactly as the bare name does.
+# Each fixture study writes its own CSV, so pin its modification time: the
+# manifest records it, and it is the one field that would otherwise differ.
+pinned_registration_csv <- function(root, file) {
+  path <- write_registration_csv(root, file)
+  Sys.setFileTime(path, as.POSIXct("2026-11-04 12:00:00", tz = "UTC"))
+  path
+}
+
+registration_entry <- function(root) {
+  m <- .read_manifest(file.path(root, "manifest.yaml"))
+  list(built = study_config(root)$built, entry = m$datasets[[1L]])
+}
+
+test_that("register_data accepts a path into the data folder as the bare name (#272)", {
+  bare <- registration_study()
+  pinned_registration_csv(bare, "built.csv")
+  register_data(bare, "built.csv", extract_date = "2026-11-04")
+  expected <- registration_entry(bare)
+  expect_identical(expected$built, "built.csv")
+  expect_identical(expected$entry$file, "built.csv")
+
+  data_leaf <- basename(study_dir("datasets", bare))
+  forms <- list(
+    relative_to_wd = function(root) {
+      withr::local_dir(root)
+      register_data(root, file.path(data_leaf, "built.csv"), extract_date = "2026-11-04")
+    },
+    relative_to_root = function(root) {
+      withr::local_dir(tempdir())
+      register_data(root, file.path(data_leaf, "built.csv"), extract_date = "2026-11-04")
+    },
+    absolute = function(root) {
+      register_data(root, file.path(study_dir("datasets", root), "built.csv"),
+                    extract_date = "2026-11-04")
+    }
+  )
+  for (form in names(forms)) {
+    root <- registration_study()
+    pinned_registration_csv(root, "built.csv")
+    forms[[form]](root)
+    expect_identical(registration_entry(root), expected, info = form)
+  }
+})
+
+test_that("register_data accepts a path for a named dataset (#272)", {
+  root <- registration_study()
+  write_registration_csv(root, "built.csv")
+  write_registration_csv(root, "echo.csv")
+  register_data(root, "built.csv")
+  register_data(root, file.path(study_dir("datasets", root), "echo.csv"),
+                dataset = "echo", role = "named")
+  expect_identical(study_config(root, require_data = FALSE)$additional_datasets$echo$built, "echo.csv")
+})
+
+test_that("register_data refuses a path outside the data folder, naming it (#272)", {
+  root <- registration_study()
+  write_registration_csv(root, "built.csv")
+  data_leaf <- basename(study_dir("datasets", root))
+  outside <- file.path(dirname(root), "other")
+  dir.create(outside)
+  file.copy(file.path(study_dir("datasets", root), "built.csv"), outside)
+  analysis <- file.path(root, "analysis_copy")
+  dir.create(analysis)
+  file.copy(file.path(study_dir("datasets", root), "built.csv"), analysis)
+  before <- readLines(file.path(root, "_study.yml"))
+
+  withr::local_dir(root)
+  for (bad in c("../other/built.csv", file.path(outside, "built.csv"), "analysis_copy/built.csv")) {
+    expect_error(register_data(root, bad), data_leaf, fixed = TRUE, info = bad)
+  }
+  expect_identical(readLines(file.path(root, "_study.yml")), before)
+  expect_false(file.exists(file.path(root, "manifest.yaml")))
+})
+
+test_that("register_data refuses a relative path that names another study's file (#272)", {
+  this <- registration_study()
+  other <- file.path(dirname(this), "other_study")
+  study_setup(other, "Other fixture", 43L, renv = FALSE)
+  write_registration_csv(this, "built.csv")
+  write_registration_csv(other, "built.csv")
+  before <- readLines(file.path(this, "_study.yml"))
+
+  # From the other study, completion gives "00_datasets/built.csv" for ITS file.
+  withr::local_dir(other)
+  data_leaf <- basename(study_dir("datasets", this))
+  expect_error(register_data(this, file.path(data_leaf, "built.csv")), "working directory")
+  expect_identical(readLines(file.path(this, "_study.yml")), before)
+  expect_false(file.exists(file.path(this, "manifest.yaml")))
+})
