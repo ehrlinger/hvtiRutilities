@@ -534,6 +534,11 @@ register_data <- function(root = study_root(), built, dataset = "study",
 # relative path is read against the working directory first and then the study
 # root. The bare name is returned and recorded, so every form registers
 # identically; a path to anywhere else stops, naming the data folder.
+#
+# The study-root reading is a fallback, never an override: a relative path that
+# names an existing file from the working directory, outside this study's data
+# folder (another study's "00_datasets/built.csv"), stops rather than quietly
+# registering this study's same-named file.
 .data_folder_file <- function(built, root, caller) {
   if (identical(basename(built), built)) return(built)
   data_dir <- study_dir("datasets", root)
@@ -542,6 +547,11 @@ register_data <- function(root = study_root(), built, dataset = "study",
   real <- function(p) normalizePath(p, winslash = "/", mustWork = FALSE)
   in_data <- dir.exists(dirname(candidates)) &
     real(dirname(candidates)) == real(data_dir)
+  if (length(candidates) == 2L && !in_data[[1L]] && file.exists(candidates[[1L]])) {
+    stop(caller, "(): '", built, "' names ", real(candidates[[1L]]),
+         " from the working directory, which is not in this study's data folder, ",
+         data_dir, ". Give the file name alone, or an absolute path.", call. = FALSE)
+  }
   if (!any(in_data)) {
     stop(caller, "(): built must be a file in the study's data folder, ",
          basename(data_dir), "/: give its name (\"", basename(built), "\") or a path into ",

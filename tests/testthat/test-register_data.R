@@ -643,3 +643,19 @@ test_that("register_data refuses a path outside the data folder, naming it (#272
   expect_identical(readLines(file.path(root, "_study.yml")), before)
   expect_false(file.exists(file.path(root, "manifest.yaml")))
 })
+
+test_that("register_data refuses a relative path that names another study's file (#272)", {
+  this <- registration_study()
+  other <- file.path(dirname(this), "other_study")
+  study_setup(other, "Other fixture", 43L, renv = FALSE)
+  write_registration_csv(this, "built.csv")
+  write_registration_csv(other, "built.csv")
+  before <- readLines(file.path(this, "_study.yml"))
+
+  # From the other study, completion gives "00_datasets/built.csv" for ITS file.
+  withr::local_dir(other)
+  data_leaf <- basename(study_dir("datasets", this))
+  expect_error(register_data(this, file.path(data_leaf, "built.csv")), "working directory")
+  expect_identical(readLines(file.path(this, "_study.yml")), before)
+  expect_false(file.exists(file.path(this, "manifest.yaml")))
+})
