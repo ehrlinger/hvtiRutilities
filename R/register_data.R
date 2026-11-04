@@ -138,7 +138,12 @@
 #'   directory, found by its \code{_study.yml}; outside a study the function
 #'   stops and writes nothing.
 #' @param built Character(1). Dataset filename within the logical
-#'   \code{datasets} directory, including its extension.
+#'   \code{datasets} directory, including its extension. A path into that
+#'   folder is accepted too, such as \code{"00_datasets/built.csv"} (what
+#'   file-name completion gives from the study root) or an absolute path, and
+#'   is recorded by its file name alone. A relative path is read against the
+#'   working directory, then the study root. A file in any other folder is
+#'   refused.
 #' @param dataset Character(1). The dataset's name. Choose it only with
 #'   \code{role = "named"}; \code{role = "study"} requires the default,
 #'   \code{dataset = "study"}. A name starts with a lowercase letter and uses
@@ -275,8 +280,7 @@ register_data <- function(root = study_root(), built, dataset = "study",
     stop("register_data(): parents are recorded only for kind = \"combined\".", call. = FALSE)
   }
 
-  if (!identical(basename(built), built) ||
-        !nzchar(tools::file_ext(built))) {
+  if (!nzchar(tools::file_ext(built))) {
     stop("register_data(): built must be one filename with its extension",
          call. = FALSE)
   }
@@ -294,6 +298,7 @@ register_data <- function(root = study_root(), built, dataset = "study",
   }
 
   cfg <- study_config(root, require_data = FALSE)
+  built <- .data_folder_file(built, cfg$root, "register_data")
   raw <- .read_study_yml(cfg$file, "register_data")
   existing <- if (role == "study" && !is.null(raw$built)) {
     list(
@@ -521,4 +526,26 @@ register_data <- function(root = study_root(), built, dataset = "study",
 
   if (!is.null(claim$note)) message(claim$note)
   study_status(cfg$root)
+}
+
+# A data file named by its bare name, or by a path into the study's data
+# folder. File-name completion inside a string works from the working
+# directory, so from the study root it gives "00_datasets/<file>" (#272). A
+# relative path is read against the working directory first and then the study
+# root. The bare name is returned and recorded, so every form registers
+# identically; a path to anywhere else stops, naming the data folder.
+.data_folder_file <- function(built, root, caller) {
+  if (identical(basename(built), built)) return(built)
+  data_dir <- study_dir("datasets", root)
+  path <- path.expand(built)
+  candidates <- if (.provenance_is_absolute(path)) path else file.path(c(getwd(), root), path)
+  real <- function(p) normalizePath(p, winslash = "/", mustWork = FALSE)
+  in_data <- dir.exists(dirname(candidates)) &
+    real(dirname(candidates)) == real(data_dir)
+  if (!any(in_data)) {
+    stop(caller, "(): built must be a file in the study's data folder, ",
+         basename(data_dir), "/: give its name (\"", basename(built), "\") or a path into ",
+         data_dir, ". '", built, "' is not there.", call. = FALSE)
+  }
+  basename(built)
 }
