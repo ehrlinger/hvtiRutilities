@@ -101,6 +101,7 @@ reference:
   - proc_freq
   - proc_print
   - followup_check
+  - duplicate_keys
   - compare_datasets
 
 - title: Dataset Versioning
