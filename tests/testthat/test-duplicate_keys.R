@@ -84,3 +84,34 @@ test_that("missing key values are counted, and unknown columns are named at once
                "idd.*op_tim")
   expect_error(duplicate_keys(d, character()), "key")
 })
+
+test_that("keys that print alike stay separate (#274 review)", {
+  # 1e15 and 1e15 + 1 are distinct doubles that both format as "1e+15".
+  d <- data.frame(id = rep(c(1e15, 1e15 + 1), each = 2), time = 1:4)
+  expect_true(identical(as.character(d$id[1]), as.character(d$id[3])) &&
+                d$id[1] != d$id[3])
+  dk <- duplicate_keys(d, "id", order_by = "time")
+  expect_equal(dk$summary$repeated_keys, 2L)
+  expect_equal(dk$rows$.group, c(1L, 1L, 2L, 2L))
+  expect_equal(dk$keep, c(TRUE, FALSE, TRUE, FALSE))
+  expect_equal(nrow(d[dk$keep, ]), 2L)
+})
+
+test_that("composite keys whose pasted strings collide stay separate", {
+  # Pasted with any one separator, ("a\037", "b") and ("a", "\037b") match.
+  d <- data.frame(x = c("a\037", "a\037", "a", "a"),
+                  y = c("b", "b", "\037b", "\037b"), time = 1:4)
+  dk <- duplicate_keys(d, c("x", "y"), order_by = "time")
+  expect_equal(dk$rows$.group, c(1L, 1L, 2L, 2L))
+  expect_equal(dk$keep, c(TRUE, FALSE, TRUE, FALSE))
+  # A missing key is not the same as the text "NA".
+  d2 <- data.frame(id = c(NA, NA, "NA", "NA"), time = 1:4)
+  expect_equal(duplicate_keys(d2, "id", order_by = "time")$rows$.group, c(1L, 1L, 2L, 2L))
+})
+
+test_that("order_by values that print alike are not a tie (#274 review)", {
+  d <- data.frame(id = c(1, 1), t = c(1 + 1e-15, 1))
+  expect_identical(as.character(d$t[1]), as.character(d$t[2]))
+  dk <- duplicate_keys(d, "id", order_by = "t")
+  expect_equal(dk$keep, c(FALSE, TRUE))
+})

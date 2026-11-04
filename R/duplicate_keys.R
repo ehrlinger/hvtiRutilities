@@ -85,11 +85,17 @@ duplicate_keys <- function(data, key, order_by = NULL, show_key = FALSE) {
   n <- nrow(data)
   k <- data[key]
   in_repeat <- duplicated(k) | duplicated(k, fromLast = TRUE)
-  # One string per key value, missing values included, to number the groups.
-  sig <- do.call(paste, c(lapply(k, function(x) ifelse(is.na(x), "\001NA", as.character(x))),
-                          sep = "\037"))
   rep_rows <- which(in_repeat)
-  group <- match(sig[rep_rows], unique(sig[rep_rows]))
+  # Number the repeated keys by comparing typed values, as duplicated() does:
+  # sort them, start a key wherever a row differs from the one before, then
+  # renumber in order of appearance. A formatted string would merge keys
+  # that print alike, such as 1e15 and 1e15 + 1.
+  kr <- k[rep_rows, , drop = FALSE]
+  o <- do.call(order, unname(as.list(kr)))
+  run <- cumsum(c(TRUE, !.same_rows(kr, o[-1L], o[-length(o)])))
+  group <- integer(length(rep_rows))
+  group[o] <- run[seq_along(o)]
+  group <- match(group, unique(group))
 
   rank <- rep(NA_integer_, length(rep_rows))
   keep <- NULL
@@ -107,8 +113,7 @@ duplicate_keys <- function(data, key, order_by = NULL, show_key = FALSE) {
     # Every repeated key has at least two rows, so the row after its first is
     # in the same key; a tie for first place is the two agreeing on order_by.
     first <- match(seq_len(max(c(0L, group))), group[o])
-    ob_sig <- do.call(paste, c(lapply(ob, as.character), sep = "\037"))[o]
-    tied <- ob_sig[first] == ob_sig[first + 1L]
+    tied <- .same_rows(ob, o[first], o[first + 1L])
     if (any(tied)) {
       stop(sum(tied), if (sum(tied) == 1L) " repeated key ties" else " repeated keys tie",
            " on order_by (", toString(order_by),
@@ -130,6 +135,18 @@ duplicate_keys <- function(data, key, order_by = NULL, show_key = FALSE) {
   )
   structure(list(summary = summary, rows = rows, keep = keep), class = "duplicate_keys",
             key = key, order_by = order_by)
+}
+
+# For each pair (i[j], i2[j]), are rows i[j] and i2[j] of d equal in every
+# column? Compares typed values, and a missing value equals only a missing value.
+.same_rows <- function(d, i, i2) {
+  same <- rep(TRUE, length(i))
+  for (x in d) {
+    a <- x[i]
+    b <- x[i2]
+    same <- same & ((is.na(a) & is.na(b)) | ((a == b) %in% TRUE))
+  }
+  same
 }
 
 #' @export
