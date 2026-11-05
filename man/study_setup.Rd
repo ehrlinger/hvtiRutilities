@@ -58,7 +58,10 @@ including an adoption accepted at the prompt. Pass \code{FALSE} to adopt
 without cleaning.}
 
 \item{renv}{Logical. Initialize and snapshot the study's \code{renv}
-environment. See Details. Defaults to \code{TRUE}; test suites that build
+environment. See Details. A sound \code{renv.lock} missing its
+\code{renv/activate.R} or \code{.Rprofile} line is repaired with
+\code{renv::activate()}, which leaves the lock unchanged. Defaults to
+\code{TRUE}; test suites that build
 temporary studies should pass \code{FALSE}.}
 
 \item{template_dir}{Character(1). The template corpus studies were copied
@@ -75,9 +78,11 @@ you are deliberately moving the study to this session's R.}
 \value{
 An object of class \code{"study_status"}, returned visibly. With
   \code{cleanup = TRUE} it carries a \code{"cleanup"} attribute, a list of
-  the \code{deleted} files and \code{removed_dirs} folders, relative to the
-  root. With \code{renv = TRUE} it carries a \code{"renv"} attribute,
-  \code{"initialized"} or \code{"retained"}.
+  \code{status} (\code{"done"}, \code{"skipped"} and so on), \code{reason},
+  the \code{deleted} files, the \code{removed_dirs} folders and the
+  \code{left} files that could not be deleted, all relative to the root.
+  With \code{renv = TRUE} it carries a \code{"renv"} attribute,
+  \code{"initialized"}, \code{"retained"} or \code{"repaired"}.
 }
 \description{
 The usual entry point is \code{hvtiR::setup()}. Creates the numbered directory structure for a new study and writes an
@@ -109,15 +114,20 @@ other files stays, as does one holding any folder the cleanup did not
 empty, and a top-level study folder is never removed. Symbolic links are
 neither followed nor deleted, and folders named \code{.git},
 \code{.checkpoint} or \code{renv} are never entered, at any depth. The
-root and \code{template_dir} must not overlap. A file that cannot be
-deleted stops the setup with an error.
+root and \code{template_dir} must not overlap. A file or folder that cannot
+be deleted is warned about and listed in the \code{"cleanup"} attribute's
+\code{left}; setup goes on. With no template corpus at \code{template_dir},
+cleanup is skipped with a warning.
 
 With \code{renv = TRUE}, the study's \code{renv} environment is set up
 after any cleanup, in a separate R process. A complete environment is
 kept: a \code{renv/} folder holding \code{activate.R}, a \code{.Rprofile}
 that sources it, and a \code{renv.lock} that parses as a lockfile. One
 interrupted after initialization (no lockfile yet) is resumed at the
-snapshot; any other partial or invalid environment stops with an error.
+snapshot. A sound \code{renv.lock} whose \code{renv/activate.R} or
+\code{.Rprofile} line is missing is repaired with
+\code{renv::activate()}, which leaves the lock unchanged. Any other partial
+or invalid environment stops with an error.
 Otherwise the study \code{DESCRIPTION} is written (see
 \code{\link{study_declare}}), \code{renv::init(bare = TRUE)} creates the
 environment, and the project is loaded and snapshotted explicitly in
