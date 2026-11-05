@@ -198,8 +198,9 @@
   .study_unlink(file.path(root, found$files))
   left <- found$files[file.exists(file.path(root, found$files))]
   if (length(left)) {
-    stop("study_setup(): cleanup could not delete ", length(left), " file(s), first ",
-         paste(utils::head(left, 5L), collapse = ", "), call. = FALSE)
+    # A file left behind cannot reach the explicit-mode lockfile; say so and go on.
+    warning("study_setup(): cleanup could not delete ", length(left), " file(s), first ",
+            paste(utils::head(left, 5L), collapse = ", "), call. = FALSE)
   }
   # A folder the deletions emptied goes (Old-Rplots, tp_ggplot, archive, by
   # whatever name), and so does an empty templates or old_RF_templates folder;
@@ -227,12 +228,15 @@
     if (litter_only) {
       .study_unlink(full, recursive = TRUE)
       if (dir.exists(full)) {
-        stop("study_setup(): cleanup could not remove folder ", folder, call. = FALSE)
+        warning("study_setup(): cleanup could not remove folder ", folder, call. = FALSE)
+        left <- c(left, folder)
+      } else {
+        removed <- c(removed, folder)
       }
-      removed <- c(removed, folder)
     }
   }
-  list(deleted = found$files, removed_dirs = removed)
+  list(status = "done", reason = NULL, deleted = setdiff(found$files, left),
+       removed_dirs = removed, left = left)
 }
 
 # Runs one R expression in a fresh R process in the study, as a seam the tests
@@ -251,13 +255,18 @@
 
 # Which of the three pieces of a renv environment are present and sound: a
 # renv/ folder holding activate.R, a .Rprofile that sources it, and a
-# renv.lock that parses as a lockfile. A path that merely exists is not enough.
+# renv.lock that parses as a complete lockfile: an R version that is one
+# non-empty string, and a Packages object (empty is allowed). A path that
+# merely exists is not enough.
 .study_renv_parts <- function(root) {
   lock <- file.path(root, "renv.lock")
   profile <- file.path(root, ".Rprofile")
-  lock_ok <- !dir.exists(lock) && file.exists(lock) && isTRUE(tryCatch(
-    is.list(jsonlite::read_json(lock)$R), error = function(e) FALSE
-  ))
+  lock_ok <- !dir.exists(lock) && file.exists(lock) && isTRUE(tryCatch({
+    parsed <- jsonlite::read_json(lock)
+    version <- parsed$R$Version
+    is.character(version) && length(version) == 1L && !is.na(version) && nzchar(version) &&
+      is.list(parsed$Packages) && (length(parsed$Packages) == 0L || !is.null(names(parsed$Packages)))
+  }, error = function(e) FALSE))
   profile_ok <- !dir.exists(profile) && file.exists(profile) && .sources_renv_activate(profile)
   c(renv = file.exists(file.path(root, "renv", "activate.R")),
     .Rprofile = profile_ok, renv.lock = lock_ok)
@@ -303,7 +312,8 @@
 }
 
 # The study-setup command's renv step (qhsprograms study_setup/workflow.py):
-# keep a complete environment, resume one interrupted after init, refuse any
+# keep a complete environment, resume one interrupted after init, repair a
+# sound lock whose renv/activate.R or .Rprofile line is missing, refuse every
 # other partial one, otherwise init bare and snapshot.
 .study_init_renv <- function(root, r_upgrade = FALSE) {
   core <- c("renv", ".Rprofile", "renv.lock")
@@ -311,7 +321,11 @@
   if (all(sound)) return("retained")
   present <- file.exists(file.path(root, core))
   resumable <- all(sound[c("renv", ".Rprofile")]) && !present[3L]
-  if (any(present) && !resumable) {
+  # A sound lock is the study's history: rebuild only the scaffolding around it.
+  # A plain file named renv is ambiguous: renv::activate() cannot replace it.
+  renv_path <- file.path(root, "renv")
+  repairable <- sound[["renv.lock"]] && !(file.exists(renv_path) && !dir.exists(renv_path))
+  if (any(present) && !resumable && !repairable) {
     stop("study_setup(): partial renv environment; sound: ",
          if (any(sound)) paste(core[sound], collapse = ", ") else "none",
          "; missing or invalid: ", paste(core[!sound], collapse = ", "), call. = FALSE)
@@ -323,6 +337,28 @@
       stop("study_setup(): ", what, " failed: ",
            if (nzchar(detail)) detail else "no output", call. = FALSE)
     }
+  }
+  if (repairable) {
+    # The same R-version decision a snapshot gets. The installed-package check
+    # that guard_snapshot() adds under r_upgrade is for a snapshot; a repair
+    # takes none, so it is told every package is present.
+    guard_snapshot(root, r_upgrade, installed = function(pkg) "0")
+    # Explicit mode builds the next snapshot from DESCRIPTION alone, so every
+    # package the lock records is declared first, or that snapshot empties the
+    # lock. A transitive dependency declared too is harmless; one dropped is
+    # history lost.
+    recorded <- names(jsonlite::read_json(file.path(root, "renv.lock"))$Packages)
+    study_declare(setdiff(recorded, "renv"), root = root)
+    project <- deparse(normalizePath(root, winslash = "/"))
+    run(paste0("renv::activate(project = ", project, "); renv::settings$use.cache(FALSE, project = ",
+               project, "); renv::settings$snapshot.type('explicit', project = ", project, ")"),
+        "renv activation")
+    if (!all(.study_renv_parts(root))) {
+      stop("study_setup(): renv activation finished without a complete environment",
+           call. = FALSE)
+    }
+    # Returns early, without a snapshot, so the lock stays as recorded.
+    return("repaired")
   }
   if (!resumable) {
     run("renv::init(bare = TRUE, restart = FALSE)", "renv initialization")
@@ -381,15 +417,24 @@
 #' empty, and a top-level study folder is never removed. Symbolic links are
 #' neither followed nor deleted, and folders named \code{.git},
 #' \code{.checkpoint} or \code{renv} are never entered, at any depth. The
-#' root and \code{template_dir} must not overlap. A file that cannot be
-#' deleted stops the setup with an error.
+#' root and \code{template_dir} must not overlap. A file or folder that cannot
+#' be deleted is warned about and listed in the \code{"cleanup"} attribute's
+#' \code{left}; setup goes on. With no template corpus at \code{template_dir},
+#' cleanup is skipped with a warning.
 #'
 #' With \code{renv = TRUE}, the study's \code{renv} environment is set up
 #' after any cleanup, in a separate R process. A complete environment is
 #' kept: a \code{renv/} folder holding \code{activate.R}, a \code{.Rprofile}
 #' that sources it, and a \code{renv.lock} that parses as a lockfile. One
 #' interrupted after initialization (no lockfile yet) is resumed at the
-#' snapshot; any other partial or invalid environment stops with an error.
+#' snapshot. A sound \code{renv.lock} whose \code{renv/activate.R} or
+#' \code{.Rprofile} line is missing is repaired with
+#' \code{renv::activate()}, which leaves the lock unchanged. Every package
+#' the lock records is declared in \code{DESCRIPTION} first, so the next
+#' snapshot keeps them, and a lock recorded under another R major.minor
+#' still needs \code{r_upgrade = TRUE}. A lock is sound only with an R
+#' version and a \code{Packages} object. Any other partial
+#' or invalid environment stops with an error.
 #' Otherwise the study \code{DESCRIPTION} is written (see
 #' \code{\link{study_declare}}), \code{renv::init(bare = TRUE)} creates the
 #' environment, and the project is loaded and snapshotted explicitly in
@@ -428,10 +473,15 @@
 #'   including an adoption accepted at the prompt. Pass \code{FALSE} to adopt
 #'   without cleaning.
 #' @param template_dir Character(1). The template corpus studies were copied
-#'   from, read when \code{cleanup = TRUE}. Setup stops with an error when it
-#'   does not exist.
+#'   from, read when \code{cleanup = TRUE}. When it does not exist, setup
+#'   warns, sets the study up without cleaning, and reports the skip in the
+#'   \code{"cleanup"} attribute.
 #' @param renv Logical. Initialize and snapshot the study's \code{renv}
-#'   environment. See Details. Defaults to \code{TRUE}; test suites that build
+#'   environment. See Details. A sound \code{renv.lock} missing its
+#'   \code{renv/activate.R} or \code{.Rprofile} line is repaired with
+#'   \code{renv::activate()}, which leaves the lock unchanged, after declaring
+#'   its packages and checking its R version against \code{r_upgrade}. Defaults to
+#'   \code{TRUE}; test suites that build
 #'   temporary studies should pass \code{FALSE}.
 #' @param r_upgrade Logical(1). Leave \code{FALSE}. The renv snapshot is
 #'   refused from an R whose major.minor differs from the R recorded in the
@@ -441,9 +491,12 @@
 #'
 #' @return An object of class \code{"study_status"}, returned visibly. With
 #'   \code{cleanup = TRUE} it carries a \code{"cleanup"} attribute, a list of
-#'   the \code{deleted} files and \code{removed_dirs} folders, relative to the
-#'   root. With \code{renv = TRUE} it carries a \code{"renv"} attribute,
-#'   \code{"initialized"} or \code{"retained"}.
+#'   \code{status} (exactly \code{"done"} or \code{"skipped"}), \code{reason}
+#'   (\code{NULL} when \code{status} is \code{"done"}), the \code{deleted}
+#'   files, the \code{removed_dirs} folders and the \code{left} files and
+#'   folders cleanup could not remove, all relative to the root.
+#'   With \code{renv = TRUE} it carries a \code{"renv"} attribute,
+#'   \code{"initialized"}, \code{"retained"} or \code{"repaired"}.
 #'
 #' @seealso \code{\link{study_status}}, \code{\link{study_config}},
 #'   \code{\link{study_dir}}
@@ -560,12 +613,22 @@ study_setup <- function(root = NULL, study, study_tracker_id,
   }
 
   if (!cleanup_given) cleanup <- adopt
+  skipped <- NULL
   if (cleanup) {
     template_dir <- .study_scalar(template_dir, "template_dir", required = TRUE)
     if (!dir.exists(template_dir)) {
-      stop("study_setup(): template corpus not found at ", template_dir,
-           "; pass template_dir, or cleanup = FALSE", call. = FALSE)
+      # Explicit-mode renv does not scan the study, so template copies can no
+      # longer reach the lockfile: cleanup is tidiness, not a reason to stop.
+      reason <- paste0("template corpus not found at ", template_dir)
+      warning("study_setup(): ", reason, "; template copies were not cleaned up. ",
+              "Pass template_dir to clean them, or cleanup = FALSE to skip this.",
+              call. = FALSE)
+      skipped <- list(status = "skipped", reason = reason, deleted = character(0),
+                      removed_dirs = character(0), left = character(0))
+      cleanup <- FALSE
     }
+  }
+  if (cleanup) {
     if (.study_paths_overlap(root, template_dir)) {
       stop("study_setup(): the study root and template_dir overlap; cleanup would ",
            "delete the corpus or the study", call. = FALSE)
@@ -647,7 +710,7 @@ study_setup <- function(root = NULL, study, study_tracker_id,
   }
 
   # Cleanup before renv: renv discovers dependencies by scanning the study.
-  cleaned <- if (cleanup) .study_cleanup(root, template_dir)
+  cleaned <- if (cleanup) .study_cleanup(root, template_dir) else skipped
   renv_state <- if (renv) .study_init_renv(root, r_upgrade)
 
   status <- study_status(root)
