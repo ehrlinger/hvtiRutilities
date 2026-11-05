@@ -486,3 +486,47 @@ test_that("study_status adds no dated_version row for a release-pinned dataset",
   st <- suppressWarnings(study_status(fx$root), classes = "deprecatedWarning")
   expect_false(any(grepl("^dated_version:", st$checks$item)))
 })
+
+test_that("a missing renv.lock points at hvtiR::setup(), spelled out to paste, not renv::init()", {
+  # A title with a quote and a path with a space: the call must still parse.
+  root <- file.path(withr::local_tempdir(), "my study")
+  suppressMessages(study_setup(root, 'Aortic "valve" study', 42L, renv = FALSE))
+  detail <- check_for(study_status(root), "renv.lock")$detail
+  expect_no_match(detail, "run renv::init()", fixed = TRUE)
+  expect_match(detail, "Adopting deletes tp.* files", fixed = TRUE)
+
+  call_text <- regmatches(detail, regexpr("hvtiR::setup\\(.*?, adopt = TRUE\\)", detail))
+  expect_length(call_text, 1L)
+  call <- str2lang(call_text)
+  expect_identical(eval(call$study), 'Aortic "valve" study')
+  expect_identical(eval(call$study_tracker_id), 42L)
+  expect_identical(eval(call$root), normalizePath(root))
+  expect_true(eval(call$adopt))
+  # Its arguments are ones setup() takes.
+  if (requireNamespace("hvtiR", quietly = TRUE)) {
+    expect_no_error(match.call(hvtiR::setup, call))
+  }
+
+  # Without a readable _study.yml there is nothing to spell out.
+  bare <- check_for(study_status(withr::local_tempdir()), "renv.lock")$detail
+  expect_match(bare, "set the study up with hvtiR::setup(), run with no project open", fixed = TRUE)
+})
+
+test_that("an older _study.yml without a Tracker ID says how to add one, not an empty command", {
+  # The legacy shape ?study_config shows: a title and a dataset, no ID.
+  root <- withr::local_tempdir()
+  yaml::write_yaml(list(study = "Example", built = "example.sas7bdat"), file.path(root, "_study.yml"))
+  detail <- check_for(study_status(root), "renv.lock")$detail
+  expect_no_match(detail, "set the study up with ,", fixed = TRUE)
+  expect_no_match(detail, "hvtiR::setup(study", fixed = TRUE)
+  expect_match(detail, "Add the line study_tracker_id: <the study's Study Tracker ID> to _study.yml", fixed = TRUE)
+  rerun <- regmatches(detail, regexpr("hvtiRutilities::study_status\\([^)]*\\)", detail))
+  expect_identical(eval(str2lang(rerun)[[2]]), normalizePath(root))
+
+  # Following that advice gives the full setup command.
+  cat("study_tracker_id: 42\n", file = file.path(root, "_study.yml"), append = TRUE)
+  detail <- check_for(study_status(root), "renv.lock")$detail
+  call <- str2lang(regmatches(detail, regexpr("hvtiR::setup\\(.*?, adopt = TRUE\\)", detail)))
+  expect_identical(eval(call$study_tracker_id), 42L)
+  expect_identical(eval(call$study), "Example")
+})
