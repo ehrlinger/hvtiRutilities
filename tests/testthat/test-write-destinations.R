@@ -83,8 +83,8 @@ test_that("study_setup() needs root outside a study", {
 test_that("walk-up writers stop and write nothing outside a study", {
   here <- no_study_dir()
   calls <- list(
-    declare_data          = quote(declare_data(built = "x.csv")),
-    register_data         = quote(register_data(built = "x.csv")),
+    declare_data          = quote(declare_data(file = "x.csv")),
+    register_data         = quote(register_data(file = "x.csv")),
     add_abbreviation      = quote(add_abbreviation("Example phrase", "ex")),
     study_update_identity = quote(study_update_identity(list(study = "x", study_tracker_id = 42L))),
     cache_fit             = quote(cache_fit("x", 1 + 1)),

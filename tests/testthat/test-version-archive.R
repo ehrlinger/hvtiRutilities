@@ -175,7 +175,7 @@ test_that("a version file another dataset reads as its source stays beside it", 
   root <- versioned_study()
   dir <- study_dir("datasets", root)
   dictionary <- "built_20260915.schema.csv"
-  suppressMessages(register_data(root, built = dictionary, dataset = "dictionary", role = "named",
+  suppressMessages(register_data(root, file = dictionary, dataset = "dictionary", role = "named",
                                  population = "Synthetic dictionary"))
   before <- digest::digest(file.path(dir, dictionary), algo = "sha256", file = TRUE)
   rebuild_source(root)

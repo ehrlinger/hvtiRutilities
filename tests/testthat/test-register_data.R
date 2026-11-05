@@ -659,3 +659,29 @@ test_that("register_data refuses a relative path that names another study's file
   expect_identical(readLines(file.path(this, "_study.yml")), before)
   expect_false(file.exists(file.path(this, "manifest.yaml")))
 })
+
+test_that("register_data() takes file =; built =, its old name, still works with a warning (#275)", {
+  root <- registration_study()
+  write_registration_csv(root, "built.csv")
+  write_registration_csv(root, "echo.csv")
+  expect_error(register_data(root, file = "built.csv", built = "built.csv"),
+               "give file = only. built = is its old name")
+  expect_error(register_data(root), "file must be one non-empty value")
+  # Nothing was written by either refusal.
+  expect_null(yaml::read_yaml(file.path(root, "_study.yml"))$built)
+
+  suppressMessages(register_data(root, file = "built.csv"))
+  expect_identical(yaml::read_yaml(file.path(root, "_study.yml"))$built, "built.csv")
+
+  w <- NULL
+  suppressMessages(withCallingHandlers(
+    register_data(root, built = "echo.csv", dataset = "echo", role = "named"),
+    deprecatedWarning = function(cond) {
+      w <<- conditionMessage(cond)
+      invokeRestart("muffleWarning")
+    }
+  ))
+  expect_identical(w, paste0("register_data(built =) is now register_data(file =). built = still works and ",
+                             "will be removed in a later release."))
+  expect_true("echo.csv" %in% vapply(.read_manifest(file.path(root, "manifest.yaml"))$datasets, `[[`, "", "file"))
+})

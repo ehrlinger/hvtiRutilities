@@ -344,7 +344,7 @@
 #' utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
 #'                  file.path(root, "00_datasets", "built.csv"),
 #'                  row.names = FALSE)
-#' invisible(register_data(root, built = "built.csv"))
+#' invisible(register_data(root, file = "built.csv"))
 #' cfg <- study_config(root)
 #'
 #' # Deprecated: it warns and names study_status() instead. A study registered
@@ -503,7 +503,7 @@ check_data_updates <- function(cfg = study_config(), dataset = NULL) {
 #' utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
 #'                  file.path(root, "00_datasets", "built.csv"),
 #'                  row.names = FALSE)
-#' invisible(register_data(root, built = "built.csv"))
+#' invisible(register_data(root, file = "built.csv"))
 #' cfg <- study_config(root)
 #'
 #' # Deprecated: it warns and names review_built() instead, then stops,
@@ -651,7 +651,7 @@ print.data_update_review <- function(x, ...) {
 #' utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
 #'                  file.path(root, "00_datasets", "built.csv"),
 #'                  row.names = FALSE)
-#' invisible(register_data(root, built = "built.csv"))
+#' invisible(register_data(root, file = "built.csv"))
 #' cfg <- study_config(root)
 #'
 #' # Deprecated: it warns and names update_manifest() instead, then stops,

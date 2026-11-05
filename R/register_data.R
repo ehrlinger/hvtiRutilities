@@ -137,7 +137,7 @@
 #' @param root Character. Study root or a directory beneath it. Defaults to the study that contains the working
 #'   directory, found by its \code{_study.yml}; outside a study the function
 #'   stops and writes nothing.
-#' @param built Character(1). Dataset filename within the logical
+#' @param file Character(1). Dataset filename within the logical
 #'   \code{datasets} directory, including its extension. A path into that
 #'   folder is accepted too, such as \code{"00_datasets/built.csv"} (what
 #'   file-name completion gives from the study root) or an absolute path, and
@@ -151,6 +151,9 @@
 #'   \code{"built"} are reserved, \code{"built"} being a second name for the
 #'   study dataset. Read the dataset back with
 #'   \code{read_built(dataset = "<name>")}.
+#' @param built The old name of \code{file}, before 2026-11. It still works,
+#'   with a warning, and will be removed in a later release. Giving both is
+#'   an error.
 #' @param role Character(1). Takes one value, which picks the slot the dataset
 #'   fills. \code{"study"}, the default when the argument is left out, registers
 #'   the study's single main dataset. It is recorded under \code{built:} in
@@ -212,7 +215,7 @@
 #' utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
 #'                  file.path(root, "00_datasets", "built.csv"),
 #'                  row.names = FALSE)
-#' register_data(root, built = "built.csv", key = "ccfid")
+#' register_data(root, file = "built.csv", key = "ccfid")
 #' # The CSV is kept; the registered version is a dated Parquet file.
 #' list.files(file.path(root, "00_datasets"))
 #' unlink(root, recursive = TRUE)
@@ -224,30 +227,31 @@
 #' utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
 #'                  file.path(root, "00_datasets", "built.csv"),
 #'                  row.names = FALSE)
-#' invisible(register_data(root, built = "built.csv", key = "ccfid"))
+#' invisible(register_data(root, file = "built.csv", key = "ccfid"))
 #' utils::write.csv(
 #'   data.frame(ccfid = c(1, 1, 2), echo_date = c("2020-01-05", "2020-06-01", "2020-02-10"),
 #'              lvef = c(55, 50, 60)),
 #'   file.path(root, "00_datasets", "echo.csv"),
 #'   row.names = FALSE
 #' )
-#' invisible(register_data(root, built = "echo.csv", dataset = "echo", role = "named",
+#' invisible(register_data(root, file = "echo.csv", dataset = "echo", role = "named",
 #'                         kind = "ancillary", key = c("ccfid", "echo_date")))
 #' read_built(study_config(root), dataset = "echo")
 #' unlink(root, recursive = TRUE)
 #'
 #' @export
-register_data <- function(root = study_root(), built, dataset = "study",
+register_data <- function(root = study_root(), file, dataset = "study",
                           role = c("study", "named"),
                           population = NULL, source = NULL,
                           extract_date = NULL,
                           catalog_dataset = NULL, release_id = NULL,
-                          kind = NULL, key = NULL, parents = NULL) {
+                          kind = NULL, key = NULL, parents = NULL, built = NULL) {
+  built <- .renamed_file_arg(if (missing(file)) NULL else file, built, "register_data")
   role <- match.arg(role)
   scalar <- function(x, name, required = FALSE) {
     .study_scalar(x, name, required, caller = "register_data")
   }
-  built <- scalar(built, "built", required = TRUE)
+  built <- scalar(built, "file", required = TRUE)
   dataset <- scalar(dataset, "dataset", required = TRUE)
   if (identical(role, "named") && identical(dataset, "built")) {
     stop("register_data(): \"built\" is reserved: it is a second name for the study dataset. ",
@@ -281,7 +285,7 @@ register_data <- function(root = study_root(), built, dataset = "study",
   }
 
   if (!nzchar(tools::file_ext(built))) {
-    stop("register_data(): built must be one filename with its extension",
+    stop("register_data(): file must be one filename with its extension",
          call. = FALSE)
   }
   if (role == "study") {
@@ -553,9 +557,25 @@ register_data <- function(root = study_root(), built, dataset = "study",
          data_dir, ". Give the file name alone, or an absolute path.", call. = FALSE)
   }
   if (!any(in_data)) {
-    stop(caller, "(): built must be a file in the study's data folder, ",
+    stop(caller, "(): file must be a file in the study's data folder, ",
          basename(data_dir), "/: give its name (\"", basename(built), "\") or a path into ",
          data_dir, ". '", built, "' is not there.", call. = FALSE)
   }
   basename(built)
+}
+
+# `file =` was `built =` before 2026-11 (#275). The old name still works, with
+# a warning; giving both is an error, since they could disagree.
+.renamed_file_arg <- function(file, built, fn) {
+  if (is.null(built)) return(file)
+  if (!is.null(file)) {
+    stop(fn, "(): give file = only. built = is its old name, so both cannot be given.", call. = FALSE)
+  }
+  warning(structure(
+    class = c("deprecatedWarning", "warning", "condition"),
+    list(message = paste0(fn, "(built =) is now ", fn, "(file =). built = still works and will be removed ",
+                          "in a later release."),
+         call = NULL)
+  ))
+  built
 }

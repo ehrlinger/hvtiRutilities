@@ -17,24 +17,27 @@
 #' @param root The study root, or a directory beneath it. Defaults to the study that contains the working
 #'   directory, found by its \code{_study.yml}; outside a study the function
 #'   stops and writes nothing.
-#' @param built The working file's name in the datasets folder, with its extension.
+#' @param file The working file's name in the datasets folder, with its extension.
+#' @param built The old name of \code{file}, before 2026-11. It still works,
+#'   with a warning, and will be removed in a later release.
 #' @param key Columns that make a row unique, or \code{NULL} to leave
 #'   \code{key:} unset.
 #' @return \code{TRUE}, invisibly, when the contract was written, or a
 #'   \code{key} was added to a declaration that had none;
-#'   \code{FALSE}, invisibly, when \code{built} was already declared.
+#'   \code{FALSE}, invisibly, when \code{file} was already declared.
 #'   Stops when the study already declares a different file or a different key.
 #' @examples
 #' root <- file.path(tempdir(), "declare-example")
 #' suppressMessages(study_setup(root, "Example", 1L, renv = FALSE))
 #' saveRDS(data.frame(ccfid = 1:3), file.path(study_dir("datasets", root), "study_cohort.rds"))
-#' declare_data(root, built = "study_cohort.rds", key = "ccfid")
+#' declare_data(root, file = "study_cohort.rds", key = "ccfid")
 #' unlink(root, recursive = TRUE)
 #' @export
-declare_data <- function(root = study_root(), built, key = NULL) {
-  built <- .study_scalar(built, "built", TRUE, caller = "declare_data")
+declare_data <- function(root = study_root(), file, key = NULL, built = NULL) {
+  built <- .renamed_file_arg(if (missing(file)) NULL else file, built, "declare_data")
+  built <- .study_scalar(built, "file", TRUE, caller = "declare_data")
   if (!identical(basename(built), built) || !nzchar(tools::file_ext(built))) {
-    stop("declare_data(): built must be one filename with its extension", call. = FALSE)
+    stop("declare_data(): file must be one filename with its extension", call. = FALSE)
   }
   if (!is.null(key) && (!is.character(key) || !length(key) || anyNA(key) || !all(nzchar(key)))) {
     stop("declare_data(): key must be NULL or column names", call. = FALSE)
