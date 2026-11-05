@@ -86,16 +86,18 @@ duplicate_keys <- function(data, key, order_by = NULL, show_key = FALSE) {
   k <- data[key]
   in_repeat <- duplicated(k) | duplicated(k, fromLast = TRUE)
   rep_rows <- which(in_repeat)
-  # Number the repeated keys by comparing typed values, as duplicated() does:
-  # sort them, start a key wherever a row differs from the one before, then
-  # renumber in order of appearance. A formatted string would merge keys
-  # that print alike, such as 1e15 and 1e15 + 1.
+  # Number the repeated keys in order of appearance, with the equality
+  # duplicated() uses: match() compares doubles exactly and keeps NA apart
+  # from NaN. Each column's values become integer codes, combined one column
+  # at a time; only those integers are pasted, so no key value is formatted
+  # as text, which would merge keys that print alike, such as 1e15 and
+  # 1e15 + 1. Sorting cannot do this: order() interleaves NA and NaN.
   kr <- k[rep_rows, , drop = FALSE]
-  o <- do.call(order, unname(as.list(kr)))
-  run <- cumsum(c(TRUE, !.same_rows(kr, o[-1L], o[-length(o)])))
-  group <- integer(length(rep_rows))
-  group[o] <- run[seq_along(o)]
-  group <- match(group, unique(group))
+  group <- rep(1L, length(rep_rows))
+  for (x in kr) {
+    pair <- paste(group, match(x, unique(x)))
+    group <- match(pair, unique(pair))
+  }
 
   rank <- rep(NA_integer_, length(rep_rows))
   keep <- NULL

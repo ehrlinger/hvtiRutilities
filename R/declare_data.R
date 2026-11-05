@@ -34,15 +34,18 @@
 #' unlink(root, recursive = TRUE)
 #' @export
 declare_data <- function(root = study_root(), file, key = NULL, built = NULL) {
-  built <- .renamed_file_arg(if (missing(file)) NULL else file, built, "declare_data")
+  built <- .renamed_file_arg(if (missing(file)) NULL else file, built, "declare_data",
+                             file_given = !missing(file), built_given = !missing(built))
   built <- .study_scalar(built, "file", TRUE, caller = "declare_data")
-  if (!identical(basename(built), built) || !nzchar(tools::file_ext(built))) {
+  if (!nzchar(tools::file_ext(built))) {
     stop("declare_data(): file must be one filename with its extension", call. = FALSE)
   }
   if (!is.null(key) && (!is.character(key) || !length(key) || anyNA(key) || !all(nzchar(key)))) {
     stop("declare_data(): key must be NULL or column names", call. = FALSE)
   }
   cfg <- study_config(root, require_data = FALSE)
+  # A path into the data folder, as tab completion gives it, names the same file (#276 review).
+  built <- .data_folder_file(built, cfg$root, "declare_data")
   raw <- .read_study_yml(cfg$file, "declare_data")
   manifest_path <- file.path(cfg$root, "manifest.yaml")
   if (!is.null(raw$built)) {

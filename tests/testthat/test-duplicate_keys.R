@@ -115,3 +115,38 @@ test_that("order_by values that print alike are not a tie (#274 review)", {
   dk <- duplicate_keys(d, "id", order_by = "t")
   expect_equal(dk$keep, c(FALSE, TRUE))
 })
+
+test_that("NA and NaN are different keys, as duplicated() treats them (#278 review)", {
+  d <- data.frame(id = c(NA_real_, NA_real_, NaN, NaN), ord = 1:4)
+  # The precondition: duplicated() sees two keys here.
+  expect_identical(duplicated(d["id"]), c(FALSE, TRUE, FALSE, TRUE))
+  dk <- duplicate_keys(d, "id", order_by = "ord")
+  expect_identical(dk$summary$repeated_keys, 2L)
+  expect_identical(dk$rows$.group, c(1L, 1L, 2L, 2L))
+  expect_identical(dk$keep, c(TRUE, FALSE, TRUE, FALSE))
+
+  # In a composite key too, interleaved so that sorting would not separate them.
+  d2 <- data.frame(id = c(1, 1, 1, 1, 2, 2), dt = c(NA, NaN, NA, NaN, 5, 5), ord = 1:6)
+  dk2 <- duplicate_keys(d2, c("id", "dt"), order_by = "ord")
+  expect_identical(dk2$rows$.group, c(1L, 2L, 1L, 2L, 3L, 3L))
+  expect_identical(dk2$keep, c(TRUE, TRUE, FALSE, FALSE, TRUE, FALSE))
+})
+
+test_that("the repeated keys are exactly the groups duplicated() would make", {
+  # Keys drawn from values that sort, print or test as NA alike, two columns.
+  pool <- c(NA_real_, NaN, 1e15, 1e15 + 1, 0, 1)
+  for (seed in 1:25) {
+    withr::with_seed(seed, {
+      d <- data.frame(a = sample(pool, 40, TRUE), b = sample(c("x", "y", NA), 40, TRUE))
+    })
+    dk <- duplicate_keys(d, c("a", "b"))
+    if (!nrow(dk$rows)) next
+    k <- d[dk$rows$row, c("a", "b")]
+    g <- dk$rows$.group
+    # One group per distinct repeated key, and each group is one key.
+    expect_identical(max(g), nrow(unique(k)), info = seed)
+    for (j in unique(g)) {
+      expect_identical(nrow(unique(k[g == j, , drop = FALSE])), 1L, info = seed)
+    }
+  }
+})

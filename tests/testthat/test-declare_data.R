@@ -115,3 +115,21 @@ test_that("declare_data() takes file =; built =, its old name, still works with 
   # Given by position, as most calls do, it is file =, with no warning.
   expect_no_warning(expect_false(declare_data(root, "study_cohort.rds")))
 })
+
+test_that("declare_data() takes a path into the data folder, as tab completion gives it (#276 review)", {
+  root <- declare_fixture()
+  withr::local_dir(root)
+  leaf <- basename(study_dir("datasets", root))
+  expect_true(declare_data(root, file = file.path(leaf, "study_cohort.rds"), key = "ccfid"))
+  expect_identical(yaml::read_yaml(file.path(root, "_study.yml"))$built, "study_cohort.rds")
+  expect_error(declare_data(root, file = "elsewhere/study_cohort.rds"), "data folder")
+})
+
+test_that("declare_data() refuses file = and built = together, even file = NULL (#278 review)", {
+  root <- declare_fixture()
+  expect_error(declare_data(root, file = "study_cohort.rds", built = "study_cohort.rds"),
+               "give file = only. built = is its old name")
+  expect_error(declare_data(root, file = NULL, built = "study_cohort.rds"),
+               "give file = only. built = is its old name")
+  expect_null(yaml::read_yaml(file.path(root, "_study.yml"))$built)
+})
