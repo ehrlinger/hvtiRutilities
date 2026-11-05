@@ -255,21 +255,41 @@
 
 # Which of the three pieces of a renv environment are present and sound: a
 # renv/ folder holding activate.R, a .Rprofile that sources it, and a
-# renv.lock that parses as a complete lockfile: an R version that is one
-# non-empty string, and a Packages object (empty is allowed). A path that
-# merely exists is not enough.
+# renv.lock that parses as a complete lockfile: an R version that parses with
+# at least major.minor, and a Packages object (empty is allowed) whose every
+# record names itself, with a version and a source. A path that merely exists
+# is not enough.
 .study_renv_parts <- function(root) {
   lock <- file.path(root, "renv.lock")
   profile <- file.path(root, ".Rprofile")
   lock_ok <- !dir.exists(lock) && file.exists(lock) && isTRUE(tryCatch({
     parsed <- jsonlite::read_json(lock)
-    version <- parsed$R$Version
-    is.character(version) && length(version) == 1L && !is.na(version) && nzchar(version) &&
-      is.list(parsed$Packages) && (length(parsed$Packages) == 0L || !is.null(names(parsed$Packages)))
+    pkgs <- parsed$Packages
+    .lock_version_ok(parsed$R$Version, 2L) &&
+      is.list(pkgs) && (length(pkgs) == 0L || !is.null(names(pkgs))) &&
+      all(vapply(names(pkgs), function(n) .lock_record_ok(pkgs[[n]], n), logical(1L)))
   }, error = function(e) FALSE))
   profile_ok <- !dir.exists(profile) && file.exists(profile) && .sources_renv_activate(profile)
   c(renv = file.exists(file.path(root, "renv", "activate.R")),
     .Rprofile = profile_ok, renv.lock = lock_ok)
+}
+
+# Whether a lockfile field is one version string with at least `parts`
+# components. guard_snapshot() treats an unparseable R version as unknown and
+# would skip the R-version decision, so a lock carrying one is not sound.
+.lock_version_ok <- function(x, parts = 1L) {
+  if (!is.character(x) || length(x) != 1L || is.na(x) || !nzchar(x)) return(FALSE)
+  v <- package_version(x, strict = FALSE)
+  !is.na(v) && length(unclass(v)[[1L]]) >= parts
+}
+
+# Whether a lockfile package record carries what renv::restore() needs: its
+# own name as Package, a version, and a source.
+.lock_record_ok <- function(rec, name) {
+  is.list(rec) && nzchar(name) &&
+    identical(rec$Package, name) &&
+    .lock_version_ok(rec$Version) &&
+    is.character(rec$Source) && length(rec$Source) == 1L && !is.na(rec$Source) && nzchar(rec$Source)
 }
 
 # Whether a .Rprofile calls source() on activate.R. A study's own profile may
@@ -433,7 +453,9 @@
 #' the lock records is declared in \code{DESCRIPTION} first, so the next
 #' snapshot keeps them, and a lock recorded under another R major.minor
 #' still needs \code{r_upgrade = TRUE}. A lock is sound only with an R
-#' version and a \code{Packages} object. Any other partial
+#' version that parses as at least major.minor, and a \code{Packages} object
+#' whose every record gives its own name as \code{Package}, a \code{Version}
+#' and a \code{Source}. Any other partial
 #' or invalid environment stops with an error.
 #' Otherwise the study \code{DESCRIPTION} is written (see
 #' \code{\link{study_declare}}), \code{renv::init(bare = TRUE)} creates the
