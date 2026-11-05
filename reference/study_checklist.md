@@ -44,12 +44,12 @@ dir.create(root, showWarnings = FALSE)
 cat(study_checklist(study_status(root)), sep = "\n")
 #> # Study readiness
 #> 
-#> Study root: `/tmp/RtmpO1LG20/study-checklist-example`
+#> Study root: `/tmp/RtmpsUmvGF/study-checklist-example`
 #> 
 #> ## Checks
 #> 
 #> - [ ] **_study.yml** — no _study.yml at this root; recovery may be available with study-setup --recover; if its Tracker ID cannot be inferred, run study-setup 42 --recover
-#> - [ ] **renv.lock** — no renv.lock; run renv::init() in the study project
+#> - [ ] **renv.lock** — no renv.lock; set the study up with hvtiR::setup(), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first
 #> - [ ] **manifest.yaml** — no manifest.yaml; register_data() creates it
 #> - [ ] **dataset** — requires a valid _study.yml
 #> - [ ] **provenance** — no .qmd/.Rmd sources found; 0 sidecars
