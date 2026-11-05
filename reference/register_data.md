@@ -36,7 +36,7 @@ and its key is checked only at registration.
 ``` r
 register_data(
   root = study_root(),
-  built,
+  file,
   dataset = "study",
   role = c("study", "named"),
   population = NULL,
@@ -46,7 +46,8 @@ register_data(
   release_id = NULL,
   kind = NULL,
   key = NULL,
-  parents = NULL
+  parents = NULL,
+  built = NULL
 )
 ```
 
@@ -58,7 +59,7 @@ register_data(
   that contains the working directory, found by its `_study.yml`;
   outside a study the function stops and writes nothing.
 
-- built:
+- file:
 
   Character(1). Dataset filename within the logical `datasets`
   directory, including its extension. A path into that folder is
@@ -131,6 +132,12 @@ register_data(
   later update to a parent marks this dataset out of date. `"built"` is
   a second name for `"study"`.
 
+- built:
+
+  The old name of `file`, before 2026-11. It still works, with a
+  warning, and will be removed in a later release. Giving both is an
+  error.
+
 ## Value
 
 An object of class `"study_status"`, returned visibly.
@@ -171,20 +178,20 @@ invisible(study_setup(root, study = "Example", study_tracker_id = 1L, renv = FAL
 utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
                  file.path(root, "00_datasets", "built.csv"),
                  row.names = FALSE)
-register_data(root, built = "built.csv", key = "ccfid")
-#> Study: /tmp/RtmpP2qccA/register-data-example
+register_data(root, file = "built.csv", key = "ccfid")
+#> Study: /tmp/RtmpO1LG20/register-data-example
 #> 
 #> [x] _study.yml — study: Example
 #> [ ] renv.lock — no renv.lock; run renv::init() in the study project
 #> [x] manifest.yaml — 1 dataset entry verified by checksum
-#> [x] dataset — built.csv, registered as built_20261104.parquet
+#> [x] dataset — built.csv, registered as built_20261105.parquet
 #> [ ] provenance — no .qmd/.Rmd sources found; 0 sidecars
 #> 
 #> 0 .R  |  0 .qmd/.Rmd  |  0 .sas  |  0 provenance sidecars
 # The CSV is kept; the registered version is a dated Parquet file.
 list.files(file.path(root, "00_datasets"))
-#> [1] "built.csv"                 "built_20261104.parquet"   
-#> [3] "built_20261104.schema.csv"
+#> [1] "built.csv"                 "built_20261105.parquet"   
+#> [3] "built_20261105.schema.csv"
 unlink(root, recursive = TRUE)
 
 # An additional dataset is registered with role = "named", under a name of
@@ -194,14 +201,14 @@ invisible(study_setup(root, study = "Example", study_tracker_id = 1L, renv = FAL
 utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
                  file.path(root, "00_datasets", "built.csv"),
                  row.names = FALSE)
-invisible(register_data(root, built = "built.csv", key = "ccfid"))
+invisible(register_data(root, file = "built.csv", key = "ccfid"))
 utils::write.csv(
   data.frame(ccfid = c(1, 1, 2), echo_date = c("2020-01-05", "2020-06-01", "2020-02-10"),
              lvef = c(55, 50, 60)),
   file.path(root, "00_datasets", "echo.csv"),
   row.names = FALSE
 )
-invisible(register_data(root, built = "echo.csv", dataset = "echo", role = "named",
+invisible(register_data(root, file = "echo.csv", dataset = "echo", role = "named",
                         kind = "ancillary", key = c("ccfid", "echo_date")))
 read_built(study_config(root), dataset = "echo")
 #>   ccfid  echo_date lvef

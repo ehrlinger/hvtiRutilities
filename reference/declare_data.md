@@ -11,7 +11,7 @@ when it is ready.
 ## Usage
 
 ``` r
-declare_data(root = study_root(), built, key = NULL)
+declare_data(root = study_root(), file, key = NULL, built = NULL)
 ```
 
 ## Arguments
@@ -22,7 +22,7 @@ declare_data(root = study_root(), built, key = NULL)
   contains the working directory, found by its `_study.yml`; outside a
   study the function stops and writes nothing.
 
-- built:
+- file:
 
   The working file's name in the datasets folder, with its extension.
 
@@ -30,10 +30,15 @@ declare_data(root = study_root(), built, key = NULL)
 
   Columns that make a row unique, or `NULL` to leave `key:` unset.
 
+- built:
+
+  The old name of `file`, before 2026-11. It still works, with a
+  warning, and will be removed in a later release.
+
 ## Value
 
 `TRUE`, invisibly, when the contract was written, or a `key` was added
-to a declaration that had none; `FALSE`, invisibly, when `built` was
+to a declaration that had none; `FALSE`, invisibly, when `file` was
 already declared. Stops when the study already declares a different file
 or a different key.
 
@@ -53,7 +58,7 @@ render with `REGISTER = FALSE`.
 ``` r
 root <- file.path(tempdir(), "declare-example")
 suppressMessages(study_setup(root, "Example", 1L, renv = FALSE))
-#> Study: /tmp/RtmpP2qccA/declare-example
+#> Study: /tmp/RtmpO1LG20/declare-example
 #> 
 #> [x] _study.yml — study: Example
 #> [ ] renv.lock — no renv.lock; run renv::init() in the study project
@@ -63,6 +68,6 @@ suppressMessages(study_setup(root, "Example", 1L, renv = FALSE))
 #> 
 #> 0 .R  |  0 .qmd/.Rmd  |  0 .sas  |  0 provenance sidecars
 saveRDS(data.frame(ccfid = 1:3), file.path(study_dir("datasets", root), "study_cohort.rds"))
-declare_data(root, built = "study_cohort.rds", key = "ccfid")
+declare_data(root, file = "study_cohort.rds", key = "ccfid")
 unlink(root, recursive = TRUE)
 ```

@@ -131,7 +131,7 @@ registration.</p>
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">register_data</span><span class="op">(</span></span>
 <span>  root <span class="op">=</span> <span class="fu"><a href="study_root.html">study_root</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  <span class="va">built</span>,</span>
+<span>  <span class="va">file</span>,</span>
 <span>  dataset <span class="op">=</span> <span class="st">"study"</span>,</span>
 <span>  role <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"study"</span>, <span class="st">"named"</span><span class="op">)</span>,</span>
 <span>  population <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -141,7 +141,8 @@ registration.</p>
 <span>  release_id <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  kind <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  key <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  parents <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  parents <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  built <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -155,7 +156,7 @@ directory, found by its <code>_study.yml</code>; outside a study the function
 stops and writes nothing.</p></dd>
 
 
-<dt id="arg-built">built<a class="anchor" aria-label="anchor" href="#arg-built"></a></dt>
+<dt id="arg-file">file<a class="anchor" aria-label="anchor" href="#arg-file"></a></dt>
 <dd><p>Character(1). Dataset filename within the logical
 <code>datasets</code> directory, including its extension. A path into that
 folder is accepted too, such as <code>"00_datasets/built.csv"</code> (what
@@ -228,6 +229,12 @@ the registered datasets it was built from. Their current versions are
 recorded, so a later update to a parent marks this dataset out of date.
 <code>"built"</code> is a second name for <code>"study"</code>.</p></dd>
 
+
+<dt id="arg-built">built<a class="anchor" aria-label="anchor" href="#arg-built"></a></dt>
+<dd><p>The old name of <code>file</code>, before 2026-11. It still works,
+with a warning, and will be removed in a later release. Giving both is
+an error.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -265,20 +272,20 @@ who needs it.</p><ul><li><p>A <code>WHERE</code> condition in one job writes no 
 <span class="r-in"><span><span class="fu">utils</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/utils/write.table.html" class="external-link">write.csv</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>ccfid <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, age <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">61</span>, <span class="fl">70</span>, <span class="fl">55</span><span class="op">)</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>                 <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">root</span>, <span class="st">"00_datasets"</span>, <span class="st">"built.csv"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>                 row.names <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu">register_data</span><span class="op">(</span><span class="va">root</span>, built <span class="op">=</span> <span class="st">"built.csv"</span>, key <span class="op">=</span> <span class="st">"ccfid"</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Study: /tmp/RtmpP2qccA/register-data-example</span>
+<span class="r-in"><span><span class="fu">register_data</span><span class="op">(</span><span class="va">root</span>, file <span class="op">=</span> <span class="st">"built.csv"</span>, key <span class="op">=</span> <span class="st">"ccfid"</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Study: /tmp/RtmpO1LG20/register-data-example</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [x] _study.yml — study: Example</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [ ] renv.lock — no renv.lock; run renv::init() in the study project</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [x] manifest.yaml — 1 dataset entry verified by checksum</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [x] dataset — built.csv, registered as built_20261104.parquet</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [x] dataset — built.csv, registered as built_20261105.parquet</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [ ] provenance — no .qmd/.Rmd sources found; 0 sidecars</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 0 .R  |  0 .qmd/.Rmd  |  0 .sas  |  0 provenance sidecars</span>
 <span class="r-in"><span><span class="co"># The CSV is kept; the registered version is a dated Parquet file.</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/list.files.html" class="external-link">list.files</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">root</span>, <span class="st">"00_datasets"</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "built.csv"                 "built_20261104.parquet"   </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [3] "built_20261104.schema.csv"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "built.csv"                 "built_20261105.parquet"   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [3] "built_20261105.schema.csv"</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/unlink.html" class="external-link">unlink</a></span><span class="op">(</span><span class="va">root</span>, recursive <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># An additional dataset is registered with role = "named", under a name of</span></span></span>
@@ -288,14 +295,14 @@ who needs it.</p><ul><li><p>A <code>WHERE</code> condition in one job writes no 
 <span class="r-in"><span><span class="fu">utils</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/utils/write.table.html" class="external-link">write.csv</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>ccfid <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, age <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">61</span>, <span class="fl">70</span>, <span class="fl">55</span><span class="op">)</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>                 <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">root</span>, <span class="st">"00_datasets"</span>, <span class="st">"built.csv"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>                 row.names <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/invisible.html" class="external-link">invisible</a></span><span class="op">(</span><span class="fu">register_data</span><span class="op">(</span><span class="va">root</span>, built <span class="op">=</span> <span class="st">"built.csv"</span>, key <span class="op">=</span> <span class="st">"ccfid"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/invisible.html" class="external-link">invisible</a></span><span class="op">(</span><span class="fu">register_data</span><span class="op">(</span><span class="va">root</span>, file <span class="op">=</span> <span class="st">"built.csv"</span>, key <span class="op">=</span> <span class="st">"ccfid"</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">utils</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/utils/write.table.html" class="external-link">write.csv</a></span><span class="op">(</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>ccfid <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span>, echo_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"2020-01-05"</span>, <span class="st">"2020-06-01"</span>, <span class="st">"2020-02-10"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>             lvef <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">55</span>, <span class="fl">50</span>, <span class="fl">60</span><span class="op">)</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">root</span>, <span class="st">"00_datasets"</span>, <span class="st">"echo.csv"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  row.names <span class="op">=</span> <span class="cn">FALSE</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/invisible.html" class="external-link">invisible</a></span><span class="op">(</span><span class="fu">register_data</span><span class="op">(</span><span class="va">root</span>, built <span class="op">=</span> <span class="st">"echo.csv"</span>, dataset <span class="op">=</span> <span class="st">"echo"</span>, role <span class="op">=</span> <span class="st">"named"</span>,</span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/invisible.html" class="external-link">invisible</a></span><span class="op">(</span><span class="fu">register_data</span><span class="op">(</span><span class="va">root</span>, file <span class="op">=</span> <span class="st">"echo.csv"</span>, dataset <span class="op">=</span> <span class="st">"echo"</span>, role <span class="op">=</span> <span class="st">"named"</span>,</span></span>
 <span class="r-in"><span>                        kind <span class="op">=</span> <span class="st">"ancillary"</span>, key <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ccfid"</span>, <span class="st">"echo_date"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="read_built.html">read_built</a></span><span class="op">(</span><span class="fu"><a href="study_config.html">study_config</a></span><span class="op">(</span><span class="va">root</span><span class="op">)</span>, dataset <span class="op">=</span> <span class="st">"echo"</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   ccfid  echo_date lvef</span>

@@ -43,7 +43,7 @@ invisible(study_setup(root, study = "Example", study_tracker_id = 1L, renv = FAL
 utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
                  file.path(root, "00_datasets", "built.csv"),
                  row.names = FALSE)
-invisible(register_data(root, built = "built.csv"))
+invisible(register_data(root, file = "built.csv"))
 cfg <- study_config(root)
 
 writeLines("x <- 1", file.path(root, "30_analyses", "fit.R"))
@@ -52,7 +52,7 @@ str(provenance_artifact("30_analyses/fit.R", role = "code", cfg = cfg))
 #>  $ path  : chr "30_analyses/fit.R"
 #>  $ role  : chr "code"
 #>  $ bytes : num 7
-#>  $ mtime : chr "2026-11-04T23:32:20Z"
+#>  $ mtime : chr "2026-11-05T14:41:42Z"
 #>  $ sha256: chr "66b7dd2c95677966d7e30532fe17ac4642554f6ca9c4165274d8438fd9c5a283"
 unlink(root, recursive = TRUE)
 ```

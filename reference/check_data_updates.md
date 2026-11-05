@@ -50,7 +50,7 @@ invisible(study_setup(root, study = "Example", study_tracker_id = 1L, renv = FAL
 utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
                  file.path(root, "00_datasets", "built.csv"),
                  row.names = FALSE)
-invisible(register_data(root, built = "built.csv"))
+invisible(register_data(root, file = "built.csv"))
 cfg <- study_config(root)
 
 # Deprecated: it warns and names study_status() instead. A study registered
@@ -62,12 +62,12 @@ check_data_updates(cfg)
 #> [7] status               is_latest            detail              
 #> <0 rows> (or 0-length row.names)
 study_status(root)
-#> Study: /tmp/RtmpP2qccA/check-data-updates-example
+#> Study: /tmp/RtmpO1LG20/check-data-updates-example
 #> 
 #> [x] _study.yml — study: Example
 #> [ ] renv.lock — no renv.lock; run renv::init() in the study project
 #> [x] manifest.yaml — 1 dataset entry verified by checksum
-#> [x] dataset — built.csv, registered as built_20261104.parquet
+#> [x] dataset — built.csv, registered as built_20261105.parquet
 #> [ ] provenance — no .qmd/.Rmd sources found; 0 sidecars
 #> 
 #> 0 .R  |  0 .qmd/.Rmd  |  0 .sas  |  0 provenance sidecars
