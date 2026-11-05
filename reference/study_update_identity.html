@@ -15,7 +15,7 @@ population, citation), keeps its value."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.19</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.20</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -119,10 +119,10 @@ rewrites it, so comments in <code>_study.yml</code> are not kept.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">root</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"update-identity-example"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="study_setup.html">study_setup</a></span><span class="op">(</span><span class="va">root</span>, <span class="st">"Typed title"</span>, <span class="fl">42L</span>, identity_source <span class="op">=</span> <span class="st">"manual"</span>,</span></span>
 <span class="r-in"><span>            renv <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Study: /tmp/RtmpsUmvGF/update-identity-example</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Study: /tmp/Rtmp6A8j9Z/update-identity-example</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [~] _study.yml — study: Typed title; identity entered by hand, confirm it with study-setup --verify</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Typed title", study_tracker_id = 42L, root = "/tmp/RtmpsUmvGF/update-identity-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Typed title", study_tracker_id = 42L, root = "/tmp/Rtmp6A8j9Z/update-identity-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [ ] manifest.yaml — no manifest.yaml; register_data() creates it</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [ ] dataset — no default dataset registered; run register_data()</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [ ] provenance — no .qmd/.Rmd sources found; 0 sidecars</span>

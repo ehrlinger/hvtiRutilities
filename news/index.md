@@ -1,5 +1,47 @@
 # Changelog
 
+## hvtiRutilities 1.5.20
+
+- `tidyverse` is no longer in Suggests. Nothing in the package, its
+  tests or its vignettes used it, and installing the suggested packages
+  no longer pulls it in.
+
+- [`register_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md)
+  accepts a path into the study’s data folder for `file` (`built` before
+  this release), such as `"00_datasets/built.csv"` or an absolute path,
+  and records the file name alone. File-name completion inside the
+  quotes gives that path, so it can now be used. A file in any other
+  folder is still refused, and the message names the data folder
+  ([\#272](https://github.com/ehrlinger/hvtiRutilities/issues/272)).
+
+- New
+  [`duplicate_keys()`](https://ehrlinger.github.io/hvtiRutilities/reference/duplicate_keys.md)
+  lists the rows that repeat a key, such as two operations on the same
+  day under `c("ccfid", "dt_surg")`. Given `order_by`, it marks the
+  first row of each repeated key to keep, as the SAS jobs do (the first
+  operation kept, the second treated as a complication), and stops on a
+  tie or a missing value rather than pick one. It never changes the
+  data, and leaves key values out of its report unless `show_key = TRUE`
+  ([\#271](https://github.com/ehrlinger/hvtiRutilities/issues/271)).
+
+- [`register_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md)
+  and
+  [`declare_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/declare_data.md)
+  name their dataset argument `file =`, which was `built =`
+  ([\#275](https://github.com/ehrlinger/hvtiRutilities/issues/275)).
+  `built =` still works, with a warning, and will be removed in a later
+  release; giving both is an error. A call that gives the file by
+  position, `register_data(root, "built.csv")`, is unchanged.
+
+- [`study_status()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md)
+  no longer tells a study without `renv.lock` to run
+  [`renv::init()`](https://rstudio.github.io/renv/reference/init.html),
+  which starts the study’s library over without the family. It names
+  `hvtiR::setup()` instead, with the study’s title, Study Tracker ID and
+  root filled in from `_study.yml`, and says that adopting deletes
+  `tp.*` files. A `_study.yml` without a Study Tracker ID is told to add
+  one first.
+
 ## hvtiRutilities 1.5.19
 
 - [`study_need()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_need.md)
