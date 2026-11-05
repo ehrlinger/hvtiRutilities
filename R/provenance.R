@@ -424,7 +424,7 @@ provenance_path <- function(path) {
 #' utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
 #'                  file.path(root, "00_datasets", "built.csv"),
 #'                  row.names = FALSE)
-#' invisible(register_data(root, built = "built.csv"))
+#' invisible(register_data(root, file = "built.csv"))
 #' cfg <- study_config(root)
 #'
 #' # The registered Parquet file, not the CSV it was converted from.
@@ -482,7 +482,7 @@ provenance_data <- function(dataset = "study", cfg = study_config(),
 #' utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
 #'                  file.path(root, "00_datasets", "built.csv"),
 #'                  row.names = FALSE)
-#' invisible(register_data(root, built = "built.csv"))
+#' invisible(register_data(root, file = "built.csv"))
 #' cfg <- study_config(root)
 #'
 #' writeLines("x <- 1", file.path(root, "30_analyses", "fit.R"))
@@ -535,7 +535,7 @@ provenance_artifact <- function(path, role = "input", cfg = study_config()) {
 #' utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
 #'                  file.path(root, "00_datasets", "built.csv"),
 #'                  row.names = FALSE)
-#' invisible(register_data(root, built = "built.csv"))
+#' invisible(register_data(root, file = "built.csv"))
 #' cfg <- study_config(root)
 #'
 #' payload <- capture_provenance("death-hz-ac",
@@ -608,7 +608,7 @@ capture_provenance <- function(job, data, artifacts = list(), extra = list(),
 #' utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
 #'                  file.path(root, "00_datasets", "built.csv"),
 #'                  row.names = FALSE)
-#' invisible(register_data(root, built = "built.csv"))
+#' invisible(register_data(root, file = "built.csv"))
 #' cfg <- study_config(root)
 #'
 #' payload <- capture_provenance("death-hz-ac",
@@ -698,7 +698,7 @@ publish_provenance <- function(path, payload) {
 #' utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
 #'                  file.path(root, "00_datasets", "built.csv"),
 #'                  row.names = FALSE)
-#' invisible(register_data(root, built = "built.csv"))
+#' invisible(register_data(root, file = "built.csv"))
 #' cfg <- study_config(root)
 #'
 #' out <- file.path(root, "40_graphs", "death-hz-ac.html")

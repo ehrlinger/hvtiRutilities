@@ -70,7 +70,7 @@ test_that("a declared but unregistered dataset's provenance record is a working 
   root <- file.path(withr::local_tempdir(), "study")
   suppressMessages(study_setup(root, "Declare fixture", 7L, renv = FALSE))
   saveRDS(data.frame(ccfid = 1:3), file.path(study_dir("datasets", root), "study_cohort.rds"))
-  declare_data(root, built = "study_cohort.rds", key = "ccfid")
+  declare_data(root, file = "study_cohort.rds", key = "ccfid")
   cfg <- study_config(root)
   withr::local_envvar(HVTI_DATA = NA)
   expect_true(isTRUE(provenance_data(cfg = cfg)$working))
