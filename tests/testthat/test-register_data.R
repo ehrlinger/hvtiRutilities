@@ -492,7 +492,7 @@ test_that("release migration keeps the same logical dataset and file", {
     write_release_fixture(root)
     args <- list(
       root = root,
-      built = "cohort_20260920.csv"
+      file = "cohort_20260920.csv"
     )
     if (identical(role, "named")) {
       args$dataset <- "named_data"
@@ -511,7 +511,7 @@ test_that("release migration refuses a dataset registered as dated versions", {
   for (role in c("study", "named")) {
     root <- registration_study()
     write_release_fixture(root)
-    args <- list(root = root, built = "cohort_20260920.csv")
+    args <- list(root = root, file = "cohort_20260920.csv")
     if (identical(role, "named")) {
       args$dataset <- "named_data"
       args$role <- "named"
@@ -665,6 +665,9 @@ test_that("register_data() takes file =; built =, its old name, still works with
   write_registration_csv(root, "built.csv")
   write_registration_csv(root, "echo.csv")
   expect_error(register_data(root, file = "built.csv", built = "built.csv"),
+               "give file = only. built = is its old name")
+  # An explicit file = NULL is still a file = given (#278 review).
+  expect_error(register_data(root, file = NULL, built = "built.csv"),
                "give file = only. built = is its old name")
   expect_error(register_data(root), "file must be one non-empty value")
   # Nothing was written by either refusal.

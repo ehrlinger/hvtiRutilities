@@ -246,7 +246,8 @@ register_data <- function(root = study_root(), file, dataset = "study",
                           extract_date = NULL,
                           catalog_dataset = NULL, release_id = NULL,
                           kind = NULL, key = NULL, parents = NULL, built = NULL) {
-  built <- .renamed_file_arg(if (missing(file)) NULL else file, built, "register_data")
+  built <- .renamed_file_arg(if (missing(file)) NULL else file, built, "register_data",
+                             file_given = !missing(file), built_given = !missing(built))
   role <- match.arg(role)
   scalar <- function(x, name, required = FALSE) {
     .study_scalar(x, name, required, caller = "register_data")
@@ -565,10 +566,12 @@ register_data <- function(root = study_root(), file, dataset = "study",
 }
 
 # `file =` was `built =` before 2026-11 (#275). The old name still works, with
-# a warning; giving both is an error, since they could disagree.
-.renamed_file_arg <- function(file, built, fn) {
-  if (is.null(built)) return(file)
-  if (!is.null(file)) {
+# a warning; giving both is an error, since they could disagree. Whether each
+# was given is passed in rather than read from NULL, so file = NULL beside a
+# stale built = is refused too, not read as built alone.
+.renamed_file_arg <- function(file, built, fn, file_given, built_given) {
+  if (!built_given) return(file)
+  if (file_given) {
     stop(fn, "(): give file = only. built = is its old name, so both cannot be given.", call. = FALSE)
   }
   warning(structure(
