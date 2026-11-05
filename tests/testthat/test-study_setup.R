@@ -502,6 +502,13 @@ fake_rscript <- function(calls, init_ok = TRUE, snapshot_ok = TRUE) {
     if (grepl("renv::init", expr, fixed = TRUE)) {
       if (!init_ok) return(list(status = 1L, output = "init exploded"))
       write_renv_start(root)
+    } else if (grepl("renv::activate", expr, fixed = TRUE)) {
+      if (!init_ok) return(list(status = 1L, output = "activate exploded"))
+      # renv::activate() replaces a stray file where renv/ belongs
+      if (file.exists(file.path(root, "renv")) && !dir.exists(file.path(root, "renv"))) {
+        unlink(file.path(root, "renv"))
+      }
+      write_renv_start(root)
     } else {
       if (!snapshot_ok) return(list(status = 1L, output = "snapshot exploded"))
       write_lock(root)
@@ -560,17 +567,58 @@ test_that("renv = TRUE keeps a complete environment and resumes an interrupted o
   expect_identical(attr(status, "renv"), "retained")
 })
 
-test_that("renv = TRUE stops on any other partial environment without running R", {
+test_that("renv = TRUE repairs a sound lock that lacks its activation, keeping the lock", {
   root <- withr::local_tempdir()
   write_lock(root)
+  before <- readBin(file.path(root, "renv.lock"), "raw", file.size(file.path(root, "renv.lock")))
   calls <- new.env()
   local_mocked_bindings(.study_rscript = fake_rscript(calls))
 
+  status <- study_setup(root, "Legacy study", 42L, adopt = TRUE, renv = TRUE, cleanup = FALSE)
+  expect_identical(attr(status, "renv"), "repaired")
+  expect_length(calls$exprs, 1L)
+  expect_match(calls$exprs, "renv::activate(project = ", fixed = TRUE)
+  after <- readBin(file.path(root, "renv.lock"), "raw", file.size(file.path(root, "renv.lock")))
+  expect_identical(after, before)
+})
+
+test_that("renv = TRUE still stops when the lock itself is not sound", {
+  root <- withr::local_tempdir()
+  write_renv_start(root)
+  writeLines("{", file.path(root, "renv.lock"))
+  calls <- new.env()
+  local_mocked_bindings(.study_rscript = fake_rscript(calls))
   expect_error(
     study_setup(root, "Legacy study", 42L, adopt = TRUE, renv = TRUE, cleanup = FALSE),
-    "partial renv environment; sound: renv.lock; missing or invalid: renv, .Rprofile"
+    "partial renv environment"
   )
   expect_null(calls$exprs)
+
+  # an empty lock is unsound too
+  unlink(file.path(root, "renv.lock"))
+  file.create(file.path(root, "renv.lock"))
+  expect_error(
+    study_setup(root, "Legacy study", 42L, adopt = TRUE, renv = TRUE, cleanup = FALSE),
+    "partial renv environment"
+  )
+  expect_null(calls$exprs)
+})
+
+test_that("real renv::activate() keeps the lock and the study's own .Rprofile lines", {
+  skip_on_cran()
+  skip_if_not_installed("renv")
+  root <- withr::local_tempdir()
+  write_lock(root)
+  writeLines("options(digits = 4)", file.path(root, ".Rprofile"))
+  lock <- readLines(file.path(root, "renv.lock"))
+  result <- .study_rscript(
+    paste0("renv::activate(project = ", deparse(normalizePath(root, winslash = "/")), ")"),
+    root, "--vanilla"
+  )
+  expect_identical(result$status, 0L, info = result$output)
+  expect_true(all(.study_renv_parts(root)))
+  expect_identical(readLines(file.path(root, "renv.lock")), lock)
+  expect_true("options(digits = 4)" %in% readLines(file.path(root, ".Rprofile")))
 })
 
 test_that("renv = TRUE reports a failed init or snapshot", {
@@ -780,7 +828,7 @@ test_that("a nested .git in the corpus is not template material", {
   expect_true(file.exists(config))
 })
 
-test_that("renv = TRUE does not mistake mere paths for a complete environment", {
+test_that("renv = TRUE repairs a sound lock whose renv or .Rprofile is only a path or unrelated", {
   calls <- new.env()
   local_mocked_bindings(.study_rscript = fake_rscript(calls))
   cases <- list(
@@ -788,10 +836,6 @@ test_that("renv = TRUE does not mistake mere paths for a complete environment", 
       writeLines("", file.path(root, "renv"))
       writeLines('source("renv/activate.R")', file.path(root, ".Rprofile"))
       write_lock(root)
-    },
-    empty_lock = function(root) {
-      write_renv_start(root)
-      file.create(file.path(root, "renv.lock"))
     },
     unrelated_profile = function(root) {
       dir.create(file.path(root, "renv"))
@@ -813,10 +857,10 @@ test_that("renv = TRUE does not mistake mere paths for a complete environment", 
   for (case in names(cases)) {
     root <- withr::local_tempdir()
     cases[[case]](root)
-    expect_error(study_setup(root, "Legacy study", 42L, adopt = TRUE, renv = TRUE, cleanup = FALSE),
-                 "partial renv environment", info = case)
+    status <- study_setup(root, "Legacy study", 42L, adopt = TRUE, renv = TRUE, cleanup = FALSE)
+    expect_identical(attr(status, "renv"), "repaired", info = case)
   }
-  expect_null(calls$exprs)
+  expect_length(calls$exprs, length(cases))
 })
 
 # Shaped like the custom .Rprofile of an adopted study: path-independent,

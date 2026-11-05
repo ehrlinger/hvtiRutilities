@@ -315,7 +315,9 @@
   if (all(sound)) return("retained")
   present <- file.exists(file.path(root, core))
   resumable <- all(sound[c("renv", ".Rprofile")]) && !present[3L]
-  if (any(present) && !resumable) {
+  # A sound lock is the study's history: rebuild only the scaffolding around it.
+  repairable <- sound[["renv.lock"]]
+  if (any(present) && !resumable && !repairable) {
     stop("study_setup(): partial renv environment; sound: ",
          if (any(sound)) paste(core[sound], collapse = ", ") else "none",
          "; missing or invalid: ", paste(core[!sound], collapse = ", "), call. = FALSE)
@@ -327,6 +329,15 @@
       stop("study_setup(): ", what, " failed: ",
            if (nzchar(detail)) detail else "no output", call. = FALSE)
     }
+  }
+  if (repairable) {
+    project <- deparse(normalizePath(root, winslash = "/"))
+    run(paste0("renv::activate(project = ", project, ")"), "renv activation")
+    if (!all(.study_renv_parts(root))) {
+      stop("study_setup(): renv activation finished without a complete environment",
+           call. = FALSE)
+    }
+    return("repaired")
   }
   if (!resumable) {
     run("renv::init(bare = TRUE, restart = FALSE)", "renv initialization")
