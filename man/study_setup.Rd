@@ -62,8 +62,9 @@ environment. See Details. Defaults to \code{TRUE}; test suites that build
 temporary studies should pass \code{FALSE}.}
 
 \item{template_dir}{Character(1). The template corpus studies were copied
-from, read when \code{cleanup = TRUE}. Setup stops with an error when it
-does not exist.}
+from, read when \code{cleanup = TRUE}. When it does not exist, setup
+warns, sets the study up without cleaning, and reports the skip in the
+\code{"cleanup"} attribute.}
 
 \item{r_upgrade}{Logical(1). Leave \code{FALSE}. The renv snapshot is
 refused from an R whose major.minor differs from the R recorded in the

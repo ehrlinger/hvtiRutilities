@@ -612,12 +612,16 @@ test_that("an adopt accepted at the prompt cleans up too", {
   expect_false(file.exists(file.path(root, "analyses/tp.hz.R")))
 })
 
-test_that("an implied cleanup with no template corpus stops before writing", {
+test_that("an implied cleanup with no template corpus warns and sets the study up", {
   root <- legacy_study()
-  expect_error(study_setup(root, "Legacy study", 42L, adopt = TRUE, renv = FALSE,
-                           template_dir = file.path(tempdir(), "no-such-corpus")),
-               "template corpus not found")
-  expect_false(file.exists(file.path(root, "_study.yml")))
+  expect_warning(
+    status <- study_setup(root, "Legacy study", 42L, adopt = TRUE, renv = FALSE,
+                          template_dir = file.path(tempdir(), "no-such-corpus")),
+    "template corpus not found"
+  )
+  expect_true(file.exists(file.path(root, "_study.yml")))
+  expect_identical(attr(status, "cleanup")$status, "skipped")
+  expect_match(attr(status, "cleanup")$reason, "template corpus not found")
 })
 
 test_that("renv is on by default", {
@@ -684,18 +688,18 @@ test_that("cleanup keeps a .renvignore or .gitignore identical to the corpus cop
   expect_true(all(file.exists(file.path(root, c(".renvignore", ".gitignore")))))
 })
 
-test_that("cleanup stops when the template corpus cannot be found", {
+test_that("cleanup warns and sets the study up when the template corpus cannot be found", {
   root <- withr::local_tempdir()
   dir.create(file.path(root, "analyses"))
   tp <- write_file(root, "analyses/tp.hz.sas")
   missing <- file.path(withr::local_tempdir(), "nowhere")
 
-  expect_error(
+  expect_warning(
     study_setup(root, "Legacy study", 42L, adopt = TRUE, cleanup = TRUE, template_dir = missing, renv = FALSE),
     "template corpus not found"
   )
   expect_true(file.exists(tp))
-  expect_false(file.exists(file.path(root, "_study.yml")))
+  expect_true(file.exists(file.path(root, "_study.yml")))
 })
 
 

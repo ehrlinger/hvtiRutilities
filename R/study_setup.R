@@ -232,7 +232,8 @@
       removed <- c(removed, folder)
     }
   }
-  list(deleted = found$files, removed_dirs = removed)
+  list(status = "done", reason = NULL, deleted = found$files, removed_dirs = removed,
+       left = character(0))
 }
 
 # Runs one R expression in a fresh R process in the study, as a seam the tests
@@ -428,8 +429,9 @@
 #'   including an adoption accepted at the prompt. Pass \code{FALSE} to adopt
 #'   without cleaning.
 #' @param template_dir Character(1). The template corpus studies were copied
-#'   from, read when \code{cleanup = TRUE}. Setup stops with an error when it
-#'   does not exist.
+#'   from, read when \code{cleanup = TRUE}. When it does not exist, setup
+#'   warns, sets the study up without cleaning, and reports the skip in the
+#'   \code{"cleanup"} attribute.
 #' @param renv Logical. Initialize and snapshot the study's \code{renv}
 #'   environment. See Details. Defaults to \code{TRUE}; test suites that build
 #'   temporary studies should pass \code{FALSE}.
@@ -560,12 +562,22 @@ study_setup <- function(root = NULL, study, study_tracker_id,
   }
 
   if (!cleanup_given) cleanup <- adopt
+  skipped <- NULL
   if (cleanup) {
     template_dir <- .study_scalar(template_dir, "template_dir", required = TRUE)
     if (!dir.exists(template_dir)) {
-      stop("study_setup(): template corpus not found at ", template_dir,
-           "; pass template_dir, or cleanup = FALSE", call. = FALSE)
+      # Explicit-mode renv does not scan the study, so template copies can no
+      # longer reach the lockfile: cleanup is tidiness, not a reason to stop.
+      reason <- paste0("template corpus not found at ", template_dir)
+      warning("study_setup(): ", reason, "; template copies were not cleaned up. ",
+              "Pass template_dir to clean them, or cleanup = FALSE to skip this.",
+              call. = FALSE)
+      skipped <- list(status = "skipped", reason = reason, deleted = character(0),
+                      removed_dirs = character(0), left = character(0))
+      cleanup <- FALSE
     }
+  }
+  if (cleanup) {
     if (.study_paths_overlap(root, template_dir)) {
       stop("study_setup(): the study root and template_dir overlap; cleanup would ",
            "delete the corpus or the study", call. = FALSE)
@@ -647,7 +659,7 @@ study_setup <- function(root = NULL, study, study_tracker_id,
   }
 
   # Cleanup before renv: renv discovers dependencies by scanning the study.
-  cleaned <- if (cleanup) .study_cleanup(root, template_dir)
+  cleaned <- if (cleanup) .study_cleanup(root, template_dir) else skipped
   renv_state <- if (renv) .study_init_renv(root, r_upgrade)
 
   status <- study_status(root)
