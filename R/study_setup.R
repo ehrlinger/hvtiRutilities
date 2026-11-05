@@ -198,8 +198,9 @@
   .study_unlink(file.path(root, found$files))
   left <- found$files[file.exists(file.path(root, found$files))]
   if (length(left)) {
-    stop("study_setup(): cleanup could not delete ", length(left), " file(s), first ",
-         paste(utils::head(left, 5L), collapse = ", "), call. = FALSE)
+    # A file left behind cannot reach the explicit-mode lockfile; say so and go on.
+    warning("study_setup(): cleanup could not delete ", length(left), " file(s), first ",
+            paste(utils::head(left, 5L), collapse = ", "), call. = FALSE)
   }
   # A folder the deletions emptied goes (Old-Rplots, tp_ggplot, archive, by
   # whatever name), and so does an empty templates or old_RF_templates folder;
@@ -227,13 +228,15 @@
     if (litter_only) {
       .study_unlink(full, recursive = TRUE)
       if (dir.exists(full)) {
-        stop("study_setup(): cleanup could not remove folder ", folder, call. = FALSE)
+        warning("study_setup(): cleanup could not remove folder ", folder, call. = FALSE)
+        left <- c(left, folder)
+      } else {
+        removed <- c(removed, folder)
       }
-      removed <- c(removed, folder)
     }
   }
-  list(status = "done", reason = NULL, deleted = found$files, removed_dirs = removed,
-       left = character(0))
+  list(status = "done", reason = NULL, deleted = setdiff(found$files, left),
+       removed_dirs = removed, left = left)
 }
 
 # Runs one R expression in a fresh R process in the study, as a seam the tests

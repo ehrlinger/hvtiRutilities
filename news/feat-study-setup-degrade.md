@@ -1,1 +1,2 @@
 * `study_setup()` with a template corpus that does not exist warns and sets the study up, without cleaning the template copies, instead of stopping before any write. The `"cleanup"` attribute records the skip: `status = "skipped"` and the `reason`. Pass `template_dir` to clean them, or `cleanup = FALSE` to skip this on purpose.
+* Files `study_setup()` cleanup cannot delete now warn instead of stopping, and are listed in the `left` field of the `"cleanup"` attribute; `deleted` holds only what was removed.

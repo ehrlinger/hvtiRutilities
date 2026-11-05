@@ -452,17 +452,22 @@ test_that("cleanup leaves renv, .git, .checkpoint and symlinked folders alone", 
   expect_true(file.exists(outside_tp))
 })
 
-test_that("cleanup stops loudly when a file cannot be deleted", {
+test_that("cleanup warns and lists what it could not delete", {
   root <- withr::local_tempdir()
   dir.create(file.path(root, "analyses"))
   write_file(root, "analyses/tp.hz.sas")
   local_mocked_bindings(.study_unlink = function(paths, recursive = FALSE) invisible(NULL))
 
-  expect_error(
-    study_setup(root, "Legacy study", 42L, adopt = TRUE, cleanup = TRUE,
-                template_dir = local_corpus(), renv = FALSE),
+  expect_warning(
+    status <- study_setup(root, "Legacy study", 42L, adopt = TRUE, cleanup = TRUE,
+                          template_dir = local_corpus(), renv = FALSE),
     "could not delete 1 .*analyses/tp.hz.sas"
   )
+  cleaned <- attr(status, "cleanup")
+  expect_identical(cleaned$status, "done")
+  expect_identical(cleaned$left, "analyses/tp.hz.sas")
+  expect_identical(cleaned$deleted, character(0))
+  expect_true(file.exists(file.path(root, "_study.yml")))
 })
 
 test_that("cleanup must be TRUE or FALSE", {
