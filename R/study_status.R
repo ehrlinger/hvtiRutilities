@@ -422,17 +422,27 @@ study_status <- function(root = getwd()) {
     # hvtiR::setup() builds the study's environment; renv::init() would start
     # its library over without the family. The call is spelled out, from
     # _study.yml, so it can be pasted as it stands.
-    setup_call <- if (is.null(cfg)) {
-      "hvtiR::setup()"
+    id <- cfg$study_tracker_id
+    if (!is.null(cfg) && !(length(id) == 1L && !is.na(id))) {
+      # An older _study.yml can lack the ID, and setup() refuses a study
+      # without one; no tool adds it to an existing file, so it is typed in.
+      .status_row("renv.lock", "MISSING",
+                  paste0("no renv.lock, and _study.yml has no study_tracker_id, which hvtiR::setup() needs. ",
+                         "Add the line study_tracker_id: <the study's Study Tracker ID> to _study.yml, then run ",
+                         "hvtiRutilities::study_status(", encodeString(root, quote = "\""),
+                         ") again for the setup command. Not renv::init()"))
     } else {
-      sprintf("hvtiR::setup(study = %s, study_tracker_id = %dL, root = %s, adopt = TRUE)",
-              encodeString(cfg$study, quote = "\""), as.integer(cfg$study_tracker_id),
-              encodeString(root, quote = "\""))
+      setup_call <- if (is.null(cfg)) {
+        "hvtiR::setup()"
+      } else {
+        sprintf("hvtiR::setup(study = %s, study_tracker_id = %dL, root = %s, adopt = TRUE)",
+                encodeString(cfg$study, quote = "\""), as.integer(id), encodeString(root, quote = "\""))
+      }
+      .status_row("renv.lock", "MISSING",
+                  paste0("no renv.lock; set the study up with ", setup_call,
+                         ", run with no project open, not renv::init(). ",
+                         "Adopting deletes tp.* files: see hvtiR's \"Start here\" first"))
     }
-    .status_row("renv.lock", "MISSING",
-                paste0("no renv.lock; set the study up with ", setup_call,
-                       ", run with no project open, not renv::init(). ",
-                       "Adopting deletes tp.* files: see hvtiR's \"Start here\" first"))
   }
 
   row_man <- .status_manifest(root)
