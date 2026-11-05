@@ -486,3 +486,28 @@ test_that("study_status adds no dated_version row for a release-pinned dataset",
   st <- suppressWarnings(study_status(fx$root), classes = "deprecatedWarning")
   expect_false(any(grepl("^dated_version:", st$checks$item)))
 })
+
+test_that("a missing renv.lock points at hvtiR::setup(), spelled out to paste, not renv::init()", {
+  # A title with a quote and a path with a space: the call must still parse.
+  root <- file.path(withr::local_tempdir(), "my study")
+  suppressMessages(study_setup(root, 'Aortic "valve" study', 42L, renv = FALSE))
+  detail <- check_for(study_status(root), "renv.lock")$detail
+  expect_no_match(detail, "run renv::init()", fixed = TRUE)
+  expect_match(detail, "Adopting deletes tp.* files", fixed = TRUE)
+
+  call_text <- regmatches(detail, regexpr("hvtiR::setup\\(.*?, adopt = TRUE\\)", detail))
+  expect_length(call_text, 1L)
+  call <- str2lang(call_text)
+  expect_identical(eval(call$study), 'Aortic "valve" study')
+  expect_identical(eval(call$study_tracker_id), 42L)
+  expect_identical(eval(call$root), normalizePath(root))
+  expect_true(eval(call$adopt))
+  # Its arguments are ones setup() takes.
+  if (requireNamespace("hvtiR", quietly = TRUE)) {
+    expect_no_error(match.call(hvtiR::setup, call))
+  }
+
+  # Without a readable _study.yml there is nothing to spell out.
+  bare <- check_for(study_status(withr::local_tempdir()), "renv.lock")$detail
+  expect_match(bare, "set the study up with hvtiR::setup(), run with no project open", fixed = TRUE)
+})

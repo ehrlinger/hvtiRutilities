@@ -419,8 +419,20 @@ study_status <- function(root = getwd()) {
   row_lock <- if (file.exists(file.path(root, "renv.lock"))) {
     .status_row("renv.lock", "OK", "renv.lock present")
   } else {
+    # hvtiR::setup() builds the study's environment; renv::init() would start
+    # its library over without the family. The call is spelled out, from
+    # _study.yml, so it can be pasted as it stands.
+    setup_call <- if (is.null(cfg)) {
+      "hvtiR::setup()"
+    } else {
+      sprintf("hvtiR::setup(study = %s, study_tracker_id = %dL, root = %s, adopt = TRUE)",
+              encodeString(cfg$study, quote = "\""), as.integer(cfg$study_tracker_id),
+              encodeString(root, quote = "\""))
+    }
     .status_row("renv.lock", "MISSING",
-                "no renv.lock; run renv::init() in the study project")
+                paste0("no renv.lock; set the study up with ", setup_call,
+                       ", run with no project open, not renv::init(). ",
+                       "Adopting deletes tp.* files: see hvtiR's \"Start here\" first"))
   }
 
   row_man <- .status_manifest(root)
