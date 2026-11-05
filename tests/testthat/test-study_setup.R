@@ -627,6 +627,67 @@ test_that("renv = TRUE still stops when the lock itself is not sound", {
   expect_null(calls$exprs)
 })
 
+test_that("renv = TRUE refuses a lock that is not complete, and runs no R", {
+  locks <- list(
+    empty_r = '{"R": {}}',
+    no_packages = '{"R": {"Version": "4.5.1"}}',
+    numeric_version = '{"R": {"Version": 4}, "Packages": {}}',
+    no_r = '{"Packages": {}}'
+  )
+  calls <- new.env()
+  local_mocked_bindings(.study_rscript = fake_rscript(calls))
+  for (case in names(locks)) {
+    root <- withr::local_tempdir()
+    writeLines(locks[[case]], file.path(root, "renv.lock"))
+    expect_false(.study_renv_parts(root)[["renv.lock"]], info = case)
+    write_renv_start(root)
+    expect_error(
+      study_setup(root, "Legacy study", 42L, adopt = TRUE, renv = TRUE, cleanup = FALSE),
+      "partial renv environment", info = case
+    )
+  }
+  expect_null(calls$exprs)
+})
+
+test_that("renv = TRUE refuses to repair a lock recorded under another R, unless r_upgrade", {
+  root <- withr::local_tempdir()
+  writeLines('{"R": {"Version": "2.0.0"}, "Packages": {}}', file.path(root, "renv.lock"))
+  calls <- new.env()
+  local_mocked_bindings(.study_rscript = fake_rscript(calls))
+  expect_error(
+    study_setup(root, "Legacy study", 42L, adopt = TRUE, renv = TRUE, cleanup = FALSE),
+    "r_upgrade = TRUE"
+  )
+  expect_null(calls$exprs)
+  expect_false(file.exists(file.path(root, "DESCRIPTION")))
+
+  status <- study_setup(root, "Legacy study", 42L, adopt = TRUE, renv = TRUE, cleanup = FALSE, r_upgrade = TRUE)
+  expect_identical(attr(status, "renv"), "repaired")
+  expect_identical(calls$exprs, activate_expr(root))
+})
+
+test_that("a repair declares the lock's packages, so the next snapshot keeps them", {
+  skip_on_cran()
+  skip_if_not_installed("renv")
+  skip_if_not_installed("jsonlite")
+  root <- withr::local_tempdir()
+  lock <- list(R = list(Version = as.character(getRversion()), Repositories = list()),
+               Packages = list(jsonlite = list(Package = "jsonlite", Version = as.character(utils::packageVersion("jsonlite")),
+                                               Source = "Repository", Repository = "CRAN")))
+  jsonlite::write_json(lock, file.path(root, "renv.lock"), auto_unbox = TRUE, pretty = TRUE)
+  status <- study_setup(root, "Legacy study", 42L, adopt = TRUE, renv = TRUE, cleanup = FALSE)
+  expect_identical(attr(status, "renv"), "repaired")
+  expect_true("jsonlite" %in% study_declare(root = root))
+  expect_false("renv" %in% study_declare(root = root))
+
+  project <- deparse(normalizePath(root, winslash = "/"))
+  result <- .study_rscript(
+    paste0("renv::snapshot(project = ", project, ", prompt = FALSE, force = TRUE)"), root, "--vanilla"
+  )
+  expect_identical(result$status, 0L, info = result$output)
+  expect_true("jsonlite" %in% names(jsonlite::read_json(file.path(root, "renv.lock"))$Packages))
+})
+
 test_that("renv = TRUE does not repair a plain file named renv, and runs no R", {
   root <- withr::local_tempdir()
   writeLines("", file.path(root, "renv"))

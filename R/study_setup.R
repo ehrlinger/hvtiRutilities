@@ -255,13 +255,18 @@
 
 # Which of the three pieces of a renv environment are present and sound: a
 # renv/ folder holding activate.R, a .Rprofile that sources it, and a
-# renv.lock that parses as a lockfile. A path that merely exists is not enough.
+# renv.lock that parses as a complete lockfile: an R version that is one
+# non-empty string, and a Packages object (empty is allowed). A path that
+# merely exists is not enough.
 .study_renv_parts <- function(root) {
   lock <- file.path(root, "renv.lock")
   profile <- file.path(root, ".Rprofile")
-  lock_ok <- !dir.exists(lock) && file.exists(lock) && isTRUE(tryCatch(
-    is.list(jsonlite::read_json(lock)$R), error = function(e) FALSE
-  ))
+  lock_ok <- !dir.exists(lock) && file.exists(lock) && isTRUE(tryCatch({
+    parsed <- jsonlite::read_json(lock)
+    version <- parsed$R$Version
+    is.character(version) && length(version) == 1L && !is.na(version) && nzchar(version) &&
+      is.list(parsed$Packages) && (length(parsed$Packages) == 0L || !is.null(names(parsed$Packages)))
+  }, error = function(e) FALSE))
   profile_ok <- !dir.exists(profile) && file.exists(profile) && .sources_renv_activate(profile)
   c(renv = file.exists(file.path(root, "renv", "activate.R")),
     .Rprofile = profile_ok, renv.lock = lock_ok)
@@ -334,7 +339,16 @@
     }
   }
   if (repairable) {
-    study_declare(root = root)
+    # The same R-version decision a snapshot gets. The installed-package check
+    # that guard_snapshot() adds under r_upgrade is for a snapshot; a repair
+    # takes none, so it is told every package is present.
+    guard_snapshot(root, r_upgrade, installed = function(pkg) "0")
+    # Explicit mode builds the next snapshot from DESCRIPTION alone, so every
+    # package the lock records is declared first, or that snapshot empties the
+    # lock. A transitive dependency declared too is harmless; one dropped is
+    # history lost.
+    recorded <- names(jsonlite::read_json(file.path(root, "renv.lock"))$Packages)
+    study_declare(setdiff(recorded, "renv"), root = root)
     project <- deparse(normalizePath(root, winslash = "/"))
     run(paste0("renv::activate(project = ", project, "); renv::settings$use.cache(FALSE, project = ",
                project, "); renv::settings$snapshot.type('explicit', project = ", project, ")"),
@@ -415,7 +429,11 @@
 #' interrupted after initialization (no lockfile yet) is resumed at the
 #' snapshot. A sound \code{renv.lock} whose \code{renv/activate.R} or
 #' \code{.Rprofile} line is missing is repaired with
-#' \code{renv::activate()}, which leaves the lock unchanged. Any other partial
+#' \code{renv::activate()}, which leaves the lock unchanged. Every package
+#' the lock records is declared in \code{DESCRIPTION} first, so the next
+#' snapshot keeps them, and a lock recorded under another R major.minor
+#' still needs \code{r_upgrade = TRUE}. A lock is sound only with an R
+#' version and a \code{Packages} object. Any other partial
 #' or invalid environment stops with an error.
 #' Otherwise the study \code{DESCRIPTION} is written (see
 #' \code{\link{study_declare}}), \code{renv::init(bare = TRUE)} creates the
@@ -461,7 +479,8 @@
 #' @param renv Logical. Initialize and snapshot the study's \code{renv}
 #'   environment. See Details. A sound \code{renv.lock} missing its
 #'   \code{renv/activate.R} or \code{.Rprofile} line is repaired with
-#'   \code{renv::activate()}, which leaves the lock unchanged. Defaults to
+#'   \code{renv::activate()}, which leaves the lock unchanged, after declaring
+#'   its packages and checking its R version against \code{r_upgrade}. Defaults to
 #'   \code{TRUE}; test suites that build
 #'   temporary studies should pass \code{FALSE}.
 #' @param r_upgrade Logical(1). Leave \code{FALSE}. The renv snapshot is

@@ -60,7 +60,8 @@ without cleaning.}
 \item{renv}{Logical. Initialize and snapshot the study's \code{renv}
 environment. See Details. A sound \code{renv.lock} missing its
 \code{renv/activate.R} or \code{.Rprofile} line is repaired with
-\code{renv::activate()}, which leaves the lock unchanged. Defaults to
+\code{renv::activate()}, which leaves the lock unchanged, after declaring
+its packages and checking its R version against \code{r_upgrade}. Defaults to
 \code{TRUE}; test suites that build
 temporary studies should pass \code{FALSE}.}
 
@@ -127,7 +128,11 @@ that sources it, and a \code{renv.lock} that parses as a lockfile. One
 interrupted after initialization (no lockfile yet) is resumed at the
 snapshot. A sound \code{renv.lock} whose \code{renv/activate.R} or
 \code{.Rprofile} line is missing is repaired with
-\code{renv::activate()}, which leaves the lock unchanged. Any other partial
+\code{renv::activate()}, which leaves the lock unchanged. Every package
+the lock records is declared in \code{DESCRIPTION} first, so the next
+snapshot keeps them, and a lock recorded under another R major.minor
+still needs \code{r_upgrade = TRUE}. A lock is sound only with an R
+version and a \code{Packages} object. Any other partial
 or invalid environment stops with an error.
 Otherwise the study \code{DESCRIPTION} is written (see
 \code{\link{study_declare}}), \code{renv::init(bare = TRUE)} creates the
