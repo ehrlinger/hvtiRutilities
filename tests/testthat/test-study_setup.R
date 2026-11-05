@@ -504,10 +504,6 @@ fake_rscript <- function(calls, init_ok = TRUE, snapshot_ok = TRUE) {
       write_renv_start(root)
     } else if (grepl("renv::activate", expr, fixed = TRUE)) {
       if (!init_ok) return(list(status = 1L, output = "activate exploded"))
-      # renv::activate() replaces a stray file where renv/ belongs
-      if (file.exists(file.path(root, "renv")) && !dir.exists(file.path(root, "renv"))) {
-        unlink(file.path(root, "renv"))
-      }
       write_renv_start(root)
     } else {
       if (!snapshot_ok) return(list(status = 1L, output = "snapshot exploded"))
@@ -597,6 +593,20 @@ test_that("renv = TRUE still stops when the lock itself is not sound", {
   # an empty lock is unsound too
   unlink(file.path(root, "renv.lock"))
   file.create(file.path(root, "renv.lock"))
+  expect_error(
+    study_setup(root, "Legacy study", 42L, adopt = TRUE, renv = TRUE, cleanup = FALSE),
+    "partial renv environment"
+  )
+  expect_null(calls$exprs)
+})
+
+test_that("renv = TRUE does not repair a plain file named renv, and runs no R", {
+  root <- withr::local_tempdir()
+  writeLines("", file.path(root, "renv"))
+  writeLines('source("renv/activate.R")', file.path(root, ".Rprofile"))
+  write_lock(root)
+  calls <- new.env()
+  local_mocked_bindings(.study_rscript = fake_rscript(calls))
   expect_error(
     study_setup(root, "Legacy study", 42L, adopt = TRUE, renv = TRUE, cleanup = FALSE),
     "partial renv environment"
@@ -832,11 +842,6 @@ test_that("renv = TRUE repairs a sound lock whose renv or .Rprofile is only a pa
   calls <- new.env()
   local_mocked_bindings(.study_rscript = fake_rscript(calls))
   cases <- list(
-    renv_file = function(root) {
-      writeLines("", file.path(root, "renv"))
-      writeLines('source("renv/activate.R")', file.path(root, ".Rprofile"))
-      write_lock(root)
-    },
     unrelated_profile = function(root) {
       dir.create(file.path(root, "renv"))
       writeLines("# activate", file.path(root, "renv", "activate.R"))

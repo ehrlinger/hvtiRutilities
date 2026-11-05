@@ -307,7 +307,8 @@
 }
 
 # The study-setup command's renv step (qhsprograms study_setup/workflow.py):
-# keep a complete environment, resume one interrupted after init, refuse any
+# keep a complete environment, resume one interrupted after init, repair a
+# sound lock whose renv/activate.R or .Rprofile line is missing, refuse every
 # other partial one, otherwise init bare and snapshot.
 .study_init_renv <- function(root, r_upgrade = FALSE) {
   core <- c("renv", ".Rprofile", "renv.lock")
@@ -316,7 +317,9 @@
   present <- file.exists(file.path(root, core))
   resumable <- all(sound[c("renv", ".Rprofile")]) && !present[3L]
   # A sound lock is the study's history: rebuild only the scaffolding around it.
-  repairable <- sound[["renv.lock"]]
+  # A plain file named renv is ambiguous: renv::activate() cannot replace it.
+  renv_path <- file.path(root, "renv")
+  repairable <- sound[["renv.lock"]] && !(file.exists(renv_path) && !dir.exists(renv_path))
   if (any(present) && !resumable && !repairable) {
     stop("study_setup(): partial renv environment; sound: ",
          if (any(sound)) paste(core[sound], collapse = ", ") else "none",
