@@ -334,12 +334,16 @@
     }
   }
   if (repairable) {
+    study_declare(root = root)
     project <- deparse(normalizePath(root, winslash = "/"))
-    run(paste0("renv::activate(project = ", project, ")"), "renv activation")
+    run(paste0("renv::activate(project = ", project, "); renv::settings$use.cache(FALSE, project = ",
+               project, "); renv::settings$snapshot.type('explicit', project = ", project, ")"),
+        "renv activation")
     if (!all(.study_renv_parts(root))) {
       stop("study_setup(): renv activation finished without a complete environment",
            call. = FALSE)
     }
+    # Returns early, without a snapshot, so the lock stays as recorded.
     return("repaired")
   }
   if (!resumable) {
@@ -468,9 +472,10 @@
 #'
 #' @return An object of class \code{"study_status"}, returned visibly. With
 #'   \code{cleanup = TRUE} it carries a \code{"cleanup"} attribute, a list of
-#'   \code{status} (\code{"done"}, \code{"skipped"} and so on), \code{reason},
-#'   the \code{deleted} files, the \code{removed_dirs} folders and the
-#'   \code{left} files that could not be deleted, all relative to the root.
+#'   \code{status} (exactly \code{"done"} or \code{"skipped"}), \code{reason}
+#'   (\code{NULL} when \code{status} is \code{"done"}), the \code{deleted}
+#'   files, the \code{removed_dirs} folders and the \code{left} files and
+#'   folders cleanup could not remove, all relative to the root.
 #'   With \code{renv = TRUE} it carries a \code{"renv"} attribute,
 #'   \code{"initialized"}, \code{"retained"} or \code{"repaired"}.
 #'

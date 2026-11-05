@@ -78,9 +78,10 @@ you are deliberately moving the study to this session's R.}
 \value{
 An object of class \code{"study_status"}, returned visibly. With
   \code{cleanup = TRUE} it carries a \code{"cleanup"} attribute, a list of
-  \code{status} (\code{"done"}, \code{"skipped"} and so on), \code{reason},
-  the \code{deleted} files, the \code{removed_dirs} folders and the
-  \code{left} files that could not be deleted, all relative to the root.
+  \code{status} (exactly \code{"done"} or \code{"skipped"}), \code{reason}
+  (\code{NULL} when \code{status} is \code{"done"}), the \code{deleted}
+  files, the \code{removed_dirs} folders and the \code{left} files and
+  folders cleanup could not remove, all relative to the root.
   With \code{renv = TRUE} it carries a \code{"renv"} attribute,
   \code{"initialized"}, \code{"retained"} or \code{"repaired"}.
 }

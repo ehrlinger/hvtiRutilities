@@ -470,6 +470,27 @@ test_that("cleanup warns and lists what it could not delete", {
   expect_true(file.exists(file.path(root, "_study.yml")))
 })
 
+test_that("cleanup warns and lists a folder it could not remove", {
+  root <- withr::local_tempdir()
+  dir.create(file.path(root, "analyses"))
+  write_file(root, "analyses/templates/tp.a.sas")
+  real_unlink <- .study_unlink
+  local_mocked_bindings(.study_unlink = function(paths, recursive = FALSE) {
+    if (!recursive) real_unlink(paths, recursive = recursive)
+    invisible(NULL)
+  })
+
+  expect_warning(
+    status <- study_setup(root, "Legacy study", 42L, adopt = TRUE, cleanup = TRUE,
+                          template_dir = local_corpus(), renv = FALSE),
+    "could not remove folder analyses/templates"
+  )
+  cleaned <- attr(status, "cleanup")
+  expect_true(dir.exists(file.path(root, "analyses/templates")))
+  expect_true("analyses/templates" %in% cleaned$left)
+  expect_false("analyses/templates" %in% cleaned$removed_dirs)
+})
+
 test_that("cleanup must be TRUE or FALSE", {
   root <- file.path(withr::local_tempdir(), "new-study")
   expect_error(study_setup(root, "Example", 42L, cleanup = NA, renv = FALSE), "cleanup must be TRUE or FALSE")
@@ -493,6 +514,12 @@ snapshot_expr <- function(root) {
   paste0("renv::load(", project, "); renv::settings$use.cache(FALSE, project = ", project,
          "); renv::settings$snapshot.type('explicit', project = ", project,
          "); renv::snapshot(project = ", project, ", prompt = FALSE)")
+}
+
+activate_expr <- function(root) {
+  project <- deparse(normalizePath(root, winslash = "/"))
+  paste0("renv::activate(project = ", project, "); renv::settings$use.cache(FALSE, project = ", project,
+         "); renv::settings$snapshot.type('explicit', project = ", project, ")")
 }
 
 fake_rscript <- function(calls, init_ok = TRUE, snapshot_ok = TRUE) {
@@ -572,8 +599,8 @@ test_that("renv = TRUE repairs a sound lock that lacks its activation, keeping t
 
   status <- study_setup(root, "Legacy study", 42L, adopt = TRUE, renv = TRUE, cleanup = FALSE)
   expect_identical(attr(status, "renv"), "repaired")
-  expect_length(calls$exprs, 1L)
-  expect_match(calls$exprs, "renv::activate(project = ", fixed = TRUE)
+  expect_identical(calls$exprs, activate_expr(root))
+  expect_true(file.exists(file.path(root, "DESCRIPTION")))
   after <- readBin(file.path(root, "renv.lock"), "raw", file.size(file.path(root, "renv.lock")))
   expect_identical(after, before)
 })
@@ -621,11 +648,15 @@ test_that("real renv::activate() keeps the lock and the study's own .Rprofile li
   write_lock(root)
   writeLines("options(digits = 4)", file.path(root, ".Rprofile"))
   lock <- readLines(file.path(root, "renv.lock"))
-  result <- .study_rscript(
-    paste0("renv::activate(project = ", deparse(normalizePath(root, winslash = "/")), ")"),
+  result <- .study_rscript(activate_expr(root), root, "--vanilla")
+  expect_identical(result$status, 0L, info = result$output)
+  read <- .study_rscript(
+    paste0("cat(renv::settings$use.cache(project = ", deparse(normalizePath(root, winslash = "/")),
+           "), renv::settings$snapshot.type(project = ", deparse(normalizePath(root, winslash = "/")), "))"),
     root, "--vanilla"
   )
-  expect_identical(result$status, 0L, info = result$output)
+  expect_identical(read$status, 0L, info = read$output)
+  expect_match(read$output, "FALSE explicit")
   expect_true(all(.study_renv_parts(root)))
   expect_identical(readLines(file.path(root, "renv.lock")), lock)
   expect_true("options(digits = 4)" %in% readLines(file.path(root, ".Rprofile")))
@@ -685,6 +716,11 @@ test_that("an implied cleanup with no template corpus warns and sets the study u
   expect_true(file.exists(file.path(root, "_study.yml")))
   expect_identical(attr(status, "cleanup")$status, "skipped")
   expect_match(attr(status, "cleanup")$reason, "template corpus not found")
+  cleaned <- attr(status, "cleanup")
+  expect_identical(cleaned$deleted, character(0))
+  expect_identical(cleaned$removed_dirs, character(0))
+  expect_identical(cleaned$left, character(0))
+  expect_type(cleaned$reason, "character")
 })
 
 test_that("renv is on by default", {
@@ -758,11 +794,18 @@ test_that("cleanup warns and sets the study up when the template corpus cannot b
   missing <- file.path(withr::local_tempdir(), "nowhere")
 
   expect_warning(
-    study_setup(root, "Legacy study", 42L, adopt = TRUE, cleanup = TRUE, template_dir = missing, renv = FALSE),
+    status <- study_setup(root, "Legacy study", 42L, adopt = TRUE, cleanup = TRUE, template_dir = missing,
+                          renv = FALSE),
     "template corpus not found"
   )
   expect_true(file.exists(tp))
   expect_true(file.exists(file.path(root, "_study.yml")))
+  cleaned <- attr(status, "cleanup")
+  expect_identical(cleaned$status, "skipped")
+  expect_type(cleaned$reason, "character")
+  expect_identical(cleaned$deleted, character(0))
+  expect_identical(cleaned$removed_dirs, character(0))
+  expect_identical(cleaned$left, character(0))
 })
 
 
