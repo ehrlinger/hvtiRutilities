@@ -42,6 +42,33 @@
   `tp.*` files. A `_study.yml` without a Study Tracker ID is told to add
   one first.
 
+- [`duplicate_keys()`](https://ehrlinger.github.io/hvtiRutilities/reference/duplicate_keys.md)
+  matches keys as
+  [`duplicated()`](https://rdrr.io/r/base/duplicated.html) matches them:
+  `NA` and `NaN` are different keys, and doubles compare exactly. It had
+  merged rows whose key held `NA` in one and `NaN` in the other into one
+  repeated key
+  ([\#278](https://github.com/ehrlinger/hvtiRutilities/issues/278)
+  review).
+
+- [`register_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md)
+  and
+  [`declare_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/declare_data.md)
+  refuse `file = NULL` given beside `built =`, as they refuse any
+  `file =` beside it, rather than reading the call as `built =` alone
+  ([\#278](https://github.com/ehrlinger/hvtiRutilities/issues/278)
+  review).
+
+- [`declare_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/declare_data.md)
+  accepts a path into the study’s data folder for `file`, such as
+  `"00_datasets/study_cohort.rds"`, as
+  [`register_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md)
+  does since
+  [\#272](https://github.com/ehrlinger/hvtiRutilities/issues/272), and
+  records the file name alone
+  ([\#276](https://github.com/ehrlinger/hvtiRutilities/issues/276)
+  review).
+
 ## hvtiRutilities 1.5.19
 
 - [`study_need()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_need.md)
