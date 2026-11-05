@@ -30,15 +30,24 @@ does one holding any folder the cleanup did not empty, and a top-level
 study folder is never removed. Symbolic links are neither followed nor
 deleted, and folders named `.git`, `.checkpoint` or `renv` are never
 entered, at any depth. The root and `template_dir` must not overlap. A
-file that cannot be deleted stops the setup with an error.
+file or folder that cannot be deleted is warned about and listed in the
+`"cleanup"` attribute's `left`; setup goes on. With no template corpus
+at `template_dir`, cleanup is skipped with a warning.
 
 With `renv = TRUE`, the study's `renv` environment is set up after any
 cleanup, in a separate R process. A complete environment is kept: a
 `renv/` folder holding `activate.R`, a `.Rprofile` that sources it, and
 a `renv.lock` that parses as a lockfile. One interrupted after
-initialization (no lockfile yet) is resumed at the snapshot; any other
-partial or invalid environment stops with an error. Otherwise the study
-`DESCRIPTION` is written (see
+initialization (no lockfile yet) is resumed at the snapshot. A sound
+`renv.lock` whose `renv/activate.R` or `.Rprofile` line is missing is
+repaired with
+[`renv::activate()`](https://rstudio.github.io/renv/reference/activate.html),
+which leaves the lock unchanged. Every package the lock records is
+declared in `DESCRIPTION` first, so the next snapshot keeps them, and a
+lock recorded under another R major.minor still needs
+`r_upgrade = TRUE`. A lock is sound only with an R version and a
+`Packages` object. Any other partial or invalid environment stops with
+an error. Otherwise the study `DESCRIPTION` is written (see
 [`study_declare`](https://ehrlinger.github.io/hvtiRutilities/reference/study_declare.md)),
 `renv::init(bare = TRUE)` creates the environment, and the project is
 loaded and snapshotted explicitly in explicit mode, so `renv.lock` comes
@@ -124,13 +133,19 @@ study_setup(
 - renv:
 
   Logical. Initialize and snapshot the study's `renv` environment. See
-  Details. Defaults to `TRUE`; test suites that build temporary studies
-  should pass `FALSE`.
+  Details. A sound `renv.lock` missing its `renv/activate.R` or
+  `.Rprofile` line is repaired with
+  [`renv::activate()`](https://rstudio.github.io/renv/reference/activate.html),
+  which leaves the lock unchanged, after declaring its packages and
+  checking its R version against `r_upgrade`. Defaults to `TRUE`; test
+  suites that build temporary studies should pass `FALSE`.
 
 - template_dir:
 
   Character(1). The template corpus studies were copied from, read when
-  `cleanup = TRUE`. Setup stops with an error when it does not exist.
+  `cleanup = TRUE`. When it does not exist, setup warns, sets the study
+  up without cleaning, and reports the skip in the `"cleanup"`
+  attribute.
 
 - r_upgrade:
 
@@ -144,10 +159,12 @@ study_setup(
 ## Value
 
 An object of class `"study_status"`, returned visibly. With
-`cleanup = TRUE` it carries a `"cleanup"` attribute, a list of the
-`deleted` files and `removed_dirs` folders, relative to the root. With
-`renv = TRUE` it carries a `"renv"` attribute, `"initialized"` or
-`"retained"`.
+`cleanup = TRUE` it carries a `"cleanup"` attribute, a list of `status`
+(exactly `"done"` or `"skipped"`), `reason` (`NULL` when `status` is
+`"done"`), the `deleted` files, the `removed_dirs` folders and the
+`left` files and folders cleanup could not remove, all relative to the
+root. With `renv = TRUE` it carries a `"renv"` attribute,
+`"initialized"`, `"retained"` or `"repaired"`.
 
 ## See also
 
@@ -160,10 +177,10 @@ An object of class `"study_status"`, returned visibly. With
 ``` r
 root <- file.path(tempdir(), "study-setup-example")
 study_setup(root, study = "Example", study_tracker_id = 1L, renv = FALSE)
-#> Study: /tmp/RtmpWFup5P/study-setup-example
+#> Study: /tmp/RtmpSZn4uu/study-setup-example
 #> 
 #> [x] _study.yml — study: Example
-#> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Example", study_tracker_id = 1L, root = "/tmp/RtmpWFup5P/study-setup-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first
+#> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Example", study_tracker_id = 1L, root = "/tmp/RtmpSZn4uu/study-setup-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first
 #> [ ] manifest.yaml — no manifest.yaml; register_data() creates it
 #> [ ] dataset — no default dataset registered; run register_data()
 #> [ ] provenance — no .qmd/.Rmd sources found; 0 sidecars
@@ -193,10 +210,19 @@ done <- study_setup(root, study = "Example", study_tracker_id = 1L,
                     adopt = TRUE, cleanup = TRUE, renv = FALSE,
                     template_dir = corpus)
 attr(done, "cleanup")
+#> $status
+#> [1] "done"
+#> 
+#> $reason
+#> NULL
+#> 
 #> $deleted
 #> [1] "30_analyses/readme.R"    "30_analyses/tp.hazard.R"
 #> 
 #> $removed_dirs
+#> character(0)
+#> 
+#> $left
 #> character(0)
 #> 
 

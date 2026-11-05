@@ -25,14 +25,23 @@ other files stays, as does one holding any folder the cleanup did not
 empty, and a top-level study folder is never removed. Symbolic links are
 neither followed nor deleted, and folders named .git,
 .checkpoint or renv are never entered, at any depth. The
-root and template_dir must not overlap. A file that cannot be
-deleted stops the setup with an error.
+root and template_dir must not overlap. A file or folder that cannot
+be deleted is warned about and listed in the &quot;cleanup&quot; attribute's
+left; setup goes on. With no template corpus at template_dir,
+cleanup is skipped with a warning.
 With renv = TRUE, the study's renv environment is set up
 after any cleanup, in a separate R process. A complete environment is
 kept: a renv/ folder holding activate.R, a .Rprofile
 that sources it, and a renv.lock that parses as a lockfile. One
 interrupted after initialization (no lockfile yet) is resumed at the
-snapshot; any other partial or invalid environment stops with an error.
+snapshot. A sound renv.lock whose renv/activate.R or
+.Rprofile line is missing is repaired with
+renv::activate(), which leaves the lock unchanged. Every package
+the lock records is declared in DESCRIPTION first, so the next
+snapshot keeps them, and a lock recorded under another R major.minor
+still needs r_upgrade = TRUE. A lock is sound only with an R
+version and a Packages object. Any other partial
+or invalid environment stops with an error.
 Otherwise the study DESCRIPTION is written (see
 study_declare), renv::init(bare = TRUE) creates the
 environment, and the project is loaded and snapshotted explicitly in
@@ -67,14 +76,23 @@ other files stays, as does one holding any folder the cleanup did not
 empty, and a top-level study folder is never removed. Symbolic links are
 neither followed nor deleted, and folders named .git,
 .checkpoint or renv are never entered, at any depth. The
-root and template_dir must not overlap. A file that cannot be
-deleted stops the setup with an error.
+root and template_dir must not overlap. A file or folder that cannot
+be deleted is warned about and listed in the &quot;cleanup&quot; attribute's
+left; setup goes on. With no template corpus at template_dir,
+cleanup is skipped with a warning.
 With renv = TRUE, the study's renv environment is set up
 after any cleanup, in a separate R process. A complete environment is
 kept: a renv/ folder holding activate.R, a .Rprofile
 that sources it, and a renv.lock that parses as a lockfile. One
 interrupted after initialization (no lockfile yet) is resumed at the
-snapshot; any other partial or invalid environment stops with an error.
+snapshot. A sound renv.lock whose renv/activate.R or
+.Rprofile line is missing is repaired with
+renv::activate(), which leaves the lock unchanged. Every package
+the lock records is declared in DESCRIPTION first, so the next
+snapshot keeps them, and a lock recorded under another R major.minor
+still needs r_upgrade = TRUE. A lock is sound only with an R
+version and a Packages object. Any other partial
+or invalid environment stops with an error.
 Otherwise the study DESCRIPTION is written (see
 study_declare), renv::init(bare = TRUE) creates the
 environment, and the project is loaded and snapshotted explicitly in
@@ -168,14 +186,23 @@ other files stays, as does one holding any folder the cleanup did not
 empty, and a top-level study folder is never removed. Symbolic links are
 neither followed nor deleted, and folders named <code>.git</code>,
 <code>.checkpoint</code> or <code>renv</code> are never entered, at any depth. The
-root and <code>template_dir</code> must not overlap. A file that cannot be
-deleted stops the setup with an error.</p>
+root and <code>template_dir</code> must not overlap. A file or folder that cannot
+be deleted is warned about and listed in the <code>"cleanup"</code> attribute's
+<code>left</code>; setup goes on. With no template corpus at <code>template_dir</code>,
+cleanup is skipped with a warning.</p>
 <p>With <code>renv = TRUE</code>, the study's <code>renv</code> environment is set up
 after any cleanup, in a separate R process. A complete environment is
 kept: a <code>renv/</code> folder holding <code>activate.R</code>, a <code>.Rprofile</code>
 that sources it, and a <code>renv.lock</code> that parses as a lockfile. One
 interrupted after initialization (no lockfile yet) is resumed at the
-snapshot; any other partial or invalid environment stops with an error.
+snapshot. A sound <code>renv.lock</code> whose <code>renv/activate.R</code> or
+<code>.Rprofile</code> line is missing is repaired with
+<code><a href="https://rstudio.github.io/renv/reference/activate.html" class="external-link">renv::activate()</a></code>, which leaves the lock unchanged. Every package
+the lock records is declared in <code>DESCRIPTION</code> first, so the next
+snapshot keeps them, and a lock recorded under another R major.minor
+still needs <code>r_upgrade = TRUE</code>. A lock is sound only with an R
+version and a <code>Packages</code> object. Any other partial
+or invalid environment stops with an error.
 Otherwise the study <code>DESCRIPTION</code> is written (see
 <code><a href="study_declare.html">study_declare</a></code>), <code>renv::init(bare = TRUE)</code> creates the
 environment, and the project is loaded and snapshotted explicitly in
@@ -264,14 +291,19 @@ without cleaning.</p></dd>
 
 <dt id="arg-renv">renv<a class="anchor" aria-label="anchor" href="#arg-renv"></a></dt>
 <dd><p>Logical. Initialize and snapshot the study's <code>renv</code>
-environment. See Details. Defaults to <code>TRUE</code>; test suites that build
+environment. See Details. A sound <code>renv.lock</code> missing its
+<code>renv/activate.R</code> or <code>.Rprofile</code> line is repaired with
+<code><a href="https://rstudio.github.io/renv/reference/activate.html" class="external-link">renv::activate()</a></code>, which leaves the lock unchanged, after declaring
+its packages and checking its R version against <code>r_upgrade</code>. Defaults to
+<code>TRUE</code>; test suites that build
 temporary studies should pass <code>FALSE</code>.</p></dd>
 
 
 <dt id="arg-template-dir">template_dir<a class="anchor" aria-label="anchor" href="#arg-template-dir"></a></dt>
 <dd><p>Character(1). The template corpus studies were copied
-from, read when <code>cleanup = TRUE</code>. Setup stops with an error when it
-does not exist.</p></dd>
+from, read when <code>cleanup = TRUE</code>. When it does not exist, setup
+warns, sets the study up without cleaning, and reports the skip in the
+<code>"cleanup"</code> attribute.</p></dd>
 
 
 <dt id="arg-r-upgrade">r_upgrade<a class="anchor" aria-label="anchor" href="#arg-r-upgrade"></a></dt>
@@ -286,9 +318,12 @@ you are deliberately moving the study to this session's R.</p></dd>
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>An object of class <code>"study_status"</code>, returned visibly. With
   <code>cleanup = TRUE</code> it carries a <code>"cleanup"</code> attribute, a list of
-  the <code>deleted</code> files and <code>removed_dirs</code> folders, relative to the
-  root. With <code>renv = TRUE</code> it carries a <code>"renv"</code> attribute,
-  <code>"initialized"</code> or <code>"retained"</code>.</p>
+  <code>status</code> (exactly <code>"done"</code> or <code>"skipped"</code>), <code>reason</code>
+  (<code>NULL</code> when <code>status</code> is <code>"done"</code>), the <code>deleted</code>
+  files, the <code>removed_dirs</code> folders and the <code>left</code> files and
+  folders cleanup could not remove, all relative to the root.
+  With <code>renv = TRUE</code> it carries a <code>"renv"</code> attribute,
+  <code>"initialized"</code>, <code>"retained"</code> or <code>"repaired"</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -300,10 +335,10 @@ you are deliberately moving the study to this session's R.</p></dd>
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">root</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"study-setup-example"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">study_setup</span><span class="op">(</span><span class="va">root</span>, study <span class="op">=</span> <span class="st">"Example"</span>, study_tracker_id <span class="op">=</span> <span class="fl">1L</span>, renv <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Study: /tmp/RtmpWFup5P/study-setup-example</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Study: /tmp/RtmpSZn4uu/study-setup-example</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [x] _study.yml — study: Example</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Example", study_tracker_id = 1L, root = "/tmp/RtmpWFup5P/study-setup-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Example", study_tracker_id = 1L, root = "/tmp/RtmpSZn4uu/study-setup-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [ ] manifest.yaml — no manifest.yaml; register_data() creates it</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [ ] dataset — no default dataset registered; run register_data()</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [ ] provenance — no .qmd/.Rmd sources found; 0 sidecars</span>
@@ -333,10 +368,19 @@ you are deliberately moving the study to this session's R.</p></dd>
 <span class="r-in"><span>                    adopt <span class="op">=</span> <span class="cn">TRUE</span>, cleanup <span class="op">=</span> <span class="cn">TRUE</span>, renv <span class="op">=</span> <span class="cn">FALSE</span>,</span></span>
 <span class="r-in"><span>                    template_dir <span class="op">=</span> <span class="va">corpus</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">done</span>, <span class="st">"cleanup"</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $status</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "done"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $reason</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> NULL</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $deleted</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "30_analyses/readme.R"    "30_analyses/tp.hazard.R"</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $removed_dirs</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> character(0)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $left</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> character(0)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span></span></span>
