@@ -1109,3 +1109,41 @@ test_that("two successive appends leave clean lines", {
   .study_append_lines_missing(c("a/", "b/"), f)
   expect_identical(readLines(f), c("x", "a/", "b/"))
 })
+
+test_that("valid JSON with invalid field contents is not a sound lock", {
+  rec <- '"Package": "digest", "Version": "0.6.37", "Source": "Repository"'
+  locks <- list(
+    nonsense_r = '{"R": {"Version": "nonsense"}, "Packages": {}}',
+    major_only_r = '{"R": {"Version": "4"}, "Packages": {}}',
+    null_record = '{"R": {"Version": "4.6.1"}, "Packages": {"broken": null}}',
+    string_record = '{"R": {"Version": "4.6.1"}, "Packages": {"broken": "1.0"}}',
+    no_version = '{"R": {"Version": "4.6.1"}, "Packages": {"digest": {"Package": "digest", "Source": "Repository"}}}',
+    bad_version = '{"R": {"Version": "4.6.1"}, "Packages": {"digest": {"Package": "digest", "Version": "x", "Source": "Repository"}}}',
+    no_source = '{"R": {"Version": "4.6.1"}, "Packages": {"digest": {"Package": "digest", "Version": "0.6.37"}}}',
+    wrong_name = paste0('{"R": {"Version": "4.6.1"}, "Packages": {"other": {', rec, "}}}")
+  )
+  for (case in names(locks)) {
+    root <- withr::local_tempdir()
+    writeLines(locks[[case]], file.path(root, "renv.lock"))
+    expect_false(.study_renv_parts(root)[["renv.lock"]], info = case)
+  }
+  root <- withr::local_tempdir()
+  writeLines(paste0('{"R": {"Version": "4.6.1"}, "Packages": {"digest": {', rec, "}}}"),
+             file.path(root, "renv.lock"))
+  expect_true(.study_renv_parts(root)[["renv.lock"]])
+})
+
+test_that("renv = TRUE refuses, not repairs, a lock with invalid contents", {
+  calls <- new.env()
+  local_mocked_bindings(.study_rscript = fake_rscript(calls))
+  for (lock in c('{"R": {"Version": "nonsense"}, "Packages": {}}',
+                 '{"R": {"Version": "4.6.1"}, "Packages": {"broken": null}}')) {
+    root <- withr::local_tempdir()
+    writeLines(lock, file.path(root, "renv.lock"))
+    expect_error(
+      study_setup(root, "Legacy study", 42L, adopt = TRUE, renv = TRUE, cleanup = FALSE),
+      "partial renv environment", info = lock
+    )
+  }
+  expect_null(calls$exprs)
+})

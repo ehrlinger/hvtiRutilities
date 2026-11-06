@@ -132,7 +132,9 @@ snapshot. A sound \code{renv.lock} whose \code{renv/activate.R} or
 the lock records is declared in \code{DESCRIPTION} first, so the next
 snapshot keeps them, and a lock recorded under another R major.minor
 still needs \code{r_upgrade = TRUE}. A lock is sound only with an R
-version and a \code{Packages} object. Any other partial
+version that parses as at least major.minor, and a \code{Packages} object
+whose every record gives its own name as \code{Package}, a \code{Version}
+and a \code{Source}. Any other partial
 or invalid environment stops with an error.
 Otherwise the study \code{DESCRIPTION} is written (see
 \code{\link{study_declare}}), \code{renv::init(bare = TRUE)} creates the
