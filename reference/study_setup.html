@@ -40,7 +40,9 @@ renv::activate(), which leaves the lock unchanged. Every package
 the lock records is declared in DESCRIPTION first, so the next
 snapshot keeps them, and a lock recorded under another R major.minor
 still needs r_upgrade = TRUE. A lock is sound only with an R
-version and a Packages object. Any other partial
+version that parses as at least major.minor, and a Packages object
+whose every record gives its own name as Package, a Version
+and a Source. Any other partial
 or invalid environment stops with an error.
 Otherwise the study DESCRIPTION is written (see
 study_declare), renv::init(bare = TRUE) creates the
@@ -91,7 +93,9 @@ renv::activate(), which leaves the lock unchanged. Every package
 the lock records is declared in DESCRIPTION first, so the next
 snapshot keeps them, and a lock recorded under another R major.minor
 still needs r_upgrade = TRUE. A lock is sound only with an R
-version and a Packages object. Any other partial
+version that parses as at least major.minor, and a Packages object
+whose every record gives its own name as Package, a Version
+and a Source. Any other partial
 or invalid environment stops with an error.
 Otherwise the study DESCRIPTION is written (see
 study_declare), renv::init(bare = TRUE) creates the
@@ -109,7 +113,7 @@ The renv package must be installed."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.20</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.21</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -201,7 +205,9 @@ snapshot. A sound <code>renv.lock</code> whose <code>renv/activate.R</code> or
 the lock records is declared in <code>DESCRIPTION</code> first, so the next
 snapshot keeps them, and a lock recorded under another R major.minor
 still needs <code>r_upgrade = TRUE</code>. A lock is sound only with an R
-version and a <code>Packages</code> object. Any other partial
+version that parses as at least major.minor, and a <code>Packages</code> object
+whose every record gives its own name as <code>Package</code>, a <code>Version</code>
+and a <code>Source</code>. Any other partial
 or invalid environment stops with an error.
 Otherwise the study <code>DESCRIPTION</code> is written (see
 <code><a href="study_declare.html">study_declare</a></code>), <code>renv::init(bare = TRUE)</code> creates the
@@ -335,10 +341,10 @@ you are deliberately moving the study to this session's R.</p></dd>
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">root</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"study-setup-example"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">study_setup</span><span class="op">(</span><span class="va">root</span>, study <span class="op">=</span> <span class="st">"Example"</span>, study_tracker_id <span class="op">=</span> <span class="fl">1L</span>, renv <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Study: /tmp/RtmpSZn4uu/study-setup-example</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Study: /tmp/RtmpqpV5l5/study-setup-example</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [x] _study.yml — study: Example</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Example", study_tracker_id = 1L, root = "/tmp/RtmpSZn4uu/study-setup-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Example", study_tracker_id = 1L, root = "/tmp/RtmpqpV5l5/study-setup-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [ ] manifest.yaml — no manifest.yaml; register_data() creates it</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [ ] dataset — no default dataset registered; run register_data()</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [ ] provenance — no .qmd/.Rmd sources found; 0 sidecars</span>

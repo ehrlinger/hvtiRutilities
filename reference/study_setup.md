@@ -45,9 +45,11 @@ repaired with
 which leaves the lock unchanged. Every package the lock records is
 declared in `DESCRIPTION` first, so the next snapshot keeps them, and a
 lock recorded under another R major.minor still needs
-`r_upgrade = TRUE`. A lock is sound only with an R version and a
-`Packages` object. Any other partial or invalid environment stops with
-an error. Otherwise the study `DESCRIPTION` is written (see
+`r_upgrade = TRUE`. A lock is sound only with an R version that parses
+as at least major.minor, and a `Packages` object whose every record
+gives its own name as `Package`, a `Version` and a `Source`. Any other
+partial or invalid environment stops with an error. Otherwise the study
+`DESCRIPTION` is written (see
 [`study_declare`](https://ehrlinger.github.io/hvtiRutilities/reference/study_declare.md)),
 `renv::init(bare = TRUE)` creates the environment, and the project is
 loaded and snapshotted explicitly in explicit mode, so `renv.lock` comes
@@ -177,10 +179,10 @@ root. With `renv = TRUE` it carries a `"renv"` attribute,
 ``` r
 root <- file.path(tempdir(), "study-setup-example")
 study_setup(root, study = "Example", study_tracker_id = 1L, renv = FALSE)
-#> Study: /tmp/RtmpSZn4uu/study-setup-example
+#> Study: /tmp/RtmpqpV5l5/study-setup-example
 #> 
 #> [x] _study.yml — study: Example
-#> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Example", study_tracker_id = 1L, root = "/tmp/RtmpSZn4uu/study-setup-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first
+#> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Example", study_tracker_id = 1L, root = "/tmp/RtmpqpV5l5/study-setup-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first
 #> [ ] manifest.yaml — no manifest.yaml; register_data() creates it
 #> [ ] dataset — no default dataset registered; run register_data()
 #> [ ] provenance — no .qmd/.Rmd sources found; 0 sidecars

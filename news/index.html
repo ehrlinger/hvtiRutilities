@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.20</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.21</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -56,6 +56,14 @@
       <small>Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.5.21" id="hvtirutilities-1521">hvtiRutilities 1.5.21<a class="anchor" aria-label="anchor" href="#hvtirutilities-1521"></a></h2>
+<ul><li>
+<code><a href="../reference/study_setup.html">study_setup()</a></code> with a template corpus that does not exist warns and sets the study up, without cleaning the template copies, instead of stopping before any write. The <code>"cleanup"</code> attribute records the skip: <code>status = "skipped"</code> and the <code>reason</code>. Pass <code>template_dir</code> to clean them, or <code>cleanup = FALSE</code> to skip this on purpose.</li>
+<li>Files and folders <code><a href="../reference/study_setup.html">study_setup()</a></code> cleanup cannot remove now warn instead of stopping, and are listed in the <code>left</code> field of the <code>"cleanup"</code> attribute; <code>deleted</code> holds only what was removed.</li>
+<li>
+<code>study_setup(renv = TRUE)</code> repairs a study whose <code>renv.lock</code> is sound but whose <code>renv/activate.R</code> or <code>.Rprofile</code> line is missing, by running <code><a href="https://rstudio.github.io/renv/reference/activate.html" class="external-link">renv::activate()</a></code> with the same cache and snapshot-type settings as a fresh init, and leaving the lock unchanged, instead of stopping. Every package the lock records is declared in <code>DESCRIPTION</code> first, so the next snapshot keeps them, and a lock recorded under another R major.minor still needs <code>r_upgrade = TRUE</code>. A lock is no longer called sound without an R version that parses as at least major.minor, or without a <code>Packages</code> object whose every record gives its own name as <code>Package</code>, a <code>Version</code> and a <code>Source</code>. The <code>"renv"</code> attribute is <code>"repaired"</code>. A lock beside a plain file named <code>renv</code> is still refused, not repaired.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.5.20" id="hvtirutilities-1520">hvtiRutilities 1.5.20<a class="anchor" aria-label="anchor" href="#hvtirutilities-1520"></a></h2>
 <ul><li><p><code>tidyverse</code> is no longer in Suggests. Nothing in the package, its tests or its vignettes used it, and installing the suggested packages no longer pulls it in.</p></li>

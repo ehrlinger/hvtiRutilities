@@ -1,5 +1,31 @@
 # Changelog
 
+## hvtiRutilities 1.5.21
+
+- [`study_setup()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md)
+  with a template corpus that does not exist warns and sets the study
+  up, without cleaning the template copies, instead of stopping before
+  any write. The `"cleanup"` attribute records the skip:
+  `status = "skipped"` and the `reason`. Pass `template_dir` to clean
+  them, or `cleanup = FALSE` to skip this on purpose.
+- Files and folders
+  [`study_setup()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md)
+  cleanup cannot remove now warn instead of stopping, and are listed in
+  the `left` field of the `"cleanup"` attribute; `deleted` holds only
+  what was removed.
+- `study_setup(renv = TRUE)` repairs a study whose `renv.lock` is sound
+  but whose `renv/activate.R` or `.Rprofile` line is missing, by running
+  [`renv::activate()`](https://rstudio.github.io/renv/reference/activate.html)
+  with the same cache and snapshot-type settings as a fresh init, and
+  leaving the lock unchanged, instead of stopping. Every package the
+  lock records is declared in `DESCRIPTION` first, so the next snapshot
+  keeps them, and a lock recorded under another R major.minor still
+  needs `r_upgrade = TRUE`. A lock is no longer called sound without an
+  R version that parses as at least major.minor, or without a `Packages`
+  object whose every record gives its own name as `Package`, a `Version`
+  and a `Source`. The `"renv"` attribute is `"repaired"`. A lock beside
+  a plain file named `renv` is still refused, not repaired.
+
 ## hvtiRutilities 1.5.20
 
 - `tidyverse` is no longer in Suggests. Nothing in the package, its
