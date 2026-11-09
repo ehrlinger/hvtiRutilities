@@ -7,7 +7,7 @@
 study_setup(
   root = NULL,
   study,
-  study_tracker_id,
+  study_tracker_id = NULL,
   umbrella = NULL,
   owner = NULL,
   irb_number = NULL,
@@ -18,7 +18,8 @@ study_setup(
   cleanup = adopt,
   renv = TRUE,
   template_dir = "/programs/development/template",
-  r_upgrade = FALSE
+  r_upgrade = FALSE,
+  derived_from = NULL
 )
 }
 \arguments{
@@ -31,7 +32,8 @@ the current folder.}
 
 \item{study}{Character(1). Study title.}
 
-\item{study_tracker_id}{Integer(1). Study Tracker topic ID.}
+\item{study_tracker_id}{The Study Tracker ID, an integer. Give this or
+\code{derived_from}, not both.}
 
 \item{umbrella, owner, irb_number, cvir_no}{Optional identity values.}
 
@@ -75,6 +77,11 @@ refused from an R whose major.minor differs from the R recorded in the
 study's \code{renv.lock} (see \code{\link{guard_snapshot}}), because it
 would rewrite the lock's R and drop packages. Set \code{TRUE} only when
 you are deliberately moving the study to this session's R.}
+
+\item{derived_from}{For an exploration of a registered study that has no
+Study Tracker record of its own: the parent's Study Tracker ID. The study
+gets a \code{provisional_id} and checkpoints locally until
+\code{\link{study_promote}} gives it its own ID.}
 }
 \value{
 An object of class \code{"study_status"}, returned visibly. With
