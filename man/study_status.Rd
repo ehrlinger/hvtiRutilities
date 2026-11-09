@@ -13,6 +13,7 @@ study_status(root = getwd())
 An object of class \code{"study_status"}: a list with \code{root},
   \code{checks} (a data frame of \code{item}, \code{status} --
   \code{"OK"}, \code{"MISSING"}, \code{"FAIL"}, \code{"UNVERIFIED"},
+  \code{"EXPLORATORY"},
   \code{"CURRENT"},
   \code{"UPDATE AVAILABLE"}, \code{"UPDATE STATUS UNKNOWN"},
   \code{"OUT OF DATE"}, \code{"PENDING"}, \code{"CLOSED"}, or \code{"UNKNOWN"} -- and

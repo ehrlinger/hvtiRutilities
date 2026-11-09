@@ -364,6 +364,7 @@
 #' @return An object of class \code{"study_status"}: a list with \code{root},
 #'   \code{checks} (a data frame of \code{item}, \code{status} --
 #'   \code{"OK"}, \code{"MISSING"}, \code{"FAIL"}, \code{"UNVERIFIED"},
+#'   \code{"EXPLORATORY"},
 #'   \code{"CURRENT"},
 #'   \code{"UPDATE AVAILABLE"}, \code{"UPDATE STATUS UNKNOWN"},
 #'   \code{"OUT OF DATE"}, \code{"PENDING"}, \code{"CLOSED"}, or \code{"UNKNOWN"} -- and
@@ -406,7 +407,13 @@ study_status <- function(root = getwd()) {
       row_yml <- .status_row("_study.yml", "FAIL", conditionMessage(parsed))
     } else {
       cfg <- parsed
-      row_yml <- if (isFALSE(cfg$identity_verified)) {
+      row_yml <- if (identical(.study_identity_state(cfg), "provisional")) {
+        .status_row("_study.yml", "EXPLORATORY",
+                    paste0("study: ", cfg$study, "; exploratory, derived ",
+                           "from ST ", cfg$derived_from, ", provisional ID ",
+                           cfg$provisional_id, "; register it with ",
+                           "study_promote(<id>)"))
+      } else if (isFALSE(cfg$identity_verified)) {
         .status_row("_study.yml", "UNVERIFIED",
                     paste0("study: ", cfg$study, "; identity entered by ",
                            "hand, confirm it with study-setup --verify"))
@@ -423,7 +430,9 @@ study_status <- function(root = getwd()) {
     # its library over without the family. The call is spelled out, from
     # _study.yml, so it can be pasted as it stands.
     id <- cfg$study_tracker_id
-    if (!is.null(cfg) && !(length(id) == 1L && !is.na(id))) {
+    provisional <- !is.null(cfg) &&
+      identical(.study_identity_state(cfg), "provisional")
+    if (!is.null(cfg) && !provisional && !(length(id) == 1L && !is.na(id))) {
       # An older _study.yml can lack the ID, and setup() refuses a study
       # without one; no tool adds it to an existing file, so it is typed in.
       .status_row("renv.lock", "MISSING",
@@ -435,8 +444,11 @@ study_status <- function(root = getwd()) {
       setup_call <- if (is.null(cfg)) {
         "hvtiR::setup()"
       } else {
-        sprintf("hvtiR::setup(study = %s, study_tracker_id = %dL, root = %s, adopt = TRUE)",
-                encodeString(cfg$study, quote = "\""), as.integer(id), encodeString(root, quote = "\""))
+        sprintf("hvtiR::setup(study = %s, %s = %dL, root = %s, adopt = TRUE)",
+                encodeString(cfg$study, quote = "\""),
+                if (provisional) "derived_from" else "study_tracker_id",
+                as.integer(if (provisional) cfg$derived_from else id),
+                encodeString(root, quote = "\""))
       }
       .status_row("renv.lock", "MISSING",
                   paste0("no renv.lock; set the study up with ", setup_call,
@@ -517,6 +529,7 @@ print.study_status <- function(x, ...) {
     "UPDATE STATUS UNKNOWN" = "[?]",
     PENDING = "[~]",
     UNVERIFIED = "[~]",
+    EXPLORATORY = "[x]",
     CLOSED = "[x]",
     UNKNOWN = "[?]"
   )
