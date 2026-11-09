@@ -339,7 +339,8 @@ print.study_checkpoint <- function(x, ...) {
 #' \code{.checkpoint/log.yml} that has not reached the remote yet.
 #' \code{\link{study_checkpoint}} does this on every call; use this function
 #' after a network outage, or once \code{study-setup --verify} has verified a
-#' manually entered identity.
+#' manually entered identity. A promoted exploration's held checkpoints are
+#' delivered once \code{checkpoint: remote:} is set; promotion does not set it.
 #' An exploration set up with \code{derived_from} is
 #' committed and tagged locally and pushed only after
 #' \code{\link{study_promote}}.
@@ -392,7 +393,7 @@ print.study_checkpoint <- function(x, ...) {
 #'   \code{study_checkpoint_push()} again from the kept copy.
 #' }
 #'
-#' @seealso \code{\link{study_checkpoint}}
+#' @seealso \code{\link{study_checkpoint}}, \code{\link{study_promote}}
 #'
 #' @examples
 #' \donttest{

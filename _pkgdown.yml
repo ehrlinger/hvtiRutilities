@@ -137,6 +137,7 @@ reference:
   contents:
   - study_setup
   - study_update_identity
+  - study_promote
   - study_declare
   - study_need
   - guard_snapshot
