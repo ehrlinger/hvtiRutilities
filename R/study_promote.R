@@ -14,7 +14,8 @@
 #'   integer.
 #' @param start A directory in the study. The study is found as by
 #'   \code{\link{study_config}}.
-#' @return The number of checkpoints held for promotion, invisibly.
+#' @return The number of checkpoint entries rewritten, invisibly. A rerun
+#'   returns \code{0} once they are rewritten.
 #' @seealso \code{\link{study_setup}}, \code{\link{study_update_identity}}
 #' @examples
 #' root <- file.path(tempdir(), "promote-example")
@@ -27,9 +28,14 @@ study_promote <- function(study_tracker_id, start = ".") {
   id <- .study_check_id(study_tracker_id, "study_tracker_id", "study_promote")
   cfg <- study_config(start, require_data = FALSE)
   raw <- .read_study_yml(cfg$file, "study_promote")
-  if (!identical(.study_identity_state(raw), "provisional")) {
-    stop("study_promote(): ", cfg$file, " already has Study Tracker ID ",
-         raw$study_tracker_id, call. = FALSE)
+  state <- .study_identity_state(raw)
+  if (!identical(state, "provisional")) {
+    if (state %in% c("registered", "promoted")) {
+      stop("study_promote(): ", cfg$file, " already has Study Tracker ID ",
+           raw$study_tracker_id, call. = FALSE)
+    }
+    stop("study_promote(): ", cfg$file, " is not a provisional exploration",
+         call. = FALSE)
   }
   if (identical(id, as.integer(raw$derived_from))) {
     warning("study_promote(): ", id, " is the parent's own ID; the ",
@@ -46,7 +52,9 @@ study_promote <- function(study_tracker_id, start = ".") {
     identical(e$delivery$reason, "provisional")
   }, logical(1)))
   for (i in held) {
-    log[[i]]$provisional_id <- log[[i]]$st_id
+    # Keep only a still-provisional (character) st_id: an entry rewritten
+    # earlier and re-held by a later checkpoint has the integer already.
+    if (is.character(log[[i]]$st_id)) log[[i]]$provisional_id <- log[[i]]$st_id
     log[[i]]$st_id <- id
     log[[i]]$delivery["reason"] <- list(NULL)
   }

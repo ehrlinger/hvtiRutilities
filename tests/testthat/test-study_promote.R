@@ -18,6 +18,46 @@ test_that("study_promote refuses a study that is not provisional", {
                "already has Study Tracker ID 7")
 })
 
+test_that("study_promote refuses a file that is not a provisional exploration", {
+  root <- file.path(withr::local_tempdir(), "legacy")
+  dir.create(root)
+  yaml::write_yaml(list(study = "Old"), file.path(root, "_study.yml"))
+  expect_error(study_promote(9L, start = root),
+               "is not a provisional exploration")
+})
+
+test_that("study_promote keeps provisional_id when rerun after an interruption", {
+  skip_if_no_git()
+  local_git_env()
+  root <- file.path(withr::local_tempdir(), "explore")
+  study_setup(root, "S", derived_from = 12L, renv = FALSE)
+  study_checkpoint("manuscript_submitted", root = root)
+  log_path <- file.path(root, ".checkpoint", "log.yml")
+  prov <- yaml::read_yaml(log_path)[[1]]$st_id
+  expect_match(prov, "^x12-")
+
+  # Interrupted after the log is rewritten, before _study.yml is written.
+  local({
+    testthat::local_mocked_bindings(
+      .study_write_atomic = function(...) stop("interrupted")
+    )
+    expect_error(study_promote(345L, start = root), "interrupted")
+  })
+  expect_identical(yaml::read_yaml(log_path)[[1]]$st_id, 345L)
+
+  # The study still reads as provisional, so the next checkpoint re-holds
+  # every pending entry, the rewritten one included.
+  study_checkpoint("manuscript_submitted", root = root)
+  held <- yaml::read_yaml(log_path)
+  expect_identical(held[[1]]$delivery$reason, "provisional")
+
+  study_promote(345L, start = root)
+  final <- yaml::read_yaml(log_path)
+  for (e in final) expect_identical(e$st_id, 345L)
+  expect_identical(final[[1]]$provisional_id, prov)
+  expect_match(final[[2]]$provisional_id, "^x12-")
+})
+
 test_that("study_promote refuses a bad ID", {
   root <- file.path(withr::local_tempdir(), "explore")
   study_setup(root, "S", derived_from = 12L, renv = FALSE)

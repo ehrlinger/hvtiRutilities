@@ -14,7 +14,8 @@ integer.}
 \code{\link{study_config}}.}
 }
 \value{
-The number of checkpoints held for promotion, invisibly.
+The number of checkpoint entries rewritten, invisibly. A rerun
+  returns \code{0} once they are rewritten.
 }
 \description{
 An exploration set up with \code{study_setup(derived_from = )} has a
