@@ -46,6 +46,8 @@ it as promoted. Without a remote it stays pending until
 yet takes no snapshot; its first checkpoint carries the promoted manifest.
 With a repository, git must be available and the \code{study_promoted}
 kind must not be retired; both are checked before anything is written.
+The \code{study_promoted} snapshot is taken whatever trigger or numbering
+the live vocabulary gives the kind; only retirement refuses it.
 
 If the snapshot fails, \file{_study.yml} and the outbox stay promoted and
 \code{study_promote()} stops with the error. A rerun is refused, because

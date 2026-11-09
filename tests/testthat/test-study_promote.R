@@ -217,6 +217,34 @@ test_that("promote then push publishes the promoted _study.yml", {
   expect_identical(cloned$study_tracker_id, 345L)
 })
 
+test_that("promote snapshots whatever trigger the live vocabulary gives", {
+  skip_if_no_git()
+  local_git_env()
+  dir <- withr::local_tempdir()
+  root <- file.path(dir, "explore")
+  study_setup(root, "S", derived_from = 12L, renv = FALSE)
+  bare <- make_bare_remote(dir)
+  set_study_keys(root, checkpoint = list(remote = bare))
+  study_checkpoint("manuscript_submitted", root = root)
+  live <- list(list(kind = "study_promoted", trigger = "auto",
+                    numbered = TRUE))
+  yaml::write_yaml(live, file.path(root, ".checkpoint", "kinds.yml"))
+
+  suppressMessages(study_promote(345L, start = root))
+  suppressMessages(study_checkpoint_push(root))
+
+  shown <- git_out(bare, c("show", "main:_study.yml"))
+  remote_yml <- yaml::yaml.load(paste(shown, collapse = "\n"))
+  expect_identical(remote_yml$study_tracker_id, 345L)
+  expect_null(remote_yml$provisional_id)
+
+  log <- yaml::read_yaml(file.path(root, ".checkpoint", "log.yml"))
+  promoted <- Filter(function(e) identical(e$kind, "study_promoted"), log)
+  expect_length(promoted, 1L)
+  expect_identical(promoted[[1]]$tag, "study_promoted")
+  expect_identical(promoted[[1]]$delivery$git, "delivered")
+})
+
 test_that("a retired study_promoted kind stops promotion before any write", {
   skip_if_no_git()
   local_git_env()
