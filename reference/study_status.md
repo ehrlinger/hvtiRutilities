@@ -12,6 +12,10 @@ are reported `"MISSING"`, never `"FAIL"` – a check that could not run is
 not a check that failed, and conflating the two makes the audit
 unreadable on exactly the legacy studies it is most needed for.
 
+`"EXPLORATORY"` means a study set up with `derived_from` that has not
+yet been promoted with
+[`study_promote`](https://ehrlinger.github.io/hvtiRutilities/reference/study_promote.md).
+
 A `_study.yml` whose identity was entered by hand and not yet confirmed
 against Study Tracker (`identity_verified: false`) is reported
 `"UNVERIFIED"`. A manifest without the field is a Tracker identity and
@@ -88,7 +92,7 @@ study_status(root = getwd())
 
 An object of class `"study_status"`: a list with `root`, `checks` (a
 data frame of `item`, `status` – `"OK"`, `"MISSING"`, `"FAIL"`,
-`"UNVERIFIED"`, `"CURRENT"`, `"UPDATE AVAILABLE"`,
+`"UNVERIFIED"`, `"EXPLORATORY"`, `"CURRENT"`, `"UPDATE AVAILABLE"`,
 `"UPDATE STATUS UNKNOWN"`, `"OUT OF DATE"`, `"PENDING"`, `"CLOSED"`, or
 `"UNKNOWN"` – and `detail`). The five base rows are followed by
 release-aware update rows, by dataset and update rows for each named
@@ -106,7 +110,7 @@ dataset, and by the `checkpoints` and `closure` rows when they apply.
 root <- file.path(tempdir(), "study-status-example")
 dir.create(root, showWarnings = FALSE)
 study_status(root)
-#> Study: /tmp/RtmpqpV5l5/study-status-example
+#> Study: /tmp/Rtmpz3M1G5/study-status-example
 #> 
 #> [ ] _study.yml — no _study.yml at this root; recovery may be available with study-setup --recover; if its Tracker ID cannot be inferred, run study-setup 42 --recover
 #> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first

@@ -9,7 +9,9 @@ symbolic links are never committed, even through `include:` patterns,
 and neither is anything under `00_datasets/` or `90_estimates/` or an
 output file type. Files in `50_documents/` other than `.qmd` and `.bib`
 sources are not committed; `CHECKPOINT.yml` records their size and
-checksum.
+checksum. An exploration set up with `derived_from` is committed and
+tagged locally and pushed only after
+[`study_promote`](https://ehrlinger.github.io/hvtiRutilities/reference/study_promote.md).
 
 ## Usage
 

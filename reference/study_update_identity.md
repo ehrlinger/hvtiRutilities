@@ -54,10 +54,10 @@ rewrites it, so comments in `_study.yml` are not kept.
 root <- file.path(tempdir(), "update-identity-example")
 study_setup(root, "Typed title", 42L, identity_source = "manual",
             renv = FALSE)
-#> Study: /tmp/RtmpqpV5l5/update-identity-example
+#> Study: /tmp/Rtmpz3M1G5/update-identity-example
 #> 
 #> [~] _study.yml — study: Typed title; identity entered by hand, confirm it with study-setup --verify
-#> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Typed title", study_tracker_id = 42L, root = "/tmp/RtmpqpV5l5/update-identity-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first
+#> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Typed title", study_tracker_id = 42L, root = "/tmp/Rtmpz3M1G5/update-identity-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first
 #> [ ] manifest.yaml — no manifest.yaml; register_data() creates it
 #> [ ] dataset — no default dataset registered; run register_data()
 #> [ ] provenance — no .qmd/.Rmd sources found; 0 sidecars

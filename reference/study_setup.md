@@ -65,7 +65,7 @@ their installs. The renv package must be installed.
 study_setup(
   root = NULL,
   study,
-  study_tracker_id,
+  study_tracker_id = NULL,
   umbrella = NULL,
   owner = NULL,
   irb_number = NULL,
@@ -76,7 +76,8 @@ study_setup(
   cleanup = adopt,
   renv = TRUE,
   template_dir = "/programs/development/template",
-  r_upgrade = FALSE
+  r_upgrade = FALSE,
+  derived_from = NULL
 )
 ```
 
@@ -98,7 +99,8 @@ study_setup(
 
 - study_tracker_id:
 
-  Integer(1). Study Tracker topic ID.
+  The Study Tracker ID, an integer. Give this or `derived_from`, not
+  both.
 
 - umbrella, owner, irb_number, cvir_no:
 
@@ -158,6 +160,14 @@ study_setup(
   because it would rewrite the lock's R and drop packages. Set `TRUE`
   only when you are deliberately moving the study to this session's R.
 
+- derived_from:
+
+  For an exploration of a registered study that has no Study Tracker
+  record of its own: the parent's Study Tracker ID. The study gets a
+  `provisional_id` and checkpoints locally until
+  [`study_promote`](https://ehrlinger.github.io/hvtiRutilities/reference/study_promote.md)
+  gives it its own ID.
+
 ## Value
 
 An object of class `"study_status"`, returned visibly. With
@@ -179,10 +189,10 @@ root. With `renv = TRUE` it carries a `"renv"` attribute,
 ``` r
 root <- file.path(tempdir(), "study-setup-example")
 study_setup(root, study = "Example", study_tracker_id = 1L, renv = FALSE)
-#> Study: /tmp/RtmpqpV5l5/study-setup-example
+#> Study: /tmp/Rtmpz3M1G5/study-setup-example
 #> 
 #> [x] _study.yml — study: Example
-#> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Example", study_tracker_id = 1L, root = "/tmp/RtmpqpV5l5/study-setup-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first
+#> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Example", study_tracker_id = 1L, root = "/tmp/Rtmpz3M1G5/study-setup-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first
 #> [ ] manifest.yaml — no manifest.yaml; register_data() creates it
 #> [ ] dataset — no default dataset registered; run register_data()
 #> [ ] provenance — no .qmd/.Rmd sources found; 0 sidecars

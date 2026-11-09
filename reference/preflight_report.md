@@ -48,7 +48,7 @@ preflight_report()
 #> 6       hvtiPlotR FALSE           
 #> 7        testthat  TRUE      3.3.2
 #> 8          quarto  TRUE      1.5.1
-#> 9         ggplot2  TRUE      4.0.3
+#> 9         ggplot2 FALSE           
 #> 10       numDeriv  TRUE 2016.8.1.1
 #>                                                                                                                      notes
 #> 1                                                                                                                         
