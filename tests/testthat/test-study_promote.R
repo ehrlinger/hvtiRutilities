@@ -216,3 +216,19 @@ test_that("promote then push publishes the promoted _study.yml", {
   expect_identical(.study_identity_state(cloned), "promoted")
   expect_identical(cloned$study_tracker_id, 345L)
 })
+
+test_that("a retired study_promoted kind stops promotion before any write", {
+  skip_if_no_git()
+  local_git_env()
+  root <- file.path(withr::local_tempdir(), "explore")
+  study_setup(root, "S", derived_from = 12L, renv = FALSE)
+  study_checkpoint("manuscript_submitted", root = root)
+  yaml::write_yaml(list(list(kind = "study_promoted", retired = TRUE)),
+                   file.path(root, ".checkpoint", "kinds.yml"))
+  log_path <- file.path(root, ".checkpoint", "log.yml")
+  log_before <- yaml::read_yaml(log_path)
+  yml_before <- readLines(file.path(root, "_study.yml"))
+  expect_error(study_promote(345L, start = root), "is retired")
+  expect_identical(yaml::read_yaml(log_path), log_before)
+  expect_identical(readLines(file.path(root, "_study.yml")), yml_before)
+})
