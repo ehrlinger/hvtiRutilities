@@ -730,6 +730,8 @@ study_setup <- function(root = NULL, study, study_tracker_id = NULL,
     citation = NULL
   )
   if (!is.null(parent)) {
+    # Fresh workspace_id/provisional_id are written only when no _study.yml
+    # exists; an existing file keeps its own.
     workspace <- uuid::UUIDgenerate()
     identity <- append(
       identity[names(identity) != "study_tracker_id"],

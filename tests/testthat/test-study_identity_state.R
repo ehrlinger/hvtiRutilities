@@ -30,9 +30,17 @@ test_that("a provisional id is x, the parent and 8 workspace characters", {
 test_that(".study_check_id accepts one positive integer only", {
   expect_identical(.study_check_id(42L, "derived_from", "f"), 42L)
   expect_identical(.study_check_id(42, "derived_from", "f"), 42L)
-  for (bad in list(0L, -1L, 4.2, "42", c(1L, 2L), NA_integer_)) {
+  for (bad in list(0L, -1L, 4.2, c(1L, 2L), NA_integer_)) {
     expect_error(.study_check_id(bad, "derived_from", "f"),
                  "f\\(\\): derived_from must be one positive integer")
+  }
+})
+
+test_that(".study_check_id accepts a canonical integer string", {
+  expect_identical(.study_check_id("42", "study_tracker_id", "f"), 42L)
+  for (bad in list("042", "4.2", "0", "x", c("1", "2"))) {
+    expect_error(.study_check_id(bad, "study_tracker_id", "f"),
+                 "f\\(\\): study_tracker_id must be one positive integer")
   }
 })
 

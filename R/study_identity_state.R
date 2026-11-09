@@ -26,10 +26,17 @@
 }
 
 # One positive whole number, as an integer. .study_whole_id() is checked
-# before coercion, which would truncate 4.2 to 4.
+# before coercion, which would truncate 4.2 to 4. A length-one string passes
+# only when it is the canonical form of an integer ("42", not "042" or "4.2"),
+# as study_setup() has always accepted from CLI callers.
 .study_check_id <- function(x, name, caller) {
-  if (!.study_whole_id(x)) {
-    stop(caller, "(): ", name, " must be one positive integer", call. = FALSE)
+  if (is.character(x) && length(x) == 1L) {
+    n <- suppressWarnings(as.integer(x))
+    if (!is.na(n) && n >= 1L && identical(as.character(n), x)) {
+      return(n)
+    }
+  } else if (.study_whole_id(x)) {
+    return(as.integer(x))
   }
-  as.integer(x)
+  stop(caller, "(): ", name, " must be one positive integer", call. = FALSE)
 }

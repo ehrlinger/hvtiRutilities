@@ -1204,3 +1204,18 @@ test_that("derived_from on a registered study, or another parent, stops", {
                            cleanup = FALSE, renv = FALSE),
                "not an exploration of ST 13")
 })
+
+test_that("study_setup accepts a Tracker ID given as a character string", {
+  root <- file.path(withr::local_tempdir(), "chr-id")
+  study_setup(root, "S", study_tracker_id = "42", renv = FALSE)
+  expect_identical(yaml::read_yaml(file.path(root, "_study.yml"))$study_tracker_id,
+                   42L)
+})
+
+test_that("study_setup accepts derived_from as a character string", {
+  root <- file.path(withr::local_tempdir(), "chr-parent")
+  study_setup(root, "S", derived_from = "1234", renv = FALSE)
+  raw <- yaml::read_yaml(file.path(root, "_study.yml"))
+  expect_identical(raw$derived_from, 1234L)
+  expect_match(raw$provisional_id, "^x1234-")
+})
