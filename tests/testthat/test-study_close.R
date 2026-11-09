@@ -404,3 +404,19 @@ test_that("offline, a stale closure records a harmless extra reopening", {
   expect_error(suppressMessages(study_reopen("again", root = s$a)),
                "not closed")
 })
+
+test_that("closing a provisional study holds the closure entry", {
+  skip_if_no_git()
+  local_git_env()
+  root <- file.path(withr::local_tempdir(), "explore")
+  study_setup(root, "S", derived_from = 12L, renv = FALSE)
+  plant_files(root, c("30_analyses/fit.R", "renv.lock"))
+  set_study_keys(root, checkpoint = list(remote = "https://example.org/x.git"))
+  suppressMessages(study_close("not_published", reason = "no journal fit",
+                               root = root))
+  entry <- .cp_log_read(root)[[1]]
+  expect_identical(entry$type, "closure")
+  expect_identical(entry$delivery$git, "pending")
+  expect_identical(entry$delivery$reason, "provisional")
+  expect_match(entry$st_id, "^x")
+})
