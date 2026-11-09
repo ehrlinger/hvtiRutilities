@@ -19,7 +19,9 @@
 #' @return The number of checkpoint entries rewritten, invisibly. A rerun
 #'   after an interrupted promotion rewrites the entries again, and the
 #'   provisional ID already recorded is kept. A study that is already
-#'   promoted is refused.
+#'   promoted, or whose \file{_study.yml} still has a legacy \code{st_id}
+#'   key, is refused, as is one whose checkpoint repository is not on
+#'   \code{main}. A rerun with a different ID rewrites every entry to it.
 #' @seealso \code{\link{study_setup}}, \code{\link{study_update_identity}}
 #' @examples
 #' root <- file.path(tempdir(), "promote-example")
@@ -41,6 +43,10 @@ study_promote <- function(study_tracker_id, start = ".") {
     stop("study_promote(): ", cfg$file, " is not a provisional exploration",
          call. = FALSE)
   }
+  if (!is.null(raw$st_id)) {
+    stop("study_promote(): ", cfg$file, " has a legacy st_id key; remove ",
+         "it before promoting", call. = FALSE)
+  }
   if (identical(id, as.integer(raw$derived_from))) {
     warning("study_promote(): ", id, " is the parent's own ID; the ",
             "exploration's checkpoints will be filed under the parent study",
@@ -53,12 +59,18 @@ study_promote <- function(study_tracker_id, start = ".") {
   root <- dirname(cfg$file)
   lock <- .cp_lock(root, "study_promote")
   on.exit(.cp_unlock(lock), add = TRUE)
+  # Reconciliation can reset the checkpoint repository, so it must not run
+  # against a checkout that is off main. Both are no-ops with no repository.
+  .cp_check_main(root, "study_promote")
   .cp_reconcile(root)
   log <- .cp_log_read(root)
   # Automatic kinds are logged "recorded" with no "provisional" reason, so
   # select on the provisional string itself as well as on the reason.
+  # An entry rewritten by an interrupted promotion has an integer st_id and
+  # the exploration's provisional_id: a retry with another ID takes it too.
   held <- which(vapply(log, function(e) {
-    is.character(e$st_id) || identical(e$delivery$reason, "provisional")
+    is.character(e$st_id) || identical(e$delivery$reason, "provisional") ||
+      identical(e$provisional_id, raw$provisional_id)
   }, logical(1)))
   for (i in held) {
     # Keep only a still-provisional (character) st_id: an entry rewritten

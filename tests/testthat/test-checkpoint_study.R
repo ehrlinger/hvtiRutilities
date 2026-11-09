@@ -85,3 +85,14 @@ test_that("a registered study is not provisional", {
                    file.path(root, "_study.yml"))
   expect_false(.cp_study(root, "f")$provisional)
 })
+
+test_that("a file mixing an exploration and a registration is refused", {
+  root <- withr::local_tempdir()
+  yaml::write_yaml(
+    list(study = "S", study_tracker_id = 9L, derived_from = 7L,
+         provisional_id = "x7-abc"),
+    file.path(root, "_study.yml")
+  )
+  expect_error(.cp_study(root, "study_checkpoint"),
+               "study_tracker_id, derived_from, provisional_id.*study_promote")
+})

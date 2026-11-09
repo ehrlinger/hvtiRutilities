@@ -39,7 +39,15 @@
          call. = FALSE)
   }
   raw <- .read_study_yml(yml, caller)
-  provisional <- identical(.study_identity_state(raw), "provisional")
+  state <- .study_identity_state(raw)
+  if (is.na(state)) {
+    present <- intersect(c("study_tracker_id", "derived_from",
+                           "provisional_id"), names(raw))
+    stop(caller, "(): _study.yml mixes an exploration and a registration (",
+         paste(present, collapse = ", "), "); use study_promote() to give ",
+         "an exploration its Study Tracker ID", call. = FALSE)
+  }
+  provisional <- identical(state, "provisional")
   st <- NULL
   if (!provisional) {
     st <- suppressWarnings(as.integer(.cp_or(raw$st_id, raw$study_tracker_id)))

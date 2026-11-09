@@ -17,7 +17,9 @@ integer.}
 The number of checkpoint entries rewritten, invisibly. A rerun
   after an interrupted promotion rewrites the entries again, and the
   provisional ID already recorded is kept. A study that is already
-  promoted is refused.
+  promoted, or whose \file{_study.yml} still has a legacy \code{st_id}
+  key, is refused, as is one whose checkpoint repository is not on
+  \code{main}. A rerun with a different ID rewrites every entry to it.
 }
 \description{
 An exploration set up with \code{study_setup(derived_from = )} has a

@@ -119,3 +119,57 @@ test_that("study_promote rewrites automatic-kind entries that are not held", {
     expect_match(e$provisional_id, "^x7-")
   }
 })
+
+test_that("study_promote refuses when the checkpoint repo is not on main", {
+  skip_if_no_git()
+  local_git_env()
+  root <- file.path(withr::local_tempdir(), "explore")
+  study_setup(root, "S", derived_from = 12L, renv = FALSE)
+  study_checkpoint("manuscript_submitted", root = root)
+  repo <- file.path(root, ".checkpoint", "repo")
+  git_out(repo, c("checkout", "-q", "-b", "side"))
+  before <- yaml::read_yaml(file.path(root, ".checkpoint", "log.yml"))
+  expect_error(study_promote(345L, start = root), "not on main")
+  expect_identical(yaml::read_yaml(file.path(root, ".checkpoint", "log.yml")),
+                   before)
+  expect_null(yaml::read_yaml(file.path(root, "_study.yml"))$study_tracker_id)
+})
+
+test_that("a retry with a different ID rewrites every entry to it", {
+  skip_if_no_git()
+  local_git_env()
+  root <- file.path(withr::local_tempdir(), "explore")
+  study_setup(root, "S", derived_from = 12L, renv = FALSE)
+  study_checkpoint("manuscript_submitted", root = root)
+  suppressMessages(study_checkpoint("analysis_started", root = root))
+  log_path <- file.path(root, ".checkpoint", "log.yml")
+  prov <- vapply(yaml::read_yaml(log_path), function(e) e$st_id, "")
+  local({
+    testthat::local_mocked_bindings(
+      .study_write_atomic = function(...) stop("interrupted")
+    )
+    expect_error(study_promote(345L, start = root), "interrupted")
+  })
+  study_promote(400L, start = root)
+  final <- yaml::read_yaml(log_path)
+  expect_length(final, 2L)
+  for (i in seq_along(final)) {
+    expect_identical(final[[i]]$st_id, 400L)
+    expect_identical(final[[i]]$provisional_id, prov[[i]])
+  }
+})
+
+test_that("study_promote refuses a manifest with a legacy st_id key", {
+  skip_if_no_git()
+  local_git_env()
+  root <- file.path(withr::local_tempdir(), "explore")
+  study_setup(root, "S", derived_from = 12L, renv = FALSE)
+  suppressMessages(study_checkpoint("analysis_started", root = root))
+  set_study_keys(root, st_id = 5L)
+  log_path <- file.path(root, ".checkpoint", "log.yml")
+  log_before <- yaml::read_yaml(log_path)
+  yml_before <- readLines(file.path(root, "_study.yml"))
+  expect_error(study_promote(345L, start = root), "legacy st_id key")
+  expect_identical(yaml::read_yaml(log_path), log_before)
+  expect_identical(readLines(file.path(root, "_study.yml")), yml_before)
+})
