@@ -14,7 +14,8 @@ integer.}
 \code{\link{study_config}}.}
 }
 \value{
-The number of checkpoint entries rewritten, invisibly. A rerun
+The number of checkpoint entries rewritten, invisibly; the
+  \code{study_promoted} checkpoint is not counted. A rerun
   after an interrupted promotion rewrites the entries again, and the
   provisional ID already recorded is kept. A study that is already
   promoted, or whose \file{_study.yml} still has a legacy \code{st_id}
@@ -31,6 +32,19 @@ Checkpoints held locally while the study was provisional are pushed by the
 next \code{\link{study_checkpoint_push}}; their tags are unchanged.
 Checkpoint commits and tag messages made while the study was provisional
 keep the provisional ID; they are pushed unchanged.
+}
+\details{
+When the study has a checkpoint repository, \code{study_promote()} then
+records a \code{study_promoted} checkpoint: a snapshot of the promoted
+study, tagged \code{study_promoted}, so the next push publishes the
+promoted \file{_study.yml} and a second copy of the study reads it as
+promoted. A study with no checkpoint repository yet takes no snapshot; its
+first checkpoint carries the promoted manifest.
+
+If that snapshot fails, \file{_study.yml} and the outbox stay promoted and
+\code{study_promote()} stops with the error. A rerun is refused, because
+the study is already promoted; record the checkpoint by hand instead, with
+\code{study_checkpoint("study_promoted")}.
 }
 \examples{
 root <- file.path(tempdir(), "promote-example")

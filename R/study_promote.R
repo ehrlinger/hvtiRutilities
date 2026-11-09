@@ -12,11 +12,25 @@
 #' Checkpoint commits and tag messages made while the study was provisional
 #' keep the provisional ID; they are pushed unchanged.
 #'
+#' @details
+#' When the study has a checkpoint repository, \code{study_promote()} then
+#' records a \code{study_promoted} checkpoint: a snapshot of the promoted
+#' study, tagged \code{study_promoted}, so the next push publishes the
+#' promoted \file{_study.yml} and a second copy of the study reads it as
+#' promoted. A study with no checkpoint repository yet takes no snapshot; its
+#' first checkpoint carries the promoted manifest.
+#'
+#' If that snapshot fails, \file{_study.yml} and the outbox stay promoted and
+#' \code{study_promote()} stops with the error. A rerun is refused, because
+#' the study is already promoted; record the checkpoint by hand instead, with
+#' \code{study_checkpoint("study_promoted")}.
+#'
 #' @param study_tracker_id The study's new Study Tracker ID, one positive
 #'   integer.
 #' @param start A directory in the study. The study is found as by
 #'   \code{\link{study_config}}.
-#' @return The number of checkpoint entries rewritten, invisibly. A rerun
+#' @return The number of checkpoint entries rewritten, invisibly; the
+#'   \code{study_promoted} checkpoint is not counted. A rerun
 #'   after an interrupted promotion rewrites the entries again, and the
 #'   provisional ID already recorded is kept. A study that is already
 #'   promoted, or whose \file{_study.yml} still has a legacy \code{st_id}
@@ -85,5 +99,15 @@ study_promote <- function(study_tracker_id, start = ".") {
   raw <- append(raw[names(raw) != "provisional_id"],
                 list(study_tracker_id = id), after = 1L)
   .study_write_atomic(raw, cfg$file)
+  # Checkpoint snapshots carry _study.yml, and a push sends only snapshots,
+  # so the promoted manifest reaches the remote as a snapshot of its own.
+  # With no repository yet, the study's first checkpoint carries it.
+  if (.cp_has_repo(.cp_repo_path(root))) {
+    .cp_require_git("study_promote")
+    study <- .cp_study(root, "study_promote")
+    row <- .cp_kind_check(.cp_kinds(root), "study_promoted", "study_promote")
+    .cp_record(root, study, row, "study_promoted", NULL, NULL, Sys.Date(),
+               lock, "study_promote")
+  }
   invisible(length(held))
 }

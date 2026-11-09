@@ -1,10 +1,12 @@
-test_that("the base vocabulary has the twelve API rows", {
+test_that("the base vocabulary has the twelve API rows and study_promoted", {
   root <- withr::local_tempdir()
   kinds <- .cp_kinds(root)
-  expect_equal(nrow(kinds), 12L)
+  expect_equal(nrow(kinds), 13L)
   expect_true(all(c("workspace_created", "manuscript_submitted",
-                    "manuscript_published") %in% kinds$kind))
+                    "manuscript_published", "study_promoted") %in% kinds$kind))
   expect_false(kinds$numbered[kinds$kind == "workspace_created"])
+  expect_false(kinds$numbered[kinds$kind == "study_promoted"])
+  expect_equal(kinds$trigger[kinds$kind == "study_promoted"], "manual")
   expect_equal(kinds$trigger[kinds$kind == "data_received"], "auto")
 })
 
@@ -38,7 +40,7 @@ test_that("a live row overrides only the fields it names", {
     file.path(root, ".checkpoint", "kinds.yml")
   )
   kinds <- .cp_kinds(root)
-  expect_equal(nrow(kinds), 13L)
+  expect_equal(nrow(kinds), 14L)
   expect_equal(kinds$trigger[kinds$kind == "data_received"], "auto")
   expect_true(kinds$numbered[kinds$kind == "data_received"])
   expect_false(kinds$numbered[kinds$kind == "workspace_created"])
@@ -59,7 +61,7 @@ test_that("an explicit null field in a live row keeps the base value", {
                "  retired: null"),
              file.path(root, ".checkpoint", "kinds.yml"))
   kinds <- .cp_kinds(root)
-  expect_equal(nrow(kinds), 12L)
+  expect_equal(nrow(kinds), 13L)
   expect_equal(kinds$trigger[kinds$kind == "data_received"], "auto")
   expect_true(kinds$numbered[kinds$kind == "data_received"])
   expect_false(kinds$numbered[kinds$kind == "workspace_created"])

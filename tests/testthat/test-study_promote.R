@@ -84,7 +84,9 @@ test_that("promotion rewrites held entries so they deliver the issued ID", {
   entry <- yaml::read_yaml(log_path)[[length(old)]]
   expect_identical(entry$st_id, 345L)
   expect_identical(entry$provisional_id, prov)
-  expect_null(entry$delivery$reason)
+  # No longer held as provisional: the study_promoted checkpoint's delivery
+  # tried it and found no remote yet.
+  expect_identical(entry$delivery$reason, "no remote configured")
 
   bare <- withr::local_tempdir()
   system2("git", c("init", "--bare", "-q", bare))
@@ -152,7 +154,11 @@ test_that("a retry with a different ID rewrites every entry to it", {
   })
   study_promote(400L, start = root)
   final <- yaml::read_yaml(log_path)
-  expect_length(final, 2L)
+  # The rewritten entries, then the study_promoted checkpoint.
+  expect_length(final, 3L)
+  expect_identical(final[[3]]$kind, "study_promoted")
+  expect_identical(final[[3]]$st_id, 400L)
+  final <- final[1:2]
   for (i in seq_along(final)) {
     expect_identical(final[[i]]$st_id, 400L)
     expect_identical(final[[i]]$provisional_id, prov[[i]])
@@ -172,4 +178,41 @@ test_that("study_promote refuses a manifest with a legacy st_id key", {
   expect_error(study_promote(345L, start = root), "legacy st_id key")
   expect_identical(yaml::read_yaml(log_path), log_before)
   expect_identical(readLines(file.path(root, "_study.yml")), yml_before)
+})
+
+test_that("promote then push publishes the promoted _study.yml", {
+  skip_if_no_git()
+  local_git_env()
+  dir <- withr::local_tempdir()
+  root <- file.path(dir, "explore")
+  study_setup(root, "S", derived_from = 12L, renv = FALSE)
+  bare <- make_bare_remote(dir)
+  set_study_keys(root, checkpoint = list(remote = bare))
+  held <- study_checkpoint("manuscript_submitted", root = root)
+  expect_identical(held$delivery$reason, "provisional")
+
+  suppressMessages(study_promote(345L, start = root))
+  suppressMessages(study_checkpoint_push(root))
+
+  shown <- git_out(bare, c("show", "main:_study.yml"))
+  remote_yml <- yaml::yaml.load(paste(shown, collapse = "\n"))
+  expect_identical(remote_yml$study_tracker_id, 345L)
+  expect_null(remote_yml$provisional_id)
+  expect_identical(remote_yml$derived_from, 12L)
+
+  log <- yaml::read_yaml(file.path(root, ".checkpoint", "log.yml"))
+  promoted <- Filter(function(e) identical(e$kind, "study_promoted"), log)
+  expect_length(promoted, 1L)
+  expect_identical(promoted[[1]]$st_id, 345L)
+  expect_identical(promoted[[1]]$tag, "study_promoted")
+  expect_identical(promoted[[1]]$delivery$git, "delivered")
+
+  tags <- git_out(bare, c("tag", "-l"))
+  expect_true(all(c(held$tag, "study_promoted") %in% tags))
+
+  clone <- file.path(dir, "second")
+  system2("git", shQuote(c("clone", "-q", "-b", "main", bare, clone)))
+  cloned <- yaml::read_yaml(file.path(clone, "_study.yml"))
+  expect_identical(.study_identity_state(cloned), "promoted")
+  expect_identical(cloned$study_tracker_id, 345L)
 })
