@@ -39,15 +39,29 @@
          call. = FALSE)
   }
   raw <- .read_study_yml(yml, caller)
-  st <- suppressWarnings(as.integer(.cp_or(raw$st_id, raw$study_tracker_id)))
-  if (length(st) != 1L || is.na(st) || st < 1L) {
-    stop(caller, "(): _study.yml has no valid st_id or study_tracker_id",
-         call. = FALSE)
+  state <- .study_identity_state(raw)
+  if (is.na(state)) {
+    present <- intersect(c("study_tracker_id", "derived_from",
+                           "provisional_id"), names(raw))
+    stop(caller, "(): _study.yml mixes an exploration and a registration (",
+         paste(present, collapse = ", "), "); use study_promote() to give ",
+         "an exploration its Study Tracker ID", call. = FALSE)
+  }
+  provisional <- identical(state, "provisional")
+  st <- NULL
+  if (!provisional) {
+    st <- suppressWarnings(as.integer(.cp_or(raw$st_id, raw$study_tracker_id)))
+    if (length(st) != 1L || is.na(st) || st < 1L) {
+      stop(caller, "(): _study.yml has no valid st_id or study_tracker_id",
+           call. = FALSE)
+    }
   }
   cp <- .cp_or(raw$checkpoint, list())
   list(
     root = root,
     st_id = st,
+    provisional = provisional,
+    provisional_id = raw$provisional_id,
     workspace_id = raw$workspace_id,
     verified = !isFALSE(raw$identity_verified),
     remote = .cp_check_remote(cp$remote, caller),

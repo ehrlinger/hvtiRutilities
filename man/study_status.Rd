@@ -13,6 +13,7 @@ study_status(root = getwd())
 An object of class \code{"study_status"}: a list with \code{root},
   \code{checks} (a data frame of \code{item}, \code{status} --
   \code{"OK"}, \code{"MISSING"}, \code{"FAIL"}, \code{"UNVERIFIED"},
+  \code{"EXPLORATORY"},
   \code{"CURRENT"},
   \code{"UPDATE AVAILABLE"}, \code{"UPDATE STATUS UNKNOWN"},
   \code{"OUT OF DATE"}, \code{"PENDING"}, \code{"CLOSED"}, or \code{"UNKNOWN"} -- and
@@ -34,6 +35,9 @@ not error on one. Checks that cannot run because an earlier one failed are
 reported \code{"MISSING"}, never \code{"FAIL"} -- a check that could not run
 is not a check that failed, and conflating the two makes the audit
 unreadable on exactly the legacy studies it is most needed for.
+
+\code{"EXPLORATORY"} means a study set up with \code{derived_from} that
+has not yet been promoted with \code{\link{study_promote}}.
 
 A \code{_study.yml} whose identity was entered by hand and not yet
 confirmed against Study Tracker (\code{identity_verified: false}) is

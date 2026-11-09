@@ -41,6 +41,9 @@ and neither is anything under \code{00_datasets/} or \code{90_estimates/}
 or an output file type. Files in
 \code{50_documents/} other than \code{.qmd} and \code{.bib} sources are not
 committed; \code{CHECKPOINT.yml} records their size and checksum.
+An exploration set up with \code{derived_from} is
+committed and tagged locally and pushed only after
+\code{\link{study_promote}}.
 }
 \details{
 The kind comes from the StudyTracker checkpoint vocabulary, for example

@@ -530,3 +530,16 @@ test_that("an older _study.yml without a Tracker ID says how to add one, not an 
   expect_identical(eval(call$study_tracker_id), 42L)
   expect_identical(eval(call$study), "Example")
 })
+
+test_that("study_status reports an exploration and its setup command", {
+  root <- file.path(withr::local_tempdir(), "explore")
+  study_setup(root, "S", derived_from = 12L, renv = FALSE)
+  st <- study_status(root)
+  yml <- check_for(st, "_study.yml")
+  expect_identical(yml$status, "EXPLORATORY")
+  expect_match(yml$detail, "derived from ST 12, provisional ID x12-")
+  lock <- check_for(st, "renv.lock")
+  expect_match(lock$detail, "derived_from = 12L", fixed = TRUE)
+  expect_no_match(lock$detail, "Add the line study_tracker_id")
+  expect_no_error(capture.output(print(st)))
+})

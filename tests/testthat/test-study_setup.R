@@ -1147,3 +1147,75 @@ test_that("renv = TRUE refuses, not repairs, a lock with invalid contents", {
   }
   expect_null(calls$exprs)
 })
+
+test_that("study_setup(derived_from) writes a provisional identity", {
+  root <- file.path(withr::local_tempdir(), "explore")
+  study_setup(root, study = "Lactate exploration", derived_from = 1234L,
+              renv = FALSE)
+  raw <- yaml::read_yaml(file.path(root, "_study.yml"))
+  expect_false("study_tracker_id" %in% names(raw))
+  expect_identical(raw$derived_from, 1234L)
+  expect_match(raw$workspace_id, "^[0-9a-f]{8}-")
+  expect_identical(raw$provisional_id,
+                   paste0("x1234-", substr(raw$workspace_id, 1, 8)))
+  expect_identical(.study_identity_state(raw), "provisional")
+  expect_true(dir.exists(file.path(root, "30_analyses")))
+})
+
+test_that("study_setup needs exactly one of the two IDs", {
+  root <- file.path(withr::local_tempdir(), "s")
+  msg <- "exactly one of study_tracker_id .* or derived_from"
+  expect_error(study_setup(root, "S", renv = FALSE), msg)
+  expect_error(study_setup(root, "S", 7L, derived_from = 8L, renv = FALSE),
+               msg)
+  expect_error(study_setup(root, "S", derived_from = 0L, renv = FALSE),
+               "derived_from must be one positive integer")
+})
+
+test_that("a rerun keeps the provisional id", {
+  root <- file.path(withr::local_tempdir(), "explore")
+  study_setup(root, "S", derived_from = 12L, renv = FALSE)
+  first <- yaml::read_yaml(file.path(root, "_study.yml"))$provisional_id
+  study_setup(root, "S", derived_from = 12L, adopt = TRUE, cleanup = FALSE,
+              renv = FALSE)
+  expect_identical(
+    yaml::read_yaml(file.path(root, "_study.yml"))$provisional_id, first
+  )
+})
+
+test_that("a Tracker ID on a provisional study points to study_promote", {
+  root <- file.path(withr::local_tempdir(), "explore")
+  study_setup(root, "S", derived_from = 12L, renv = FALSE)
+  expect_error(
+    study_setup(root, "S", 99L, adopt = TRUE, cleanup = FALSE, renv = FALSE),
+    "study_promote\\(99L\\)"
+  )
+})
+
+test_that("derived_from on a registered study, or another parent, stops", {
+  root <- file.path(withr::local_tempdir(), "s")
+  study_setup(root, "S", 7L, renv = FALSE)
+  expect_error(study_setup(root, "S", derived_from = 7L, adopt = TRUE,
+                           cleanup = FALSE, renv = FALSE),
+               "not an exploration of ST 7")
+  root2 <- file.path(withr::local_tempdir(), "x")
+  study_setup(root2, "S", derived_from = 12L, renv = FALSE)
+  expect_error(study_setup(root2, "S", derived_from = 13L, adopt = TRUE,
+                           cleanup = FALSE, renv = FALSE),
+               "not an exploration of ST 13")
+})
+
+test_that("study_setup accepts a Tracker ID given as a character string", {
+  root <- file.path(withr::local_tempdir(), "chr-id")
+  study_setup(root, "S", study_tracker_id = "42", renv = FALSE)
+  expect_identical(yaml::read_yaml(file.path(root, "_study.yml"))$study_tracker_id,
+                   42L)
+})
+
+test_that("study_setup accepts derived_from as a character string", {
+  root <- file.path(withr::local_tempdir(), "chr-parent")
+  study_setup(root, "S", derived_from = "1234", renv = FALSE)
+  raw <- yaml::read_yaml(file.path(root, "_study.yml"))
+  expect_identical(raw$derived_from, 1234L)
+  expect_match(raw$provisional_id, "^x1234-")
+})

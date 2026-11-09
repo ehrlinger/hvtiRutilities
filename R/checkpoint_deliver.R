@@ -263,7 +263,9 @@
   }, logical(1)))
   if (!length(pending)) return(invisible(log))
   repair <- NULL
-  reason <- if (!study$verified) {
+  reason <- if (isTRUE(study$provisional)) {
+    "provisional"
+  } else if (!study$verified) {
     "identity unverified"
   } else if (is.null(study$remote)) {
     "no remote configured"
@@ -289,7 +291,11 @@
     log[[i]]$delivery$reason <- reason
   }
   .cp_log_write(root, log)
-  if (identical(reason, "identity unverified")) {
+  if (identical(reason, "provisional")) {
+    message(length(pending), " checkpoint(s) saved locally and not pushed: ",
+            "this exploration has no Study Tracker ID yet. Run ",
+            "study_promote(<id>) once it is registered.")
+  } else if (identical(reason, "identity unverified")) {
     message(length(pending), " checkpoint(s) saved locally and not pushed: ",
             "identity unverified. Run study-setup --verify, then ",
             "study_checkpoint_push().")

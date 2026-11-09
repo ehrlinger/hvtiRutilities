@@ -65,3 +65,34 @@ test_that("a remote URL carrying a password is an error that does not echo it", 
     expect_equal(.cp_study(root, "study_checkpoint")$remote, good)
   }
 })
+
+test_that("a provisional study reads with no st_id", {
+  root <- withr::local_tempdir()
+  yaml::write_yaml(list(study = "S", derived_from = 12L,
+                        provisional_id = "x12-3f9a2c1b",
+                        workspace_id = "3f9a2c1b-0000"),
+                   file.path(root, "_study.yml"))
+  s <- .cp_study(root, "f")
+  expect_null(s$st_id)
+  expect_true(s$provisional)
+  expect_identical(s$provisional_id, "x12-3f9a2c1b")
+  expect_identical(s$workspace_id, "3f9a2c1b-0000")
+})
+
+test_that("a registered study is not provisional", {
+  root <- withr::local_tempdir()
+  yaml::write_yaml(list(study = "S", study_tracker_id = 5L),
+                   file.path(root, "_study.yml"))
+  expect_false(.cp_study(root, "f")$provisional)
+})
+
+test_that("a file mixing an exploration and a registration is refused", {
+  root <- withr::local_tempdir()
+  yaml::write_yaml(
+    list(study = "S", study_tracker_id = 9L, derived_from = 7L,
+         provisional_id = "x7-abc"),
+    file.path(root, "_study.yml")
+  )
+  expect_error(.cp_study(root, "study_checkpoint"),
+               "study_tracker_id, derived_from, provisional_id.*study_promote")
+})

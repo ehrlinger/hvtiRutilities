@@ -132,6 +132,14 @@
          "; a tracker identity is verified and a manual one is not",
          call. = FALSE)
   }
+  if (is.na(.study_identity_state(raw))) {
+    keys <- intersect(c("study_tracker_id", "derived_from", "provisional_id"),
+                      names(raw))
+    stop("study_config(): ", found, " has ", paste(keys, collapse = ", "),
+         ", which is neither an exploration (derived_from and ",
+         "provisional_id) nor a promoted study (derived_from and ",
+         "study_tracker_id)", call. = FALSE)
+  }
   invisible(raw)
 }
 

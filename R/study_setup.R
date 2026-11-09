@@ -474,7 +474,8 @@
 #'   its directory. Use \code{root = "."} with \code{adopt = TRUE} to set up
 #'   the current folder.
 #' @param study Character(1). Study title.
-#' @param study_tracker_id Integer(1). Study Tracker topic ID.
+#' @param study_tracker_id The Study Tracker ID, an integer. Give this or
+#'   \code{derived_from}, not both.
 #' @param umbrella,owner,irb_number,cvir_no Optional identity values.
 #' @param study_creation_date Optional Study Tracker creation date.
 #' @param adopt Logical. Permit additive setup in an existing root. When the
@@ -510,6 +511,10 @@
 #'   study's \code{renv.lock} (see \code{\link{guard_snapshot}}), because it
 #'   would rewrite the lock's R and drop packages. Set \code{TRUE} only when
 #'   you are deliberately moving the study to this session's R.
+#' @param derived_from For an exploration of a registered study that has no
+#'   Study Tracker record of its own: the parent's Study Tracker ID. The study
+#'   gets a \code{provisional_id} and checkpoints locally until
+#'   \code{\link{study_promote}} gives it its own ID.
 #'
 #' @return An object of class \code{"study_status"}, returned visibly. With
 #'   \code{cleanup = TRUE} it carries a \code{"cleanup"} attribute, a list of
@@ -549,14 +554,14 @@
 #' unlink(c(root, corpus), recursive = TRUE)
 #'
 #' @export
-study_setup <- function(root = NULL, study, study_tracker_id,
+study_setup <- function(root = NULL, study, study_tracker_id = NULL,
                         umbrella = NULL, owner = NULL,
                         irb_number = NULL, cvir_no = NULL,
                         study_creation_date = NULL, adopt = FALSE,
                         identity_source = c("tracker", "manual"),
                         cleanup = adopt, renv = TRUE,
                         template_dir = "/programs/development/template",
-                        r_upgrade = FALSE) {
+                        r_upgrade = FALSE, derived_from = NULL) {
   # cleanup defaults to the FINAL adopt, which the interactive prompt below may
   # set. Validating it here would force the default with the caller's adopt.
   cleanup_given <- !missing(cleanup)
@@ -571,11 +576,15 @@ study_setup <- function(root = NULL, study, study_tracker_id,
   }
   root <- if (is.null(root)) .study_setup_root() else .study_scalar(root, "root", required = TRUE)
   study <- .study_scalar(study, "study", required = TRUE)
-  tracker <- suppressWarnings(as.integer(study_tracker_id))
-  if (length(tracker) != 1L || is.na(tracker) || tracker < 1L ||
-        !identical(as.character(tracker), as.character(study_tracker_id))) {
-    stop("study_setup(): study_tracker_id must be one positive integer",
-         call. = FALSE)
+  if (is.null(study_tracker_id) == is.null(derived_from)) {
+    stop("study_setup(): give exactly one of study_tracker_id (a registered ",
+         "study) or derived_from (an exploration of one)", call. = FALSE)
+  }
+  tracker <- if (!is.null(study_tracker_id)) {
+    .study_check_id(study_tracker_id, "study_tracker_id", "study_setup")
+  }
+  parent <- if (!is.null(derived_from)) {
+    .study_check_id(derived_from, "derived_from", "study_setup")
   }
   umbrella <- .study_scalar(umbrella, "umbrella")
   owner <- .study_scalar(owner, "owner")
@@ -616,16 +625,29 @@ study_setup <- function(root = NULL, study, study_tracker_id,
   }
   if (identity_exists) {
     existing <- .read_study_yml(yml, "study_setup")
-    existing_tracker <- suppressWarnings(
-      as.integer(existing$study_tracker_id)
-    )
-    if (length(existing_tracker) != 1L || is.na(existing_tracker)) {
-      stop("study_setup(): existing _study.yml has no Study Tracker ID",
-           call. = FALSE)
-    }
-    if (!identical(existing_tracker, tracker)) {
-      stop("study_setup(): _study.yml already exists for Study Tracker ID ",
-           existing_tracker, call. = FALSE)
+    state <- .study_identity_state(existing)
+    if (!is.null(parent)) {
+      if (!identical(state, "provisional") ||
+            !identical(as.integer(existing$derived_from), parent)) {
+        stop("study_setup(): ", yml, " is not an exploration of ST ", parent,
+             call. = FALSE)
+      }
+    } else if (identical(state, "provisional")) {
+      stop("study_setup(): ", yml, " is an exploration of ST ",
+           existing$derived_from, " with no Study Tracker ID of its own; ",
+           "register it with study_promote(", tracker, "L)", call. = FALSE)
+    } else {
+      existing_tracker <- suppressWarnings(
+        as.integer(existing$study_tracker_id)
+      )
+      if (length(existing_tracker) != 1L || is.na(existing_tracker)) {
+        stop("study_setup(): existing _study.yml has no Study Tracker ID",
+             call. = FALSE)
+      }
+      if (!identical(existing_tracker, tracker)) {
+        stop("study_setup(): _study.yml already exists for Study Tracker ID ",
+             existing_tracker, call. = FALSE)
+      }
     }
     if (!adopt && !(.study_interactive() && isTRUE(.study_ask_adopt(root)))) {
       stop("study_setup(): ", root, " is already set up as a study; use adopt = TRUE ",
@@ -707,6 +729,18 @@ study_setup <- function(root = NULL, study, study_tracker_id,
     built = NULL,
     citation = NULL
   )
+  if (!is.null(parent)) {
+    # Fresh workspace_id/provisional_id are written only when no _study.yml
+    # exists; an existing file keeps its own.
+    workspace <- uuid::UUIDgenerate()
+    identity <- append(
+      identity[names(identity) != "study_tracker_id"],
+      list(derived_from = parent,
+           provisional_id = .study_provisional_id(parent, workspace),
+           workspace_id = workspace),
+      after = 1L
+    )
+  }
   if (!identity_exists) {
     .study_write_atomic(identity, yml)
   }
