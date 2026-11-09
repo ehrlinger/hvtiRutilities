@@ -1,10 +1,10 @@
 test_that("identity state classifies the four valid shapes", {
+  provisional <- list(derived_from = 7L, provisional_id = "x7-3f9a2c1b")
+  promoted <- list(derived_from = 7L, study_tracker_id = 9L)
   expect_identical(.study_identity_state(list(study_tracker_id = 7L)),
                    "registered")
-  expect_identical(.study_identity_state(
-    list(derived_from = 7L, provisional_id = "x7-3f9a2c1b")), "provisional")
-  expect_identical(.study_identity_state(
-    list(derived_from = 7L, study_tracker_id = 9L)), "promoted")
+  expect_identical(.study_identity_state(provisional), "provisional")
+  expect_identical(.study_identity_state(promoted), "promoted")
   expect_identical(.study_identity_state(list(study = "S")), "legacy")
 })
 
@@ -12,12 +12,13 @@ test_that("identity state is NA for a mix of the two shapes", {
   na <- NA_character_
   expect_identical(.study_identity_state(list(provisional_id = "x7-a")), na)
   expect_identical(.study_identity_state(list(derived_from = 7L)), na)
-  expect_identical(.study_identity_state(list(
-    derived_from = 7L, provisional_id = "x7-a", study_tracker_id = 9L)), na)
-  expect_identical(.study_identity_state(
-    list(derived_from = "seven", provisional_id = "x7-a")), na)
-  expect_identical(.study_identity_state(
-    list(derived_from = 7L, provisional_id = 5L)), na)
+  all_three <- list(derived_from = 7L, provisional_id = "x7-a",
+                    study_tracker_id = 9L)
+  expect_identical(.study_identity_state(all_three), na)
+  bad_parent <- list(derived_from = "seven", provisional_id = "x7-a")
+  expect_identical(.study_identity_state(bad_parent), na)
+  bad_id <- list(derived_from = 7L, provisional_id = 5L)
+  expect_identical(.study_identity_state(bad_id), na)
 })
 
 test_that("a provisional id is x, the parent and 8 workspace characters", {
