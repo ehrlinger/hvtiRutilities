@@ -35,7 +35,7 @@
     if (!is.na(n) && n >= 1L && identical(as.character(n), x)) {
       return(n)
     }
-  } else if (.study_whole_id(x)) {
+  } else if (.study_whole_id(x) && x <= .Machine$integer.max) {
     return(as.integer(x))
   }
   stop(caller, "(): ", name, " must be one positive integer", call. = FALSE)

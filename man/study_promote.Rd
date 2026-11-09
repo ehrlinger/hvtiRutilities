@@ -15,7 +15,9 @@ integer.}
 }
 \value{
 The number of checkpoint entries rewritten, invisibly. A rerun
-  returns \code{0} once they are rewritten.
+  after an interrupted promotion rewrites the entries again, and the
+  provisional ID already recorded is kept. A study that is already
+  promoted is refused.
 }
 \description{
 An exploration set up with \code{study_setup(derived_from = )} has a
@@ -25,6 +27,8 @@ has registered it, \code{study_promote()} writes that ID into
 and \code{workspace_id} stay, so the lineage to the parent study is kept.
 Checkpoints held locally while the study was provisional are pushed by the
 next \code{\link{study_checkpoint_push}}; their tags are unchanged.
+Checkpoint commits and tag messages made while the study was provisional
+keep the provisional ID; they are pushed unchanged.
 }
 \examples{
 root <- file.path(tempdir(), "promote-example")

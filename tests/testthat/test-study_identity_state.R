@@ -65,3 +65,9 @@ test_that("study_config accepts provisional, promoted and legacy files", {
     expect_no_error(study_config(root, require_data = FALSE))
   }
 })
+
+test_that(".study_check_id rejects a number beyond the integer range", {
+  expect_error(.study_check_id(3e9, "study_tracker_id", "f"),
+               "f(): study_tracker_id must be one positive integer",
+               fixed = TRUE)
+})

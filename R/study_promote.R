@@ -9,13 +9,17 @@
 #' and \code{workspace_id} stay, so the lineage to the parent study is kept.
 #' Checkpoints held locally while the study was provisional are pushed by the
 #' next \code{\link{study_checkpoint_push}}; their tags are unchanged.
+#' Checkpoint commits and tag messages made while the study was provisional
+#' keep the provisional ID; they are pushed unchanged.
 #'
 #' @param study_tracker_id The study's new Study Tracker ID, one positive
 #'   integer.
 #' @param start A directory in the study. The study is found as by
 #'   \code{\link{study_config}}.
 #' @return The number of checkpoint entries rewritten, invisibly. A rerun
-#'   returns \code{0} once they are rewritten.
+#'   after an interrupted promotion rewrites the entries again, and the
+#'   provisional ID already recorded is kept. A study that is already
+#'   promoted is refused.
 #' @seealso \code{\link{study_setup}}, \code{\link{study_update_identity}}
 #' @examples
 #' root <- file.path(tempdir(), "promote-example")
@@ -47,16 +51,23 @@ study_promote <- function(study_tracker_id, start = ".") {
   # this is interrupted before _study.yml is written, the study is still
   # provisional and a rerun repeats the (idempotent) rewrite.
   root <- dirname(cfg$file)
+  lock <- .cp_lock(root, "study_promote")
+  on.exit(.cp_unlock(lock), add = TRUE)
+  .cp_reconcile(root)
   log <- .cp_log_read(root)
+  # Automatic kinds are logged "recorded" with no "provisional" reason, so
+  # select on the provisional string itself as well as on the reason.
   held <- which(vapply(log, function(e) {
-    identical(e$delivery$reason, "provisional")
+    is.character(e$st_id) || identical(e$delivery$reason, "provisional")
   }, logical(1)))
   for (i in held) {
     # Keep only a still-provisional (character) st_id: an entry rewritten
     # earlier and re-held by a later checkpoint has the integer already.
     if (is.character(log[[i]]$st_id)) log[[i]]$provisional_id <- log[[i]]$st_id
     log[[i]]$st_id <- id
-    log[[i]]$delivery["reason"] <- list(NULL)
+    if (identical(log[[i]]$delivery$reason, "provisional")) {
+      log[[i]]$delivery["reason"] <- list(NULL)
+    }
   }
   if (length(held)) .cp_log_write(root, log)
   raw <- append(raw[names(raw) != "provisional_id"],

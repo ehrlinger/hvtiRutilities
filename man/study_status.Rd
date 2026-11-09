@@ -36,6 +36,9 @@ reported \code{"MISSING"}, never \code{"FAIL"} -- a check that could not run
 is not a check that failed, and conflating the two makes the audit
 unreadable on exactly the legacy studies it is most needed for.
 
+\code{"EXPLORATORY"} means a study set up with \code{derived_from} that
+has not yet been promoted with \code{\link{study_promote}}.
+
 A \code{_study.yml} whose identity was entered by hand and not yet
 confirmed against Study Tracker (\code{identity_verified: false}) is
 reported \code{"UNVERIFIED"}. A manifest without the field is a Tracker

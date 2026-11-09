@@ -100,3 +100,22 @@ test_that("promoting to the parent's own ID warns", {
   study_setup(root, "S", derived_from = 12L, renv = FALSE)
   expect_warning(study_promote(12L, start = root), "the parent's own ID")
 })
+
+test_that("study_promote rewrites automatic-kind entries that are not held", {
+  skip_if_no_git()
+  local_git_env()
+  root <- file.path(withr::local_tempdir(), "explore")
+  study_setup(root, "S", derived_from = 7L, renv = FALSE)
+  suppressMessages(study_checkpoint("analysis_started", root = root))
+  suppressMessages(study_checkpoint("data_received", root = root))
+  log_path <- file.path(root, ".checkpoint", "log.yml")
+  for (e in yaml::read_yaml(log_path)) expect_match(e$st_id, "^x7-")
+
+  expect_identical(study_promote(9L, start = root), 2L)
+  final <- yaml::read_yaml(log_path)
+  expect_length(final, 2L)
+  for (e in final) {
+    expect_identical(e$st_id, 9L)
+    expect_match(e$provisional_id, "^x7-")
+  }
+})
