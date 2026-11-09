@@ -7,23 +7,34 @@
 #' has registered it, \code{study_promote()} writes that ID into
 #' \code{_study.yml} and removes \code{provisional_id}. \code{derived_from}
 #' and \code{workspace_id} stay, so the lineage to the parent study is kept.
-#' Checkpoints held locally while the study was provisional are pushed by the
-#' next \code{\link{study_checkpoint_push}}; their tags are unchanged.
-#' Checkpoint commits and tag messages made while the study was provisional
+#' When the study has a checkpoint repository and a remote, the checkpoints
+#' held locally while the study was provisional are delivered at once, with
+#' the \code{study_promoted} checkpoint described below, and
+#' \code{\link{study_checkpoint_push}} retries anything still pending; their
+#' tags are unchanged. Checkpoint commits and tag messages made while the study was provisional
 #' keep the provisional ID; they are pushed unchanged.
 #'
 #' @details
 #' When the study has a checkpoint repository, \code{study_promote()} then
 #' records a \code{study_promoted} checkpoint: a snapshot of the promoted
-#' study, tagged \code{study_promoted}, so the next push publishes the
-#' promoted \file{_study.yml} and a second copy of the study reads it as
-#' promoted. A study with no checkpoint repository yet takes no snapshot; its
-#' first checkpoint carries the promoted manifest.
+#' study, tagged \code{study_promoted}, and delivers it with the held
+#' checkpoints, printing the usual delivery messages, so the promoted
+#' \file{_study.yml} reaches the remote and a second copy of the study reads
+#' it as promoted. Without a remote it stays pending until
+#' \code{\link{study_checkpoint_push}}. A study with no checkpoint repository
+#' yet takes no snapshot; its first checkpoint carries the promoted manifest.
+#' With a repository, git must be available and the \code{study_promoted}
+#' kind must not be retired; both are checked before anything is written.
 #'
-#' If that snapshot fails, \file{_study.yml} and the outbox stay promoted and
+#' If the snapshot fails, \file{_study.yml} and the outbox stay promoted and
 #' \code{study_promote()} stops with the error. A rerun is refused, because
 #' the study is already promoted; record the checkpoint by hand instead, with
-#' \code{study_checkpoint("study_promoted")}.
+#' \code{study_checkpoint("study_promoted")}, which is refused too if the
+#' kind has been retired.
+#'
+#' If two copies of a study both promote, their unnumbered
+#' \code{study_promoted} tags clash on push and the second stays pending, as
+#' \code{workspace_created} does.
 #'
 #' @param study_tracker_id The study's new Study Tracker ID, one positive
 #'   integer.
@@ -77,6 +88,13 @@ study_promote <- function(study_tracker_id, start = ".") {
   # against a checkout that is off main. Both are no-ops with no repository.
   .cp_check_main(root, "study_promote")
   .cp_reconcile(root)
+  # Checked before any write, so a study that cannot take its
+  # study_promoted snapshot is left provisional rather than half promoted.
+  has_repo <- .cp_has_repo(.cp_repo_path(root))
+  if (has_repo) {
+    .cp_require_git("study_promote")
+    row <- .cp_kind_check(.cp_kinds(root), "study_promoted", "study_promote")
+  }
   log <- .cp_log_read(root)
   # Automatic kinds are logged "recorded" with no "provisional" reason, so
   # select on the provisional string itself as well as on the reason.
@@ -102,10 +120,8 @@ study_promote <- function(study_tracker_id, start = ".") {
   # Checkpoint snapshots carry _study.yml, and a push sends only snapshots,
   # so the promoted manifest reaches the remote as a snapshot of its own.
   # With no repository yet, the study's first checkpoint carries it.
-  if (.cp_has_repo(.cp_repo_path(root))) {
-    .cp_require_git("study_promote")
+  if (has_repo) {
     study <- .cp_study(root, "study_promote")
-    row <- .cp_kind_check(.cp_kinds(root), "study_promoted", "study_promote")
     .cp_record(root, study, row, "study_promoted", NULL, NULL, Sys.Date(),
                lock, "study_promote")
   }
