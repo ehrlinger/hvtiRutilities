@@ -199,6 +199,9 @@
 #' or an output file type. Files in
 #' \code{50_documents/} other than \code{.qmd} and \code{.bib} sources are not
 #' committed; \code{CHECKPOINT.yml} records their size and checksum.
+#' An exploration set up with \code{derived_from} is
+#' committed and tagged locally and pushed only after
+#' \code{\link{study_promote}}.
 #'
 #' @details
 #' The kind comes from the StudyTracker checkpoint vocabulary, for example
@@ -282,7 +285,8 @@ study_checkpoint <- function(kind, note = NULL, attributes = NULL,
 
   entry <- list(
     type = "checkpoint", checkpoint_id = uuid::UUIDgenerate(),
-    st_id = study$st_id, workspace_id = study$workspace_id, kind = kind,
+    st_id = .cp_or(study$st_id, study$provisional_id),
+    workspace_id = study$workspace_id, kind = kind,
     occurred_at = .cp_date(occurred_at), trigger = row$trigger,
     artifact = NULL, git_commit = NULL, note = note, attributes = attributes,
     tag = NULL, state = NULL, delivery = list(git = "none", st = "pending")
@@ -336,6 +340,9 @@ print.study_checkpoint <- function(x, ...) {
 #' \code{\link{study_checkpoint}} does this on every call; use this function
 #' after a network outage, or once \code{study-setup --verify} has verified a
 #' manually entered identity.
+#' An exploration set up with \code{derived_from} is
+#' committed and tagged locally and pushed only after
+#' \code{\link{study_promote}}.
 #'
 #' @details
 #' An entry that a crash left half-written is settled first: completed when
@@ -415,6 +422,11 @@ study_checkpoint_push <- function(root = study_root()) {
   on.exit(.cp_unlock(held), add = TRUE)
   .cp_reconcile(root)
   study <- .cp_study(root, "study_checkpoint_push")
+  if (isTRUE(study$provisional)) {
+    stop("study_checkpoint_push(): this exploration (", study$provisional_id,
+         ") has no Study Tracker ID; register it with study_promote() first",
+         call. = FALSE)
+  }
   .cp_lock_touch(held)
   invisible(.cp_log_frame(.cp_deliver(root, study)))
 }

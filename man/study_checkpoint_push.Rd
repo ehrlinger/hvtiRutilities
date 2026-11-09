@@ -22,6 +22,9 @@ Retries delivery of every checkpoint, closure and reopening in
 \code{\link{study_checkpoint}} does this on every call; use this function
 after a network outage, or once \code{study-setup --verify} has verified a
 manually entered identity.
+An exploration set up with \code{derived_from} is
+committed and tagged locally and pushed only after
+\code{\link{study_promote}}.
 }
 \details{
 An entry that a crash left half-written is settled first: completed when

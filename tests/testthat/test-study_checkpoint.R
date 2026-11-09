@@ -288,3 +288,17 @@ test_that("a tag succeeds but marking committed fails: rollback and abandon", {
   expect_equal(log[[2]]$state, "abandoned")
   expect_null(log[[2]]$git_commit)
 })
+
+test_that("a provisional study checkpoints locally and holds the push", {
+  skip_if_no_git()
+  local_git_env()
+  root <- file.path(withr::local_tempdir(), "explore")
+  study_setup(root, "S", derived_from = 12L, renv = FALSE)
+  set_study_keys(root, checkpoint = list(remote = "https://example.org/x.git"))
+  res <- study_checkpoint("manuscript_submitted", root = root)
+  expect_identical(res$delivery$git, "pending")
+  expect_identical(res$delivery$reason, "provisional")
+  log <- yaml::read_yaml(file.path(root, ".checkpoint", "log.yml"))
+  expect_match(log[[length(log)]]$st_id, "^x12-")
+  expect_error(study_checkpoint_push(root), "study_promote")
+})
