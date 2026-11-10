@@ -13,7 +13,8 @@ study_checkpoint(
 )
 }
 \arguments{
-\item{kind}{Character(1). A checkpoint kind.}
+\item{kind}{Character(1). A checkpoint kind. \code{study_promoted} is
+reserved for \code{\link{study_promote}}.}
 
 \item{note}{Optional character(1), stored with the checkpoint.}
 

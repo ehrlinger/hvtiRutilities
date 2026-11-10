@@ -302,3 +302,12 @@ test_that("a provisional study checkpoints locally and holds the push", {
   expect_match(log[[length(log)]]$st_id, "^x12-")
   expect_error(study_checkpoint_push(root), "study_promote")
 })
+
+test_that("study_promoted is reserved for study_promote()", {
+  skip_if_no_git()
+  local_git_env()
+  root <- make_checkpoint_study(withr::local_tempdir())
+  expect_error(study_checkpoint("study_promoted", root = root),
+               "study_promote\\(\\)")
+  expect_length(.cp_log_read(root), 0L)
+})

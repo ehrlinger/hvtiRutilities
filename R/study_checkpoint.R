@@ -224,7 +224,8 @@
 #' the outbox, so they leave the study folder. A message says so whenever
 #' either is given: they must not contain patient information.
 #'
-#' @param kind Character(1). A checkpoint kind.
+#' @param kind Character(1). A checkpoint kind. \code{study_promoted} is
+#'   reserved for \code{\link{study_promote}}.
 #' @param note Optional character(1), stored with the checkpoint.
 #' @param attributes Optional named list of kind-specific details, each a
 #'   single value, for example \code{list(journal = "JTCVS")}.
@@ -261,6 +262,10 @@
 #' }
 study_checkpoint <- function(kind, note = NULL, attributes = NULL,
                              occurred_at = Sys.Date(), root = study_root()) {
+  if (identical(kind, "study_promoted")) {
+    stop("study_checkpoint(): the study_promoted kind is recorded only by ",
+         "study_promote().", call. = FALSE)
+  }
   .cp_require_git("study_checkpoint")
   root <- normalizePath(root, mustWork = TRUE)
   held <- .cp_lock(root, "study_checkpoint")
