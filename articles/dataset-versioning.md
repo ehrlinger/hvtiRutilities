@@ -35,8 +35,9 @@ Most of the time you do not call any of the functions below directly. A
 study registers its dataset once, and from then on the cycle is two
 steps.
 
-1.  Rebuild `datasets/built.sas7bdat` as often as you need. Jobs are not
-    affected: they read the registered version, a dated parquet such as
+1.  Rebuild `00_datasets/built.sas7bdat` (`datasets/` in an adopted
+    study) as often as you need. Jobs are not affected: they read the
+    registered version, a dated parquet such as
     `built_20260915.parquet`, and
     [`read_built()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_built.md)
     says that a newer file is waiting.
@@ -50,7 +51,7 @@ steps.
 
     Run it from anywhere in the study. It converts the new file to
     `built_20261007.parquet`, moves the version it replaces into
-    `datasets/_archive/`, and prints what it did. Commit
+    `_archive/` in the same folder, and prints what it did. Commit
     `manifest.yaml`.
 
 Every registered version stays on disk, so a manuscript revision can be
@@ -108,8 +109,8 @@ cohort_file <- file.path(datasets_dir, "cohort_20240115.csv")
 write.csv(cohort, cohort_file, row.names = FALSE)
 ```
 
-Register it in the manifest. Row count is detected automatically from
-the CSV header; only the SHA-256 is computed from the raw bytes.
+Register it in the manifest. The row count is the CSV’s line count less
+its header row; the SHA-256 is computed from the raw bytes.
 
 ``` r
 
@@ -175,17 +176,19 @@ cat(paste(readLines(manifest_path), collapse = "\n"))
 Each entry records exactly what is needed to re-verify the file later:
 `extract_date`, `n_rows`, `sha256`, and any provenance notes you supply.
 
-### SAS datasets — automatic row count
+### SAS datasets: row count
 
 Files exported directly from SAS (`.sas7bdat`) are handled the same way.
 [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
-calls
-[`haven::read_sas()`](https://haven.tidyverse.org/reference/read_sas.html)
-internally to count rows; the checksum is always computed from the raw
-file bytes.
+can count rows with
+[`haven::read_sas()`](https://haven.tidyverse.org/reference/read_sas.html),
+but only when `options(manifest.allow_heavy_rowcount = TRUE)` is set,
+because it reads the whole file. Otherwise supply `n_rows`. The checksum
+is always computed from the raw file bytes.
 
 ``` r
 
+options(manifest.allow_heavy_rowcount = TRUE)
 update_manifest(
   file          = here::here("datasets", "cohort_20240115.sas7bdat"),
   manifest_path = here::here("manifest.yaml"),
@@ -195,17 +198,18 @@ update_manifest(
 )
 ```
 
-### Excel workbooks — automatic row count
+### Excel workbooks: row count
 
 Adjudication logs, crosswalk tables, and other curator-maintained
 datasets often arrive as `.xlsx` files.
 [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
-calls
+counts their rows with
 [`readxl::read_excel()`](https://readxl.tidyverse.org/reference/read_excel.html)
-to count rows.
+under the same option, or takes `n_rows`.
 
 ``` r
 
+options(manifest.allow_heavy_rowcount = TRUE)
 update_manifest(
   file          = here::here("datasets", "adjudication_20240115.xlsx"),
   manifest_path = here::here("manifest.yaml"),
@@ -245,8 +249,9 @@ verify_manifest(
 )
 ```
 
-The function prints one confirmation line per file and returns
-invisibly. If everything is clean, your script continues.
+The function is silent when every check passes and returns its report
+invisibly; `verbose = TRUE` prints one line per file. If everything is
+clean, your script continues.
 
 ### Typical script header
 
@@ -296,8 +301,8 @@ and actual SHA-256 values, giving you an unambiguous audit trail.
 ### Collecting all failures at once
 
 During development it can be useful to see every problem before fixing
-any of them. Set `stop_on_error = FALSE` to collect warnings instead of
-stopping.
+any of them. Set `stop_on_error = FALSE` to report every failure in a
+single warning instead of stopping.
 
 ``` r
 
@@ -407,8 +412,9 @@ Each registered version records where its data came from, under a
   [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
   moves it next to the dated parquet and the manifest notes its name and
   checksum, with the job, view and as-of date it carries.
-- `origin: legacy` means there was no such record. Every version
-  registered before this scheme reads as legacy.
+- `origin: legacy` means there was no build record for exactly the file
+  registered. Every version registered before this scheme reads as
+  legacy.
 
 [`verify_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md)
 checks each build record against its recorded checksum. The record is a

@@ -156,7 +156,7 @@
 <span><span class="co">#&gt; 9                                             Sex     FALSE    FALSE</span></span>
 <span><span class="co">#&gt; 10                        Body mass index (kg/m2)     FALSE    FALSE</span></span></code></pre></div>
 </div>
-<p>The result is a two-column data frame: <code>key</code> (variable name) and <code>label</code> (descriptive text). Every column in the data gets an entry. Unlabeled columns fall back to the variable name itself.</p>
+<p>The result is a data frame with <code>key</code> (variable name), <code>label</code> (the label cut to 40 characters for display), <code>label_full</code> (the label as the source carried it), and the logical columns <code>truncated</code> and <code>over_cap</code>. Every column in the data gets an entry. Unlabeled columns fall back to the variable name, which is never cut.</p>
 <section class="level4"><h4 id="detecting-missing-labels">Detecting Missing Labels<a class="anchor" aria-label="anchor" href="#detecting-missing-labels"></a>
 </h4>
 <p>When data arrives from a plain CSV (no labels), <code><a href="../reference/label_map.html">label_map()</a></code> warns you:</p>
@@ -302,7 +302,7 @@
 <span><span class="co">#&gt; 15   lvefvs_b    Baseline LVEF (%)    Baseline LVEF (%)     FALSE    FALSE</span></span>
 <span><span class="co">#&gt; 22 nyha_class           NYHA Class           NYHA Class     FALSE    FALSE</span></span></code></pre></div>
 </div>
-<p>In a real project, <code>labels_overrides.yml</code> lives alongside <code>config.yml</code> in the project root and is committed to version control. Each study gets its own file; shared analysis code never contains hard-coded label replacements.</p>
+<p>In a real project, <code>labels_overrides.yml</code> lives in the directory the analysis runs from, usually the study root beside <code>_study.yml</code>, and is committed to version control. Each study gets its own file; shared analysis code never contains hard-coded label replacements.</p>
 <section class="level4"><h4 id="example-labels_overrides-yml">Example <code>labels_overrides.yml</code>
 <a class="anchor" aria-label="anchor" href="#example-labels_overrides-yml"></a>
 </h4>
@@ -549,7 +549,7 @@
 <span><span class="va">title</span> <span class="op">&lt;-</span> <span class="va">lmap</span><span class="op">$</span><span class="va">label</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/match.html" class="external-link">match</a></span><span class="op">(</span><span class="st">"ages"</span>, <span class="va">lmap</span><span class="op">$</span><span class="va">key</span><span class="op">)</span><span class="op">]</span>  <span class="co"># NA, no warning</span></span>
 <span></span>
 <span><span class="co"># GOOD: get_label() catches the typo</span></span>
-<span><span class="va">title</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_label.html">get_label</a></span><span class="op">(</span><span class="va">lmap</span>, <span class="st">"ages"</span><span class="op">)</span>  <span class="co"># Error: 'ages' not found in label map</span></span></code></pre></div>
+<span><span class="va">title</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_label.html">get_label</a></span><span class="op">(</span><span class="va">lmap</span>, <span class="st">"ages"</span><span class="op">)</span>  <span class="co"># Error: Variable 'ages' not found in label map.</span></span></code></pre></div>
 </div>
 </section><section class="level3"><h3 id="labeling-the-map-instead-of-the-data">4. Labeling the map instead of the data<a class="anchor" aria-label="anchor" href="#labeling-the-map-instead-of-the-data"></a>
 </h3>
@@ -595,7 +595,7 @@
 <td>Label a data frame or update a label map</td>
 </tr>
 <tr class="odd">
-<td><code>apply_label_overrides(data, file)</code></td>
+<td><code>apply_label_overrides(data, overrides_file)</code></td>
 <td>Apply study-specific overrides from YAML (works on label maps or data frames)</td>
 </tr>
 <tr class="even">

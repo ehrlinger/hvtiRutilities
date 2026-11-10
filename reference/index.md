@@ -117,7 +117,8 @@ Compare an R result against its SAS reference under derived tolerances
 
 ## Study Setup
 
-Initialize a study for reproducible analysis, and audit whether it is
+Initialize a registered study or an exploration of one, promote an
+exploration once the Tracker registers it, and audit whether a study is
 ready
 
 - [`study_setup()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md)

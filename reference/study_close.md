@@ -86,11 +86,15 @@ offline fails at once rather than when the outbox is delivered.
 Whether the study is closed is read from the latest `closed-*` or
 `reopened-*` tag on the checkpoint history, counting tags pushed from
 other copies of the study. Before deciding, both functions sync with the
-remote, delivering any pending checkpoints first. When the remote cannot
-be reached, a message says that the closure state is from this copy's
-last fetch and may be out of date. When a closure or reopening tag in
-this copy is not on its history, which an interrupted delivery can
-leave, the state cannot be determined and both functions stop; run
+remote, delivering any pending checkpoints first. On an exploration set
+up with `derived_from`, nothing is delivered: the closure or reopening
+is committed and tagged locally and held until
+[`study_promote`](https://ehrlinger.github.io/hvtiRutilities/reference/study_promote.md),
+and the closure state is this copy's. When the remote cannot be reached,
+a message says that the closure state is from this copy's last fetch and
+may be out of date. When a closure or reopening tag in this copy is not
+on its history, which an interrupted delivery can leave, the state
+cannot be determined and both functions stop; run
 [`study_checkpoint_push`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checkpoint_push.md)
 while the remote is reachable.
 

@@ -126,7 +126,7 @@
 <ul>
 <li>Creates a lookup table mapping variable names to their labels</li>
 <li>Useful for working with SAS datasets that have variable labels</li>
-<li>Returns a data frame with <code>key</code> (variable name) and <code>label</code> columns</li>
+<li>Returns a data frame with <code>key</code>, <code>label</code>, <code>label_full</code>, <code>truncated</code> and <code>over_cap</code> columns</li>
 </ul>
 </li>
 <li>
@@ -185,7 +185,7 @@
 <span></span>
 <span><span class="co"># Examine converted types</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">dta_converted</span><span class="op">)</span></span>
-<span><span class="co"># boolean: logi (binary 1/2 → TRUE/FALSE)</span></span>
+<span><span class="co"># boolean: Factor (a 1/2 code becomes a factor; only 0/1 becomes logical)</span></span>
 <span><span class="co"># logical: Factor (character → factor)</span></span>
 <span><span class="co"># char: Factor (character → factor)</span></span></code></pre></div>
 </div>
@@ -225,6 +225,7 @@
 <span><span class="co"># Extract labels as a lookup table</span></span>
 <span><span class="va">labels</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/label_map.html">label_map</a></span><span class="op">(</span><span class="va">dta</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">labels</span><span class="op">)</span></span>
+<span><span class="co"># (key and label shown; label_full, truncated and over_cap omitted)</span></span>
 <span><span class="co">#   key                              label</span></span>
 <span><span class="co"># 1 age        Patient Age (years)</span></span>
 <span><span class="co"># 2 sex                    Patient Sex</span></span>
@@ -261,7 +262,7 @@
 </h2>
 <ul>
 <li>
-<strong>Preserves variable labels</strong>: All functions maintain SAS/labelled variable attributes</li>
+<strong>Preserves variable labels</strong>: <code><a href="reference/r_data_types.html">r_data_types()</a></code> keeps SAS/labelled variable labels</li>
 <li>
 <strong>Handles NA variants</strong>: Automatically converts “NA”, “na”, “Na”, “nA” strings to actual NA values</li>
 <li>

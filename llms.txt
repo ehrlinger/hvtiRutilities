@@ -42,7 +42,8 @@ working with SAS datasets in R.
   Extract variable labels from labeled datasets
   - Creates a lookup table mapping variable names to their labels
   - Useful for working with SAS datasets that have variable labels
-  - Returns a data frame with `key` (variable name) and `label` columns
+  - Returns a data frame with `key`, `label`, `label_full`, `truncated`
+    and `over_cap` columns
 - **[`sample_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/sample_data.md)**:
   Generate sample datasets for testing
   - Creates datasets with various column types for testing package
@@ -105,7 +106,7 @@ dta_converted <- r_data_types(dta)
 
 # Examine converted types
 str(dta_converted)
-# boolean: logi (binary 1/2 → TRUE/FALSE)
+# boolean: Factor (a 1/2 code becomes a factor; only 0/1 becomes logical)
 # logical: Factor (character → factor)
 # char: Factor (character → factor)
 ```
@@ -148,6 +149,7 @@ var_label(dta$bp) <- "Systolic Blood Pressure (mmHg)"
 # Extract labels as a lookup table
 labels <- label_map(dta)
 print(labels)
+# (key and label shown; label_full, truncated and over_cap omitted)
 #   key                              label
 # 1 age        Patient Age (years)
 # 2 sex                    Patient Sex
@@ -182,8 +184,9 @@ lmap <- label_map(model_data)
 
 ## Key Features
 
-- **Preserves variable labels**: All functions maintain SAS/labelled
-  variable attributes
+- **Preserves variable labels**:
+  [`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
+  keeps SAS/labelled variable labels
 - **Handles NA variants**: Automatically converts “NA”, “na”, “Na”, “nA”
   strings to actual NA values
 - **Type-safe**: Returns the same data structure class as input
@@ -336,7 +339,8 @@ Compare an R result against its SAS reference under derived tolerances
 
 ## Study Setup
 
-Initialize a study for reproducible analysis, and audit whether it is
+Initialize a registered study or an exploration of one, promote an
+exploration once the Tracker registers it, and audit whether a study is
 ready
 
 - [`study_setup()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md)

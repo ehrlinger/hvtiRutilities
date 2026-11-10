@@ -53,9 +53,9 @@ The YAML file format is a simple mapping of variable names to labels:
     cavv_area: "Common AVV Area"
 
 This design keeps study-specific label customizations in configuration
-rather than code. Each study gets its own `labels_overrides.yml`
-alongside its `config.yml`, and shared helper functions never contain
-hard-coded replacements.
+rather than code. Each study gets its own `labels_overrides.yml` in the
+directory the analysis runs from, usually beside `_study.yml`, and
+shared helper functions never contain hard-coded replacements.
 
 ## See also
 

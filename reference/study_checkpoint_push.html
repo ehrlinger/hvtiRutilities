@@ -5,17 +5,17 @@ study_checkpoint does this on every call; use this function
 after a network outage, or once study-setup --verify has verified a
 manually entered identity. A promoted exploration's held checkpoints are
 delivered once checkpoint: remote: is set; promotion does not set it.
-An exploration set up with derived_from is
-committed and tagged locally and pushed only after
-study_promote."><meta property="og:description" content="Retries delivery of every checkpoint, closure and reopening in
+On an exploration set up with derived_from that has not been
+promoted, it stops with an error and pushes nothing; run
+study_promote first."><meta property="og:description" content="Retries delivery of every checkpoint, closure and reopening in
 .checkpoint/log.yml that has not reached the remote yet.
 study_checkpoint does this on every call; use this function
 after a network outage, or once study-setup --verify has verified a
 manually entered identity. A promoted exploration's held checkpoints are
 delivered once checkpoint: remote: is set; promotion does not set it.
-An exploration set up with derived_from is
-committed and tagged locally and pushed only after
-study_promote."></head><body>
+On an exploration set up with derived_from that has not been
+promoted, it stops with an error and pushes nothing; run
+study_promote first."></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -80,9 +80,9 @@ study_promote."></head><body>
 after a network outage, or once <code>study-setup --verify</code> has verified a
 manually entered identity. A promoted exploration's held checkpoints are
 delivered once <code>checkpoint: remote:</code> is set; promotion does not set it.
-An exploration set up with <code>derived_from</code> is
-committed and tagged locally and pushed only after
-<code><a href="study_promote.html">study_promote</a></code>.</p>
+On an exploration set up with <code>derived_from</code> that has not been
+promoted, it stops with an error and pushes nothing; run
+<code><a href="study_promote.html">study_promote</a></code> first.</p>
     </div>
 
     <div class="section level2">

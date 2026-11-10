@@ -99,7 +99,7 @@
 </h3>
 <ul>
 <li>
-<strong><code><a href="../reference/read_clinical_data.html">read_clinical_data()</a></code></strong>: Read SAS, CSV, Excel, or RDS files as they are; pass <code>convert_types = TRUE</code> to also apply <code><a href="../reference/r_data_types.html">r_data_types()</a></code>
+<strong><code><a href="../reference/read_clinical_data.html">read_clinical_data()</a></code></strong>: Read SAS, CSV, Excel, RDS or Parquet files as they are; pass <code>convert_types = TRUE</code> to also apply <code><a href="../reference/r_data_types.html">r_data_types()</a></code>
 </li>
 <li>
 <strong><code><a href="../reference/r_data_types.html">r_data_types()</a></code></strong>: Automatically infer and convert data types based on content</li>
@@ -160,17 +160,17 @@
 <span><span class="co">#&gt; 'data.frame':    100 obs. of  7 variables:</span></span>
 <span><span class="co">#&gt;  $ id     : int  1 2 3 4 5 6 7 8 9 10 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Patient Identifier"</span></span>
-<span><span class="co">#&gt;  $ boolean: int  1 2 2 1 2 1 2 1 1 1 ...</span></span>
+<span><span class="co">#&gt;  $ boolean: int  1 2 1 1 1 2 2 1 2 2 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Binary Indicator"</span></span>
-<span><span class="co">#&gt;  $ logical: chr  "F" "T" "T" "F" ...</span></span>
+<span><span class="co">#&gt;  $ logical: chr  "F" "T" "F" "F" ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Logical Status"</span></span>
-<span><span class="co">#&gt;  $ f_real : num  0.919 0.238 0.343 0.53 0.919 ...</span></span>
+<span><span class="co">#&gt;  $ f_real : num  0.216 0.216 0.366 0.228 0.228 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Random Uniform Value"</span></span>
-<span><span class="co">#&gt;  $ float  : num  -0.9985 0.98 -0.7204 -0.0403 -0.6552 ...</span></span>
+<span><span class="co">#&gt;  $ float  : num  -0.1561 -0.5452 0.4435 -0.0058 0.2809 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Random Normal Value"</span></span>
-<span><span class="co">#&gt;  $ char   : chr  "female" "male" "male" "male" ...</span></span>
+<span><span class="co">#&gt;  $ char   : chr  "male" "female" "female" "male" ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Gender"</span></span>
-<span><span class="co">#&gt;  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 5 1 3 3 5 3 2 2 1 4 ...</span></span>
+<span><span class="co">#&gt;  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 5 1 3 3 2 1 4 5 1 1 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Category Group"</span></span></code></pre></div>
 </div>
 <p>Notice that the sample data has: - <code>boolean</code>: integer values (1, 2) - <code>logical</code>: character values (“F”, “T”) - <code>char</code>: character values (“male”, “female”)</p>
@@ -190,17 +190,17 @@
 <span><span class="co">#&gt; 'data.frame':    100 obs. of  7 variables:</span></span>
 <span><span class="co">#&gt;  $ id     : int  1 2 3 4 5 6 7 8 9 10 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Patient Identifier"</span></span>
-<span><span class="co">#&gt;  $ boolean: Factor w/ 2 levels "1","2": 1 2 2 1 2 1 2 1 1 1 ...</span></span>
+<span><span class="co">#&gt;  $ boolean: Factor w/ 2 levels "1","2": 1 2 1 1 1 2 2 1 2 2 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Binary Indicator"</span></span>
-<span><span class="co">#&gt;  $ logical: Factor w/ 2 levels "F","T": 1 2 2 1 2 1 2 1 1 1 ...</span></span>
+<span><span class="co">#&gt;  $ logical: Factor w/ 2 levels "F","T": 1 2 1 1 1 2 2 1 2 2 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Logical Status"</span></span>
-<span><span class="co">#&gt;  $ f_real : Factor w/ 9 levels "0.237741576274857",..: 8 1 2 3 8 1 7 8 5 1 ...</span></span>
+<span><span class="co">#&gt;  $ f_real : Factor w/ 9 levels "0.0718834756407887",..: 2 2 4 3 3 3 4 2 9 2 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Random Uniform Value"</span></span>
-<span><span class="co">#&gt;  $ float  : num  -0.9985 0.98 -0.7204 -0.0403 -0.6552 ...</span></span>
+<span><span class="co">#&gt;  $ float  : num  -0.1561 -0.5452 0.4435 -0.0058 0.2809 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Random Normal Value"</span></span>
-<span><span class="co">#&gt;  $ char   : Factor w/ 2 levels "female","male": 1 2 2 2 2 1 1 2 2 1 ...</span></span>
+<span><span class="co">#&gt;  $ char   : Factor w/ 2 levels "female","male": 2 1 1 2 1 2 2 1 1 1 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Gender"</span></span>
-<span><span class="co">#&gt;  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 5 1 3 3 5 3 2 2 1 4 ...</span></span>
+<span><span class="co">#&gt;  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 5 1 3 3 2 1 4 5 1 1 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Category Group"</span></span>
 <span><span class="co">#&gt;  - attr(*, "hvti_type_conversion")='data.frame': 7 obs. of  6 variables:</span></span>
 <span><span class="co">#&gt;   ..$ variable    : chr [1:7] "id" "boolean" "logical" "f_real" ...</span></span>
@@ -210,20 +210,23 @@
 <span><span class="co">#&gt;   ..$ n_levels    : int [1:7] NA 2 2 9 NA 2 5</span></span>
 <span><span class="co">#&gt;   ..$ storage_out : chr [1:7] "integer" "factor" "factor" "factor" ...</span></span></code></pre></div>
 </div>
-<p>After conversion: - <code>boolean</code>: converted to logical (TRUE/FALSE) because it has exactly 2 unique values - <code>logical</code>: converted to factor (categorical variable) - <code>char</code>: converted to factor (categorical variable) - Continuous variables (<code>float</code>, <code>f_real</code>) remain numeric</p>
+<p>After conversion: - <code>boolean</code>: converted to a factor, because its two values are 1 and 2. Only a 0/1 column becomes logical - <code>logical</code>: converted to factor (categorical variable) - <code>char</code>: converted to factor (categorical variable) - Continuous variables (<code>float</code>, <code>f_real</code>) remain numeric</p>
 </section><section class="level3"><h3 id="transformation-rules">Transformation Rules<a class="anchor" aria-label="anchor" href="#transformation-rules"></a>
 </h3>
 <p>The function applies transformations in this order:</p>
 <ol type="1">
+<li>With <code>use_value_labels = TRUE</code>, a column carrying value labels → <code>factor</code>, with those labels as its levels</li>
 <li>Character strings “NA”, “na”, “Na”, “nA” → actual <code>NA</code> values</li>
-<li>Numeric/integer with exactly 2 unique values → <code>logical</code>
+<li>Numeric whose two values are 0 and 1 → <code>logical</code>; any other two-value code → <code>factor</code>
 </li>
 <li>Character columns → <code>factor</code>
 </li>
 <li>Numeric with 3 to <code>factor_size</code> unique values → <code>factor</code>
 </li>
 <li>Optionally: logical → <code>factor</code> (if <code>binary_factor = TRUE</code>)</li>
-</ol></section></section><section class="level2"><h2 id="working-with-real-data">Working with Real Data<a class="anchor" aria-label="anchor" href="#working-with-real-data"></a>
+</ol>
+<p>Date and time columns are never changed.</p>
+</section></section><section class="level2"><h2 id="working-with-real-data">Working with Real Data<a class="anchor" aria-label="anchor" href="#working-with-real-data"></a>
 </h2>
 <section class="level3"><h3 id="example-mtcars-dataset">Example: mtcars Dataset<a class="anchor" aria-label="anchor" href="#example-mtcars-dataset"></a>
 </h3>
@@ -274,7 +277,7 @@
 <span><span class="co"># Check carb variable</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/class.html" class="external-link">class</a></span><span class="op">(</span><span class="va">mtcars_clean</span><span class="op">$</span><span class="va">carb</span><span class="op">)</span>  <span class="co"># factor (6 unique &lt; 10)</span></span>
 <span><span class="co">#&gt; [1] "factor"</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/class.html" class="external-link">class</a></span><span class="op">(</span><span class="va">mtcars_strict</span><span class="op">$</span><span class="va">carb</span><span class="op">)</span> <span class="co"># integer (6 unique NOT &lt; 5)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/class.html" class="external-link">class</a></span><span class="op">(</span><span class="va">mtcars_strict</span><span class="op">$</span><span class="va">carb</span><span class="op">)</span> <span class="co"># numeric (6 unique NOT &lt; 5)</span></span>
 <span><span class="co">#&gt; [1] "numeric"</span></span></code></pre></div>
 </div>
 </section><section class="level3"><h3 id="skipping-specific-variables">Skipping Specific Variables<a class="anchor" aria-label="anchor" href="#skipping-specific-variables"></a>
@@ -550,7 +553,7 @@
 <span><span class="va">dict</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/data_dictionary.html">data_dictionary</a></span><span class="op">(</span><span class="va">dta</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/write.table.html" class="external-link">write.csv</a></span><span class="op">(</span><span class="va">dict</span>, <span class="st">"data_dictionary.csv"</span>, row.names <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
 </div>
-<p><code><a href="../reference/read_clinical_data.html">read_clinical_data()</a></code> supports <code>.sas7bdat</code>, <code>.csv</code>, <code>.xlsx</code>, <code>.xls</code>, and <code>.rds</code> files. <code>convert_types = FALSE</code> is the default; <code>factor_size</code> and the other <code><a href="../reference/r_data_types.html">r_data_types()</a></code> arguments are silently ignored unless <code>convert_types = TRUE</code> is also passed.</p>
+<p><code><a href="../reference/read_clinical_data.html">read_clinical_data()</a></code> supports <code>.sas7bdat</code>, <code>.csv</code>, <code>.xlsx</code>, <code>.xls</code>, <code>.rds</code> and <code>.parquet</code> files. <code>convert_types = FALSE</code> is the default; <code>factor_size</code> and the other <code><a href="../reference/r_data_types.html">r_data_types()</a></code> arguments are silently ignored unless <code>convert_types = TRUE</code> is also passed.</p>
 </section></section><section class="level2"><h2 id="best-practices">Best Practices<a class="anchor" aria-label="anchor" href="#best-practices"></a>
 </h2>
 <section class="level3"><h3 id="when-to-use-r_data_types">When to Use <code>r_data_types()</code>
@@ -596,7 +599,7 @@
 <p>The <code>hvtiRutilities</code> package streamlines data preparation for clinical research:</p>
 <ul>
 <li>
-<strong><code><a href="../reference/read_clinical_data.html">read_clinical_data()</a></code></strong>: Import from SAS, CSV, Excel, or RDS as-is, with type conversion available via <code>convert_types = TRUE</code>
+<strong><code><a href="../reference/read_clinical_data.html">read_clinical_data()</a></code></strong>: Import from SAS, CSV, Excel, RDS or Parquet as-is, with type conversion available via <code>convert_types = TRUE</code>
 </li>
 <li>
 <strong><code><a href="../reference/r_data_types.html">r_data_types()</a></code></strong>: Automatic, intelligent type conversion</li>

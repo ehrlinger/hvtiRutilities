@@ -39,9 +39,9 @@ for `PROC UNIVARIATE`, and
 gives you its output data set.
 
 The point is not that R lacks a way to describe a data frame. It has
-several. The point is that you already know what these three tables
-should look like, and when the R version prints the same numbers in the
-same shape, you can tell at a glance whether the extract is right. A
+several. The point is that you already know what these tables should
+look like, and when the R version prints the same numbers in the same
+shape, you can tell at a glance whether the extract is right. A
 different summary in a different layout makes you re-learn what “normal”
 looks like.
 
@@ -258,9 +258,11 @@ proc_means(dta, vars = c("age", "bmi"),
 #> 2      bmi Body mass index (kg/m2) 200     0 26.7885  26.65 23.65 30.15
 ```
 
-The keywords are SAS keywords: `n`, `nmiss`, `mean`, `std`, `min`,
-`max`, `sum`, `range`, `stderr`, `cv`, `median`, `q1`, `q3`, and any
-`pNN` for a percentile between 1 and 99.
+The keywords are SAS keywords, among them `n`, `nmiss`, `mean`, `std`,
+`min`, `max`, `sum`, `range`, `stderr`, `cv`, `median`, `q1`, `q3`, and
+any `pNN` for a percentile between 1 and 99;
+[`?proc_means`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
+lists the rest.
 
 ``` r
 
@@ -301,9 +303,10 @@ Two behaviours here are inherited from SAS on purpose.
 Rows with a missing value in any class variable are dropped, which is
 what `PROC MEANS` does unless you add `MISSING`. And the class levels
 come out in declared order rather than alphabetically, matching SAS’s
-default `ORDER=INTERNAL`. That is why NYHA class reads I, II, III, IV
-above instead of sorting to I, II, III, IV by luck. Give the function an
-ordered factor and your clinical scales stay in clinical sequence.
+default `ORDER=INTERNAL`. NYHA class reads I, II, III, IV above because
+of its factor levels, not because alphabetical order happens to agree.
+Give the function an ordered factor and your clinical scales stay in
+clinical sequence.
 
 Rows are ordered by analysis variable first, then by class level, so a
 multi-variable request stays readable:
@@ -682,7 +685,7 @@ so you can check the list rather than discover an entry mid-analysis.
 | Behaviour | SAS | `hvtiRutilities` |
 |----|----|----|
 | Quantile estimator | `QNTLDEF=5` | `type = 2`, the same estimator |
-| Default `PROC MEANS` statistics | N, Mean, Std Dev, Min, Max | Same five |
+| Default `PROC MEANS` statistics | N, Mean, Std Dev, Min, Max | Eight: the five plus `p15`, `median` and `p85` |
 | Variables with no `VAR` statement | All numeric | All numeric (logicals excluded unless named) |
 | Missing class levels | Dropped unless `MISSING` | Dropped |
 | Class level order | `ORDER=INTERNAL` | Factor level order |

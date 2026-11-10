@@ -251,12 +251,12 @@ when none does.
 ## Where Do the Older Versions Go?
 
 Every registered version is kept, so a manuscript revision can be
-reproduced from the version its paper used. Older releases of the
-package keep them all beside the SAS file, which is how the example’s
-folder filled up.
+reproduced from the version its paper used. Releases before
+hvtiRutilities 1.5.12 kept them all beside the SAS file, which is how
+the example’s folder filled up.
 
-From the release that carries hvtiRutilities
-[\#243](https://github.com/ehrlinger/hvtiRutilities/pull/243),
+From 1.5.12
+([\#243](https://github.com/ehrlinger/hvtiRutilities/pull/243)),
 [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
 moves the version it replaces, with its `.schema.csv` and build record,
 into `datasets/_archive/`. Only the current version of each dataset sits

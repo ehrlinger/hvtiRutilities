@@ -131,12 +131,12 @@
 </h2>
 <p>Most of the time you do not call any of the functions below directly. A study registers its dataset once, and from then on the cycle is two steps.</p>
 <ol type="1">
-<li><p>Rebuild <code>datasets/built.sas7bdat</code> as often as you need. Jobs are not affected: they read the registered version, a dated parquet such as <code>built_20260915.parquet</code>, and <code><a href="../reference/read_built.html">read_built()</a></code> says that a newer file is waiting.</p></li>
+<li><p>Rebuild <code>00_datasets/built.sas7bdat</code> (<code>datasets/</code> in an adopted study) as often as you need. Jobs are not affected: they read the registered version, a dated parquet such as <code>built_20260915.parquet</code>, and <code><a href="../reference/read_built.html">read_built()</a></code> says that a newer file is waiting.</p></li>
 <li>
 <p>When the rebuild is right, register it:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">hvtiRutilities</span><span class="fu">::</span><span class="fu"><a href="../reference/update_manifest.html">update_manifest</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p>Run it from anywhere in the study. It converts the new file to <code>built_20261007.parquet</code>, moves the version it replaces into <code>datasets/_archive/</code>, and prints what it did. Commit <code>manifest.yaml</code>.</p>
+<p>Run it from anywhere in the study. It converts the new file to <code>built_20261007.parquet</code>, moves the version it replaces into <code>_archive/</code> in the same folder, and prints what it did. Commit <code>manifest.yaml</code>.</p>
 </li>
 </ol>
 <p>Every registered version stays on disk, so a manuscript revision can be reproduced from the version its paper used. Only the current one sits beside the source; the earlier ones, each with its <code>.schema.csv</code>, are in <code>_archive/</code>, which Quarto skips as it skips every folder whose name starts with <code>_</code>. <code>manifest.yaml</code> still records every version by name and checksum, and <code><a href="../reference/verify_manifest.html">verify_manifest()</a></code> checks each one where it lies. A study registered before 1.5.12 keeps its earlier versions beside the source and works unchanged; its next registration moves them. The rest of this vignette explains the checksums underneath, and how to record a file outside a study.</p>
@@ -175,7 +175,7 @@
 <span><span class="va">cohort_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">datasets_dir</span>, <span class="st">"cohort_20240115.csv"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/write.table.html" class="external-link">write.csv</a></span><span class="op">(</span><span class="va">cohort</span>, <span class="va">cohort_file</span>, row.names <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
 </div>
-<p>Register it in the manifest. Row count is detected automatically from the CSV header; only the SHA-256 is computed from the raw bytes.</p>
+<p>Register it in the manifest. The row count is the CSV’s line count less its header row; the SHA-256 is computed from the raw bytes.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/update_manifest.html">update_manifest</a></span><span class="op">(</span></span>
@@ -231,12 +231,13 @@
 <span><span class="co">#&gt;   sort_key: ccfid</span></span></code></pre></div>
 </div>
 <p>Each entry records exactly what is needed to re-verify the file later: <code>extract_date</code>, <code>n_rows</code>, <code>sha256</code>, and any provenance notes you supply.</p>
-</section><section class="level3"><h3 id="sas-datasets-automatic-row-count">SAS datasets — automatic row count<a class="anchor" aria-label="anchor" href="#sas-datasets-automatic-row-count"></a>
+</section><section class="level3"><h3 id="sas-datasets-row-count">SAS datasets: row count<a class="anchor" aria-label="anchor" href="#sas-datasets-row-count"></a>
 </h3>
-<p>Files exported directly from SAS (<code>.sas7bdat</code>) are handled the same way. <code><a href="../reference/update_manifest.html">update_manifest()</a></code> calls <code><a href="https://haven.tidyverse.org/reference/read_sas.html" class="external-link">haven::read_sas()</a></code> internally to count rows; the checksum is always computed from the raw file bytes.</p>
+<p>Files exported directly from SAS (<code>.sas7bdat</code>) are handled the same way. <code><a href="../reference/update_manifest.html">update_manifest()</a></code> can count rows with <code><a href="https://haven.tidyverse.org/reference/read_sas.html" class="external-link">haven::read_sas()</a></code>, but only when <code>options(manifest.allow_heavy_rowcount = TRUE)</code> is set, because it reads the whole file. Otherwise supply <code>n_rows</code>. The checksum is always computed from the raw file bytes.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/update_manifest.html">update_manifest</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>manifest.allow_heavy_rowcount <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/update_manifest.html">update_manifest</a></span><span class="op">(</span></span>
 <span>  file          <span class="op">=</span> <span class="fu">here</span><span class="fu">::</span><span class="fu">here</span><span class="op">(</span><span class="st">"datasets"</span>, <span class="st">"cohort_20240115.sas7bdat"</span><span class="op">)</span>,</span>
 <span>  manifest_path <span class="op">=</span> <span class="fu">here</span><span class="fu">::</span><span class="fu">here</span><span class="op">(</span><span class="st">"manifest.yaml"</span><span class="op">)</span>,</span>
 <span>  extract_date  <span class="op">=</span> <span class="st">"2024-01-15"</span>,</span>
@@ -244,12 +245,13 @@
 <span>  sort_key      <span class="op">=</span> <span class="st">"pat_id"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
-</section><section class="level3"><h3 id="excel-workbooks-automatic-row-count">Excel workbooks — automatic row count<a class="anchor" aria-label="anchor" href="#excel-workbooks-automatic-row-count"></a>
+</section><section class="level3"><h3 id="excel-workbooks-row-count">Excel workbooks: row count<a class="anchor" aria-label="anchor" href="#excel-workbooks-row-count"></a>
 </h3>
-<p>Adjudication logs, crosswalk tables, and other curator-maintained datasets often arrive as <code>.xlsx</code> files. <code><a href="../reference/update_manifest.html">update_manifest()</a></code> calls <code><a href="https://readxl.tidyverse.org/reference/read_excel.html" class="external-link">readxl::read_excel()</a></code> to count rows.</p>
+<p>Adjudication logs, crosswalk tables, and other curator-maintained datasets often arrive as <code>.xlsx</code> files. <code><a href="../reference/update_manifest.html">update_manifest()</a></code> counts their rows with <code><a href="https://readxl.tidyverse.org/reference/read_excel.html" class="external-link">readxl::read_excel()</a></code> under the same option, or takes <code>n_rows</code>.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/update_manifest.html">update_manifest</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>manifest.allow_heavy_rowcount <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/update_manifest.html">update_manifest</a></span><span class="op">(</span></span>
 <span>  file          <span class="op">=</span> <span class="fu">here</span><span class="fu">::</span><span class="fu">here</span><span class="op">(</span><span class="st">"datasets"</span>, <span class="st">"adjudication_20240115.xlsx"</span><span class="op">)</span>,</span>
 <span>  manifest_path <span class="op">=</span> <span class="fu">here</span><span class="fu">::</span><span class="fu">here</span><span class="op">(</span><span class="st">"manifest.yaml"</span><span class="op">)</span>,</span>
 <span>  extract_date  <span class="op">=</span> <span class="st">"2024-01-15"</span>,</span>
@@ -279,7 +281,7 @@
 <span>  data_dir      <span class="op">=</span> <span class="va">datasets_dir</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
-<p>The function prints one confirmation line per file and returns invisibly. If everything is clean, your script continues.</p>
+<p>The function is silent when every check passes and returns its report invisibly; <code>verbose = TRUE</code> prints one line per file. If everything is clean, your script continues.</p>
 <section class="level3"><h3 id="typical-script-header">Typical script header<a class="anchor" aria-label="anchor" href="#typical-script-header"></a>
 </h3>
 <div class="cell">
@@ -319,7 +321,7 @@
 <p>The error message names the affected file and shows both the expected and actual SHA-256 values, giving you an unambiguous audit trail.</p>
 <section class="level3"><h3 id="collecting-all-failures-at-once">Collecting all failures at once<a class="anchor" aria-label="anchor" href="#collecting-all-failures-at-once"></a>
 </h3>
-<p>During development it can be useful to see every problem before fixing any of them. Set <code>stop_on_error = FALSE</code> to collect warnings instead of stopping.</p>
+<p>During development it can be useful to see every problem before fixing any of them. Set <code>stop_on_error = FALSE</code> to report every failure in a single warning instead of stopping.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">report</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/verify_manifest.html">verify_manifest</a></span><span class="op">(</span></span>
@@ -375,7 +377,7 @@
 <li>
 <code>origin: bd</code> means a build left a build record, <code>&lt;stem&gt;.build.yml</code>, beside the working file, and that record describes exactly the file registered. <code><a href="../reference/update_manifest.html">update_manifest()</a></code> moves it next to the dated parquet and the manifest notes its name and checksum, with the job, view and as-of date it carries.</li>
 <li>
-<code>origin: legacy</code> means there was no such record. Every version registered before this scheme reads as legacy.</li>
+<code>origin: legacy</code> means there was no build record for exactly the file registered. Every version registered before this scheme reads as legacy.</li>
 </ul>
 <p><code><a href="../reference/verify_manifest.html">verify_manifest()</a></code> checks each build record against its recorded checksum. The record is a file beside the dataset on the share. It is not committed: only <code>manifest.yaml</code> goes into Git.</p>
 </section><section class="level2"><h2 id="a-new-pull-for-a-different-project">A New Pull for a Different Project<a class="anchor" aria-label="anchor" href="#a-new-pull-for-a-different-project"></a>

@@ -183,7 +183,8 @@ str(model_data[, c("dead", "reop", "sex", "nyha_class", "diabetes", "hypertensio
 After conversion:
 
 - `dead` and `reop` (2 unique values) → `logical`
-- `sex`, `diabetes`, `hypertension` (character) → `factor`
+- `sex`, `diabetes` and `hypertension` were already factors and pass
+  through unchanged
 - `nyha_class` was already an ordered `factor`
 
 ### Extracting Variable Labels

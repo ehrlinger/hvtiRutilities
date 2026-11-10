@@ -132,7 +132,8 @@ Defaults to <code>"labels_overrides.yml"</code> in the current working directory
 
 <p>This design keeps study-specific label customizations in configuration
 rather than code. Each study gets its own <code>labels_overrides.yml</code>
-alongside its <code>config.yml</code>, and shared helper functions never contain
+in the directory the analysis runs from, usually beside <code>_study.yml</code>,
+and shared helper functions never contain
 hard-coded replacements.</p>
     </div>
     <div class="section level2">

@@ -110,7 +110,7 @@
 <p>Open a new extract in SAS and you almost certainly run three things before anything else. <code>PROC CONTENTS</code> to see what arrived: how many observations, how many variables, what each one is called and how it is stored. <code>PROC MEANS</code> to see whether the numbers are plausible: means, ranges, how much is missing. And <code>PROC FREQ</code> to see whether the categories look right: how many died, how the cohort splits across the groups you will compare.</p>
 <p>None of them is a modelling step. They are the sanity check you do before you trust the file enough to analyse it. <code><a href="../reference/proc_contents.html">proc_contents()</a></code>, <code><a href="../reference/proc_means.html">proc_means()</a></code> and <code><a href="../reference/proc_freq.html">proc_freq()</a></code> are those three habits, kept intact in R.</p>
 <p>The fourth comes a little later. When a summary needs weights, a percentile such as the 2.5th, or a test against a null value, you reach for <code>PROC UNIVARIATE</code>, and <code><a href="../reference/proc_univariate.html">proc_univariate()</a></code> gives you its output data set.</p>
-<p>The point is not that R lacks a way to describe a data frame. It has several. The point is that you already know what these three tables should look like, and when the R version prints the same numbers in the same shape, you can tell at a glance whether the extract is right. A different summary in a different layout makes you re-learn what “normal” looks like.</p>
+<p>The point is not that R lacks a way to describe a data frame. It has several. The point is that you already know what these tables should look like, and when the R version prints the same numbers in the same shape, you can tell at a glance whether the extract is right. A different summary in a different layout makes you re-learn what “normal” looks like.</p>
 <p>We will use the simulated cardiac surgery cohort that ships with the package, so every example here runs as written:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb2"><pre class="downlit sourceCode r">
@@ -247,7 +247,7 @@ run;</code></pre>
 <span><span class="co">#&gt; 1      age  Age at surgery (years) 200     0 44.5890  44.75 35.85 54.50</span></span>
 <span><span class="co">#&gt; 2      bmi Body mass index (kg/m2) 200     0 26.7885  26.65 23.65 30.15</span></span></code></pre></div>
 </div>
-<p>The keywords are SAS keywords: <code>n</code>, <code>nmiss</code>, <code>mean</code>, <code>std</code>, <code>min</code>, <code>max</code>, <code>sum</code>, <code>range</code>, <code>stderr</code>, <code>cv</code>, <code>median</code>, <code>q1</code>, <code>q3</code>, and any <code>pNN</code> for a percentile between 1 and 99.</p>
+<p>The keywords are SAS keywords, among them <code>n</code>, <code>nmiss</code>, <code>mean</code>, <code>std</code>, <code>min</code>, <code>max</code>, <code>sum</code>, <code>range</code>, <code>stderr</code>, <code>cv</code>, <code>median</code>, <code>q1</code>, <code>q3</code>, and any <code>pNN</code> for a percentile between 1 and 99; <code><a href="../reference/proc_means.html">?proc_means</a></code> lists the rest.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/proc_means.html">proc_means</a></span><span class="op">(</span><span class="va">dta</span>, vars <span class="op">=</span> <span class="st">"bypass_time"</span>, stats <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"p5"</span>, <span class="st">"p50"</span>, <span class="st">"p95"</span><span class="op">)</span><span class="op">)</span></span>
@@ -278,7 +278,7 @@ run;</code></pre>
 <span><span class="co">#&gt; 4 53.9</span></span></code></pre></div>
 </div>
 <p>Two behaviours here are inherited from SAS on purpose.</p>
-<p>Rows with a missing value in any class variable are dropped, which is what <code>PROC MEANS</code> does unless you add <code>MISSING</code>. And the class levels come out in declared order rather than alphabetically, matching SAS’s default <code>ORDER=INTERNAL</code>. That is why NYHA class reads I, II, III, IV above instead of sorting to I, II, III, IV by luck. Give the function an ordered factor and your clinical scales stay in clinical sequence.</p>
+<p>Rows with a missing value in any class variable are dropped, which is what <code>PROC MEANS</code> does unless you add <code>MISSING</code>. And the class levels come out in declared order rather than alphabetically, matching SAS’s default <code>ORDER=INTERNAL</code>. NYHA class reads I, II, III, IV above because of its factor levels, not because alphabetical order happens to agree. Give the function an ordered factor and your clinical scales stay in clinical sequence.</p>
 <p>Rows are ordered by analysis variable first, then by class level, so a multi-variable request stays readable:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb15"><pre class="downlit sourceCode r">
@@ -535,7 +535,8 @@ run;</code></pre>
 <tr class="even">
 <td>Default <code>PROC MEANS</code> statistics</td>
 <td>N, Mean, Std Dev, Min, Max</td>
-<td>Same five</td>
+<td>Eight: the five plus <code>p15</code>, <code>median</code> and <code>p85</code>
+</td>
 </tr>
 <tr class="odd">
 <td>Variables with no <code>VAR</code> statement</td>

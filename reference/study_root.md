@@ -2,7 +2,9 @@
 
 Returns the absolute path of the directory holding `_study.yml`, found
 by walking up from `start`. Errors if there is none, naming the
-directories walked.
+directories walked, or when `_study.yml` is invalid, as
+[`study_config`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md)
+reports it.
 
 ## Usage
 
@@ -36,6 +38,6 @@ yaml::write_yaml(
   file.path(root, "_study.yml")
 )
 study_root(root)
-#> [1] "/tmp/Rtmp2nCoZ4/study-root-example"
+#> [1] "/tmp/RtmpZyifae/study-root-example"
 unlink(root, recursive = TRUE)
 ```

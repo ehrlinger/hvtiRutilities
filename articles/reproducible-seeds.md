@@ -208,16 +208,17 @@ sequence shifts.
 
 R also stores the generator state in `.Random.seed` in the global
 environment. A package function should change it only when the caller
-asks it to, by passing a seed. `hvtiRutilities` follows that rule.
+asks it to.
 [`generate_survival_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/generate_survival_data.md)
-calls `set.seed(seed)` when it is given a seed, and with `seed = NULL`
-it sets nothing and draws from the caller’s stream.
+is the exception here: its default `seed = 1024` means it calls
+[`set.seed()`](https://rdrr.io/r/base/Random.html) unless you pass
+`seed = NULL`, which sets nothing and draws from the caller’s stream.
 [`cache_fit()`](https://ehrlinger.github.io/hvtiRutilities/reference/cache_fit.md)
-does the same with its `seed`, and also seeds a cache hit, so a loaded
-result leaves the stream in the same state as a computed one. Neither
-saves or restores `.Random.seed` behind the caller’s back, so after a
-seeded call the stream sits wherever that call left it. Seed the next
-random step yourself.
+defaults to `seed = NULL` and seeds only when given a seed, and also
+seeds a cache hit, so a loaded result leaves the stream in the same
+state as a computed one. Neither saves or restores `.Random.seed` behind
+the caller’s back, so after a seeded call the stream sits wherever that
+call left it. Seed the next random step yourself.
 
 ### SAS
 

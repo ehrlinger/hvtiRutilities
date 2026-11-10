@@ -11,7 +11,7 @@ from SAS.
 ### Main Functions
 
 - **[`read_clinical_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_clinical_data.md)**:
-  Read SAS, CSV, Excel, or RDS files as they are; pass
+  Read SAS, CSV, Excel, RDS or Parquet files as they are; pass
   `convert_types = TRUE` to also apply
   [`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
 - **[`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)**:
@@ -84,17 +84,17 @@ str(dta)
 #> 'data.frame':    100 obs. of  7 variables:
 #>  $ id     : int  1 2 3 4 5 6 7 8 9 10 ...
 #>   ..- attr(*, "label")= chr "Patient Identifier"
-#>  $ boolean: int  1 2 2 1 2 1 2 1 1 1 ...
+#>  $ boolean: int  1 2 1 1 1 2 2 1 2 2 ...
 #>   ..- attr(*, "label")= chr "Binary Indicator"
-#>  $ logical: chr  "F" "T" "T" "F" ...
+#>  $ logical: chr  "F" "T" "F" "F" ...
 #>   ..- attr(*, "label")= chr "Logical Status"
-#>  $ f_real : num  0.919 0.238 0.343 0.53 0.919 ...
+#>  $ f_real : num  0.216 0.216 0.366 0.228 0.228 ...
 #>   ..- attr(*, "label")= chr "Random Uniform Value"
-#>  $ float  : num  -0.9985 0.98 -0.7204 -0.0403 -0.6552 ...
+#>  $ float  : num  -0.1561 -0.5452 0.4435 -0.0058 0.2809 ...
 #>   ..- attr(*, "label")= chr "Random Normal Value"
-#>  $ char   : chr  "female" "male" "male" "male" ...
+#>  $ char   : chr  "male" "female" "female" "male" ...
 #>   ..- attr(*, "label")= chr "Gender"
-#>  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 5 1 3 3 5 3 2 2 1 4 ...
+#>  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 5 1 3 3 2 1 4 5 1 1 ...
 #>   ..- attr(*, "label")= chr "Category Group"
 ```
 
@@ -119,17 +119,17 @@ str(dta_converted)
 #> 'data.frame':    100 obs. of  7 variables:
 #>  $ id     : int  1 2 3 4 5 6 7 8 9 10 ...
 #>   ..- attr(*, "label")= chr "Patient Identifier"
-#>  $ boolean: Factor w/ 2 levels "1","2": 1 2 2 1 2 1 2 1 1 1 ...
+#>  $ boolean: Factor w/ 2 levels "1","2": 1 2 1 1 1 2 2 1 2 2 ...
 #>   ..- attr(*, "label")= chr "Binary Indicator"
-#>  $ logical: Factor w/ 2 levels "F","T": 1 2 2 1 2 1 2 1 1 1 ...
+#>  $ logical: Factor w/ 2 levels "F","T": 1 2 1 1 1 2 2 1 2 2 ...
 #>   ..- attr(*, "label")= chr "Logical Status"
-#>  $ f_real : Factor w/ 9 levels "0.237741576274857",..: 8 1 2 3 8 1 7 8 5 1 ...
+#>  $ f_real : Factor w/ 9 levels "0.0718834756407887",..: 2 2 4 3 3 3 4 2 9 2 ...
 #>   ..- attr(*, "label")= chr "Random Uniform Value"
-#>  $ float  : num  -0.9985 0.98 -0.7204 -0.0403 -0.6552 ...
+#>  $ float  : num  -0.1561 -0.5452 0.4435 -0.0058 0.2809 ...
 #>   ..- attr(*, "label")= chr "Random Normal Value"
-#>  $ char   : Factor w/ 2 levels "female","male": 1 2 2 2 2 1 1 2 2 1 ...
+#>  $ char   : Factor w/ 2 levels "female","male": 2 1 1 2 1 2 2 1 1 1 ...
 #>   ..- attr(*, "label")= chr "Gender"
-#>  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 5 1 3 3 5 3 2 2 1 4 ...
+#>  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 5 1 3 3 2 1 4 5 1 1 ...
 #>   ..- attr(*, "label")= chr "Category Group"
 #>  - attr(*, "hvti_type_conversion")='data.frame': 7 obs. of  6 variables:
 #>   ..$ variable    : chr [1:7] "id" "boolean" "logical" "f_real" ...
@@ -140,20 +140,26 @@ str(dta_converted)
 #>   ..$ storage_out : chr [1:7] "integer" "factor" "factor" "factor" ...
 ```
 
-After conversion: - `boolean`: converted to logical (TRUE/FALSE) because
-it has exactly 2 unique values - `logical`: converted to factor
-(categorical variable) - `char`: converted to factor (categorical
-variable) - Continuous variables (`float`, `f_real`) remain numeric
+After conversion: - `boolean`: converted to a factor, because its two
+values are 1 and 2. Only a 0/1 column becomes logical - `logical`:
+converted to factor (categorical variable) - `char`: converted to factor
+(categorical variable) - Continuous variables (`float`, `f_real`) remain
+numeric
 
 ### Transformation Rules
 
 The function applies transformations in this order:
 
-1.  Character strings “NA”, “na”, “Na”, “nA” → actual `NA` values
-2.  Numeric/integer with exactly 2 unique values → `logical`
-3.  Character columns → `factor`
-4.  Numeric with 3 to `factor_size` unique values → `factor`
-5.  Optionally: logical → `factor` (if `binary_factor = TRUE`)
+1.  With `use_value_labels = TRUE`, a column carrying value labels →
+    `factor`, with those labels as its levels
+2.  Character strings “NA”, “na”, “Na”, “nA” → actual `NA` values
+3.  Numeric whose two values are 0 and 1 → `logical`; any other
+    two-value code → `factor`
+4.  Character columns → `factor`
+5.  Numeric with 3 to `factor_size` unique values → `factor`
+6.  Optionally: logical → `factor` (if `binary_factor = TRUE`)
+
+Date and time columns are never changed.
 
 ## Working with Real Data
 
@@ -213,7 +219,7 @@ class(mtcars_strict$cyl) # factor (3 unique < 5)
 # Check carb variable
 class(mtcars_clean$carb)  # factor (6 unique < 10)
 #> [1] "factor"
-class(mtcars_strict$carb) # integer (6 unique NOT < 5)
+class(mtcars_strict$carb) # numeric (6 unique NOT < 5)
 #> [1] "numeric"
 ```
 
@@ -533,8 +539,9 @@ write.csv(dict, "data_dictionary.csv", row.names = FALSE)
 ```
 
 [`read_clinical_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_clinical_data.md)
-supports `.sas7bdat`, `.csv`, `.xlsx`, `.xls`, and `.rds` files.
-`convert_types = FALSE` is the default; `factor_size` and the other
+supports `.sas7bdat`, `.csv`, `.xlsx`, `.xls`, `.rds` and `.parquet`
+files. `convert_types = FALSE` is the default; `factor_size` and the
+other
 [`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
 arguments are silently ignored unless `convert_types = TRUE` is also
 passed.
@@ -599,8 +606,8 @@ The `hvtiRutilities` package streamlines data preparation for clinical
 research:
 
 - **[`read_clinical_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_clinical_data.md)**:
-  Import from SAS, CSV, Excel, or RDS as-is, with type conversion
-  available via `convert_types = TRUE`
+  Import from SAS, CSV, Excel, RDS or Parquet as-is, with type
+  conversion available via `convert_types = TRUE`
 - **[`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)**:
   Automatic, intelligent type conversion
 - **[`label_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)**:
