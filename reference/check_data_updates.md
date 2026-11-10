@@ -62,12 +62,12 @@ check_data_updates(cfg)
 #> [7] status               is_latest            detail              
 #> <0 rows> (or 0-length row.names)
 study_status(root)
-#> Study: /tmp/Rtmpz3M1G5/check-data-updates-example
+#> Study: /tmp/Rtmp1Bkq5c/check-data-updates-example
 #> 
 #> [x] _study.yml — study: Example
-#> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Example", study_tracker_id = 1L, root = "/tmp/Rtmpz3M1G5/check-data-updates-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first
+#> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Example", study_tracker_id = 1L, root = "/tmp/Rtmp1Bkq5c/check-data-updates-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first
 #> [x] manifest.yaml — 1 dataset entry verified by checksum
-#> [x] dataset — built.csv, registered as built_20261109.parquet
+#> [x] dataset — built.csv, registered as built_20261110.parquet
 #> [ ] provenance — no .qmd/.Rmd sources found; 0 sidecars
 #> 
 #> 0 .R  |  0 .qmd/.Rmd  |  0 .sas  |  0 provenance sidecars
