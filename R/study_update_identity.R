@@ -33,7 +33,9 @@
 #' rewrites it, so comments in \code{_study.yml} are not kept.
 #'
 #' @param identity A named list from the Study Tracker record. It must hold
-#'   \code{study_tracker_id}, equal to the manifest's, and \code{study}; it may
+#'   \code{study_tracker_id}, equal to the manifest's (so an exploration set
+#'   up with \code{derived_from} is promoted with \code{\link{study_promote}}
+#'   first), and \code{study}; it may
 #'   hold \code{umbrella}, \code{owner}, \code{irb_number}, \code{cvir_no} and
 #'   \code{study_creation_date}.
 #' @param start A directory inside the study; the study is found as

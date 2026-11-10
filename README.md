@@ -39,7 +39,7 @@ hvtiRutilities provides utility functions for working with clinical research dat
 - **`label_map()`**: Extract variable labels from labeled datasets
   - Creates a lookup table mapping variable names to their labels
   - Useful for working with SAS datasets that have variable labels
-  - Returns a data frame with `key` (variable name) and `label` columns
+  - Returns a data frame with `key`, `label`, `label_full`, `truncated` and `over_cap` columns
 
 - **`sample_data()`**: Generate sample datasets for testing
   - Creates datasets with various column types for testing package functions
@@ -94,7 +94,7 @@ dta_converted <- r_data_types(dta)
 
 # Examine converted types
 str(dta_converted)
-# boolean: logi (binary 1/2 → TRUE/FALSE)
+# boolean: Factor (a 1/2 code becomes a factor; only 0/1 becomes logical)
 # logical: Factor (character → factor)
 # char: Factor (character → factor)
 ```
@@ -134,6 +134,7 @@ var_label(dta$bp) <- "Systolic Blood Pressure (mmHg)"
 # Extract labels as a lookup table
 labels <- label_map(dta)
 print(labels)
+# (key and label shown; label_full, truncated and over_cap omitted)
 #   key                              label
 # 1 age        Patient Age (years)
 # 2 sex                    Patient Sex
@@ -167,7 +168,7 @@ lmap <- label_map(model_data)
 
 ## Key Features
 
-- **Preserves variable labels**: All functions maintain SAS/labelled variable attributes
+- **Preserves variable labels**: `r_data_types()` keeps SAS/labelled variable labels
 - **Handles NA variants**: Automatically converts "NA", "na", "Na", "nA" strings to actual NA values
 - **Type-safe**: Returns the same data structure class as input (data.frame, tibble, data.table, etc.)
 - **Flexible control**: Multiple parameters to customize type conversion behavior

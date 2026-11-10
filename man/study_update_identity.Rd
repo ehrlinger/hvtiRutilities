@@ -8,7 +8,9 @@ study_update_identity(identity, start = study_root())
 }
 \arguments{
 \item{identity}{A named list from the Study Tracker record. It must hold
-\code{study_tracker_id}, equal to the manifest's, and \code{study}; it may
+\code{study_tracker_id}, equal to the manifest's (so an exploration set
+up with \code{derived_from} is promoted with \code{\link{study_promote}}
+first), and \code{study}; it may
 hold \code{umbrella}, \code{owner}, \code{irb_number}, \code{cvir_no} and
 \code{study_creation_date}.}
 

@@ -191,17 +191,17 @@
 #' @description
 #' Commits an allow-listed snapshot of the study (code, identity and
 #' reproducibility files) to a private git repository in
-#' \code{.checkpoint/repo/}, tags it with the checkpoint kind and a sequence
-#' number, records it in the outbox \code{.checkpoint/log.yml}, and pushes it
+#' \code{.checkpoint/repo/}, tags it with the checkpoint kind and, for a
+#' numbered kind, a sequence number, records it in the outbox \code{.checkpoint/log.yml}, and pushes it
 #' when \code{_study.yml} names a remote. Known data formats, credentials and
 #' symbolic links are never committed, even through \code{include:} patterns,
 #' and neither is anything under \code{00_datasets/} or \code{90_estimates/}
 #' or an output file type. Files in
 #' \code{50_documents/} other than \code{.qmd} and \code{.bib} sources are not
 #' committed; \code{CHECKPOINT.yml} records their size and checksum.
-#' An exploration set up with \code{derived_from} is
-#' committed and tagged locally and pushed only after
-#' \code{\link{study_promote}}.
+#' On an exploration set up with \code{derived_from} that has not been
+#' promoted, it stops with an error and pushes nothing; run
+#' \code{\link{study_promote}} first.
 #'
 #' @details
 #' The kind comes from the StudyTracker checkpoint vocabulary, for example
@@ -212,7 +212,8 @@
 #' retries later.
 #'
 #' One session at a time: this function, \code{\link{study_checkpoint_push}},
-#' \code{\link{study_close}} and \code{study_reopen()} hold the lock
+#' \code{\link{study_close}}, \code{study_reopen()},
+#' \code{\link{study_promote}} and \code{\link{study_render_commit}} hold the lock
 #' \code{.checkpoint/lock} while they run. A call that finds it held by
 #' another session stops, naming the holder; retry once that session has
 #' finished. The holder refreshes the lock between phases (selection, the

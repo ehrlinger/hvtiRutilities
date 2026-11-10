@@ -133,7 +133,7 @@ reference:
   - parity_headline
 
 - title: Study Setup
-  desc: Initialize a study for reproducible analysis, and audit whether it is ready
+  desc: Initialize a registered study or an exploration of one, promote an exploration once the Tracker registers it, and audit whether a study is ready
   contents:
   - study_setup
   - study_update_identity

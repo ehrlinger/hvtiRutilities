@@ -48,7 +48,8 @@ cavv_area: "Common AVV Area"
 
 This design keeps study-specific label customizations in configuration
 rather than code. Each study gets its own \code{labels_overrides.yml}
-alongside its \code{config.yml}, and shared helper functions never contain
+in the directory the analysis runs from, usually beside \code{_study.yml},
+and shared helper functions never contain
 hard-coded replacements.
 }
 \examples{

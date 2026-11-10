@@ -24,7 +24,7 @@ The `hvtiRutilities` package provides utility functions for working with clinica
 
 ### Main Functions
 
-- **`read_clinical_data()`**: Read SAS, CSV, Excel, or RDS files as they are; pass `convert_types = TRUE` to also apply `r_data_types()`
+- **`read_clinical_data()`**: Read SAS, CSV, Excel, RDS or Parquet files as they are; pass `convert_types = TRUE` to also apply `r_data_types()`
 - **`r_data_types()`**: Automatically infer and convert data types based on content
 - **`label_map()`**: Extract variable labels from labeled datasets into a lookup table
 - **`get_label()`** / **`get_labels()`**: Safely look up one or many variable labels
@@ -85,7 +85,7 @@ str(dta_converted)
 ```
 
 After conversion:
-- `boolean`: converted to logical (TRUE/FALSE) because it has exactly 2 unique values
+- `boolean`: converted to a factor, because its two values are 1 and 2. Only a 0/1 column becomes logical
 - `logical`: converted to factor (categorical variable)
 - `char`: converted to factor (categorical variable)
 - Continuous variables (`float`, `f_real`) remain numeric
@@ -94,11 +94,14 @@ After conversion:
 
 The function applies transformations in this order:
 
-1. Character strings "NA", "na", "Na", "nA" → actual `NA` values
-2. Numeric/integer with exactly 2 unique values → `logical`
-3. Character columns → `factor`
-4. Numeric with 3 to `factor_size` unique values → `factor`
-5. Optionally: logical → `factor` (if `binary_factor = TRUE`)
+1. With `use_value_labels = TRUE`, a column carrying value labels → `factor`, with those labels as its levels
+2. Character strings "NA", "na", "Na", "nA" → actual `NA` values
+3. Numeric whose two values are 0 and 1 → `logical`; any other two-value code → `factor`
+4. Character columns → `factor`
+5. Numeric with 3 to `factor_size` unique values → `factor`
+6. Optionally: logical → `factor` (if `binary_factor = TRUE`)
+
+Date and time columns are never changed.
 
 ## Working with Real Data
 
@@ -138,7 +141,7 @@ class(mtcars_strict$cyl) # factor (3 unique < 5)
 
 # Check carb variable
 class(mtcars_clean$carb)  # factor (6 unique < 10)
-class(mtcars_strict$carb) # integer (6 unique NOT < 5)
+class(mtcars_strict$carb) # numeric (6 unique NOT < 5)
 ```
 
 ### Skipping Specific Variables
@@ -356,8 +359,8 @@ dict <- data_dictionary(dta)
 write.csv(dict, "data_dictionary.csv", row.names = FALSE)
 ```
 
-`read_clinical_data()` supports `.sas7bdat`, `.csv`, `.xlsx`, `.xls`, and
-`.rds` files. `convert_types = FALSE` is the default; `factor_size` and the
+`read_clinical_data()` supports `.sas7bdat`, `.csv`, `.xlsx`, `.xls`, `.rds`
+and `.parquet` files. `convert_types = FALSE` is the default; `factor_size` and the
 other `r_data_types()` arguments are silently ignored unless
 `convert_types = TRUE` is also passed.
 
@@ -414,7 +417,7 @@ table(clean_data$categorical_var)
 
 The `hvtiRutilities` package streamlines data preparation for clinical research:
 
-- **`read_clinical_data()`**: Import from SAS, CSV, Excel, or RDS as-is, with type conversion available via `convert_types = TRUE`
+- **`read_clinical_data()`**: Import from SAS, CSV, Excel, RDS or Parquet as-is, with type conversion available via `convert_types = TRUE`
 - **`r_data_types()`**: Automatic, intelligent type conversion
 - **`label_map()`**: Extract variable labels into a lookup table
 - **`get_label()`** / **`get_labels()`**: Safe label lookup (single or vectorized)
