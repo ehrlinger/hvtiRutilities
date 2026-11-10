@@ -1,2 +1,0 @@
-* `study_update_identity()` on an exploration set up with `derived_from` stops with a message naming `study_promote()`, instead of reporting a mismatch against an empty Study Tracker ID.
-* `study_checkpoint("study_promoted")` is refused except on a promoted study, where it recovers a promotion whose snapshot failed. It snapshots whatever trigger or numbering the live vocabulary gives the kind, as `study_promote()` does.
