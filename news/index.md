@@ -23,6 +23,38 @@
   study has a checkpoint repository, so the promoted `_study.yml`
   reaches the remote and a second copy of the study reads it as
   promoted. Git and the kind are checked before anything is written.
+- Documentation sweep: the README, vignettes and study-lifecycle help
+  now match the code.
+  [`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
+  turns a 1/2 code into a factor (only 0/1 becomes logical);
+  [`label_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)
+  returns five columns;
+  [`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
+  defaults to eight statistics;
+  [`generate_survival_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/generate_survival_data.md)
+  reseeds by default;
+  [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
+  counts SAS and Excel rows only under
+  `options(manifest.allow_heavy_rowcount = TRUE)`;
+  [`verify_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md)
+  is silent unless `verbose = TRUE`. The help for
+  [`study_checkpoint_push()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checkpoint_push.md),
+  [`study_close()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_close.md),
+  [`study_update_identity()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_update_identity.md)
+  and
+  [`study_root()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_root.md)
+  describes an exploration set up with `derived_from`.
+- [`study_update_identity()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_update_identity.md)
+  on an exploration set up with `derived_from` stops with a message
+  naming
+  [`study_promote()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_promote.md),
+  instead of reporting a mismatch against an empty Study Tracker ID.
+- `study_checkpoint("study_promoted")` is refused except on a promoted
+  study, where it recovers a promotion whose snapshot failed. It
+  snapshots whatever trigger or numbering the live vocabulary gives the
+  kind, as
+  [`study_promote()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_promote.md)
+  does.
 
 ## hvtiRutilities 1.5.21
 
