@@ -30,7 +30,9 @@ study_checkpoint(
 
 - kind:
 
-  Character(1). A checkpoint kind.
+  Character(1). A checkpoint kind. `study_promoted` is recorded by
+  [`study_promote`](https://ehrlinger.github.io/hvtiRutilities/reference/study_promote.md),
+  and by hand only on a promoted study whose promotion snapshot failed.
 
 - note:
 
