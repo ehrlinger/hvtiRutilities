@@ -260,3 +260,40 @@ test_that("a retired study_promoted kind stops promotion before any write", {
   expect_identical(yaml::read_yaml(log_path), log_before)
   expect_identical(readLines(file.path(root, "_study.yml")), yml_before)
 })
+
+test_that("a failed promotion snapshot is recovered by hand", {
+  skip_if_no_git()
+  local_git_env()
+  dir <- withr::local_tempdir()
+  root <- file.path(dir, "explore")
+  study_setup(root, "S", derived_from = 12L, renv = FALSE)
+  bare <- make_bare_remote(dir)
+  set_study_keys(root, checkpoint = list(remote = bare))
+  study_checkpoint("manuscript_submitted", root = root)
+  # A live row that would skip the snapshot must not apply to the recovery.
+  live <- list(list(kind = "study_promoted", trigger = "auto",
+                    numbered = TRUE))
+  yaml::write_yaml(live, file.path(root, ".checkpoint", "kinds.yml"))
+
+  local({
+    testthat::local_mocked_bindings(
+      .cp_record = function(...) stop("snapshot failed")
+    )
+    expect_error(suppressMessages(study_promote(345L, start = root)),
+                 "snapshot failed")
+  })
+  raw <- yaml::read_yaml(file.path(root, "_study.yml"))
+  expect_identical(.study_identity_state(raw), "promoted")
+  expect_error(study_promote(345L, start = root), "already has")
+
+  rec <- suppressMessages(study_checkpoint("study_promoted", root = root))
+  expect_identical(rec$tag, "study_promoted")
+  suppressMessages(study_checkpoint_push(root))
+  shown <- git_out(bare, c("show", "main:_study.yml"))
+  remote_yml <- yaml::yaml.load(paste(shown, collapse = "\n"))
+  expect_identical(remote_yml$study_tracker_id, 345L)
+  expect_true("study_promoted" %in% git_out(bare, c("tag", "-l")))
+
+  expect_error(study_checkpoint("study_promoted", root = root),
+               "already recorded")
+})
