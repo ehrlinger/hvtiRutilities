@@ -4,6 +4,9 @@
 * New `study_promote()` writes an exploration's Study Tracker ID once the Tracker has registered it, and keeps `derived_from` as lineage.
 * An exploration's checkpoints and closures are committed and tagged locally and held in the outbox with reason `provisional`. `study_checkpoint_push()` refuses an exploration until it is promoted. `study_status()` reports it as `EXPLORATORY`.
 * `study_promote()` records a `study_promoted` checkpoint, a new unnumbered kind, when the study has a checkpoint repository, so the promoted `_study.yml` reaches the remote and a second copy of the study reads it as promoted. Git and the kind are checked before anything is written.
+* Documentation sweep: the README, vignettes and study-lifecycle help now match the code. `r_data_types()` turns a 1/2 code into a factor (only 0/1 becomes logical); `label_map()` returns five columns; `proc_means()` defaults to eight statistics; `generate_survival_data()` reseeds by default; `update_manifest()` counts SAS and Excel rows only under `options(manifest.allow_heavy_rowcount = TRUE)`; `verify_manifest()` is silent unless `verbose = TRUE`. The help for `study_checkpoint_push()`, `study_close()`, `study_update_identity()` and `study_root()` describes an exploration set up with `derived_from`.
+* `study_update_identity()` on an exploration set up with `derived_from` stops with a message naming `study_promote()`, instead of reporting a mismatch against an empty Study Tracker ID.
+* `study_checkpoint("study_promoted")` is refused except on a promoted study, where it recovers a promotion whose snapshot failed. It snapshots whatever trigger or numbering the live vocabulary gives the kind, as `study_promote()` does.
 
 # hvtiRutilities 1.5.21
 
