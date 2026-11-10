@@ -199,9 +199,9 @@
 #' or an output file type. Files in
 #' \code{50_documents/} other than \code{.qmd} and \code{.bib} sources are not
 #' committed; \code{CHECKPOINT.yml} records their size and checksum.
-#' On an exploration set up with \code{derived_from} that has not been
-#' promoted, it stops with an error and pushes nothing; run
-#' \code{\link{study_promote}} first.
+#' An exploration set up with \code{derived_from} is
+#' committed and tagged locally and pushed only after
+#' \code{\link{study_promote}}.
 #'
 #' @details
 #' The kind comes from the StudyTracker checkpoint vocabulary, for example
@@ -354,9 +354,9 @@ print.study_checkpoint <- function(x, ...) {
 #' after a network outage, or once \code{study-setup --verify} has verified a
 #' manually entered identity. A promoted exploration's held checkpoints are
 #' delivered once \code{checkpoint: remote:} is set; promotion does not set it.
-#' An exploration set up with \code{derived_from} is
-#' committed and tagged locally and pushed only after
-#' \code{\link{study_promote}}.
+#' On an exploration set up with \code{derived_from} that has not been
+#' promoted, it stops with an error and pushes nothing; run
+#' \code{\link{study_promote}} first.
 #'
 #' @details
 #' An entry that a crash left half-written is settled first: completed when
