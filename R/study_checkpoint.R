@@ -225,7 +225,9 @@
 #' the outbox, so they leave the study folder. A message says so whenever
 #' either is given: they must not contain patient information.
 #'
-#' @param kind Character(1). A checkpoint kind.
+#' @param kind Character(1). A checkpoint kind. \code{study_promoted} is
+#'   recorded by \code{\link{study_promote}}, and by hand only on a promoted
+#'   study whose promotion snapshot failed.
 #' @param note Optional character(1), stored with the checkpoint.
 #' @param attributes Optional named list of kind-specific details, each a
 #'   single value, for example \code{list(journal = "JTCVS")}.
@@ -270,6 +272,19 @@ study_checkpoint <- function(kind, note = NULL, attributes = NULL,
   .cp_reconcile(root)
   study <- .cp_study(root, "study_checkpoint")
   row <- .cp_kind_check(.cp_kinds(root), kind, "study_checkpoint")
+  if (identical(kind, "study_promoted")) {
+    # Recorded by study_promote(); by hand only to recover a promotion whose
+    # snapshot failed, so only on a study that is already promoted. Snapshot
+    # it as study_promote() does, whatever the live vocabulary says.
+    raw <- .read_study_yml(file.path(root, "_study.yml"), "study_checkpoint")
+    if (!identical(.study_identity_state(raw), "promoted")) {
+      stop("study_checkpoint(): the study_promoted kind is recorded by ",
+           "study_promote(); by hand only on a promoted study whose ",
+           "promotion snapshot failed.", call. = FALSE)
+    }
+    row$trigger <- "manual"
+    row$numbered <- FALSE
+  }
   if (!is.null(note)) .cp_check_string(note, "study_checkpoint", "note")
   .cp_check_attributes(attributes, "study_checkpoint")
   .cp_sync(root, study)

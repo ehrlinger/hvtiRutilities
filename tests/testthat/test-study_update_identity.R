@@ -112,3 +112,16 @@ test_that("study_update_identity writes nothing when already verified", {
   expect_identical(changed, character(0))
   expect_identical(file.mtime(file.path(root, "_study.yml")), stamp)
 })
+
+test_that("study_update_identity on an exploration points to study_promote", {
+  root <- file.path(withr::local_tempdir(), "study")
+  study_setup(root, "S", derived_from = 12L, renv = FALSE)
+  before <- readLines(file.path(root, "_study.yml"))
+
+  expect_error(
+    study_update_identity(list(study_tracker_id = 12L, study = "S"),
+                          start = root),
+    "exploration.*study_promote\\(\\)"
+  )
+  expect_identical(readLines(file.path(root, "_study.yml")), before)
+})

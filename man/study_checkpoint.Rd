@@ -13,7 +13,9 @@ study_checkpoint(
 )
 }
 \arguments{
-\item{kind}{Character(1). A checkpoint kind.}
+\item{kind}{Character(1). A checkpoint kind. \code{study_promoted} is
+recorded by \code{\link{study_promote}}, and by hand only on a promoted
+study whose promotion snapshot failed.}
 
 \item{note}{Optional character(1), stored with the checkpoint.}
 

@@ -88,6 +88,11 @@ study_update_identity <- function(identity, start = study_root()) {
 
   cfg <- study_config(start, require_data = FALSE)
   raw <- .read_study_yml(cfg$file, "study_update_identity")
+  if (identical(.study_identity_state(raw), "provisional")) {
+    stop("study_update_identity(): ", cfg$file, " is an exploration (",
+         raw$provisional_id, ") with no Study Tracker ID to verify; ",
+         "register it with study_promote() first.", call. = FALSE)
+  }
   if (!.study_whole_id(raw$study_tracker_id) ||
         id != raw$study_tracker_id) {
     stop("study_update_identity(): the record's Study Tracker ID ",
