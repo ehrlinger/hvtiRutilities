@@ -1,5 +1,29 @@
 # Changelog
 
+## hvtiRutilities 1.5.22
+
+- [`study_setup()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md)
+  gains `derived_from`, for an exploration of a registered study that
+  has no Study Tracker record of its own. It writes `derived_from`, a
+  `provisional_id` and a `workspace_id` to `_study.yml`, and no
+  `study_tracker_id`. `study_tracker_id` now defaults to `NULL`, and
+  exactly one of the two is required.
+- New
+  [`study_promote()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_promote.md)
+  writes an exploration’s Study Tracker ID once the Tracker has
+  registered it, and keeps `derived_from` as lineage.
+- An exploration’s checkpoints and closures are committed and tagged
+  locally and held in the outbox with reason `provisional`.
+  [`study_checkpoint_push()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checkpoint_push.md)
+  refuses an exploration until it is promoted.
+  [`study_status()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md)
+  reports it as `EXPLORATORY`.
+- [`study_promote()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_promote.md)
+  records a `study_promoted` checkpoint, a new unnumbered kind, when the
+  study has a checkpoint repository, so the promoted `_study.yml`
+  reaches the remote and a second copy of the study reads it as
+  promoted. Git and the kind are checked before anything is written.
+
 ## hvtiRutilities 1.5.21
 
 - [`study_setup()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md)

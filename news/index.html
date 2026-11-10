@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.21</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.22</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -56,6 +56,15 @@
       <small>Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.5.22" id="hvtirutilities-1522">hvtiRutilities 1.5.22<a class="anchor" aria-label="anchor" href="#hvtirutilities-1522"></a></h2>
+<ul><li>
+<code><a href="../reference/study_setup.html">study_setup()</a></code> gains <code>derived_from</code>, for an exploration of a registered study that has no Study Tracker record of its own. It writes <code>derived_from</code>, a <code>provisional_id</code> and a <code>workspace_id</code> to <code>_study.yml</code>, and no <code>study_tracker_id</code>. <code>study_tracker_id</code> now defaults to <code>NULL</code>, and exactly one of the two is required.</li>
+<li>New <code><a href="../reference/study_promote.html">study_promote()</a></code> writes an exploration’s Study Tracker ID once the Tracker has registered it, and keeps <code>derived_from</code> as lineage.</li>
+<li>An exploration’s checkpoints and closures are committed and tagged locally and held in the outbox with reason <code>provisional</code>. <code><a href="../reference/study_checkpoint_push.html">study_checkpoint_push()</a></code> refuses an exploration until it is promoted. <code><a href="../reference/study_status.html">study_status()</a></code> reports it as <code>EXPLORATORY</code>.</li>
+<li>
+<code><a href="../reference/study_promote.html">study_promote()</a></code> records a <code>study_promoted</code> checkpoint, a new unnumbered kind, when the study has a checkpoint repository, so the promoted <code>_study.yml</code> reaches the remote and a second copy of the study reads it as promoted. Git and the kind are checked before anything is written.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.5.21" id="hvtirutilities-1521">hvtiRutilities 1.5.21<a class="anchor" aria-label="anchor" href="#hvtirutilities-1521"></a></h2>
 <ul><li>
