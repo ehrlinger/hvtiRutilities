@@ -505,8 +505,11 @@ write_renv_start <- function(root) {
   writeLines('source("renv/activate.R")', file.path(root, ".Rprofile"))
 }
 
+# A sound lock recorded under the running R, so the R major.minor guard
+# passes on every R the matrix runs (oldrel included).
 write_lock <- function(root) {
-  writeLines('{"R": {"Version": "4.6.0"}, "Packages": {}}', file.path(root, "renv.lock"))
+  lock <- sprintf('{"R": {"Version": "%s"}, "Packages": {}}', getRversion())
+  writeLines(lock, file.path(root, "renv.lock"))
 }
 
 snapshot_expr <- function(root) {
