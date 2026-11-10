@@ -52,10 +52,10 @@ rewrites it, so comments in `_study.yml` are not kept.
 ``` r
 root <- file.path(tempdir(), "add-abbrev-example")
 study_setup(root, "Abbreviation example", 1L, renv = FALSE)
-#> Study: /tmp/Rtmp0M5JIJ/add-abbrev-example
+#> Study: /tmp/RtmpghBC75/add-abbrev-example
 #> 
 #> [x] _study.yml — study: Abbreviation example
-#> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Abbreviation example", study_tracker_id = 1L, root = "/tmp/Rtmp0M5JIJ/add-abbrev-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first
+#> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Abbreviation example", study_tracker_id = 1L, root = "/tmp/RtmpghBC75/add-abbrev-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first
 #> [ ] manifest.yaml — no manifest.yaml; register_data() creates it
 #> [ ] dataset — no default dataset registered; run register_data()
 #> [ ] provenance — no .qmd/.Rmd sources found; 0 sidecars
