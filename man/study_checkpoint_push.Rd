@@ -23,9 +23,9 @@ Retries delivery of every checkpoint, closure and reopening in
 after a network outage, or once \code{study-setup --verify} has verified a
 manually entered identity. A promoted exploration's held checkpoints are
 delivered once \code{checkpoint: remote:} is set; promotion does not set it.
-An exploration set up with \code{derived_from} is
-committed and tagged locally and pushed only after
-\code{\link{study_promote}}.
+On an exploration set up with \code{derived_from} that has not been
+promoted, it stops with an error and pushes nothing; run
+\code{\link{study_promote}} first.
 }
 \details{
 An entry that a crash left half-written is settled first: completed when

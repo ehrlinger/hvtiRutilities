@@ -65,9 +65,11 @@ lmap <- label_map(dta)
 head(lmap, 10)
 ```
 
-The result is a two-column data frame: `key` (variable name) and `label`
-(descriptive text). Every column in the data gets an entry. Unlabeled
-columns fall back to the variable name itself.
+The result is a data frame with `key` (variable name), `label` (the label cut
+to 40 characters for display), `label_full` (the label as the source carried
+it), and the logical columns `truncated` and `over_cap`. Every column in the
+data gets an entry. Unlabeled columns fall back to the variable name, which is
+never cut.
 
 #### Detecting Missing Labels
 
@@ -188,8 +190,9 @@ lmap[lmap$key %in% c("lvefvs_b", "hgb_bs", "gfr_bs", "nyha_class"), ]
 unlink(tmp_overrides)
 ```
 
-In a real project, `labels_overrides.yml` lives alongside `config.yml` in
-the project root and is committed to version control. Each study gets its
+In a real project, `labels_overrides.yml` lives in the directory the analysis
+runs from, usually the study root beside `_study.yml`, and is committed to
+version control. Each study gets its
 own file; shared analysis code never contains hard-coded label replacements.
 
 #### Example `labels_overrides.yml`
@@ -360,7 +363,7 @@ dta <- add_labels(dta, c(risk_score = "Composite Risk Score"))
 title <- lmap$label[match("ages", lmap$key)]  # NA, no warning
 
 # GOOD: get_label() catches the typo
-title <- get_label(lmap, "ages")  # Error: 'ages' not found in label map
+title <- get_label(lmap, "ages")  # Error: Variable 'ages' not found in label map.
 ```
 
 ### 4. Labeling the map instead of the data
@@ -386,7 +389,7 @@ lmap <- label_map(dta)  # always in sync
 | `get_label(lmap, var)` | Look up one label with error checking |
 | `get_labels(lmap, vars)` | Look up multiple labels at once (vectorized) |
 | `add_labels(data, labels)` | Label a data frame or update a label map |
-| `apply_label_overrides(data, file)` | Apply study-specific overrides from YAML (works on label maps or data frames) |
+| `apply_label_overrides(data, overrides_file)` | Apply study-specific overrides from YAML (works on label maps or data frames) |
 | `data_dictionary(data)` | Build a type-annotated data dictionary |
 
 ## Session Information

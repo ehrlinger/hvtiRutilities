@@ -11,7 +11,8 @@
 #' @description
 #' Returns the absolute path of the directory holding \code{_study.yml}, found
 #' by walking up from \code{start}. Errors if there is none, naming the
-#' directories walked.
+#' directories walked, or when \code{_study.yml} is invalid, as
+#' \code{\link{study_config}} reports it.
 #'
 #' @param start Character. Directory to start the upward walk from. Defaults
 #'   to \code{getwd()}.

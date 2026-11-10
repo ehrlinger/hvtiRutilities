@@ -753,7 +753,8 @@ add_labels <- function(label_map_df, new_labels) {
 #'
 #' This design keeps study-specific label customizations in configuration
 #' rather than code. Each study gets its own \code{labels_overrides.yml}
-#' alongside its \code{config.yml}, and shared helper functions never contain
+#' in the directory the analysis runs from, usually beside \code{_study.yml},
+#' and shared helper functions never contain
 #' hard-coded replacements.
 #'
 #' @seealso \code{\link{add_labels}} for programmatic label updates,

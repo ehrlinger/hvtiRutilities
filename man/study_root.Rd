@@ -16,7 +16,8 @@ Character(1). The absolute path of the study root.
 \description{
 Returns the absolute path of the directory holding \code{_study.yml}, found
 by walking up from \code{start}. Errors if there is none, naming the
-directories walked.
+directories walked, or when \code{_study.yml} is invalid, as
+\code{\link{study_config}} reports it.
 }
 \examples{
 root <- file.path(tempdir(), "study-root-example")
