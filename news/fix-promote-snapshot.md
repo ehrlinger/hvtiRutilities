@@ -1,0 +1,1 @@
+* `study_promote()` records a `study_promoted` checkpoint, a new unnumbered kind, when the study has a checkpoint repository, so the promoted `_study.yml` reaches the remote and a second copy of the study reads it as promoted. Git and the kind are checked before anything is written.

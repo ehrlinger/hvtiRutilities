@@ -282,7 +282,23 @@ study_checkpoint <- function(kind, note = NULL, attributes = NULL,
             "checkpoint anyway", call. = FALSE)
   }
   .cp_free_text_notice(note, attributes)
+  final <- .cp_record(root, study, row, kind, note, attributes, occurred_at,
+                      held, "study_checkpoint")
+  # The automatic path returns early in .cp_record(), without the message.
+  if (identical(kind, "manuscript_published") &&
+        identical(row$trigger, "manual")) {
+    message("The study can now be closed as published: ",
+            "study_close(\"published\", publication = list(...))")
+  }
+  invisible(final)
+}
 
+# Log, snapshot and deliver one checkpoint of `kind` (its vocabulary row is
+# `row`) under the lock `held`, which the caller has taken, and after the
+# caller has checked main and reconciled. Returns the study_checkpoint result.
+# study_checkpoint() and study_promote() share it.
+.cp_record <- function(root, study, row, kind, note, attributes, occurred_at,
+                       held, caller) {
   entry <- list(
     type = "checkpoint", checkpoint_id = uuid::UUIDgenerate(),
     st_id = .cp_or(study$st_id, study$provisional_id),
@@ -298,26 +314,22 @@ study_checkpoint <- function(kind, note = NULL, attributes = NULL,
     # Spec 6.1: every call retries pending deliveries, snapshot or not.
     .cp_lock_touch(held)
     .cp_deliver(root, study)
-    return(invisible(.cp_result(entry, NULL)))
+    return(.cp_result(entry, NULL))
   }
 
   tag_fn <- function(repo) {
     if (row$numbered) return(.cp_next_tag(repo, kind))
     if (length(.cp_tags(repo, paste0("^", kind, "$")))) {
-      stop("study_checkpoint(): '", kind, "' is already recorded for this ",
+      stop(caller, "(): '", kind, "' is already recorded for this ",
            "study", call. = FALSE)
     }
     kind
   }
-  snap <- .cp_snapshot(root, study, tag_fn, entry, "study_checkpoint", held)
+  snap <- .cp_snapshot(root, study, tag_fn, entry, caller, held)
   .cp_lock_touch(held)
   .cp_deliver(root, study)
   final <- .cp_or(.cp_log_find(root, entry$checkpoint_id), snap$entry)
-  if (identical(kind, "manuscript_published")) {
-    message("The study can now be closed as published: ",
-            "study_close(\"published\", publication = list(...))")
-  }
-  invisible(.cp_result(final, snap))
+  .cp_result(final, snap)
 }
 
 #' @export
