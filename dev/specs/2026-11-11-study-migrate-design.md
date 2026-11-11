@@ -69,6 +69,13 @@ Each leaves the folder byte-identical.
    unknown field.
 6. The checkpoint repository is mid-write or not on `main` (the existing
    guards).
+7. `.checkpoint/exploration/` exists with no migration marker (see *Resuming*
+   below): an earlier migration finished, or someone made it by hand.
+8. The exploration's checkpoint remote (`checkpoint: remote:` in
+   `_study.yml`) already has a `main`. Explorations never push, so a remote
+   with history belongs to something else; migrating would fetch it into the
+   new repository (`.cp_repo_init()` fetches an existing remote's `main` and
+   tags). Probed before any write.
 
 Path comparison is on normalised absolute paths. The Tracker stores LRI paths
 rooted at `/studies`; a study opened through a desktop mount
@@ -77,32 +84,67 @@ session does not read its own folder as "a different folder".
 
 ## What it writes, in order
 
-1. **Set the exploration's record aside.** Rename `.checkpoint/` to
-   `.checkpoint-exploration/`. It is kept locally, never pushed and never
-   delivered; the outbox entries go with it, so no checkpoint from the
-   exploration's era ever reaches the Tracker or the study's remote. A
-   `.checkpoint-exploration/` that already exists is refused before anything
-   is written.
+Revised 2026-11-11 after Codex review of #290: the first draft renamed
+`.checkpoint/` to `.checkpoint-exploration/`, which (a) left the archive
+inside snapshot scope, because `.cp_deny_rule()` excludes only a top-level
+`.checkpoint` directory, and (b) moved the lock, `.checkpoint/lock`, out from
+under its holder, so a second process could take a fresh lock mid-migration.
+
+**The whole migration runs under the existing checkpoint lock**,
+`.checkpoint/lock`, which never moves. The exploration's record is set aside
+*inside* `.checkpoint/`, so the existing tooling rule keeps it out of every
+snapshot, whatever `include` patterns say. The active code reads only fixed
+paths (`.checkpoint/repo`, `log.yml`, `kinds.yml`, `lock`), so nothing reads
+`.checkpoint/exploration/`.
+
+0. **Take the lock** and write the marker `.checkpoint/migrating.yml`
+   (`provisional_id`, the new `study_tracker_id`, the target identity). From
+   here on, every other checkpoint operation (`study_checkpoint()`,
+   `study_checkpoint_push()`, the automatic triggers) refuses while the marker
+   exists and says to rerun `study_migrate()`.
+1. **Set the exploration's record aside.** Move `.checkpoint/repo` and
+   `.checkpoint/log.yml` (the outbox) into `.checkpoint/exploration/`. Kept
+   locally, never pushed, never delivered: no checkpoint from the
+   exploration's era reaches the Tracker or a remote. `kinds.yml` stays.
 2. **Rewrite `_study.yml`**, whole and atomically, as `register_data()` does:
    - set `study_tracker_id` and the identity keys from `identity`;
    - add `migrated_from: <provisional_id>`;
    - drop `provisional_id`;
+   - drop `checkpoint: remote:` (the exploration's remote is not the
+     topic's; the topic's repository is assigned by `study-setup` after
+     migration);
    - keep `derived_from` and `workspace_id`;
    - set `identity_source: tracker` and `identity_verified: true`, because the
      number came from a Tracker read.
-3. **Start a fresh checkpoint repository** and record a `workspace_created`
-   checkpoint with `attributes: {migrated_from, derived_from}`. Its remote,
-   when `_study.yml` names one, sees only post-migration history.
+3. **Start a fresh checkpoint repository** (no remote, so nothing is fetched)
+   and record `workspace_created` with
+   `attributes: {migrated_from, derived_from}`.
+4. **Remove the marker** and release the lock.
 
 `.study_identity_state()` gains a `migrated` state (a `migrated_from` key and
 a `study_tracker_id`), which behaves as `registered` everywhere except that
 `study_migrate()` refuses it.
 
-**A failure in step 3** leaves steps 1 and 2 in place, and a rerun is refused
-because the study is no longer an exploration. The recovery is
-`study_checkpoint("workspace_created")` by hand. The error says so.
-(Unverified at design time: confirm that `study_checkpoint()` creates the
-repository when none exists, or have the recovery say how.)
+### Resuming
+
+Any interruption (an error, a killed session, a failed rename or manifest
+write) leaves the marker. **The recovery is always to rerun `study_migrate()`
+with the same identity**: it takes the lock, sees the marker and resumes at
+the first step not yet done. Each step is detected from the folder, not from
+a step counter:
+
+| Step | Done when |
+|---|---|
+| 1 | `.checkpoint/exploration/` holds the repository and outbox that existed, and `.checkpoint/repo` and `log.yml` are absent (a partial move finishes the rest) |
+| 2 | `_study.yml` carries the marker's `study_tracker_id` and `migrated_from` |
+| 3 | the new repository has a `workspace_created` tag |
+
+A rerun with a **different** identity while the marker exists is refused,
+naming the one in the marker. Because step 3 is only ever done by
+`study_migrate()`, the lineage attributes are recorded exactly once; the
+earlier `study_checkpoint("workspace_created")` recovery, which passed no
+attributes, is dropped. Neither outbox is lost or delivered on any path: the
+old one only ever moves into `exploration/`, and the new one starts empty.
 
 ## What goes
 
@@ -123,40 +165,49 @@ made when this is built.
 
 ## For the StudyTracker maintainers (Tore Klock, Patrick Vargo)
 
-Additions to the Workspace API spec (`Projects/StudyTracker Workspace API -
-Spec.md` in the vault). **No new checkpoint kind is needed.**
+Their first look is the MVP note, `Projects/StudyTracker Workspace API - MVP
+Spec.md` in the vault, which already carries what this needs: an ST is a
+**Topic**, its folder record is a **TopicFolder**, and the `workspace_created`
+checkpoint carries `attributes.migrated_from` (the exploration's provisional
+ID) and `attributes.derived_from` (the parent ST). **No new checkpoint kind or
+endpoint is needed.**
 
-1. **`workspace_created` carries `attributes.migrated_from`** (the
-   exploration's provisional ID) and `attributes.derived_from` (the parent ST)
-   when the study came from an exploration. Stored uninterpreted, as §3.3
-   already says.
-2. **An optional `derived_from` StudyLink kind** (§3.5), from the new study to
-   its parent, posted at migration. Alternatively `continues` covers it; the
-   maintainers choose.
-3. **The workspace is registered at migration**, with the new `st_id`, from
-   the exploration's folder. An exploration never calls `POST /workspaces`,
-   so §3.1's `invalid_workspace` guard needs no exception.
-4. **A read of the study's recorded folder.** `GET /studies/{stId}/workspaces`
-   (§7) already returns it; `study-setup` uses it to fill `identity$path`.
+- The folder is registered at migration (`POST /topics/{stId}/folder`), from
+  the exploration's folder. An exploration never registers one.
+- `GET /topics/{stId}/folder` is the read `study-setup` uses to fill
+  `identity$path` (`404 folder_not_found` means none).
+- A `derived_from` link between topics is deferred with the other links.
 
-Carried over, still open from 2026-09-25: an `adhoc` kind; one rename settling
-the `_study.yml` keys (`st_id` vs `study_tracker_id`, `workspace_id`,
-`identity_source`, `identity_verified`); an optional `git_commit` on Closure;
-open question 2 (the `Tasks.status` values).
+Still open: one rename settling the `_study.yml` keys (`study_tracker_id`,
+`workspace_id` against the API's `folder_id`, `identity_source`,
+`identity_verified`), and whether `workspace_created` is renamed with it.
 
 ## Tests
 
-All on temp studies; no network.
+All on temp studies; no network except a local bare repository standing in
+for a remote.
 
-- Each refusal (1 to 6, plus an existing `.checkpoint-exploration/`) leaves
-  every file byte-identical.
-- Happy path: `.checkpoint-exploration/` holds the old repository and outbox;
-  the new repository holds exactly one entry, `workspace_created`, with both
-  attributes; no outbox entry anywhere carries the provisional ID;
-  `_study.yml` has the expected keys and no `provisional_id`.
+- Each refusal (1 to 8) leaves every file byte-identical.
+- Happy path: `.checkpoint/exploration/` holds the old repository and
+  outbox, and the **preserved** old outbox still carries the provisional ID,
+  as it should; the **new** outbox carries none. The new repository holds
+  exactly one entry, `workspace_created`, with both attributes; `_study.yml`
+  has the expected keys, no `provisional_id` and no `checkpoint: remote:`.
+- **Snapshot scope:** plant `.checkpoint/exploration/repo/30_analyses/legacy.R`
+  and `.checkpoint/exploration/log.yml`; the first post-migration checkpoint's
+  git tree contains neither, with the default selector and with
+  `include = "*.yml"`, and a push to a bare remote carries neither.
+- **The lock holds throughout:** a competing `study_checkpoint()` started at
+  the step 1 and step 2 boundaries (mocked pauses) is refused, and the
+  migration's own lock is never reported lost.
+- **Resume from every interruption:** fail after step 0, during and after step
+  1 (a partial move), after step 2, and during step 3; each rerun with the
+  same identity completes, records `workspace_created` once with both
+  attributes, and delivers nothing from the old outbox. A rerun with a
+  different identity is refused.
+- Refusal 8: a remote with a `main` is refused before any write; an empty
+  remote is dropped from `_study.yml` and nothing is fetched.
 - An exploration with no checkpoint repository yet migrates and gets one.
-- Step 3 fails (mock `.cp_record`): `_study.yml` is migrated, a rerun is
-  refused, and `study_checkpoint("workspace_created")` recovers.
 - A `/Volumes/qhsstudies/...` start compared with a `/studies/...`
   `identity$path` for the same folder reads as "this folder".
 
