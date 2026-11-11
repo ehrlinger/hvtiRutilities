@@ -165,8 +165,8 @@ made when this is built.
 
 ## For the StudyTracker maintainers (Tore Klock, Patrick Vargo)
 
-Their first look is the MVP note, `Projects/StudyTracker Workspace API - MVP
-Spec.md` in the vault, which already carries what this needs: an ST is a
+Their first look is the MVP note, `Projects/StudyTracker Topic API.md` in the
+vault, which already carries what this needs: an ST is a
 **Topic**, its folder record is a **TopicFolder**, and the `workspace_created`
 checkpoint carries `attributes.migrated_from` (the exploration's provisional
 ID) and `attributes.derived_from` (the parent ST). **No new checkpoint kind or
@@ -178,9 +178,12 @@ endpoint is needed.**
   `identity$path` (`404 folder_not_found` means none).
 - A `derived_from` link between topics is deferred with the other links.
 
+The API keys the folder record by the ST number alone; it has no folder ID
+and records no host. The `workspace_id` that `_study.yml` carries stays local.
+
 Still open: one rename settling the `_study.yml` keys (`study_tracker_id`,
-`workspace_id` against the API's `folder_id`, `identity_source`,
-`identity_verified`), and whether `workspace_created` is renamed with it.
+`workspace_id`, `identity_source`, `identity_verified`), and whether
+`workspace_created` is renamed with it.
 
 ## Tests
 
