@@ -112,7 +112,7 @@ paths (`.checkpoint/repo`, `log.yml`, `kinds.yml`, `lock`), so nothing reads
    - drop `provisional_id`;
    - drop `checkpoint: remote:` (the exploration's remote is not the
      topic's; the topic's repository is assigned by `study-setup` after
-     migration);
+     migration; confirmed by John, 2026-11-11);
    - keep `derived_from` and `workspace_id`;
    - set `identity_source: tracker` and `identity_verified: true`, because the
      number came from a Tracker read.
