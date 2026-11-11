@@ -179,19 +179,19 @@ utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
                  file.path(root, "00_datasets", "built.csv"),
                  row.names = FALSE)
 register_data(root, file = "built.csv", key = "ccfid")
-#> Study: /tmp/RtmpghBC75/register-data-example
+#> Study: /tmp/RtmpPjfiBm/register-data-example
 #> 
 #> [x] _study.yml — study: Example
-#> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Example", study_tracker_id = 1L, root = "/tmp/RtmpghBC75/register-data-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first
+#> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Example", study_tracker_id = 1L, root = "/tmp/RtmpPjfiBm/register-data-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first
 #> [x] manifest.yaml — 1 dataset entry verified by checksum
-#> [x] dataset — built.csv, registered as built_20261110.parquet
+#> [x] dataset — built.csv, registered as built_20261111.parquet
 #> [ ] provenance — no .qmd/.Rmd sources found; 0 sidecars
 #> 
 #> 0 .R  |  0 .qmd/.Rmd  |  0 .sas  |  0 provenance sidecars
 # The CSV is kept; the registered version is a dated Parquet file.
 list.files(file.path(root, "00_datasets"))
-#> [1] "built.csv"                 "built_20261110.parquet"   
-#> [3] "built_20261110.schema.csv"
+#> [1] "built.csv"                 "built_20261111.parquet"   
+#> [3] "built_20261111.schema.csv"
 unlink(root, recursive = TRUE)
 
 # An additional dataset is registered with role = "named", under a name of
