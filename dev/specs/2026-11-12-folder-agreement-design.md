@@ -13,7 +13,10 @@ the cache is now last-known only and each delivery channel revalidates
 before it writes; a relocation releases nothing until the Tracker accepts it;
 relocations are a barrier rather than relying on log order; and a relocation
 has durable states, so a conflict or an interruption settles instead of
-blocking the queue.
+blocking the queue. **Revised again** after the re-review at `0d1de3e`: the
+Tracker read-then-write window is stated (a read before every post, and a
+folder precondition raised as an open API question), and the remote's
+`FOLDER.yml` moves by one defined compare-and-set transition.
 
 ## The problem
 
@@ -85,10 +88,11 @@ to release an external write, so each delivery channel revalidates first.
 Both channels refuse to deliver on the cache alone; each checks the authority
 it is about to write to, at the moment it writes.
 
-- **The Tracker channel (qhsprograms).** Before it posts any entry, the flush
-  reads `GET /topics/{stId}/folder` and rewrites `tracker_path` from the
-  answer, then applies the comparison. This is one cheap read per flush, not
-  per entry.
+- **The Tracker channel (qhsprograms).** Before **each** post, the flush
+  reads `GET /topics/{stId}/folder`, rewrites `tracker_path` from the answer,
+  and applies the comparison. A read per entry rather than per flush keeps
+  the window below to one request, not a whole batch; flushes are a handful
+  of entries, so the cost is small.
   - Offline, or the sign-in has expired: nothing is posted, as today. The
     entries wait in the outbox; there is nothing to revalidate against and
     nothing to send.
@@ -106,25 +110,37 @@ it is about to write to, at the moment it writes.
   already fetches the remote before pushing (`.cp_push()`); after that fetch
   it reads the remote's `FOLDER.yml`. If it names a folder other than this
   one, delivery is held with reason `folder mismatch`, whatever the cache
-  says. Absent (before the API, or a remote that predates this design) means
-  `unknown`, not a hold. The first delivery after `tracker_path` agrees
-  writes `FOLDER.yml` if it is absent, and an accepted Relocation rewrites it
-  (below).
+  says, **except for the one authorised transition in "Moving the Git
+  record"** below. Absent (before the API, or a remote that predates this
+  design) means `unknown`, not a hold.
 
 So in the reviewer's case (folder A copied to B, B confirmed as the topic's
 folder), A's cache still says A, but A's next flush reads B from the Tracker
 and A's next push reads B from the remote's `FOLDER.yml`, and both hold.
 
 **The guarantee, narrowed.** A stray copy cannot deliver to a channel that
-already records the move. One window remains: after the Tracker accepts B's
-Relocation and before B's next push writes `FOLDER.yml`, a push from A finds
-the remote still naming A and goes through. B delivers `FOLDER.yml` in the
-same delivery that settles the Relocation, so the window is the time B is
-offline after confirming, and the stray commits it admits are A's own
-snapshots, visible in the remote's history and tagged as A's. The Tracker
-channel has no such window, because it reads the Tracker itself. This design
-does not try to close the Git window: doing so would need the Git remote to
-ask the Tracker, which it cannot.
+already recorded the move before the copy checked it. Two windows remain,
+one per channel, and this design states them rather than closing them:
+
+- **Tracker: read, then write.** The folder read and the post are two
+  requests, and `POST /topics/{stId}/checkpoints` (and the closure and
+  reopening posts) take no folder precondition. If B's Relocation is
+  accepted between A's read and A's post, the Tracker records A's event
+  after the move. The window is one request's round trip, because the read
+  is repeated before every post. The consequence: one stray event on the
+  topic, with document paths relative to a folder that is no longer the
+  record, and a `git_commit` that is A's. The next read before A's next post
+  sees B and holds the rest. Closing this window needs the server to check a
+  folder precondition atomically with each write (for example an
+  `expected_folder` field answered by `409 folder_moved`). That is a change
+  to the Topic API and is left as an open question for the Tracker
+  maintainers, not assumed here.
+- **Git: acceptance, then push.** After the Tracker accepts B's Relocation
+  and before B's push moves `FOLDER.yml`, a push from A finds the remote
+  still naming A and goes through. The window is the time B is offline after
+  confirming. The stray commits it admits are A's own snapshots, visible in
+  the remote's history and tagged as A's. Closing it would need the Git
+  remote to ask the Tracker, which it cannot.
 
 ## Where it shows
 
@@ -187,7 +203,9 @@ study_relocate(reason = NULL, start = study_root())
 4. **Queues a Relocation** in the outbox: `relocation_id` (a new UUID),
    `from_path` = the cached `tracker_path`, `to_path` = this folder
    (normalised), `reason`, `occurred_at`, with
-   `delivery: { st: pending, git: none }`. When a `conflicted` Relocation to
+   `delivery: { st: pending, git: pending }`. Its `git` field tracks only
+   whether it has moved the remote's `FOLDER.yml` (see "Moving the Git
+   record"); a Relocation is never a snapshot. When a `conflicted` Relocation to
    this folder exists, this step also marks it `superseded`, with
    `superseded_by` naming the new one (both in one atomic log rewrite).
 
@@ -242,10 +260,61 @@ in this order:
 1. sets the Relocation's `delivery.st` to `delivered`;
 2. rewrites `tracker_path` to `to_path` (atomic rewrite of `_study.yml`).
 
-The next `.cp_deliver()` sees `agrees`, commits `FOLDER.yml`
-`{ path: to_path, relocation_id }` to the checkpoint repository and pushes
-it ahead of the held snapshots in the same push. Then the held entries go to
-the Tracker in log order.
+Then the flush runs Git delivery, which moves the remote's `FOLDER.yml` by
+the transition below, ahead of the held snapshots in the same push. Then the
+held entries go to the Tracker in log order.
+
+### Moving the Git record
+
+The remote's `FOLDER.yml` changes in exactly two ways, and only inside a Git
+delivery that the qhsprograms flush starts immediately after a folder read.
+The flush passes that read's answer to `.cp_deliver()` (an internal argument,
+`tracker_confirmed`); a delivery started any other way, such as
+`study_checkpoint()` or `study_checkpoint_push()` on its own, never moves the
+record and holds with `folder mismatch` while the remote names another
+folder.
+
+**Registration.** The remote has no `FOLDER.yml` and `tracker_confirmed` is
+this folder: write `{ path: this folder, relocation_id: null }`.
+
+**Relocation.** Every condition holds, checked after the fetch:
+
+1. the log has a Relocation `R` with `to_path` equal to this folder, whose
+   `delivery.st` is `delivered`, or `superseded` with
+   `superseded_reason: already recorded`, and whose `delivery.git` is
+   `pending`;
+2. `tracker_confirmed` equals `R.to_path`;
+3. the remote's `FOLDER.yml` names `R.from_path` (the record `R` moved away
+   from).
+
+Then delivery commits `FOLDER.yml` `{ path: R.to_path, relocation_id:
+R.relocation_id }` on top of the fetched `main`, puts the held snapshots
+after it, and pushes `main` as it does today, without force. Git refuses a
+push that is not a fast-forward, so if the remote moved between the fetch
+and the push, the push is rejected, nothing is written, and the next
+delivery fetches and checks again. That rejection is the compare-and-set: a
+stale copy cannot overwrite a newer record, because a newer record means a
+different `FOLDER.yml` than the one its condition 3 matched.
+
+`R.delivery.git` becomes `delivered` once the push succeeds, so each
+Relocation moves the Git record at most once.
+
+What the fetched remote can say, and what happens:
+
+| Remote `FOLDER.yml` | Tracker read | Result |
+|---|---|---|
+| this folder | this folder | nothing to write; `R.delivery.git` is `delivered`; held snapshots go out |
+| `R.from_path` | `R.to_path` | write it, as above |
+| `R.from_path` | another folder | hold; `R.delivery.git` becomes `superseded` (the Tracker has moved on, so `R` may never move the Git record) |
+| a third folder | `R.to_path` | hold, and report both: the remote and the Tracker disagree, so the remote was moved by a copy inside the Git window. Repair is by hand; this design does not guess which to trust |
+| a third folder | that folder | hold; this folder is now a copy; `R.delivery.git` becomes `superseded` |
+
+**The already-recorded branch.** When a `409` finds the Tracker already
+recording this folder, `R` is `superseded` on the Tracker side but the
+Tracker *did* confirm the move to `R.to_path`, so condition 1 accepts it and
+`R` moves the Git record exactly as a delivered one would. If some other
+Relocation in another folder's log already moved the remote to this folder,
+the first row applies and nothing is written.
 
 **An ambiguous network outcome** (timeout, dropped connection, no response
 read) leaves the entry `pending`. The next flush posts the same
@@ -288,7 +357,9 @@ recovery:
 | after step 4's write | a `pending` Relocation | rerun returns it (step 3); the next flush posts it |
 | after the POST is sent, before its answer is recorded | `pending` | replay of the same ID; `200` returns the stored record |
 | after `delivered`, before `tracker_path` is rewritten | `delivered`, stale cache | the next flush's revalidating read rewrites `tracker_path` from the Tracker; until then the comparison says `disagrees` and nothing goes out, which errs safe |
-| after `tracker_path`, before `FOLDER.yml` is pushed | cache agrees, remote does not | the next `.cp_deliver()` writes and pushes `FOLDER.yml` (the absent-or-stale case), ahead of the held snapshots |
+| after `tracker_path`, before the `FOLDER.yml` commit | cache agrees, remote does not | Git delivery holds (the remote names `R.from_path`); the next flush reads the Tracker and makes the transition |
+| after the local `FOLDER.yml` commit, before the push | an unpushed commit | the commit is dropped; the next transition starts again from a fresh fetch, so it never replays onto a remote that has moved |
+| push sent, answer lost | remote may or may not hold it | the next fetch shows which: this folder (first row, mark `delivered`) or `R.from_path` (write again) |
 | after `409`, before the refresh | `conflicted`, stale cache | the next flush or `study-setup --verify` refreshes and applies the conflict rules above |
 
 The lock in step 2 covers the hvtiRutilities writes; the qhsprograms flush
@@ -305,9 +376,12 @@ as a working copy can be added then.
 ## What the qhsprograms layer does
 
 - Write `tracker_path` from `GET /topics/{stId}/folder` in `study-setup`
-  (registration), `study-setup --verify` (refresh) and at the start of every
-  outbox flush; leave it empty on `404 folder_not_found` when it was empty,
-  and hold everything without clearing it when it was not.
+  (registration), `study-setup --verify` (refresh) and before every post in
+  an outbox flush; leave it empty on `404 folder_not_found` when it was
+  empty, and hold everything without clearing it when it was not.
+- Start Git delivery with `tracker_confirmed` set to the folder read's
+  answer, so the remote's `FOLDER.yml` can move only right after a Tracker
+  read.
 - Post every `pending` Relocation to `POST /topics/{stId}/folder/relocations`
   before any other entry, and apply the acceptance, ambiguous-outcome and
   `409` rules above.
@@ -354,9 +428,19 @@ a local bare repository).
   second post; `409` with a third folder stays `conflicted`, and a second
   `study_relocate()` queues a new Relocation from the refreshed path, marks
   the first `superseded_by` it, and is accepted.
+- **Read-then-write race** (re-review finding 1): the mock accepts B's
+  Relocation between A's folder read and A's first post; the test asserts
+  the documented window (exactly that one post lands) and that A's next read
+  holds every later entry.
+- **Moving the Git record** (re-review finding 4), on a local bare remote:
+  one test per row of the remote-state table, recording the actual fetch,
+  compare and push sequence; a remote advanced between fetch and push
+  (planted by a second clone) rejects the push and leaves `FOLDER.yml`
+  unchanged; the already-recorded branch moves the record with a superseded
+  `R`; a delivery without `tracker_confirmed` never moves it.
 - **Interruptions**: one test per row of the interruption table, stopping
-  after each write and rerunning, asserting one Relocation per move and the
-  final log.
+  after each write and rerunning, asserting one Relocation per move, one
+  `FOLDER.yml` change per move and the final log.
 - **Refusals** (exploration, empty `tracker_path`, already agrees) leave every
   file byte-identical; a second `study_relocate()` with one pending returns
   it and leaves the log byte-identical.
@@ -365,7 +449,8 @@ a local bare repository).
 
 - Detecting a copy automatically (a second folder with the same ST): the
   Tracker records one folder, so a copy is simply a folder that disagrees.
-- Closing the Git window between a Relocation's acceptance and the next
-  push of `FOLDER.yml` (see "The guarantee, narrowed").
+- Closing either window in "The guarantee, narrowed". The Tracker one needs
+  a folder precondition on the write endpoints, an open question for the
+  Tracker maintainers; the Git one needs the remote to ask the Tracker.
 - Moving folders on disk. Nothing here moves anything.
 - Shared dataset folders, which have no Tracker record in the MVP.
