@@ -98,7 +98,7 @@ Registration converts the file once to a dated parquet in the same folder,
 and the job templates read, so the source file may be rebuilt freely; run
 \code{\link{update_manifest}()} to register a rebuilt file as a new version.
 The date is the file's modification date unless \code{extract_date} is given.
-Conversion needs the \pkg{arrow} package. A release-aware registration
+A release-aware registration
 (\code{catalog_dataset} and \code{release_id}) records the catalog's file as
 it is and converts nothing.
 

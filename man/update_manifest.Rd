@@ -103,7 +103,7 @@ date in a message after the table until its source is rebuilt and
 \code{update_manifest()} is run again. Name one dataset with \code{dataset}.
 Release-aware datasets are skipped; use \code{\link{review_data_update}} and
 \code{\link{adopt_data_update}}. A key violation on one dataset stops the
-whole run and leaves every dataset as it was. Needs the \pkg{arrow} package.
+whole run and leaves every dataset as it was.
 
 \strong{A single file}: \code{update_manifest(file, ...)} records a SHA-256
 checksum, row count, extract date and optional provenance fields for one

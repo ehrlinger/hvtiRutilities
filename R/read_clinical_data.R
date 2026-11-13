@@ -21,8 +21,7 @@
 #'   \item{\code{.xlsx}, \code{.xls}}{Excel workbooks via
 #'     \code{readxl::read_excel()}}
 #'   \item{\code{.rds}}{R serialized objects via \code{readRDS()}}
-#'   \item{\code{.parquet}}{Parquet files via \code{arrow::read_parquet()}; needs
-#'     the \pkg{arrow} package}
+#'   \item{\code{.parquet}}{Parquet files via \code{arrow::read_parquet()}}
 #' }
 #'
 #' @details
