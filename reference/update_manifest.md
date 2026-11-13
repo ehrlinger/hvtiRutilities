@@ -19,7 +19,7 @@ Release-aware datasets are skipped; use
 and
 [`adopt_data_update`](https://ehrlinger.github.io/hvtiRutilities/reference/adopt_data_update.md).
 A key violation on one dataset stops the whole run and leaves every
-dataset as it was. Needs the arrow package.
+dataset as it was.
 
 **A single file**: `update_manifest(file, ...)` records a SHA-256
 checksum, row count, extract date and optional provenance fields for one
