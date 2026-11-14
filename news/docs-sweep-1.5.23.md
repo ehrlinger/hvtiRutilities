@@ -1,1 +1,0 @@
-* The `verify_manifest()` help no longer ties re-deriving a registered version's row count to the arrow package, which is now an import. It says the count is re-derived when the version records one and its parquet footer can be read; otherwise the entry can pass with `row_count_checked` `FALSE`, and `strict = TRUE` fails it instead.

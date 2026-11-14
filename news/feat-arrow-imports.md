@@ -1,1 +1,0 @@
-* arrow moves from Suggests to Imports, so installing hvtiRutilities installs arrow with it. Every registered dataset is a parquet file, and studies were installing arrow by hand before their first registration or read. The checks that stop with a clear message when arrow cannot be loaded stay in place.

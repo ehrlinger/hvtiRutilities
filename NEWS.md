@@ -1,3 +1,11 @@
+# hvtiRutilities 1.5.23
+
+* The renv-repair tests write their sound lock under the running R rather than R 4.6.0, so they pass on R 4.5 (the oldrel check) as well.
+
+* arrow moves from Suggests to Imports, so installing hvtiRutilities installs arrow with it. Every registered dataset is a parquet file, and studies were installing arrow by hand before their first registration or read. The checks that stop with a clear message when arrow cannot be loaded stay in place.
+
+* The `verify_manifest()` help no longer ties re-deriving a registered version's row count to the arrow package, which is now an import. It says the count is re-derived when the version records one and its parquet footer can be read; otherwise the entry can pass with `row_count_checked` `FALSE`, and `strict = TRUE` fails it instead.
+
 # hvtiRutilities 1.5.22
 
 * `study_setup()` gains `derived_from`, for an exploration of a registered study that has no Study Tracker record of its own. It writes `derived_from`, a `provisional_id` and a `workspace_id` to `_study.yml`, and no `study_tracker_id`. `study_tracker_id` now defaults to `NULL`, and exactly one of the two is required.
