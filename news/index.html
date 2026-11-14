@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.22</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.23</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -56,6 +56,13 @@
       <small>Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.5.23" id="hvtirutilities-1523">hvtiRutilities 1.5.23<a class="anchor" aria-label="anchor" href="#hvtirutilities-1523"></a></h2>
+<ul><li><p>The renv-repair tests write their sound lock under the running R rather than R 4.6.0, so they pass on R 4.5 (the oldrel check) as well.</p></li>
+<li><p>arrow moves from Suggests to Imports, so installing hvtiRutilities installs arrow with it. An ordinary registration converts the data to a dated parquet file, and studies were installing arrow by hand before their first registration or read. A release-aware registration (<code>catalog_dataset</code> and <code>release_id</code>, deprecated) still records the catalog’s file as it is, so a CSV stays a CSV. The checks that stop with a clear message when arrow cannot be loaded stay in place.</p></li>
+<li><p>The <code><a href="../reference/verify_manifest.html">verify_manifest()</a></code> help no longer ties re-deriving a registered version’s row count to the arrow package, which is now an import. It says the count is re-derived when the version records one and its parquet footer can be read; otherwise the entry can pass with <code>row_count_checked</code> <code>FALSE</code>, and <code>strict = TRUE</code> fails it instead.</p></li>
+<li><p><code><a href="../reference/study_render_commit.html">study_render_commit()</a></code> and <code><a href="../reference/study_render_record.html">study_render_record()</a></code> work on Windows. The path lists, commit messages and records they hand to git were written in text mode, so each line ended CRLF there, and <code>git update-index --index-info</code>, which splits on LF only, stored every path with a trailing CR. Every render commit then stopped with “changed while it was being committed”. These files are now written with LF line endings on every platform.</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.5.22" id="hvtirutilities-1522">hvtiRutilities 1.5.22<a class="anchor" aria-label="anchor" href="#hvtirutilities-1522"></a></h2>
 <ul><li>

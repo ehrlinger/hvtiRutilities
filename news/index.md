@@ -1,5 +1,36 @@
 # Changelog
 
+## hvtiRutilities 1.5.23
+
+- The renv-repair tests write their sound lock under the running R
+  rather than R 4.6.0, so they pass on R 4.5 (the oldrel check) as well.
+
+- arrow moves from Suggests to Imports, so installing hvtiRutilities
+  installs arrow with it. An ordinary registration converts the data to
+  a dated parquet file, and studies were installing arrow by hand before
+  their first registration or read. A release-aware registration
+  (`catalog_dataset` and `release_id`, deprecated) still records the
+  catalog’s file as it is, so a CSV stays a CSV. The checks that stop
+  with a clear message when arrow cannot be loaded stay in place.
+
+- The
+  [`verify_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md)
+  help no longer ties re-deriving a registered version’s row count to
+  the arrow package, which is now an import. It says the count is
+  re-derived when the version records one and its parquet footer can be
+  read; otherwise the entry can pass with `row_count_checked` `FALSE`,
+  and `strict = TRUE` fails it instead.
+
+- [`study_render_commit()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_render_commit.md)
+  and
+  [`study_render_record()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_render_record.md)
+  work on Windows. The path lists, commit messages and records they hand
+  to git were written in text mode, so each line ended CRLF there, and
+  `git update-index --index-info`, which splits on LF only, stored every
+  path with a trailing CR. Every render commit then stopped with
+  “changed while it was being committed”. These files are now written
+  with LF line endings on every platform.
+
 ## hvtiRutilities 1.5.22
 
 - [`study_setup()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md)
