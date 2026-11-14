@@ -27,10 +27,13 @@ below) sets row_count_checked to TRUE once its checksum is
 verified, because a record has no row count.
 For a dataset registered with register_data, every registered
 version (the current dated parquet and each earlier one) is checked, and its
-row count is re-derived from the parquet footer when the arrow package is
-available. A source file rebuilt since registration is reported with status
-&quot;PENDING&quot; and never stops: jobs keep reading the registered version
-until update_manifest() registers the new one.
+row count is re-derived from the parquet footer when the version records a
+count and the footer can be read. When either fails the entry can still
+pass, with row_count_checked FALSE; use strict = TRUE
+to fail such an entry instead. A source file rebuilt since registration is
+reported with status &quot;PENDING&quot; and never stops: jobs keep reading the
+registered version until update_manifest() registers the new
+one.
 Call this function at the top of every analysis script or Quarto document
 to ensure data integrity before any results are generated."><meta property="og:description" content="Reads a manifest.yaml produced by update_manifest and,
 for every entry, confirms that (a) the file exists, (b) its SHA-256
@@ -60,10 +63,13 @@ below) sets row_count_checked to TRUE once its checksum is
 verified, because a record has no row count.
 For a dataset registered with register_data, every registered
 version (the current dated parquet and each earlier one) is checked, and its
-row count is re-derived from the parquet footer when the arrow package is
-available. A source file rebuilt since registration is reported with status
-&quot;PENDING&quot; and never stops: jobs keep reading the registered version
-until update_manifest() registers the new one.
+row count is re-derived from the parquet footer when the version records a
+count and the footer can be read. When either fails the entry can still
+pass, with row_count_checked FALSE; use strict = TRUE
+to fail such an entry instead. A source file rebuilt since registration is
+reported with status &quot;PENDING&quot; and never stops: jobs keep reading the
+registered version until update_manifest() registers the new
+one.
 Call this function at the top of every analysis script or Quarto document
 to ensure data integrity before any results are generated."></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -152,10 +158,13 @@ below) sets <code>row_count_checked</code> to <code>TRUE</code> once its checksu
 verified, because a record has no row count.</p>
 <p>For a dataset registered with <code><a href="register_data.html">register_data</a></code>, every registered
 version (the current dated parquet and each earlier one) is checked, and its
-row count is re-derived from the parquet footer when the arrow package is
-available. A source file rebuilt since registration is reported with status
-<code>"PENDING"</code> and never stops: jobs keep reading the registered version
-until <code><a href="update_manifest.html">update_manifest()</a></code> registers the new one.</p>
+row count is re-derived from the parquet footer when the version records a
+count and the footer can be read. When either fails the entry can still
+pass, with <code>row_count_checked</code> <code>FALSE</code>; use <code>strict = TRUE</code>
+to fail such an entry instead. A source file rebuilt since registration is
+reported with status <code>"PENDING"</code> and never stops: jobs keep reading the
+registered version until <code><a href="update_manifest.html">update_manifest()</a></code> registers the new
+one.</p>
 <p>Call this function at the top of every analysis script or Quarto document
 to ensure data integrity before any results are generated.</p>
     </div>

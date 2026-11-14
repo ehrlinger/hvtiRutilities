@@ -35,9 +35,11 @@ For a dataset registered with
 [`register_data`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md),
 every registered version (the current dated parquet and each earlier
 one) is checked, and its row count is re-derived from the parquet footer
-when the arrow package is available. A source file rebuilt since
-registration is reported with status `"PENDING"` and never stops: jobs
-keep reading the registered version until
+when the version records a count and the footer can be read. When either
+fails the entry can still pass, with `row_count_checked` `FALSE`; use
+`strict = TRUE` to fail such an entry instead. A source file rebuilt
+since registration is reported with status `"PENDING"` and never stops:
+jobs keep reading the registered version until
 [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
 registers the new one.
 
