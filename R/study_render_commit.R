@@ -69,7 +69,7 @@
 .cp_hash_files <- function(repo, files) {
   list_file <- tempfile("cp-paths-")
   on.exit(unlink(list_file), add = TRUE)
-  writeLines(files, list_file, useBytes = TRUE)
+  .cp_write_lf(files, list_file)
   blobs <- .cp_git_stdin(repo, c("hash-object", "-w", "--no-filters",
                                  "--stdin-paths"), list_file)
   if (length(blobs) != length(files) || !all(grepl("^[0-9a-f]{40}$", blobs))) {
@@ -83,7 +83,7 @@
 .cp_blob_sizes <- function(repo, blobs) {
   ids <- tempfile("cp-ids-")
   on.exit(unlink(ids), add = TRUE)
-  writeLines(blobs, ids, useBytes = TRUE)
+  .cp_write_lf(blobs, ids)
   as.numeric(.cp_git_stdin(repo, c("cat-file", "--batch-check=%(objectsize)"),
                            ids))
 }
@@ -148,7 +148,7 @@
   if (!is.na(base)) .cp_git_do(repo, c("read-tree", base))
   info <- tempfile("cp-info-")
   on.exit(unlink(info), add = TRUE)
-  writeLines(paste0(modes, " ", blobs, "\t", paths), info, useBytes = TRUE)
+  .cp_write_lf(paste0(modes, " ", blobs, "\t", paths), info)
   .cp_git_stdin(repo, c("update-index", "--add", "--index-info"), info)
   .cp_git_do(repo, "write-tree")[1]
 }
@@ -418,8 +418,8 @@ study_render_record <- function(render_id, commit, job, outputs,
   )
   json <- tempfile("cp-record-", fileext = ".json")
   on.exit(unlink(json), add = TRUE)
-  writeLines(jsonlite::toJSON(record, auto_unbox = TRUE, null = "null",
-                              digits = NA, pretty = TRUE), json)
+  .cp_write_lf(jsonlite::toJSON(record, auto_unbox = TRUE, null = "null",
+                                digits = NA, pretty = TRUE), json)
   tree <- .cp_tree_with(rc$repo, records_tip, "100644",
                         .cp_hash_files(rc$repo, json), record_path)
   .cp_render_advance(rc$repo, rc$refs$records, records_tip, tree,

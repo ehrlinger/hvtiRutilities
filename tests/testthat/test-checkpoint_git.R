@@ -134,3 +134,13 @@ test_that("a .git directory that is not a repository is a clear error", {
   expect_error(study_checkpoint("abstract_submitted", root = root), msg)
   expect_error(study_close("abandoned", root = root), msg)
 })
+
+test_that("files git reads end lines LF on every platform", {
+  # update-index --index-info splits on LF only; a CR written by text mode on
+  # Windows became part of the path and broke every render commit there.
+  path <- withr::local_tempfile()
+  .cp_write_lf(c("100644 abc\t30_analyses/fit.R", "second"), path)
+  bytes <- readBin(path, "raw", file.size(path))
+  expect_false(any(bytes == as.raw(0x0d)))
+  expect_identical(rawToChar(bytes), "100644 abc\t30_analyses/fit.R\nsecond\n")
+})

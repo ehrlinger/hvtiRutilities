@@ -133,10 +133,20 @@
   if (res$ok) res$out[1] else NA_character_
 }
 
+# Write `lines` for git to read, ending each with LF. writeLines() to a file
+# name opens it in text mode, which on Windows ends lines CRLF, and readers
+# such as update-index --index-info split on LF only, so the CR would become
+# part of a path.
+.cp_write_lf <- function(lines, path) {
+  con <- file(path, open = "wb")
+  on.exit(close(con), add = TRUE)
+  writeLines(lines, con, useBytes = TRUE)
+  invisible(path)
+}
+
 .cp_message_file <- function(lines) {
   path <- tempfile("cp-msg-")
-  writeLines(lines, path, useBytes = TRUE)
-  path
+  .cp_write_lf(lines, path)
 }
 
 .cp_commit_tag <- function(repo, tag, message) {

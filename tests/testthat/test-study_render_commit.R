@@ -335,7 +335,7 @@ test_that("a copied study gets its own render refs and keeps the old (review 7)"
   clone_dir <- withr::local_tempdir()
   expect_true(file.copy(root, clone_dir, recursive = TRUE))
   clone <- file.path(clone_dir, "study")
-  unlink(.cp_repo_path(clone), recursive = TRUE)
+  remove_tree(.cp_repo_path(clone))
   git_out(dir, c("clone", "-q", .cp_repo_path(root), .cp_repo_path(clone)))
   study_render_commit("30_analyses/fit.R", root = clone)
   expect_false(render_ref(clone) %in% c(ref, render_ref(copy)))
