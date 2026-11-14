@@ -93,10 +93,10 @@ verified, because a record has no row count.
 
 For a dataset registered with \code{\link{register_data}}, every registered
 version (the current dated parquet and each earlier one) is checked, and its
-row count is re-derived from the parquet footer when the arrow package is
-available. A source file rebuilt since registration is reported with status
-\code{"PENDING"} and never stops: jobs keep reading the registered version
-until \code{\link{update_manifest}()} registers the new one.
+row count is re-derived from the parquet footer. A source file rebuilt since
+registration is reported with status \code{"PENDING"} and never stops: jobs
+keep reading the registered version until \code{\link{update_manifest}()}
+registers the new one.
 
 Call this function at the top of every analysis script or Quarto document
 to ensure data integrity before any results are generated.
