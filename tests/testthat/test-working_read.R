@@ -76,6 +76,8 @@ test_that("the interactive console is allowed", {
 })
 
 test_that("Rscript's --file names the job", {
+  # A relative --file is placed against PWD, which Windows' shell does not set.
+  withr::local_envvar(PWD = withr::local_tempdir())
   local_mocked_bindings(.knitr_input = function() NULL,
                         .command_args = function() c("/usr/lib/R/bin/exec/R", "--file=30_analyses/fit.R"))
   expect_identical(basename(.job_file()), "fit.R")
