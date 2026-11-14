@@ -2,7 +2,7 @@
 
 * The renv-repair tests write their sound lock under the running R rather than R 4.6.0, so they pass on R 4.5 (the oldrel check) as well.
 
-* arrow moves from Suggests to Imports, so installing hvtiRutilities installs arrow with it. Every registered dataset is a parquet file, and studies were installing arrow by hand before their first registration or read. The checks that stop with a clear message when arrow cannot be loaded stay in place.
+* arrow moves from Suggests to Imports, so installing hvtiRutilities installs arrow with it. An ordinary registration converts the data to a dated parquet file, and studies were installing arrow by hand before their first registration or read. A release-aware registration (`catalog_dataset` and `release_id`, deprecated) still records the catalog's file as it is, so a CSV stays a CSV. The checks that stop with a clear message when arrow cannot be loaded stay in place.
 
 * The `verify_manifest()` help no longer ties re-deriving a registered version's row count to the arrow package, which is now an import. It says the count is re-derived when the version records one and its parquet footer can be read; otherwise the entry can pass with `row_count_checked` `FALSE`, and `strict = TRUE` fails it instead.
 
