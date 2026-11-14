@@ -6,6 +6,8 @@
 
 * The `verify_manifest()` help no longer ties re-deriving a registered version's row count to the arrow package, which is now an import. It says the count is re-derived when the version records one and its parquet footer can be read; otherwise the entry can pass with `row_count_checked` `FALSE`, and `strict = TRUE` fails it instead.
 
+* `study_render_commit()` and `study_render_record()` work on Windows. The path lists, commit messages and records they hand to git were written in text mode, so each line ended CRLF there, and `git update-index --index-info`, which splits on LF only, stored every path with a trailing CR. Every render commit then stopped with "changed while it was being committed". These files are now written with LF line endings on every platform.
+
 # hvtiRutilities 1.5.22
 
 * `study_setup()` gains `derived_from`, for an exploration of a registered study that has no Study Tracker record of its own. It writes `derived_from`, a `provisional_id` and a `workspace_id` to `_study.yml`, and no `study_tracker_id`. `study_tracker_id` now defaults to `NULL`, and exactly one of the two is required.
