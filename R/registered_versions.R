@@ -238,27 +238,14 @@
   entry[setdiff(names(entry), c("file", "role", "history", "source_size", "source_mtime", .version_fields))]
 }
 
-# Has the source changed since this version was registered? A stat settles it
-# when the filesystem resolves sub-second mtimes, as .cache_valid() reasons;
-# otherwise, or when the stat differs, the hash decides, so a touch without a
-# change is not reported. A missing source is not a change: jobs keep reading
-# the registered version. `exact = TRUE` skips the stat and always hashes: a
-# same-size copy that preserves the recorded mtime (cp -p, a restore) passes
-# the stat, and the exported source_changed() promises "differs", not "looks
-# untouched".
-.source_changed <- function(source_path, entry, exact = FALSE) {
+# Has the source changed since this version was registered? The recorded
+# SHA-256 decides, every time: a stat would miss a same-size replacement that
+# kept the recorded mtime (cp -p, a restore), and a touch that changed no bytes
+# is not a change. The cost is one pass over the source per call, so one per
+# dataset read. A missing source is not a change: jobs keep reading the
+# registered version.
+.source_changed <- function(source_path, entry) {
   if (!.is_versioned(entry) || !file.exists(source_path)) return(FALSE)
-  if (!exact && !is.null(entry$source_size) && !is.null(entry$source_mtime)) {
-    info <- file.info(source_path)
-    mtime <- as.numeric(info$mtime)
-    same_size <- identical(as.numeric(entry$source_size), as.numeric(info$size))
-    # An unparsable recorded mtime (a hand-edited manifest) cannot settle it:
-    # fall through to the hash rather than test an NA.
-    recorded <- suppressWarnings(as.numeric(tryCatch(as.POSIXct(entry$source_mtime, tz = "UTC"),
-                                                     error = function(e) NA)))
-    same_mtime <- !is.na(recorded) && abs(mtime - recorded) < 1e-4
-    if (same_size && same_mtime && mtime != floor(mtime)) return(FALSE)
-  }
   !identical(entry$source_sha256, digest::digest(source_path, algo = "sha256", file = TRUE))
 }
 
@@ -277,21 +264,11 @@
 }
 
 # Register a rebuilt source as the next version; the current one moves to the
-# head of history. An unchanged source keeps its version, but a stamp that no
-# longer matches it (a rewrite of the same bytes) is re-recorded, so later
-# reads settle it with a stat rather than a hash. Only update_manifest()
-# writes it; reads never write the manifest.
+# head of history. An unchanged source keeps its version and its entry as it
+# stands. Only update_manifest() writes it; reads never write the manifest.
 .next_version <- function(entry, source_path, extract_date, reserved = character(), key = NULL) {
   if (!.source_changed(source_path, entry)) {
-    # A missing source is also "unchanged", and has no stamp to record.
-    restamped <- FALSE
-    if (file.exists(source_path)) {
-      stamp <- .source_stamp(source_path)
-      restamped <- !identical(as.numeric(entry$source_size), stamp$source_size) ||
-        !identical(entry$source_mtime, stamp$source_mtime)
-      entry[names(stamp)] <- stamp
-    }
-    return(list(entry = entry, written = character(), action = "unchanged", restamped = restamped,
+    return(list(entry = entry, written = character(), action = "unchanged",
                 provenance = list(),
                 detail = paste0("unchanged since ", entry$extract_date, " (", entry$parquet, ")")))
   }
@@ -408,7 +385,6 @@
   }, add = TRUE)
   rows <- list()
   provenance <- list()
-  restamped <- FALSE
   archive <- list()
 
   for (name in targets) {
@@ -490,7 +466,6 @@
     if (identical(contract$kind, "combined") && rebuilt) {
       manifest$datasets[[hit]]$parent_versions <- .parent_versions(cfg, contract$parents, manifest)
     }
-    restamped <- restamped || isTRUE(step$restamped)
     if (step$action %in% c("registered", "migrated")) {
       archive[[length(archive) + 1L]] <- list(entry = manifest$datasets[[hit]], dir = dirname(source_path))
     }
@@ -510,7 +485,7 @@
 
   out <- do.call(rbind, unname(rows))
   changed <- any(out$action %in% c("registered", "migrated")) || unguarded
-  if (changed || restamped) {
+  if (changed) {
     .atomic_write(manifest_path, function(tmp) .write_manifest(manifest, tmp))
   }
   committed <- TRUE
@@ -519,7 +494,7 @@
   for (a in archive) .archive_history(a$entry, a$dir, manifest$datasets)
   .hvti_inform(paste0(format(out$dataset), ": ", out$detail, collapse = "\n"))
   for (b in behind) .hvti_inform(b)
-  if (changed || restamped) {
+  if (changed) {
     .hvti_inform("Commit manifest.yaml so the record of which version is current travels with the study.")
   }
   invisible(out)

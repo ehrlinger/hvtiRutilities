@@ -29,10 +29,9 @@ It reads no data, but it hashes the source file and compares the SHA-256
 with the one recorded at registration, so the answer is about the bytes: a
 touch that changed nothing is not reported, and a same-size replacement that
 kept the old modification time (a copy or restore that preserves dates) is.
-The cost is one pass over the source file. \code{\link[=read_built]{read_built()}} signals
-\code{hvtiRutilities_source_changed} for a changed source, but settles an
-unchanged size and modification time without hashing, so it can miss the
-preserved-date case that this function catches.
+The cost is one pass over the source file. \code{\link[=read_built]{read_built()}} and
+\code{\link[=update_manifest]{update_manifest()}} make the same comparison, so every read of a registered
+dataset hashes its source once.
 }
 \examples{
 if (requireNamespace("arrow", quietly = TRUE)) {

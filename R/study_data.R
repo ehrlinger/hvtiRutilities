@@ -204,7 +204,9 @@ built_manifest <- function(cfg = study_config(), dataset = "study") {
 #' version (a dated parquet) is read, after its checksum is checked. If the
 #' source file has been rebuilt since, the registered version is still read
 #' and a message of class `hvtiRutilities_source_changed` says so and
-#' names [update_manifest()].
+#' names [update_manifest()]. Whether the source changed is settled by its
+#' SHA-256 against the one recorded at registration, so each read of a
+#' registered dataset hashes its source once, as [source_changed()] does.
 #'
 #' A combined dataset (see [register_data()]) is still read when a
 #' dataset it was built from has been updated since. A message of class
