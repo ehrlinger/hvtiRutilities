@@ -33,9 +33,10 @@ review, and the two should not disagree in silence.
 \section{Argument order}{
 
 \verb{time, event}, as in \code{survival::Surv()}. Until 2026-11 the order
-was \verb{event, time}. For one release a call passing both unnamed is read
-in the old order, with a warning; name them, \verb{time =} and
-\verb{event =}, and the call means the same before and after.
+was \verb{event, time}, so a call passing both unnamed means opposite things
+in the two orders and is an error, whether or not \code{data} is named.
+Name them, \verb{time =} and \verb{event =}, and the call means the same
+before and after. One of the two unnamed reads the same in either order.
 }
 
 \examples{

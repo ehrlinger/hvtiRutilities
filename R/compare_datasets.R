@@ -14,6 +14,10 @@
 #'
 #' @param old A data frame representing the previous version of the dataset.
 #' @param new A data frame representing the current version of the dataset.
+#' @param show_levels Logical. Include the level values themselves in the
+#'   result and the printed summary. Defaults to `FALSE`: a character
+#'   identifier or free-text column read as a factor has row-level values as
+#'   its levels, so by default only level counts are reported.
 #'
 #' @return A list with the following elements:
 #' \describe{
@@ -30,9 +34,11 @@
 #'     `old_label`, `new_label` for shared columns whose label
 #'     changed}
 #'   \item{level_changes}{Data frame with columns `variable`,
-#'     `old_levels`, `new_levels` (levels joined with
-#'     `", "`) for shared columns that are factors in both and whose
-#'     levels, or their order, changed}
+#'     `old_n`, `new_n` (level counts), `n_added` and
+#'     `n_removed` for shared columns that are factors in both and whose
+#'     levels, or their order, changed. With `show_levels = TRUE` it also
+#'     has `old_levels` and `new_levels` (levels joined with
+#'     `", "`).}
 #' }
 #'
 #' @seealso [update_manifest()], [verify_manifest()]
@@ -53,7 +59,10 @@
 #' diff$rows_new
 #' diff$cols_added
 #' diff$cols_dropped
-compare_datasets <- function(old, new) {
+compare_datasets <- function(old, new, show_levels = FALSE) {
+  if (!is.logical(show_levels) || length(show_levels) != 1L || is.na(show_levels)) {
+    stop("compare_datasets(): `show_levels` must be TRUE or FALSE.", call. = FALSE)
+  }
   if (!is.data.frame(old)) {
     stop("'old' must be a data frame.", call. = FALSE)
   }
@@ -110,14 +119,25 @@ compare_datasets <- function(old, new) {
   lev_changed <- both_factor[!vapply(both_factor, function(v) {
     identical(levels(old[[v]]), levels(new[[v]]))
   }, logical(1))]
+  # Counts only by default: an identifier or free-text column read as a factor
+  # has patient-level values as its levels, and this summary is routinely
+  # printed into logs and rendered reports.
+  count <- function(f) vapply(lev_changed, f, integer(1), USE.NAMES = FALSE)
   level_changes <- data.frame(
-    variable   = lev_changed,
-    old_levels = vapply(lev_changed, function(v) paste(levels(old[[v]]), collapse = ", "),
-                        character(1), USE.NAMES = FALSE),
-    new_levels = vapply(lev_changed, function(v) paste(levels(new[[v]]), collapse = ", "),
-                        character(1), USE.NAMES = FALSE),
+    variable  = lev_changed,
+    old_n     = count(function(v) nlevels(old[[v]])),
+    new_n     = count(function(v) nlevels(new[[v]])),
+    n_added   = count(function(v) length(setdiff(levels(new[[v]]), levels(old[[v]])))),
+    n_removed = count(function(v) length(setdiff(levels(old[[v]]), levels(new[[v]])))),
     stringsAsFactors = FALSE
   )
+  if (show_levels) {
+    joined <- function(d) {
+      vapply(lev_changed, function(v) paste(levels(d[[v]]), collapse = ", "), character(1), USE.NAMES = FALSE)
+    }
+    level_changes$old_levels <- joined(old)
+    level_changes$new_levels <- joined(new)
+  }
 
   structure(
     list(
@@ -166,9 +186,14 @@ print.dataset_comparison <- function(x, ...) {
   if (nrow(level_changes) > 0L) {
     cat("  Level changes:\n")
     for (i in seq_len(nrow(level_changes))) {
-      cat("    ", level_changes$variable[i], ": [",
-          level_changes$old_levels[i], "] -> [",
-          level_changes$new_levels[i], "]\n", sep = "")
+      lc <- level_changes[i, , drop = FALSE]
+      what <- if (lc$n_added == 0L && lc$n_removed == 0L) "order changed" else
+        paste0(lc$n_added, " added, ", lc$n_removed, " removed")
+      cat("    ", lc$variable, ": ", lc$old_n, " -> ", lc$new_n, " levels (", what, ")\n", sep = "")
+      # Values only when the caller asked for them with show_levels = TRUE.
+      if (!is.null(lc$old_levels)) {
+        cat("      [", lc$old_levels, "] -> [", lc$new_levels, "]\n", sep = "")
+      }
     }
   }
   if (length(x$cols_added) == 0L && length(x$cols_dropped) == 0L &&

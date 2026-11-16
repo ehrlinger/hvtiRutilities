@@ -39,11 +39,13 @@
 declare_data <- function(file, key = NULL, built = NULL, root = study_root()) {
   cl <- sys.call()
   env <- parent.frame()
-  if (.hvti_root_first(cl, env)) {
+  old_root <- .hvti_root_first(cl, env, declare_data, environment())
+  if (!is.null(old_root)) {
     .hvti_deprecate("declare_data_root",
                     "declare_data(): `root` is now the last argument. A first unnamed argument that is a ",
                     "directory is read as the root for one more release; pass root = by name.")
-    return(.hvti_recall(cl, env, function(root, file, key, built) NULL, declare_data))
+    return(.hvti_recall(cl, env, function(root, file, key, built) NULL, declare_data,
+                        forced = list(root = old_root)))
   }
   built <- .renamed_file_arg(if (missing(file)) NULL else file, built, "declare_data",
                              file_given = !missing(file), built_given = !missing(built))

@@ -63,6 +63,9 @@ test_that("compare_datasets() compares levels and says values were not compared"
   new <- data.frame(g = factor(c("a", "c")), x = 3:4)
   res <- compare_datasets(old, new)
   expect_equal(res$level_changes$variable, "g")
+  expect_equal(res$level_changes$n_added, 1L)
+  expect_equal(res$level_changes$n_removed, 1L)
+  res <- compare_datasets(old, new, show_levels = TRUE)
   expect_equal(res$level_changes$old_levels, "a, b")
   expect_equal(res$level_changes$new_levels, "a, c")
   out <- capture.output(print(compare_datasets(old[, "x", drop = FALSE],
@@ -155,4 +158,32 @@ test_that("an empty or non-scalar checkpoint remote is a configuration error", {
   expect_error(.cp_check_remote("", "f"), "one non-empty URL")
   expect_error(.cp_check_remote(c("a", "b"), "f"), "one non-empty URL")
   expect_error(.cp_check_remote(list(a = 1), "f"), "one non-empty URL")
+})
+
+test_that("compare_datasets() never prints or returns level values unless asked", {
+  # Synthetic identifier-like levels: a character ID read as a factor.
+  old <- data.frame(mrn = factor(c("MRN-000101", "MRN-000102")))
+  new <- data.frame(mrn = factor(c("MRN-000101", "MRN-000199")), order = 1:2)
+  res <- compare_datasets(old, new)
+  out <- capture.output(print(res))
+  expect_false(any(grepl("MRN-", out)))
+  expect_false(any(grepl("MRN-", unlist(lapply(unclass(res), function(x) unlist(x))))))
+  expect_true(any(grepl("mrn: 2 -> 2 levels \\(1 added, 1 removed\\)", out)))
+  # An order-only change is reported as such, still without values.
+  reordered <- data.frame(mrn = factor(c("MRN-000101", "MRN-000102"), levels = c("MRN-000102", "MRN-000101")))
+  out <- capture.output(print(compare_datasets(old, reordered)))
+  expect_true(any(grepl("mrn: 2 -> 2 levels \\(order changed\\)", out)))
+  expect_false(any(grepl("MRN-", out)))
+  # The opt-in shows them, in the object and the print.
+  out <- capture.output(print(compare_datasets(old, new, show_levels = TRUE)))
+  expect_true(any(grepl("MRN-000199", out)))
+  expect_error(compare_datasets(old, new, show_levels = NA), "show_levels")
+})
+
+test_that(".cp_date() refuses non-finite dates and date-times", {
+  expect_error(.cp_date(structure(Inf, class = "Date")), "must be one")
+  expect_error(.cp_date(structure(-Inf, class = "Date")), "must be one")
+  expect_error(.cp_date(.POSIXct(Inf, tz = "UTC")), "must be one")
+  expect_error(.cp_date(.POSIXct(NaN, tz = "UTC")), "must be one")
+  expect_error(.cp_date(as.POSIXlt(.POSIXct(Inf, tz = "UTC"))), "must be one")
 })

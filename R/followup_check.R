@@ -36,7 +36,9 @@
 #' @param data A data frame, one row per patient.
 #' @param time Names of one or more follow-up interval columns, in years.
 #'   Was `followup` before 2026-11; `followup =` still works for one
-#'   release, with a warning.
+#'   release, with a warning. The order was `event, time` until then, so
+#'   a call passing `time` and `event` both unnamed is an error;
+#'   name them.
 #' @param event Name of the event indicator: 1 or `TRUE` for an event, 0
 #'   or `FALSE` for censored. Missing values are allowed and counted.
 #' @param identifier `NULL` (the default), or the name of one column to
@@ -80,11 +82,11 @@ followup_check <- function(data, time, event, identifier = NULL, max_rows = 25L,
                            followup) {
   cl <- sys.call()
   env <- parent.frame()
-  if (.hvti_old_call(cl, env, renamed = "followup", positional = 3L)) {
+  .hvti_refuse_ambiguous_order(cl, env, followup_check, "followup_check", "(data, time, event, ...)")
+  if (.hvti_old_call(cl, env, renamed = "followup")) {
     .hvti_deprecate("followup_check_args",
-                    "followup_check(): the arguments are now (data, time, event, ...), as in survival::Surv(). ",
-                    "`followup =` is now `time =`, and two unnamed arguments after the data are read in the ",
-                    "old order, event then follow-up, for one more release. Name them: time =, event =.")
+                    "followup_check(): the arguments are now (data, time, event, ...), as in survival::Surv(), ",
+                    "and `followup =` is now `time =`. Name time = and event =.")
     # Errors name the argument the caller wrote, so an old `followup =` caller
     # still reads `followup` in them for the one release the shim lives.
     arg <- if ("followup" %in% names(.hvti_call_args(cl, env))) "followup" else "time"

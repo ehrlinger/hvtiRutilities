@@ -252,7 +252,8 @@ register_data <- function(file, dataset = "study",
                           root = study_root()) {
   cl <- sys.call()
   env <- parent.frame()
-  if (.hvti_root_first(cl, env)) {
+  old_root <- .hvti_root_first(cl, env, register_data, environment())
+  if (!is.null(old_root)) {
     .hvti_deprecate("register_data_root",
                     "register_data(): `root` is now the last argument. A first unnamed argument that is a ",
                     "directory is read as the root for one more release; pass root = by name.")
@@ -261,7 +262,7 @@ register_data <- function(file, dataset = "study",
                                  catalog_dataset, release_id, kind, key, parents, built) {
                           NULL
                         },
-                        register_data))
+                        register_data, forced = list(root = old_root)))
   }
   built <- .renamed_file_arg(if (missing(file)) NULL else file, built, "register_data",
                              file_given = !missing(file), built_given = !missing(built))

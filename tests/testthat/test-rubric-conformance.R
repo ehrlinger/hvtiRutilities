@@ -14,19 +14,44 @@ local_fresh_notice <- function(key, env = parent.frame()) {
 d <- data.frame(dead = c(1, 0, 0, 1), iv_dead = c(2, 3, 4, 5))
 want <- list(n = 4L, n_events = 2L, n_censored = 2L)
 
-test_that("cohort_counts() takes (data, time, event); old calls work once more, with one notice", {
+test_that("cohort_counts() takes (data, time, event); a `d =` call works once more, with one notice", {
   expect_identical(cohort_counts(d, time = "iv_dead", event = "dead"), want)
   expect_identical(cohort_counts(data = d, event = "dead", time = "iv_dead"), want)
   local_fresh_notice("cohort_counts_args")
-  expect_warning(got <- cohort_counts(d, "dead", "iv_dead"), class = "hvtiRutilities_deprecated")
+  expect_warning(got <- cohort_counts(d = d, event = "dead", time = "iv_dead"), class = "hvtiRutilities_deprecated")
   expect_identical(got, want)
   expect_no_warning(expect_identical(cohort_counts(d = d, event = "dead", time = "iv_dead"), want))
 })
 
-test_that("assert_cohort() reads an all-positional old call in the old order", {
+test_that("assert_cohort() takes (data, expected, time, event)", {
   expect_true(assert_cohort(d, want, time = "iv_dead", event = "dead"))
   local_fresh_notice("assert_cohort_args")
-  expect_warning(expect_true(assert_cohort(d, want, "dead", "iv_dead")), "now \\(data, expected, time, event\\)")
+  expect_warning(expect_true(assert_cohort(d = d, want, event = "dead", time = "iv_dead")),
+                 "now \\(data, expected, time, event\\)")
+})
+
+# Both columns binary, so a swapped time and event changes the count rather
+# than failing validation: three events read the wrong way round, two right.
+b <- data.frame(ev = c(1, 1, 0), tt = c(1, 1, 1))
+b_want <- list(n = 3L, n_events = 2L, n_censored = 1L)
+
+test_that("two unnamed survival arguments are refused on every call, in either order", {
+  refused <- "pass `time =` and `event =` by name"
+  for (attempt in 1:2) {
+    expect_error(cohort_counts(b, "tt", "ev"), refused)
+    expect_error(cohort_counts(b, "ev", "tt"), refused)
+    expect_error(cohort_counts(data = b, "ev", "tt"), refused)
+    expect_error(assert_cohort(b, b_want, "tt", "ev"), refused)
+    expect_error(assert_cohort(data = b, expected = b_want, "ev", "tt"), refused)
+    expect_error(followup_check(b, "tt", "ev"), refused)
+    expect_error(followup_check(data = b, "ev", "tt"), refused)
+  }
+  # One of the two unnamed means the same in the old order and the new.
+  expect_identical(cohort_counts(b, "tt", event = "ev"), b_want)
+  expect_identical(cohort_counts(b, event = "ev", "tt"), b_want)
+  expect_true(assert_cohort(b, b_want, "tt", event = "ev"))
+  expect_identical(followup_check(b, event = "ev", "tt")$cohort$event, 2L)
+  expect_identical(followup_check(data = b, "tt", event = "ev")$cohort$event, 2L)
 })
 
 test_that("followup_check() takes time = and maps followup = to it", {
@@ -34,7 +59,6 @@ test_that("followup_check() takes time = and maps followup = to it", {
   local_fresh_notice("followup_check_args")
   expect_warning(old <- followup_check(d, event = "dead", followup = "iv_dead"), class = "deprecatedWarning")
   expect_equal(old$cohort, new$cohort)
-  expect_equal(followup_check(d, "dead", "iv_dead")$intervals, new$intervals)
   # An old-name caller's errors still name `followup` while the shim lives.
   expect_error(followup_check(d, event = "dead", followup = character()), "`followup` must name")
   expect_error(followup_check(d, time = character(), event = "dead"), "`time` must name")
@@ -130,4 +154,57 @@ test_that("a seeded cache_fit() inside a study records its seed in the sidecar",
   expect_identical(jsonlite::read_json(provenance_path(file.path(dir, "draw.rds")))$seed, 7L)
   cache_fit("plain", sum(1:3), dir = dir)
   expect_null(jsonlite::read_json(provenance_path(file.path(dir, "plain.rds")))$seed)
+})
+
+test_that("a root-first call evaluates its root once and writes to that study only", {
+  skip_if_not_installed("arrow")
+  base <- withr::local_tempdir()
+  make_roots <- function(tag) {
+    roots <- file.path(base, paste0(tag, 1:2))
+    for (i in 1:2) {
+      suppressMessages(study_setup(roots[[i]], paste("Two roots", tag, i), 20L + i, renv = FALSE))
+      utils::write.csv(data.frame(ccfid = 1:3), file.path(study_dir("datasets", roots[[i]]), "built.csv"),
+                       row.names = FALSE)
+    }
+    roots
+  }
+  # A stateful resolver: the first study on its first call, the second after.
+  resolver <- function(roots) {
+    calls <- new.env()
+    calls$n <- 0L
+    list(calls = calls, next_root = function() {
+      calls$n <- calls$n + 1L
+      roots[[calls$n]]
+    })
+  }
+  yml <- function(roots) unname(tools::md5sum(file.path(roots, "_study.yml")))
+
+  roots <- make_roots("declare")
+  r <- resolver(roots)
+  before <- yml(roots)
+  local_fresh_notice("declare_data_root")
+  suppressWarnings(declare_data(r$next_root(), file = "built.csv", key = "ccfid"))
+  expect_identical(r$calls$n, 1L)
+  expect_true(yml(roots)[[1]] != before[[1]])
+  expect_identical(yml(roots)[[2]], before[[2]])
+
+  roots <- make_roots("register")
+  r <- resolver(roots)
+  before <- yml(roots)
+  local_fresh_notice("register_data_root")
+  suppressWarnings(suppressMessages(register_data(r$next_root(), "built.csv")))
+  expect_identical(r$calls$n, 1L)
+  expect_true(yml(roots)[[1]] != before[[1]])
+  expect_identical(yml(roots)[[2]], before[[2]])
+
+  # A new-order call evaluates its file argument once, too.
+  roots <- make_roots("file")
+  calls <- new.env()
+  calls$n <- 0L
+  next_file <- function() {
+    calls$n <- calls$n + 1L
+    "built.csv"
+  }
+  expect_true(declare_data(next_file(), key = "ccfid", root = roots[[1]]))
+  expect_identical(calls$n, 1L)
 })

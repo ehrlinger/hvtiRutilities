@@ -4,7 +4,7 @@
 
 * `study_status()` reports closure as `UNKNOWN` when git fails, rather than reading the failure as an open study.
 
-* `compare_datasets()` also compares the levels of shared factor columns (new `level_changes` element), and its printed summary says that values were not compared, rather than "No differences detected" for two datasets whose values may differ.
+* `compare_datasets()` also compares the levels of shared factor columns (new `level_changes` element). It reports level counts only (old and new count, how many added and removed, or an order change), never the levels themselves, since an identifier or free-text column read as a factor has patient-level values as its levels; `show_levels = TRUE` adds them. Its printed summary says that values were not compared, rather than "No differences detected" for two datasets whose values may differ.
 
 * `verify_manifest()` and the other functions defaulting to the study manifest pass on a malformed `_study.yml` instead of quietly checking `manifest.yaml` in the working directory. Only a missing `_study.yml` means "not in a study".
 
@@ -18,4 +18,4 @@
 
 * `apply_value_labels()` leaves a factor column as read and names it in a warning, instead of stopping with labelled's "Value labels cannot be applied to factors".
 
-* Checkpoints: `occurred_at`, `closed_at` and `reopened_at` must be one `Date`, date-time or `"YYYY-MM-DD"` string; `"01/02/2026"` was logged as year 1. A checkpoint of a kind whose live `trigger` is not `manual` or `auto` is an error rather than an automatic kind; other kinds are unaffected. An empty or non-scalar `checkpoint: remote:` is a configuration error rather than "remote unreachable". An unusable `.checkpoint/repo` reports git's own message and the `safe.directory` fix before advising a delete.
+* Checkpoints: `occurred_at`, `closed_at` and `reopened_at` must be one finite `Date`, date-time or `"YYYY-MM-DD"` string; `"01/02/2026"` was logged as year 1. A checkpoint of a kind whose live `trigger` is not `manual` or `auto` is an error rather than an automatic kind; other kinds are unaffected. An empty or non-scalar `checkpoint: remote:` is a configuration error rather than "remote unreachable". An unusable `.checkpoint/repo` reports git's own message and the `safe.directory` fix before advising a delete.
