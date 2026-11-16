@@ -169,6 +169,7 @@ reference:
   - study_dir
   - read_built
   - review_built
+  - source_changed
   - check_data_updates
   - review_data_update
   - adopt_data_update

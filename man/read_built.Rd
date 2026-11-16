@@ -57,7 +57,9 @@ For a dataset registered with \code{\link[=register_data]{register_data()}}, the
 version (a dated parquet) is read, after its checksum is checked. If the
 source file has been rebuilt since, the registered version is still read
 and a message of class \code{hvtiRutilities_source_changed} says so and
-names \code{\link[=update_manifest]{update_manifest()}}.
+names \code{\link[=update_manifest]{update_manifest()}}. Whether the source changed is settled by its
+SHA-256 against the one recorded at registration, so each read of a
+registered dataset hashes its source once, as \code{\link[=source_changed]{source_changed()}} does.
 
 A combined dataset (see \code{\link[=register_data]{register_data()}}) is still read when a
 dataset it was built from has been updated since. A message of class

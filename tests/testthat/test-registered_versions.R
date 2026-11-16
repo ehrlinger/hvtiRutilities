@@ -537,7 +537,7 @@ test_that("a conversion failure during registration names register_data(), not r
   expect_match(conditionMessage(e), "^register_data\\(\\): ")
 })
 
-test_that("an unparsable recorded source mtime falls through to the hash", {
+test_that("the recorded hash decides, whatever the recorded stamp says", {
   dir <- withr::local_tempdir()
   src <- write_source_csv(dir)
   entry <- list(parquet = "built_20261007.parquet", source_size = file.info(src)$size,
@@ -1019,40 +1019,12 @@ test_that("update_manifest(file) refuses a file that is another entry's register
   expect_identical(readLines(mp), before)
 })
 
-test_that("update_manifest() re-stamps a touched but unchanged source, so later reads skip the hash", {
-  skip_if_not_installed("arrow")
-  root <- make_registered_study(withr::local_tempdir())
-  mp <- file.path(root, "manifest.yaml")
-  src <- file.path(study_dir("datasets", root), "built.csv")
-  bytes <- readBin(src, "raw", file.info(src)$size)
-  Sys.sleep(0.05)
-  writeBin(bytes, src)
-  require_subsecond_mtime(src)
-  # With the recorded hash made wrong, only a stat can call the source unchanged.
-  stat_only <- function() {
-    e <- .manifest_entry(mp, "built.csv")
-    e$source_sha256 <- "not-a-hash"
-    !.source_changed(src, e)
-  }
-  expect_false(stat_only())
-
-  before <- readLines(mp)
-  suppressMessages(read_built(study_config(root)))
-  expect_identical(readLines(mp), before)
-
-  out <- withr::with_dir(root, suppressMessages(update_manifest(dataset = "study")))
-  expect_identical(out$action, "unchanged")
-  expect_true(stat_only())
-  e <- .manifest_entry(mp, "built.csv")
-  expect_identical(e$source_size, as.numeric(file.info(src)$size))
-  expect_identical(e$parquet, Filter(is.list, yaml::read_yaml(text = before)$datasets)[[1L]]$parquet)
-})
-
-test_that("update_manifest() asks for a commit when it only restamped the manifest", {
+test_that("update_manifest() leaves the manifest alone for a touched but unchanged source", {
   root <- versioned_study()
   src <- file.path(study_dir("datasets", root), "built.csv")
-  before <- manifest_entry_for(root)
-  # The same bytes rewritten later: no new version, but the recorded stamp no longer matches.
+  mp <- file.path(root, "manifest.yaml")
+  before <- readLines(mp)
+  # The same bytes rewritten later: the hash matches, so nothing is registered or written.
   Sys.setFileTime(src, as.POSIXct("2026-09-30 08:15:30.5", tz = "UTC"))
   msgs <- character()
   out <- withr::with_dir(root, withCallingHandlers(update_manifest(), message = function(m) {
@@ -1060,14 +1032,39 @@ test_that("update_manifest() asks for a commit when it only restamped the manife
     invokeRestart("muffleMessage")
   }))
   expect_identical(out$action, "unchanged")
-  expect_false(identical(manifest_entry_for(root)$source_mtime, before$source_mtime))
-  expect_true(any(grepl("Commit manifest.yaml", msgs, fixed = TRUE)))
-
-  # Nothing to write the second time: no commit line.
-  msgs <- character()
-  withr::with_dir(root, withCallingHandlers(update_manifest(), message = function(m) {
-    msgs <<- c(msgs, conditionMessage(m))
-    invokeRestart("muffleMessage")
-  }))
+  expect_identical(readLines(mp), before)
   expect_false(any(grepl("Commit manifest.yaml", msgs, fixed = TRUE)))
+})
+
+# A same-size replacement that keeps the recorded fractional mtime: a stat calls it unchanged, the
+# hash does not. Returns the root and the registered version it replaced.
+preserved_date_rebuild <- function(env = parent.frame()) {
+  root <- versioned_study(env, data = data.frame(id = 1:3, DEAD = c(1L, 0L, 0L)))  # nolint: object_usage_linter.
+  src <- built_path(study_config(root))
+  stamp <- as.POSIXct("2026-09-15 12:00:00.25", tz = "UTC")
+  Sys.setFileTime(src, stamp)
+  # Record the fractional stamp, as a registration on a sub-second filesystem would.
+  mp <- file.path(root, "manifest.yaml")
+  m <- .read_manifest(mp)
+  m$datasets[[1L]][names(.source_stamp(src))] <- .source_stamp(src)
+  .write_manifest(m, mp)
+  size <- file.info(src)$size
+  utils::write.csv(data.frame(id = 1:3, DEAD = c(0L, 1L, 0L)), src, row.names = FALSE)
+  Sys.setFileTime(src, stamp)
+  testthat::expect_identical(file.info(src)$size, size)
+  testthat::expect_identical(.source_stamp(src)$source_mtime, m$datasets[[1L]]$source_mtime)
+  list(root = root, registered = m$datasets[[1L]]$parquet)
+}
+
+test_that("read_built() reports a same-size replacement that kept the recorded mtime", {
+  s <- preserved_date_rebuild()
+  expect_message(d <- read_built(study_config(s$root)), class = "hvtiRutilities_source_changed")
+  expect_identical(d$dead, c(1L, 0L, 0L))
+})
+
+test_that("update_manifest() registers a same-size replacement that kept the recorded mtime", {
+  s <- preserved_date_rebuild()
+  out <- withr::with_dir(s$root, suppressMessages(update_manifest()))
+  expect_identical(out$action, "registered")
+  expect_false(identical(manifest_entry_for(s$root)$parquet, s$registered))
 })
