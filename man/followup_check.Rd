@@ -6,20 +6,23 @@
 \usage{
 followup_check(
   data,
+  time,
   event,
-  followup,
   identifier = NULL,
   max_rows = 25L,
-  stats = c("n", "nmiss", "mean", "std", "min", "p15", "median", "p85", "max")
+  stats = c("n", "nmiss", "mean", "std", "min", "p15", "median", "p85", "max"),
+  followup
 )
 }
 \arguments{
 \item{data}{A data frame, one row per patient.}
 
+\item{time}{Names of one or more follow-up interval columns, in years.
+Was \code{followup} before 2026-11; \code{followup =} still works for one
+release, with a warning.}
+
 \item{event}{Name of the event indicator: 1 or \code{TRUE} for an event, 0
 or \code{FALSE} for censored. Missing values are allowed and counted.}
-
-\item{followup}{Names of one or more follow-up interval columns, in years.}
 
 \item{identifier}{\code{NULL} (the default), or the name of one column to
 show in \code{review}.}
@@ -31,6 +34,8 @@ order. Default 25.}
 \code{means} tables, passed to \code{\link{proc_means}} and validated the
 same way. Default
 \code{c("n", "nmiss", "mean", "std", "min", "p15", "median", "p85", "max")}.}
+
+\item{followup}{Deprecated: the old name of \code{time}, kept for one release.}
 }
 \value{
 An object of class \code{followup_check}, a list of four
@@ -84,7 +89,7 @@ result before sharing a report that shows \code{review} with one.
 }
 \examples{
 d <- data.frame(dead = c(1, 0, 0, NA, 1), iv_dead = c(2.5, 4, 0, 1.2, NA))
-fc <- followup_check(d, event = "dead", followup = "iv_dead")
+fc <- followup_check(d, time = "iv_dead", event = "dead")
 fc
 fc$cohort
 fc$review

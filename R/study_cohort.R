@@ -16,9 +16,16 @@
 #' move, but it warns: \code{\link{followup_check}} flags the same rows for
 #' review, and the two should not disagree in silence.
 #'
-#' @param d A data frame.
-#' @param event Character scalar naming the binary event column.
+#' @param data A data frame. Was \code{d} before 2026-11; \code{d =} still
+#'   works for one release, with a warning.
 #' @param time Character scalar naming the time column.
+#' @param event Character scalar naming the binary event column.
+#'
+#' @section Argument order:
+#' \code{time, event}, as in \code{survival::Surv()}. Until 2026-11 the order
+#' was \code{event, time}. For one release a call passing both unnamed is read
+#' in the old order, with a warning; name them, \code{time =} and
+#' \code{event =}, and the call means the same before and after.
 #'
 #' @return A list with integer elements \code{n}, \code{n_events} and
 #'   \code{n_censored}.
@@ -29,8 +36,18 @@
 #'
 #' @examples
 #' d <- data.frame(dead = c(1, 1, 0, 0, 0), iv_dead = 1:5)
-#' cohort_counts(d, event = "dead", time = "iv_dead")
-cohort_counts <- function(d, event, time) {
+#' cohort_counts(d, time = "iv_dead", event = "dead")
+cohort_counts <- function(data, time, event) {
+  cl <- sys.call()
+  env <- parent.frame()
+  if (.hvti_old_call(cl, env, renamed = "d", positional = 3L)) {
+    .hvti_deprecate("cohort_counts_args",
+                    "cohort_counts(): the arguments are now (data, time, event), as in survival::Surv(). ",
+                    "`d =` is now `data =`, and two unnamed arguments after the data are read in the ",
+                    "old order, event then time, for one more release. Name them: time =, event =.")
+    return(.hvti_recall(cl, env, function(d, event, time) NULL, cohort_counts, c(d = "data")))
+  }
+  d <- data
   if (!is.character(event)) {
     stop("cohort_counts(): event must be a non-missing, non-empty character scalar",
          call. = FALSE)
@@ -91,11 +108,17 @@ cohort_counts <- function(d, event, time) {
 #' counts and errors on any disagreement. Call it before any analysis that
 #' would otherwise run happily on an unreconciled cohort.
 #'
-#' @param d A data frame.
+#' @param data A data frame. Was \code{d} before 2026-11; \code{d =} still
+#'   works for one release, with a warning.
 #' @param expected List containing nonnegative integer \code{n},
 #'   \code{n_events} and \code{n_censored}.
-#' @param event Character scalar naming the binary event column.
 #' @param time Character scalar naming the time column.
+#' @param event Character scalar naming the binary event column.
+#'
+#' @section Argument order:
+#' \code{time, event}, as in \code{survival::Surv()}; it was \code{event,
+#' time} until 2026-11. For one release a call passing all four arguments
+#' unnamed is read in the old order, with a warning.
 #'
 #' @return \code{invisible(TRUE)} on success; otherwise an error.
 #'
@@ -106,8 +129,19 @@ cohort_counts <- function(d, event, time) {
 #' @examples
 #' d <- data.frame(dead = c(1, 1, 0, 0, 0), iv_dead = 1:5)
 #' expected <- list(n = 5L, n_events = 2L, n_censored = 3L)
-#' assert_cohort(d, expected, event = "dead", time = "iv_dead")
-assert_cohort <- function(d, expected, event, time) {
+#' assert_cohort(d, expected, time = "iv_dead", event = "dead")
+assert_cohort <- function(data, expected, time, event) {
+  cl <- sys.call()
+  env <- parent.frame()
+  if (.hvti_old_call(cl, env, renamed = "d", positional = 4L)) {
+    .hvti_deprecate("assert_cohort_args",
+                    "assert_cohort(): the arguments are now (data, expected, time, event), as in ",
+                    "survival::Surv(). `d =` is now `data =`, and four unnamed arguments are read in the ",
+                    "old order, event then time, for one more release. Name them: time =, event =.")
+    return(.hvti_recall(cl, env, function(d, expected, event, time) NULL, assert_cohort,
+                        c(d = "data")))
+  }
+  d <- data
   keys <- c("n", "n_events", "n_censored")
   valid <- is.list(expected) && all(keys %in% names(expected)) &&
     all(vapply(expected[keys], function(x) {
@@ -127,7 +161,7 @@ assert_cohort <- function(d, expected, event, time) {
     stop("assert_cohort(): expected counts are inconsistent", call. = FALSE)
   }
   want <- lapply(expected[keys], as.integer)
-  observed <- cohort_counts(d, event, time)
+  observed <- cohort_counts(d, time = time, event = event)
   if (!identical(observed, want)) {
     stop(
       "cohort gate: expected N=", want$n,

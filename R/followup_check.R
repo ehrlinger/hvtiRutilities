@@ -34,9 +34,11 @@
 #' result before sharing a report that shows \code{review} with one.
 #'
 #' @param data A data frame, one row per patient.
+#' @param time Names of one or more follow-up interval columns, in years.
+#'   Was \code{followup} before 2026-11; \code{followup =} still works for one
+#'   release, with a warning.
 #' @param event Name of the event indicator: 1 or \code{TRUE} for an event, 0
 #'   or \code{FALSE} for censored. Missing values are allowed and counted.
-#' @param followup Names of one or more follow-up interval columns, in years.
 #' @param identifier \code{NULL} (the default), or the name of one column to
 #'   show in \code{review}.
 #' @param max_rows The most suspicious rows to return in \code{review}, in data
@@ -46,6 +48,7 @@
 #'   same way. Default
 #'   \code{c("n", "nmiss", "mean", "std", "min", "p15", "median", "p85", "max")}.
 #'
+#' @param followup Deprecated: the old name of \code{time}, kept for one release.
 #' @return An object of class \code{followup_check}, a list of four
 #'   components, three data frames and a list of three:
 #' \describe{
@@ -67,17 +70,30 @@
 #'
 #' @examples
 #' d <- data.frame(dead = c(1, 0, 0, NA, 1), iv_dead = c(2.5, 4, 0, 1.2, NA))
-#' fc <- followup_check(d, event = "dead", followup = "iv_dead")
+#' fc <- followup_check(d, time = "iv_dead", event = "dead")
 #' fc
 #' fc$cohort
 #' fc$review
 #' @export
-followup_check <- function(data, event, followup, identifier = NULL, max_rows = 25L,
-                           stats = c("n", "nmiss", "mean", "std", "min", "p15", "median", "p85", "max")) {
+followup_check <- function(data, time, event, identifier = NULL, max_rows = 25L,
+                           stats = c("n", "nmiss", "mean", "std", "min", "p15", "median", "p85", "max"),
+                           followup) {
+  cl <- sys.call()
+  env <- parent.frame()
+  if (.hvti_old_call(cl, env, renamed = "followup", positional = 3L)) {
+    .hvti_deprecate("followup_check_args",
+                    "followup_check(): the arguments are now (data, time, event, ...), as in survival::Surv(). ",
+                    "`followup =` is now `time =`, and two unnamed arguments after the data are read in the ",
+                    "old order, event then follow-up, for one more release. Name them: time =, event =.")
+    return(.hvti_recall(cl, env,
+                        function(data, event, followup, identifier = NULL, max_rows = 25L, stats) NULL,
+                        followup_check, c(followup = "time")))
+  }
+  followup <- time
   if (!is.data.frame(data)) stop("`data` must be a data frame.", call. = FALSE)
   field_names <- function(x) is.character(x) && length(x) > 0L && !anyNA(x) && all(nzchar(x)) && !anyDuplicated(x)
   if (!field_names(event) || length(event) != 1L) stop("`event` must name one column.", call. = FALSE)
-  if (!field_names(followup)) stop("`followup` must name one or more distinct columns.", call. = FALSE)
+  if (!field_names(followup)) stop("`time` must name one or more distinct columns.", call. = FALSE)
   if (!is.null(identifier) && (!field_names(identifier) || length(identifier) != 1L)) {
     stop("`identifier` must be NULL or one column name.", call. = FALSE)
   }
@@ -97,7 +113,7 @@ followup_check <- function(data, event, followup, identifier = NULL, max_rows = 
   }
   not_numeric <- followup[!vapply(data[followup], is.numeric, logical(1L))]
   if (length(not_numeric)) {
-    stop("`followup` columns must be numeric: ", paste(not_numeric, collapse = ", "), call. = FALSE)
+    stop("`time` columns must be numeric: ", paste(not_numeric, collapse = ", "), call. = FALSE)
   }
 
   cohort <- data.frame(full = nrow(data), event = sum(ev == 1, na.rm = TRUE),

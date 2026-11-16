@@ -75,10 +75,10 @@ test_that("assert_cohort uses only the supplied expectation", {
   d <- data.frame(dead = c(1, 0, 0), iv_dead = 1:3)
   expected <- list(n = 3L, n_events = 1L, n_censored = 2L)
 
-  expect_true(assert_cohort(d, expected, "dead", "iv_dead"))
+  expect_true(assert_cohort(d, expected, time = "iv_dead", event = "dead"))
   expected$n_events <- 2L
   expect_error(
-    assert_cohort(d, expected, "dead", "iv_dead"),
+    assert_cohort(d, expected, time = "iv_dead", event = "dead"),
     "expected"
   )
 })
@@ -88,15 +88,15 @@ test_that("assert_cohort reports expected and observed counts", {
   expected <- list(n = 5L, n_events = 2L, n_censored = 3L)
 
   expect_error(
-    assert_cohort(d, expected, "dead", "iv_dead"),
+    assert_cohort(d, expected, time = "iv_dead", event = "dead"),
     "expected"
   )
   expect_error(
-    assert_cohort(d, expected, "dead", "iv_dead"),
+    assert_cohort(d, expected, time = "iv_dead", event = "dead"),
     "events=2"
   )
   expect_error(
-    assert_cohort(d, expected, "dead", "iv_dead"),
+    assert_cohort(d, expected, time = "iv_dead", event = "dead"),
     "events=3"
   )
 })
@@ -111,7 +111,7 @@ test_that("assert_cohort checks count consistency without integer overflow", {
 
   expect_no_warning(
     expect_error(
-      assert_cohort(d, expected, "dead", "iv_dead"),
+      assert_cohort(d, expected, time = "iv_dead", event = "dead"),
       "inconsistent"
     )
   )

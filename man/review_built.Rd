@@ -36,7 +36,7 @@ if (requireNamespace("arrow", quietly = TRUE)) {
   suppressMessages(study_setup(root, "Example", 1L, renv = FALSE))
   path <- file.path(study_dir("datasets", root), "example.csv")
   write.csv(data.frame(DEAD = c(1, 0, 0), IV_DEAD = 1:3), path, row.names = FALSE)
-  suppressMessages(register_data(root, "example.csv"))
+  suppressMessages(register_data("example.csv", root = root))
   write.csv(data.frame(DEAD = c(1, 0, 0, 1), IV_DEAD = 1:4), path, row.names = FALSE)
   review_built(study_config(root))
   unlink(root, recursive = TRUE)

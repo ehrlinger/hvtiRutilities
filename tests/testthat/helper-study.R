@@ -59,7 +59,7 @@ make_registered_study <- function(dir, ancillary = FALSE) {
     file.path(data_dir, "built.csv"),
     row.names = FALSE
   )
-  register_data(root, "built.csv")
+  register_data(root = root, "built.csv")
 
   write.csv(
     data.frame(dead = c(1L, 0L), iv_dead = 1:2),
@@ -67,7 +67,7 @@ make_registered_study <- function(dir, ancillary = FALSE) {
     row.names = FALSE
   )
   register_data(
-    root,
+    root = root,
     "complete.csv",
     dataset = "complete_cases",
     role = "named"
@@ -80,7 +80,7 @@ make_registered_study <- function(dir, ancillary = FALSE) {
       row.names = FALSE
     )
     register_data(
-      root,
+      root = root,
       "imaging.csv",
       dataset = "imaging",
       role = "named"

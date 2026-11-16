@@ -137,6 +137,9 @@
 #' @param root Character. Study root or a directory beneath it. Defaults to the study that contains the working
 #'   directory, found by its \code{_study.yml}; outside a study the function
 #'   stops and writes nothing.
+#'   It comes last, after 2026-11; a call that passes an existing directory
+#'   as its first unnamed argument is read in the old, root-first order for
+#'   one release, with a warning.
 #' @param file Character(1). Dataset filename within the logical
 #'   \code{datasets} directory, including its extension. A path into that
 #'   folder is accepted too, such as \code{"00_datasets/built.csv"} (what
@@ -215,7 +218,7 @@
 #' utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
 #'                  file.path(root, "00_datasets", "built.csv"),
 #'                  row.names = FALSE)
-#' register_data(root, file = "built.csv", key = "ccfid")
+#' register_data(file = "built.csv", key = "ccfid", root = root)
 #' # The CSV is kept; the registered version is a dated Parquet file.
 #' list.files(file.path(root, "00_datasets"))
 #' unlink(root, recursive = TRUE)
@@ -227,25 +230,39 @@
 #' utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
 #'                  file.path(root, "00_datasets", "built.csv"),
 #'                  row.names = FALSE)
-#' invisible(register_data(root, file = "built.csv", key = "ccfid"))
+#' invisible(register_data(file = "built.csv", key = "ccfid", root = root))
 #' utils::write.csv(
 #'   data.frame(ccfid = c(1, 1, 2), echo_date = c("2020-01-05", "2020-06-01", "2020-02-10"),
 #'              lvef = c(55, 50, 60)),
 #'   file.path(root, "00_datasets", "echo.csv"),
 #'   row.names = FALSE
 #' )
-#' invisible(register_data(root, file = "echo.csv", dataset = "echo", role = "named",
-#'                         kind = "ancillary", key = c("ccfid", "echo_date")))
+#' invisible(register_data(file = "echo.csv", dataset = "echo", role = "named",
+#'                         kind = "ancillary", key = c("ccfid", "echo_date"), root = root))
 #' read_built(study_config(root), dataset = "echo")
 #' unlink(root, recursive = TRUE)
 #'
 #' @export
-register_data <- function(root = study_root(), file, dataset = "study",
+register_data <- function(file, dataset = "study",
                           role = c("study", "named"),
                           population = NULL, source = NULL,
                           extract_date = NULL,
                           catalog_dataset = NULL, release_id = NULL,
-                          kind = NULL, key = NULL, parents = NULL, built = NULL) {
+                          kind = NULL, key = NULL, parents = NULL, built = NULL,
+                          root = study_root()) {
+  cl <- sys.call()
+  env <- parent.frame()
+  if (.hvti_root_first(cl, env)) {
+    .hvti_deprecate("register_data_root",
+                    "register_data(): `root` is now the last argument. A first unnamed argument that is a ",
+                    "directory is read as the root for one more release; pass root = by name.")
+    return(.hvti_recall(cl, env,
+                        function(root, file, dataset, role, population, source, extract_date,
+                                 catalog_dataset, release_id, kind, key, parents, built) {
+                          NULL
+                        },
+                        register_data))
+  }
   built <- .renamed_file_arg(if (missing(file)) NULL else file, built, "register_data",
                              file_given = !missing(file), built_given = !missing(built))
   role <- match.arg(role)
@@ -575,7 +592,7 @@ register_data <- function(root = study_root(), file, dataset = "study",
     stop(fn, "(): give file = only. built = is its old name, so both cannot be given.", call. = FALSE)
   }
   warning(structure(
-    class = c("deprecatedWarning", "warning", "condition"),
+    class = c("hvtiRutilities_deprecated", "deprecatedWarning", "warning", "condition"),
     list(message = paste0(fn, "(built =) is now ", fn, "(file =). built = still works and will be removed ",
                           "in a later release."),
          call = NULL)

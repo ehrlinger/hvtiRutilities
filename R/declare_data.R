@@ -17,6 +17,9 @@
 #' @param root The study root, or a directory beneath it. Defaults to the study that contains the working
 #'   directory, found by its \code{_study.yml}; outside a study the function
 #'   stops and writes nothing.
+#'   It comes last, after 2026-11; a call that passes an existing directory
+#'   as its first unnamed argument is read in the old, root-first order for
+#'   one release, with a warning.
 #' @param file The working file's name in the datasets folder, with its extension.
 #' @param built The old name of \code{file}, before 2026-11. It still works,
 #'   with a warning, and will be removed in a later release.
@@ -30,10 +33,18 @@
 #' root <- file.path(tempdir(), "declare-example")
 #' suppressMessages(study_setup(root, "Example", 1L, renv = FALSE))
 #' saveRDS(data.frame(ccfid = 1:3), file.path(study_dir("datasets", root), "study_cohort.rds"))
-#' declare_data(root, file = "study_cohort.rds", key = "ccfid")
+#' declare_data("study_cohort.rds", key = "ccfid", root = root)
 #' unlink(root, recursive = TRUE)
 #' @export
-declare_data <- function(root = study_root(), file, key = NULL, built = NULL) {
+declare_data <- function(file, key = NULL, built = NULL, root = study_root()) {
+  cl <- sys.call()
+  env <- parent.frame()
+  if (.hvti_root_first(cl, env)) {
+    .hvti_deprecate("declare_data_root",
+                    "declare_data(): `root` is now the last argument. A first unnamed argument that is a ",
+                    "directory is read as the root for one more release; pass root = by name.")
+    return(.hvti_recall(cl, env, function(root, file, key, built) NULL, declare_data))
+  }
   built <- .renamed_file_arg(if (missing(file)) NULL else file, built, "declare_data",
                              file_given = !missing(file), built_given = !missing(built))
   built <- .study_scalar(built, "file", TRUE, caller = "declare_data")

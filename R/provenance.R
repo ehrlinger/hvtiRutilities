@@ -16,7 +16,44 @@
 }
 
 .provenance_reserved <- function() {
-  c(names(.provenance_required()), "output")
+  c(names(.provenance_required()), names(.hvti_provenance_types()), "output")
+}
+
+# The family's shared provenance record (hvtiR API rubric, 2026-11-16): seven
+# fields every hvtiR package writes first, so one reader handles them all
+# without special cases. A value that does not apply is NA of the stated type.
+.hvti_provenance_types <- function() {
+  c(package = "character", version = "character", sha = "character",
+    method = "character", seed = "integer", rng_kind = "character", time = "POSIXct")
+}
+
+.hvti_provenance_core <- function(method, seed = NA_integer_, time = Sys.time()) {
+  sha <- utils::packageDescription("hvtiRutilities")$RemoteSha
+  list(
+    package  = "hvtiRutilities",
+    version  = as.character(utils::packageVersion("hvtiRutilities")),
+    sha      = if (is.character(sha) && length(sha) == 1L && nzchar(sha)) sha else NA_character_,
+    method   = method,
+    seed     = as.integer(seed),
+    rng_kind = RNGkind(),
+    time     = time
+  )
+}
+
+# The conformance test the rubric asks each package to carry: the names are a
+# superset of the seven, and each field has its stated type and length.
+.hvti_provenance_conforms <- function(record) {
+  types <- .hvti_provenance_types()
+  if (!is.list(record) || !all(names(types) %in% names(record))) return(FALSE)
+  # method is "character", any length of at least one; the rest are fixed.
+  lengths <- c(package = 1L, version = 1L, sha = 1L, method = NA, seed = 1L, rng_kind = 3L, time = 1L)
+  all(vapply(names(types), function(k) {
+    v <- record[[k]]
+    type_ok <- switch(types[[k]], character = is.character(v), integer = is.integer(v),
+                      POSIXct = inherits(v, "POSIXct"))
+    len_ok <- if (is.na(lengths[[k]])) length(v) >= 1L else length(v) == lengths[[k]]
+    type_ok && len_ok
+  }, logical(1)))
 }
 
 .loaded_packages <- function() {
@@ -293,6 +330,7 @@
     stop("publish_provenance(): captured payload must not contain `output`.",
          call. = FALSE)
   }
+
   scalar <- function(value) {
     is.character(value) && length(value) == 1L &&
       !is.na(value) && nzchar(value)
@@ -354,6 +392,10 @@
 }
 
 .provenance_write_json <- function(record, path) {
+  # JSON has no NA and no time type: an unknown sha is written as null, never
+  # the string "NA", and the time in the same UTC form as `rendered`.
+  if ("sha" %in% names(record) && length(record$sha) == 1L && is.na(record$sha)) record["sha"] <- list(NULL)
+  if (inherits(record$time, "POSIXct")) record$time <- format(record$time, "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")
   jsonlite::write_json(
     record,
     path,
@@ -424,7 +466,7 @@ provenance_path <- function(path) {
 #' utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
 #'                  file.path(root, "00_datasets", "built.csv"),
 #'                  row.names = FALSE)
-#' invisible(register_data(root, file = "built.csv"))
+#' invisible(register_data(file = "built.csv", root = root))
 #' cfg <- study_config(root)
 #'
 #' # The registered Parquet file, not the CSV it was converted from.
@@ -482,7 +524,7 @@ provenance_data <- function(dataset = "study", cfg = study_config(),
 #' utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
 #'                  file.path(root, "00_datasets", "built.csv"),
 #'                  row.names = FALSE)
-#' invisible(register_data(root, file = "built.csv"))
+#' invisible(register_data(file = "built.csv", root = root))
 #' cfg <- study_config(root)
 #'
 #' writeLines("x <- 1", file.path(root, "30_analyses", "fit.R"))
@@ -524,7 +566,16 @@ provenance_artifact <- function(path, role = "input", cfg = study_config()) {
 #'   publication fields cannot be displaced.
 #' @param cfg List. A study manifest from \code{\link{study_config}}.
 #'
-#' @return A captured provenance payload as a plain list.
+#' @return A captured provenance payload as a plain list. It opens with the
+#'   seven fields every hvtiR package's provenance record shares:
+#'   \code{package} (\code{"hvtiRutilities"}), \code{version}, \code{sha}
+#'   (the installed commit, or \code{NA}), \code{method} (here the
+#'   \code{job}), \code{seed} (\code{NA}: a render draws no random numbers of
+#'   its own), \code{rng_kind} (\code{RNGkind()}) and \code{time} (when it
+#'   was captured, \code{POSIXct}). The render-specific fields follow. An
+#'   \code{extra} element with one of these names is dropped, as one naming a
+#'   render field always was. In the published JSON an unknown \code{sha} is
+#'   \code{null} and \code{time} is UTC in the form \code{rendered} uses.
 #'
 #' @seealso \code{\link{publish_provenance}},
 #'   \code{\link{record_provenance}}
@@ -535,7 +586,7 @@ provenance_artifact <- function(path, role = "input", cfg = study_config()) {
 #' utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
 #'                  file.path(root, "00_datasets", "built.csv"),
 #'                  row.names = FALSE)
-#' invisible(register_data(root, file = "built.csv"))
+#' invisible(register_data(file = "built.csv", root = root))
 #' cfg <- study_config(root)
 #'
 #' payload <- capture_provenance("death-hz-ac",
@@ -566,9 +617,12 @@ capture_provenance <- function(job, data, artifacts = list(), extra = list(),
     NULL
   }
 
-  record <- list(
+  now <- Sys.time()
+  # The family's seven common fields first; a render draws no random numbers
+  # of its own, so seed is NA and method is the job.
+  record <- c(.hvti_provenance_core(method = job, time = now), list(
     job = job,
-    rendered = format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"),
+    rendered = format(now, "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"),
     study = list(
       name = cfg$study,
       file = basename(cfg$file),
@@ -582,7 +636,7 @@ capture_provenance <- function(job, data, artifacts = list(), extra = list(),
     renv_lock = lock_record,
     data = data,
     artifacts = artifacts
-  )
+  ))
   c(record, extra)
 }
 
@@ -608,7 +662,7 @@ capture_provenance <- function(job, data, artifacts = list(), extra = list(),
 #' utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
 #'                  file.path(root, "00_datasets", "built.csv"),
 #'                  row.names = FALSE)
-#' invisible(register_data(root, file = "built.csv"))
+#' invisible(register_data(file = "built.csv", root = root))
 #' cfg <- study_config(root)
 #'
 #' payload <- capture_provenance("death-hz-ac",
@@ -698,7 +752,7 @@ publish_provenance <- function(path, payload) {
 #' utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
 #'                  file.path(root, "00_datasets", "built.csv"),
 #'                  row.names = FALSE)
-#' invisible(register_data(root, file = "built.csv"))
+#' invisible(register_data(file = "built.csv", root = root))
 #' cfg <- study_config(root)
 #'
 #' out <- file.path(root, "40_graphs", "death-hz-ac.html")

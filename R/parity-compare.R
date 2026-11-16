@@ -83,12 +83,23 @@ compare_parity <- function(quantity, r, sas, class, source = "lst",
 #' means nothing was really compared -- so it is flagged rather than
 #' celebrated.
 #'
-#' @param df A data frame of \code{\link{compare_parity}} rows.
+#' @param data A data frame of \code{\link{compare_parity}} rows. Was
+#'   \code{df} before 2026-11; \code{df =} still works for one release, with a
+#'   warning.
+#' @param df Deprecated: the old name of \code{data}, kept for one release.
 #' @return A single string.
 #' @export
 #' @examples
 #' parity_headline(compare_parity("a", 1.0001, 1, class = "mle_printed"))
-parity_headline <- function(df) {
+parity_headline <- function(data, df) {
+  cl <- sys.call()
+  env <- parent.frame()
+  if (.hvti_old_call(cl, env, renamed = "df")) {
+    .hvti_deprecate("parity_headline_df",
+                    "parity_headline(): `df =` is now `data =`. The old name works for one more release.")
+    return(.hvti_recall(cl, env, function(df) NULL, parity_headline, c(df = "data")))
+  }
+  df <- data
   n <- nrow(df)
   worst <- suppressWarnings(max(df$rel_diff, na.rm = TRUE))
   # -Inf is max() of nothing comparable; +Inf is a real discrepancy against a

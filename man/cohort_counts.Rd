@@ -4,14 +4,15 @@
 \alias{cohort_counts}
 \title{Count the analysable cohort}
 \usage{
-cohort_counts(d, event, time)
+cohort_counts(data, time, event)
 }
 \arguments{
-\item{d}{A data frame.}
-
-\item{event}{Character scalar naming the binary event column.}
+\item{data}{A data frame. Was \code{d} before 2026-11; \code{d =} still
+works for one release, with a warning.}
 
 \item{time}{Character scalar naming the time column.}
+
+\item{event}{Character scalar naming the binary event column.}
 }
 \value{
 A list with integer elements \code{n}, \code{n_events} and
@@ -29,9 +30,17 @@ A zero or negative time is still counted, so the gate's numbers do not
 move, but it warns: \code{\link{followup_check}} flags the same rows for
 review, and the two should not disagree in silence.
 }
+\section{Argument order}{
+
+\code{time, event}, as in \code{survival::Surv()}. Until 2026-11 the order
+was \code{event, time}. For one release a call passing both unnamed is read
+in the old order, with a warning; name them, \code{time =} and
+\code{event =}, and the call means the same before and after.
+}
+
 \examples{
 d <- data.frame(dead = c(1, 1, 0, 0, 0), iv_dead = 1:5)
-cohort_counts(d, event = "dead", time = "iv_dead")
+cohort_counts(d, time = "iv_dead", event = "dead")
 }
 \seealso{
 \code{\link{assert_cohort}}

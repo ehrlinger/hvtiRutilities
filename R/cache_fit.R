@@ -146,7 +146,7 @@ cache_fit <- function(name, code, seed = NULL, dir = study_dir("estimates"),
   switch(
     plan$action,
     load = {
-      message("cache_fit(): loaded '", name, "' from cache")
+      .hvti_inform("cache_fit(): loaded '", name, "' from cache")
       if (!is.null(plan$seed)) set.seed(plan$seed)
       return(.cache_attach(plan$stored$value, plan$stored$key))
     },
@@ -154,7 +154,7 @@ cache_fit <- function(name, code, seed = NULL, dir = study_dir("estimates"),
     stale   = .cache_abort("stale", name, plan$path, plan$diff)
   )
   if (plan$exists) {
-    message("cache_fit(): recomputing '", name, "' (refit = TRUE)")
+    .hvti_inform("cache_fit(): recomputing '", name, "' (refit = TRUE)")
   }
 
   key <- plan$key

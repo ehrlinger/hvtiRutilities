@@ -85,7 +85,7 @@ test_that("a study registered before the archive keeps working, and its next ver
 test_that("a version's build record moves with it and still verifies", {
   s <- unregistered_study()
   write_build_sidecar(s$src)
-  suppressMessages(register_data(s$root, "built.csv"))
+  suppressMessages(register_data(root = s$root, "built.csv"))
   dir <- dirname(s$src)
   mp <- file.path(s$root, "manifest.yaml")
   rebuild_source(s$root)
@@ -175,7 +175,7 @@ test_that("a version file another dataset reads as its source stays beside it", 
   root <- versioned_study()
   dir <- study_dir("datasets", root)
   dictionary <- "built_20260915.schema.csv"
-  suppressMessages(register_data(root, file = dictionary, dataset = "dictionary", role = "named",
+  suppressMessages(register_data(root = root, file = dictionary, dataset = "dictionary", role = "named",
                                  population = "Synthetic dictionary"))
   before <- digest::digest(file.path(dir, dictionary), algo = "sha256", file = TRUE)
   rebuild_source(root)

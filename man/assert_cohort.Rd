@@ -4,17 +4,18 @@
 \alias{assert_cohort}
 \title{Assert the cohort matches a job-level expectation}
 \usage{
-assert_cohort(d, expected, event, time)
+assert_cohort(data, expected, time, event)
 }
 \arguments{
-\item{d}{A data frame.}
+\item{data}{A data frame. Was \code{d} before 2026-11; \code{d =} still
+works for one release, with a warning.}
 
 \item{expected}{List containing nonnegative integer \code{n},
 \code{n_events} and \code{n_censored}.}
 
-\item{event}{Character scalar naming the binary event column.}
-
 \item{time}{Character scalar naming the time column.}
+
+\item{event}{Character scalar naming the binary event column.}
 }
 \value{
 \code{invisible(TRUE)} on success; otherwise an error.
@@ -24,10 +25,17 @@ Compares \code{\link{cohort_counts}} against explicitly supplied expected
 counts and errors on any disagreement. Call it before any analysis that
 would otherwise run happily on an unreconciled cohort.
 }
+\section{Argument order}{
+
+\code{time, event}, as in \code{survival::Surv()}; it was \code{event,
+time} until 2026-11. For one release a call passing all four arguments
+unnamed is read in the old order, with a warning.
+}
+
 \examples{
 d <- data.frame(dead = c(1, 1, 0, 0, 0), iv_dead = 1:5)
 expected <- list(n = 5L, n_events = 2L, n_censored = 3L)
-assert_cohort(d, expected, event = "dead", time = "iv_dead")
+assert_cohort(d, expected, time = "iv_dead", event = "dead")
 }
 \seealso{
 \code{\link{cohort_counts}}

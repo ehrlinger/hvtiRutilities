@@ -104,7 +104,7 @@ test_that("cohort_counts() warns on zero or negative time but keeps the count", 
   expect_warning(cc <- cohort_counts(d, event = "dead", time = "t"),
                  "1 negative and 1 zero")
   expect_equal(cc$n, 3L)
-  expect_no_warning(cohort_counts(data.frame(dead = 1, t = 2), "dead", "t"))
+  expect_no_warning(cohort_counts(data.frame(dead = 1, t = 2), time = "t", event = "dead"))
 })
 
 test_that("covariates_to_numeric() warns about names not in the data", {

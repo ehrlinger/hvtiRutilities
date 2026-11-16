@@ -1,0 +1,8 @@
+* Argument names and order follow the family API rubric. Each rename works for one more release with a once-per-session warning of class `hvtiRutilities_deprecated` (and `deprecatedWarning`):
+  * `cohort_counts(data, time, event)` and `assert_cohort(data, expected, time, event)`: `d` is now `data`, and `time` comes before `event`, as in `survival::Surv()`. A call that passes both unnamed is read in the old order for this release; name them.
+  * `followup_check(data, time, event, ...)`: `followup` is now `time`, and comes before `event`.
+  * `r_data_types(data, ...)` (was `dataset`) and `parity_headline(data)` (was `df`).
+  * `register_data()` and `declare_data()` take `root` last. A call whose first unnamed argument is an existing directory is read in the old, root-first order for this release; pass `root =` by name.
+* Condition classes carry the package name: a lost checkpoint lock is `hvtiRutilities_cp_lock_lost` (still also `hvti_cp_lock_lost` for this release), and every deprecation notice is `hvtiRutilities_deprecated`.
+* `options(hvti.quiet = TRUE)` silences the informational messages from `cache_fit()`, `update_manifest()`'s registration summary and the checkpoint functions. Warnings and errors are never silenced, and neither is the reminder that checkpoint notes must not contain patient information.
+* `capture_provenance()` opens its record with the seven fields every hvtiR package's provenance shares: `package`, `version`, `sha`, `method` (the job), `seed` (`NA`), `rng_kind` and `time`.

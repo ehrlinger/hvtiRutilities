@@ -193,7 +193,9 @@
   if (is.null(held)) return(invisible(FALSE))
   if (!isTRUE(Sys.setFileTime(.cp_lock_lease(held$lock, held$token), Sys.time()))) {
     stop(structure(
-      class = c("hvti_cp_lock_lost", "error", "condition"),
+      # hvtiRutilities_cp_lock_lost is the class to catch; hvti_cp_lock_lost is
+      # its name before 2026-11, kept for one release.
+      class = c("hvtiRutilities_cp_lock_lost", "hvti_cp_lock_lost", "error", "condition"),
       list(message = paste0(.cp_or(held$caller, "checkpoint"), "(): the checkpoint ",
                             "lock was taken over by another session; retry when it ",
                             "has finished"),

@@ -4,13 +4,9 @@
 \alias{declare_data}
 \title{Name a study's working dataset without registering it}
 \usage{
-declare_data(root = study_root(), file, key = NULL, built = NULL)
+declare_data(file, key = NULL, built = NULL, root = study_root())
 }
 \arguments{
-\item{root}{The study root, or a directory beneath it. Defaults to the study that contains the working
-directory, found by its \code{_study.yml}; outside a study the function
-stops and writes nothing.}
-
 \item{file}{The working file's name in the datasets folder, with its extension.}
 
 \item{key}{Columns that make a row unique, or \code{NULL} to leave
@@ -18,6 +14,13 @@ stops and writes nothing.}
 
 \item{built}{The old name of \code{file}, before 2026-11. It still works,
 with a warning, and will be removed in a later release.}
+
+\item{root}{The study root, or a directory beneath it. Defaults to the study that contains the working
+directory, found by its \code{_study.yml}; outside a study the function
+stops and writes nothing.
+It comes last, after 2026-11; a call that passes an existing directory
+as its first unnamed argument is read in the old, root-first order for
+one release, with a warning.}
 }
 \value{
 \code{TRUE}, invisibly, when the contract was written, or a
@@ -45,6 +48,6 @@ with \code{REGISTER = FALSE}.
 root <- file.path(tempdir(), "declare-example")
 suppressMessages(study_setup(root, "Example", 1L, renv = FALSE))
 saveRDS(data.frame(ccfid = 1:3), file.path(study_dir("datasets", root), "study_cohort.rds"))
-declare_data(root, file = "study_cohort.rds", key = "ccfid")
+declare_data("study_cohort.rds", key = "ccfid", root = root)
 unlink(root, recursive = TRUE)
 }

@@ -70,7 +70,7 @@ test_that("a declared but unregistered dataset's provenance record is a working 
   root <- file.path(withr::local_tempdir(), "study")
   suppressMessages(study_setup(root, "Declare fixture", 7L, renv = FALSE))
   saveRDS(data.frame(ccfid = 1:3), file.path(study_dir("datasets", root), "study_cohort.rds"))
-  declare_data(root, file = "study_cohort.rds", key = "ccfid")
+  declare_data(root = root, file = "study_cohort.rds", key = "ccfid")
   cfg <- study_config(root)
   withr::local_envvar(HVTI_DATA = NA)
   expect_true(isTRUE(provenance_data(cfg = cfg)$working))
@@ -253,8 +253,13 @@ test_that("capture records the complete session snapshot", {
     cfg = cfg
   )
 
-  required <- hvtiRutilities:::.provenance_required()
-  expect_identical(names(record)[seq_along(required)], names(required))
+  # The family's seven common fields first, then the render's own.
+  leading <- c(names(hvtiRutilities:::.hvti_provenance_types()),
+               names(hvtiRutilities:::.provenance_required()))
+  expect_identical(names(record)[seq_along(leading)], leading)
+  expect_true(hvtiRutilities:::.hvti_provenance_conforms(record))
+  expect_identical(record$method, "death-hz-ac")
+  expect_identical(record$seed, NA_integer_)
   expect_match(record$rendered, "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:]{8}Z$")
   expect_identical(record$study$name, cfg$study)
   expect_identical(record$study$file, "_study.yml")
@@ -471,7 +476,7 @@ test_that("publish rejects malformed payloads", {
   payload <- capture_provenance("death-hz-ac", list(),
                                 cfg = study_config(root, require_data = FALSE))
 
-  expect_error(publish_provenance(out, payload[-1L]), "payload")
+  expect_error(publish_provenance(out, payload[setdiff(names(payload), "job")]), "payload")
   payload$output <- list(sha256 = "spoofed")
   expect_error(publish_provenance(out, payload), "output")
 })

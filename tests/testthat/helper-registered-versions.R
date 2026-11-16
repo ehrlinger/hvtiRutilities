@@ -13,7 +13,7 @@ versioned_study <- function(env = parent.frame(), data = data.frame(id = 1:3, DE
   path <- file.path(study_dir("datasets", root), "built.csv")
   utils::write.csv(data, path, row.names = FALSE)
   Sys.setFileTime(path, as.POSIXct("2026-09-15 12:00:00", tz = "UTC"))
-  suppressMessages(register_data(root, "built.csv"))
+  suppressMessages(register_data(root = root, "built.csv"))
   root
 }
 

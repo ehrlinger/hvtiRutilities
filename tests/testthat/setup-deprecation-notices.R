@@ -14,11 +14,14 @@
 # depending on file order.
 local({
   env <- asNamespace("hvtiRutilities")$.hvti_deprecated
-  for (flag in c("convert_types", "use_value_labels", "release_contract")) {
+  flags <- c("convert_types", "use_value_labels", "release_contract", "cohort_counts_args", "assert_cohort_args",
+             "followup_check_args", "r_data_types_dataset", "parity_headline_df", "register_data_root",
+             "declare_data_root")
+  for (flag in flags) {
     assign(flag, TRUE, envir = env)
   }
   withr::defer(
-    rm(list = c("convert_types", "use_value_labels", "release_contract"), envir = env),
+    rm(list = flags, envir = env),
     envir = testthat::teardown_env()
   )
 })

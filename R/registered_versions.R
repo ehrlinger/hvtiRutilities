@@ -514,10 +514,10 @@
   # A legacy cache name can be another dataset's registered version; that file is never removed.
   unlink(drop[!basename(drop) %in% .recorded_version_names(manifest$datasets)])
   for (a in archive) .archive_history(a$entry, a$dir, manifest$datasets)
-  message(paste0(format(out$dataset), ": ", out$detail, collapse = "\n"))
-  for (b in behind) message(b)
+  .hvti_inform(paste0(format(out$dataset), ": ", out$detail, collapse = "\n"))
+  for (b in behind) .hvti_inform(b)
   if (changed || restamped) {
-    message("Commit manifest.yaml so the record of which version is current travels with the study.")
+    .hvti_inform("Commit manifest.yaml so the record of which version is current travels with the study.")
   }
   invisible(out)
 }

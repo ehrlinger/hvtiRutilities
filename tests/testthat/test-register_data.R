@@ -46,7 +46,7 @@ test_that("register_data registers the default dataset without an endpoint", {
   root <- registration_study()
   write_registration_csv(root, "built.csv", n = 5L, n_events = 2L)
 
-  status <- register_data(root, "built.csv")
+  status <- register_data(root = root, "built.csv")
 
   expect_s3_class(status, "study_status")
   cfg <- study_config(root)
@@ -60,12 +60,12 @@ test_that("register_data registers the default dataset without an endpoint", {
 test_that("register_data adds a named dataset without changing the default", {
   root <- registration_study()
   write_registration_csv(root, "built.csv")
-  register_data(root, "built.csv")
+  register_data(root = root, "built.csv")
   before <- study_config(root)
   write_registration_csv(root, "subset.csv", n = 3L, n_events = 1L)
 
   register_data(
-    root,
+    root = root,
     "subset.csv",
     dataset = "complete_cases",
     role = "named",
@@ -86,7 +86,7 @@ test_that("register_data permits ancillary data before the default", {
   write_registration_csv(root, "imaging.csv")
 
   register_data(
-    root,
+    root = root,
     "imaging.csv",
     dataset = "imaging",
     role = "named"
@@ -101,11 +101,11 @@ test_that("register_data permits ancillary data before the default", {
 test_that("register_data refuses duplicate registrations without changes", {
   root <- registration_study()
   write_registration_csv(root, "built.csv")
-  register_data(root, "built.csv")
+  register_data(root = root, "built.csv")
   before <- study_manifest_bytes(root)
 
   expect_error(
-    register_data(root, "built.csv"),
+    register_data(root = root, "built.csv"),
     "already registered"
   )
 
@@ -115,12 +115,12 @@ test_that("register_data refuses duplicate registrations without changes", {
 test_that("register_data validates named data before writing", {
   root <- registration_study()
   write_registration_csv(root, "built.csv")
-  register_data(root, "built.csv")
+  register_data(root = root, "built.csv")
   write_registration_csv(root, "subset.csv")
   before <- study_manifest_bytes(root)
 
   expect_error(
-    register_data(root, "subset.csv",
+    register_data(root = root, "subset.csv",
                   dataset = "Complete Cases", role = "named"),
     "lower-snake-case"
   )
@@ -131,7 +131,7 @@ test_that("register_data does not require endpoint columns before writing", {
   root <- registration_study()
   write_registration_csv(root, "built.csv")
 
-  register_data(root, "built.csv")
+  register_data(root = root, "built.csv")
 
   expect_identical(study_config(root)$built, "built.csv")
   expect_true(file.exists(file.path(root, "manifest.yaml")))
@@ -140,7 +140,7 @@ test_that("register_data does not require endpoint columns before writing", {
 test_that("register_data identifies itself in argument errors", {
   root <- registration_study()
 
-  expect_error(register_data(root, ""),
+  expect_error(register_data(root = root, ""),
                "register_data[(][)]")
 })
 
@@ -149,7 +149,7 @@ test_that("register_data records source and the requested extract date", {
   write_registration_csv(root, "built.csv")
 
   register_data(
-    root,
+    root = root,
     "built.csv",
     source = "Synthetic fixture",
     extract_date = "2006-05-03"
@@ -165,7 +165,7 @@ test_that("register_data defaults extract date to the dataset mtime", {
   path <- write_registration_csv(root, "built.csv")
   Sys.setFileTime(path, as.POSIXct("2006-05-03 14:03:00", tz = "UTC"))
 
-  register_data(root, "built.csv")
+  register_data(root = root, "built.csv")
 
   manifest <- .read_manifest(file.path(root, "manifest.yaml"))
   expect_identical(manifest$datasets[[1L]]$extract_date, "2006-05-03")
@@ -174,7 +174,7 @@ test_that("register_data defaults extract date to the dataset mtime", {
 test_that("register_data creates a verifiable manifest entry", {
   root <- registration_study()
   write_registration_csv(root, "built.csv")
-  register_data(root, "built.csv")
+  register_data(root = root, "built.csv")
 
   report <- verify_manifest(
     file.path(root, "manifest.yaml"),
@@ -188,7 +188,7 @@ test_that("register_data creates a verifiable manifest entry", {
 test_that("verify_manifest refuses a mixed study layout by default", {
   root <- registration_study()
   write_registration_csv(root, "built.csv")
-  register_data(root, "built.csv")
+  register_data(root = root, "built.csv")
   dir.create(file.path(root, "datasets"))
 
   expect_error(
@@ -200,13 +200,13 @@ test_that("verify_manifest refuses a mixed study layout by default", {
 test_that("register_data refuses files that share derived output paths", {
   root <- registration_study()
   write_registration_csv(root, "built.csv")
-  register_data(root, "built.csv")
+  register_data(root = root, "built.csv")
   before <- study_manifest_bytes(root)
   d <- data.frame(id = 1:2, dead = c(0L, 1L), iv_dead = 1:2)
   saveRDS(d, file.path(study_dir("datasets", root), "built.rds"))
 
   expect_error(
-    register_data(root, "built.rds", dataset = "secondary", role = "named"),
+    register_data(root = root, "built.rds", dataset = "secondary", role = "named"),
     "derived path stem"
   )
   expect_identical(study_manifest_bytes(root), before)
@@ -252,7 +252,7 @@ test_that("register_data rejects an unnamed additional dataset sequence", {
 
   expect_error(
     register_data(
-      root,
+      root = root,
       "new.csv",
       dataset = "secondary",
       role = "named"
@@ -268,11 +268,11 @@ test_that("register_data refuses an absent or extensionless file", {
   before <- readLines(file.path(root, "_study.yml"))
 
   expect_error(
-    register_data(root, "missing.csv"),
+    register_data(root = root, "missing.csv"),
     "missing"
   )
   expect_error(
-    register_data(root, "missing"),
+    register_data(root = root, "missing"),
     "extension"
   )
 
@@ -285,7 +285,7 @@ test_that("register_data attaches a verified published release", {
   fx <- write_release_fixture(root)
 
   suppressWarnings(register_data(
-    root,
+    root = root,
     "cohort_20260920.csv",
     catalog_dataset = "surgery_cohort",
     release_id = "surgery_cohort-20260920-r1"
@@ -310,7 +310,7 @@ test_that("release registration refuses a filename mismatch without writes", {
 
   suppressWarnings(expect_error(
     register_data(
-      root,
+      root = root,
       "cohort_20260921.csv",
       catalog_dataset = "surgery_cohort",
       release_id = "surgery_cohort-20260920-r1"
@@ -327,7 +327,7 @@ test_that("release registration requires both catalog identifiers", {
 
   expect_error(
     register_data(
-      root,
+      root = root,
       "cohort_20260920.csv",
       catalog_dataset = "surgery_cohort"
     ),
@@ -335,7 +335,7 @@ test_that("release registration requires both catalog identifiers", {
   )
   expect_error(
     register_data(
-      root,
+      root = root,
       "cohort_20260920.csv",
       release_id = "surgery_cohort-20260920-r1"
     ),
@@ -354,7 +354,7 @@ test_that("release registration rejects withdrawn or changed releases", {
 
   suppressWarnings(expect_error(
     register_data(
-      withdrawn_root,
+      root = withdrawn_root,
       "cohort_20260920.csv",
       catalog_dataset = "surgery_cohort",
       release_id = "surgery_cohort-20260920-r1"
@@ -367,7 +367,7 @@ test_that("release registration rejects withdrawn or changed releases", {
   writeLines("changed", file.path(changed$data_dir, "cohort_20260920.csv"))
   suppressWarnings(expect_error(
     register_data(
-      changed_root,
+      root = changed_root,
       "cohort_20260920.csv",
       catalog_dataset = "surgery_cohort",
       release_id = "surgery_cohort-20260920-r1"
@@ -385,7 +385,7 @@ test_that("release registration reconciles catalog provenance", {
 
   suppressWarnings(expect_error(
     register_data(
-      root,
+      root = root,
       "cohort_20260920.csv",
       source = "Different source",
       catalog_dataset = "surgery_cohort",
@@ -395,7 +395,7 @@ test_that("release registration reconciles catalog provenance", {
   ), classes = "deprecatedWarning")
   suppressWarnings(expect_error(
     register_data(
-      root,
+      root = root,
       "cohort_20260920.csv",
       extract_date = "2026-09-19",
       catalog_dataset = "surgery_cohort",
@@ -405,7 +405,7 @@ test_that("release registration reconciles catalog provenance", {
   ), classes = "deprecatedWarning")
 
   suppressWarnings(expect_no_error(register_data(
-    root,
+    root = root,
     "cohort_20260920.csv",
     source = "Synthetic registry",
     extract_date = "2026-09-20",
@@ -433,7 +433,7 @@ test_that("release registration brackets the data read with integrity checks", {
 
   suppressWarnings(expect_error(
     register_data(
-      root,
+      root = root,
       "cohort_20260920.csv",
       catalog_dataset = "surgery_cohort",
       release_id = "surgery_cohort-20260920-r1"
@@ -454,14 +454,14 @@ test_that("register_data attaches a release to a legacy registration once", {
   root <- registration_study()
   write_release_fixture(root)
   register_data(
-    root,
+    root = root,
     "cohort_20260920.csv",
     population = "Synthetic cohort"
   )
   unconvert_registration(root, "cohort_20260920.csv")
 
   suppressWarnings(register_data(
-    root,
+    root = root,
     "cohort_20260920.csv",
     catalog_dataset = "surgery_cohort",
     release_id = "surgery_cohort-20260920-r1"
@@ -477,7 +477,7 @@ test_that("register_data attaches a release to a legacy registration once", {
 
   suppressWarnings(expect_error(
     register_data(
-      root,
+      root = root,
       "cohort_20260920.csv",
       catalog_dataset = "surgery_cohort",
       release_id = "surgery_cohort-20260920-r1"
@@ -532,7 +532,7 @@ test_that("named release migration preserves additive contract fields", {
   root <- registration_study()
   write_release_fixture(root)
   register_data(
-    root,
+    root = root,
     "cohort_20260920.csv",
     dataset = "named_data",
     role = "named"
@@ -548,7 +548,7 @@ test_that("named release migration preserves additive contract fields", {
 
   expect_no_error(study_config(root, require_data = FALSE))
   suppressWarnings(register_data(
-    root,
+    root = root,
     "cohort_20260920.csv",
     dataset = "named_data",
     role = "named",
@@ -586,7 +586,7 @@ registration_entry <- function(root) {
 test_that("register_data accepts a path into the data folder as the bare name (#272)", {
   bare <- registration_study()
   pinned_registration_csv(bare, "built.csv")
-  register_data(bare, "built.csv", extract_date = "2026-11-04")
+  register_data(root = bare, "built.csv", extract_date = "2026-11-04")
   expected <- registration_entry(bare)
   expect_identical(expected$built, "built.csv")
   expect_identical(expected$entry$file, "built.csv")
@@ -595,14 +595,14 @@ test_that("register_data accepts a path into the data folder as the bare name (#
   forms <- list(
     relative_to_wd = function(root) {
       withr::local_dir(root)
-      register_data(root, file.path(data_leaf, "built.csv"), extract_date = "2026-11-04")
+      register_data(root = root, file.path(data_leaf, "built.csv"), extract_date = "2026-11-04")
     },
     relative_to_root = function(root) {
       withr::local_dir(tempdir())
-      register_data(root, file.path(data_leaf, "built.csv"), extract_date = "2026-11-04")
+      register_data(root = root, file.path(data_leaf, "built.csv"), extract_date = "2026-11-04")
     },
     absolute = function(root) {
-      register_data(root, file.path(study_dir("datasets", root), "built.csv"),
+      register_data(root = root, file.path(study_dir("datasets", root), "built.csv"),
                     extract_date = "2026-11-04")
     }
   )
@@ -618,8 +618,8 @@ test_that("register_data accepts a path for a named dataset (#272)", {
   root <- registration_study()
   write_registration_csv(root, "built.csv")
   write_registration_csv(root, "echo.csv")
-  register_data(root, "built.csv")
-  register_data(root, file.path(study_dir("datasets", root), "echo.csv"),
+  register_data(root = root, "built.csv")
+  register_data(root = root, file.path(study_dir("datasets", root), "echo.csv"),
                 dataset = "echo", role = "named")
   expect_identical(study_config(root, require_data = FALSE)$additional_datasets$echo$built, "echo.csv")
 })
@@ -638,7 +638,7 @@ test_that("register_data refuses a path outside the data folder, naming it (#272
 
   withr::local_dir(root)
   for (bad in c("../other/built.csv", file.path(outside, "built.csv"), "analysis_copy/built.csv")) {
-    expect_error(register_data(root, bad), data_leaf, fixed = TRUE, info = bad)
+    expect_error(register_data(root = root, bad), data_leaf, fixed = TRUE, info = bad)
   }
   expect_identical(readLines(file.path(root, "_study.yml")), before)
   expect_false(file.exists(file.path(root, "manifest.yaml")))
@@ -655,7 +655,7 @@ test_that("register_data refuses a relative path that names another study's file
   # From the other study, completion gives "00_datasets/built.csv" for ITS file.
   withr::local_dir(other)
   data_leaf <- basename(study_dir("datasets", this))
-  expect_error(register_data(this, file.path(data_leaf, "built.csv")), "working directory")
+  expect_error(register_data(root = this, file.path(data_leaf, "built.csv")), "working directory")
   expect_identical(readLines(file.path(this, "_study.yml")), before)
   expect_false(file.exists(file.path(this, "manifest.yaml")))
 })
@@ -664,21 +664,21 @@ test_that("register_data() takes file =; built =, its old name, still works with
   root <- registration_study()
   write_registration_csv(root, "built.csv")
   write_registration_csv(root, "echo.csv")
-  expect_error(register_data(root, file = "built.csv", built = "built.csv"),
+  expect_error(register_data(root = root, file = "built.csv", built = "built.csv"),
                "give file = only. built = is its old name")
   # An explicit file = NULL is still a file = given (#278 review).
-  expect_error(register_data(root, file = NULL, built = "built.csv"),
+  expect_error(register_data(root = root, file = NULL, built = "built.csv"),
                "give file = only. built = is its old name")
   expect_error(register_data(root), "file must be one non-empty value")
   # Nothing was written by either refusal.
   expect_null(yaml::read_yaml(file.path(root, "_study.yml"))$built)
 
-  suppressMessages(register_data(root, file = "built.csv"))
+  suppressMessages(register_data(root = root, file = "built.csv"))
   expect_identical(yaml::read_yaml(file.path(root, "_study.yml"))$built, "built.csv")
 
   w <- NULL
   suppressMessages(withCallingHandlers(
-    register_data(root, built = "echo.csv", dataset = "echo", role = "named"),
+    register_data(root = root, built = "echo.csv", dataset = "echo", role = "named"),
     deprecatedWarning = function(cond) {
       w <<- conditionMessage(cond)
       invokeRestart("muffleWarning")

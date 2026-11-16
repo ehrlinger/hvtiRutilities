@@ -288,7 +288,7 @@ built_manifest <- function(cfg = study_config(), dataset = "study") {
 #'   suppressMessages(study_setup(root, "Example", 1L, renv = FALSE))
 #'   write.csv(data.frame(DEAD = c(1, 0, 0), IV_DEAD = 1:3),
 #'             file.path(study_dir("datasets", root), "example.csv"), row.names = FALSE)
-#'   suppressMessages(register_data(root, "example.csv"))
+#'   suppressMessages(register_data("example.csv", root = root))
 #'   names(read_built(study_config(root)))
 #'   unlink(root, recursive = TRUE)
 #' }

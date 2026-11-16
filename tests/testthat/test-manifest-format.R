@@ -16,7 +16,7 @@ guard_study <- function(env = parent.frame()) {
   path <- file.path(study_dir("datasets", root), "built.csv")
   utils::write.csv(data.frame(id = 1:3, dead = c(1L, 0L, 0L), iv_dead = 1:3), path, row.names = FALSE)
   Sys.setFileTime(path, as.POSIXct("2026-09-15 12:00:00", tz = "UTC"))
-  suppressMessages(register_data(root, "built.csv"))
+  suppressMessages(register_data(root = root, "built.csv"))
   root
 }
 

@@ -71,8 +71,8 @@
     }
   }
   if (!is.null(why)) {
-    message("Closure state is from this copy's last fetch and may be out of ",
-            "date: ", why, ".")
+    .hvti_inform("Closure state is from this copy's last fetch and may be out of ",
+                 "date: ", why, ".")
   }
   invisible(is.null(why))
 }

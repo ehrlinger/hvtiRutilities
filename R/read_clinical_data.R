@@ -136,7 +136,7 @@ read_clinical_data <- function(file, convert_types = FALSE, ...,
            "`convert_types` is FALSE. Drop them, or pass convert_types = TRUE.",
            call. = FALSE)
     }
-    unknown <- setdiff(dot_names, setdiff(names(formals(r_data_types)), "dataset"))
+    unknown <- setdiff(dot_names, setdiff(names(formals(r_data_types)), "data"))
     if (length(unknown)) {
       stop("read_clinical_data(): r_data_types() has no argument ",
            paste0("`", unknown, "`", collapse = ", "), ". Arguments in `...` ",

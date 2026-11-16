@@ -5,15 +5,18 @@
 \title{Automatically infer and convert data types}
 \usage{
 r_data_types(
-  dataset,
+  data,
   factor_size = 10,
   skip_vars = NULL,
   binary_factor = FALSE,
-  use_value_labels = FALSE
+  use_value_labels = FALSE,
+  dataset
 )
 }
 \arguments{
-\item{dataset}{A data frame, tibble, data.table, or similar tabular object}
+\item{data}{A data frame, tibble, data.table, or similar tabular object.
+Was \code{dataset} before 2026-11; \code{dataset =} still works for one
+release, with a warning.}
 
 \item{factor_size}{Integer threshold for factor conversion. Numeric variables
 with fewer than this many unique values (but more than 2) will be converted
@@ -33,9 +36,12 @@ converted through \code{\link[labelled]{to_factor}}, so the level text is
 kept. If FALSE the value labels are dropped and the numeric codes are
 converted instead. Default is FALSE, which warns once per session; the
 default becomes TRUE in a later release.}
+
+\item{dataset}{Deprecated: the old name of \code{data}. Kept as an argument
+for one release so \code{dataset =} still reaches the deprecation notice.}
 }
 \value{
-An object of the same class as \code{dataset} with columns
+An object of the same class as \code{data} with columns
   converted according to the function's rules. Variable labels are
   preserved. The result carries a per-column conversion report, read with
   \code{\link{type_conversion_report}}.
