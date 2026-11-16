@@ -4,7 +4,14 @@
 \alias{proc_freq}
 \title{Frequency tables, in the style of SAS PROC FREQ}
 \usage{
-proc_freq(data, tables, missing = FALSE, list = FALSE, weights = NULL)
+proc_freq(
+  data,
+  tables,
+  missing = FALSE,
+  list = FALSE,
+  weight_col = NULL,
+  weights
+)
 }
 \arguments{
 \item{data}{A data frame.}
@@ -22,10 +29,12 @@ with each SAS special missing value a level of its own.}
 columns and percentages of the grand total for an n-way table. It has no
 effect on a one-way table.}
 
-\item{weights}{Character or \code{NULL}. Name of a single numeric column of
+\item{weight_col}{Character or \code{NULL}. Name of a single numeric column of
 weights, SAS \code{WEIGHT}. \code{Frequency} becomes the sum of weights.
 Rows with a missing weight are excluded entirely; non-positive weights
 are an error, as in \code{\link{proc_means}}.}
+
+\item{weights}{Deprecated: the old name of \code{weight_col}, kept for one release.}
 }
 \value{
 A data frame with one column per \code{tables} variable (each

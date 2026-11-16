@@ -14,20 +14,20 @@ local_fresh_notice <- function(key, env = parent.frame()) {
 d <- data.frame(dead = c(1, 0, 0, 1), iv_dead = c(2, 3, 4, 5))
 want <- list(n = 4L, n_events = 2L, n_censored = 2L)
 
-test_that("cohort_counts() takes (data, time, event); a `d =` call works once more, with one notice", {
-  expect_identical(cohort_counts(d, time = "iv_dead", event = "dead"), want)
-  expect_identical(cohort_counts(data = d, event = "dead", time = "iv_dead"), want)
+test_that("cohort_counts() takes (data, time_col, event_col); d, time and event work once more, with one notice", {
+  expect_identical(cohort_counts(d, time_col = "iv_dead", event_col = "dead"), want)
+  expect_identical(cohort_counts(data = d, event_col = "dead", time_col = "iv_dead"), want)
   local_fresh_notice("cohort_counts_args")
-  expect_warning(got <- cohort_counts(d = d, event = "dead", time = "iv_dead"), class = "hvtiRutilities_deprecated")
+  expect_warning(got <- cohort_counts(d, time = "iv_dead", event = "dead"), class = "hvtiRutilities_deprecated")
   expect_identical(got, want)
   expect_no_warning(expect_identical(cohort_counts(d = d, event = "dead", time = "iv_dead"), want))
 })
 
-test_that("assert_cohort() takes (data, expected, time, event)", {
-  expect_true(assert_cohort(d, want, time = "iv_dead", event = "dead"))
+test_that("assert_cohort() takes (data, expected, time_col, event_col); the old names warn once", {
+  expect_true(assert_cohort(d, want, time_col = "iv_dead", event_col = "dead"))
   local_fresh_notice("assert_cohort_args")
   expect_warning(expect_true(assert_cohort(d = d, want, event = "dead", time = "iv_dead")),
-                 "now \\(data, expected, time, event\\)")
+                 "now \\(data, expected, time_col, event_col\\)")
 })
 
 # Both columns binary, so a swapped time and event changes the count rather
@@ -36,7 +36,7 @@ b <- data.frame(ev = c(1, 1, 0), tt = c(1, 1, 1))
 b_want <- list(n = 3L, n_events = 2L, n_censored = 1L)
 
 test_that("two unnamed survival arguments are refused on every call, in either order", {
-  refused <- "pass `time =` and `event =` by name"
+  refused <- "pass `time_col =` and `event_col =` by name"
   for (attempt in 1:2) {
     expect_error(cohort_counts(b, "tt", "ev"), refused)
     expect_error(cohort_counts(b, "ev", "tt"), refused)
@@ -46,22 +46,72 @@ test_that("two unnamed survival arguments are refused on every call, in either o
     expect_error(followup_check(b, "tt", "ev"), refused)
     expect_error(followup_check(data = b, "ev", "tt"), refused)
   }
-  # One of the two unnamed means the same in the old order and the new.
-  expect_identical(cohort_counts(b, "tt", event = "ev"), b_want)
-  expect_identical(cohort_counts(b, event = "ev", "tt"), b_want)
-  expect_true(assert_cohort(b, b_want, "tt", event = "ev"))
-  expect_identical(followup_check(b, event = "ev", "tt")$cohort$event, 2L)
-  expect_identical(followup_check(data = b, "tt", event = "ev")$cohort$event, 2L)
 })
 
-test_that("followup_check() takes time = and maps followup = to it", {
-  new <- followup_check(d, time = "iv_dead", event = "dead")
+test_that("one unnamed survival argument binds the same under every name, and never swaps", {
+  local_fresh_notice("cohort_counts_args")
+  local_fresh_notice("assert_cohort_args")
   local_fresh_notice("followup_check_args")
-  expect_warning(old <- followup_check(d, event = "dead", followup = "iv_dead"), class = "deprecatedWarning")
+  suppressWarnings({
+    for (attempt in 1:2) {
+      # New names.
+      expect_identical(cohort_counts(b, "tt", event_col = "ev"), b_want)
+      expect_identical(cohort_counts(b, event_col = "ev", "tt"), b_want)
+      expect_identical(cohort_counts(data = b, time_col = "tt", "ev"), b_want)
+      expect_true(assert_cohort(b, b_want, "tt", event_col = "ev"))
+      expect_true(assert_cohort(b, b_want, time_col = "tt", "ev"))
+      expect_identical(followup_check(b, event_col = "ev", "tt")$cohort$event, 2L)
+      expect_identical(followup_check(data = b, "tt", event_col = "ev")$cohort$event, 2L)
+      expect_identical(followup_check(b, time_col = "tt", "ev")$cohort$event, 2L)
+      # Old names, as hvtiRdatabuild and hvtiRtemplates still write them.
+      expect_identical(cohort_counts(b, event = "ev", time = "tt"), b_want)
+      expect_identical(cohort_counts(b, "tt", event = "ev"), b_want)
+      expect_identical(cohort_counts(d = b, "ev", time = "tt"), b_want)
+      expect_true(assert_cohort(b, expected = b_want, event = "ev", time = "tt"))
+      expect_true(assert_cohort(b, b_want, "ev", time = "tt"))
+      expect_identical(followup_check(b, event = "ev", followup = "tt")$cohort$event, 2L)
+      expect_identical(followup_check(b, "ev", followup = "tt")$cohort$event, 2L)
+      expect_identical(followup_check(b, "ev", followup = "tt", identifier = "tt")$cohort$event, 2L)
+      expect_identical(followup_check(b, time = "tt", "ev")$cohort$event, 2L)
+    }
+  })
+})
+
+test_that("followup_check() takes time_col, event_col and id_col; the old names warn once", {
+  new <- followup_check(d, time_col = "iv_dead", event_col = "dead")
+  local_fresh_notice("followup_check_args")
+  expect_warning(old <- followup_check(d, event = "dead", followup = "iv_dead"), class = "hvtiRutilities_deprecated")
   expect_equal(old$cohort, new$cohort)
-  # An old-name caller's errors still name `followup` while the shim lives.
+  expect_no_warning(followup_check(d, event = "dead", time = "iv_dead", identifier = "dead"))
+  expect_identical(names(followup_check(d, time_col = "iv_dead", event_col = "dead", id_col = "dead",
+                                        max_rows = 1L)$review),
+                   names(suppressWarnings(followup_check(d, event = "dead", followup = "iv_dead",
+                                                         identifier = "dead", max_rows = 1L))$review))
+  # Errors name each argument as the caller wrote it while the shim lives.
   expect_error(followup_check(d, event = "dead", followup = character()), "`followup` must name")
-  expect_error(followup_check(d, time = character(), event = "dead"), "`time` must name")
+  expect_error(followup_check(d, event = "dead", time = character()), "`time` must name")
+  expect_error(followup_check(d, time_col = character(), event_col = "dead"), "`time_col` must name")
+  expect_error(followup_check(d, event = c("dead", "iv_dead"), followup = "iv_dead"), "`event` must name one column")
+  expect_error(followup_check(d, event_col = c("dead", "iv_dead"), time_col = "iv_dead"), "`event_col` must name one column")
+  expect_error(followup_check(d, event = "dead", followup = "iv_dead", identifier = c("a", "b")), "`identifier`")
+})
+
+test_that("proc_means(), proc_freq() and proc_univariate() take weight_col; weights = warns once", {
+  w <- data.frame(x = c(1, 2, 3, 4), g = c("a", "a", "b", "b"), wt = c(1, 2, 1, 4))
+  cases <- list(
+    proc_means = function(...) proc_means(w, vars = "x", stats = c("n", "mean"), ...),
+    proc_freq = function(...) proc_freq(w, "g", ...),
+    proc_univariate = function(...) proc_univariate(w, vars = "x", stats = c("n", "mean"), ...)
+  )
+  for (fn in names(cases)) {
+    new <- cases[[fn]](weight_col = "wt")
+    local_fresh_notice(paste0(fn, "_weights"))
+    expect_warning(old <- cases[[fn]](weights = "wt"), "`weights =` is now `weight_col =`", info = fn)
+    expect_identical(old, new, info = fn)
+    expect_no_warning(cases[[fn]](weights = "wt"))
+  }
+  # The fifth positional argument of proc_freq() is still the weight column.
+  expect_identical(proc_freq(w, "g", FALSE, FALSE, "wt"), proc_freq(w, "g", weight_col = "wt"))
 })
 
 test_that("r_data_types() and parity_headline() take data =", {

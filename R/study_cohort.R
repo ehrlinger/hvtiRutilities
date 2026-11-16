@@ -18,15 +18,18 @@
 #'
 #' @param data A data frame. Was \code{d} before 2026-11; \code{d =} still
 #'   works for one release, with a warning.
-#' @param time Character scalar naming the time column.
-#' @param event Character scalar naming the binary event column.
+#' @param time_col Character scalar naming the time column. Was \code{time}
+#'   before 2026-11; \code{time =} still works for one release, with a warning.
+#' @param event_col Character scalar naming the binary event column. Was
+#'   \code{event} before 2026-11; \code{event =} still works for one release,
+#'   with a warning.
 #'
 #' @section Argument order:
-#' \code{time, event}, as in \code{survival::Surv()}. Until 2026-11 the order
-#' was \code{event, time}, so a call passing both unnamed means opposite things
-#' in the two orders and is an error, whether or not \code{data} is named.
-#' Name them, \code{time =} and \code{event =}, and the call means the same
-#' before and after. One of the two unnamed reads the same in either order.
+#' \code{time_col, event_col}, as in \code{survival::Surv()}. Until 2026-11 the
+#' order was \code{event, time}, so a call passing both unnamed means opposite
+#' things in the two orders and is an error, whether or not \code{data} is
+#' named. Name them, \code{time_col =} and \code{event_col =}. One of the two
+#' unnamed reads the same in either order.
 #'
 #' @return A list with integer elements \code{n}, \code{n_events} and
 #'   \code{n_censored}.
@@ -37,28 +40,29 @@
 #'
 #' @examples
 #' d <- data.frame(dead = c(1, 1, 0, 0, 0), iv_dead = 1:5)
-#' cohort_counts(d, time = "iv_dead", event = "dead")
-cohort_counts <- function(data, time, event) {
+#' cohort_counts(d, time_col = "iv_dead", event_col = "dead")
+cohort_counts <- function(data, time_col, event_col) {
   cl <- sys.call()
   env <- parent.frame()
-  .hvti_refuse_ambiguous_order(cl, env, cohort_counts, "cohort_counts", "(data, time, event)")
-  if (.hvti_old_call(cl, env, renamed = "d")) {
+  .hvti_refuse_ambiguous_order(cl, env, cohort_counts, "cohort_counts", "(data, time_col, event_col)")
+  # The old names `d`, `time` and `event` partially match the new ones, so R
+  # binds them itself; only the notice is needed.
+  if (.hvti_old_call(cl, env, renamed = c("d", "time", "event"))) {
     .hvti_deprecate("cohort_counts_args",
-                    "cohort_counts(): the arguments are now (data, time, event), as in survival::Surv(), ",
-                    "and `d =` is now `data =`. Name time = and event =.")
-    return(.hvti_recall(cl, env, function(d, event, time) NULL, cohort_counts, c(d = "data")))
+                    "cohort_counts(): the arguments are now (data, time_col, event_col), as in survival::Surv(). ",
+                    "`d =`, `time =` and `event =` are now `data =`, `time_col =` and `event_col =`.")
   }
   d <- data
-  if (!is.character(event)) {
-    stop("cohort_counts(): event must be a non-missing, non-empty character scalar",
+  if (!is.character(event_col)) {
+    stop("cohort_counts(): event_col must be a non-missing, non-empty character scalar",
          call. = FALSE)
   }
-  if (!is.character(time)) {
-    stop("cohort_counts(): time must be a non-missing, non-empty character scalar",
+  if (!is.character(time_col)) {
+    stop("cohort_counts(): time_col must be a non-missing, non-empty character scalar",
          call. = FALSE)
   }
-  event <- .study_scalar(event, "event", required = TRUE, caller = "cohort_counts")
-  time <- .study_scalar(time, "time", required = TRUE, caller = "cohort_counts")
+  event <- .study_scalar(event_col, "event_col", required = TRUE, caller = "cohort_counts")
+  time <- .study_scalar(time_col, "time_col", required = TRUE, caller = "cohort_counts")
   missing_cols <- setdiff(c(event, time), names(d))
   if (length(missing_cols)) {
     stop(
@@ -113,13 +117,17 @@ cohort_counts <- function(data, time, event) {
 #'   works for one release, with a warning.
 #' @param expected List containing nonnegative integer \code{n},
 #'   \code{n_events} and \code{n_censored}.
-#' @param time Character scalar naming the time column.
-#' @param event Character scalar naming the binary event column.
+#' @param time_col Character scalar naming the time column. Was \code{time}
+#'   before 2026-11; \code{time =} still works for one release, with a warning.
+#' @param event_col Character scalar naming the binary event column. Was
+#'   \code{event} before 2026-11; \code{event =} still works for one release,
+#'   with a warning.
 #'
 #' @section Argument order:
-#' \code{time, event}, as in \code{survival::Surv()}; it was \code{event,
-#' time} until 2026-11. A call passing both unnamed is an error, since the two
-#' orders read it oppositely; name \code{time =} and \code{event =}.
+#' \code{time_col, event_col}, as in \code{survival::Surv()}; it was
+#' \code{event, time} until 2026-11. A call passing both unnamed is an error,
+#' since the two orders read it oppositely; name \code{time_col =} and
+#' \code{event_col =}.
 #'
 #' @return \code{invisible(TRUE)} on success; otherwise an error.
 #'
@@ -130,17 +138,16 @@ cohort_counts <- function(data, time, event) {
 #' @examples
 #' d <- data.frame(dead = c(1, 1, 0, 0, 0), iv_dead = 1:5)
 #' expected <- list(n = 5L, n_events = 2L, n_censored = 3L)
-#' assert_cohort(d, expected, time = "iv_dead", event = "dead")
-assert_cohort <- function(data, expected, time, event) {
+#' assert_cohort(d, expected, time_col = "iv_dead", event_col = "dead")
+assert_cohort <- function(data, expected, time_col, event_col) {
   cl <- sys.call()
   env <- parent.frame()
-  .hvti_refuse_ambiguous_order(cl, env, assert_cohort, "assert_cohort", "(data, expected, time, event)")
-  if (.hvti_old_call(cl, env, renamed = "d")) {
+  .hvti_refuse_ambiguous_order(cl, env, assert_cohort, "assert_cohort", "(data, expected, time_col, event_col)")
+  # As in cohort_counts(), the old names partially match the new ones.
+  if (.hvti_old_call(cl, env, renamed = c("d", "time", "event"))) {
     .hvti_deprecate("assert_cohort_args",
-                    "assert_cohort(): the arguments are now (data, expected, time, event), as in ",
-                    "survival::Surv(), and `d =` is now `data =`. Name time = and event =.")
-    return(.hvti_recall(cl, env, function(d, expected, event, time) NULL, assert_cohort,
-                        c(d = "data")))
+                    "assert_cohort(): the arguments are now (data, expected, time_col, event_col), as in ",
+                    "survival::Surv(). `d =`, `time =` and `event =` are now `data =`, `time_col =` and `event_col =`.")
   }
   d <- data
   keys <- c("n", "n_events", "n_censored")
@@ -162,7 +169,7 @@ assert_cohort <- function(data, expected, time, event) {
     stop("assert_cohort(): expected counts are inconsistent", call. = FALSE)
   }
   want <- lapply(expected[keys], as.integer)
-  observed <- cohort_counts(d, time = time, event = event)
+  observed <- cohort_counts(d, time_col = time_col, event_col = event_col)
   if (!identical(observed, want)) {
     stop(
       "cohort gate: expected N=", want$n,

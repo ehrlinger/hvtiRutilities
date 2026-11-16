@@ -9,7 +9,8 @@ proc_means(
   vars = NULL,
   class = NULL,
   stats = c("n", "mean", "std", "min", "p15", "median", "p85", "max"),
-  weights = NULL
+  weight_col = NULL,
+  weights
 )
 }
 \arguments{
@@ -33,13 +34,15 @@ Counts:
 \code{"pNN"} for NN from 1 to 99. Sums: \code{"sum"}, \code{"uss"},
 \code{"css"}. Shape: \code{"skewness"}, \code{"kurtosis"}.}
 
-\item{weights}{Character or \code{NULL}. Name of a single numeric column of
+\item{weight_col}{Character or \code{NULL}. Name of a single numeric column of
 \code{data} to use as an observation weight, mirroring the SAS
 \code{WEIGHT} statement. Observations whose weight is missing are excluded
 from every statistic except \code{nobs}, which counts them, as SAS does.
 A zero or negative weight is an error naming the offending rows: SAS's own
 handling of non-positive weights varies across procedures and versions, so
 this fails loudly rather than encode a guess.}
+
+\item{weights}{Deprecated: the old name of \code{weight_col}, kept for one release.}
 }
 \value{
 A data frame with one row per analysis variable per class
@@ -89,7 +92,7 @@ than being a simplification. Weighted: \code{mean}, \code{std}, \code{var},
 \code{mode}, and every quantile -- \code{median}, \code{q1}, \code{q3},
 \code{pNN} and \code{qrange}. \code{PROC MEANS} does not compute weighted
 quantiles at all; that is \code{PROC UNIVARIATE}. So
-\code{proc_means(d, stats = "median", weights = "wt")} returns the
+\code{proc_means(d, stats = "median", weight_col = "wt")} returns the
 \emph{unweighted} median.
 
 \code{mode} returns the smallest value among tied modes, and \code{NA} when
@@ -122,7 +125,7 @@ proc_means(dta, vars = c("age", "bmi"),
 # Weighted statistics
 dta <- data.frame(age = c(51, 63, 47, 72), wt = c(1, 2, 1, 4))
 proc_means(dta, vars = "age", stats = c("n", "sumwgt", "mean"),
-           weights = "wt")
+           weight_col = "wt")
 }
 \seealso{
 \code{\link{proc_contents}} for variable metadata.

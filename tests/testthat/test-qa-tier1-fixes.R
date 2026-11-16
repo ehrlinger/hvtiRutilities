@@ -104,10 +104,10 @@ test_that("an empty study root resolves to the numbered layout", {
 
 test_that("cohort_counts() warns on zero or negative time but keeps the count", {
   d <- data.frame(dead = c(1, 0, 0), t = c(0, -1, 5))
-  expect_warning(cc <- cohort_counts(d, event = "dead", time = "t"),
+  expect_warning(cc <- cohort_counts(d, event_col = "dead", time_col = "t"),
                  "1 negative and 1 zero")
   expect_equal(cc$n, 3L)
-  expect_no_warning(cohort_counts(data.frame(dead = 1, t = 2), time = "t", event = "dead"))
+  expect_no_warning(cohort_counts(data.frame(dead = 1, t = 2), time_col = "t", event_col = "dead"))
 })
 
 test_that("covariates_to_numeric() warns about names not in the data", {

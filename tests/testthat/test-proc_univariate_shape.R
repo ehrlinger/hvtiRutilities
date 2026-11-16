@@ -47,7 +47,7 @@ test_that("class rows lead, drop a missing class value, and sort", {
 })
 
 test_that("vars = NULL analyses numeric columns other than weights", {
-  res <- proc_univariate(dta, stats = "n", weights = "w")
+  res <- proc_univariate(dta, stats = "n", weight_col = "w")
   expect_equal(res$variable, c("x", "y"))
 })
 
@@ -69,7 +69,7 @@ test_that("a class level whose every weight is missing is dropped", {
   cw <- data.frame(g = c("x", "x", "y", "y"), a = 1:4,
                    wt = c(1, 2, NA, NA))
   res <- proc_univariate(cw, vars = "a", class = "g",
-                         stats = c("n", "nobs"), weights = "wt")
+                         stats = c("n", "nobs"), weight_col = "wt")
   expect_identical(res$g, "x")
   expect_identical(res$n, 2L)
   expect_identical(res$nobs, 2L)
@@ -86,7 +86,7 @@ test_that("all-missing weights under class warns about the weight", {
   cw <- data.frame(x = 1:4, g = c("a", "a", "b", "b"), w = NA_real_)
   expect_warning(
     res <- proc_univariate(cw, vars = "x", class = "g",
-                           stats = c("n", "nobs"), weights = "w"),
+                           stats = c("n", "nobs"), weight_col = "w"),
     "missing weight"
   )
   expect_equal(nrow(res), 0L)
