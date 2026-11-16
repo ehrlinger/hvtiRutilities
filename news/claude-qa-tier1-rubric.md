@@ -5,7 +5,9 @@
   * `proc_means()`, `proc_freq()` and `proc_univariate()`: `weights` is now `weight_col`, in the same position.
   * `declare_data()`, `register_data()` and `duplicate_keys()`: `key` is now `key_cols`; `duplicate_keys()`'s `order_by` is now `order_by_cols`.
   * `r_data_types(data, ...)` (was `dataset`) and `parity_headline(data)` (was `df`).
-  * `register_data()` and `declare_data()` take `root` last. A call whose first unnamed argument is an existing directory is read in the old, root-first order for this release, with that argument evaluated once; pass `root =` by name.
+  * `register_data()` and `declare_data()` take `root` last. A call whose first argument is unnamed and an existing directory is read in the old, root-first order for this release, with that argument evaluated once; pass `root =` by name.
+  * A renamed argument given under both its old and its new name in one call is an error, rather than one silently winning.
+  * An abbreviated argument name that used to match one formal may now match the old and the new name both, and R stops with "argument matches multiple formal arguments": `weight =` in `proc_means()`, `proc_freq()` and `proc_univariate()`, and `id =` in `followup_check()`. Write the full new name.
 * Condition classes carry the package name: a lost checkpoint lock is `hvtiRutilities_cp_lock_lost` (still also `hvti_cp_lock_lost` for this release), and every deprecation notice is `hvtiRutilities_deprecated`.
 * `options(hvti.quiet = TRUE)` silences the informational messages from `cache_fit()`, `update_manifest()`'s registration summary and the checkpoint functions. Warnings and errors are never silenced, and neither is the reminder that checkpoint notes must not contain patient information.
 * `capture_provenance()` opens its record with the seven fields every hvtiR package's provenance shares: `package`, `version`, `sha`, `method` (the job), `seed`, `rng_kind` and `time`. A new `seed` argument records a seeded job's seed, and `cache_fit()` passes its own; an unseeded job's `seed` and an unknown `sha` are `null` in the published JSON.

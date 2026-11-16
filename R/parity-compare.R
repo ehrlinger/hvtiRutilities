@@ -94,6 +94,7 @@ compare_parity <- function(quantity, r, sas, class, source = "lst",
 parity_headline <- function(data, df) {
   cl <- sys.call()
   env <- parent.frame()
+  if (!missing(df) && !missing(data)) .hvti_refuse_both("parity_headline", "df", "data")
   if (.hvti_old_call(cl, env, renamed = "df")) {
     .hvti_deprecate("parity_headline_df",
                     "parity_headline(): `df =` is now `data =`. The old name works for one more release.")

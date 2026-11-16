@@ -88,6 +88,11 @@ followup_check <- function(data, time_cols, event_col, id_col = NULL, max_rows =
   .hvti_refuse_ambiguous_order(cl, env, followup_check, "followup_check", "(data, time_cols, event_col, ...)",
                                pair = c("time_cols", "event_col"))
   written <- names(.hvti_call_args(cl, env))
+  # Both names as written: an unnamed argument may sit in `time_cols` here and
+  # still mean the old event column, which the re-issued call reads it as.
+  given <- function(formal) any(nzchar(written) & startsWith(formal, written))
+  if ("followup" %in% written && given("time_cols")) .hvti_refuse_both("followup_check", "followup", "time_cols")
+  if ("identifier" %in% written && given("id_col")) .hvti_refuse_both("followup_check", "identifier", "id_col")
   # Errors name each argument as the caller wrote it, so an old `followup =`
   # or `event =` caller still reads that name in them while the shim lives.
   as_written <- c(time_cols = intersect(c("followup", "time", "time_col", "time_cols"), written)[1L],

@@ -614,7 +614,8 @@ capture_provenance <- function(job, data, artifacts = list(), extra = list(),
                                cfg = study_config(), seed = NA_integer_) {
   .provenance_scalar_character(job, "job", "capture_provenance")
   if (!is.atomic(seed) || length(seed) != 1L ||
-        (!is.na(seed) && (!is.numeric(seed) || !is.finite(seed) || seed != round(seed)))) {
+        (!is.na(seed) && (!is.numeric(seed) || !is.finite(seed) || seed != round(seed) ||
+                            abs(seed) > .Machine$integer.max))) {
     stop("capture_provenance(): `seed` must be one whole number, or NA when the job sets none.",
          call. = FALSE)
   }

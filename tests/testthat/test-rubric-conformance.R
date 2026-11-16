@@ -350,3 +350,44 @@ test_that("update_manifest() takes sort_key_cols and still records the field as 
   # The no-file form still refuses a single-file argument under its new name.
   expect_error(update_manifest(sort_key_cols = "id"), "sort_key_cols")
 })
+
+test_that("a renamed argument given under both its old and its new name is an error, not a silent choice", {
+  w <- data.frame(x = c(1, 2, 3, 4), g = c("a", "a", "b", "b"), wt = c(1, 2, 1, 4))
+  expect_error(proc_means(w, var_cols = "x", weight_col = "wt", weights = NULL), "`weights =` and `weight_col =`")
+  expect_error(proc_univariate(w, var_cols = "x", weight_col = "wt", weights = "wt"), "`weights =` and `weight_col =`")
+  # The new name given by position counts as given.
+  expect_error(proc_freq(w, "g", FALSE, FALSE, "wt", weights = NULL), "`weights =` and `weight_col =`")
+  expect_error(followup_check(d, followup = "iv_dead", time_cols = "iv_dead", event_col = "dead"),
+               "`followup =` and `time_cols =`")
+  expect_error(followup_check(d, "dead", followup = "iv_dead", time = "iv_dead"), "`followup =` and `time_cols =`")
+  expect_error(followup_check(d, time_cols = "iv_dead", event_col = "dead", id_col = "dead", identifier = "dead"),
+               "`identifier =` and `id_col =`")
+  expect_error(r_data_types(data = w, dataset = w, use_value_labels = FALSE), "`dataset =` and `data =`")
+  expect_error(parity_headline(data = compare_parity("a", 1, 1), df = compare_parity("a", 1, 1)), "`df =` and `data =`")
+})
+
+test_that("only a call that opens with an unnamed directory is read in the old root-first order", {
+  skip_if_not_installed("arrow")
+  root <- file.path(withr::local_tempdir(), "s")
+  suppressMessages(study_setup(root, "Root bind", 11L, renv = FALSE))
+  utils::write.csv(data.frame(ccfid = 1:3), file.path(study_dir("datasets", root), "built.csv"), row.names = FALSE)
+  # Run from the study, beside a directory named like the dataset and like the key.
+  dir.create(file.path(root, "valve"))
+  dir.create(file.path(root, "ccfid"))
+  withr::local_dir(root)
+  local_fresh_notice("declare_data_root")
+  # `file` is named, so the unnamed "ccfid" is the key, never a root.
+  expect_no_warning(declare_data(file = "built.csv", "ccfid"))
+  expect_identical(study_config(root, require_data = FALSE)$key, "ccfid")
+  local_fresh_notice("register_data_root")
+  # Likewise the unnamed "valve" is the dataset.
+  expect_no_warning(suppressMessages(register_data(file = "built.csv", "valve", role = "named")))
+  expect_identical(yaml::read_yaml(file.path(root, "_study.yml"))$additional_datasets$valve$built, "built.csv")
+})
+
+test_that("capture_provenance() refuses a seed outside the integer range rather than recording none", {
+  root <- file.path(withr::local_tempdir(), "p")
+  suppressMessages(study_setup(root, "Seed range", 13L, renv = FALSE))
+  expect_error(capture_provenance("job", data = list(), cfg = study_config(root, require_data = FALSE), seed = 3e9),
+               "`seed`")
+})

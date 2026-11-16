@@ -120,6 +120,7 @@ proc_means <- function(data, var_cols = NULL, class_cols = NULL,
                        stats = c("n", "mean", "std", "min", "p15", "median", "p85", "max"),
                        weight_col = NULL, weights, vars) {
   if (!missing(weights)) {
+    if (!missing(weight_col)) .hvti_refuse_both("proc_means", "weights", "weight_col")
     .hvti_deprecate("proc_means_weights", "proc_means(): `weights =` is now `weight_col =`, per the family rule that an ",
                     "argument naming one column ends in _col. The old name works for one more release.")
     weight_col <- weights
