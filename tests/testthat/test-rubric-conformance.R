@@ -112,7 +112,7 @@ test_that("key_cols and order_by_cols: duplicate_keys(), declare_data() and regi
   utils::write.csv(data.frame(ccfid = 1:3), file.path(study_dir("datasets", root), "built.csv"), row.names = FALSE)
   local_fresh_notice("declare_data_key")
   expect_warning(expect_true(declare_data("built.csv", key = "ccfid", root = root)), "`key =` is now `key_cols =`")
-  expect_identical(study_config(root, require_data = FALSE)$data$key, "ccfid")
+  expect_identical(study_config(root, require_data = FALSE)$key, "ccfid")
   root <- file.path(withr::local_tempdir(), "k2")
   suppressMessages(study_setup(root, "Key cols 2", 10L, renv = FALSE))
   utils::write.csv(data.frame(ccfid = 1:3), file.path(study_dir("datasets", root), "built.csv"), row.names = FALSE)
