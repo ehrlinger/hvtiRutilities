@@ -597,7 +597,7 @@ verify_manifest <- function(manifest_path = .default_manifest_path(),
                             verbose       = FALSE,
                             strict        = FALSE) {
   if (!file.exists(manifest_path)) {
-    stop("Manifest file not found: ", manifest_path, call. = FALSE)
+    stop("verify_manifest(): manifest file not found: ", manifest_path, call. = FALSE)
   }
 
   manifest <- .read_manifest(manifest_path)

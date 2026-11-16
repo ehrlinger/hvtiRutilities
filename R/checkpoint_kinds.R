@@ -20,19 +20,12 @@
     rows[[k]] <- if (is.null(rows[[k]])) r else utils::modifyList(rows[[k]], r)
   }
   rows <- unname(rows)
-  # Anything but "manual" used to read as automatic, so a live row saying
-  # trigger: Manual recorded the milestone with no commit and no tag.
-  trig <- vapply(rows, function(r) as.character(.cp_or(r$trigger, "manual")), character(1))
-  bad <- !trig %in% c("manual", "auto")
-  if (any(bad)) {
-    stop("checkpoint kinds: trigger must be \"manual\" or \"auto\"; got ",
-         paste0(vapply(rows[bad], function(r) as.character(r$kind), character(1)),
-                ": \"", trig[bad], "\"", collapse = ", "),
-         call. = FALSE)
-  }
   data.frame(
     kind = vapply(rows, function(r) as.character(r$kind), character(1)),
-    trigger = vapply(rows, function(r) as.character(.cp_or(r$trigger, "manual")),
+    # A non-scalar trigger is kept as written, pasted, so .cp_kind_check()
+    # can name it rather than vapply failing on its length.
+    trigger = vapply(rows, function(r) paste(as.character(.cp_or(r$trigger, "manual")),
+                                             collapse = ", "),
                      character(1)),
     numbered = vapply(rows, function(r) !isFALSE(r$numbered), logical(1)),
     retired = vapply(rows, function(r) isTRUE(r$retired), logical(1)),
@@ -48,6 +41,15 @@
          call. = FALSE)
   }
   row <- kinds[kinds$kind == kind, , drop = FALSE]
+  # Anything but "manual" used to read as automatic, so a live row saying
+  # trigger: Manual recorded the milestone with no commit and no tag. Checked
+  # on the kind in use only, so one bad row in the administrator-owned table
+  # does not stop every other kind.
+  if (!row$trigger %in% c("manual", "auto")) {
+    stop(caller, "(): checkpoint kind '", kind, "' has trigger \"", row$trigger,
+         "\" in the live kinds table; it must be \"manual\" or \"auto\"",
+         call. = FALSE)
+  }
   if (row$retired) {
     stop(caller, "(): checkpoint kind '", kind, "' is retired and cannot ",
          "be used for a new checkpoint", call. = FALSE)

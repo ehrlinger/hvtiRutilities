@@ -27,16 +27,16 @@
   .cp_or(entry$checkpoint_id, .cp_or(entry$closure_id, entry$reopening_id))
 }
 
-# One date, as a Date or a "YYYY-MM-DD" string. as.Date() alone read
+# One date, as a Date, a date-time or a "YYYY-MM-DD" string. as.Date() alone read
 # "01/02/2026" as year 1 and 20260101 as year 57440, and the result went into
 # the tag message and to ST without a word.
 .cp_date <- function(x, what = "date") {
   ok <- length(x) == 1L && !is.na(x) &&
-    (inherits(x, "Date") ||
+    (inherits(x, c("Date", "POSIXt")) ||
        (is.character(x) && grepl("^[0-9]{4}-[0-9]{2}-[0-9]{2}$", x) &&
           !is.na(as.Date(x, format = "%Y-%m-%d"))))
   if (!ok) {
-    stop(what, " must be one Date or one \"YYYY-MM-DD\" string, not ",
+    stop(what, " must be one Date, date-time or \"YYYY-MM-DD\" string, not ",
          paste(format(x), collapse = ", "), call. = FALSE)
   }
   format(as.Date(x), "%Y-%m-%d")

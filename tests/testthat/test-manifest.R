@@ -555,7 +555,7 @@ test_that("verify_manifest with stop_on_error=FALSE warns instead of stopping", 
 test_that("verify_manifest errors on missing manifest file", {
   expect_error(
     verify_manifest(manifest_path = "/no/such/manifest.yaml"),
-    "Manifest file not found"
+    "manifest file not found"
   )
 })
 

@@ -8,7 +8,7 @@
 
 * `verify_manifest()` and the other functions defaulting to the study manifest pass on a malformed `_study.yml` instead of quietly checking `manifest.yaml` in the working directory. Only a missing `_study.yml` means "not in a study".
 
-* `add_labels()` on a data frame, and so `apply_label_overrides()`, warns about names not present in the data instead of dropping them silently.
+* `add_labels()` on a data frame, and so `apply_label_overrides()` on a data frame, warns about names not present in the data instead of dropping them silently.
 
 * `study_dir()` resolves a root that has neither layout's folders to the numbered spelling new studies use, so `study_dir("estimates")` in a fresh study is `90_estimates`, not a bare `estimates`.
 
@@ -18,4 +18,4 @@
 
 * `apply_value_labels()` leaves a factor column as read and names it in a warning, instead of stopping with labelled's "Value labels cannot be applied to factors".
 
-* Checkpoints: `occurred_at`, `closed_at` and `reopened_at` must be one `Date` or one `"YYYY-MM-DD"` string; `"01/02/2026"` was logged as year 1. A live checkpoint kind whose `trigger` is not `manual` or `auto` is an error rather than an automatic kind. An empty or non-scalar `checkpoint: remote:` is a configuration error rather than "remote unreachable". An unusable `.checkpoint/repo` reports git's own message and the `safe.directory` fix before advising a delete.
+* Checkpoints: `occurred_at`, `closed_at` and `reopened_at` must be one `Date`, date-time or `"YYYY-MM-DD"` string; `"01/02/2026"` was logged as year 1. A checkpoint of a kind whose live `trigger` is not `manual` or `auto` is an error rather than an automatic kind; other kinds are unaffected. An empty or non-scalar `checkpoint: remote:` is a configuration error rather than "remote unreachable". An unusable `.checkpoint/repo` reports git's own message and the `safe.directory` fix before advising a delete.

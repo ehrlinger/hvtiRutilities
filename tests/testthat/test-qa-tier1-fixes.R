@@ -127,18 +127,26 @@ test_that("apply_value_labels() leaves a factor column as read and says so", {
 test_that("checkpoint dates must be one Date or one YYYY-MM-DD string", {
   expect_identical(.cp_date(as.Date("2026-01-02")), "2026-01-02")
   expect_identical(.cp_date("2026-01-02"), "2026-01-02")
+  expect_identical(.cp_date(as.POSIXct("2026-01-02 10:00:00", tz = "UTC")), "2026-01-02")
   for (bad in list("01/02/2026", 20260101, NA, c("2026-01-01", "2026-01-02"), "2026-02-30")) {
     expect_error(.cp_date(bad, "study_checkpoint(): `occurred_at`"),
                  "`occurred_at` must be one Date")
   }
 })
 
-test_that("a live checkpoint kind with an unknown trigger is an error", {
+test_that("an unknown trigger stops only the kind that carries it", {
   root <- withr::local_tempdir()
   dir.create(file.path(root, ".checkpoint"))
-  yaml::write_yaml(list(list(kind = "manuscript_submitted", trigger = "Manual")),
+  yaml::write_yaml(list(list(kind = "manuscript_submitted", trigger = "Manual"),
+                        list(kind = "grant_submitted", trigger = c("manual", "auto"))),
                    file.path(root, ".checkpoint", "kinds.yml"))
-  expect_error(.cp_kinds(root), "manuscript_submitted: \"Manual\"")
+  kinds <- .cp_kinds(root)
+  expect_error(.cp_kind_check(kinds, "manuscript_submitted", "study_checkpoint"),
+               "'manuscript_submitted' has trigger \"Manual\"")
+  expect_error(.cp_kind_check(kinds, "grant_submitted", "study_checkpoint"),
+               "trigger \"manual, auto\"")
+  expect_identical(.cp_kind_check(kinds, "abstract_submitted", "study_checkpoint")$kind,
+                   "abstract_submitted")
 })
 
 test_that("an empty or non-scalar checkpoint remote is a configuration error", {

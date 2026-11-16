@@ -36,6 +36,9 @@ When \code{data} is a label map (a data frame with \code{key} and
 \code{data} is any other data frame, labels are applied directly to
 the data via \code{\link{add_labels}}, which is the preferred
 data-first workflow.
+In that mode a key naming a column the data does not have warns, as
+\code{\link{add_labels}} does; an overrides file shared by several
+datasets warns for each key the current one lacks.
 }
 \details{
 The YAML file format is a simple mapping of variable names to labels:

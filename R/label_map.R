@@ -737,6 +737,9 @@ add_labels <- function(label_map_df, new_labels) {
 #' \code{data} is any other data frame, labels are applied directly to
 #' the data via \code{\link{add_labels}}, which is the preferred
 #' data-first workflow.
+#' In that mode a key naming a column the data does not have warns, as
+#' \code{\link{add_labels}} does; an overrides file shared by several
+#' datasets warns for each key the current one lacks.
 #'
 #' @param data A data frame: either a label map (with \code{key} and
 #'   \code{label} columns, as returned by \code{\link{label_map}}), or any

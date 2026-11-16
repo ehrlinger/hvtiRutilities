@@ -246,25 +246,25 @@ r_data_types <- function(dataset,
 
   # Validate inputs before doing any work
   if (!is.data.frame(dataset)) {
-    stop("'dataset' must be a data.frame or similar tabular object.",
+    stop("r_data_types(): 'dataset' must be a data.frame or similar tabular object.",
          call. = FALSE)
   }
 
   if (!is.numeric(factor_size) || is.nan(factor_size) || factor_size <= 1) {
-    stop("'factor_size' must be a numeric value greater than 1.", call. = FALSE)
+    stop("r_data_types(): 'factor_size' must be a numeric value greater than 1.", call. = FALSE)
   } else if (factor_size %% 1 != 0) {
-    stop("'factor_size' must be a whole number (integer).", call. = FALSE)
+    stop("r_data_types(): 'factor_size' must be a whole number (integer).", call. = FALSE)
   } else if (factor_size > 50) {
-    stop("'factor_size' must be 50 or less to avoid excessive factor creation. You specified ", factor_size, ".",
+    stop("r_data_types(): 'factor_size' must be 50 or less to avoid excessive factor creation. You specified ", factor_size, ".",
          call. = FALSE)
   }
 
   if (!is.null(skip_vars)) {
     if (!is.character(skip_vars)) {
-      stop("'skip_vars' must be a character vector of column names.", call. = FALSE)
+      stop("r_data_types(): 'skip_vars' must be a character vector of column names.", call. = FALSE)
     }
     if (any(!(skip_vars %in% colnames(dataset)))) {
-      stop("One or more columns in 'skip_vars' not found in dataset: ",
+      stop("r_data_types(): One or more columns in 'skip_vars' not found in dataset: ",
            paste(setdiff(skip_vars, colnames(dataset)), collapse = ", "), ".",
            call. = FALSE)
     }
