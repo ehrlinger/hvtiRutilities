@@ -20,6 +20,16 @@
     rows[[k]] <- if (is.null(rows[[k]])) r else utils::modifyList(rows[[k]], r)
   }
   rows <- unname(rows)
+  # Anything but "manual" used to read as automatic, so a live row saying
+  # trigger: Manual recorded the milestone with no commit and no tag.
+  trig <- vapply(rows, function(r) as.character(.cp_or(r$trigger, "manual")), character(1))
+  bad <- !trig %in% c("manual", "auto")
+  if (any(bad)) {
+    stop("checkpoint kinds: trigger must be \"manual\" or \"auto\"; got ",
+         paste0(vapply(rows[bad], function(r) as.character(r$kind), character(1)),
+                ": \"", trig[bad], "\"", collapse = ", "),
+         call. = FALSE)
+  }
   data.frame(
     kind = vapply(rows, function(r) as.character(r$kind), character(1)),
     trigger = vapply(rows, function(r) as.character(.cp_or(r$trigger, "manual")),

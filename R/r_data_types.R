@@ -2,6 +2,11 @@
 # clinical data. Held here so the dispatcher and its tests agree on the list.
 .na_strings <- c("NA", "na", "Na", "nA")
 
+# A character column converted to a factor with more levels than this warns.
+# It matches the ceiling on factor_size, the most levels a numeric column can
+# ever be given by inference.
+.character_level_warn <- 50L
+
 # factor()'s default numeric handling formats each level via as.character()
 # and only then deduplicates, so two distinct numeric values that happen to
 # print identically -- adjacent representable doubles differing by a few
@@ -143,9 +148,13 @@
 #'     \code{binary_factor}: \code{as.logical()} maps every nonzero code to
 #'     \code{TRUE}, so a 1/2 column would otherwise become \code{TRUE} for
 #'     every row and silently lose one of its two categories.
-#'   \item Remaining character columns become factors.
-#'   \item Numeric columns with 3 to \code{factor_size} distinct values
-#'     become factors.
+#'   \item Remaining character columns become factors, whatever their number
+#'     of distinct values: \code{factor_size} does not apply to them. A
+#'     character column that yields more than 50 levels -- usually an
+#'     identifier or free text, not a category -- warns, naming the column;
+#'     pass it in \code{skip_vars} to keep it as character.
+#'   \item Numeric columns with more than 2 and fewer than \code{factor_size}
+#'     distinct values become factors.
 #'   \item Logical columns become factors when \code{binary_factor = TRUE}.
 #' }
 #'
@@ -157,7 +166,9 @@
 #' @param dataset A data frame, tibble, data.table, or similar tabular object
 #' @param factor_size Integer threshold for factor conversion. Numeric variables
 #'   with fewer than this many unique values (but more than 2) will be converted
-#'   to factors. Must be between 2 and 50. Default is 10.
+#'   to factors, so the default of 10 converts a column with 3 to 9 distinct
+#'   values. Must be a whole number from 2 to 50. Character columns are not
+#'   subject to it. Default is 10.
 #' @param skip_vars Character vector of column names to exclude from conversion.
 #'   These columns will remain unchanged. Default is NULL (convert all columns).
 #' @param binary_factor Logical. If TRUE, binary variables are converted to
@@ -235,23 +246,27 @@ r_data_types <- function(dataset,
 
   # Validate inputs before doing any work
   if (!is.data.frame(dataset)) {
-    stop("'dataset' must be a data.frame or similar tabular object.")
+    stop("'dataset' must be a data.frame or similar tabular object.",
+         call. = FALSE)
   }
 
   if (!is.numeric(factor_size) || is.nan(factor_size) || factor_size <= 1) {
-    stop("'factor_size' must be a numeric value greater than 1.")
+    stop("'factor_size' must be a numeric value greater than 1.", call. = FALSE)
   } else if (factor_size %% 1 != 0) {
-    stop("'factor_size' must be a whole number (integer).")
+    stop("'factor_size' must be a whole number (integer).", call. = FALSE)
   } else if (factor_size > 50) {
-    stop("'factor_size' must be 50 or less to avoid excessive factor creation. You specified ", factor_size, ".")
+    stop("'factor_size' must be 50 or less to avoid excessive factor creation. You specified ", factor_size, ".",
+         call. = FALSE)
   }
 
   if (!is.null(skip_vars)) {
     if (!is.character(skip_vars)) {
-      stop("'skip_vars' must be a character vector of column names.")
+      stop("'skip_vars' must be a character vector of column names.", call. = FALSE)
     }
     if (any(!(skip_vars %in% colnames(dataset)))) {
-      stop("One or more columns in 'skip_vars' not found in dataset.")
+      stop("One or more columns in 'skip_vars' not found in dataset: ",
+           paste(setdiff(skip_vars, colnames(dataset)), collapse = ", "), ".",
+           call. = FALSE)
     }
   }
 
@@ -275,6 +290,26 @@ r_data_types <- function(dataset,
   # `[]<-` rather than a rebuild: it preserves the tibble/data.table class of
   # the input, which the contract promises and the extended tests assert.
   new_data[] <- lapply(converted, `[[`, "value")
+
+  # factor_size bounds the numeric branch only; a character column becomes a
+  # factor whatever its level count. That is kept, because a category stored
+  # as text is the common case, but an identifier or free-text column turned
+  # into a factor with a level per row is never what was meant, so it is
+  # named rather than converted in silence.
+  many <- vapply(names(converted), function(nm) {
+    identical(converted[[nm]]$rule, "character_factor") &&
+      nlevels(converted[[nm]]$value) > .character_level_warn
+  }, logical(1))
+  if (any(many)) {
+    warning(
+      "r_data_types(): character column(s) converted to a factor with more ",
+      "than ", .character_level_warn, " levels: ",
+      paste(names(converted)[many], collapse = ", "), ". An identifier or ",
+      "free-text column is not a category; pass it in 'skip_vars' to keep it ",
+      "as character.",
+      call. = FALSE
+    )
+  }
 
   # Restore skipped columns in original order
   if (!is.null(skip_vars)) {

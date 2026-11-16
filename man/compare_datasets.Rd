@@ -26,13 +26,23 @@ A list with the following elements:
   \item{label_changes}{Data frame with columns \code{variable},
     \code{old_label}, \code{new_label} for shared columns whose label
     changed}
+  \item{level_changes}{Data frame with columns \code{variable},
+    \code{old_levels}, \code{new_levels} (levels joined with
+    \code{", "}) for shared columns that are factors in both and whose
+    levels, or their order, changed}
 }
 }
 \description{
 Summarises the differences between two data pulls of the same dataset:
-added or dropped columns, row count changes, type changes, and label
-changes. This is useful for auditing data drift when a new extract
-arrives, and pairs naturally with the manifest system.
+added or dropped columns, row count changes, type changes, label changes
+and factor-level changes. This is useful for auditing data drift when a new
+extract arrives, and pairs naturally with the manifest system.
+
+\strong{Values are not compared.} Matching rows across two pulls needs a
+key, and this function takes none, so two datasets with the same shape,
+classes, labels and levels but different values compare as equal. The
+printed summary says so. Compare values on a key with \code{merge()} when
+that is the question.
 }
 \examples{
 # Simulate two data pulls

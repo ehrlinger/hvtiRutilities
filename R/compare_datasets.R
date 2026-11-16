@@ -2,9 +2,15 @@
 #'
 #' @description
 #' Summarises the differences between two data pulls of the same dataset:
-#' added or dropped columns, row count changes, type changes, and label
-#' changes. This is useful for auditing data drift when a new extract
-#' arrives, and pairs naturally with the manifest system.
+#' added or dropped columns, row count changes, type changes, label changes
+#' and factor-level changes. This is useful for auditing data drift when a new
+#' extract arrives, and pairs naturally with the manifest system.
+#'
+#' \strong{Values are not compared.} Matching rows across two pulls needs a
+#' key, and this function takes none, so two datasets with the same shape,
+#' classes, labels and levels but different values compare as equal. The
+#' printed summary says so. Compare values on a key with \code{merge()} when
+#' that is the question.
 #'
 #' @param old A data frame representing the previous version of the dataset.
 #' @param new A data frame representing the current version of the dataset.
@@ -23,6 +29,10 @@
 #'   \item{label_changes}{Data frame with columns \code{variable},
 #'     \code{old_label}, \code{new_label} for shared columns whose label
 #'     changed}
+#'   \item{level_changes}{Data frame with columns \code{variable},
+#'     \code{old_levels}, \code{new_levels} (levels joined with
+#'     \code{", "}) for shared columns that are factors in both and whose
+#'     levels, or their order, changed}
 #' }
 #'
 #' @seealso \code{\link{update_manifest}}, \code{\link{verify_manifest}}
@@ -93,6 +103,22 @@ compare_datasets <- function(old, new) {
     )
   }
 
+  # Level changes on shared columns that are factors in both
+  both_factor <- shared[vapply(shared, function(v) {
+    is.factor(old[[v]]) && is.factor(new[[v]])
+  }, logical(1))]
+  lev_changed <- both_factor[!vapply(both_factor, function(v) {
+    identical(levels(old[[v]]), levels(new[[v]]))
+  }, logical(1))]
+  level_changes <- data.frame(
+    variable   = lev_changed,
+    old_levels = vapply(lev_changed, function(v) paste(levels(old[[v]]), collapse = ", "),
+                        character(1), USE.NAMES = FALSE),
+    new_levels = vapply(lev_changed, function(v) paste(levels(new[[v]]), collapse = ", "),
+                        character(1), USE.NAMES = FALSE),
+    stringsAsFactors = FALSE
+  )
+
   structure(
     list(
       rows_old      = nrow(old),
@@ -100,7 +126,8 @@ compare_datasets <- function(old, new) {
       cols_added    = setdiff(new_names, old_names),
       cols_dropped  = setdiff(old_names, new_names),
       type_changes  = type_changes,
-      label_changes = label_changes
+      label_changes = label_changes,
+      level_changes = level_changes
     ),
     class = "dataset_comparison"
   )
@@ -133,10 +160,23 @@ print.dataset_comparison <- function(x, ...) {
           x$label_changes$new_label[i], "'\n", sep = "")
     }
   }
+  # An object saved before level_changes existed has none to print.
+  level_changes <- x$level_changes
+  if (is.null(level_changes)) level_changes <- data.frame(variable = character())
+  if (nrow(level_changes) > 0L) {
+    cat("  Level changes:\n")
+    for (i in seq_len(nrow(level_changes))) {
+      cat("    ", level_changes$variable[i], ": [",
+          level_changes$old_levels[i], "] -> [",
+          level_changes$new_levels[i], "]\n", sep = "")
+    }
+  }
   if (length(x$cols_added) == 0L && length(x$cols_dropped) == 0L &&
         nrow(x$type_changes) == 0L && nrow(x$label_changes) == 0L &&
-        x$rows_old == x$rows_new) {
-    cat("  No differences detected.\n")
+        nrow(level_changes) == 0L && x$rows_old == x$rows_new) {
+    cat("  No differences in row count, columns, classes, labels or factor",
+        "levels.\n")
   }
+  cat("  Values were not compared.\n")
   invisible(x)
 }

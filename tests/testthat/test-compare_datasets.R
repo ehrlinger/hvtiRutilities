@@ -12,7 +12,8 @@ test_that("compare_datasets returns correct structure", {
   expect_type(result, "list")
   expect_s3_class(result, "dataset_comparison")
   expect_named(result, c("rows_old", "rows_new", "cols_added",
-                         "cols_dropped", "type_changes", "label_changes"))
+                         "cols_dropped", "type_changes", "label_changes",
+                         "level_changes"))
 })
 
 test_that("compare_datasets detects row count changes", {

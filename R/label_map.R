@@ -702,7 +702,15 @@ add_labels <- function(label_map_df, new_labels) {
     return(.refresh_truncation(label_map_df, new_keys))
   }
 
-  # Apply labels directly to the data frame via labelled
+  # Apply labels directly to the data frame via labelled. A name the data
+  # does not have is most often a typo, and labelling nothing is not what the
+  # caller asked for, so it is named as apply_value_labels() names its own.
+  unknown <- setdiff(names(new_labels), names(label_map_df))
+  if (length(unknown)) {
+    warning("add_labels(): ", length(unknown), " name(s) not present in the ",
+            "data were not applied: ", paste(unknown, collapse = ", "), ".",
+            call. = FALSE)
+  }
   for (nm in names(new_labels)) {
     if (nm %in% names(label_map_df)) {
       labelled::var_label(label_map_df[[nm]]) <- new_labels[[nm]]

@@ -272,7 +272,9 @@
                       detail)
   # Never syncs: a status read must not touch the network. With a remote,
   # the answer is only as fresh as the last fetch, and the row says so.
-  closed <- tryCatch(.cp_is_closed(root), error = function(e) FALSE)
+  # A git failure is not evidence the study is open: NA reports UNKNOWN, as a
+  # missing remote ref does.
+  closed <- tryCatch(.cp_is_closed(root), error = function(e) NA)
   remote <- tryCatch(.cp_study(root, "study_status")$remote,
                      error = function(e) NULL)
   closures <- Filter(function(e) identical(e$type, "closure"), log)

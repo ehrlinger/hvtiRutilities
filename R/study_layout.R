@@ -23,7 +23,9 @@
     stop("study directory layout is mixed", call. = FALSE)
   }
 
-  if (numbered) "numbered" else "legacy"
+  # A root with neither spelling has no code referencing bare names yet, so it
+  # takes the layout new studies get, as study_setup() gives an empty root.
+  if (legacy) "legacy" else "numbered"
 }
 
 #' Resolve a directory in the study layout
@@ -31,7 +33,9 @@
 #' @description
 #' Maps a logical study directory such as \code{"datasets"} to the numbered
 #' spelling used by new studies or the bare spelling retained by legacy
-#' studies. A root containing both layouts is an error.
+#' studies. A root containing both layouts is an error. A root containing
+#' neither -- a new or empty study -- resolves to the numbered spelling, as
+#' \code{\link{study_setup}} lays one out.
 #'
 #' @param folder Character. One logical study directory name.
 #' @param root Character. Study root. Defaults to \code{study_root()}.

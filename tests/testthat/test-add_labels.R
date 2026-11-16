@@ -68,9 +68,10 @@ test_that("add_labels applies labels directly to a data frame", {
   expect_equal(labelled::var_label(result$bmi), "Body Mass Index")
 })
 
-test_that("add_labels on data frame ignores columns not in data", {
+test_that("add_labels on data frame warns about and skips columns not in data", {
   dta <- data.frame(age = c(25, 30))
-  result <- add_labels(dta, c(age = "Age", nonexistent = "Missing"))
+  expect_warning(result <- add_labels(dta, c(age = "Age", nonexistent = "Missing")),
+                 "not applied: nonexistent")
 
   expect_equal(labelled::var_label(result$age), "Age")
   expect_equal(ncol(result), 1)

@@ -18,7 +18,9 @@ Character(1). The resolved directory path. Its existence is not
 \description{
 Maps a logical study directory such as \code{"datasets"} to the numbered
 spelling used by new studies or the bare spelling retained by legacy
-studies. A root containing both layouts is an error.
+studies. A root containing both layouts is an error. A root containing
+neither -- a new or empty study -- resolves to the numbered spelling, as
+\code{\link{study_setup}} lays one out.
 }
 \examples{
 root <- file.path(tempdir(), "numbered-study-layout")
