@@ -33,9 +33,9 @@ test_that("means are proc_means over the full, event and censored subsets", {
   st <- c("n", "nmiss", "mean", "std", "min", "p15", "median", "p85", "max")
   expect_named(fc$means, c("full", "event", "censored"))
   expect_named(fc$means$full, c("variable", "label", st))
-  expect_identical(fc$means$full, proc_means(d, vars = "iv_dead", stats = st))
-  expect_identical(fc$means$event, proc_means(d[c(1, 5), ], vars = "iv_dead", stats = st))
-  expect_identical(fc$means$censored, proc_means(d[c(2, 3, 6), ], vars = "iv_dead", stats = st))
+  expect_identical(fc$means$full, proc_means(d, var_cols = "iv_dead", stats = st))
+  expect_identical(fc$means$event, proc_means(d[c(1, 5), ], var_cols = "iv_dead", stats = st))
+  expect_identical(fc$means$censored, proc_means(d[c(2, 3, 6), ], var_cols = "iv_dead", stats = st))
 })
 
 test_that("means report the 15th and 85th percentiles under SAS QNTLDEF=5", {
@@ -50,7 +50,7 @@ test_that("means report the 15th and 85th percentiles under SAS QNTLDEF=5", {
 
 test_that("stats chooses the means statistics and is validated like proc_means", {
   fc <- followup_check(d, time_cols = "iv_dead", event_col = "dead", stats = c("n", "p25", "p75"))
-  expect_identical(fc$means$full, proc_means(d, vars = "iv_dead", stats = c("n", "p25", "p75")))
+  expect_identical(fc$means$full, proc_means(d, var_cols = "iv_dead", stats = c("n", "p25", "p75")))
   expect_error(followup_check(d, time_cols = "iv_dead", event_col = "dead", stats = c("n", "bogus")),
                "Unrecognised statistic keyword\\(s\\): bogus")
 })

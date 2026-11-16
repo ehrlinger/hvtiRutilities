@@ -150,7 +150,7 @@ Sometimes you want to preserve certain variables in their original form:
 
 ```{r}
 # Keep vs and am as numeric instead of converting to logical
-mtcars_partial <- r_data_types(mtcars, skip_vars = c("vs", "am"))
+mtcars_partial <- r_data_types(mtcars, skip_cols = c("vs", "am"))
 
 # Compare
 class(mtcars_clean$vs)    # logical (converted)
@@ -222,7 +222,7 @@ Labels are preserved when using `r_data_types()`:
 dta <- sample_data(n = 50)
 lmap_before <- label_map(dta)
 
-dta_clean <- r_data_types(dta, skip_vars = "id")
+dta_clean <- r_data_types(dta, skip_cols = "id")
 lmap_after <- label_map(dta_clean)
 
 identical(lmap_before, lmap_after)  # TRUE
@@ -262,7 +262,7 @@ var_label(clinical$adverse_event) <- "Most Severe Adverse Event"
 clinical_clean <- r_data_types(
   clinical,
   factor_size = 5,      # Only convert if < 5 unique values
-  skip_vars = "id"      # Keep ID as integer
+  skip_cols = "id"      # Keep ID as integer
 )
 
 # Step 4: Examine results
@@ -327,7 +327,7 @@ labs <- data.frame(
 # Convert with specific settings
 labs_clean <- r_data_types(
   labs,
-  skip_vars = c("patient", "value"),  # Preserve ID and numeric values
+  skip_cols = c("patient", "value"),  # Preserve ID and numeric values
   factor_size = 4                      # Conservative factor conversion
 )
 

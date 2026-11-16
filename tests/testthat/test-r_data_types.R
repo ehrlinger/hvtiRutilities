@@ -150,7 +150,7 @@ test_that("skip_vars preserves specified columns unchanged", {
     b = c("x", "y", "z"),
     stringsAsFactors = FALSE
   )
-  result <- r_data_types(dta, skip_vars = "a")
+  result <- r_data_types(dta, skip_cols = "a")
 
   expect_type(result$a, "double")  # Unchanged
   expect_s3_class(result$b, "factor")  # Still converted
@@ -163,7 +163,7 @@ test_that("skip_vars works with multiple columns", {
     d = 1:100,  # Many unique values, won't be converted to factor
     stringsAsFactors = FALSE
   )
-  result <- r_data_types(dta, skip_vars = c("a", "b"))
+  result <- r_data_types(dta, skip_cols = c("a", "b"))
 
   # Skipped columns remain unchanged
   expect_type(result$a, "integer")
@@ -178,7 +178,7 @@ test_that("skip_vars errors on non-existent column names", {
   dta <- data.frame(a = 1:3)
 
   expect_error(
-    r_data_types(dta, skip_vars = "nonexistent"),
+    r_data_types(dta, skip_cols = "nonexistent"),
     "not found in dataset"
   )
 })

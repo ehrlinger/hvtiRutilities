@@ -47,7 +47,7 @@
 #'   \item \code{.csv}: a date is \emph{character}. With
 #'     \code{convert_types = TRUE} it then becomes a factor, as every character
 #'     column does; convert it with \code{as.Date()} first, or name it in
-#'     \code{skip_vars}.
+#'     \code{skip_cols}.
 #'   \item \code{.rds}, \code{.parquet}: the types that were written.
 #' }
 #' \code{\link{r_data_types}} never alters a \code{Date} or \code{POSIXct}
@@ -66,7 +66,7 @@
 #'   wrong for 0/1 event and censoring flags, so type conversion belongs to a
 #'   declared variable-derivation step rather than to reading.
 #' @param ... Additional arguments passed to \code{\link{r_data_types}}
-#'   (e.g., \code{factor_size}, \code{skip_vars}, \code{binary_factor},
+#'   (e.g., \code{factor_size}, \code{skip_cols}, \code{binary_factor},
 #'   \code{use_value_labels}). Must be named. An error when
 #'   \code{convert_types = FALSE}, or for a name \code{r_data_types()} does
 #'   not take.

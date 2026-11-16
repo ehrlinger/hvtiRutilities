@@ -4,47 +4,47 @@ library(hvtiRutilities)
 d <- data.frame(a = c(1, 2, 3, 4), wt = c(1, 1, 2, 4))
 
 test_that("sumwgt sums the weight column", {
-  res <- proc_means(d, vars = "a", stats = "sumwgt", weight_col = "wt")
+  res <- proc_means(d, var_cols = "a", stats = "sumwgt", weight_col = "wt")
   expect_equal(res$sumwgt, 8)
 })
 
 test_that("sumwgt equals n when no weights are given", {
-  res <- proc_means(d, vars = "a", stats = c("n", "sumwgt"))
+  res <- proc_means(d, var_cols = "a", stats = c("n", "sumwgt"))
   expect_equal(res$sumwgt, res$n)
 })
 
 test_that("weights must name a column present in data", {
-  expect_error(proc_means(d, vars = "a", stats = "sumwgt", weight_col = "nope"),
+  expect_error(proc_means(d, var_cols = "a", stats = "sumwgt", weight_col = "nope"),
                "Column\\(s\\) not found")
 })
 
 test_that("weights must name a numeric column", {
   d2 <- data.frame(a = c(1, 2), g = c("x", "y"))
-  expect_error(proc_means(d2, vars = "a", stats = "sumwgt", weight_col = "g"),
+  expect_error(proc_means(d2, var_cols = "a", stats = "sumwgt", weight_col = "g"),
                "must be numeric")
 })
 
 test_that("weights must be a single column name", {
-  expect_error(proc_means(d, vars = "a", stats = "sumwgt",
+  expect_error(proc_means(d, var_cols = "a", stats = "sumwgt",
                           weight_col = c("wt", "a")),
                "single column")
 })
 
 test_that("a zero weight is an error naming the row", {
   dz <- data.frame(a = c(1, 2, 3), wt = c(1, 0, 2))
-  expect_error(proc_means(dz, vars = "a", stats = "sumwgt", weight_col = "wt"),
+  expect_error(proc_means(dz, var_cols = "a", stats = "sumwgt", weight_col = "wt"),
                "row\\(s\\): 2")
 })
 
 test_that("a negative weight is an error naming the row", {
   dn <- data.frame(a = c(1, 2, 3), wt = c(1, 2, -3))
-  expect_error(proc_means(dn, vars = "a", stats = "sumwgt", weight_col = "wt"),
+  expect_error(proc_means(dn, var_cols = "a", stats = "sumwgt", weight_col = "wt"),
                "row\\(s\\): 3")
 })
 
 test_that("a missing weight excludes that observation", {
   dm <- data.frame(a = c(1, 2, 3), wt = c(1, NA, 2))
-  res <- proc_means(dm, vars = "a", stats = c("n", "sumwgt"), weight_col = "wt")
+  res <- proc_means(dm, var_cols = "a", stats = c("n", "sumwgt"), weight_col = "wt")
   expect_equal(res$n, 2L)
   expect_equal(res$sumwgt, 3)
 })
@@ -53,7 +53,7 @@ test_that("weights apply within each class level", {
   dc <- data.frame(a = c(1, 2, 3, 4),
                    g = c("x", "x", "y", "y"),
                    wt = c(1, 3, 2, 5))
-  res <- proc_means(dc, vars = "a", class = "g", stats = "sumwgt",
+  res <- proc_means(dc, var_cols = "a", class_cols = "g", stats = "sumwgt",
                     weight_col = "wt")
   expect_equal(res$sumwgt[res$g == "x"], 4)
   expect_equal(res$sumwgt[res$g == "y"], 7)
@@ -65,14 +65,14 @@ test_that("the weight column is not itself analysed by default", {
 })
 
 test_that("naming the weight column in vars is an error", {
-  expect_error(proc_means(d, vars = "wt", stats = "n", weight_col = "wt"),
-               "also named in 'vars' or 'class'")
+  expect_error(proc_means(d, var_cols = "wt", stats = "n", weight_col = "wt"),
+               "also named in 'var_cols' or 'class_cols'")
 })
 
 test_that("naming the weight column in class is an error", {
-  expect_error(proc_means(d, vars = "a", class = "wt", stats = "n",
+  expect_error(proc_means(d, var_cols = "a", class_cols = "wt", stats = "n",
                           weight_col = "wt"),
-               "also named in 'vars' or 'class'")
+               "also named in 'var_cols' or 'class_cols'")
 })
 
 test_that("a missing weight and a missing class value filter independently", {
@@ -84,7 +84,7 @@ test_that("a missing weight and a missing class value filter independently", {
     g  = c("x", "x", NA, "y", "y"),
     wt = c(1, NA, 2, 3, 4)
   )
-  res <- proc_means(dcw, vars = "a", class = "g",
+  res <- proc_means(dcw, var_cols = "a", class_cols = "g",
                     stats = c("n", "sumwgt", "mean"), weight_col = "wt")
 
   expect_equal(res$n[res$g == "x"], 1L)
@@ -100,22 +100,22 @@ test_that("a missing weight and a missing class value filter independently", {
 test_that("variable labels survive a weighted call", {
   d <- data.frame(age = c(51, 63, 47, 72), wt = c(1, 2, 1, 4))
   labelled::var_label(d$age) <- "Age at baseline"
-  res <- proc_means(d, vars = "age", stats = c("n", "mean"), weight_col = "wt")
+  res <- proc_means(d, var_cols = "age", stats = c("n", "mean"), weight_col = "wt")
   expect_equal(res$label, "Age at baseline")
 })
 
 test_that("variable labels survive a weighted call with a missing weight", {
   d <- data.frame(age = c(51, 63, 47, 72), wt = c(1, NA, 1, 4))
   labelled::var_label(d$age) <- "Age at baseline"
-  res <- proc_means(d, vars = "age", stats = c("n", "mean"), weight_col = "wt")
+  res <- proc_means(d, var_cols = "age", stats = c("n", "mean"), weight_col = "wt")
   expect_equal(res$label, "Age at baseline")
   expect_equal(res$n, 3L)
 })
 
 test_that("sumwgt is numeric whether or not weights are supplied", {
   d <- data.frame(a = c(1, 2, 3, 4), wt = c(1, 1, 2, 4))
-  expect_type(proc_means(d, vars = "a", stats = "sumwgt")$sumwgt, "double")
-  expect_type(proc_means(d, vars = "a", stats = "sumwgt", weight_col = "wt")$sumwgt,
+  expect_type(proc_means(d, var_cols = "a", stats = "sumwgt")$sumwgt, "double")
+  expect_type(proc_means(d, var_cols = "a", stats = "sumwgt", weight_col = "wt")$sumwgt,
               "double")
 })
 
@@ -123,7 +123,7 @@ test_that("sumwgt is numeric for an integer weight column", {
   # is.numeric() accepts integers, and sum() of an integer vector stays integer,
   # so an integer weight column would otherwise flip the column type.
   di <- data.frame(a = c(1, 2, 3, 4), wt = c(1L, 1L, 2L, 4L))
-  res <- proc_means(di, vars = "a", stats = "sumwgt", weight_col = "wt")
+  res <- proc_means(di, var_cols = "a", stats = "sumwgt", weight_col = "wt")
   expect_type(res$sumwgt, "double")
   expect_equal(res$sumwgt, 8)
 })
@@ -132,14 +132,14 @@ test_that("sumwgt does not overflow on large integer weights", {
   # sum() on integers overflows to NA with a warning; coercing first avoids it.
   dbig <- data.frame(a = c(1, 2), wt = c(2000000000L, 2000000000L))
   withr::local_options(warn = 2)
-  expect_equal(proc_means(dbig, vars = "a", stats = "sumwgt",
+  expect_equal(proc_means(dbig, var_cols = "a", stats = "sumwgt",
                           weight_col = "wt")$sumwgt, 4e9)
 })
 
 test_that("nobs counts rows excluded for a missing weight, as SAS does", {
   # SAS: NOBS = N + NMISS + observations excluded for a missing weight.
   dm <- data.frame(a = c(1, NA, 3, 4), wt = c(1, 2, NA, 1))
-  res <- proc_means(dm, vars = "a", stats = c("n", "nmiss", "nobs"),
+  res <- proc_means(dm, var_cols = "a", stats = c("n", "nmiss", "nobs"),
                     weight_col = "wt")
   expect_identical(res$n, 2L)
   expect_identical(res$nmiss, 1L)
@@ -150,7 +150,7 @@ test_that("nobs counts excluded-weight rows within their class level", {
   dc <- data.frame(a = c(1, 2, 3, NA, 5),
                    g = c("x", "x", "y", "y", NA),
                    wt = c(1, NA, NA, 2, NA))
-  res <- proc_means(dc, vars = "a", class = "g",
+  res <- proc_means(dc, var_cols = "a", class_cols = "g",
                     stats = c("n", "nmiss", "nobs"), weight_col = "wt")
   expect_identical(res$n, c(1L, 0L))
   expect_identical(res$nmiss, c(0L, 1L))
@@ -162,7 +162,7 @@ test_that("a class level whose every weight is missing keeps its row", {
   # NMISS = 0 and _FREQ_ = 2. PROC UNIVARIATE drops such a level instead.
   cw <- data.frame(g = c("x", "x", "y", "y"), a = c(1, 2, 3, 4),
                    wt = c(1, 2, NA, NA))
-  res <- proc_means(cw, vars = "a", class = "g",
+  res <- proc_means(cw, var_cols = "a", class_cols = "g",
                     stats = c("n", "nmiss", "nobs", "mean"), weight_col = "wt")
   expect_identical(res$g, c("x", "y"))
   expect_identical(res$n, c(2L, 0L))

@@ -103,7 +103,7 @@ str(dta_converted)
 
 ```r
 # Skip conversion for specific variables
-dta_partial <- r_data_types(dta, skip_vars = c("boolean", "char"))
+dta_partial <- r_data_types(dta, skip_cols = c("boolean", "char"))
 # boolean and char remain unchanged, others are converted
 ```
 
@@ -159,7 +159,7 @@ mean(dta$reop)   # ~reoperation rate
 model_data <- r_data_types(
   dta,
   factor_size = 5,
-  skip_vars = c("ccfid", "iv_dead", "iv_reop")
+  skip_cols = c("ccfid", "iv_dead", "iv_reop")
 )
 
 # Extract variable labels for reporting

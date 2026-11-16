@@ -4,20 +4,23 @@
 \alias{level_map}
 \title{Report what stripping a code prefix would do to a dataset's levels}
 \usage{
-level_map(data, vars = NULL, max_levels = 20L)
+level_map(data, var_cols = NULL, max_levels = 20L, vars)
 }
 \arguments{
 \item{data}{A data frame.}
 
-\item{vars}{Optional character vector of column names to report. Defaults
+\item{var_cols}{Optional character vector of column names to report. Defaults
 to every discrete column - factor, value-labelled, or character. Naming a
-column that is not in \code{data} is an error.}
+column that is not in \code{data} is an error. Was \code{vars} before 2026-11;
+\code{vars =} still works for one release, with a warning.}
 
 \item{max_levels}{Maximum distinct values a column may have before it is
 skipped. A single positive whole number, finite; defaults to 20. To
 report every column, pass a number at least as large as the widest one -
 \code{Inf} is refused, because a threshold that never fires reads as a
 cap that is working.}
+
+\item{vars}{Deprecated: the old name of \code{var_cols}, kept for one release.}
 }
 \value{
 A data frame with one row per reported level and the columns

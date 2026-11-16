@@ -4,7 +4,7 @@
 \alias{proc_print}
 \title{Targeted prints of matching rows, in the style of SAS PROC PRINT with WHERE}
 \usage{
-proc_print(data, where, var = NULL, max_rows = 25L, console = TRUE)
+proc_print(data, where, var_cols = NULL, max_rows = 25L, console = TRUE)
 }
 \arguments{
 \item{data}{A data frame.}
@@ -13,8 +13,9 @@ proc_print(data, where, var = NULL, max_rows = 25L, console = TRUE)
 single non-empty quoted label, or one such formula. Labels must be
 unique.}
 
-\item{var}{Character or \code{NULL}. Columns to print for the matching
-rows, SAS \code{VAR}. \code{NULL} prints every column.}
+\item{var_cols}{Character or \code{NULL}. Columns to print for the matching
+rows, SAS \code{VAR}. \code{NULL} prints every column. Was \code{var} before
+2026-11; \code{var =} still works for one release, with a warning.}
 
 \item{max_rows}{A single positive whole number. At most this many matching
 rows are printed per condition; the count is always the full count.}
@@ -65,7 +66,7 @@ dta <- generate_survival_data(n = 200, seed = 42)
 proc_print(dta,
   where = list(age > 80 ~ "Older than 80",
                dead == 1 & iv_dead < 1 ~ "Death in the first year"),
-  var = c("age", "dead", "iv_dead"))
+  var_cols = c("age", "dead", "iv_dead"))
 }
 \seealso{
 \code{\link{proc_freq}}, \code{\link{followup_check}}
