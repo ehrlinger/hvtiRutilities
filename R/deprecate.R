@@ -58,8 +58,8 @@
 # rather than read in either order: a cohort gate must not count the wrong
 # column without saying so.
 .hvti_refuse_ambiguous_order <- function(cl, env, fn, caller, signature) {
-  if (all(c("time", "event") %in% .hvti_positional_formals(cl, env, fn))) {
-    stop(caller, "(): pass `time =` and `event =` by name. The arguments are now ", signature,
+  if (all(c("time_col", "event_col") %in% .hvti_positional_formals(cl, env, fn))) {
+    stop(caller, "(): pass `time_col =` and `event_col =` by name. The arguments are now ", signature,
          ", as in survival::Surv(), and were event before time until 2026-11, so two unnamed ",
          "arguments cannot be read safely.", call. = FALSE)
   }
@@ -69,9 +69,11 @@
 # a function with the previous formals, rename what was renamed, substitute
 # any argument already evaluated (`forced`, by old formal name) so it is not
 # evaluated again, and call `fn` with every argument named so the new order
-# cannot misread it.
+# cannot misread it. With `old = NULL` the arguments stay as written, in
+# place, with only the renamed names changed, so unnamed ones bind against
+# `fn`'s own order: for a rename that kept its position.
 .hvti_recall <- function(cl, env, old, fn, rename = character(), forced = list()) {
-  args <- as.list(match.call(old, cl, expand.dots = TRUE, envir = env))[-1L]
+  args <- if (is.null(old)) .hvti_call_args(cl, env) else as.list(match.call(old, cl, expand.dots = TRUE, envir = env))[-1L]
   args[names(forced)] <- forced
   hit <- names(args) %in% names(rename)
   names(args)[hit] <- rename[names(args)[hit]]

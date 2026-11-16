@@ -28,7 +28,7 @@ test_that("variable labels survive, including after rows are dropped", {
 test_that("variable labels survive weighting", {
   d <- data.frame(g = c("a", "b"), wt = c(1, NA))
   labelled::var_label(d$g) <- "Group"
-  res <- proc_freq(d, "g", weights = "wt")
+  res <- proc_freq(d, "g", weight_col = "wt")
   expect_equal(labelled::var_label(res$g), "Group")
 })
 

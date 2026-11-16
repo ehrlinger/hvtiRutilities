@@ -9,11 +9,12 @@ proc_univariate(
   vars = NULL,
   class = NULL,
   stats = c("n", "median", "mean", "std", "cv", "min", "max"),
-  weights = NULL,
+  weight_col = NULL,
   pctlpts = NULL,
   pctlpre = "p",
   mu0 = 0,
-  vardef = c("df", "n", "wdf", "weight")
+  vardef = c("df", "n", "wdf", "weight"),
+  weights
 )
 }
 \arguments{
@@ -21,7 +22,7 @@ proc_univariate(
 
 \item{vars}{Character vector of columns to analyse. \code{NULL} (default)
 selects every numeric column not named in \code{class} or
-\code{weights}.}
+\code{weight_col}.}
 
 \item{class}{Character vector of grouping columns, prepended to the result
 as leading columns. Rows with a missing value in any class variable are
@@ -34,7 +35,7 @@ every weight is missing has no row, as in SAS.}
 \code{"probt"}, \code{"msign"}, \code{"probm"}, \code{"signrank"},
 \code{"probs"}, \code{"normal"} and \code{"probn"}.}
 
-\item{weights}{Character or \code{NULL}. Name of a single numeric column of
+\item{weight_col}{Character or \code{NULL}. Name of a single numeric column of
 \code{data} to use as an observation weight, SAS \code{WEIGHT}.
 Observations whose weight is missing are excluded from every statistic
 except \code{nobs}, which counts them.}
@@ -51,6 +52,8 @@ SAS \verb{PCTLPRE=}. The point follows with \code{.} replaced by
 
 \item{vardef}{The variance divisor: \code{"df"} (default), \code{"n"},
 \code{"wdf"} or \code{"weight"}. SAS \verb{VARDEF=}.}
+
+\item{weights}{Deprecated: the old name of \code{weight_col}, kept for one release.}
 }
 \value{
 A data frame with one row per analysis variable per class
@@ -92,7 +95,7 @@ than the adjusted ones.
 \strong{Statistics SAS does not compute are NA}, as SAS writes missing:
 \itemize{
 \item \code{msign}, \code{probm}, \code{signrank}, \code{probs},
-\code{normal}, \code{probn} when \code{weights} is given;
+\code{normal}, \code{probn} when \code{weight_col} is given;
 \item \code{t}, \code{probt}, \code{stderr} and \code{stdmean} when
 \code{vardef} is not \code{"df"};
 \item \code{skewness} and \code{kurtosis} when \code{vardef} is

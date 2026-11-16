@@ -6,28 +6,31 @@
 \usage{
 followup_check(
   data,
-  time,
-  event,
-  identifier = NULL,
+  time_col,
+  event_col,
+  id_col = NULL,
   max_rows = 25L,
   stats = c("n", "nmiss", "mean", "std", "min", "p15", "median", "p85", "max"),
-  followup
+  followup,
+  identifier
 )
 }
 \arguments{
 \item{data}{A data frame, one row per patient.}
 
-\item{time}{Names of one or more follow-up interval columns, in years.
-Was \code{followup} before 2026-11; \verb{followup =} still works for one
-release, with a warning. The order was \verb{event, time} until then, so
-a call passing \code{time} and \code{event} both unnamed is an error;
-name them.}
+\item{time_col}{Names of one or more follow-up interval columns, in years.
+Was \code{followup}, and briefly \code{time}, before 2026-11; both still
+work for one release, with a warning. The order was \verb{event, time}
+until then, so a call passing \code{time_col} and \code{event_col} both
+unnamed is an error; name them.}
 
-\item{event}{Name of the event indicator: 1 or \code{TRUE} for an event, 0
-or \code{FALSE} for censored. Missing values are allowed and counted.}
+\item{event_col}{Name of the event indicator: 1 or \code{TRUE} for an
+event, 0 or \code{FALSE} for censored. Missing values are allowed and
+counted. Was \code{event}; \verb{event =} still works for one release.}
 
-\item{identifier}{\code{NULL} (the default), or the name of one column to
-show in \code{review}.}
+\item{id_col}{\code{NULL} (the default), or the name of one column to show
+in \code{review}. Was \code{identifier}; \verb{identifier =} still works
+for one release.}
 
 \item{max_rows}{The most suspicious rows to return in \code{review}, in data
 order. Default 25.}
@@ -37,7 +40,8 @@ order. Default 25.}
 same way. Default
 \code{c("n", "nmiss", "mean", "std", "min", "p15", "median", "p85", "max")}.}
 
-\item{followup}{Deprecated: the old name of \code{time}, kept for one release.}
+\item{followup, identifier}{Deprecated: the old names of \code{time_col} and
+\code{id_col}, kept for one release.}
 }
 \value{
 An object of class \code{followup_check}, a list of four
@@ -53,7 +57,7 @@ observed values.}
 \code{censored}, of \code{\link[=proc_means]{proc_means()}} tables over the
 intervals, one column per statistic in \code{stats}.}
 \item{\code{review}}{Up to \code{max_rows} suspicious rows, with the
-event, the intervals and any \code{identifier}.}
+event, the intervals and any \code{id_col}.}
 }
 }
 \description{
@@ -86,12 +90,12 @@ SAS \verb{PROC MEANS} prints no percentiles unless asked, so a parity
 comparison names the same statistics on the SAS side, or passes the SAS
 job's list to \code{stats}.
 
-Identifiers are never included unless named in \code{identifier}. Check the
+Identifiers are never included unless named in \code{id_col}. Check the
 result before sharing a report that shows \code{review} with one.
 }
 \examples{
 d <- data.frame(dead = c(1, 0, 0, NA, 1), iv_dead = c(2.5, 4, 0, 1.2, NA))
-fc <- followup_check(d, time = "iv_dead", event = "dead")
+fc <- followup_check(d, time_col = "iv_dead", event_col = "dead")
 fc
 fc$cohort
 fc$review

@@ -41,7 +41,7 @@
 #' `mode`, and every quantile -- `median`, `q1`, `q3`,
 #' `pNN` and `qrange`. `PROC MEANS` does not compute weighted
 #' quantiles at all; that is `PROC UNIVARIATE`. So
-#' `proc_means(d, stats = "median", weights = "wt")` returns the
+#' `proc_means(d, stats = "median", weight_col = "wt")` returns the
 #' *unweighted* median.
 #'
 #' `mode` returns the smallest value among tied modes, and `NA` when
@@ -77,7 +77,7 @@
 #'   `"range"`, `"qrange"`, `"q1"`, `"q3"`, or any
 #'   `"pNN"` for NN from 1 to 99. Sums: `"sum"`, `"uss"`,
 #'   `"css"`. Shape: `"skewness"`, `"kurtosis"`.
-#' @param weights Character or `NULL`. Name of a single numeric column of
+#' @param weight_col Character or `NULL`. Name of a single numeric column of
 #'   `data` to use as an observation weight, mirroring the SAS
 #'   `WEIGHT` statement. Observations whose weight is missing are excluded
 #'   from every statistic except `nobs`, which counts them, as SAS does.
@@ -85,6 +85,7 @@
 #'   handling of non-positive weights varies across procedures and versions, so
 #'   this fails loudly rather than encode a guess.
 #'
+#' @param weights Deprecated: the old name of `weight_col`, kept for one release.
 #' @return A data frame with one row per analysis variable per class
 #'   combination. Columns are the `class` variables (when supplied), then
 #'   `variable`, `label`, then one column per requested statistic in
@@ -110,10 +111,16 @@
 #' # Weighted statistics
 #' dta <- data.frame(age = c(51, 63, 47, 72), wt = c(1, 2, 1, 4))
 #' proc_means(dta, vars = "age", stats = c("n", "sumwgt", "mean"),
-#'            weights = "wt")
+#'            weight_col = "wt")
 proc_means <- function(data, vars = NULL, class = NULL,
                        stats = c("n", "mean", "std", "min", "p15", "median", "p85", "max"),
-                       weights = NULL) {
+                       weight_col = NULL, weights) {
+  if (!missing(weights)) {
+    .hvti_deprecate("proc_means_weights", "proc_means(): `weights =` is now `weight_col =`, per the family rule that an ",
+                    "argument naming one column ends in _col. The old name works for one more release.")
+    weight_col <- weights
+  }
+  weights <- weight_col
   if (!is.data.frame(data)) {
     stop("'data' must be a data frame.", call. = FALSE)
   }
@@ -272,7 +279,7 @@ proc_means <- function(data, vars = NULL, class = NULL,
     return(NULL)
   }
   if (!is.character(weights) || length(weights) != 1L) {
-    stop("'weights' must be a single column name.", call. = FALSE)
+    stop("'weight_col' must be a single column name.", call. = FALSE)
   }
   .check_columns(weights, data)
 

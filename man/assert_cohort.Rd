@@ -4,7 +4,7 @@
 \alias{assert_cohort}
 \title{Assert the cohort matches a job-level expectation}
 \usage{
-assert_cohort(data, expected, time, event)
+assert_cohort(data, expected, time_col, event_col)
 }
 \arguments{
 \item{data}{A data frame. Was \code{d} before 2026-11; \verb{d =} still
@@ -13,9 +13,12 @@ works for one release, with a warning.}
 \item{expected}{List containing nonnegative integer \code{n},
 \code{n_events} and \code{n_censored}.}
 
-\item{time}{Character scalar naming the time column.}
+\item{time_col}{Character scalar naming the time column. Was \code{time}
+before 2026-11; \verb{time =} still works for one release, with a warning.}
 
-\item{event}{Character scalar naming the binary event column.}
+\item{event_col}{Character scalar naming the binary event column. Was
+\code{event} before 2026-11; \verb{event =} still works for one release,
+with a warning.}
 }
 \value{
 \code{invisible(TRUE)} on success; otherwise an error.
@@ -27,14 +30,16 @@ would otherwise run happily on an unreconciled cohort.
 }
 \section{Argument order}{
 
-\verb{time, event}, as in \code{survival::Surv()}; it was \verb{event, time} until 2026-11. A call passing both unnamed is an error, since the two
-orders read it oppositely; name \verb{time =} and \verb{event =}.
+\verb{time_col, event_col}, as in \code{survival::Surv()}; it was
+\verb{event, time} until 2026-11. A call passing both unnamed is an error,
+since the two orders read it oppositely; name \verb{time_col =} and
+\verb{event_col =}.
 }
 
 \examples{
 d <- data.frame(dead = c(1, 1, 0, 0, 0), iv_dead = 1:5)
 expected <- list(n = 5L, n_events = 2L, n_censored = 3L)
-assert_cohort(d, expected, time = "iv_dead", event = "dead")
+assert_cohort(d, expected, time_col = "iv_dead", event_col = "dead")
 }
 \seealso{
 \code{\link[=cohort_counts]{cohort_counts()}}

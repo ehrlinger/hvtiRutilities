@@ -8,11 +8,11 @@ test_that("proc_means() errors and messages carry over", {
   expect_error(proc_univariate(dta, vars = "nope"), "not found in 'data'")
   expect_error(proc_univariate(data.frame(x = "a"), vars = "x"),
                "Non-numeric column")
-  expect_error(proc_univariate(dta, weights = "nope"), "not found in 'data'")
+  expect_error(proc_univariate(dta, weight_col = "nope"), "not found in 'data'")
   expect_error(proc_univariate(data.frame(x = 1, w = 0), vars = "x",
-                               weights = "w"),
+                               weight_col = "w"),
                "non-positive value")
-  expect_error(proc_univariate(dta, vars = c("x", "w"), weights = "w"),
+  expect_error(proc_univariate(dta, vars = c("x", "w"), weight_col = "w"),
                "also named in 'vars' or 'class'")
 })
 

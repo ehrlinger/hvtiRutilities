@@ -385,7 +385,7 @@ wdta <- dta
 wdta$wt <- ifelse(wdta$sex == "Female", 2, 1)
 
 proc_univariate(wdta, vars = "age", stats = c("n", "sumwgt"),
-                weights = "wt", pctlpts = c(2.5, 16, 50, 84, 97.5),
+                weight_col = "wt", pctlpts = c(2.5, 16, 50, 84, 97.5),
                 pctlpre = "p_")
 ```
 
@@ -398,9 +398,9 @@ With `weights`, `proc_univariate()` weights `median`, `q1`, `q3`, `qrange`,
 ```{r univ-weighted}
 w4 <- data.frame(x = c(1, 2, 3, 4), wt = c(1, 3, 1, 1))
 
-proc_means(w4, vars = "x", stats = "median", weights = "wt")
+proc_means(w4, vars = "x", stats = "median", weight_col = "wt")
 
-proc_univariate(w4, vars = "x", stats = "median", weights = "wt")
+proc_univariate(w4, vars = "x", stats = "median", weight_col = "wt")
 ```
 
 The weighted rule is not `QNTLDEF=5` with weights added. SAS sorts the values,
@@ -422,10 +422,10 @@ is `DF`, and `skewness` and `kurtosis` are missing under `WDF` and `WEIGHT`.
 `proc_univariate()` returns `NA` in the same places:
 
 ```{r univ-vardef}
-proc_univariate(wdta, vars = "age", weights = "wt",
+proc_univariate(wdta, vars = "age", weight_col = "wt",
                 stats = c("std", "stdmean", "skewness"), vardef = "wdf")
 
-proc_univariate(wdta, vars = "age", weights = "wt",
+proc_univariate(wdta, vars = "age", weight_col = "wt",
                 stats = c("std", "stdmean", "skewness"))
 ```
 

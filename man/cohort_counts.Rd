@@ -4,15 +4,18 @@
 \alias{cohort_counts}
 \title{Count the analysable cohort}
 \usage{
-cohort_counts(data, time, event)
+cohort_counts(data, time_col, event_col)
 }
 \arguments{
 \item{data}{A data frame. Was \code{d} before 2026-11; \verb{d =} still
 works for one release, with a warning.}
 
-\item{time}{Character scalar naming the time column.}
+\item{time_col}{Character scalar naming the time column. Was \code{time}
+before 2026-11; \verb{time =} still works for one release, with a warning.}
 
-\item{event}{Character scalar naming the binary event column.}
+\item{event_col}{Character scalar naming the binary event column. Was
+\code{event} before 2026-11; \verb{event =} still works for one release,
+with a warning.}
 }
 \value{
 A list with integer elements \code{n}, \code{n_events} and
@@ -32,16 +35,16 @@ review, and the two should not disagree in silence.
 }
 \section{Argument order}{
 
-\verb{time, event}, as in \code{survival::Surv()}. Until 2026-11 the order
-was \verb{event, time}, so a call passing both unnamed means opposite things
-in the two orders and is an error, whether or not \code{data} is named.
-Name them, \verb{time =} and \verb{event =}, and the call means the same
-before and after. One of the two unnamed reads the same in either order.
+\verb{time_col, event_col}, as in \code{survival::Surv()}. Until 2026-11 the
+order was \verb{event, time}, so a call passing both unnamed means opposite
+things in the two orders and is an error, whether or not \code{data} is
+named. Name them, \verb{time_col =} and \verb{event_col =}. One of the two
+unnamed reads the same in either order.
 }
 
 \examples{
 d <- data.frame(dead = c(1, 1, 0, 0, 0), iv_dead = 1:5)
-cohort_counts(d, time = "iv_dead", event = "dead")
+cohort_counts(d, time_col = "iv_dead", event_col = "dead")
 }
 \seealso{
 \code{\link[=assert_cohort]{assert_cohort()}}
