@@ -72,7 +72,15 @@ and percentages. One call is one table; a SAS step with several
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">proc_freq</span><span class="op">(</span><span class="va">data</span>, <span class="va">tables</span>, missing <span class="op">=</span> <span class="cn">FALSE</span>, list <span class="op">=</span> <span class="cn">FALSE</span>, weights <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">proc_freq</span><span class="op">(</span></span>
+<span>  <span class="va">data</span>,</span>
+<span>  <span class="va">table_cols</span>,</span>
+<span>  missing <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  list <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  weight_col <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  <span class="va">weights</span>,</span>
+<span>  <span class="va">tables</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -83,14 +91,15 @@ and percentages. One call is one table; a SAS step with several
 <dd><p>A data frame.</p></dd>
 
 
-<dt id="arg-tables">tables<a class="anchor" aria-label="anchor" href="#arg-tables"></a></dt>
+<dt id="arg-table-cols">table_cols<a class="anchor" aria-label="anchor" href="#arg-table-cols"></a></dt>
 <dd><p>Character vector of one or more column names defining the
-table.</p></dd>
+table. Was <code>tables</code> before 2026-11; <code>tables =</code> still works for one
+release, with a warning.</p></dd>
 
 
 <dt id="arg-missing">missing<a class="anchor" aria-label="anchor" href="#arg-missing"></a></dt>
 <dd><p>Logical. <code>FALSE</code> (the SAS default) excludes rows with a
-missing value in any <code>tables</code> variable from the table and from every
+missing value in any <code>table_cols</code> variable from the table and from every
 denominator, and reports their count in the <code>frequency_missing</code>
 attribute. <code>TRUE</code>, SAS <code>/ MISSING</code>, treats missing as a level,
 with each SAS special missing value a level of its own.</p></dd>
@@ -102,16 +111,24 @@ columns and percentages of the grand total for an n-way table. It has no
 effect on a one-way table.</p></dd>
 
 
-<dt id="arg-weights">weights<a class="anchor" aria-label="anchor" href="#arg-weights"></a></dt>
+<dt id="arg-weight-col">weight_col<a class="anchor" aria-label="anchor" href="#arg-weight-col"></a></dt>
 <dd><p>Character or <code>NULL</code>. Name of a single numeric column of
 weights, SAS <code>WEIGHT</code>. <code>Frequency</code> becomes the sum of weights.
 Rows with a missing weight are excluded entirely; non-positive weights
 are an error, as in <code><a href="proc_means.html">proc_means</a></code>.</p></dd>
 
+
+<dt id="arg-weights">weights<a class="anchor" aria-label="anchor" href="#arg-weights"></a></dt>
+<dd><p>Deprecated: the old name of <code>weight_col</code>, kept for one release.</p></dd>
+
+
+<dt id="arg-tables">tables<a class="anchor" aria-label="anchor" href="#arg-tables"></a></dt>
+<dd><p>Deprecated: the old name of <code>table_cols</code>, kept for one release.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A data frame with one column per <code>tables</code> variable (each
+    <p>A data frame with one column per <code>table_cols</code> variable (each
   followed by a <code>&lt;var&gt;_label</code> column when the variable carries value
   labels), then:</p><ul><li><p>for a one-way table, or <code>list = TRUE</code>: <code>Frequency</code>,
       <code>Percent</code>, <code>Cum_Frequency</code>, <code>Cum_Percent</code>;</p></li>
@@ -124,7 +141,7 @@ are an error, as in <code><a href="proc_means.html">proc_means</a></code>.</p></
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>The last name in <code>tables</code> is the column variable, the one before it
+    <p>The last name in <code>table_cols</code> is the column variable, the one before it
 the row variable, and any earlier names are strata, as in SAS
 <code>TABLES a*b*c</code>.</p>
 <p><strong>Percentages depend on <code>list</code>, not only the columns shown.</strong>
@@ -144,7 +161,7 @@ SAS omits zero-count levels without <code>SPARSE</code>.</p>
 forms levels from formatted values: stored codes sharing a label form one
 row, shown as the smallest of those codes, and a <code>&lt;var&gt;_label</code> column
 holding the label follows it. A value with no label is its own row.
-Variable labels on the <code>tables</code> columns are kept.</p>
+Variable labels on the <code>table_cols</code> columns are kept.</p>
 <p><strong>What counts as missing.</strong> As in SAS, a blank or whitespace-only
 character value is missing, and so is <code>NaN</code>. SAS special missing
 values, read by <code>haven</code> as <code><a href="https://haven.tidyverse.org/reference/tagged_na.html" class="external-link">tagged_na</a></code>, are

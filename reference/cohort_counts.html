@@ -84,29 +84,43 @@ review, and the two should not disagree in silence.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">cohort_counts</span><span class="op">(</span><span class="va">d</span>, <span class="va">event</span>, <span class="va">time</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">cohort_counts</span><span class="op">(</span><span class="va">data</span>, <span class="va">time_col</span>, <span class="va">event_col</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
 
 
-<dl><dt id="arg-d">d<a class="anchor" aria-label="anchor" href="#arg-d"></a></dt>
-<dd><p>A data frame.</p></dd>
+<dl><dt id="arg-data">data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>
+<dd><p>A data frame. Was <code>d</code> before 2026-11; <code>d =</code> still
+works for one release, with a warning.</p></dd>
 
 
-<dt id="arg-event">event<a class="anchor" aria-label="anchor" href="#arg-event"></a></dt>
-<dd><p>Character scalar naming the binary event column.</p></dd>
+<dt id="arg-time-col">time_col<a class="anchor" aria-label="anchor" href="#arg-time-col"></a></dt>
+<dd><p>Character scalar naming the time column. Was <code>time</code>
+before 2026-11; <code>time =</code> still works for one release, with a warning.</p></dd>
 
 
-<dt id="arg-time">time<a class="anchor" aria-label="anchor" href="#arg-time"></a></dt>
-<dd><p>Character scalar naming the time column.</p></dd>
+<dt id="arg-event-col">event_col<a class="anchor" aria-label="anchor" href="#arg-event-col"></a></dt>
+<dd><p>Character scalar naming the binary event column. Was
+<code>event</code> before 2026-11; <code>event =</code> still works for one release,
+with a warning.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A list with integer elements <code>n</code>, <code>n_events</code> and
   <code>n_censored</code>.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="argument-order">Argument order<a class="anchor" aria-label="anchor" href="#argument-order"></a></h2>
+
+
+<p><code>time_col, event_col</code>, as in <code><a href="https://rdrr.io/pkg/survival/man/Surv.html" class="external-link">survival::Surv()</a></code>. Until 2026-11 the
+order was <code>event, time</code>, so a call passing both unnamed means opposite
+things in the two orders and is an error, whether or not <code>data</code> is
+named. Name them, <code>time_col =</code> and <code>event_col =</code>. One of the two
+unnamed reads the same in either order.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -116,7 +130,7 @@ review, and the two should not disagree in silence.</p>
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">d</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>dead <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">0</span><span class="op">)</span>, iv_dead <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu">cohort_counts</span><span class="op">(</span><span class="va">d</span>, event <span class="op">=</span> <span class="st">"dead"</span>, time <span class="op">=</span> <span class="st">"iv_dead"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">cohort_counts</span><span class="op">(</span><span class="va">d</span>, time_col <span class="op">=</span> <span class="st">"iv_dead"</span>, event_col <span class="op">=</span> <span class="st">"dead"</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $n</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 5</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>

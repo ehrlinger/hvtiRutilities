@@ -9,7 +9,7 @@ it reports; it changes nothing.
 ## Usage
 
 ``` r
-level_map(data, vars = NULL, max_levels = 20L)
+level_map(data, var_cols = NULL, max_levels = 20L, vars)
 ```
 
 ## Arguments
@@ -18,11 +18,12 @@ level_map(data, vars = NULL, max_levels = 20L)
 
   A data frame.
 
-- vars:
+- var_cols:
 
   Optional character vector of column names to report. Defaults to every
   discrete column - factor, value-labelled, or character. Naming a
-  column that is not in `data` is an error.
+  column that is not in `data` is an error. Was `vars` before 2026-11;
+  `vars =` still works for one release, with a warning.
 
 - max_levels:
 
@@ -31,6 +32,10 @@ level_map(data, vars = NULL, max_levels = 20L)
   column, pass a number at least as large as the widest one - `Inf` is
   refused, because a threshold that never fires reads as a cap that is
   working.
+
+- vars:
+
+  Deprecated: the old name of `var_cols`, kept for one release.
 
 ## Value
 

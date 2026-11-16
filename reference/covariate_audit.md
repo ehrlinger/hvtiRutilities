@@ -7,7 +7,7 @@ rather than make it silently.
 ## Usage
 
 ``` r
-covariate_audit(data, vars, max_levels = 12L)
+covariate_audit(data, var_cols, max_levels = 12L, vars)
 ```
 
 ## Arguments
@@ -16,14 +16,19 @@ covariate_audit(data, vars, max_levels = 12L)
 
   A data frame.
 
-- vars:
+- var_cols:
 
-  Character vector of covariate names.
+  Character vector of covariate names. Was `vars` before 2026-11;
+  `vars =` still works for one release, with a warning.
 
 - max_levels:
 
   Integer. Columns with more distinct values than this are treated as
   continuous and their non-integer levels are reported as `NA`.
+
+- vars:
+
+  Deprecated: the old name of `var_cols`, kept for one release.
 
 ## Value
 

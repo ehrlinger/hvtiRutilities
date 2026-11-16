@@ -9,16 +9,21 @@ celebrated.
 ## Usage
 
 ``` r
-parity_headline(df)
+parity_headline(data, df)
 ```
 
 ## Arguments
 
-- df:
+- data:
 
   A data frame of
   [`compare_parity`](https://ehrlinger.github.io/hvtiRutilities/reference/compare_parity.md)
-  rows.
+  rows. Was `df` before 2026-11; `df =` still works for one release,
+  with a warning.
+
+- df:
+
+  Deprecated: the old name of `data`, kept for one release.
 
 ## Value
 

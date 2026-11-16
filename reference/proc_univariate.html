@@ -80,14 +80,16 @@ normality.</p>
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">proc_univariate</span><span class="op">(</span></span>
 <span>  <span class="va">data</span>,</span>
-<span>  vars <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  class <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  var_cols <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  class_cols <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  stats <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"n"</span>, <span class="st">"median"</span>, <span class="st">"mean"</span>, <span class="st">"std"</span>, <span class="st">"cv"</span>, <span class="st">"min"</span>, <span class="st">"max"</span><span class="op">)</span>,</span>
-<span>  weights <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  weight_col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  pctlpts <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  pctlpre <span class="op">=</span> <span class="st">"p"</span>,</span>
 <span>  mu0 <span class="op">=</span> <span class="fl">0</span>,</span>
-<span>  vardef <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"df"</span>, <span class="st">"n"</span>, <span class="st">"wdf"</span>, <span class="st">"weight"</span><span class="op">)</span></span>
+<span>  vardef <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"df"</span>, <span class="st">"n"</span>, <span class="st">"wdf"</span>, <span class="st">"weight"</span><span class="op">)</span>,</span>
+<span>  <span class="va">weights</span>,</span>
+<span>  <span class="va">vars</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -99,15 +101,19 @@ normality.</p>
 <dd><p>A data frame, tibble, or similar tabular object.</p></dd>
 
 
-<dt id="arg-vars">vars<a class="anchor" aria-label="anchor" href="#arg-vars"></a></dt>
-<dd><p>Character vector of columns to analyse. <code>NULL</code> (default)
-selects every numeric column not named in <code>class</code> or
-<code>weights</code>.</p></dd>
+<dt id="arg-var-cols">var_cols<a class="anchor" aria-label="anchor" href="#arg-var-cols"></a></dt>
+<dd><p>Character vector of columns to analyse, was <code>vars</code> before
+2026-11 (<code>vars =</code> still works for one release, with a warning).
+<code>NULL</code> (default) selects every numeric column not named in
+<code>class_cols</code> or
+<code>weight_col</code>.</p></dd>
 
 
-<dt id="arg-class">class<a class="anchor" aria-label="anchor" href="#arg-class"></a></dt>
-<dd><p>Character vector of grouping columns, prepended to the result
-as leading columns. Rows with a missing value in any class variable are
+<dt id="arg-class-cols">class_cols<a class="anchor" aria-label="anchor" href="#arg-class-cols"></a></dt>
+<dd><p>Character vector of grouping columns, prepended to the
+result as leading columns. Was <code>class</code> before 2026-11; <code>class =</code> still
+works for one release, with a warning. Rows with a missing value in any
+class variable are
 dropped, and levels follow <code>ORDER=INTERNAL</code>, as in
 <code><a href="proc_means.html">proc_means</a></code>. Unlike <code><a href="proc_means.html">proc_means()</a></code>, a level whose
 every weight is missing has no row, as in SAS.</p></dd>
@@ -120,7 +126,7 @@ every weight is missing has no row, as in SAS.</p></dd>
 <code>"probs"</code>, <code>"normal"</code> and <code>"probn"</code>.</p></dd>
 
 
-<dt id="arg-weights">weights<a class="anchor" aria-label="anchor" href="#arg-weights"></a></dt>
+<dt id="arg-weight-col">weight_col<a class="anchor" aria-label="anchor" href="#arg-weight-col"></a></dt>
 <dd><p>Character or <code>NULL</code>. Name of a single numeric column of
 <code>data</code> to use as an observation weight, SAS <code>WEIGHT</code>.
 Observations whose weight is missing are excluded from every statistic
@@ -147,11 +153,19 @@ SAS <code>PCTLPRE=</code>. The point follows with <code>.</code> replaced by
 <dd><p>The variance divisor: <code>"df"</code> (default), <code>"n"</code>,
 <code>"wdf"</code> or <code>"weight"</code>. SAS <code>VARDEF=</code>.</p></dd>
 
+
+<dt id="arg-weights">weights<a class="anchor" aria-label="anchor" href="#arg-weights"></a></dt>
+<dd><p>Deprecated: the old name of <code>weight_col</code>, kept for one release.</p></dd>
+
+
+<dt id="arg-vars">vars<a class="anchor" aria-label="anchor" href="#arg-vars"></a></dt>
+<dd><p>Deprecated: the old name of <code>var_cols</code>, kept for one release.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A data frame with one row per analysis variable per class
-  combination. Columns are the <code>class</code> variables (when supplied), then
+  combination. Columns are the <code>class_cols</code> variables (when supplied), then
   <code>variable</code>, <code>label</code>, then one column per <code>stats</code> keyword in
   the order given, then one column per <code>pctlpts</code> point in the order
   given. <code>n</code>, <code>nmiss</code> and <code>nobs</code> are integer; all others are
@@ -178,7 +192,7 @@ without weights). It changes <code>var</code>, <code>std</code> and <code>cv</co
 <code>"n"</code>, <code>skewness</code> and <code>kurtosis</code> are the moment forms rather
 than the adjusted ones.</p>
 <p><strong>Statistics SAS does not compute are NA</strong>, as SAS writes missing:</p><ul><li><p><code>msign</code>, <code>probm</code>, <code>signrank</code>, <code>probs</code>,
-    <code>normal</code>, <code>probn</code> when <code>weights</code> is given;</p></li>
+    <code>normal</code>, <code>probn</code> when <code>weight_col</code> is given;</p></li>
 <li><p><code>t</code>, <code>probt</code>, <code>stderr</code> and <code>stdmean</code> when
     <code>vardef</code> is not <code>"df"</code>;</p></li>
 <li><p><code>skewness</code> and <code>kurtosis</code> when <code>vardef</code> is
@@ -231,13 +245,13 @@ precision. At two observations both are <code>1</code>, as SAS reports.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 6    1.732727 1.9354171 111.6977318    0.04    9.92</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Decimal percentiles, as for a bootstrap interval</span></span></span>
-<span class="r-in"><span><span class="fu">proc_univariate</span><span class="op">(</span><span class="va">dta</span>, vars <span class="op">=</span> <span class="st">"age"</span>, stats <span class="op">=</span> <span class="st">"n"</span>,</span></span>
+<span class="r-in"><span><span class="fu">proc_univariate</span><span class="op">(</span><span class="va">dta</span>, var_cols <span class="op">=</span> <span class="st">"age"</span>, stats <span class="op">=</span> <span class="st">"n"</span>,</span></span>
 <span class="r-in"><span>                pctlpts <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2.5</span>, <span class="fl">50</span>, <span class="fl">97.5</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   variable                  label   n  p2_5   p50 p97_5</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1      age Age at surgery (years) 200 16.45 44.75 72.45</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Tests for location and normality</span></span></span>
-<span class="r-in"><span><span class="fu">proc_univariate</span><span class="op">(</span><span class="va">dta</span>, vars <span class="op">=</span> <span class="st">"bmi"</span>,</span></span>
+<span class="r-in"><span><span class="fu">proc_univariate</span><span class="op">(</span><span class="va">dta</span>, var_cols <span class="op">=</span> <span class="st">"bmi"</span>,</span></span>
 <span class="r-in"><span>                stats <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mean"</span>, <span class="st">"t"</span>, <span class="st">"probt"</span>, <span class="st">"normal"</span>, <span class="st">"probn"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>                mu0 <span class="op">=</span> <span class="fl">25</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   variable                   label    mean        t        probt    normal</span>

@@ -62,7 +62,7 @@ invisible(study_setup(root, study = "Example", study_tracker_id = 1L, renv = FAL
 utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
                  file.path(root, "00_datasets", "built.csv"),
                  row.names = FALSE)
-invisible(register_data(root, file = "built.csv"))
+invisible(register_data(file = "built.csv", root = root))
 cfg <- study_config(root)
 
 # The registered Parquet file, not the CSV it was converted from.
@@ -72,7 +72,7 @@ str(provenance_data("study", cfg = cfg))
 #>  $ path   : chr "00_datasets/built_20261116.parquet"
 #>  $ role   : chr "analysis"
 #>  $ bytes  : num 1162
-#>  $ mtime  : chr "2026-11-16T16:15:59Z"
+#>  $ mtime  : chr "2026-11-16T19:05:08Z"
 #>  $ sha256 : chr "a70fb80222cc62fdad5ebd24da671563bdd084a939a6c2fe792e5d11b218cca3"
 unlink(root, recursive = TRUE)
 ```

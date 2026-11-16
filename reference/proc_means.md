@@ -17,10 +17,12 @@ pass the SAS job's list to `stats`, or add `P15 MEDIAN P85` to the SAS
 ``` r
 proc_means(
   data,
-  vars = NULL,
-  class = NULL,
+  var_cols = NULL,
+  class_cols = NULL,
   stats = c("n", "mean", "std", "min", "p15", "median", "p85", "max"),
-  weights = NULL
+  weight_col = NULL,
+  weights,
+  vars
 )
 ```
 
@@ -30,16 +32,18 @@ proc_means(
 
   A data frame, tibble, or similar tabular object.
 
-- vars:
+- var_cols:
 
-  Character vector of columns to analyse. `NULL` (default) selects every
-  numeric column not named in `class`.
+  Character vector of columns to analyse, was `vars` before 2026-11
+  (`vars =` still works for one release, with a warning). `NULL`
+  (default) selects every numeric column not named in `class_cols`.
 
-- class:
+- class_cols:
 
   Character vector of grouping columns, prepended to the result as
-  leading columns. Rows with a missing value in any class variable are
-  dropped, matching SAS's default.
+  leading columns. Was `class` before 2026-11; `class =` still works for
+  one release, with a warning. Rows with a missing value in any class
+  variable are dropped, matching SAS's default.
 
 - stats:
 
@@ -52,7 +56,7 @@ proc_means(
   `"pNN"` for NN from 1 to 99. Sums: `"sum"`, `"uss"`, `"css"`. Shape:
   `"skewness"`, `"kurtosis"`.
 
-- weights:
+- weight_col:
 
   Character or `NULL`. Name of a single numeric column of `data` to use
   as an observation weight, mirroring the SAS `WEIGHT` statement.
@@ -62,10 +66,18 @@ proc_means(
   non-positive weights varies across procedures and versions, so this
   fails loudly rather than encode a guess.
 
+- weights:
+
+  Deprecated: the old name of `weight_col`, kept for one release.
+
+- vars:
+
+  Deprecated: the old name of `var_cols`, kept for one release.
+
 ## Value
 
 A data frame with one row per analysis variable per class combination.
-Columns are the `class` variables (when supplied), then `variable`,
+Columns are the `class_cols` variables (when supplied), then `variable`,
 `label`, then one column per requested statistic in the order given by
 `stats`. Count statistics (`n`, `nmiss`) are integer; all others are
 numeric.
@@ -79,11 +91,11 @@ even-numbered samples clinical subgroups produce. For `c(1, 2, 3, 4)`,
 the first quartile is `1.5` in SAS and `1.75` under R's default. The
 median agrees, which is why the discrepancy hides.
 
-With `vars = NULL` all numeric columns are analysed, matching SAS's
+With `var_cols = NULL` all numeric columns are analysed, matching SAS's
 behaviour when the `VAR` statement is omitted. Logical columns are not
 [`is.numeric()`](https://rdrr.io/r/base/numeric.html) in R and so are
-excluded from that default set; naming one in `vars` coerces it to 0/1,
-making `mean` a proportion as `PROC MEANS` would give.
+excluded from that default set; naming one in `var_cols` coerces it to
+0/1, making `mean` a proportion as `PROC MEANS` would give.
 
 Rows are ordered by analysis variable first, then by class level. A
 factor class variable orders by its declared level order rather than
@@ -96,7 +108,7 @@ than being a simplification. Weighted: `mean`, `std`, `var`, `cv`,
 Unweighted: `n`, `nmiss`, `nobs`, `min`, `max`, `range`, `mode`, and
 every quantile – `median`, `q1`, `q3`, `pNN` and `qrange`. `PROC MEANS`
 does not compute weighted quantiles at all; that is `PROC UNIVARIATE`.
-So `proc_means(d, stats = "median", weights = "wt")` returns the
+So `proc_means(d, stats = "median", weight_col = "wt")` returns the
 *unweighted* median.
 
 `mode` returns the smallest value among tied modes, and `NA` when no
@@ -144,7 +156,7 @@ head(proc_means(dta))
 #> 6 1.9354171    0.04    0.210    1.29    3.360    9.92
 
 # Named variables and an explicit statistic list
-proc_means(dta, vars = c("age", "bmi"),
+proc_means(dta, var_cols = c("age", "bmi"),
            stats = c("n", "mean", "median", "p15"))
 #>   variable                   label   n    mean median  p15
 #> 1      age  Age at surgery (years) 200 44.5890  44.75 29.3
@@ -152,8 +164,8 @@ proc_means(dta, vars = c("age", "bmi"),
 
 # Weighted statistics
 dta <- data.frame(age = c(51, 63, 47, 72), wt = c(1, 2, 1, 4))
-proc_means(dta, vars = "age", stats = c("n", "sumwgt", "mean"),
-           weights = "wt")
+proc_means(dta, var_cols = "age", stats = c("n", "sumwgt", "mean"),
+           weight_col = "wt")
 #>   variable label n sumwgt mean
 #> 1      age   age 4      8   64
 ```

@@ -35,7 +35,6 @@ and its key is checked only at registration.
 
 ``` r
 register_data(
-  root = study_root(),
   file,
   dataset = "study",
   role = c("study", "named"),
@@ -45,19 +44,14 @@ register_data(
   catalog_dataset = NULL,
   release_id = NULL,
   kind = NULL,
-  key = NULL,
+  key_cols = NULL,
   parents = NULL,
-  built = NULL
+  built = NULL,
+  root = study_root()
 )
 ```
 
 ## Arguments
-
-- root:
-
-  Character. Study root or a directory beneath it. Defaults to the study
-  that contains the working directory, found by its `_study.yml`;
-  outside a study the function stops and writes nothing.
 
 - file:
 
@@ -119,11 +113,12 @@ register_data(
   echoes or labs, joined to the cohort by a job) or `"combined"` (built
   by joining others).
 
-- key:
+- key_cols:
 
   Character or `NULL`. The columns that make each row unique, such as
   `c("ccfid", "echo_date")`. Checked at registration, which stops if any
-  row repeats on it. Jobs use it unless they set their own.
+  row repeats on it. Jobs use it unless they set their own. Was `key`
+  before 2026-11; `key =` still works for one release, with a warning.
 
 - parents:
 
@@ -137,6 +132,15 @@ register_data(
   The old name of `file`, before 2026-11. It still works, with a
   warning, and will be removed in a later release. Giving both is an
   error.
+
+- root:
+
+  Character. Study root or a directory beneath it. Defaults to the study
+  that contains the working directory, found by its `_study.yml`;
+  outside a study the function stops and writes nothing. It comes last,
+  after 2026-11; a call that passes an existing directory as its first
+  argument, unnamed, is read in the old, root-first order for one
+  release, with a warning.
 
 ## Value
 
@@ -178,11 +182,11 @@ invisible(study_setup(root, study = "Example", study_tracker_id = 1L, renv = FAL
 utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
                  file.path(root, "00_datasets", "built.csv"),
                  row.names = FALSE)
-register_data(root, file = "built.csv", key = "ccfid")
-#> Study: /tmp/RtmpEuZDli/register-data-example
+register_data(file = "built.csv", key_cols = "ccfid", root = root)
+#> Study: /tmp/RtmpT6gx1g/register-data-example
 #> 
 #> [x] _study.yml — study: Example
-#> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Example", study_tracker_id = 1L, root = "/tmp/RtmpEuZDli/register-data-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first
+#> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Example", study_tracker_id = 1L, root = "/tmp/RtmpT6gx1g/register-data-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first
 #> [x] manifest.yaml — 1 dataset entry verified by checksum
 #> [x] dataset — built.csv, registered as built_20261116.parquet
 #> [ ] provenance — no .qmd/.Rmd sources found; 0 sidecars
@@ -201,15 +205,15 @@ invisible(study_setup(root, study = "Example", study_tracker_id = 1L, renv = FAL
 utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
                  file.path(root, "00_datasets", "built.csv"),
                  row.names = FALSE)
-invisible(register_data(root, file = "built.csv", key = "ccfid"))
+invisible(register_data(file = "built.csv", key_cols = "ccfid", root = root))
 utils::write.csv(
   data.frame(ccfid = c(1, 1, 2), echo_date = c("2020-01-05", "2020-06-01", "2020-02-10"),
              lvef = c(55, 50, 60)),
   file.path(root, "00_datasets", "echo.csv"),
   row.names = FALSE
 )
-invisible(register_data(root, file = "echo.csv", dataset = "echo", role = "named",
-                        kind = "ancillary", key = c("ccfid", "echo_date")))
+invisible(register_data(file = "echo.csv", dataset = "echo", role = "named",
+                        kind = "ancillary", key_cols = c("ccfid", "echo_date"), root = root))
 read_built(study_config(root), dataset = "echo")
 #>   ccfid  echo_date lvef
 #> 1     1 2020-01-05   55

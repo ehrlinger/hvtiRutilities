@@ -9,19 +9,23 @@ data.
 
 ``` r
 r_data_types(
-  dataset,
+  data,
   factor_size = 10,
-  skip_vars = NULL,
+  skip_cols = NULL,
   binary_factor = FALSE,
-  use_value_labels = FALSE
+  use_value_labels = FALSE,
+  dataset,
+  skip_vars
 )
 ```
 
 ## Arguments
 
-- dataset:
+- data:
 
-  A data frame, tibble, data.table, or similar tabular object
+  A data frame, tibble, data.table, or similar tabular object. Was
+  `dataset` before 2026-11; `dataset =` still works for one release,
+  with a warning.
 
 - factor_size:
 
@@ -31,10 +35,12 @@ r_data_types(
   values. Must be a whole number from 2 to 50. Character columns are not
   subject to it. Default is 10.
 
-- skip_vars:
+- skip_cols:
 
   Character vector of column names to exclude from conversion. These
   columns will remain unchanged. Default is NULL (convert all columns).
+  Was `skip_vars` before 2026-11; `skip_vars =` still works for one
+  release, with a warning.
 
 - binary_factor:
 
@@ -50,11 +56,20 @@ r_data_types(
   the numeric codes are converted instead. Default is FALSE, which warns
   once per session; the default becomes TRUE in a later release.
 
+- dataset:
+
+  Deprecated: the old name of `data`. Kept as an argument for one
+  release so `dataset =` still reaches the deprecation notice.
+
+- skip_vars:
+
+  Deprecated: the old name of `skip_cols`, kept for one release.
+
 ## Value
 
-An object of the same class as `dataset` with columns converted
-according to the function's rules. Variable labels are preserved. The
-result carries a per-column conversion report, read with
+An object of the same class as `data` with columns converted according
+to the function's rules. Variable labels are preserved. The result
+carries a per-column conversion report, read with
 [`type_conversion_report`](https://ehrlinger.github.io/hvtiRutilities/reference/type_conversion_report.md).
 
 ## Details
@@ -80,7 +95,7 @@ Each column is converted by the first rule that matches, in this order:
     distinct values: `factor_size` does not apply to them. A character
     column that yields more than 50 levels – usually an identifier or
     free text, not a category – warns, naming the column; pass it in
-    `skip_vars` to keep it as character.
+    `skip_cols` to keep it as character.
 
 5.  Numeric columns with more than 2 and fewer than `factor_size`
     distinct values become factors.
@@ -155,7 +170,7 @@ str(mtcars_converted$vs)  # logical (FALSE/TRUE)
 
 # Skip specific columns
 mtcars_partial <- r_data_types(datasets::mtcars,
-                               skip_vars = c("vs", "am"),
+                               skip_cols = c("vs", "am"),
                                use_value_labels = FALSE)
 str(mtcars_partial$vs)  # Still numeric (unchanged)
 #>  num [1:32] 0 0 1 1 0 1 0 1 1 1 ...

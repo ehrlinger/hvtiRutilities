@@ -44,7 +44,7 @@ dir.create(root, showWarnings = FALSE)
 cat(study_checklist(study_status(root)), sep = "\n")
 #> # Study readiness
 #> 
-#> Study root: `/tmp/RtmpEuZDli/study-checklist-example`
+#> Study root: `/tmp/RtmpT6gx1g/study-checklist-example`
 #> 
 #> ## Checks
 #> 

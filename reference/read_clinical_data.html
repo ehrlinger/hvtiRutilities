@@ -159,7 +159,7 @@ declared variable-derivation step rather than to reading.</p></dd>
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Additional arguments passed to <code><a href="r_data_types.html">r_data_types</a></code>
-(e.g., <code>factor_size</code>, <code>skip_vars</code>, <code>binary_factor</code>,
+(e.g., <code>factor_size</code>, <code>skip_cols</code>, <code>binary_factor</code>,
 <code>use_value_labels</code>). Must be named. An error when
 <code>convert_types = FALSE</code>, or for a name <code><a href="r_data_types.html">r_data_types()</a></code> does
 not take.</p></dd>
@@ -199,7 +199,7 @@ types, and <code>read_clinical_data()</code> does not reconcile them:</p><ul><li
 <li><p><code>.csv</code>: a date is <em>character</em>. With
     <code>convert_types = TRUE</code> it then becomes a factor, as every character
     column does; convert it with <code><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date()</a></code> first, or name it in
-    <code>skip_vars</code>.</p></li>
+    <code>skip_cols</code>.</p></li>
 <li><p><code>.rds</code>, <code>.parquet</code>: the types that were written.</p></li>
 </ul><p><code><a href="r_data_types.html">r_data_types</a></code> never alters a <code>Date</code> or <code>POSIXct</code>
 column.</p>

@@ -50,7 +50,7 @@ invisible(study_setup(root, study = "Example", study_tracker_id = 1L, renv = FAL
 utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
                  file.path(root, "00_datasets", "built.csv"),
                  row.names = FALSE)
-invisible(register_data(root, file = "built.csv"))
+invisible(register_data(file = "built.csv", root = root))
 cfg <- study_config(root)
 
 # Deprecated: it warns and names study_status() instead. A study registered
@@ -62,10 +62,10 @@ check_data_updates(cfg)
 #> [7] status               is_latest            detail              
 #> <0 rows> (or 0-length row.names)
 study_status(root)
-#> Study: /tmp/RtmpEuZDli/check-data-updates-example
+#> Study: /tmp/RtmpT6gx1g/check-data-updates-example
 #> 
 #> [x] _study.yml — study: Example
-#> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Example", study_tracker_id = 1L, root = "/tmp/RtmpEuZDli/check-data-updates-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first
+#> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Example", study_tracker_id = 1L, root = "/tmp/RtmpT6gx1g/check-data-updates-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first
 #> [x] manifest.yaml — 1 dataset entry verified by checksum
 #> [x] dataset — built.csv, registered as built_20261116.parquet
 #> [ ] provenance — no .qmd/.Rmd sources found; 0 sidecars

@@ -61,7 +61,7 @@ read_clinical_data(file, convert_types = FALSE, ..., catalog_file = NULL)
 
   Additional arguments passed to
   [`r_data_types`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
-  (e.g., `factor_size`, `skip_vars`, `binary_factor`,
+  (e.g., `factor_size`, `skip_cols`, `binary_factor`,
   `use_value_labels`). Must be named. An error when
   `convert_types = FALSE`, or for a name
   [`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
@@ -107,7 +107,7 @@ types, and `read_clinical_data()` does not reconcile them:
 - `.csv`: a date is *character*. With `convert_types = TRUE` it then
   becomes a factor, as every character column does; convert it with
   [`as.Date()`](https://rdrr.io/r/base/as.Date.html) first, or name it
-  in `skip_vars`.
+  in `skip_cols`.
 
 - `.rds`, `.parquet`: the types that were written.
 

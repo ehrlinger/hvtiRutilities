@@ -72,7 +72,7 @@ make it silently.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">covariate_audit</span><span class="op">(</span><span class="va">data</span>, <span class="va">vars</span>, max_levels <span class="op">=</span> <span class="fl">12L</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">covariate_audit</span><span class="op">(</span><span class="va">data</span>, <span class="va">var_cols</span>, max_levels <span class="op">=</span> <span class="fl">12L</span>, <span class="va">vars</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -83,13 +83,18 @@ make it silently.</p>
 <dd><p>A data frame.</p></dd>
 
 
-<dt id="arg-vars">vars<a class="anchor" aria-label="anchor" href="#arg-vars"></a></dt>
-<dd><p>Character vector of covariate names.</p></dd>
+<dt id="arg-var-cols">var_cols<a class="anchor" aria-label="anchor" href="#arg-var-cols"></a></dt>
+<dd><p>Character vector of covariate names. Was <code>vars</code> before
+2026-11; <code>vars =</code> still works for one release, with a warning.</p></dd>
 
 
 <dt id="arg-max-levels">max_levels<a class="anchor" aria-label="anchor" href="#arg-max-levels"></a></dt>
 <dd><p>Integer. Columns with more distinct values than this are
 treated as continuous and their non-integer levels are reported as <code>NA</code>.</p></dd>
+
+
+<dt id="arg-vars">vars<a class="anchor" aria-label="anchor" href="#arg-vars"></a></dt>
+<dd><p>Deprecated: the old name of <code>var_cols</code>, kept for one release.</p></dd>
 
 </dl></div>
     <div class="section level2">

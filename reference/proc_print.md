@@ -9,7 +9,7 @@ several SAS `PROC PRINT; WHERE` steps would.
 ## Usage
 
 ``` r
-proc_print(data, where, var = NULL, max_rows = 25L, console = TRUE)
+proc_print(data, where, var_cols = NULL, max_rows = 25L, console = TRUE)
 ```
 
 ## Arguments
@@ -23,10 +23,11 @@ proc_print(data, where, var = NULL, max_rows = 25L, console = TRUE)
   A list of conditions, each `condition ~ "Label"` with a single
   non-empty quoted label, or one such formula. Labels must be unique.
 
-- var:
+- var_cols:
 
   Character or `NULL`. Columns to print for the matching rows, SAS
-  `VAR`. `NULL` prints every column.
+  `VAR`. `NULL` prints every column. Was `var` before 2026-11; `var =`
+  still works for one release, with a warning.
 
 - max_rows:
 
@@ -84,7 +85,7 @@ dta <- generate_survival_data(n = 200, seed = 42)
 proc_print(dta,
   where = list(age > 80 ~ "Older than 80",
                dead == 1 & iv_dead < 1 ~ "Death in the first year"),
-  var = c("age", "dead", "iv_dead"))
+  var_cols = c("age", "dead", "iv_dead"))
 #>                     label n n_missing
 #> 1           Older than 80 1         0
 #> 2 Death in the first year 5         0

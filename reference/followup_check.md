@@ -13,11 +13,13 @@ date.
 ``` r
 followup_check(
   data,
-  event,
-  followup,
-  identifier = NULL,
+  time_cols,
+  event_col,
+  id_col = NULL,
   max_rows = 25L,
-  stats = c("n", "nmiss", "mean", "std", "min", "p15", "median", "p85", "max")
+  stats = c("n", "nmiss", "mean", "std", "min", "p15", "median", "p85", "max"),
+  followup,
+  identifier
 )
 ```
 
@@ -27,18 +29,24 @@ followup_check(
 
   A data frame, one row per patient.
 
-- event:
+- time_cols:
+
+  Names of one or more follow-up interval columns, in years. Was
+  `followup`, and briefly `time`, before 2026-11; both still work for
+  one release, with a warning. The order was `event, time` until then,
+  so a call passing `time_cols` and `event_col` both unnamed is an
+  error; name them.
+
+- event_col:
 
   Name of the event indicator: 1 or `TRUE` for an event, 0 or `FALSE`
-  for censored. Missing values are allowed and counted.
+  for censored. Missing values are allowed and counted. Was `event`;
+  `event =` still works for one release.
 
-- followup:
-
-  Names of one or more follow-up interval columns, in years.
-
-- identifier:
+- id_col:
 
   `NULL` (the default), or the name of one column to show in `review`.
+  Was `identifier`; `identifier =` still works for one release.
 
 - max_rows:
 
@@ -52,6 +60,11 @@ followup_check(
   [`proc_means`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
   and validated the same way. Default
   `c("n", "nmiss", "mean", "std", "min", "p15", "median", "p85", "max")`.
+
+- followup, identifier:
+
+  Deprecated: the old names of `time_cols` and `id_col`, kept for one
+  release.
 
 ## Value
 
@@ -77,7 +90,7 @@ data frames and a list of three:
 - `review`:
 
   Up to `max_rows` suspicious rows, with the event, the intervals and
-  any `identifier`.
+  any `id_col`.
 
 ## Details
 
@@ -103,7 +116,7 @@ because those are what the group's descriptive summaries show. SAS
 names the same statistics on the SAS side, or passes the SAS job's list
 to `stats`.
 
-Identifiers are never included unless named in `identifier`. Check the
+Identifiers are never included unless named in `id_col`. Check the
 result before sharing a report that shows `review` with one.
 
 ## See also
@@ -116,7 +129,7 @@ which counts the analysable cohort rather than checking follow-up.
 
 ``` r
 d <- data.frame(dead = c(1, 0, 0, NA, 1), iv_dead = c(2.5, 4, 0, 1.2, NA))
-fc <- followup_check(d, event = "dead", followup = "iv_dead")
+fc <- followup_check(d, time_cols = "iv_dead", event_col = "dead")
 fc
 #> <followup_check> event `dead`, interval(s) `iv_dead`
 #>   Cohort     : 5 (2 event, 2 censored, 1 missing event)

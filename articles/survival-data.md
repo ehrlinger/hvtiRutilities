@@ -156,7 +156,7 @@ function handles these automatically.
 model_data <- r_data_types(
   dta,
   factor_size = 5,
-  skip_vars = c("ccfid", "iv_dead", "iv_reop", "iv_opyrs")
+  skip_cols = c("ccfid", "iv_dead", "iv_reop", "iv_opyrs")
 )
 #> Warning: r_data_types(): 'use_value_labels' defaults to FALSE, so a column
 #> carrying SAS value labels is converted from its numeric codes and the level

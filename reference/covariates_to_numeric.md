@@ -13,7 +13,7 @@ it before reading any coefficient.
 ## Usage
 
 ``` r
-covariates_to_numeric(data, vars)
+covariates_to_numeric(data, var_cols, vars)
 ```
 
 ## Arguments
@@ -22,9 +22,14 @@ covariates_to_numeric(data, vars)
 
   A data frame.
 
+- var_cols:
+
+  Character vector of covariate names. Was `vars` before 2026-11;
+  `vars =` still works for one release, with a warning.
+
 - vars:
 
-  Character vector of covariate names.
+  Deprecated: the old name of `var_cols`, kept for one release.
 
 ## Value
 

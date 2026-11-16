@@ -8,7 +8,15 @@ statements is several calls.
 ## Usage
 
 ``` r
-proc_freq(data, tables, missing = FALSE, list = FALSE, weights = NULL)
+proc_freq(
+  data,
+  table_cols,
+  missing = FALSE,
+  list = FALSE,
+  weight_col = NULL,
+  weights,
+  tables
+)
 ```
 
 ## Arguments
@@ -17,17 +25,19 @@ proc_freq(data, tables, missing = FALSE, list = FALSE, weights = NULL)
 
   A data frame.
 
-- tables:
+- table_cols:
 
-  Character vector of one or more column names defining the table.
+  Character vector of one or more column names defining the table. Was
+  `tables` before 2026-11; `tables =` still works for one release, with
+  a warning.
 
 - missing:
 
   Logical. `FALSE` (the SAS default) excludes rows with a missing value
-  in any `tables` variable from the table and from every denominator,
-  and reports their count in the `frequency_missing` attribute. `TRUE`,
-  SAS `/ MISSING`, treats missing as a level, with each SAS special
-  missing value a level of its own.
+  in any `table_cols` variable from the table and from every
+  denominator, and reports their count in the `frequency_missing`
+  attribute. `TRUE`, SAS `/ MISSING`, treats missing as a level, with
+  each SAS special missing value a level of its own.
 
 - list:
 
@@ -35,17 +45,25 @@ proc_freq(data, tables, missing = FALSE, list = FALSE, weights = NULL)
   percentages of the grand total for an n-way table. It has no effect on
   a one-way table.
 
-- weights:
+- weight_col:
 
   Character or `NULL`. Name of a single numeric column of weights, SAS
   `WEIGHT`. `Frequency` becomes the sum of weights. Rows with a missing
   weight are excluded entirely; non-positive weights are an error, as in
   [`proc_means`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md).
 
+- weights:
+
+  Deprecated: the old name of `weight_col`, kept for one release.
+
+- tables:
+
+  Deprecated: the old name of `table_cols`, kept for one release.
+
 ## Value
 
-A data frame with one column per `tables` variable (each followed by a
-`<var>_label` column when the variable carries value labels), then:
+A data frame with one column per `table_cols` variable (each followed by
+a `<var>_label` column when the variable carries value labels), then:
 
 - for a one-way table, or `list = TRUE`: `Frequency`, `Percent`,
   `Cum_Frequency`, `Cum_Percent`;
@@ -60,8 +78,8 @@ remaining rows is returned with zero rows, not an error.
 
 ## Details
 
-The last name in `tables` is the column variable, the one before it the
-row variable, and any earlier names are strata, as in SAS
+The last name in `table_cols` is the column variable, the one before it
+the row variable, and any earlier names are strata, as in SAS
 `TABLES a*b*c`.
 
 **Percentages depend on `list`, not only the columns shown.** For a
@@ -85,7 +103,7 @@ A `haven_labelled` variable is grouped on its value label, as SAS forms
 levels from formatted values: stored codes sharing a label form one row,
 shown as the smallest of those codes, and a `<var>_label` column holding
 the label follows it. A value with no label is its own row. Variable
-labels on the `tables` columns are kept.
+labels on the `table_cols` columns are kept.
 
 **What counts as missing.** As in SAS, a blank or whitespace-only
 character value is missing, and so is `NaN`. SAS special missing values,

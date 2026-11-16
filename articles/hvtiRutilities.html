@@ -160,17 +160,17 @@
 <span><span class="co">#&gt; 'data.frame':    100 obs. of  7 variables:</span></span>
 <span><span class="co">#&gt;  $ id     : int  1 2 3 4 5 6 7 8 9 10 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Patient Identifier"</span></span>
-<span><span class="co">#&gt;  $ boolean: int  1 2 1 2 2 2 1 2 1 1 ...</span></span>
+<span><span class="co">#&gt;  $ boolean: int  2 1 2 2 2 2 2 1 2 2 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Binary Indicator"</span></span>
-<span><span class="co">#&gt;  $ logical: chr  "F" "T" "F" "T" ...</span></span>
+<span><span class="co">#&gt;  $ logical: chr  "T" "F" "T" "T" ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Logical Status"</span></span>
-<span><span class="co">#&gt;  $ f_real : num  0.949 0.949 0.949 0.949 0.641 ...</span></span>
+<span><span class="co">#&gt;  $ f_real : num  0.0374 0.955 0.0374 0.3473 0.3473 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Random Uniform Value"</span></span>
-<span><span class="co">#&gt;  $ float  : num  -0.119 -2.092 1.735 0.4 -1.247 ...</span></span>
+<span><span class="co">#&gt;  $ float  : num  -0.674 -0.902 -0.409 -0.28 0.459 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Random Normal Value"</span></span>
-<span><span class="co">#&gt;  $ char   : chr  "male" "female" "male" "female" ...</span></span>
+<span><span class="co">#&gt;  $ char   : chr  "female" "female" "male" "male" ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Gender"</span></span>
-<span><span class="co">#&gt;  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 2 4 2 2 3 4 3 4 1 2 ...</span></span>
+<span><span class="co">#&gt;  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 4 5 5 4 2 5 2 2 3 5 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Category Group"</span></span></code></pre></div>
 </div>
 <p>Notice that the sample data has: - <code>boolean</code>: integer values (1, 2) - <code>logical</code>: character values (“F”, “T”) - <code>char</code>: character values (“male”, “female”)</p>
@@ -190,17 +190,17 @@
 <span><span class="co">#&gt; 'data.frame':    100 obs. of  7 variables:</span></span>
 <span><span class="co">#&gt;  $ id     : int  1 2 3 4 5 6 7 8 9 10 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Patient Identifier"</span></span>
-<span><span class="co">#&gt;  $ boolean: Factor w/ 2 levels "1","2": 1 2 1 2 2 2 1 2 1 1 ...</span></span>
+<span><span class="co">#&gt;  $ boolean: Factor w/ 2 levels "1","2": 2 1 2 2 2 2 2 1 2 2 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Binary Indicator"</span></span>
-<span><span class="co">#&gt;  $ logical: Factor w/ 2 levels "F","T": 1 2 1 2 2 2 1 2 1 1 ...</span></span>
+<span><span class="co">#&gt;  $ logical: Factor w/ 2 levels "F","T": 2 1 2 2 2 2 2 1 2 2 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Logical Status"</span></span>
-<span><span class="co">#&gt;  $ f_real : Factor w/ 9 levels "0.0133100675884634",..: 8 8 8 8 5 8 6 8 6 1 ...</span></span>
+<span><span class="co">#&gt;  $ f_real : Factor w/ 9 levels "0.00310187716968358",..: 3 9 3 6 6 6 9 1 4 2 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Random Uniform Value"</span></span>
-<span><span class="co">#&gt;  $ float  : num  -0.119 -2.092 1.735 0.4 -1.247 ...</span></span>
+<span><span class="co">#&gt;  $ float  : num  -0.674 -0.902 -0.409 -0.28 0.459 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Random Normal Value"</span></span>
-<span><span class="co">#&gt;  $ char   : Factor w/ 2 levels "female","male": 2 1 2 1 1 2 2 1 2 1 ...</span></span>
+<span><span class="co">#&gt;  $ char   : Factor w/ 2 levels "female","male": 1 1 2 2 2 1 2 2 2 2 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Gender"</span></span>
-<span><span class="co">#&gt;  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 2 4 2 2 3 4 3 4 1 2 ...</span></span>
+<span><span class="co">#&gt;  $ factor : Factor w/ 5 levels "C1","C2","C3",..: 4 5 5 4 2 5 2 2 3 5 ...</span></span>
 <span><span class="co">#&gt;   ..- attr(*, "label")= chr "Category Group"</span></span>
 <span><span class="co">#&gt;  - attr(*, "hvti_type_conversion")='data.frame': 7 obs. of  6 variables:</span></span>
 <span><span class="co">#&gt;   ..$ variable    : chr [1:7] "id" "boolean" "logical" "f_real" ...</span></span>
@@ -286,7 +286,7 @@
 <div class="cell">
 <div class="sourceCode cell-code" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Keep vs and am as numeric instead of converting to logical</span></span>
-<span><span class="va">mtcars_partial</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/r_data_types.html">r_data_types</a></span><span class="op">(</span><span class="va">mtcars</span>, skip_vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"vs"</span>, <span class="st">"am"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">mtcars_partial</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/r_data_types.html">r_data_types</a></span><span class="op">(</span><span class="va">mtcars</span>, skip_cols <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"vs"</span>, <span class="st">"am"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Compare</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/class.html" class="external-link">class</a></span><span class="op">(</span><span class="va">mtcars_clean</span><span class="op">$</span><span class="va">vs</span><span class="op">)</span>    <span class="co"># logical (converted)</span></span>
@@ -373,7 +373,7 @@
 <code class="sourceCode R"><span><span class="va">dta</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sample_data.html">sample_data</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">50</span><span class="op">)</span></span>
 <span><span class="va">lmap_before</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/label_map.html">label_map</a></span><span class="op">(</span><span class="va">dta</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">dta_clean</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/r_data_types.html">r_data_types</a></span><span class="op">(</span><span class="va">dta</span>, skip_vars <span class="op">=</span> <span class="st">"id"</span><span class="op">)</span></span>
+<span><span class="va">dta_clean</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/r_data_types.html">r_data_types</a></span><span class="op">(</span><span class="va">dta</span>, skip_cols <span class="op">=</span> <span class="st">"id"</span><span class="op">)</span></span>
 <span><span class="va">lmap_after</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/label_map.html">label_map</a></span><span class="op">(</span><span class="va">dta_clean</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/identical.html" class="external-link">identical</a></span><span class="op">(</span><span class="va">lmap_before</span>, <span class="va">lmap_after</span><span class="op">)</span>  <span class="co"># TRUE</span></span>
@@ -413,7 +413,7 @@
 <span><span class="va">clinical_clean</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/r_data_types.html">r_data_types</a></span><span class="op">(</span></span>
 <span>  <span class="va">clinical</span>,</span>
 <span>  factor_size <span class="op">=</span> <span class="fl">5</span>,      <span class="co"># Only convert if &lt; 5 unique values</span></span>
-<span>  skip_vars <span class="op">=</span> <span class="st">"id"</span>      <span class="co"># Keep ID as integer</span></span>
+<span>  skip_cols <span class="op">=</span> <span class="st">"id"</span>      <span class="co"># Keep ID as integer</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Step 4: Examine results</span></span>
@@ -512,7 +512,7 @@
 <span><span class="co"># Convert with specific settings</span></span>
 <span><span class="va">labs_clean</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/r_data_types.html">r_data_types</a></span><span class="op">(</span></span>
 <span>  <span class="va">labs</span>,</span>
-<span>  skip_vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"patient"</span>, <span class="st">"value"</span><span class="op">)</span>,  <span class="co"># Preserve ID and numeric values</span></span>
+<span>  skip_cols <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"patient"</span>, <span class="st">"value"</span><span class="op">)</span>,  <span class="co"># Preserve ID and numeric values</span></span>
 <span>  factor_size <span class="op">=</span> <span class="fl">4</span>                      <span class="co"># Conservative factor conversion</span></span>
 <span><span class="op">)</span></span>
 <span></span>

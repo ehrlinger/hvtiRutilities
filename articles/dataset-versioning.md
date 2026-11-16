@@ -119,7 +119,7 @@ update_manifest(
   manifest_path = manifest_path,
   extract_date = "2024-01-15",
   source       = "Epic EMR, query v4.2, ICD mapping v3.2",
-  sort_key     = "ccfid"
+  sort_key_cols = "ccfid"
 )
 ```
 
@@ -143,7 +143,7 @@ update_manifest(
   manifest_path = manifest_path,
   extract_date  = "2024-01-15",
   source        = "Epic EMR, labs module — Hgb, eGFR, BNP",
-  sort_key      = "ccfid"
+  sort_key_cols = "ccfid"
 )
 ```
 
@@ -194,7 +194,7 @@ update_manifest(
   manifest_path = here::here("manifest.yaml"),
   extract_date  = "2024-01-15",
   source        = "SAS CORR registry extract, query v3.1",
-  sort_key      = "pat_id"
+  sort_key_cols = "pat_id"
 )
 ```
 
@@ -439,7 +439,7 @@ update_manifest(
   manifest_path = manifest_path,
   extract_date  = "2024-08-01",
   source        = "Epic EMR, query v4.2, ICD mapping v3.3 — LVAD sub-study cohort",
-  sort_key      = "ccfid"
+  sort_key_cols = "ccfid"
 )
 ```
 

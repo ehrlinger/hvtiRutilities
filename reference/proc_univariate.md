@@ -13,14 +13,16 @@ location and normality.
 ``` r
 proc_univariate(
   data,
-  vars = NULL,
-  class = NULL,
+  var_cols = NULL,
+  class_cols = NULL,
   stats = c("n", "median", "mean", "std", "cv", "min", "max"),
-  weights = NULL,
+  weight_col = NULL,
   pctlpts = NULL,
   pctlpre = "p",
   mu0 = 0,
-  vardef = c("df", "n", "wdf", "weight")
+  vardef = c("df", "n", "wdf", "weight"),
+  weights,
+  vars
 )
 ```
 
@@ -30,16 +32,19 @@ proc_univariate(
 
   A data frame, tibble, or similar tabular object.
 
-- vars:
+- var_cols:
 
-  Character vector of columns to analyse. `NULL` (default) selects every
-  numeric column not named in `class` or `weights`.
+  Character vector of columns to analyse, was `vars` before 2026-11
+  (`vars =` still works for one release, with a warning). `NULL`
+  (default) selects every numeric column not named in `class_cols` or
+  `weight_col`.
 
-- class:
+- class_cols:
 
   Character vector of grouping columns, prepended to the result as
-  leading columns. Rows with a missing value in any class variable are
-  dropped, and levels follow `ORDER=INTERNAL`, as in
+  leading columns. Was `class` before 2026-11; `class =` still works for
+  one release, with a warning. Rows with a missing value in any class
+  variable are dropped, and levels follow `ORDER=INTERNAL`, as in
   [`proc_means`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md).
   Unlike
   [`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md),
@@ -52,7 +57,7 @@ proc_univariate(
   accepts, plus `"stdmean"`, `"t"`, `"probt"`, `"msign"`, `"probm"`,
   `"signrank"`, `"probs"`, `"normal"` and `"probn"`.
 
-- weights:
+- weight_col:
 
   Character or `NULL`. Name of a single numeric column of `data` to use
   as an observation weight, SAS `WEIGHT`. Observations whose weight is
@@ -79,10 +84,18 @@ proc_univariate(
   The variance divisor: `"df"` (default), `"n"`, `"wdf"` or `"weight"`.
   SAS `VARDEF=`.
 
+- weights:
+
+  Deprecated: the old name of `weight_col`, kept for one release.
+
+- vars:
+
+  Deprecated: the old name of `var_cols`, kept for one release.
+
 ## Value
 
 A data frame with one row per analysis variable per class combination.
-Columns are the `class` variables (when supplied), then `variable`,
+Columns are the `class_cols` variables (when supplied), then `variable`,
 `label`, then one column per `stats` keyword in the order given, then
 one column per `pctlpts` point in the order given. `n`, `nmiss` and
 `nobs` are integer; all others are numeric.
@@ -112,7 +125,7 @@ adjusted ones.
 **Statistics SAS does not compute are NA**, as SAS writes missing:
 
 - `msign`, `probm`, `signrank`, `probs`, `normal`, `probn` when
-  `weights` is given;
+  `weight_col` is given;
 
 - `t`, `probt`, `stderr` and `stdmean` when `vardef` is not `"df"`;
 
@@ -170,13 +183,13 @@ head(proc_univariate(dta))
 #> 6    1.732727 1.9354171 111.6977318    0.04    9.92
 
 # Decimal percentiles, as for a bootstrap interval
-proc_univariate(dta, vars = "age", stats = "n",
+proc_univariate(dta, var_cols = "age", stats = "n",
                 pctlpts = c(2.5, 50, 97.5))
 #>   variable                  label   n  p2_5   p50 p97_5
 #> 1      age Age at surgery (years) 200 16.45 44.75 72.45
 
 # Tests for location and normality
-proc_univariate(dta, vars = "bmi",
+proc_univariate(dta, var_cols = "bmi",
                 stats = c("mean", "t", "probt", "normal", "probn"),
                 mu0 = 25)
 #>   variable                   label    mean        t        probt    normal

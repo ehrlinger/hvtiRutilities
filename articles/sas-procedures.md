@@ -227,7 +227,7 @@ adds `p15`, `median` and `p85` between the minimum and the maximum:
 
 ``` r
 
-proc_means(dta, vars = c("age", "bmi", "gfr_bs"))
+proc_means(dta, var_cols = c("age", "bmi", "gfr_bs"))
 #>   variable                         label   n    mean       std  min   p15
 #> 1      age        Age at surgery (years) 200 44.5890 14.595538  1.0 29.30
 #> 2      bmi       Body mass index (kg/m2) 200 26.7885  4.750479 15.0 21.90
@@ -251,7 +251,7 @@ statistics and you get them in the order you asked, the same way a
 
 ``` r
 
-proc_means(dta, vars = c("age", "bmi"),
+proc_means(dta, var_cols = c("age", "bmi"),
            stats = c("n", "nmiss", "mean", "median", "q1", "q3"))
 #>   variable                   label   n nmiss    mean median    q1    q3
 #> 1      age  Age at surgery (years) 200     0 44.5890  44.75 35.85 54.50
@@ -266,7 +266,7 @@ lists the rest.
 
 ``` r
 
-proc_means(dta, vars = "bypass_time", stats = c("p5", "p50", "p95"))
+proc_means(dta, var_cols = "bypass_time", stats = c("p5", "p50", "p95"))
 #>      variable                             label p5  p50   p95
 #> 1 bypass_time Cardiopulmonary bypass time (min) 40 88.5 143.5
 ```
@@ -284,7 +284,7 @@ run;
 
 ``` r
 
-proc_means(dta, vars = "age", class = "nyha_class",
+proc_means(dta, var_cols = "age", class_cols = "nyha_class",
            stats = c("n", "mean", "std", "median", "q1", "q3"))
 #>   nyha_class variable                  label  n     mean      std median   q1
 #> 1          I      age Age at surgery (years) 46 44.60870 14.43548  44.75 37.7
@@ -313,7 +313,7 @@ multi-variable request stays readable:
 
 ``` r
 
-proc_means(dta, vars = c("age", "bmi"), class = "sex",
+proc_means(dta, var_cols = c("age", "bmi"), class_cols = "sex",
            stats = c("n", "mean", "std"))
 #>      sex variable                   label   n     mean       std
 #> 1 Female      age  Age at surgery (years)  77 45.07143 14.800443
@@ -359,7 +359,7 @@ reproduce SAS. On our cohort the gap is small but real:
 
 ``` r
 
-proc_means(dta, vars = "age", stats = c("q1", "median", "q3"))
+proc_means(dta, var_cols = "age", stats = c("q1", "median", "q3"))
 #>   variable                  label    q1 median   q3
 #> 1      age Age at surgery (years) 35.85  44.75 54.5
 
@@ -388,7 +388,7 @@ out of the default variable set. Name one in `vars` and it is coerced to
 ``` r
 
 flags <- data.frame(complication = c(TRUE, FALSE, TRUE, TRUE, FALSE))
-proc_means(flags, vars = "complication", stats = c("n", "mean", "sum"))
+proc_means(flags, var_cols = "complication", stats = c("n", "mean", "sum"))
 #>       variable        label n mean sum
 #> 1 complication complication 5  0.6   3
 ```
@@ -531,8 +531,8 @@ underscore:
 wdta <- dta
 wdta$wt <- ifelse(wdta$sex == "Female", 2, 1)
 
-proc_univariate(wdta, vars = "age", stats = c("n", "sumwgt"),
-                weights = "wt", pctlpts = c(2.5, 16, 50, 84, 97.5),
+proc_univariate(wdta, var_cols = "age", stats = c("n", "sumwgt"),
+                weight_col = "wt", pctlpts = c(2.5, 16, 50, 84, 97.5),
                 pctlpre = "p_")
 #>   variable                  label   n sumwgt p_2_5 p_16 p_50 p_84 p_97_5
 #> 1      age Age at surgery (years) 200    277  14.6 30.1   45 58.8   72.7
@@ -552,11 +552,11 @@ give two medians:
 
 w4 <- data.frame(x = c(1, 2, 3, 4), wt = c(1, 3, 1, 1))
 
-proc_means(w4, vars = "x", stats = "median", weights = "wt")
+proc_means(w4, var_cols = "x", stats = "median", weight_col = "wt")
 #>   variable label median
 #> 1        x     x    2.5
 
-proc_univariate(w4, vars = "x", stats = "median", weights = "wt")
+proc_univariate(w4, var_cols = "x", stats = "median", weight_col = "wt")
 #>   variable label median
 #> 1        x     x      2
 ```
@@ -585,12 +585,12 @@ returns `NA` in the same places:
 
 ``` r
 
-proc_univariate(wdta, vars = "age", weights = "wt",
+proc_univariate(wdta, var_cols = "age", weight_col = "wt",
                 stats = c("std", "stdmean", "skewness"), vardef = "wdf")
 #>   variable                  label      std stdmean skewness
 #> 1      age Age at surgery (years) 14.62749      NA       NA
 
-proc_univariate(wdta, vars = "age", weights = "wt",
+proc_univariate(wdta, var_cols = "age", weight_col = "wt",
                 stats = c("std", "stdmean", "skewness"))
 #>   variable                  label      std  stdmean   skewness
 #> 1      age Age at surgery (years) 17.22653 1.035042 -0.2823725
@@ -605,7 +605,7 @@ root of the sum of the weights, not of the number of observations.
 
 ``` r
 
-proc_univariate(dta, vars = "bmi", mu0 = 25,
+proc_univariate(dta, var_cols = "bmi", mu0 = 25,
                 stats = c("mean", "t", "probt", "msign", "probm",
                           "signrank", "probs", "normal", "probn"))
 #>   variable                   label    mean        t        probt msign
