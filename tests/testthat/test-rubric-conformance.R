@@ -391,3 +391,22 @@ test_that("capture_provenance() refuses a seed outside the integer range rather 
   expect_error(capture_provenance("job", data = list(), cfg = study_config(root, require_data = FALSE), seed = 3e9),
                "`seed`")
 })
+
+test_that("the *_cols renames refuse the old and the new name together", {
+  w <- data.frame(x = c(1, 2, 3, 4), a = c("p", "q", "p", "q"), g = c("a", "a", "b", "b"),
+                  f = factor(c("1", "2", "1", "2")))
+  both <- function(old, new) paste0("`", old, " =` and `", new, " =`")
+  expect_error(proc_means(w, var_cols = "x", vars = "x"), both("vars", "var_cols"))
+  expect_error(proc_univariate(w, var_cols = "x", vars = "x"), both("vars", "var_cols"))
+  expect_error(covariate_audit(w, var_cols = "f", vars = "f"), both("vars", "var_cols"))
+  expect_error(covariates_to_numeric(w, var_cols = "f", vars = "f"), both("vars", "var_cols"))
+  expect_error(level_map(w, var_cols = "f", vars = "f"), both("vars", "var_cols"))
+  expect_error(proc_freq(w, table_cols = "g", tables = "a"), both("tables", "table_cols"))
+  # The new name given by position counts as given, since it holds the old name's place.
+  expect_error(proc_freq(w, "g", tables = "a"), both("tables", "table_cols"))
+  expect_error(r_data_types(w, skip_cols = "a", skip_vars = "a", use_value_labels = FALSE), both("skip_vars", "skip_cols"))
+  # An old name that partially matches the new one cannot be given with it: R refuses the call before
+  # the function runs.
+  expect_error(proc_means(w, "x", class_cols = "g", class = "g"), "unused argument (class", fixed = TRUE)
+  expect_error(proc_print(w, x > 2 ~ "big", var_cols = "x", var = "x", console = FALSE), "unused argument (var", fixed = TRUE)
+})

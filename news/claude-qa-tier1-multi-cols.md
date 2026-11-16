@@ -5,3 +5,5 @@
   * `var` is now `var_cols` in `proc_print()`.
   * `skip_vars` is now `skip_cols` in `r_data_types()`, and through it in `read_clinical_data(...)`.
   * `sort_key` is now `sort_key_cols` in `update_manifest()`. The field it writes in `manifest.yaml` is still `sort_key`.
+  * An old and a new name given together is an error, not one silently winning.
+  * Two abbreviations that used to match one formal now match the old and the new name both, and R stops with "argument matches multiple formal arguments": `var =` in `covariate_audit()`, `covariates_to_numeric()`, `level_map()`, `proc_means()` and `proc_univariate()`, and `table =` in `proc_freq()`. Write the full new name.

@@ -99,6 +99,7 @@ imputed_levels <- function(x) {
 #' covariate_audit(d, c("hx_htn", "age"))
 covariate_audit <- function(data, var_cols, max_levels = 12L, vars) {
   if (!missing(vars)) {
+    if (!missing(var_cols)) .hvti_refuse_both("covariate_audit", "vars", "var_cols")
     .hvti_deprecate("covariate_audit_vars", "covariate_audit(): `vars =` is now `var_cols =`, ",
                     "per the family rule that an argument naming columns ends in _cols. The old name works for one more release.")
     var_cols <- vars
@@ -176,6 +177,7 @@ covariate_audit <- function(data, var_cols, max_levels = 12L, vars) {
 #' str(covariates_to_numeric(d, "hx_htn"))
 covariates_to_numeric <- function(data, var_cols, vars) {
   if (!missing(vars)) {
+    if (!missing(var_cols)) .hvti_refuse_both("covariates_to_numeric", "vars", "var_cols")
     .hvti_deprecate("covariates_to_numeric_vars", "covariates_to_numeric(): `vars =` is now `var_cols =`, ",
                     "per the family rule that an argument naming columns ends in _cols. The old name works for one more release.")
     var_cols <- vars

@@ -133,6 +133,7 @@ proc_univariate <- function(data, var_cols = NULL, class_cols = NULL,
   weights <- weight_col
   # `class` partially matches `class_cols`, so R binds it; `vars` does not
   # match `var_cols` and is a trailing formal.
+  if (!missing(vars) && !missing(var_cols)) .hvti_refuse_both("proc_univariate", "vars", "var_cols")
   if (!missing(vars) || .hvti_old_call(sys.call(), parent.frame(), renamed = "class")) {
     .hvti_deprecate("proc_univariate_cols", "proc_univariate(): `vars =` and `class =` are now `var_cols =` and `class_cols =`, ",
                     "per the family rule that an argument naming columns ends in _cols. The old names work for one more release.")

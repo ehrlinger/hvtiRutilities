@@ -250,6 +250,7 @@ r_data_types <- function(data,
   }
   dataset <- data
   if (!missing(skip_vars)) {
+    if (!missing(skip_cols)) .hvti_refuse_both("r_data_types", "skip_vars", "skip_cols")
     .hvti_deprecate("r_data_types_skip_vars", "r_data_types(): `skip_vars =` is now `skip_cols =`, ",
                     "per the family rule that an argument naming columns ends in _cols. The old name works for one more release.")
     skip_cols <- skip_vars

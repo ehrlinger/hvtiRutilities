@@ -228,6 +228,7 @@ strip_level_prefix <- function(x) {
 #' subset(level_map(dta), stripped)
 level_map <- function(data, var_cols = NULL, max_levels = 20L, vars) {
   if (!missing(vars)) {
+    if (!missing(var_cols)) .hvti_refuse_both("level_map", "vars", "var_cols")
     .hvti_deprecate("level_map_vars", "level_map(): `vars =` is now `var_cols =`, ",
                     "per the family rule that an argument naming columns ends in _cols. The old name works for one more release.")
     var_cols <- vars
