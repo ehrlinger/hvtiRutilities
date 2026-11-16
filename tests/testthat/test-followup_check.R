@@ -6,13 +6,13 @@ d <- data.frame(
 )
 
 test_that("cohort counts the whole cohort, each subset and missing events", {
-  fc <- followup_check(d, time_col = "iv_dead", event_col = "dead")
+  fc <- followup_check(d, time_cols = "iv_dead", event_col = "dead")
   expect_s3_class(fc, "followup_check")
   expect_identical(fc$cohort, data.frame(full = 6L, event = 2L, censored = 3L, missing_event = 1L))
 })
 
 test_that("intervals count missing, negative and zero values and summarise the rest", {
-  fc <- followup_check(d, time_col = c("iv_dead", "iv_fup"), event_col = "dead")
+  fc <- followup_check(d, time_cols = c("iv_dead", "iv_fup"), event_col = "dead")
   row <- fc$intervals[fc$intervals$interval == "iv_dead", ]
   observed <- c(2.5, 4, 0, 1.2, -1)
   expect_identical(c(row$missing, row$negative, row$zero), c(1L, 1L, 1L))
@@ -23,13 +23,13 @@ test_that("intervals count missing, negative and zero values and summarise the r
 })
 
 test_that("an interval with no observed value summarises as NA, not an error", {
-  fc <- followup_check(transform(d, iv_dead = NA_real_), time_col = "iv_dead", event_col = "dead")
+  fc <- followup_check(transform(d, iv_dead = NA_real_), time_cols = "iv_dead", event_col = "dead")
   expect_true(all(is.na(fc$intervals[c("min", "q1", "median", "q3", "mean", "sd", "max")])))
   expect_identical(fc$intervals$missing, 6L)
 })
 
 test_that("means are proc_means over the full, event and censored subsets", {
-  fc <- followup_check(d, time_col = "iv_dead", event_col = "dead")
+  fc <- followup_check(d, time_cols = "iv_dead", event_col = "dead")
   st <- c("n", "nmiss", "mean", "std", "min", "p15", "median", "p85", "max")
   expect_named(fc$means, c("full", "event", "censored"))
   expect_named(fc$means$full, c("variable", "label", st))
@@ -40,7 +40,7 @@ test_that("means are proc_means over the full, event and censored subsets", {
 
 test_that("means report the 15th and 85th percentiles under SAS QNTLDEF=5", {
   dd <- data.frame(dead = rep(0, 8), iv = c(2, 4, 4, 4, 5, 5, 7, 9))
-  m <- followup_check(dd, time_col = "iv", event_col = "dead")$means$full
+  m <- followup_check(dd, time_cols = "iv", event_col = "dead")$means$full
   # n = 8. p15: np = 1.2, giving x(2) = 4. p85: np = 6.8, giving x(7) = 7.
   # R's default type 7 would give 6.9 for p85.
   expect_equal(c(m$p15, m$median, m$p85), c(4, 4.5, 7))
@@ -49,47 +49,47 @@ test_that("means report the 15th and 85th percentiles under SAS QNTLDEF=5", {
 })
 
 test_that("stats chooses the means statistics and is validated like proc_means", {
-  fc <- followup_check(d, time_col = "iv_dead", event_col = "dead", stats = c("n", "p25", "p75"))
+  fc <- followup_check(d, time_cols = "iv_dead", event_col = "dead", stats = c("n", "p25", "p75"))
   expect_identical(fc$means$full, proc_means(d, vars = "iv_dead", stats = c("n", "p25", "p75")))
-  expect_error(followup_check(d, time_col = "iv_dead", event_col = "dead", stats = c("n", "bogus")),
+  expect_error(followup_check(d, time_cols = "iv_dead", event_col = "dead", stats = c("n", "bogus")),
                "Unrecognised statistic keyword\\(s\\): bogus")
 })
 
 test_that("review holds suspicious rows in data order, capped, identifiers only on request", {
-  fc <- followup_check(d, time_col = "iv_dead", event_col = "dead")
+  fc <- followup_check(d, time_cols = "iv_dead", event_col = "dead")
   # c: zero interval; d: missing event; e: missing interval; f: negative.
   expect_identical(fc$review$dead, c(0, NA, 1, 0))
   expect_named(fc$review, c("dead", "iv_dead"))
   expect_identical(attr(fc, "n_suspicious"), 4L)
-  fc <- followup_check(d, time_col = "iv_dead", event_col = "dead", id_col = "id", max_rows = 2)
+  fc <- followup_check(d, time_cols = "iv_dead", event_col = "dead", id_col = "id", max_rows = 2)
   expect_identical(fc$review$id, c("c", "d"))
   expect_identical(attr(fc, "n_suspicious"), 4L)
 })
 
 test_that("a logical event is accepted", {
-  fc <- followup_check(transform(d, dead = as.logical(dead)), time_col = "iv_dead", event_col = "dead")
+  fc <- followup_check(transform(d, dead = as.logical(dead)), time_cols = "iv_dead", event_col = "dead")
   expect_identical(fc$cohort$event, 2L)
 })
 
 test_that("every missing column is named in one error", {
-  expect_error(followup_check(d, time_col = c("iv_dead", "nope1"), event_col = "dead", id_col = "nope2"),
+  expect_error(followup_check(d, time_cols = c("iv_dead", "nope1"), event_col = "dead", id_col = "nope2"),
                "Unknown column\\(s\\): nope1, nope2")
 })
 
 test_that("arguments are validated before anything is computed", {
-  expect_error(followup_check(as.list(d), time_col = "iv_dead", event_col = "dead"), "data frame")
-  expect_error(followup_check(d, time_col = "iv_dead", event_col = c("dead", "id")), "`event_col` must name one column")
-  expect_error(followup_check(d, time_col = character(), event_col = "dead"), "`time_col`")
-  expect_error(followup_check(d, time_col = c("iv_dead", "iv_dead"), event_col = "dead"), "`time_col`")
-  expect_error(followup_check(d, time_col = "iv_dead", event_col = "dead", id_col = c("id", "dead")), "`id_col`")
+  expect_error(followup_check(as.list(d), time_cols = "iv_dead", event_col = "dead"), "data frame")
+  expect_error(followup_check(d, time_cols = "iv_dead", event_col = c("dead", "id")), "`event_col` must name one column")
+  expect_error(followup_check(d, time_cols = character(), event_col = "dead"), "`time_cols`")
+  expect_error(followup_check(d, time_cols = c("iv_dead", "iv_dead"), event_col = "dead"), "`time_cols`")
+  expect_error(followup_check(d, time_cols = "iv_dead", event_col = "dead", id_col = c("id", "dead")), "`id_col`")
   for (bad in list(0, 1.5, NA, Inf, c(1, 2), "3")) {
-    expect_error(followup_check(d, time_col = "iv_dead", event_col = "dead", max_rows = bad), "`max_rows`")
+    expect_error(followup_check(d, time_cols = "iv_dead", event_col = "dead", max_rows = bad), "`max_rows`")
   }
-  expect_error(followup_check(transform(d, dead = c(0, 2, 0, 1, 0, 1)), time_col = "iv_dead", event_col = "dead"), "binary")
-  expect_error(followup_check(transform(d, iv_fup = as.character(iv_fup)), time_col = c("iv_dead", "iv_fup"), event_col = "dead"),
+  expect_error(followup_check(transform(d, dead = c(0, 2, 0, 1, 0, 1)), time_cols = "iv_dead", event_col = "dead"), "binary")
+  expect_error(followup_check(transform(d, iv_fup = as.character(iv_fup)), time_cols = c("iv_dead", "iv_fup"), event_col = "dead"),
                "must be numeric: iv_fup")
 })
 
 test_that("print summarises the check", {
-  expect_output(print(followup_check(d, time_col = "iv_dead", event_col = "dead")), "6 \\(2 event, 3 censored, 1 missing event\\)")
+  expect_output(print(followup_check(d, time_cols = "iv_dead", event_col = "dead")), "6 \\(2 event, 3 censored, 1 missing event\\)")
 })

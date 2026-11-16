@@ -6,7 +6,7 @@
 \usage{
 followup_check(
   data,
-  time_col,
+  time_cols,
   event_col,
   id_col = NULL,
   max_rows = 25L,
@@ -18,10 +18,10 @@ followup_check(
 \arguments{
 \item{data}{A data frame, one row per patient.}
 
-\item{time_col}{Names of one or more follow-up interval columns, in years.
+\item{time_cols}{Names of one or more follow-up interval columns, in years.
 Was \code{followup}, and briefly \code{time}, before 2026-11; both still
 work for one release, with a warning. The order was \code{event, time}
-until then, so a call passing \code{time_col} and \code{event_col} both
+until then, so a call passing \code{time_cols} and \code{event_col} both
 unnamed is an error; name them.}
 
 \item{event_col}{Name of the event indicator: 1 or \code{TRUE} for an
@@ -40,7 +40,7 @@ order. Default 25.}
 same way. Default
 \code{c("n", "nmiss", "mean", "std", "min", "p15", "median", "p85", "max")}.}
 
-\item{followup, identifier}{Deprecated: the old names of \code{time_col} and
+\item{followup, identifier}{Deprecated: the old names of \code{time_cols} and
 \code{id_col}, kept for one release.}
 }
 \value{
@@ -95,7 +95,7 @@ result before sharing a report that shows \code{review} with one.
 }
 \examples{
 d <- data.frame(dead = c(1, 0, 0, NA, 1), iv_dead = c(2.5, 4, 0, 1.2, NA))
-fc <- followup_check(d, time_col = "iv_dead", event_col = "dead")
+fc <- followup_check(d, time_cols = "iv_dead", event_col = "dead")
 fc
 fc$cohort
 fc$review

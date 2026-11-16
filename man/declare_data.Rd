@@ -4,13 +4,14 @@
 \alias{declare_data}
 \title{Name a study's working dataset without registering it}
 \usage{
-declare_data(file, key = NULL, built = NULL, root = study_root())
+declare_data(file, key_cols = NULL, built = NULL, root = study_root())
 }
 \arguments{
 \item{file}{The working file's name in the datasets folder, with its extension.}
 
-\item{key}{Columns that make a row unique, or \code{NULL} to leave
-\code{key:} unset.}
+\item{key_cols}{Columns that make a row unique, or \code{NULL} to leave
+\code{key:} unset. Was \code{key} before 2026-11; \code{key =} still
+works for one release, with a warning.}
 
 \item{built}{The old name of \code{file}, before 2026-11. It still works,
 with a warning, and will be removed in a later release.}
@@ -24,7 +25,7 @@ one release, with a warning.}
 }
 \value{
 \code{TRUE}, invisibly, when the contract was written, or a
-  \code{key} was added to a declaration that had none;
+  \code{key_cols} was added to a declaration that had none;
   \code{FALSE}, invisibly, when \code{file} was already declared.
   Stops when the study already declares a different file or a different key.
 }
@@ -48,6 +49,6 @@ with \code{REGISTER = FALSE}.
 root <- file.path(tempdir(), "declare-example")
 suppressMessages(study_setup(root, "Example", 1L, renv = FALSE))
 saveRDS(data.frame(ccfid = 1:3), file.path(study_dir("datasets", root), "study_cohort.rds"))
-declare_data("study_cohort.rds", key = "ccfid", root = root)
+declare_data("study_cohort.rds", key_cols = "ccfid", root = root)
 unlink(root, recursive = TRUE)
 }

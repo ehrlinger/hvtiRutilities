@@ -69,9 +69,9 @@ registered_shape_study <- function(env = parent.frame()) {
   utils::write.csv(data.frame(ccfid = 1:3, dead = c(1L, 0L, 0L)), file.path(data_dir, "built.csv"), row.names = FALSE)
   utils::write.csv(data.frame(ccfid = c(1L, 1L, 2L, 9L), echo_date = c(10, 20, 10, 10), ef = c(50, 55, 60, 40)),
                    file.path(data_dir, "echo.csv"), row.names = FALSE)
-  suppressMessages(register_data(root = root, "built.csv", key = "ccfid"))
+  suppressMessages(register_data(root = root, "built.csv", key_cols = "ccfid"))
   suppressMessages(register_data(root = root, "echo.csv", dataset = "echo", role = "named",
-                                 kind = "ancillary", key = c("ccfid", "echo_date")))
+                                 kind = "ancillary", key_cols = c("ccfid", "echo_date")))
   root
 }
 
@@ -90,11 +90,11 @@ test_that("a repeating or missing key stops before anything is written", {
   before <- list.files(data_dir)
   before_files <- file_snapshot(root)
 
-  err <- expect_error(register_data(root = root, "labs.csv", dataset = "labs", role = "named", kind = "ancillary", key = "ccfid"),
+  err <- expect_error(register_data(root = root, "labs.csv", dataset = "labs", role = "named", kind = "ancillary", key_cols = "ccfid"),
                       "1 row repeats")
   # counts only: the message never names an identifier value
   expect_no_match(conditionMessage(err), "918273", fixed = TRUE)
-  expect_error(register_data(root = root, "labs.csv", dataset = "labs", role = "named", kind = "ancillary", key = "lab_date"),
+  expect_error(register_data(root = root, "labs.csv", dataset = "labs", role = "named", kind = "ancillary", key_cols = "lab_date"),
                "lab_date")
   expect_identical(list.files(data_dir), before)
   expect_identical(file_snapshot(root), before_files)
@@ -108,8 +108,8 @@ test_that("a registration that fails after the conversion leaves the study untou
   before_files <- file_snapshot(root)
 
   expect_error(register_data(root = root, "labs.csv", dataset = "labs", role = "named", kind = "combined",
-                             key = "ccfid", parents = "nope"), "nope")
-  expect_error(register_data(root = root, "labs.csv", dataset = "labs", role = "named", kind = "built", key = "ccfid"))
+                             key_cols = "ccfid", parents = "nope"), "nope")
+  expect_error(register_data(root = root, "labs.csv", dataset = "labs", role = "named", kind = "built", key_cols = "ccfid"))
 
   expect_identical(list.files(data_dir, recursive = TRUE), before_listing)
   expect_identical(file_snapshot(root), before_files)
@@ -121,7 +121,7 @@ test_that("a combined dataset records its parents' versions in the manifest", {
   utils::write.csv(data.frame(ccfid = c(1L, 1L, 2L), echo_date = c(10, 20, 10), dead = c(1L, 1L, 0L)),
                    file.path(data_dir, "be.csv"), row.names = FALSE)
   suppressMessages(register_data(root = root, "be.csv", dataset = "built_echo", role = "named", kind = "combined",
-                                 key = c("ccfid", "echo_date"), parents = c("study", "echo")))
+                                 key_cols = c("ccfid", "echo_date"), parents = c("study", "echo")))
 
   expect_identical(study_config(root)$additional_datasets$built_echo$parents, c("study", "echo"))
   m <- .read_manifest(file.path(root, "manifest.yaml"))
@@ -150,7 +150,7 @@ combined_study <- function(env = parent.frame()) {
   utils::write.csv(data.frame(ccfid = c(1L, 1L, 2L), echo_date = c(10, 20, 10), dead = c(1L, 1L, 0L)),
                    file.path(data_dir, "be.csv"), row.names = FALSE)
   suppressMessages(register_data(root = root, "be.csv", dataset = "built_echo", role = "named", kind = "combined",
-                                 key = c("ccfid", "echo_date"), parents = c("study", "echo")))
+                                 key_cols = c("ccfid", "echo_date"), parents = c("study", "echo")))
   root
 }
 

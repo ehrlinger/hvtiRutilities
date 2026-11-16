@@ -1,23 +1,23 @@
 #' Find rows that repeat a key, and choose which to keep
 #'
 #' @description
-#' Lists the rows of \code{data} that share a value of \code{key}, such as a
+#' Lists the rows of \code{data} that share a value of \code{key_cols}, such as a
 #' patient with two operations on the same day under the key
-#' \code{c("ccfid", "dt_surg")}. Given \code{order_by}, it also marks the
+#' \code{c("ccfid", "dt_surg")}. Given \code{order_by_cols}, it also marks the
 #' first row of each repeated key to keep, which is how the SAS jobs resolve
 #' them: the first operation is kept and the second is treated as a
 #' complication of it.
 #'
 #' @details
 #' \code{data} is never changed. Subset it with \code{keep}:
-#' \code{data[dk$keep, ]} is unique on \code{key}, and \code{data[!dk$keep, ]}
+#' \code{data[dk$keep, ]} is unique on \code{key_cols}, and \code{data[!dk$keep, ]}
 #' holds the rows set aside, to record or to carry as complications. Drop rows
 #' in the build, where corrections belong, not in a study job.
 #'
 #' "First" means first when the rows of a repeated key are sorted by the
-#' \code{order_by} columns, in ascending order. When the first two rows of a
-#' repeated key tie on \code{order_by}, or a row in a repeated key is missing
-#' an \code{order_by} value, there is no first row to keep, and the function
+#' \code{order_by_cols} columns, in ascending order. When the first two rows of a
+#' repeated key tie on \code{order_by_cols}, or a row in a repeated key is missing
+#' an \code{order_by_cols} value, there is no first row to keep, and the function
 #' stops rather than pick one. Add a column that separates them, such as the
 #' time of the operation.
 #'
@@ -30,9 +30,12 @@
 #' at the rows in \code{data}.
 #'
 #' @param data A data frame.
-#' @param key Names of the columns that should make each row unique.
-#' @param order_by \code{NULL} (the default), or names of the columns that
-#'   order the rows of a repeated key. Required for \code{keep}.
+#' @param key_cols Names of the columns that should make each row unique. Was
+#'   \code{key_cols} before 2026-11; \code{key =} still works for one release, with a
+#'   warning.
+#' @param order_by_cols \code{NULL} (the default), or names of the columns that
+#'   order the rows of a repeated key. Required for \code{keep}. Was
+#'   \code{order_by_cols}; \code{order_by =} still works for one release.
 #' @param show_key Include the key columns in \code{rows}? Default
 #'   \code{FALSE}.
 #'
@@ -44,14 +47,14 @@
 #'   \item{\code{rows}}{One row per row of \code{data} in a repeated key, in
 #'     data order: \code{row}, its row number in \code{data}; \code{.group},
 #'     numbering the repeated keys in order of appearance; \code{.rank}, its
-#'     place within the key by \code{order_by} (\code{NA} without
-#'     \code{order_by}); then the key columns when \code{show_key = TRUE}.}
+#'     place within the key by \code{order_by_cols} (\code{NA} without
+#'     \code{order_by_cols}); then the key columns when \code{show_key = TRUE}.}
 #'   \item{\code{keep}}{A logical vector, one per row of \code{data}:
 #'     \code{TRUE} for every row outside a repeated key and for the first row
-#'     of each repeated key. \code{NULL} without \code{order_by}.}
+#'     of each repeated key. \code{NULL} without \code{order_by_cols}.}
 #' }
 #'
-#' @seealso \code{\link{register_data}}, whose \code{key} argument refuses a
+#' @seealso \code{\link{register_data}}, whose \code{key_cols} argument refuses a
 #'   dataset that repeats it.
 #'
 #' @examples
@@ -60,19 +63,29 @@
 #'   dt_surg = as.Date(c("2010-01-05", "2012-03-01", "2012-03-01", "2011-06-01")),
 #'   op_time = c(8, 14, 9, 10)
 #' )
-#' dk <- duplicate_keys(ops, c("id", "dt_surg"), order_by = "op_time")
+#' dk <- duplicate_keys(ops, c("id", "dt_surg"), order_by_cols = "op_time")
 #' dk
 #' dk$rows
 #' ops[dk$keep, ]
 #' ops[!dk$keep, ]
 #' @export
-duplicate_keys <- function(data, key, order_by = NULL, show_key = FALSE) {
+duplicate_keys <- function(data, key_cols, order_by_cols = NULL, show_key = FALSE) {
+  # `key` and `order_by` partially match their new names, so R binds them;
+  # only the notice is needed.
+  if (.hvti_old_call(sys.call(), parent.frame(), renamed = c("key", "order_by"))) {
+    .hvti_deprecate("duplicate_keys_args",
+                    "duplicate_keys(): `key =` and `order_by =` are now `key_cols =` and `order_by_cols =`, per ",
+                    "the family rule that an argument naming columns ends in _cols. The old names work for one ",
+                    "more release.")
+  }
+  key <- key_cols
+  order_by <- order_by_cols
   if (!is.data.frame(data)) stop("`data` must be a data frame.", call. = FALSE)
   if (!is.character(key) || !length(key) || anyNA(key)) {
-    stop("`key` must name one or more columns.", call. = FALSE)
+    stop("`key_cols` must name one or more columns.", call. = FALSE)
   }
   if (!is.null(order_by) && (!is.character(order_by) || !length(order_by) || anyNA(order_by))) {
-    stop("`order_by` must be NULL or name one or more columns.", call. = FALSE)
+    stop("`order_by_cols` must be NULL or name one or more columns.", call. = FALSE)
   }
   if (!is.logical(show_key) || length(show_key) != 1L || is.na(show_key)) {
     stop("`show_key` must be TRUE or FALSE.", call. = FALSE)

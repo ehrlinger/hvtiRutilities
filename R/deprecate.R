@@ -57,9 +57,9 @@
 # whether or not the data is named, so such a call is refused on every call
 # rather than read in either order: a cohort gate must not count the wrong
 # column without saying so.
-.hvti_refuse_ambiguous_order <- function(cl, env, fn, caller, signature) {
-  if (all(c("time_col", "event_col") %in% .hvti_positional_formals(cl, env, fn))) {
-    stop(caller, "(): pass `time_col =` and `event_col =` by name. The arguments are now ", signature,
+.hvti_refuse_ambiguous_order <- function(cl, env, fn, caller, signature, pair = c("time_col", "event_col")) {
+  if (all(pair %in% .hvti_positional_formals(cl, env, fn))) {
+    stop(caller, "(): pass `", pair[[1L]], " =` and `", pair[[2L]], " =` by name. The arguments are now ", signature,
          ", as in survival::Surv(), and were event before time until 2026-11, so two unnamed ",
          "arguments cannot be read safely.", call. = FALSE)
   }

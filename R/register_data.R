@@ -180,9 +180,11 @@
 #'   \code{"built"} (the study dataset), \code{"subset"}, \code{"ancillary"}
 #'   (many rows per patient, such as echoes or labs, joined to the cohort by a
 #'   job) or \code{"combined"} (built by joining others).
-#' @param key Character or \code{NULL}. The columns that make each row unique,
+#' @param key_cols Character or \code{NULL}. The columns that make each row unique,
 #'   such as \code{c("ccfid", "echo_date")}. Checked at registration, which
 #'   stops if any row repeats on it. Jobs use it unless they set their own.
+#'   Was \code{key} before 2026-11; \code{key =} still works for one release,
+#'   with a warning.
 #' @param parents Character or \code{NULL}. For \code{kind = "combined"} only:
 #'   the registered datasets it was built from. Their current versions are
 #'   recorded, so a later update to a parent marks this dataset out of date.
@@ -218,7 +220,7 @@
 #' utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
 #'                  file.path(root, "00_datasets", "built.csv"),
 #'                  row.names = FALSE)
-#' register_data(file = "built.csv", key = "ccfid", root = root)
+#' register_data(file = "built.csv", key_cols = "ccfid", root = root)
 #' # The CSV is kept; the registered version is a dated Parquet file.
 #' list.files(file.path(root, "00_datasets"))
 #' unlink(root, recursive = TRUE)
@@ -230,7 +232,7 @@
 #' utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
 #'                  file.path(root, "00_datasets", "built.csv"),
 #'                  row.names = FALSE)
-#' invisible(register_data(file = "built.csv", key = "ccfid", root = root))
+#' invisible(register_data(file = "built.csv", key_cols = "ccfid", root = root))
 #' utils::write.csv(
 #'   data.frame(ccfid = c(1, 1, 2), echo_date = c("2020-01-05", "2020-06-01", "2020-02-10"),
 #'              lvef = c(55, 50, 60)),
@@ -238,7 +240,7 @@
 #'   row.names = FALSE
 #' )
 #' invisible(register_data(file = "echo.csv", dataset = "echo", role = "named",
-#'                         kind = "ancillary", key = c("ccfid", "echo_date"), root = root))
+#'                         kind = "ancillary", key_cols = c("ccfid", "echo_date"), root = root))
 #' read_built(study_config(root), dataset = "echo")
 #' unlink(root, recursive = TRUE)
 #'
@@ -248,10 +250,15 @@ register_data <- function(file, dataset = "study",
                           population = NULL, source = NULL,
                           extract_date = NULL,
                           catalog_dataset = NULL, release_id = NULL,
-                          kind = NULL, key = NULL, parents = NULL, built = NULL,
+                          kind = NULL, key_cols = NULL, parents = NULL, built = NULL,
                           root = study_root()) {
   cl <- sys.call()
   env <- parent.frame()
+  if (.hvti_old_call(cl, env, renamed = "key")) {
+    .hvti_deprecate("register_data_key",
+                    "register_data(): `key =` is now `key_cols =`, per the family rule that an argument naming ",
+                    "columns ends in _cols. The old name works for one more release.")
+  }
   old_root <- .hvti_root_first(cl, env, register_data, environment())
   if (!is.null(old_root)) {
     .hvti_deprecate("register_data_root",
@@ -262,8 +269,9 @@ register_data <- function(file, dataset = "study",
                                  catalog_dataset, release_id, kind, key, parents, built) {
                           NULL
                         },
-                        register_data, forced = list(root = old_root)))
+                        register_data, c(key = "key_cols"), forced = list(root = old_root)))
   }
+  key <- key_cols
   built <- .renamed_file_arg(if (missing(file)) NULL else file, built, "register_data",
                              file_given = !missing(file), built_given = !missing(built))
   role <- match.arg(role)

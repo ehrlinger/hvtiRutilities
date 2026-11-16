@@ -13,7 +13,7 @@ dk_ops <- function() {
 
 test_that("a clean key reports zero repeats and still counts the rows", {
   d <- dk_ops()[c(1, 2, 4, 6), ]
-  dk <- duplicate_keys(d, "id", order_by = "op_time")
+  dk <- duplicate_keys(d, "id", order_by_cols = "op_time")
   expect_s3_class(dk, "duplicate_keys")
   expect_identical(dk$summary$rows, 4L)
   expect_identical(dk$summary$keys, 4L)
@@ -38,14 +38,14 @@ test_that("a same-day pair repeats the patient-and-date key; different days do n
 
 test_that("order_by keeps the first row of each key and marks the rest", {
   d <- dk_ops()
-  dk <- duplicate_keys(d, c("id", "dt_surg"), order_by = "op_time")
+  dk <- duplicate_keys(d, c("id", "dt_surg"), order_by_cols = "op_time")
   # Patient 2 had two operations on 2012-03-01: 09:00 cabg is first.
   expect_identical(dk$keep, c(TRUE, FALSE, TRUE, TRUE, TRUE, TRUE))
   expect_identical(d[!dk$keep, "proc"], "mvr")
   expect_identical(dk$rows$.rank, c(2L, 1L))
   expect_identical(anyDuplicated(d[dk$keep, c("id", "dt_surg")]), 0L)
 
-  by_id <- duplicate_keys(d, "id", order_by = c("dt_surg", "op_time"))
+  by_id <- duplicate_keys(d, "id", order_by_cols = c("dt_surg", "op_time"))
   expect_identical(d[by_id$keep, "proc"], c("avr", "cabg", "avr", "tvr"))
 })
 
@@ -56,16 +56,16 @@ test_that("without order_by nothing is chosen", {
 test_that("a tie or a missing order_by value in a repeated key stops", {
   d <- dk_ops()
   d$op_time[3] <- 14
-  expect_error(duplicate_keys(d, c("id", "dt_surg"), order_by = "op_time"),
+  expect_error(duplicate_keys(d, c("id", "dt_surg"), order_by_cols = "op_time"),
                "1 repeated key")
   d <- dk_ops()
   d$op_time[3] <- NA
-  expect_error(duplicate_keys(d, c("id", "dt_surg"), order_by = "op_time"),
+  expect_error(duplicate_keys(d, c("id", "dt_surg"), order_by_cols = "op_time"),
                "missing")
   # A missing order_by value outside any repeated key is not a choice to make.
   d <- dk_ops()
   d$op_time[1] <- NA
-  expect_identical(sum(!duplicate_keys(d, c("id", "dt_surg"), order_by = "op_time")$keep), 1L)
+  expect_identical(sum(!duplicate_keys(d, c("id", "dt_surg"), order_by_cols = "op_time")$keep), 1L)
 })
 
 test_that("key values are shown only when asked", {
@@ -80,7 +80,7 @@ test_that("missing key values are counted, and unknown columns are named at once
   d <- dk_ops()
   d$id[6] <- NA
   expect_identical(duplicate_keys(d, "id")$summary$missing_keys, 1L)
-  expect_error(duplicate_keys(d, c("idd", "dt_surg"), order_by = "op_tim"),
+  expect_error(duplicate_keys(d, c("idd", "dt_surg"), order_by_cols = "op_tim"),
                "idd.*op_tim")
   expect_error(duplicate_keys(d, character()), "key")
 })
@@ -90,7 +90,7 @@ test_that("keys that print alike stay separate (#274 review)", {
   d <- data.frame(id = rep(c(1e15, 1e15 + 1), each = 2), time = 1:4)
   expect_true(identical(as.character(d$id[1]), as.character(d$id[3])) &&
                 d$id[1] != d$id[3])
-  dk <- duplicate_keys(d, "id", order_by = "time")
+  dk <- duplicate_keys(d, "id", order_by_cols = "time")
   expect_equal(dk$summary$repeated_keys, 2L)
   expect_equal(dk$rows$.group, c(1L, 1L, 2L, 2L))
   expect_equal(dk$keep, c(TRUE, FALSE, TRUE, FALSE))
@@ -101,18 +101,18 @@ test_that("composite keys whose pasted strings collide stay separate", {
   # Pasted with any one separator, ("a\037", "b") and ("a", "\037b") match.
   d <- data.frame(x = c("a\037", "a\037", "a", "a"),
                   y = c("b", "b", "\037b", "\037b"), time = 1:4)
-  dk <- duplicate_keys(d, c("x", "y"), order_by = "time")
+  dk <- duplicate_keys(d, c("x", "y"), order_by_cols = "time")
   expect_equal(dk$rows$.group, c(1L, 1L, 2L, 2L))
   expect_equal(dk$keep, c(TRUE, FALSE, TRUE, FALSE))
   # A missing key is not the same as the text "NA".
   d2 <- data.frame(id = c(NA, NA, "NA", "NA"), time = 1:4)
-  expect_equal(duplicate_keys(d2, "id", order_by = "time")$rows$.group, c(1L, 1L, 2L, 2L))
+  expect_equal(duplicate_keys(d2, "id", order_by_cols = "time")$rows$.group, c(1L, 1L, 2L, 2L))
 })
 
 test_that("order_by values that print alike are not a tie (#274 review)", {
   d <- data.frame(id = c(1, 1), t = c(1 + 1e-15, 1))
   expect_identical(as.character(d$t[1]), as.character(d$t[2]))
-  dk <- duplicate_keys(d, "id", order_by = "t")
+  dk <- duplicate_keys(d, "id", order_by_cols = "t")
   expect_equal(dk$keep, c(FALSE, TRUE))
 })
 
@@ -120,14 +120,14 @@ test_that("NA and NaN are different keys, as duplicated() treats them (#278 revi
   d <- data.frame(id = c(NA_real_, NA_real_, NaN, NaN), ord = 1:4)
   # The precondition: duplicated() sees two keys here.
   expect_identical(duplicated(d["id"]), c(FALSE, TRUE, FALSE, TRUE))
-  dk <- duplicate_keys(d, "id", order_by = "ord")
+  dk <- duplicate_keys(d, "id", order_by_cols = "ord")
   expect_identical(dk$summary$repeated_keys, 2L)
   expect_identical(dk$rows$.group, c(1L, 1L, 2L, 2L))
   expect_identical(dk$keep, c(TRUE, FALSE, TRUE, FALSE))
 
   # In a composite key too, interleaved so that sorting would not separate them.
   d2 <- data.frame(id = c(1, 1, 1, 1, 2, 2), dt = c(NA, NaN, NA, NaN, 5, 5), ord = 1:6)
-  dk2 <- duplicate_keys(d2, c("id", "dt"), order_by = "ord")
+  dk2 <- duplicate_keys(d2, c("id", "dt"), order_by_cols = "ord")
   expect_identical(dk2$rows$.group, c(1L, 2L, 1L, 2L, 3L, 3L))
   expect_identical(dk2$keep, c(TRUE, TRUE, FALSE, FALSE, TRUE, FALSE))
 })

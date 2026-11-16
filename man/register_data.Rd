@@ -14,7 +14,7 @@ register_data(
   catalog_dataset = NULL,
   release_id = NULL,
   kind = NULL,
-  key = NULL,
+  key_cols = NULL,
   parents = NULL,
   built = NULL,
   root = study_root()
@@ -66,9 +66,11 @@ release this way: that would drop every registered version.}
 (many rows per patient, such as echoes or labs, joined to the cohort by a
 job) or \code{"combined"} (built by joining others).}
 
-\item{key}{Character or \code{NULL}. The columns that make each row unique,
+\item{key_cols}{Character or \code{NULL}. The columns that make each row unique,
 such as \code{c("ccfid", "echo_date")}. Checked at registration, which
-stops if any row repeats on it. Jobs use it unless they set their own.}
+stops if any row repeats on it. Jobs use it unless they set their own.
+Was \code{key} before 2026-11; \code{key =} still works for one release,
+with a warning.}
 
 \item{parents}{Character or \code{NULL}. For \code{kind = "combined"} only:
 the registered datasets it was built from. Their current versions are
@@ -144,7 +146,7 @@ invisible(study_setup(root, study = "Example", study_tracker_id = 1L, renv = FAL
 utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
                  file.path(root, "00_datasets", "built.csv"),
                  row.names = FALSE)
-register_data(file = "built.csv", key = "ccfid", root = root)
+register_data(file = "built.csv", key_cols = "ccfid", root = root)
 # The CSV is kept; the registered version is a dated Parquet file.
 list.files(file.path(root, "00_datasets"))
 unlink(root, recursive = TRUE)
@@ -156,7 +158,7 @@ invisible(study_setup(root, study = "Example", study_tracker_id = 1L, renv = FAL
 utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
                  file.path(root, "00_datasets", "built.csv"),
                  row.names = FALSE)
-invisible(register_data(file = "built.csv", key = "ccfid", root = root))
+invisible(register_data(file = "built.csv", key_cols = "ccfid", root = root))
 utils::write.csv(
   data.frame(ccfid = c(1, 1, 2), echo_date = c("2020-01-05", "2020-06-01", "2020-02-10"),
              lvef = c(55, 50, 60)),
@@ -164,7 +166,7 @@ utils::write.csv(
   row.names = FALSE
 )
 invisible(register_data(file = "echo.csv", dataset = "echo", role = "named",
-                        kind = "ancillary", key = c("ccfid", "echo_date"), root = root))
+                        kind = "ancillary", key_cols = c("ccfid", "echo_date"), root = root))
 read_built(study_config(root), dataset = "echo")
 unlink(root, recursive = TRUE)
 \dontshow{\}) # examplesIf}
