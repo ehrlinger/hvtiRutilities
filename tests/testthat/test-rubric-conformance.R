@@ -410,3 +410,26 @@ test_that("the *_cols renames refuse the old and the new name together", {
   expect_error(proc_means(w, "x", class_cols = "g", class = "g"), "unused argument (class", fixed = TRUE)
   expect_error(proc_print(w, x > 2 ~ "big", var_cols = "x", var = "x", console = FALSE), "unused argument (var", fixed = TRUE)
 })
+
+test_that("old and new column names together are refused for every alias family, with NULL or by position (#302 review)", {
+  d <- data.frame(a = 1:3, b = 4:6, f = factor(c("1", "2", "1")), s = c("u", "v", "u"))
+  both <- function(old, new) paste0("`", old, " =` and `", new, " =`")
+  # The review's reproductions: before the fix each returned results for `b`.
+  expect_error(proc_means(d, var_cols = "a", vars = "b", stats = "mean"), both("vars", "var_cols"))
+  expect_error(proc_freq(d, table_cols = "a", tables = "b"), both("tables", "table_cols"))
+  # An explicit NULL is still the new name given.
+  expect_error(proc_means(d, var_cols = NULL, vars = "b"), both("vars", "var_cols"))
+  expect_error(proc_univariate(d, var_cols = NULL, vars = "b"), both("vars", "var_cols"))
+  expect_error(level_map(d, var_cols = NULL, vars = "f"), both("vars", "var_cols"))
+  expect_error(r_data_types(d, skip_cols = NULL, skip_vars = "s", use_value_labels = FALSE), both("skip_vars", "skip_cols"))
+  expect_error(proc_means(d, var_cols = "a", weight_col = NULL, weights = "b"), both("weights", "weight_col"))
+  # The new name by position, in the place the old name held.
+  expect_error(proc_means(d, "a", vars = "b"), both("vars", "var_cols"))
+  expect_error(proc_univariate(d, "a", vars = "b"), both("vars", "var_cols"))
+  expect_error(covariate_audit(d, "f", vars = "f"), both("vars", "var_cols"))
+  expect_error(covariates_to_numeric(d, "f", vars = "f"), both("vars", "var_cols"))
+  expect_error(level_map(d, "f", vars = "f"), both("vars", "var_cols"))
+  expect_error(r_data_types(d, 10, "s", skip_vars = "a", use_value_labels = FALSE), both("skip_vars", "skip_cols"))
+  # A skip_cols conflict must not convert a column the caller meant to keep.
+  expect_error(r_data_types(d, skip_cols = "s", skip_vars = "a", use_value_labels = FALSE), both("skip_vars", "skip_cols"))
+})
