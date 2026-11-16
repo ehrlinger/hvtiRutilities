@@ -47,7 +47,7 @@
 #'   \item `.csv`: a date is *character*. With
 #'     `convert_types = TRUE` it then becomes a factor, as every character
 #'     column does; convert it with `as.Date()` first, or name it in
-#'     `skip_vars`.
+#'     `skip_cols`.
 #'   \item `.rds`, `.parquet`: the types that were written.
 #' }
 #' [r_data_types()] never alters a `Date` or `POSIXct`
@@ -66,7 +66,7 @@
 #'   wrong for 0/1 event and censoring flags, so type conversion belongs to a
 #'   declared variable-derivation step rather than to reading.
 #' @param ... Additional arguments passed to [r_data_types()]
-#'   (e.g., `factor_size`, `skip_vars`, `binary_factor`,
+#'   (e.g., `factor_size`, `skip_cols`, `binary_factor`,
 #'   `use_value_labels`). Must be named. An error when
 #'   `convert_types = FALSE`, or for a name `r_data_types()` does
 #'   not take.

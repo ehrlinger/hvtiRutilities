@@ -61,7 +61,7 @@
 #'     `"binary_factor"`, `"character_factor"`,
 #'     `"n_distinct_factor"`, `"unchanged"` or `"skipped"`.
 #'     `"unchanged"` means every rule was tested and none fired;
-#'     `"skipped"` means the column was named in `skip_vars` and no
+#'     `"skipped"` means the column was named in `skip_cols` and no
 #'     rule was tested.
 #'   \item `level_source` -- `"value labels"` where the levels came
 #'     from the column's own value labels, `"inference"` where they came

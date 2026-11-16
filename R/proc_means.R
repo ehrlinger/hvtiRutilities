@@ -22,10 +22,10 @@
 #' `1.75` under R's default. The median agrees, which is why the
 #' discrepancy hides.
 #'
-#' With `vars = NULL` all numeric columns are analysed, matching SAS's
+#' With `var_cols = NULL` all numeric columns are analysed, matching SAS's
 #' behaviour when the `VAR` statement is omitted. Logical columns are not
 #' `is.numeric()` in R and so are excluded from that default set; naming
-#' one in `vars` coerces it to 0/1, making `mean` a proportion as
+#' one in `var_cols` coerces it to 0/1, making `mean` a proportion as
 #' `PROC MEANS` would give.
 #'
 #' Rows are ordered by analysis variable first, then by class level. A factor
@@ -62,10 +62,13 @@
 #' would give `Inf`.
 #'
 #' @param data A data frame, tibble, or similar tabular object.
-#' @param vars Character vector of columns to analyse. `NULL` (default)
-#'   selects every numeric column not named in `class`.
-#' @param class Character vector of grouping columns, prepended to the result
-#'   as leading columns. Rows with a missing value in any class variable are
+#' @param var_cols Character vector of columns to analyse, was `vars` before
+#'   2026-11 (`vars =` still works for one release, with a warning).
+#'   `NULL` (default) selects every numeric column not named in `class_cols`.
+#' @param class_cols Character vector of grouping columns, prepended to the
+#'   result as leading columns. Was `class` before 2026-11; `class =` still
+#'   works for one release, with a warning. Rows with a missing value in any
+#'   class variable are
 #'   dropped, matching SAS's default.
 #' @param stats Character vector of SAS statistic keywords. The default,
 #'   `c("n", "mean", "std", "min", "p15", "median", "p85", "max")`, is
@@ -86,8 +89,9 @@
 #'   this fails loudly rather than encode a guess.
 #'
 #' @param weights Deprecated: the old name of `weight_col`, kept for one release.
+#' @param vars Deprecated: the old name of `var_cols`, kept for one release.
 #' @return A data frame with one row per analysis variable per class
-#'   combination. Columns are the `class` variables (when supplied), then
+#'   combination. Columns are the `class_cols` variables (when supplied), then
 #'   `variable`, `label`, then one column per requested statistic in
 #'   the order given by `stats`. Count statistics (`n`,
 #'   `nmiss`) are integer; all others are numeric.
@@ -105,16 +109,16 @@
 #' head(proc_means(dta))
 #'
 #' # Named variables and an explicit statistic list
-#' proc_means(dta, vars = c("age", "bmi"),
+#' proc_means(dta, var_cols = c("age", "bmi"),
 #'            stats = c("n", "mean", "median", "p15"))
 #'
 #' # Weighted statistics
 #' dta <- data.frame(age = c(51, 63, 47, 72), wt = c(1, 2, 1, 4))
-#' proc_means(dta, vars = "age", stats = c("n", "sumwgt", "mean"),
+#' proc_means(dta, var_cols = "age", stats = c("n", "sumwgt", "mean"),
 #'            weight_col = "wt")
-proc_means <- function(data, vars = NULL, class = NULL,
+proc_means <- function(data, var_cols = NULL, class_cols = NULL,
                        stats = c("n", "mean", "std", "min", "p15", "median", "p85", "max"),
-                       weight_col = NULL, weights) {
+                       weight_col = NULL, weights, vars) {
   if (!missing(weights)) {
     if (!missing(weight_col)) .hvti_refuse_both("proc_means", "weights", "weight_col")
     .hvti_deprecate("proc_means_weights", "proc_means(): `weights =` is now `weight_col =`, per the family rule that an ",
@@ -122,6 +126,16 @@ proc_means <- function(data, vars = NULL, class = NULL,
     weight_col <- weights
   }
   weights <- weight_col
+  # `class` partially matches `class_cols`, so R binds it; `vars` does not
+  # match `var_cols` and is a trailing formal.
+  if (!missing(vars) && !missing(var_cols)) .hvti_refuse_both("proc_means", "vars", "var_cols")
+  if (!missing(vars) || .hvti_old_call(sys.call(), parent.frame(), renamed = "class")) {
+    .hvti_deprecate("proc_means_cols", "proc_means(): `vars =` and `class =` are now `var_cols =` and `class_cols =`, ",
+                    "per the family rule that an argument naming columns ends in _cols. The old names work for one more release.")
+  }
+  if (!missing(vars)) var_cols <- vars
+  vars <- var_cols
+  class <- class_cols
   if (!is.data.frame(data)) {
     stop("'data' must be a data frame.", call. = FALSE)
   }
@@ -161,14 +175,14 @@ proc_means <- function(data, vars = NULL, class = NULL,
     usable <- vapply(data[vars], function(x) is.numeric(x) || is.logical(x),
                      logical(1))
     if (!all(usable)) {
-      stop("Non-numeric column(s) named in 'vars': ",
+      stop("Non-numeric column(s) named in 'var_cols': ",
            paste(vars[!usable], collapse = ", "), call. = FALSE)
     }
   }
 
   if (!is.null(weights) && weights %in% c(vars, class)) {
     stop("Weight column '", weights,
-         "' is also named in 'vars' or 'class'. A column cannot be both a ",
+         "' is also named in 'var_cols' or 'class_cols'. A column cannot be both a ",
          "weight and an analysis or class variable.", call. = FALSE)
   }
 

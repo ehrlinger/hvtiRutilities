@@ -40,7 +40,7 @@ test_that("mode returns the smallest value when modes tie", {
 test_that("mode is the value itself at n = 1, as in SAS", {
   # SAS 9.4 M8 PROC MEANS and PROC UNIVARIATE both give MODE = 3 here.
   expect_equal(cs(3, "mode"), 3)
-  expect_equal(proc_means(data.frame(a = 3), vars = "a", stats = "mode")$mode,
+  expect_equal(proc_means(data.frame(a = 3), var_cols = "a", stats = "mode")$mode,
                3)
 })
 

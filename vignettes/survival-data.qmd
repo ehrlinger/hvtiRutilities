@@ -91,7 +91,7 @@ The dataset arrives with variable labels attached and several columns that benef
 model_data <- r_data_types(
   dta,
   factor_size = 5,
-  skip_vars = c("ccfid", "iv_dead", "iv_reop", "iv_opyrs")
+  skip_cols = c("ccfid", "iv_dead", "iv_reop", "iv_opyrs")
 )
 
 str(model_data[, c("dead", "reop", "sex", "nyha_class", "diabetes", "hypertension")])

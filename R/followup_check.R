@@ -164,7 +164,7 @@ followup_check <- function(data, time_cols, event_col, id_col = NULL, max_rows =
   }))
   subsets <- list(full = data, event = data[!is.na(ev) & ev == 1, , drop = FALSE],
                   censored = data[!is.na(ev) & ev == 0, , drop = FALSE])
-  means <- lapply(subsets, function(s) proc_means(s, vars = followup, stats = stats))
+  means <- lapply(subsets, function(s) proc_means(s, var_cols = followup, stats = stats))
   suspicious <- is.na(ev) | Reduce(`|`, lapply(data[followup], function(x) is.na(x) | x <= 0))
   review <- data[utils::head(which(suspicious), max_rows), needed, drop = FALSE]
   rownames(review) <- NULL

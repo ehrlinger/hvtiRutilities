@@ -47,7 +47,7 @@ test_that("a skipped column is reported as skipped, not as unchanged", {
   dta <- data.frame(a = c(1, 2, 3, 1), b = c(0, 1, 0, 1))
 
   rep <- type_conversion_report(
-    r_data_types(dta, skip_vars = "b", use_value_labels = FALSE)
+    r_data_types(dta, skip_cols = "b", use_value_labels = FALSE)
   )
 
   expect_equal(rep$rule, c("n_distinct_factor", "skipped"))

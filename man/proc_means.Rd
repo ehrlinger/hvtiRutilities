@@ -6,21 +6,25 @@
 \usage{
 proc_means(
   data,
-  vars = NULL,
-  class = NULL,
+  var_cols = NULL,
+  class_cols = NULL,
   stats = c("n", "mean", "std", "min", "p15", "median", "p85", "max"),
   weight_col = NULL,
-  weights
+  weights,
+  vars
 )
 }
 \arguments{
 \item{data}{A data frame, tibble, or similar tabular object.}
 
-\item{vars}{Character vector of columns to analyse. \code{NULL} (default)
-selects every numeric column not named in \code{class}.}
+\item{var_cols}{Character vector of columns to analyse, was \code{vars} before
+2026-11 (\verb{vars =} still works for one release, with a warning).
+\code{NULL} (default) selects every numeric column not named in \code{class_cols}.}
 
-\item{class}{Character vector of grouping columns, prepended to the result
-as leading columns. Rows with a missing value in any class variable are
+\item{class_cols}{Character vector of grouping columns, prepended to the
+result as leading columns. Was \code{class} before 2026-11; \verb{class =} still
+works for one release, with a warning. Rows with a missing value in any
+class variable are
 dropped, matching SAS's default.}
 
 \item{stats}{Character vector of SAS statistic keywords. The default,
@@ -43,10 +47,12 @@ handling of non-positive weights varies across procedures and versions, so
 this fails loudly rather than encode a guess.}
 
 \item{weights}{Deprecated: the old name of \code{weight_col}, kept for one release.}
+
+\item{vars}{Deprecated: the old name of \code{var_cols}, kept for one release.}
 }
 \value{
 A data frame with one row per analysis variable per class
-combination. Columns are the \code{class} variables (when supplied), then
+combination. Columns are the \code{class_cols} variables (when supplied), then
 \code{variable}, \code{label}, then one column per requested statistic in
 the order given by \code{stats}. Count statistics (\code{n},
 \code{nmiss}) are integer; all others are numeric.
@@ -73,10 +79,10 @@ and even-numbered samples clinical subgroups produce. For
 \code{1.75} under R's default. The median agrees, which is why the
 discrepancy hides.
 
-With \code{vars = NULL} all numeric columns are analysed, matching SAS's
+With \code{var_cols = NULL} all numeric columns are analysed, matching SAS's
 behaviour when the \code{VAR} statement is omitted. Logical columns are not
 \code{is.numeric()} in R and so are excluded from that default set; naming
-one in \code{vars} coerces it to 0/1, making \code{mean} a proportion as
+one in \code{var_cols} coerces it to 0/1, making \code{mean} a proportion as
 \verb{PROC MEANS} would give.
 
 Rows are ordered by analysis variable first, then by class level. A factor
@@ -119,12 +125,12 @@ dta <- generate_survival_data(n = 200, seed = 42)
 head(proc_means(dta))
 
 # Named variables and an explicit statistic list
-proc_means(dta, vars = c("age", "bmi"),
+proc_means(dta, var_cols = c("age", "bmi"),
            stats = c("n", "mean", "median", "p15"))
 
 # Weighted statistics
 dta <- data.frame(age = c(51, 63, 47, 72), wt = c(1, 2, 1, 4))
-proc_means(dta, vars = "age", stats = c("n", "sumwgt", "mean"),
+proc_means(dta, var_cols = "age", stats = c("n", "sumwgt", "mean"),
            weight_col = "wt")
 }
 \seealso{

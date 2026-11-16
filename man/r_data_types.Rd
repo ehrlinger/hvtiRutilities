@@ -7,10 +7,11 @@
 r_data_types(
   data,
   factor_size = 10,
-  skip_vars = NULL,
+  skip_cols = NULL,
   binary_factor = FALSE,
   use_value_labels = FALSE,
-  dataset
+  dataset,
+  skip_vars
 )
 }
 \arguments{
@@ -24,8 +25,10 @@ to factors, so the default of 10 converts a column with 3 to 9 distinct
 values. Must be a whole number from 2 to 50. Character columns are not
 subject to it. Default is 10.}
 
-\item{skip_vars}{Character vector of column names to exclude from conversion.
-These columns will remain unchanged. Default is NULL (convert all columns).}
+\item{skip_cols}{Character vector of column names to exclude from conversion.
+These columns will remain unchanged. Default is NULL (convert all columns).
+Was \code{skip_vars} before 2026-11; \verb{skip_vars =} still works for one
+release, with a warning.}
 
 \item{binary_factor}{Logical. If TRUE, binary variables are converted to
 factors instead of logical. Default is FALSE (convert to logical).}
@@ -39,6 +42,8 @@ default becomes TRUE in a later release.}
 
 \item{dataset}{Deprecated: the old name of \code{data}. Kept as an argument
 for one release so \verb{dataset =} still reaches the deprecation notice.}
+
+\item{skip_vars}{Deprecated: the old name of \code{skip_cols}, kept for one release.}
 }
 \value{
 An object of the same class as \code{data} with columns
@@ -70,7 +75,7 @@ every row and silently lose one of its two categories.
 of distinct values: \code{factor_size} does not apply to them. A
 character column that yields more than 50 levels -- usually an
 identifier or free text, not a category -- warns, naming the column;
-pass it in \code{skip_vars} to keep it as character.
+pass it in \code{skip_cols} to keep it as character.
 \item Numeric columns with more than 2 and fewer than \code{factor_size}
 distinct values become factors.
 \item Logical columns become factors when \code{binary_factor = TRUE}.
@@ -96,7 +101,7 @@ str(mtcars_converted$vs)  # logical (FALSE/TRUE)
 
 # Skip specific columns
 mtcars_partial <- r_data_types(datasets::mtcars,
-                               skip_vars = c("vs", "am"),
+                               skip_cols = c("vs", "am"),
                                use_value_labels = FALSE)
 str(mtcars_partial$vs)  # Still numeric (unchanged)
 

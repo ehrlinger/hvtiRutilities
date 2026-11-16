@@ -64,9 +64,9 @@ test_that("unweighted statistics ignore weights entirely", {
 
 test_that("proc_means reports unweighted quantiles when weights are given", {
   d <- data.frame(a = v, wt = w)
-  wt  <- proc_means(d, vars = "a", stats = c("median", "q1", "q3"),
+  wt  <- proc_means(d, var_cols = "a", stats = c("median", "q1", "q3"),
                     weight_col = "wt")
-  raw <- proc_means(d, vars = "a", stats = c("median", "q1", "q3"))
+  raw <- proc_means(d, var_cols = "a", stats = c("median", "q1", "q3"))
   expect_equal(wt$median, raw$median)
   expect_equal(wt$q1, raw$q1)
   expect_equal(wt$q3, raw$q3)

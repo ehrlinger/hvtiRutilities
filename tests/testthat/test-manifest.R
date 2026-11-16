@@ -44,7 +44,7 @@ test_that("update_manifest [CSV] creates entry with correct fields", {
     manifest_path = mpath,
     extract_date  = "2024-01-15",
     source        = "Epic EMR, query v4.2",
-    sort_key      = "id"
+    sort_key_cols = "id"
   )
 
   m <- yaml::read_yaml(mpath)
@@ -117,7 +117,7 @@ test_that("update_manifest [SAS] creates entry with correct row count", {
     manifest_path = mpath,
     extract_date  = "2024-01-15",
     source        = "SAS CORR registry, labs module v2.1",
-    sort_key      = "pat_id"
+    sort_key_cols = "pat_id"
   )
 
   m <- yaml::read_yaml(mpath)

@@ -248,7 +248,7 @@ test_that("labels are preserved through r_data_types()", {
   converted <- r_data_types(
     dta,
     factor_size = 5,
-    skip_vars = c("ccfid", "iv_dead", "iv_reop")
+    skip_cols = c("ccfid", "iv_dead", "iv_reop")
   )
   lmap_after <- label_map(converted)
 

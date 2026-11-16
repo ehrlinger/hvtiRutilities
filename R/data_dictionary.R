@@ -39,7 +39,7 @@
 #' # After type conversion
 #' dta_clean <- r_data_types(dta,
 #'   factor_size = 5,
-#'   skip_vars = c("ccfid", "iv_dead", "iv_reop", "iv_opyrs")
+#'   skip_cols = c("ccfid", "iv_dead", "iv_reop", "iv_opyrs")
 #' )
 #' dict_clean <- data_dictionary(dta_clean)
 #' head(dict_clean, 10)
