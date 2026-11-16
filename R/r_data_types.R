@@ -237,6 +237,7 @@ r_data_types <- function(data,
                          dataset) {
   cl <- sys.call()
   env <- parent.frame()
+  if (!missing(dataset) && !missing(data)) .hvti_refuse_both("r_data_types", "dataset", "data")
   if (.hvti_old_call(cl, env, renamed = "dataset")) {
     .hvti_deprecate("r_data_types_dataset",
                     "r_data_types(): `dataset =` is now `data =`. The old name works for one more release.")

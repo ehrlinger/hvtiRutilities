@@ -102,6 +102,7 @@
 proc_freq <- function(data, tables, missing = FALSE, list = FALSE,
                       weight_col = NULL, weights) {
   if (!missing(weights)) {
+    if (!missing(weight_col)) .hvti_refuse_both("proc_freq", "weights", "weight_col")
     .hvti_deprecate("proc_freq_weights", "proc_freq(): `weights =` is now `weight_col =`, per the family rule that an ",
                     "argument naming one column ends in _col. The old name works for one more release.")
     weight_col <- weights

@@ -20,7 +20,7 @@ with a warning, and will be removed in a later release.}
 directory, found by its \verb{_study.yml}; outside a study the function
 stops and writes nothing.
 It comes last, after 2026-11; a call that passes an existing directory
-as its first unnamed argument is read in the old, root-first order for
+as its first argument, unnamed, is read in the old, root-first order for
 one release, with a warning.}
 }
 \value{

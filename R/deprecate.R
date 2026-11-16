@@ -32,6 +32,13 @@
   args
 }
 
+# A renamed argument given under both names: reading either one would drop
+# the other without a word, so the call is refused.
+.hvti_refuse_both <- function(caller, old, new) {
+  stop(caller, "(): `", old, " =` and `", new, " =` are the same argument, under its old and new names. ",
+       "Give only `", new, " =`.", call. = FALSE)
+}
+
 # Whether a call names an argument that was renamed.
 .hvti_old_call <- function(cl, env, renamed) {
   any(names(.hvti_call_args(cl, env)) %in% renamed)
@@ -81,8 +88,13 @@
 }
 
 # register_data() and declare_data() took `root` first until 2026-11. A call
-# whose first unnamed argument is an existing directory, and which does not
-# name `root`, was written in that order: a data file is never a directory.
+# whose FIRST argument is unnamed and an existing directory, and which does not
+# name `root`, was written in that order: a data file is never a directory,
+# and the old order put `root` first, as hvtiRdatabuild and hvtiRtemplates
+# still write `register_data(root, file = ...)`. A call that opens with a named
+# argument, such as `register_data(file = "x.csv", "valve")`, is read in the
+# new order, so an unnamed `dataset` or `key_cols` that happens to name a
+# directory is never taken for the root.
 # The argument is read by forcing the formal of `fn` it bound to, in `fenv`
 # (the caller's own frame), so it is evaluated exactly once however the call
 # is then read: a stateful root expression cannot name one study here and
@@ -90,7 +102,7 @@
 .hvti_root_first <- function(cl, env, fn, fenv) {
   if ("root" %in% names(.hvti_call_args(cl, env))) return(NULL)
   bound <- .hvti_positional_formals(cl, env, fn)
-  if (!length(bound)) return(NULL)
+  if (!length(bound) || nzchar(names(.hvti_call_args(cl, env))[[1L]])) return(NULL)
   value <- get(bound[[1L]], envir = fenv)
   if (is.character(value) && length(value) == 1L && !is.na(value) && dir.exists(value)) value else NULL
 }

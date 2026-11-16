@@ -18,7 +18,7 @@
 #'   directory, found by its `_study.yml`; outside a study the function
 #'   stops and writes nothing.
 #'   It comes last, after 2026-11; a call that passes an existing directory
-#'   as its first unnamed argument is read in the old, root-first order for
+#'   as its first argument, unnamed, is read in the old, root-first order for
 #'   one release, with a warning.
 #' @param file The working file's name in the datasets folder, with its extension.
 #' @param built The old name of `file`, before 2026-11. It still works,
@@ -48,7 +48,7 @@ declare_data <- function(file, key_cols = NULL, built = NULL, root = study_root(
   old_root <- .hvti_root_first(cl, env, declare_data, environment())
   if (!is.null(old_root)) {
     .hvti_deprecate("declare_data_root",
-                    "declare_data(): `root` is now the last argument. A first unnamed argument that is a ",
+                    "declare_data(): `root` is now the last argument. A first argument, unnamed, that is a ",
                     "directory is read as the root for one more release; pass root = by name.")
     return(.hvti_recall(cl, env, function(root, file, key, built) NULL, declare_data,
                         c(key = "key_cols"), forced = list(root = old_root)))
