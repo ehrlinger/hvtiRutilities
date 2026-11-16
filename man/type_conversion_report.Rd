@@ -7,15 +7,15 @@
 type_conversion_report(x)
 }
 \arguments{
-\item{x}{An object returned by \code{\link{r_data_types}}.}
+\item{x}{An object returned by \code{\link[=r_data_types]{r_data_types()}}.}
 }
 \value{
 A data frame with columns \code{variable}, \code{storage_in},
-  \code{rule}, \code{level_source}, \code{n_levels} and \code{storage_out},
-  one row per column of the converted dataset, in column order.
+\code{rule}, \code{level_source}, \code{n_levels} and \code{storage_out},
+one row per column of the converted dataset, in column order.
 }
 \description{
-Returns the record \code{\link{r_data_types}} attaches to its result: one
+Returns the record \code{\link[=r_data_types]{r_data_types()}} attaches to its result: one
 row per column, naming the rule that fired and where the levels came from.
 }
 \details{
@@ -26,19 +26,19 @@ apart.
 
 The columns are:
 \itemize{
-  \item \code{variable} -- the column name.
-  \item \code{storage_in} -- its class as received, before conversion.
-  \item \code{rule} -- one of \code{"value_labels"}, \code{"binary_logical"},
-    \code{"binary_factor"}, \code{"character_factor"},
-    \code{"n_distinct_factor"}, \code{"unchanged"} or \code{"skipped"}.
-    \code{"unchanged"} means every rule was tested and none fired;
-    \code{"skipped"} means the column was named in \code{skip_cols} and no
-    rule was tested.
-  \item \code{level_source} -- \code{"value labels"} where the levels came
-    from the column's own value labels, \code{"inference"} where they came
-    from counting distinct values, and \code{NA} where no levels were made.
-  \item \code{n_levels} -- levels produced, or \code{NA} for a non-factor.
-  \item \code{storage_out} -- the class of the returned column.
+\item \code{variable} -- the column name.
+\item \code{storage_in} -- its class as received, before conversion.
+\item \code{rule} -- one of \code{"value_labels"}, \code{"binary_logical"},
+\code{"binary_factor"}, \code{"character_factor"},
+\code{"n_distinct_factor"}, \code{"unchanged"} or \code{"skipped"}.
+\code{"unchanged"} means every rule was tested and none fired;
+\code{"skipped"} means the column was named in \code{skip_cols} and no
+rule was tested.
+\item \code{level_source} -- \code{"value labels"} where the levels came
+from the column's own value labels, \code{"inference"} where they came
+from counting distinct values, and \code{NA} where no levels were made.
+\item \code{n_levels} -- levels produced, or \code{NA} for a non-factor.
+\item \code{storage_out} -- the class of the returned column.
 }
 
 The report is an attribute of the returned object. Operations that rebuild
@@ -50,5 +50,5 @@ converted <- r_data_types(datasets::mtcars, use_value_labels = FALSE)
 type_conversion_report(converted)
 }
 \seealso{
-\code{\link{r_data_types}}
+\code{\link[=r_data_types]{r_data_types()}}
 }

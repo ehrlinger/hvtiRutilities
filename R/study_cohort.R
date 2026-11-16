@@ -8,33 +8,33 @@
 #' Counts rows for which both explicitly supplied event and time columns are
 #' present, and the events among them.
 #'
-#' The event column must be logical or numeric binary coding: \code{FALSE}/\code{TRUE}
-#' or \code{0}/\code{1}. Rows missing either column are excluded from the
+#' The event column must be logical or numeric binary coding: `FALSE`/`TRUE`
+#' or `0`/`1`. Rows missing either column are excluded from the
 #' analysable cohort.
 #'
 #' A zero or negative time is still counted, so the gate's numbers do not
-#' move, but it warns: \code{\link{followup_check}} flags the same rows for
+#' move, but it warns: [followup_check()] flags the same rows for
 #' review, and the two should not disagree in silence.
 #'
-#' @param data A data frame. Was \code{d} before 2026-11; \code{d =} still
+#' @param data A data frame. Was `d` before 2026-11; `d =` still
 #'   works for one release, with a warning.
-#' @param time_col Character scalar naming the time column. Was \code{time}
-#'   before 2026-11; \code{time =} still works for one release, with a warning.
+#' @param time_col Character scalar naming the time column. Was `time`
+#'   before 2026-11; `time =` still works for one release, with a warning.
 #' @param event_col Character scalar naming the binary event column. Was
-#'   \code{event} before 2026-11; \code{event =} still works for one release,
+#'   `event` before 2026-11; `event =` still works for one release,
 #'   with a warning.
 #'
 #' @section Argument order:
-#' \code{time_col, event_col}, as in \code{survival::Surv()}. Until 2026-11 the
-#' order was \code{event, time}, so a call passing both unnamed means opposite
-#' things in the two orders and is an error, whether or not \code{data} is
-#' named. Name them, \code{time_col =} and \code{event_col =}. One of the two
+#' `time_col, event_col`, as in `survival::Surv()`. Until 2026-11 the
+#' order was `event, time`, so a call passing both unnamed means opposite
+#' things in the two orders and is an error, whether or not `data` is
+#' named. Name them, `time_col =` and `event_col =`. One of the two
 #' unnamed reads the same in either order.
 #'
-#' @return A list with integer elements \code{n}, \code{n_events} and
-#'   \code{n_censored}.
+#' @return A list with integer elements `n`, `n_events` and
+#'   `n_censored`.
 #'
-#' @seealso \code{\link{assert_cohort}}
+#' @seealso [assert_cohort()]
 #'
 #' @export
 #'
@@ -109,29 +109,29 @@ cohort_counts <- function(data, time_col, event_col) {
 #' Assert the cohort matches a job-level expectation
 #'
 #' @description
-#' Compares \code{\link{cohort_counts}} against explicitly supplied expected
+#' Compares [cohort_counts()] against explicitly supplied expected
 #' counts and errors on any disagreement. Call it before any analysis that
 #' would otherwise run happily on an unreconciled cohort.
 #'
-#' @param data A data frame. Was \code{d} before 2026-11; \code{d =} still
+#' @param data A data frame. Was `d` before 2026-11; `d =` still
 #'   works for one release, with a warning.
-#' @param expected List containing nonnegative integer \code{n},
-#'   \code{n_events} and \code{n_censored}.
-#' @param time_col Character scalar naming the time column. Was \code{time}
-#'   before 2026-11; \code{time =} still works for one release, with a warning.
+#' @param expected List containing nonnegative integer `n`,
+#'   `n_events` and `n_censored`.
+#' @param time_col Character scalar naming the time column. Was `time`
+#'   before 2026-11; `time =` still works for one release, with a warning.
 #' @param event_col Character scalar naming the binary event column. Was
-#'   \code{event} before 2026-11; \code{event =} still works for one release,
+#'   `event` before 2026-11; `event =` still works for one release,
 #'   with a warning.
 #'
 #' @section Argument order:
-#' \code{time_col, event_col}, as in \code{survival::Surv()}; it was
-#' \code{event, time} until 2026-11. A call passing both unnamed is an error,
-#' since the two orders read it oppositely; name \code{time_col =} and
-#' \code{event_col =}.
+#' `time_col, event_col`, as in `survival::Surv()`; it was
+#' `event, time` until 2026-11. A call passing both unnamed is an error,
+#' since the two orders read it oppositely; name `time_col =` and
+#' `event_col =`.
 #'
-#' @return \code{invisible(TRUE)} on success; otherwise an error.
+#' @return `invisible(TRUE)` on success; otherwise an error.
 #'
-#' @seealso \code{\link{cohort_counts}}
+#' @seealso [cohort_counts()]
 #'
 #' @export
 #'

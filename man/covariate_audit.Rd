@@ -10,7 +10,7 @@ covariate_audit(data, var_cols, max_levels = 12L, vars)
 \item{data}{A data frame.}
 
 \item{var_cols}{Character vector of covariate names. Was \code{vars} before
-2026-11; \code{vars =} still works for one release, with a warning.}
+2026-11; \verb{vars =} still works for one release, with a warning.}
 
 \item{max_levels}{Integer. Columns with more distinct values than this are
 treated as continuous and their non-integer levels are reported as \code{NA}.}
@@ -19,14 +19,14 @@ treated as continuous and their non-integer levels are reported as \code{NA}.}
 }
 \value{
 A data frame with columns \code{variable}, \code{storage},
-  \code{n_levels},
+\code{n_levels},
 \code{noninteger_levels} and \code{action}. \code{noninteger_levels} reports
 \code{value (rows)} \strong{per level}: per level rather than as a total
 because the
-  total cannot distinguish a mean-imputed binary (one such level, in a
-  minority of rows) from an inverse transformation whose several non-integer
+total cannot distinguish a mean-imputed binary (one such level, in a
+minority of rows) from an inverse transformation whose several non-integer
 levels are ordinary data. A blank means "no such level"; \code{NA} means "not
-looked for". \code{action} is what \code{\link{covariates_to_numeric}} would
+looked for". \code{action} is what \code{\link[=covariates_to_numeric]{covariates_to_numeric()}} would
 do, and an
 \code{action} beginning \code{ERROR} marks a variable that must not be
 fitted.
@@ -39,9 +39,9 @@ make it silently.
 }
 \details{
 \strong{The problem this exists for.} \code{vars.sas} is commonly called as
-\code{\%vars(missing=1, impute=1)}, which mean-imputes missing values and
+\verb{\%vars(missing=1, impute=1)}, which mean-imputes missing values and
 adds a
-paired \code{ms_*} missing indicator. So a 0/1 clinical variable arrives
+paired \verb{ms_*} missing indicator. So a 0/1 clinical variable arrives
 carrying
 three distinct values: 0, 1, and the cohort mean. One real example:
 \code{hx_htn}'s third value is 0.714047, the prevalence of hypertension, not
@@ -50,7 +50,7 @@ patient's hypertension status.
 
 In SAS these columns are numeric and enter a model \strong{linearly}: an
 imputed
-row contributes the mean, and the \code{ms_*} indicator carries whatever the
+row contributes the mean, and the \verb{ms_*} indicator carries whatever the
 missingness itself is worth. That is the design the \code{.sas} job
 specifies.
 
@@ -74,7 +74,7 @@ That bound is also an honest statement of the limit. Mean imputation
 detectable in a discrete column, because the mean is not a value the column
 can legitimately take. In a continuous column it is invisible by construction
 -- an imputed mean looks exactly like a measured value -- and the paired
-\code{ms_*}
+\verb{ms_*}
 indicator is the only record that it happened. So \code{NA} in
 \code{noninteger_levels} means \strong{"not knowable here"}, not "none".
 }
@@ -84,5 +84,5 @@ d <- data.frame(hx_htn = factor(c("0", "1", "0.714047")),
 covariate_audit(d, c("hx_htn", "age"))
 }
 \seealso{
-\code{\link{covariates_to_numeric}}, \code{\link{imputed_levels}}
+\code{\link[=covariates_to_numeric]{covariates_to_numeric()}}, \code{\link[=imputed_levels]{imputed_levels()}}
 }

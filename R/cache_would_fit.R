@@ -1,53 +1,53 @@
 #' Would cache_fit() compute, or load?
 #'
-#' Answers, without computing anything, whether \code{\link{cache_fit}} called
+#' Answers, without computing anything, whether [cache_fit()] called
 #' with the same arguments would run its computation. A job uses it to guard a
 #' resource, memory or cores, only when a fit will actually run, rather than
 #' refusing a session for a fit it would simply load from the cache.
 #'
 #' @details
-#' The arguments are \code{cache_fit()}'s, with the same names, order and
-#' defaults, and none is dropped: \code{name} and \code{dir} locate the file,
-#' \code{code}, \code{seed} and \code{packages} make the key, and \code{refit}
+#' The arguments are `cache_fit()`'s, with the same names, order and
+#' defaults, and none is dropped: `name` and `dir` locate the file,
+#' `code`, `seed` and `packages` make the key, and `refit`
 #' decides what a stale or unkeyed file does. Write the call exactly as the
-#' \code{cache_fit()} call it guards, for example
-#' \code{cache_would_fit("forest", rfsrc(f, data = d), seed = 1)} before
-#' \code{cache_fit("forest", rfsrc(f, data = d), seed = 1)}. \code{code} is
-#' captured as \code{cache_fit()} captures it, by substitution, and is never
-#' evaluated: inline code and a variable holding a \code{\link[base]{quote}}d
-#' call both work, and an already-computed object is refused as it is there.
-#' The same rule about wrappers applies; see \code{\link{cache_fit}}.
+#' `cache_fit()` call it guards, for example
+#' `cache_would_fit("forest", rfsrc(f, data = d), seed = 1)` before
+#' `cache_fit("forest", rfsrc(f, data = d), seed = 1)`. `code` is
+#' captured as `cache_fit()` captures it, by substitution, and is never
+#' evaluated: inline code and a variable holding a call quoted with
+#' [base::quote()] both work, and an already-computed object is refused as it is there.
+#' The same rule about wrappers applies; see [cache_fit()].
 #'
-#' The answer comes from the same internal decision \code{cache_fit()} makes,
+#' The answer comes from the same internal decision `cache_fit()` makes,
 #' not from a copy of it, so the two cannot drift apart:
 #' \itemize{
-#'   \item no file: \code{TRUE};
-#'   \item a file whose key matches: \code{FALSE}, whatever \code{refit} is,
-#'     because a valid cache is loaded even under \code{refit = TRUE};
+#'   \item no file: `TRUE`;
+#'   \item a file whose key matches: `FALSE`, whatever `refit` is,
+#'     because a valid cache is loaded even under `refit = TRUE`;
 #'   \item a stale file (the code, an input, the seed or a package version
-#'     changed) or an unkeyed or unreadable file: \code{TRUE} with
-#'     \code{refit = TRUE}, and \code{FALSE} without it.
+#'     changed) or an unkeyed or unreadable file: `TRUE` with
+#'     `refit = TRUE`, and `FALSE` without it.
 #' }
-#' The last case is deliberate. Without \code{refit}, \code{cache_fit()} stops
+#' The last case is deliberate. Without `refit`, `cache_fit()` stops
 #' on a stale or unkeyed file before it computes anything, so nothing will run
 #' and there is nothing to guard; the error that follows is
-#' \code{cache_fit()}'s to raise, with the list of what changed. For the same
-#' reason, an existing file under \code{refit = FALSE} is not read at all,
+#' `cache_fit()`'s to raise, with the list of what changed. For the same
+#' reason, an existing file under `refit = FALSE` is not read at all,
 #' since every outcome there computes nothing.
 #'
-#' Arguments are checked as \code{cache_fit()} checks them, and a bad one
-#' raises the same error, naming \code{cache_fit()}, including a \code{dir}
-#' that does not exist. Under \code{refit = TRUE} an existing file is read to
+#' Arguments are checked as `cache_fit()` checks them, and a bad one
+#' raises the same error, naming `cache_fit()`, including a `dir`
+#' that does not exist. Under `refit = TRUE` an existing file is read to
 #' compare its key, so a matching fit is read here and again by
-#' \code{cache_fit()}.
+#' `cache_fit()`.
 #'
 #' @inheritParams cache_fit
 #'
-#' @return \code{TRUE} if \code{cache_fit()} with the same arguments would run
-#'   \code{code}, \code{FALSE} if it would load the cached result or stop on a
+#' @return `TRUE` if `cache_fit()` with the same arguments would run
+#'   `code`, `FALSE` if it would load the cached result or stop on a
 #'   stale or unkeyed file without computing.
 #'
-#' @seealso \code{\link{cache_fit}}
+#' @seealso [cache_fit()]
 #'
 #' @export
 #'

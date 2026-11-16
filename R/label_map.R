@@ -334,96 +334,96 @@
 #' Extracts variable labels from a labeled dataset and returns them as a
 #' data frame with variable names (keys) and their corresponding labels.
 #' This is particularly useful when working with SAS datasets that include
-#' variable labels, or any dataset labeled with the \code{labelled} package.
+#' variable labels, or any dataset labeled with the `labelled` package.
 #'
-#' A warning is issued when more than 50\% of columns carry no label at all.
+#' A warning is issued when more than 50% of columns carry no label at all.
 #' This typically indicates the data was imported from a source without labels
 #' (e.g., plain CSV) and labels should be supplied via
-#' \code{\link{add_labels}} or a \code{labels_overrides.yml} file (see
-#' \code{\link{apply_label_overrides}}). A variable whose real label happens
-#' to equal its own name does \strong{not} count towards the threshold: the
-#' absent label is read as \code{NA} rather than filled, so the two cases are
-#' distinguishable here even though \code{\link{proc_contents}} cannot tell
+#' [add_labels()] or a `labels_overrides.yml` file (see
+#' [apply_label_overrides()]). A variable whose real label happens
+#' to equal its own name does **not** count towards the threshold: the
+#' absent label is read as `NA` rather than filled, so the two cases are
+#' distinguishable here even though [proc_contents()] cannot tell
 #' them apart.
 #'
-#' Labels longer than \code{label_max} are cut for display. The cut breaks on
-#' a word boundary and is marked with \code{...}, and the source text is kept
-#' in \code{label_full} - truncation is a view, not a change to the data.
-#' \code{\link{dataset_schema}} deliberately has no such parameter: it records
+#' Labels longer than `label_max` are cut for display. The cut breaks on
+#' a word boundary and is marked with `...`, and the source text is kept
+#' in `label_full` - truncation is a view, not a change to the data.
+#' [dataset_schema()] deliberately has no such parameter: it records
 #' the label as the source carried it, because a schema sidecar outlives the
 #' source dataset.
 #'
-#' The variable-name fallback is \strong{exempt} from the cap. A name standing
+#' The variable-name fallback is **exempt** from the cap. A name standing
 #' in for a missing label passes through whole, however long, and
-#' \code{truncated} is \code{FALSE}. A truncated name would match nothing in
+#' `truncated` is `FALSE`. A truncated name would match nothing in
 #' the data and would read as a deliberately short label rather than as a
 #' missing one, destroying the signal the fallback exists to give.
 #'
-#' \strong{Labels that differ stay different.} Cutting each label on its own
+#' **Labels that differ stay different.** Cutting each label on its own
 #' can make two labels identical once their distinguishing ends are cut off.
-#' Within one map, labels that differ in \code{label_full} always differ in
-#' \code{label}. Each step below runs only on labels still over the cap or
+#' Within one map, labels that differ in `label_full` always differ in
+#' `label`. Each step below runs only on labels still over the cap or
 #' still colliding:
 #' \enumerate{
-#'   \item A heading, the text before the first \code{": "}, \code{" - "} or
-#'     \code{"; "}, shared by two or more labels, one of them over the cap, is
+#'   \item A heading, the text before the first `": "`, `" - "` or
+#'     `"; "`, shared by two or more labels, one of them over the cap, is
 #'     abbreviated in every label that carries it: to its entry in
-#'     \code{abbreviations}, or else to the initials of its words, skipping
-#'     small words such as "of" and "and". \code{"Surgical procedure"} becomes
-#'     \code{"SP"}. A one-word heading is left alone, and two headings with the
+#'     `abbreviations`, or else to the initials of its words, skipping
+#'     small words such as "of" and "and". `"Surgical procedure"` becomes
+#'     `"SP"`. A one-word heading is left alone, and two headings with the
 #'     same initials are neither abbreviated.
-#'   \item Any phrase in \code{abbreviations} is applied, whole words and
+#'   \item Any phrase in `abbreviations` is applied, whole words and
 #'     ignoring case, to a label still over the cap. A label that fits is never
 #'     abbreviated this way.
 #'   \item The label is cut on a word boundary and marked.
-#'   \item Cut labels that still collide keep both ends, \code{"Ascending aorta
-#'     ... plus arch"}.
+#'   \item Cut labels that still collide keep both ends, `"Ascending aorta
+#'     ... plus arch"`.
 #'   \item A label that still collides is shown whole, over the cap, and
-#'     \code{over_cap} marks it: a long label is a layout problem a reader can
+#'     `over_cap` marks it: a long label is a layout problem a reader can
 #'     see, two identical labels a wrong figure nobody can.
 #' }
-#' The abbreviations actually shown come back as the \code{abbreviations}
+#' The abbreviations actually shown come back as the `abbreviations`
 #' attribute, to print as a key beneath a figure or table, and per variable as
-#' the \code{abbreviations_by_key} attribute (\code{key}, \code{abbreviation},
-#' \code{expansion}), so a key under one section can list only what that
+#' the `abbreviations_by_key` attribute (`key`, `abbreviation`,
+#' `expansion`), so a key under one section can list only what that
 #' section's labels use.
 #'
 #' @param data A data frame, tibble, or similar object with variable labels
-#'   (typically created using the \code{labelled} package or imported from SAS).
+#'   (typically created using the `labelled` package or imported from SAS).
 #' @param label_max Maximum length of a displayed label, in characters,
-#'   including the \code{...} marker. Defaults to 40, the historical
+#'   including the `...` marker. Defaults to 40, the historical
 #'   convention. Must be at least 4, so that a cut always has room to be
-#'   marked; use \code{Inf} or \code{NA} to disable truncation. Does not
+#'   marked; use `Inf` or `NA` to disable truncation. Does not
 #'   apply to a variable name filled in for a missing label.
-#' @param abbreviations \code{NULL}, or a named character vector in which
+#' @param abbreviations `NULL`, or a named character vector in which
 #'   each name is a phrase and each value is that phrase's abbreviation:
-#'   \code{c("Left ventricular" = "LV")}. Used only on labels over the cap, and
-#'   for a shared heading in place of its initials. An \code{expansion}
-#'   attribute, as \code{\link{study_abbreviations}} returns, names the term
+#'   `c("Left ventricular" = "LV")`. Used only on labels over the cap, and
+#'   for a shared heading in place of its initials. An `expansion`
+#'   attribute, as [study_abbreviations()] returns, names the term
 #'   each abbreviation stands for in the key. A word-like abbreviation such as
-#'   \code{"Preop"} takes the case of the text it replaces.
+#'   `"Preop"` takes the case of the text it replaces.
 #'
-#' @return A data frame with five columns, and an \code{abbreviations}
-#'   attribute: a data frame of \code{abbreviation} and \code{expansion} for
+#' @return A data frame with five columns, and an `abbreviations`
+#'   attribute: a data frame of `abbreviation` and `expansion` for
 #'   every abbreviation the labels show, with no rows when there are none.
 #' \describe{
 #'   \item{key}{Character vector of variable names from the input dataset}
 #'   \item{label}{Character vector of labels fit to print: the variable label
-#'     cut to \code{label_max}, or the variable's own name where the source
+#'     cut to `label_max`, or the variable's own name where the source
 #'     carries no label}
 #'   \item{label_full}{The label as the source carried it, never truncated,
 #'     or the variable name where there is none}
-#'   \item{truncated}{Logical: \code{TRUE} where \code{label} was cut from
-#'     \code{label_full}. Always \code{FALSE} for a filled variable name.
-#'     \code{subset(x, truncated)} is the report of what was cut}
-#'   \item{over_cap}{Logical: \code{TRUE} where \code{label} is longer than
-#'     \code{label_max} because every shorter form collided with another
-#'     label. \code{subset(x, over_cap)} is the report}
+#'   \item{truncated}{Logical: `TRUE` where `label` was cut from
+#'     `label_full`. Always `FALSE` for a filled variable name.
+#'     `subset(x, truncated)` is the report of what was cut}
+#'   \item{over_cap}{Logical: `TRUE` where `label` is longer than
+#'     `label_max` because every shorter form collided with another
+#'     label. `subset(x, over_cap)` is the report}
 #' }
 #'
-#' @seealso \code{\link{get_label}} for looking up a single label,
-#'   \code{\link{add_labels}} for registering labels for derived variables,
-#'   \code{\link{apply_label_overrides}} for applying study-specific overrides
+#' @seealso [get_label()] for looking up a single label,
+#'   [add_labels()] for registering labels for derived variables,
+#'   [apply_label_overrides()] for applying study-specific overrides
 #'   from a YAML file.
 #'
 #' @export
@@ -513,11 +513,11 @@ label_map <- function(data, label_max = 40, abbreviations = NULL) {
 #'
 #' @description
 #' Returns the descriptive label for one variable name from a label map.
-#' This is a safer alternative to the manual \code{match()} pattern,
+#' This is a safer alternative to the manual `match()` pattern,
 #' providing clear errors on typos and missing variables.
 #'
-#' @param label_map_df A data frame with \code{key} and \code{label} columns,
-#'   as returned by \code{\link{label_map}}.
+#' @param label_map_df A data frame with `key` and `label` columns,
+#'   as returned by [label_map()].
 #' @param variable A single character string: the variable name to look up.
 #'
 #' @return A single character string: the label for the requested variable.
@@ -558,22 +558,22 @@ get_label <- function(label_map_df, variable) {
 #' Look up labels for multiple variables at once
 #'
 #' @description
-#' A vectorized companion to \code{\link{get_label}}. Returns a named character
+#' A vectorized companion to [get_label()]. Returns a named character
 #' vector of labels for one or more variable names, making it convenient to
 #' label axes, table columns, or multi-panel plots in a single call.
 #'
 #' Variables not found in the label map cause an error (just like
-#' \code{get_label}), so typos are caught immediately.
+#' `get_label`), so typos are caught immediately.
 #'
-#' @param label_map_df A data frame with \code{key} and \code{label} columns,
-#'   as returned by \code{\link{label_map}}.
+#' @param label_map_df A data frame with `key` and `label` columns,
+#'   as returned by [label_map()].
 #' @param variables A character vector of variable names to look up.
 #'
-#' @return A named character vector with names equal to \code{variables}
+#' @return A named character vector with names equal to `variables`
 #'   and values equal to the corresponding labels.
 #'
-#' @seealso \code{\link{get_label}} for single-variable lookup,
-#'   \code{\link{label_map}} to extract a label map from data.
+#' @seealso [get_label()] for single-variable lookup,
+#'   [label_map()] to extract a label map from data.
 #'
 #' @export
 #'
@@ -625,25 +625,25 @@ get_labels <- function(label_map_df, variables) {
 #' derived variables (e.g., ratios, binned groups, computed indices) that were
 #' not present in the original imported dataset.
 #'
-#' When \code{label_map_df} is a label map (a data frame with \code{key} and
-#' \code{label} columns), the map is updated and returned. When
-#' \code{label_map_df} is a regular data frame (any data frame without the
+#' When `label_map_df` is a label map (a data frame with `key` and
+#' `label` columns), the map is updated and returned. When
+#' `label_map_df` is a regular data frame (any data frame without the
 #' label map structure), labels are applied directly to the data using
-#' \code{labelled::var_label()}, which is the preferred approach because labels
-#' travel with the data through \code{dplyr} operations.
+#' `labelled::var_label()`, which is the preferred approach because labels
+#' travel with the data through `dplyr` operations.
 #'
-#' @param label_map_df A data frame with \code{key} and \code{label} columns
-#'   (as returned by \code{\link{label_map}}), \strong{or} any data frame
+#' @param label_map_df A data frame with `key` and `label` columns
+#'   (as returned by [label_map()]), **or** any data frame
 #'   to which labels should be applied directly.
 #' @param new_labels A named character vector where names are variable names
 #'   and values are descriptive labels.
 #'
 #' @return When given a label map: the updated label map data frame.
 #'   When given a data frame: the data frame with labels applied via
-#'   \code{labelled::var_label()}.
+#'   `labelled::var_label()`.
 #'
-#' @seealso \code{\link{label_map}} to extract a label map from data,
-#'   \code{\link{apply_label_overrides}} for bulk overrides from YAML.
+#' @seealso [label_map()] to extract a label map from data,
+#'   [apply_label_overrides()] for bulk overrides from YAML.
 #'
 #' @export
 #'
@@ -724,7 +724,7 @@ add_labels <- function(label_map_df, new_labels) {
 #'
 #' @description
 #' Reads label overrides from a YAML file and applies them to a label map
-#' \strong{or} directly to a data frame. This allows study-specific label
+#' **or** directly to a data frame. This allows study-specific label
 #' replacements (e.g., abbreviations, corrections) to be configured
 #' externally rather than hard-coded in analysis scripts.
 #'
@@ -732,24 +732,24 @@ add_labels <- function(label_map_df, new_labels) {
 #' If the file does not exist, the input is returned unchanged --- making
 #' it safe to call unconditionally in shared code.
 #'
-#' When \code{data} is a label map (a data frame with \code{key} and
-#' \code{label} columns), the overrides are applied to the map. When
-#' \code{data} is any other data frame, labels are applied directly to
-#' the data via \code{\link{add_labels}}, which is the preferred
+#' When `data` is a label map (a data frame with `key` and
+#' `label` columns), the overrides are applied to the map. When
+#' `data` is any other data frame, labels are applied directly to
+#' the data via [add_labels()], which is the preferred
 #' data-first workflow.
 #' In that mode a key naming a column the data does not have warns, as
-#' \code{\link{add_labels}} does; an overrides file shared by several
+#' [add_labels()] does; an overrides file shared by several
 #' datasets warns for each key the current one lacks.
 #'
-#' @param data A data frame: either a label map (with \code{key} and
-#'   \code{label} columns, as returned by \code{\link{label_map}}), or any
+#' @param data A data frame: either a label map (with `key` and
+#'   `label` columns, as returned by [label_map()]), or any
 #'   data frame whose columns should be labeled directly.
 #' @param overrides_file Path to a YAML file containing label overrides.
-#'   Defaults to \code{"labels_overrides.yml"} in the current working directory.
+#'   Defaults to `"labels_overrides.yml"` in the current working directory.
 #'
 #' @return When given a label map: the updated label map data frame.
 #'   When given a data frame: the data frame with labels applied via
-#'   \code{labelled::var_label()}.
+#'   `labelled::var_label()`.
 #'   In both cases, variables not mentioned in the YAML file are left
 #'   unchanged.
 #'
@@ -763,13 +763,13 @@ add_labels <- function(label_map_df, new_labels) {
 #' }
 #'
 #' This design keeps study-specific label customizations in configuration
-#' rather than code. Each study gets its own \code{labels_overrides.yml}
-#' in the directory the analysis runs from, usually beside \code{_study.yml},
+#' rather than code. Each study gets its own `labels_overrides.yml`
+#' in the directory the analysis runs from, usually beside `_study.yml`,
 #' and shared helper functions never contain
 #' hard-coded replacements.
 #'
-#' @seealso \code{\link{add_labels}} for programmatic label updates,
-#'   \code{\link{label_map}} for extracting labels from data.
+#' @seealso [add_labels()] for programmatic label updates,
+#'   [label_map()] for extracting labels from data.
 #'
 #' @export
 #'
@@ -818,14 +818,14 @@ apply_label_overrides <- function(data,
 #' Apply label overrides from a YAML file (deprecated)
 #'
 #' @description
-#' \strong{Deprecated.} Use \code{\link{apply_label_overrides}()} instead.
-#' \code{clean_labels()} has been renamed for clarity. This function is
+#' **Deprecated.** Use [apply_label_overrides()] instead.
+#' `clean_labels()` has been renamed for clarity. This function is
 #' kept as an alias for backward compatibility.
 #'
 #' @param label_map_df A data frame (label map or dataset) passed to
-#'   \code{\link{apply_label_overrides}}.
+#'   [apply_label_overrides()].
 #' @param overrides_file Path to a YAML file containing label overrides.
-#'   Defaults to \code{"labels_overrides.yml"}.
+#'   Defaults to `"labels_overrides.yml"`.
 #'
 #' @inherit apply_label_overrides return
 #'

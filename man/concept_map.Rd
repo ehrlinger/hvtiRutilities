@@ -11,13 +11,13 @@ concept_map(pool, prefer = character(0), aliases = character(0), ...)
 
 \item{prefer}{Named character vector \code{c(concept = variable)}.}
 
-\item{aliases}{Named character vector, as for \code{\link{concept_of}}.}
+\item{aliases}{Named character vector, as for \code{\link[=concept_of]{concept_of()}}.}
 
-\item{...}{Passed to \code{\link{concept_of}}.}
+\item{...}{Passed to \code{\link[=concept_of]{concept_of()}}.}
 }
 \value{
 A data frame with columns \code{variable}, \code{concept} and
-  \code{representative}, ordered by concept with the representative first.
+\code{representative}, ordered by concept with the representative first.
 }
 \description{
 One row per candidate: which concept it belongs to, and whether it is that
@@ -25,8 +25,7 @@ concept's representative. Returned rather than applied, so a caller can put
 the map in its report \strong{before} anything is discarded.
 }
 \details{
-\code{prefer} overrides which form represents a concept, as \code{c(concept =
-variable)}. \strong{The default is a modelling assumption, not a neutral
+\code{prefer} overrides which form represents a concept, as \code{c(concept = variable)}. \strong{The default is a modelling assumption, not a neutral
 choice:}
 keeping the plain form asserts the effect is linear in it. Measured on one
 study, \code{ln_crcl} selected in 43.8\% of replicates against 18.0\% for
@@ -39,5 +38,5 @@ into the report either way, so the choice is visible rather than implied.
 concept_map(c("age", "ln_age", "age2", "agee"))
 }
 \seealso{
-\code{\link{concept_of}}, \code{\link{prune_to_one_form}}
+\code{\link[=concept_of]{concept_of()}}, \code{\link[=prune_to_one_form]{prune_to_one_form()}}
 }

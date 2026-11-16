@@ -7,13 +7,13 @@
 sas_macro_signature(file)
 }
 \arguments{
-\item{file}{Character. Path to a `.sas` file.}
+\item{file}{Character. Path to a \code{.sas} file.}
 }
 \value{
 A one-row \code{data.frame} with columns \code{file},
-  \code{macro_name}, \code{short_desc}, \code{created_on},
-  \code{modified_on}, and \code{documented_call}. Absent fields are
-  \code{NA_character_}. \code{macro_name} is lowercased.
+\code{macro_name}, \code{short_desc}, \code{created_on},
+\code{modified_on}, and \code{documented_call}. Absent fields are
+\code{NA_character_}. \code{macro_name} is lowercased.
 }
 \description{
 Legacy CORR macros carry a structured comment block naming the macro, its
@@ -27,7 +27,7 @@ All fields are optional. A file with no header block yields a row of
 \code{NA}s rather than an error, because an undocumented macro is a normal
 occurrence in this corpus and not a defect.
 
-When several \code{MODIFIED BY} lines are present, the \strong{last} date is
+When several \verb{MODIFIED BY} lines are present, the \strong{last} date is
 returned. Note that this date is advisory evidence only; \code{sas_triage()}
 never uses it to choose between competing macro definitions.
 }

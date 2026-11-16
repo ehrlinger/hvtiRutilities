@@ -2,14 +2,14 @@
 #'
 #' @description
 #' One row per column: creation position, name, R class, SAS two-valued type,
-#' \code{format.sas} and label. This is the durable description of a source
+#' `format.sas` and label. This is the durable description of a source
 #' dataset — what a schema sidecar records, and what a later read is compared
 #' against.
 #'
 #' @details
-#' \code{label} and \code{format} are read from the column attributes directly
-#' and are \code{NA} when the source carries none. This is the difference from
-#' \code{\link{proc_contents}}, which fills an absent label with the variable's
+#' `label` and `format` are read from the column attributes directly
+#' and are `NA` when the source carries none. This is the difference from
+#' [proc_contents()], which fills an absent label with the variable's
 #' own name: right for a printed listing, wrong for a record that outlives the
 #' source dataset.
 #'
@@ -19,12 +19,12 @@
 #'
 #' @param data A data frame, tibble, or similar tabular object.
 #'
-#' @return A data frame with columns \code{num} (creation position, integer),
-#'   \code{variable}, \code{class} (first R class), \code{type}
-#'   (\code{"Num"}/\code{"Char"}), \code{format} (SAS format or \code{NA}) and
-#'   \code{label} (or \code{NA}).
+#' @return A data frame with columns `num` (creation position, integer),
+#'   `variable`, `class` (first R class), `type`
+#'   (`"Num"`/`"Char"`), `format` (SAS format or `NA`) and
+#'   `label` (or `NA`).
 #'
-#' @seealso \code{\link{proc_contents}} for a printable listing that also
+#' @seealso [proc_contents()] for a printable listing that also
 #'   summarises completeness.
 #'
 #' @export

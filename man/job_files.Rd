@@ -18,18 +18,18 @@ files would otherwise be counted twice under two study labels.}
 }
 \value{
 A data frame with one row per file and the columns \code{path},
-  \code{study}, \code{folder}, \code{status}, \code{depth}, \code{naming},
-  \code{prefix}, \code{is_template}, \code{qualifier1},
-  \code{qualifiers}, \code{n_qualifiers}, \code{stem}, \code{ext},
-  \code{prefix_class}, \code{folder_expected} and \code{folder_ok}.
-  The three qualifier columns carry the dot-fields of a \code{legacy}
-  name that lie between the prefix and the extension, or the trailing
-  qualifier field of a \code{scaffolded} name, and are \code{NA}
-  (count zero) for every other convention. They are named by position
-  because the second field means a different thing in each taxonomy
-  folder; see \code{\link{hvti_taxonomy}} and the design note referenced
-  in \file{R/job_names.R}.
-  Zero rows if the roots hold no files.
+\code{study}, \code{folder}, \code{status}, \code{depth}, \code{naming},
+\code{prefix}, \code{is_template}, \code{qualifier1},
+\code{qualifiers}, \code{n_qualifiers}, \code{stem}, \code{ext},
+\code{prefix_class}, \code{folder_expected} and \code{folder_ok}.
+The three qualifier columns carry the dot-fields of a \code{legacy}
+name that lie between the prefix and the extension, or the trailing
+qualifier field of a \code{scaffolded} name, and are \code{NA}
+(count zero) for every other convention. They are named by position
+because the second field means a different thing in each taxonomy
+folder; see \code{\link[=hvti_taxonomy]{hvti_taxonomy()}} and the design note referenced
+in \file{R/job_names.R}.
+Zero rows if the roots hold no files.
 }
 \description{
 Walks each root and returns one row per file. This is a filename-only
@@ -45,16 +45,16 @@ tooling: a path with a \code{.git} or \code{.checkpoint} component holds
 version-control internals or a study checkpoint's mirror, not study files,
 and is not listed.
 
-A \code{scaffolded} name, \code{<subject>-<type>-<prefix>[-<qualifier>].qmd}
+A \code{scaffolded} name, \verb{<subject>-<type>-<prefix>[-<qualifier>].qmd}
 as written by \code{hvtiRtemplates::add_job()}, is parsed with its
 qualifier. So is the template-first form,
-\code{<prefix>[.<qualifier>].<subject>.<type>.qmd}. The \code{-runner.R}
+\verb{<prefix>[.<qualifier>].<subject>.<type>.qmd}. The \code{-runner.R}
 (or \code{.runner.R}) that \code{add_job()} writes beside some reports
 takes the report's \code{stem}, so it counts as a file of that job rather
 than as a second job.
 
-A legacy prefix listed in \code{\link{hvti_prefix_folds}} is reported as
-the prefix it folds into, so a \code{pm.*} file counts as \code{lm}.
+A legacy prefix listed in \code{\link[=hvti_prefix_folds]{hvti_prefix_folds()}} is reported as
+the prefix it folds into, so a \verb{pm.*} file counts as \code{lm}.
 \code{stem} keeps the name as written, so a folded file stays findable.
 
 There is deliberately no extension allowlist. See
@@ -80,5 +80,5 @@ job_files(d)[, c("study", "folder", "prefix", "status")]
 unlink(d, recursive = TRUE)
 }
 \seealso{
-\code{\link{job_census}}, \code{\link{hvti_taxonomy}}
+\code{\link[=job_census]{job_census()}}, \code{\link[=hvti_taxonomy]{hvti_taxonomy()}}
 }

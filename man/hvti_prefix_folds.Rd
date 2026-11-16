@@ -11,7 +11,7 @@ A named character vector, \code{c(legacy = prefix)}.
 }
 \description{
 A legacy prefix that names the same job as a prefix in
-\code{\link{hvti_taxonomy}}, so a census counts its files under that
+\code{\link[=hvti_taxonomy]{hvti_taxonomy()}}, so a census counts its files under that
 prefix. \code{pm} folds into \code{lm}: a review of the job catalog on
 2026-09-11 found that the propensity work filed as \code{pm} belongs with
 the logistic models in \code{lm}.
@@ -26,5 +26,5 @@ and every value is present in it; the tests pin both.
 hvti_prefix_folds()
 }
 \seealso{
-\code{\link{job_files}}, which applies it.
+\code{\link[=job_files]{job_files()}}, which applies it.
 }

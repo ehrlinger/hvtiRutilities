@@ -13,14 +13,14 @@ study_dir(folder, root = study_root())
 }
 \value{
 Character(1). The resolved directory path. Its existence is not
-  required.
+required.
 }
 \description{
 Maps a logical study directory such as \code{"datasets"} to the numbered
 spelling used by new studies or the bare spelling retained by legacy
 studies. A root containing both layouts is an error. A root containing
 neither -- a new or empty study -- resolves to the numbered spelling, as
-\code{\link{study_setup}} lays one out.
+\code{\link[=study_setup]{study_setup()}} lays one out.
 }
 \examples{
 root <- file.path(tempdir(), "numbered-study-layout")
@@ -30,5 +30,5 @@ study_dir("datasets", root)
 unlink(root, recursive = TRUE)
 }
 \seealso{
-\code{\link{study_root}}, \code{\link{sas_path}}
+\code{\link[=study_root]{study_root()}}, \code{\link[=sas_path]{sas_path()}}
 }

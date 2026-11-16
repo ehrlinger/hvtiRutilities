@@ -9,51 +9,51 @@ generate_survival_data(n = 500, seed = 1024)
 \arguments{
 \item{n}{Integer. Number of patients to simulate. Default \code{500}.}
 
-\item{seed}{\code{NULL} or an integer passed to \code{\link{set.seed}}.
+\item{seed}{\code{NULL} or an integer passed to \code{\link[=set.seed]{set.seed()}}.
 Default \code{1024}. \code{NULL} draws from the caller's random number
 stream instead.}
 }
 \value{
 A \code{data.frame} with \code{n} rows and 24 columns:
 \describe{
-  \item{ccfid}{Character. Patient identifier (\code{"PT00001"}, …).}
-  \item{origin_year}{Integer. Calendar year corresponding to \code{iv_opyrs = 0}
-    (randomly sampled between 1998 and 2018).}
-  \item{iv_opyrs}{Numeric. Observation interval length in years measured
-    from \code{origin_year}; always greater than or equal to \code{iv_dead}.}
-  \item{iv_dead}{Numeric. Observed follow-up time in years (min of true
-    survival time and administrative censoring time).}
-  \item{dead}{Integer. Event indicator: \code{1} = death, \code{0} =
-    censored.}
-  \item{reop}{Integer. Reoperation indicator: \code{1} = yes,
-    \code{0} = no.}
-  \item{iv_reop}{Numeric. Time to reoperation (years); \code{NA} if no
-    reoperation.}
-  \item{age}{Numeric. Age at surgery in years (range 1–85).}
-  \item{sex}{Factor. \code{"Male"} / \code{"Female"} (55 / 45 \%).}
-  \item{bmi}{Numeric. Body mass index in kg/m² (range 15–50).}
-  \item{hgb_bs}{Numeric. Baseline hemoglobin in g/dL (range 6–18).}
-  \item{wbc_bs}{Numeric. Baseline WBC count in K/µL (range 1.5–20).}
-  \item{plate_bs}{Numeric. Baseline platelet count in K/µL (range 50–500).}
-  \item{gfr_bs}{Numeric. Baseline eGFR in mL/min/1.73 m² (range 10–120).}
-  \item{lvefvs_b}{Numeric. Baseline LV ejection fraction in \% (range
-    15–75).}
-  \item{lvmass_b}{Numeric. Baseline LV mass in g (range 60–400).}
-  \item{lvmsi_b}{Numeric. Baseline LV mass index in g/m² (range 40–220);
-    derived as \code{lvmass_b / (bmi * 0.5)}.}
-  \item{stvoli_b}{Numeric. Baseline systolic stroke-volume index in mL/m²
-    (range 20–110).}
-  \item{stvold_b}{Numeric. Baseline diastolic stroke-volume index in mL/m²
-    (range 40–180).}
-  \item{bypass_time}{Numeric. Cardiopulmonary bypass time in minutes
-    (range 20–240).}
-  \item{xclamp_time}{Numeric. Aortic cross-clamp time in minutes; sampled
-    as 50–75 \% of \code{bypass_time}.}
-  \item{nyha_class}{Ordered factor. NYHA functional class I–IV.}
-  \item{diabetes}{Factor. Diabetes mellitus: \code{"No"} / \code{"Yes"}
-    (75 / 25 \%).}
-  \item{hypertension}{Factor. Hypertension: \code{"No"} / \code{"Yes"}
-    (55 / 45 \%).}
+\item{ccfid}{Character. Patient identifier (\code{"PT00001"}, …).}
+\item{origin_year}{Integer. Calendar year corresponding to \code{iv_opyrs = 0}
+(randomly sampled between 1998 and 2018).}
+\item{iv_opyrs}{Numeric. Observation interval length in years measured
+from \code{origin_year}; always greater than or equal to \code{iv_dead}.}
+\item{iv_dead}{Numeric. Observed follow-up time in years (min of true
+survival time and administrative censoring time).}
+\item{dead}{Integer. Event indicator: \code{1} = death, \code{0} =
+censored.}
+\item{reop}{Integer. Reoperation indicator: \code{1} = yes,
+\code{0} = no.}
+\item{iv_reop}{Numeric. Time to reoperation (years); \code{NA} if no
+reoperation.}
+\item{age}{Numeric. Age at surgery in years (range 1–85).}
+\item{sex}{Factor. \code{"Male"} / \code{"Female"} (55 / 45 \%).}
+\item{bmi}{Numeric. Body mass index in kg/m² (range 15–50).}
+\item{hgb_bs}{Numeric. Baseline hemoglobin in g/dL (range 6–18).}
+\item{wbc_bs}{Numeric. Baseline WBC count in K/µL (range 1.5–20).}
+\item{plate_bs}{Numeric. Baseline platelet count in K/µL (range 50–500).}
+\item{gfr_bs}{Numeric. Baseline eGFR in mL/min/1.73 m² (range 10–120).}
+\item{lvefvs_b}{Numeric. Baseline LV ejection fraction in \% (range
+15–75).}
+\item{lvmass_b}{Numeric. Baseline LV mass in g (range 60–400).}
+\item{lvmsi_b}{Numeric. Baseline LV mass index in g/m² (range 40–220);
+derived as \code{lvmass_b / (bmi * 0.5)}.}
+\item{stvoli_b}{Numeric. Baseline systolic stroke-volume index in mL/m²
+(range 20–110).}
+\item{stvold_b}{Numeric. Baseline diastolic stroke-volume index in mL/m²
+(range 40–180).}
+\item{bypass_time}{Numeric. Cardiopulmonary bypass time in minutes
+(range 20–240).}
+\item{xclamp_time}{Numeric. Aortic cross-clamp time in minutes; sampled
+as 50–75 \% of \code{bypass_time}.}
+\item{nyha_class}{Ordered factor. NYHA functional class I–IV.}
+\item{diabetes}{Factor. Diabetes mellitus: \code{"No"} / \code{"Yes"}
+(75 / 25 \%).}
+\item{hypertension}{Factor. Hypertension: \code{"No"} / \code{"Yes"}
+(55 / 45 \%).}
 }
 }
 \description{
@@ -82,7 +82,7 @@ global stream is left where the simulation ended, as any seeded R code
 leaves it; set a seed again before later code that needs its own
 reproducible draws. With \code{seed = NULL} the function sets no seed and
 draws from the caller's stream, so
-\code{set.seed(s); generate_survival_data(seed = NULL)} reproduces
+\verb{set.seed(s); generate_survival_data(seed = NULL)} reproduces
 \code{generate_survival_data(seed = s)}.
 }
 \examples{
@@ -96,7 +96,7 @@ model_data <- dta[, !names(dta) \%in\% c("ccfid", "reop", "iv_reop",
   "origin_year", "iv_opyrs")]
 }
 \seealso{
-\code{\link[randomForestSRC]{rfsrc}},
-\code{\link[survival]{Surv}},
-\code{\link[haven]{read_sas}}
+\code{\link[randomForestSRC:rfsrc]{randomForestSRC::rfsrc()}},
+\code{\link[survival:Surv]{survival::Surv()}},
+\code{\link[haven:read_sas]{haven::read_sas()}}
 }

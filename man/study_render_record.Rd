@@ -17,7 +17,7 @@ study_render_record(
 \item{render_id}{Character(1). The render's identifier; names the record.}
 
 \item{commit}{Character(1). The 40-character commit from
-\code{\link{study_render_commit}} that the outputs print.}
+\code{\link[=study_render_commit]{study_render_commit()}} that the outputs print.}
 
 \item{job}{Character(1). The job rendered, relative to the study root.}
 
@@ -38,8 +38,8 @@ a figure copied into a manuscript can be traced after its job is rendered
 again.
 }
 \details{
-The record is written as \code{.hvti-renders/<render_id>.json} in a new
-commit on \code{refs/renders/<id>/records}, and every later record commit
+The record is written as \verb{.hvti-renders/<render_id>.json} in a new
+commit on \verb{refs/renders/<id>/records}, and every later record commit
 carries it, so the ref's tip holds every record. A \code{render_id} already
 recorded stops the call; a record is never replaced. The record names
 \code{commit}, \code{job}, the time, \code{extra} (typically the render's
@@ -77,5 +77,5 @@ if (nzchar(Sys.which("git"))) {
 }
 }
 \seealso{
-\code{\link{study_render_commit}}
+\code{\link[=study_render_commit]{study_render_commit()}}
 }

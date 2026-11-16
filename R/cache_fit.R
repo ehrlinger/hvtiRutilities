@@ -5,128 +5,128 @@
 #' result, and on later calls loads it instead of recomputing. The saved result
 #' is used only if nothing it was built from has changed: the code, every
 #' outside value the code reads, the versions of the packages its functions
-#' come from, and the seed. If anything changed, \code{cache_fit()} stops and
+#' come from, and the seed. If anything changed, `cache_fit()` stops and
 #' lists what changed. It never returns a stale result.
 #'
 #' @details
-#' \code{code} is not evaluated on a cache hit. It can be written inline, as a
+#' `code` is not evaluated on a cache hit. It can be written inline, as a
 #' single call or a \code{\{\}} block of several steps, or passed as a
-#' variable holding a \code{\link[base]{quote}}d call built beforehand. Both
+#' variable holding a call built beforehand with [base::quote()]. Both
 #' forms give the same key for the same computation. Passing an object that has
 #' already been computed is an error, because the cache could never skip it.
 #'
-#' \code{code} must be written in the call to \code{cache_fit()} itself. A
+#' `code` must be written in the call to `cache_fit()` itself. A
 #' wrapper function that forwards its own argument, e.g.
-#' \code{function(nm, expr) cache_fit(nm, expr)}, forces that argument's
-#' promise when it resolves \code{code}, so the value is already computed and
+#' `function(nm, expr) cache_fit(nm, expr)`, forces that argument's
+#' promise when it resolves `code`, so the value is already computed and
 #' the call is refused as already-computed. A wrapper should instead build and
-#' pass a quoted call, for example \code{cache_fit(nm, bquote(...))} or by
-#' passing \code{quote(...)} through.
+#' pass a quoted call, for example `cache_fit(nm, bquote(...))` or by
+#' passing `quote(...)` through.
 #'
 #' The code runs in a new environment whose parent is the caller's, so names
 #' assigned inside a block do not appear in the caller.
 #'
 #' The key digests each free variable of the code: a name bound by an
-#' assignment, a \code{function} formal, or a \code{for} index is local within
+#' assignment, a `function` formal, or a `for` index is local within
 #' that binding's scope, so a name that is also read free elsewhere in the
 #' code still counts as an input. Values read indirectly (inside the body of a
-#' function it calls, or through \code{get()}) are not seen; pass such values
+#' function it calls, or through `get()`) are not seen; pass such values
 #' into the code as arguments. The exception is a function defined in the
 #' global environment
-#' (as in a shared \code{_common.R}): its own body is part of the key, so
+#' (as in a shared `_common.R`): its own body is part of the key, so
 #' editing it invalidates a cache that calls it, even though values it in turn
 #' reads indirectly are still not seen. This reaches only one level deep: a
 #' global helper is part of the key only through its own body, not through the
 #' bodies of further helpers it in turn calls, so editing a callee of a helper
 #' does not invalidate a cache that calls the helper. For example, if
-#' \code{hA <- function(z) hB(z)} is defined globally and \code{hB}'s body is
-#' later edited, the key computed for code that calls \code{hA} is unchanged.
+#' `hA <- function(z) hB(z)` is defined globally and `hB`'s body is
+#' later edited, the key computed for code that calls `hA` is unchanged.
 #'
 #' The result is returned with its key attached as an attribute, and that
 #' attached key, not the object's own content, is what a downstream
-#' \code{cache_fit()} digests when this result is passed to it as an input.
+#' `cache_fit()` digests when this result is passed to it as an input.
 #' Mutating the returned object afterwards, for example
-#' \code{fit$coefficients <- ...}, is invisible to that downstream cache,
+#' `fit$coefficients <- ...`, is invisible to that downstream cache,
 #' because the attached key does not change to reflect the mutation. If a
 #' cached object is modified in place, strip its
-#' \code{hvtiRutilities_cache_key} attribute or re-wrap the result so a
+#' `hvtiRutilities_cache_key` attribute or re-wrap the result so a
 #' downstream cache is not fooled into treating it as unchanged.
 #'
 #' The attached-key short cut above applies only to a cached object passed
 #' directly as an input. A cached object wrapped inside a list, or a model
-#' object built outside \code{cache_fit()}, carries no such key and is
+#' object built outside `cache_fit()`, carries no such key and is
 #' digested whole instead; such objects can digest differently across
 #' sessions or platforms even when nothing meaningful about them changed.
-#' This shows up as a loud, classed \code{hvtiRutilities_stale_cache} error
+#' This shows up as a loud, classed `hvtiRutilities_stale_cache` error
 #' rather than a silently wrong cache hit, which is the safer failure mode,
 #' but is worth knowing about when a downstream cache goes stale for no
 #' apparent reason.
 #'
 #' The key records the version of the package that owns each function called
-#' in \code{code}, and no other. A wrapper is therefore keyed on itself only:
-#' \code{gg_partial_rfsrc(forest, ...)} records ggRandomForests, though
+#' in `code`, and no other. A wrapper is therefore keyed on itself only:
+#' `gg_partial_rfsrc(forest, ...)` records ggRandomForests, though
 #' randomForestSRC computes the partial dependence when it runs. An upgrade of
-#' randomForestSRC reaches that key only through \code{forest}'s own key,
+#' randomForestSRC reaches that key only through `forest`'s own key,
 #' which holds the version at fit time, not the version that runs now. Name
-#' such a package in \code{packages}, e.g.
-#' \code{packages = "randomForestSRC"}, and its version joins the key, so an
-#' upgrade makes the cache stale. Adding \code{packages} to an existing call
+#' such a package in `packages`, e.g.
+#' `packages = "randomForestSRC"`, and its version joins the key, so an
+#' upgrade makes the cache stale. Adding `packages` to an existing call
 #' makes its cache stale once, with the package reported as
-#' \code{(absent)} in the stored key. Base-priority packages are ignored, as
-#' they are for functions called in \code{code}.
+#' `(absent)` in the stored key. Base-priority packages are ignored, as
+#' they are for functions called in `code`.
 #'
-#' The computation must return a value; a result of \code{NULL} is an error,
+#' The computation must return a value; a result of `NULL` is an error,
 #' because there would be nothing to cache.
 #'
-#' When \code{seed} is given, \code{cache_fit()} calls \code{set.seed(seed)}
+#' When `seed` is given, `cache_fit()` calls `set.seed(seed)`
 #' before the code runs and again after it, even when it fails, and calls it
 #' once when the result is loaded instead. If the code changes the generator
-#' with \code{\link{RNGkind}}, the kinds in use when \code{cache_fit()} was
+#' with [RNGkind()], the kinds in use when `cache_fit()` was
 #' called are put back before that second call. A computed and a loaded result
 #' therefore leave the global random number stream in the same state, the one
-#' \code{set.seed(seed)} sets, so code after \code{cache_fit()} draws the
+#' `set.seed(seed)` sets, so code after `cache_fit()` draws the
 #' same numbers whether or not the cache was hit. Seed any later random step yourself rather than relying on
-#' that state. When \code{seed} is \code{NULL}, \code{cache_fit()} sets no
+#' that state. When `seed` is `NULL`, `cache_fit()` sets no
 #' seed: the code draws from the caller's stream, and a loaded result leaves
 #' the stream untouched. If that code consumes random numbers, the result is
 #' still saved, with a warning of class
-#' \code{hvtiRutilities_nonreproducible_fit}, and the key records
-#' \code{reproducible = FALSE}.
+#' `hvtiRutilities_nonreproducible_fit`, and the key records
+#' `reproducible = FALSE`.
 #'
 #' A stale file stops with an error of class
-#' \code{hvtiRutilities_stale_cache}; a file not written by \code{cache_fit()}
-#' stops with class \code{hvtiRutilities_unkeyed_cache}. Both are recomputed
-#' with \code{refit = TRUE}.
+#' `hvtiRutilities_stale_cache`; a file not written by `cache_fit()`
+#' stops with class `hvtiRutilities_unkeyed_cache`. Both are recomputed
+#' with `refit = TRUE`.
 #'
 #' The result is written to a temporary file and renamed into place, so an
-#' interrupted run never leaves a partial file. When \code{dir} lies inside a
+#' interrupted run never leaves a partial file. When `dir` lies inside a
 #' study, a provenance sidecar carrying the key and the completed cache file's
-#' hash is published with \code{\link{capture_provenance}} and
-#' \code{\link{publish_provenance}}. The cache records an explicit empty data
+#' hash is published with [capture_provenance()] and
+#' [publish_provenance()]. The cache records an explicit empty data
 #' list rather than inferring that the currently registered dataset was an
 #' input to the computation.
 #'
 #' @param name Character(1). File stem; the result is stored at
-#'   \code{file.path(dir, paste0(name, ".rds"))}.
+#'   `file.path(dir, paste0(name, ".rds"))`.
 #' @param code The computation: an inline call or \code{\{\}} block, or a
 #'   variable holding a quoted call.
-#' @param seed \code{NULL} or a single whole number.
+#' @param seed `NULL` or a single whole number.
 #' @param dir Character(1). An existing directory. Defaults to the estimates
 #'   folder of the study that contains the working directory, found by its
-#'   \code{_study.yml}; outside a study the function stops and writes nothing.
-#' @param refit Logical(1). \code{TRUE} recomputes and overwrites the file only
+#'   `_study.yml`; outside a study the function stops and writes nothing.
+#' @param refit Logical(1). `TRUE` recomputes and overwrites the file only
 #'   when it is stale or unkeyed; a valid cache is still loaded, not
-#'   recomputed, regardless of \code{refit}.
-#' @param packages \code{NULL} or a character vector of package names whose
+#'   recomputed, regardless of `refit`.
+#' @param packages `NULL` or a character vector of package names whose
 #'   versions are added to the key. Use it for a package that does the work
-#'   beneath a wrapper and so never appears in \code{code} itself; see
+#'   beneath a wrapper and so never appears in `code` itself; see
 #'   Details.
 #'
-#' @return The result of \code{code}, computed or loaded, with its key attached
-#'   as attribute \code{hvtiRutilities_cache_key}.
+#' @return The result of `code`, computed or loaded, with its key attached
+#'   as attribute `hvtiRutilities_cache_key`.
 #'
-#' @seealso \code{\link{capture_provenance}},
-#'   \code{\link{publish_provenance}}, \code{\link{study_dir}}
+#' @seealso [capture_provenance()],
+#'   [publish_provenance()], [study_dir()]
 #'
 #' @export
 #'

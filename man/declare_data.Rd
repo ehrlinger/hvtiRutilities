@@ -10,14 +10,14 @@ declare_data(file, key_cols = NULL, built = NULL, root = study_root())
 \item{file}{The working file's name in the datasets folder, with its extension.}
 
 \item{key_cols}{Columns that make a row unique, or \code{NULL} to leave
-\code{key:} unset. Was \code{key} before 2026-11; \code{key =} still
+\verb{key:} unset. Was \code{key} before 2026-11; \verb{key =} still
 works for one release, with a warning.}
 
 \item{built}{The old name of \code{file}, before 2026-11. It still works,
 with a warning, and will be removed in a later release.}
 
 \item{root}{The study root, or a directory beneath it. Defaults to the study that contains the working
-directory, found by its \code{_study.yml}; outside a study the function
+directory, found by its \verb{_study.yml}; outside a study the function
 stops and writes nothing.
 It comes last, after 2026-11; a call that passes an existing directory
 as its first argument, unnamed, is read in the old, root-first order for
@@ -25,22 +25,22 @@ one release, with a warning.}
 }
 \value{
 \code{TRUE}, invisibly, when the contract was written, or a
-  \code{key_cols} was added to a declaration that had none;
-  \code{FALSE}, invisibly, when \code{file} was already declared.
-  Stops when the study already declares a different file or a different key.
+\code{key_cols} was added to a declaration that had none;
+\code{FALSE}, invisibly, when \code{file} was already declared.
+Stops when the study already declares a different file or a different key.
 }
 \description{
-Writes the study dataset's contract, \code{built:} and \code{key:}, to
-\code{_study.yml}, and an empty \code{manifest.yaml} when the study has none.
+Writes the study dataset's contract, \verb{built:} and \verb{key:}, to
+\verb{_study.yml}, and an empty \code{manifest.yaml} when the study has none.
 It registers no version. The dataset is then known but has no registered
 version, so every read of it is a working read: allowed in the console and
 in a draft render, refused in a final one. Register it with
-\code{\link{update_manifest}()} when it is ready.
+\code{\link[=update_manifest]{update_manifest()}} when it is ready.
 }
 \details{
 A new study's first build needs this before any job can read it, because
-\code{\link{read_built}()} finds the file through the contract. The empty
-manifest is there because the templates call \code{\link{verify_manifest}()}
+\code{\link[=read_built]{read_built()}} finds the file through the contract. The empty
+manifest is there because the templates call \code{\link[=verify_manifest]{verify_manifest()}}
 before reading data, and that stops on a missing file. An existing manifest
 is left untouched. The \code{bd} template calls this on its first render
 with \code{REGISTER = FALSE}.

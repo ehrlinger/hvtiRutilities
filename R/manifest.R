@@ -55,27 +55,27 @@
 #' Create or update a dataset manifest file
 #'
 #' @description
-#' \strong{In a study}, run with no arguments after rebuilding a registered
-#' dataset: \code{update_manifest()}. It finds the study from the working
+#' **In a study**, run with no arguments after rebuilding a registered
+#' dataset: `update_manifest()`. It finds the study from the working
 #' directory, converts every registered dataset whose source file has changed
-#' to a new dated parquet (\code{<name>_YYYYMMDD.parquet}, or \code{_r2},
-#' \code{_r3} for another version on the same date), keeps every earlier
-#' version in an \code{_archive/} folder beside the source, records the change
-#' in \code{manifest.yaml}, and prints one line per dataset. Jobs read the new
+#' to a new dated parquet (`<name>_YYYYMMDD.parquet`, or `_r2`,
+#' `_r3` for another version on the same date), keeps every earlier
+#' version in an `_archive/` folder beside the source, records the change
+#' in `manifest.yaml`, and prints one line per dataset. Jobs read the new
 #' version from then on. Unchanged datasets are left
 #' alone. Datasets that are not combined are updated before the combined
 #' datasets built from them, and a combined dataset records its parents'
 #' versions when its own rebuilt source is registered. One whose parents have
 #' since been updated, or that records no parent versions, is listed as out of
 #' date in a message after the table until its source is rebuilt and
-#' \code{update_manifest()} is run again. Name one dataset with \code{dataset}.
-#' Release-aware datasets are skipped; use \code{\link{review_data_update}} and
-#' \code{\link{adopt_data_update}}. A key violation on one dataset stops the
+#' `update_manifest()` is run again. Name one dataset with `dataset`.
+#' Release-aware datasets are skipped; use [review_data_update()] and
+#' [adopt_data_update()]. A key violation on one dataset stops the
 #' whole run and leaves every dataset as it was.
 #'
-#' \strong{A single file}: \code{update_manifest(file, ...)} records a SHA-256
+#' **A single file**: `update_manifest(file, ...)` records a SHA-256
 #' checksum, row count, extract date and optional provenance fields for one
-#' file in a \code{manifest.yaml}. If the manifest already contains an entry
+#' file in a `manifest.yaml`. If the manifest already contains an entry
 #' for the named file it is updated in place; otherwise a new entry is
 #' appended. The manifest is intended to be committed to version control while
 #' the data files themselves are not. It refuses a file a study
@@ -83,69 +83,69 @@
 #' no-argument form for those. It also refuses one of those versions or its
 #' schema file, which is another dataset's registered data.
 #'
-#' Row counts are detected automatically for \strong{CSV} (\code{.csv}) files.
-#' For \strong{SAS} (\code{.sas7bdat}) and \strong{Excel} (\code{.xlsx},
-#' \code{.xls}) files, automatic row counting is considered "heavy" because it
+#' Row counts are detected automatically for **CSV** (`.csv`) files.
+#' For **SAS** (`.sas7bdat`) and **Excel** (`.xlsx`,
+#' `.xls`) files, automatic row counting is considered "heavy" because it
 #' loads the entire dataset/workbook into memory; it is therefore disabled by
 #' default and only performed when
-#' \code{options(manifest.allow_heavy_rowcount = TRUE)} is set.  For any other
-#' format, or when heavy counting is disabled, supply \code{n_rows}
+#' `options(manifest.allow_heavy_rowcount = TRUE)` is set.  For any other
+#' format, or when heavy counting is disabled, supply `n_rows`
 #' explicitly.
 #'
 #' @param file Character. Path to the dataset file. Omit it inside a study to
 #'   register every changed dataset; see the description.
 #' @param manifest_path Character. Path to the manifest YAML file.
-#'   Created if it does not exist. \code{NULL} (the default) writes the
-#'   enclosing study's \code{manifest.yaml} at its root, the manifest the
-#'   no-argument form and \code{\link{verify_manifest}} use, and only for a
+#'   Created if it does not exist. `NULL` (the default) writes the
+#'   enclosing study's `manifest.yaml` at its root, the manifest the
+#'   no-argument form and [verify_manifest()] use, and only for a
 #'   file in the study's datasets folder, where that manifest's entries are
 #'   resolved. Outside a study, or for a file anywhere else, there is no
 #'   default: name the manifest, or the call stops and writes nothing.
-#' @param extract_date Character or \code{Date}. The date the data were pulled
-#'   from the source system.  Stored as \code{"YYYY-MM-DD"}.  Defaults to
-#'   today's date. With no \code{file}, the date of the new version; defaults
+#' @param extract_date Character or `Date`. The date the data were pulled
+#'   from the source system.  Stored as `"YYYY-MM-DD"`.  Defaults to
+#'   today's date. With no `file`, the date of the new version; defaults
 #'   to the source file's modification date.
-#' @param n_rows Integer. Number of data rows.  When \code{NULL} (default) the
+#' @param n_rows Integer. Number of data rows.  When `NULL` (default) the
 #'   row count is detected automatically from CSV files, and from SAS/Excel
-#'   files only when \code{options(manifest.allow_heavy_rowcount = TRUE)} is
+#'   files only when `options(manifest.allow_heavy_rowcount = TRUE)` is
 #'   set.
 #'   all other file types supply this value explicitly.
 #' @param source Character. Free-text description of the data source (e.g.
-#'   \code{"Epic EMR, query v4.2, ICD mapping v3.2"}).
+#'   `"Epic EMR, query v4.2, ICD mapping v3.2"`).
 #' @param sort_key_cols Character. Column name(s) that define the canonical sort
-#'   order of the dataset, recorded as the entry's \code{sort_key}. Was \code{sort_key}
-#'   before 2026-11; \code{sort_key =} still works for one release, with a warning.
+#'   order of the dataset, recorded as the entry's `sort_key`. Was `sort_key`
+#'   before 2026-11; `sort_key =` still works for one release, with a warning.
 #' @param n_cols Integer. Column count. Pass it from a frame already read; a
 #'   row count alone cannot detect a dropped column.
 #' @param schema_sha256 Character. SHA-256 of this dataset's schema sidecar,
 #'   making the manifest-to-sidecar link tamper-evident.
-#' @param role Character, always \code{"source"}. This function only ever
-#'   writes \code{role = "source"} entries; a \code{role = "primary"}
-#'   (promoted) entry's \code{sha256} must describe its \strong{parquet}, not
+#' @param role Character, always `"source"`. This function only ever
+#'   writes `role = "source"` entries; a `role = "primary"`
+#'   (promoted) entry's `sha256` must describe its **parquet**, not
 #'   the source this function hashes, so calling it on a promoted entry would
 #'   write a manifest that can never verify. No exported function performs
-#'   promotion yet — the internal \code{.update_promoted_entry()} is what
-#'   maintains a promoted entry once one exists. See the \emph{Promotion}
+#'   promotion yet — the internal `.update_promoted_entry()` is what
+#'   maintains a promoted entry once one exists. See the *Promotion*
 #'   section of the read-layer design spec.
 #' @param reader Character. The package and version that produced this
-#'   derived file (e.g. \code{"haven 2.5.5"}). Under \code{role = "primary"}
+#'   derived file (e.g. `"haven 2.5.5"`). Under `role = "primary"`
 #'   the parquet is the data, so the reader that produced it is part of its
 #'   provenance: a reader defect found later is otherwise unfindable once the
-#'   source is retired. \code{NULL} (default) omits the field.
-#' @param verbose Logical. If \code{TRUE}, report which manifest entry was
-#'   added or updated via \code{\link[base]{message}}.  Defaults to
-#'   \code{FALSE} so that scripted or looped calls stay silent.
-#' @param dataset Character(1) or \code{NULL}. With no \code{file}: the one
-#'   registered dataset to update; \code{NULL} updates every one that changed.
-#'   \code{"built"} is a second name for \code{"study"}. Ignored when
-#'   \code{file} is given.
+#'   source is retired. `NULL` (default) omits the field.
+#' @param verbose Logical. If `TRUE`, report which manifest entry was
+#'   added or updated via [base::message()].  Defaults to
+#'   `FALSE` so that scripted or looped calls stay silent.
+#' @param dataset Character(1) or `NULL`. With no `file`: the one
+#'   registered dataset to update; `NULL` updates every one that changed.
+#'   `"built"` is a second name for `"study"`. Ignored when
+#'   `file` is given.
 #'
-#' @return With \code{file}, invisibly returns the updated manifest as a named
-#'   list. With no \code{file}, invisibly returns a data frame with one row per
-#'   dataset and columns \code{dataset}, \code{action} (\code{"registered"},
-#'   \code{"migrated"}, \code{"unchanged"}, \code{"skipped"} or
-#'   \code{"missing"}, for a source that is not on disk and has no registered
-#'   version) and \code{detail}.
+#' @return With `file`, invisibly returns the updated manifest as a named
+#'   list. With no `file`, invisibly returns a data frame with one row per
+#'   dataset and columns `dataset`, `action` (`"registered"`,
+#'   `"migrated"`, `"unchanged"`, `"skipped"` or
+#'   `"missing"`, for a source that is not on disk and has no registered
+#'   version) and `detail`.
 #'
 #' @examples
 #' dir <- file.path(tempdir(), "update-manifest-example")
@@ -160,7 +160,7 @@
 #' verify_manifest(manifest, verbose = TRUE)
 #' unlink(dir, recursive = TRUE)
 #'
-#' @seealso \code{\link{verify_manifest}}
+#' @seealso [verify_manifest()]
 #' @export
 update_manifest <- function(file,
                             manifest_path = NULL,
@@ -491,17 +491,17 @@ update_manifest <- function(file,
 #' Verify all datasets listed in a manifest
 #'
 #' @description
-#' Reads a \code{manifest.yaml} produced by \code{\link{update_manifest}} and,
+#' Reads a `manifest.yaml` produced by [update_manifest()] and,
 #' for every entry, confirms that (a) the file exists, (b) its SHA-256
 #' checksum matches the recorded value, and (c) its row count matches.
 #' Supported formats for automatic row-count verification: CSV
-#' (\code{.csv}), SAS (\code{.sas7bdat}), and Excel (\code{.xlsx},
-#' \code{.xls}).  For other file types the row-count check is skipped and
+#' (`.csv`), SAS (`.sas7bdat`), and Excel (`.xlsx`,
+#' `.xls`).  For other file types the row-count check is skipped and
 #' only the SHA-256 is verified.
 #'
 #' Re-deriving the row count of a SAS or Excel file means reading the whole
 #' file, so it only happens under
-#' \code{options(manifest.allow_heavy_rowcount = TRUE)}.  Without that option
+#' `options(manifest.allow_heavy_rowcount = TRUE)`.  Without that option
 #' the row count is skipped rather than failed, and the entry passes on its
 #' checksum, which is the stronger of the two checks.  A check that could not
 #' run is not a check that failed.  A file that cannot be read at all is a
@@ -516,63 +516,63 @@ update_manifest <- function(file,
 #' report distinguishes them rather than reporting all three as simply
 #' verified.  The count was compared; the count is recorded but was not
 #' re-derived; or the manifest records no count at all.  The
-#' \code{row_count_checked} column is \code{TRUE} only in the first case, and
+#' `row_count_checked` column is `TRUE` only in the first case, and
 #' the message names which of the three it was.  A build-record row (see
-#' below) sets \code{row_count_checked} to \code{TRUE} once its checksum is
+#' below) sets `row_count_checked` to `TRUE` once its checksum is
 #' verified, because a record has no row count.
 #'
-#' For a dataset registered with \code{\link{register_data}}, every registered
+#' For a dataset registered with [register_data()], every registered
 #' version (the current dated parquet and each earlier one) is checked, and its
 #' row count is re-derived from the parquet footer when the version records a
 #' count and the footer can be read. When either fails the entry can still
-#' pass, with \code{row_count_checked} \code{FALSE}; use \code{strict = TRUE}
+#' pass, with `row_count_checked` `FALSE`; use `strict = TRUE`
 #' to fail such an entry instead. A source file rebuilt since registration is
-#' reported with status \code{"PENDING"} and never stops: jobs keep reading the
-#' registered version until \code{\link{update_manifest}()} registers the new
+#' reported with status `"PENDING"` and never stops: jobs keep reading the
+#' registered version until [update_manifest()] registers the new
 #' one.
 #'
 #' Call this function at the top of every analysis script or Quarto document
 #' to ensure data integrity before any results are generated.
 #'
 #' @param manifest_path Character. Path to the manifest YAML file. Defaults to
-#'   the study's \code{manifest.yaml} when run inside a study (a
-#'   \code{_study.yml} here or above), and to \code{"manifest.yaml"} in the
+#'   the study's `manifest.yaml` when run inside a study (a
+#'   `_study.yml` here or above), and to `"manifest.yaml"` in the
 #'   working directory otherwise.
 #' @param data_dir Character. Directory holding the dataset files. When
-#'   supplied, it is used exactly as given. When \code{NULL} (default), the
-#'   manifest directory is inspected once. \code{00_datasets/} supports the
-#'   numbered layout created by \code{\link{study_setup}}, \code{datasets/}
+#'   supplied, it is used exactly as given. When `NULL` (default), the
+#'   manifest directory is inspected once. `00_datasets/` supports the
+#'   numbered layout created by [study_setup()], `datasets/`
 #'   supports an adopted legacy layout, and a manifest with neither uses its
 #'   own directory. Outside a study, an empty nested directory does not displace
 #'   files beside the manifest. Both dataset directories together are a mixed
 #'   layout and produce an error; entries never fall back between layouts.
-#' @param stop_on_error Logical. If \code{TRUE} (default) the function calls
-#'   \code{stop()} on the first failed check, preventing the analysis from
-#'   proceeding.  Set to \code{FALSE} to collect all errors and report them
+#' @param stop_on_error Logical. If `TRUE` (default) the function calls
+#'   `stop()` on the first failed check, preventing the analysis from
+#'   proceeding.  Set to `FALSE` to collect all errors and report them
 #'   together as a warning.
-#' @param verbose Logical. If \code{TRUE}, report each passing entry via
-#'   \code{\link[base]{message}}.  Defaults to \code{FALSE} so that scripted or
+#' @param verbose Logical. If `TRUE`, report each passing entry via
+#'   [base::message()].  Defaults to `FALSE` so that scripted or
 #'   looped calls stay silent; the same information is always available in the
-#'   returned data frame.  Failures are reported through \code{stop()} or
-#'   \code{warning()} regardless of this setting.
-#' @param strict Logical. If \code{TRUE}, an entry whose row count could not be
-#'   re-derived is reported as \code{"FAIL"} rather than passing on its
+#'   returned data frame.  Failures are reported through `stop()` or
+#'   `warning()` regardless of this setting.
+#' @param strict Logical. If `TRUE`, an entry whose row count could not be
+#'   re-derived is reported as `"FAIL"` rather than passing on its
 #'   checksum alone, and the message names which of the three causes applies:
 #'   no count recorded in the manifest, a file type whose rows cannot be
-#'   counted, or heavy row counting left disabled.  Defaults to \code{FALSE},
+#'   counted, or heavy row counting left disabled.  Defaults to `FALSE`,
 #'   which preserves the permissive behaviour described above.
 #'
 #'   Use it where the question is "did every check actually run", not "is the
 #'   data intact": a release gate, an archival gate, or a hand-off where a
-#'   downstream reader will treat \code{"OK"} as meaning fully verified. Under
-#'   the default, \code{"OK"} can mean "checksum verified, row count not
-#'   examined", and the \code{row_count_checked} column is the only thing that
+#'   downstream reader will treat `"OK"` as meaning fully verified. Under
+#'   the default, `"OK"` can mean "checksum verified, row count not
+#'   examined", and the `row_count_checked` column is the only thing that
 #'   distinguishes the two.
 #'
-#' @return Invisibly returns a data frame with columns \code{file},
-#'   \code{status} (\code{"OK"} or \code{"FAIL"}), \code{message}, and
-#'   \code{row_count_checked} (logical; \code{TRUE} when the row count was
-#'   re-derived from the file and compared with the manifest; also \code{TRUE}
+#' @return Invisibly returns a data frame with columns `file`,
+#'   `status` (`"OK"` or `"FAIL"`), `message`, and
+#'   `row_count_checked` (logical; `TRUE` when the row count was
+#'   re-derived from the file and compared with the manifest; also `TRUE`
 #'   for a build-record row whose checksum was verified, since a record has no
 #'   row count).
 #'
@@ -596,7 +596,7 @@ update_manifest <- function(file,
 #' report[, c("file", "status")]
 #' unlink(dir, recursive = TRUE)
 #'
-#' @seealso \code{\link{update_manifest}}
+#' @seealso [update_manifest()]
 #' @export
 verify_manifest <- function(manifest_path = .default_manifest_path(),
                             data_dir      = NULL,

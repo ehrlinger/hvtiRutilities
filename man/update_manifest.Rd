@@ -26,7 +26,7 @@ register every changed dataset; see the description.}
 \item{manifest_path}{Character. Path to the manifest YAML file.
 Created if it does not exist. \code{NULL} (the default) writes the
 enclosing study's \code{manifest.yaml} at its root, the manifest the
-no-argument form and \code{\link{verify_manifest}} use, and only for a
+no-argument form and \code{\link[=verify_manifest]{verify_manifest()}} use, and only for a
 file in the study's datasets folder, where that manifest's entries are
 resolved. Outside a study, or for a file anywhere else, there is no
 default: name the manifest, or the call stops and writes nothing.}
@@ -50,7 +50,7 @@ row count alone cannot detect a dropped column.}
 
 \item{sort_key_cols}{Character. Column name(s) that define the canonical sort
 order of the dataset, recorded as the entry's \code{sort_key}. Was \code{sort_key}
-before 2026-11; \code{sort_key =} still works for one release, with a warning.}
+before 2026-11; \verb{sort_key =} still works for one release, with a warning.}
 
 \item{schema_sha256}{Character. SHA-256 of this dataset's schema sidecar,
 making the manifest-to-sidecar link tamper-evident.}
@@ -71,7 +71,7 @@ provenance: a reader defect found later is otherwise unfindable once the
 source is retired. \code{NULL} (default) omits the field.}
 
 \item{verbose}{Logical. If \code{TRUE}, report which manifest entry was
-added or updated via \code{\link[base]{message}}.  Defaults to
+added or updated via \code{\link[base:message]{base::message()}}.  Defaults to
 \code{FALSE} so that scripted or looped calls stay silent.}
 
 \item{dataset}{Character(1) or \code{NULL}. With no \code{file}: the one
@@ -81,19 +81,19 @@ registered dataset to update; \code{NULL} updates every one that changed.
 }
 \value{
 With \code{file}, invisibly returns the updated manifest as a named
-  list. With no \code{file}, invisibly returns a data frame with one row per
-  dataset and columns \code{dataset}, \code{action} (\code{"registered"},
-  \code{"migrated"}, \code{"unchanged"}, \code{"skipped"} or
-  \code{"missing"}, for a source that is not on disk and has no registered
-  version) and \code{detail}.
+list. With no \code{file}, invisibly returns a data frame with one row per
+dataset and columns \code{dataset}, \code{action} (\code{"registered"},
+\code{"migrated"}, \code{"unchanged"}, \code{"skipped"} or
+\code{"missing"}, for a source that is not on disk and has no registered
+version) and \code{detail}.
 }
 \description{
 \strong{In a study}, run with no arguments after rebuilding a registered
 dataset: \code{update_manifest()}. It finds the study from the working
 directory, converts every registered dataset whose source file has changed
-to a new dated parquet (\code{<name>_YYYYMMDD.parquet}, or \code{_r2},
-\code{_r3} for another version on the same date), keeps every earlier
-version in an \code{_archive/} folder beside the source, records the change
+to a new dated parquet (\verb{<name>_YYYYMMDD.parquet}, or \verb{_r2},
+\verb{_r3} for another version on the same date), keeps every earlier
+version in an \verb{_archive/} folder beside the source, records the change
 in \code{manifest.yaml}, and prints one line per dataset. Jobs read the new
 version from then on. Unchanged datasets are left
 alone. Datasets that are not combined are updated before the combined
@@ -102,8 +102,8 @@ versions when its own rebuilt source is registered. One whose parents have
 since been updated, or that records no parent versions, is listed as out of
 date in a message after the table until its source is rebuilt and
 \code{update_manifest()} is run again. Name one dataset with \code{dataset}.
-Release-aware datasets are skipped; use \code{\link{review_data_update}} and
-\code{\link{adopt_data_update}}. A key violation on one dataset stops the
+Release-aware datasets are skipped; use \code{\link[=review_data_update]{review_data_update()}} and
+\code{\link[=adopt_data_update]{adopt_data_update()}}. A key violation on one dataset stops the
 whole run and leaves every dataset as it was.
 
 \strong{A single file}: \code{update_manifest(file, ...)} records a SHA-256
@@ -140,5 +140,5 @@ unlink(dir, recursive = TRUE)
 
 }
 \seealso{
-\code{\link{verify_manifest}}
+\code{\link[=verify_manifest]{verify_manifest()}}
 }

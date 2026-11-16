@@ -15,13 +15,13 @@ pool_collinear_pairs(data, pool, threshold = 0.99)
 }
 \value{
 A data frame with columns \code{var1}, \code{var2}, \code{r} and
-  \code{complement},
+\code{complement},
 ordered by decreasing \code{abs(r)}. Empty when the pool is clean, so the
 caller
-  decides whether to warn, fail, or print it.
+decides whether to warn, fail, or print it.
 }
 \description{
-\strong{What this catches that pruning cannot.} \code{\link{concept_map}}
+\strong{What this catches that pruning cannot.} \code{\link[=concept_map]{concept_map()}}
 groups
 \emph{transformations}, by stripping a known affix and finding the parent.
 Two
@@ -57,5 +57,5 @@ d <- data.frame(male = c(1, 0, 1, 0), female = c(0, 1, 0, 1),
 pool_collinear_pairs(d, c("male", "female", "age"))
 }
 \seealso{
-\code{\link{concept_map}}, \code{\link{prune_to_one_form}}
+\code{\link[=concept_map]{concept_map()}}, \code{\link[=prune_to_one_form]{prune_to_one_form()}}
 }

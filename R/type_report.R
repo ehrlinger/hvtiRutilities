@@ -44,43 +44,43 @@
 #' Read the per-column type-conversion report
 #'
 #' @description
-#' Returns the record \code{\link{r_data_types}} attaches to its result: one
+#' Returns the record [r_data_types()] attaches to its result: one
 #' row per column, naming the rule that fired and where the levels came from.
 #'
 #' @details
-#' A column that became a factor because it was \emph{declared} one, and a
+#' A column that became a factor because it was *declared* one, and a
 #' column that became a factor because it happened to have seven distinct
 #' values, are otherwise the same object. This is how a caller tells them
 #' apart.
 #'
 #' The columns are:
 #' \itemize{
-#'   \item \code{variable} -- the column name.
-#'   \item \code{storage_in} -- its class as received, before conversion.
-#'   \item \code{rule} -- one of \code{"value_labels"}, \code{"binary_logical"},
-#'     \code{"binary_factor"}, \code{"character_factor"},
-#'     \code{"n_distinct_factor"}, \code{"unchanged"} or \code{"skipped"}.
-#'     \code{"unchanged"} means every rule was tested and none fired;
-#'     \code{"skipped"} means the column was named in \code{skip_cols} and no
+#'   \item `variable` -- the column name.
+#'   \item `storage_in` -- its class as received, before conversion.
+#'   \item `rule` -- one of `"value_labels"`, `"binary_logical"`,
+#'     `"binary_factor"`, `"character_factor"`,
+#'     `"n_distinct_factor"`, `"unchanged"` or `"skipped"`.
+#'     `"unchanged"` means every rule was tested and none fired;
+#'     `"skipped"` means the column was named in `skip_cols` and no
 #'     rule was tested.
-#'   \item \code{level_source} -- \code{"value labels"} where the levels came
-#'     from the column's own value labels, \code{"inference"} where they came
-#'     from counting distinct values, and \code{NA} where no levels were made.
-#'   \item \code{n_levels} -- levels produced, or \code{NA} for a non-factor.
-#'   \item \code{storage_out} -- the class of the returned column.
+#'   \item `level_source` -- `"value labels"` where the levels came
+#'     from the column's own value labels, `"inference"` where they came
+#'     from counting distinct values, and `NA` where no levels were made.
+#'   \item `n_levels` -- levels produced, or `NA` for a non-factor.
+#'   \item `storage_out` -- the class of the returned column.
 #' }
 #'
 #' The report is an attribute of the returned object. Operations that rebuild
 #' a data frame -- most \pkg{dplyr} verbs among them -- drop it. Read it
-#' directly from the \code{r_data_types()} result.
+#' directly from the `r_data_types()` result.
 #'
-#' @param x An object returned by \code{\link{r_data_types}}.
+#' @param x An object returned by [r_data_types()].
 #'
-#' @return A data frame with columns \code{variable}, \code{storage_in},
-#'   \code{rule}, \code{level_source}, \code{n_levels} and \code{storage_out},
+#' @return A data frame with columns `variable`, `storage_in`,
+#'   `rule`, `level_source`, `n_levels` and `storage_out`,
 #'   one row per column of the converted dataset, in column order.
 #'
-#' @seealso \code{\link{r_data_types}}
+#' @seealso [r_data_types()]
 #'
 #' @export type_conversion_report
 #'

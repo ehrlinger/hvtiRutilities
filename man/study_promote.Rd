@@ -11,27 +11,27 @@ study_promote(study_tracker_id, start = ".")
 integer.}
 
 \item{start}{A directory in the study. The study is found as by
-\code{\link{study_config}}.}
+\code{\link[=study_config]{study_config()}}.}
 }
 \value{
 The number of checkpoint entries rewritten, invisibly; the
-  \code{study_promoted} checkpoint is not counted. A rerun
-  after an interrupted promotion rewrites the entries again, and the
-  provisional ID already recorded is kept. A study that is already
-  promoted, or whose \file{_study.yml} still has a legacy \code{st_id}
-  key, is refused, as is one whose checkpoint repository is not on
-  \code{main}. A rerun with a different ID rewrites every entry to it.
+\code{study_promoted} checkpoint is not counted. A rerun
+after an interrupted promotion rewrites the entries again, and the
+provisional ID already recorded is kept. A study that is already
+promoted, or whose \file{_study.yml} still has a legacy \code{st_id}
+key, is refused, as is one whose checkpoint repository is not on
+\code{main}. A rerun with a different ID rewrites every entry to it.
 }
 \description{
 An exploration set up with \code{study_setup(derived_from = )} has a
 \code{provisional_id} and no Study Tracker ID of its own. Once the Tracker
 has registered it, \code{study_promote()} writes that ID into
-\code{_study.yml} and removes \code{provisional_id}. \code{derived_from}
+\verb{_study.yml} and removes \code{provisional_id}. \code{derived_from}
 and \code{workspace_id} stay, so the lineage to the parent study is kept.
 When the study has a checkpoint repository and a remote, the checkpoints
 held locally while the study was provisional are delivered at once, with
 the \code{study_promoted} checkpoint described below, and
-\code{\link{study_checkpoint_push}} retries anything still pending; their
+\code{\link[=study_checkpoint_push]{study_checkpoint_push()}} retries anything still pending; their
 tags are unchanged. Checkpoint commits and tag messages made while the study was provisional
 keep the provisional ID; they are pushed unchanged.
 }
@@ -42,7 +42,7 @@ study, tagged \code{study_promoted}, and delivers it with the held
 checkpoints, printing the usual delivery messages, so the promoted
 \file{_study.yml} reaches the remote and a second copy of the study reads
 it as promoted. Without a remote it stays pending until
-\code{\link{study_checkpoint_push}}. A study with no checkpoint repository
+\code{\link[=study_checkpoint_push]{study_checkpoint_push()}}. A study with no checkpoint repository
 yet takes no snapshot; its first checkpoint carries the promoted manifest.
 With a repository, git must be available and the \code{study_promoted}
 kind must not be retired; both are checked before anything is written.
@@ -67,5 +67,5 @@ study_promote(2L, start = root)
 unlink(root, recursive = TRUE)
 }
 \seealso{
-\code{\link{study_setup}}, \code{\link{study_update_identity}}
+\code{\link[=study_setup]{study_setup()}}, \code{\link[=study_update_identity]{study_update_identity()}}
 }

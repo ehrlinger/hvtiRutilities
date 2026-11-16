@@ -7,7 +7,7 @@
 built_path(cfg = study_config(), dataset = "study")
 }
 \arguments{
-\item{cfg}{List. A study manifest from \code{\link{study_config}}.}
+\item{cfg}{List. A study manifest from \code{\link[=study_config]{study_config()}}.}
 
 \item{dataset}{Character(1). Logical dataset name. Defaults to
 \code{"study"}. \code{"built"} is a second name for \code{"study"}.}
@@ -31,5 +31,5 @@ built_path(study_config(root))
 unlink(root, recursive = TRUE)
 }
 \seealso{
-\code{\link{built_manifest}}, \code{\link{read_built}}
+\code{\link[=built_manifest]{built_manifest()}}, \code{\link[=read_built]{read_built()}}
 }

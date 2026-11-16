@@ -408,125 +408,125 @@
 #' Set up study identity and directories
 #'
 #' @description
-#' The usual entry point is \code{hvtiR::setup()}. Creates the numbered directory structure for a new study and writes an
-#' identity-only \code{_study.yml}. With \code{adopt = TRUE}, an existing
+#' The usual entry point is `hvtiR::setup()`. Creates the numbered directory structure for a new study and writes an
+#' identity-only `_study.yml`. With `adopt = TRUE`, an existing
 #' study keeps its legacy or numbered directory layout and every existing
 #' initialization file.
 #'
-#' Data are deliberately not required. Call \code{\link{register_data}} after
+#' Data are deliberately not required. Call [register_data()] after
 #' the default or a named dataset exists.
 #'
-#' When the root holds no \code{.Rproj} file, one named for the root
+#' When the root holds no `.Rproj` file, one named for the root
 #' directory is written, so that opening the project and
-#' \code{\link{study_root}} agree on the study root. An existing project is
+#' [study_root()] agree on the study root. An existing project is
 #' left unchanged.
 #'
-#' With \code{cleanup = TRUE}, the template copies a legacy study carries are
+#' With `cleanup = TRUE`, the template copies a legacy study carries are
 #' deleted before anything else reads the study, anywhere in it: every file
-#' whose name starts with \code{tp.}, every \code{binder.summaries.doc}, and
+#' whose name starts with `tp.`, every `binder.summaries.doc`, and
 #' every other file whose name and exact content match a file in the template
-#' corpus at \code{template_dir}. A study's own file that shares a name with a
-#' corpus file but differs from it (an edited \code{references.bib}, say) is
-#' kept, as are \code{.renvignore} and \code{.gitignore}. These files are
+#' corpus at `template_dir`. A study's own file that shares a name with a
+#' corpus file but differs from it (an edited `references.bib`, say) is
+#' kept, as are `.renvignore` and `.gitignore`. These files are
 #' copied in when a study is created, months before any analysis, and the
 #' corpus they came from is kept centrally, so no backup is made. A folder
 #' the deletions leave holding nothing (desktop litter such as
-#' \code{Thumbs.db} aside) is removed, whatever its name, as is an empty
-#' \code{templates} or \code{old_RF_templates*} folder; a folder still holding
+#' `Thumbs.db` aside) is removed, whatever its name, as is an empty
+#' `templates` or `old_RF_templates*` folder; a folder still holding
 #' other files stays, as does one holding any folder the cleanup did not
 #' empty, and a top-level study folder is never removed. Symbolic links are
-#' neither followed nor deleted, and folders named \code{.git},
-#' \code{.checkpoint} or \code{renv} are never entered, at any depth. The
-#' root and \code{template_dir} must not overlap. A file or folder that cannot
-#' be deleted is warned about and listed in the \code{"cleanup"} attribute's
-#' \code{left}; setup goes on. With no template corpus at \code{template_dir},
+#' neither followed nor deleted, and folders named `.git`,
+#' `.checkpoint` or `renv` are never entered, at any depth. The
+#' root and `template_dir` must not overlap. A file or folder that cannot
+#' be deleted is warned about and listed in the `"cleanup"` attribute's
+#' `left`; setup goes on. With no template corpus at `template_dir`,
 #' cleanup is skipped with a warning.
 #'
-#' With \code{renv = TRUE}, the study's \code{renv} environment is set up
+#' With `renv = TRUE`, the study's `renv` environment is set up
 #' after any cleanup, in a separate R process. A complete environment is
-#' kept: a \code{renv/} folder holding \code{activate.R}, a \code{.Rprofile}
-#' that sources it, and a \code{renv.lock} that parses as a lockfile. One
+#' kept: a `renv/` folder holding `activate.R`, a `.Rprofile`
+#' that sources it, and a `renv.lock` that parses as a lockfile. One
 #' interrupted after initialization (no lockfile yet) is resumed at the
-#' snapshot. A sound \code{renv.lock} whose \code{renv/activate.R} or
-#' \code{.Rprofile} line is missing is repaired with
-#' \code{renv::activate()}, which leaves the lock unchanged. Every package
-#' the lock records is declared in \code{DESCRIPTION} first, so the next
+#' snapshot. A sound `renv.lock` whose `renv/activate.R` or
+#' `.Rprofile` line is missing is repaired with
+#' `renv::activate()`, which leaves the lock unchanged. Every package
+#' the lock records is declared in `DESCRIPTION` first, so the next
 #' snapshot keeps them, and a lock recorded under another R major.minor
-#' still needs \code{r_upgrade = TRUE}. A lock is sound only with an R
-#' version that parses as at least major.minor, and a \code{Packages} object
-#' whose every record gives its own name as \code{Package}, a \code{Version}
-#' and a \code{Source}. Any other partial
+#' still needs `r_upgrade = TRUE`. A lock is sound only with an R
+#' version that parses as at least major.minor, and a `Packages` object
+#' whose every record gives its own name as `Package`, a `Version`
+#' and a `Source`. Any other partial
 #' or invalid environment stops with an error.
-#' Otherwise the study \code{DESCRIPTION} is written (see
-#' \code{\link{study_declare}}), \code{renv::init(bare = TRUE)} creates the
+#' Otherwise the study `DESCRIPTION` is written (see
+#' [study_declare()]), `renv::init(bare = TRUE)` creates the
 #' environment, and the project is loaded and snapshotted explicitly in
-#' explicit mode, so \code{renv.lock} comes from the \code{DESCRIPTION} and
-#' not from a scan of the study's code. The study's \code{renv} does not use
-#' a per-user package cache (\code{use.cache} is \code{FALSE} in
-#' \code{renv/settings.json}), because the library is shared by the team and
+#' explicit mode, so `renv.lock` comes from the `DESCRIPTION` and
+#' not from a scan of the study's code. The study's `renv` does not use
+#' a per-user package cache (`use.cache` is `FALSE` in
+#' `renv/settings.json`), because the library is shared by the team and
 #' links into one person's cache that others cannot read break their installs.
 #' The renv package must be installed.
 #'
 #' @param root Character. Study root to create or adopt. When omitted, the
-#'   study enclosing the working directory (found as \code{\link{study_root}}
+#'   study enclosing the working directory (found as [study_root()]
 #'   finds it) is used. Outside a study there is no default:
-#'   \code{study_setup()} stops and writes nothing, so a new study always names
-#'   its directory. Use \code{root = "."} with \code{adopt = TRUE} to set up
+#'   `study_setup()` stops and writes nothing, so a new study always names
+#'   its directory. Use `root = "."` with `adopt = TRUE` to set up
 #'   the current folder.
 #' @param study Character(1). Study title.
 #' @param study_tracker_id The Study Tracker ID, an integer. Give this or
-#'   \code{derived_from}, not both.
+#'   `derived_from`, not both.
 #' @param umbrella,owner,irb_number,cvir_no Optional identity values.
 #' @param study_creation_date Optional Study Tracker creation date.
 #' @param adopt Logical. Permit additive setup in an existing root. When the
-#'   root already holds a \code{_study.yml} for the same Study Tracker ID and
-#'   the session is interactive, \code{study_setup()} asks whether to adopt it
+#'   root already holds a `_study.yml` for the same Study Tracker ID and
+#'   the session is interactive, `study_setup()` asks whether to adopt it
 #'   instead of stopping.
 #' @param identity_source Character(1). Where the identity values came
-#'   from: \code{"tracker"} (the default), for a Study Tracker record, or
-#'   \code{"manual"}, for values typed by hand while the Tracker was
-#'   unavailable. A new \code{_study.yml} records it as
-#'   \code{identity_source}, with \code{identity_verified} set to
-#'   \code{TRUE} for \code{"tracker"} and \code{FALSE} for
-#'   \code{"manual"}. An existing \code{_study.yml} is not rewritten, so
+#'   from: `"tracker"` (the default), for a Study Tracker record, or
+#'   `"manual"`, for values typed by hand while the Tracker was
+#'   unavailable. A new `_study.yml` records it as
+#'   `identity_source`, with `identity_verified` set to
+#'   `TRUE` for `"tracker"` and `FALSE` for
+#'   `"manual"`. An existing `_study.yml` is not rewritten, so
 #'   adoption keeps the recorded source.
-#' @param cleanup Logical. Delete the study's \code{tp.*} template copies and
-#'   \code{binder.summaries.doc}, and remove the template folders they leave
-#'   empty. See Details. Defaults to \code{adopt}: adopting a study cleans it,
-#'   including an adoption accepted at the prompt. Pass \code{FALSE} to adopt
+#' @param cleanup Logical. Delete the study's `tp.*` template copies and
+#'   `binder.summaries.doc`, and remove the template folders they leave
+#'   empty. See Details. Defaults to `adopt`: adopting a study cleans it,
+#'   including an adoption accepted at the prompt. Pass `FALSE` to adopt
 #'   without cleaning.
 #' @param template_dir Character(1). The template corpus studies were copied
-#'   from, read when \code{cleanup = TRUE}. When it does not exist, setup
+#'   from, read when `cleanup = TRUE`. When it does not exist, setup
 #'   warns, sets the study up without cleaning, and reports the skip in the
-#'   \code{"cleanup"} attribute.
-#' @param renv Logical. Initialize and snapshot the study's \code{renv}
-#'   environment. See Details. A sound \code{renv.lock} missing its
-#'   \code{renv/activate.R} or \code{.Rprofile} line is repaired with
-#'   \code{renv::activate()}, which leaves the lock unchanged, after declaring
-#'   its packages and checking its R version against \code{r_upgrade}. Defaults to
-#'   \code{TRUE}; test suites that build
-#'   temporary studies should pass \code{FALSE}.
-#' @param r_upgrade Logical(1). Leave \code{FALSE}. The renv snapshot is
+#'   `"cleanup"` attribute.
+#' @param renv Logical. Initialize and snapshot the study's `renv`
+#'   environment. See Details. A sound `renv.lock` missing its
+#'   `renv/activate.R` or `.Rprofile` line is repaired with
+#'   `renv::activate()`, which leaves the lock unchanged, after declaring
+#'   its packages and checking its R version against `r_upgrade`. Defaults to
+#'   `TRUE`; test suites that build
+#'   temporary studies should pass `FALSE`.
+#' @param r_upgrade Logical(1). Leave `FALSE`. The renv snapshot is
 #'   refused from an R whose major.minor differs from the R recorded in the
-#'   study's \code{renv.lock} (see \code{\link{guard_snapshot}}), because it
-#'   would rewrite the lock's R and drop packages. Set \code{TRUE} only when
+#'   study's `renv.lock` (see [guard_snapshot()]), because it
+#'   would rewrite the lock's R and drop packages. Set `TRUE` only when
 #'   you are deliberately moving the study to this session's R.
 #' @param derived_from For an exploration of a registered study that has no
 #'   Study Tracker record of its own: the parent's Study Tracker ID. The study
-#'   gets a \code{provisional_id} and checkpoints locally until
-#'   \code{\link{study_promote}} gives it its own ID.
+#'   gets a `provisional_id` and checkpoints locally until
+#'   [study_promote()] gives it its own ID.
 #'
-#' @return An object of class \code{"study_status"}, returned visibly. With
-#'   \code{cleanup = TRUE} it carries a \code{"cleanup"} attribute, a list of
-#'   \code{status} (exactly \code{"done"} or \code{"skipped"}), \code{reason}
-#'   (\code{NULL} when \code{status} is \code{"done"}), the \code{deleted}
-#'   files, the \code{removed_dirs} folders and the \code{left} files and
+#' @return An object of class `"study_status"`, returned visibly. With
+#'   `cleanup = TRUE` it carries a `"cleanup"` attribute, a list of
+#'   `status` (exactly `"done"` or `"skipped"`), `reason`
+#'   (`NULL` when `status` is `"done"`), the `deleted`
+#'   files, the `removed_dirs` folders and the `left` files and
 #'   folders cleanup could not remove, all relative to the root.
-#'   With \code{renv = TRUE} it carries a \code{"renv"} attribute,
-#'   \code{"initialized"}, \code{"retained"} or \code{"repaired"}.
+#'   With `renv = TRUE` it carries a `"renv"` attribute,
+#'   `"initialized"`, `"retained"` or `"repaired"`.
 #'
-#' @seealso \code{\link{study_status}}, \code{\link{study_config}},
-#'   \code{\link{study_dir}}
+#' @seealso [study_status()], [study_config()],
+#'   [study_dir()]
 #'
 #' @examples
 #' root <- file.path(tempdir(), "study-setup-example")

@@ -193,56 +193,56 @@
 #' @description
 #' Commits an allow-listed snapshot of the study (code, identity and
 #' reproducibility files) to a private git repository in
-#' \code{.checkpoint/repo/}, tags it with the checkpoint kind and, for a
-#' numbered kind, a sequence number, records it in the outbox \code{.checkpoint/log.yml}, and pushes it
-#' when \code{_study.yml} names a remote. Known data formats, credentials and
-#' symbolic links are never committed, even through \code{include:} patterns,
-#' and neither is anything under \code{00_datasets/} or \code{90_estimates/}
+#' `.checkpoint/repo/`, tags it with the checkpoint kind and, for a
+#' numbered kind, a sequence number, records it in the outbox `.checkpoint/log.yml`, and pushes it
+#' when `_study.yml` names a remote. Known data formats, credentials and
+#' symbolic links are never committed, even through `include:` patterns,
+#' and neither is anything under `00_datasets/` or `90_estimates/`
 #' or an output file type. Files in
-#' \code{50_documents/} other than \code{.qmd} and \code{.bib} sources are not
-#' committed; \code{CHECKPOINT.yml} records their size and checksum.
-#' An exploration set up with \code{derived_from} is
+#' `50_documents/` other than `.qmd` and `.bib` sources are not
+#' committed; `CHECKPOINT.yml` records their size and checksum.
+#' An exploration set up with `derived_from` is
 #' committed and tagged locally and pushed only after
-#' \code{\link{study_promote}}.
+#' [study_promote()].
 #'
 #' @details
 #' The kind comes from the StudyTracker checkpoint vocabulary, for example
-#' \code{"abstract_submitted"} or \code{"manuscript_submitted"}. Automatic
-#' kinds such as \code{"data_received"} are logged without a snapshot.
+#' `"abstract_submitted"` or `"manuscript_submitted"`. Automatic
+#' kinds such as `"data_received"` are logged without a snapshot.
 #' A checkpoint is committed locally before anything is pushed, so an
-#' unreachable remote never loses one; \code{\link{study_checkpoint_push}}
+#' unreachable remote never loses one; [study_checkpoint_push()]
 #' retries later.
 #'
-#' One session at a time: this function, \code{\link{study_checkpoint_push}},
-#' \code{\link{study_close}}, \code{study_reopen()},
-#' \code{\link{study_promote}} and \code{\link{study_render_commit}} hold the lock
-#' \code{.checkpoint/lock} while they run. A call that finds it held by
+#' One session at a time: this function, [study_checkpoint_push()],
+#' [study_close()], `study_reopen()`,
+#' [study_promote()] and [study_render_commit()] hold the lock
+#' `.checkpoint/lock` while they run. A call that finds it held by
 #' another session stops, naming the holder; retry once that session has
 #' finished. The holder refreshes the lock between phases (selection, the
-#' snapshot's \code{CHECKPOINT.yml}, the commit and tag, delivery), so a lock
+#' snapshot's `CHECKPOINT.yml`, the commit and tag, delivery), so a lock
 #' not refreshed for 6 hours was left by a crashed session and is taken over
 #' with a warning.
 #'
-#' \code{note} and \code{attributes} are written to the snapshot, the tag and
+#' `note` and `attributes` are written to the snapshot, the tag and
 #' the outbox, so they leave the study folder. A message says so whenever
 #' either is given: they must not contain patient information.
 #'
-#' @param kind Character(1). A checkpoint kind. \code{study_promoted} is
-#'   recorded by \code{\link{study_promote}}, and by hand only on a promoted
+#' @param kind Character(1). A checkpoint kind. `study_promoted` is
+#'   recorded by [study_promote()], and by hand only on a promoted
 #'   study whose promotion snapshot failed.
 #' @param note Optional character(1), stored with the checkpoint.
 #' @param attributes Optional named list of kind-specific details, each a
-#'   single value, for example \code{list(journal = "JTCVS")}.
+#'   single value, for example `list(journal = "JTCVS")`.
 #' @param occurred_at Date the event happened. Defaults to today.
 #' @param root Character. Study root. Defaults to the study that contains the working
-#'   directory, found by its \code{_study.yml}; outside a study the function
+#'   directory, found by its `_study.yml`; outside a study the function
 #'   stops and writes nothing.
 #'
-#' @return An object of class \code{"study_checkpoint"}, returned invisibly,
+#' @return An object of class `"study_checkpoint"`, returned invisibly,
 #'   with the tag, commit, file count, skipped files and delivery states.
 #'
-#' @seealso \code{\link{study_checkpoint_push}}, \code{\link{study_close}},
-#'   \code{\link{study_status}}
+#' @seealso [study_checkpoint_push()], [study_close()],
+#'   [study_status()]
 #'
 #' @export
 #'
@@ -366,64 +366,64 @@ print.study_checkpoint <- function(x, ...) {
 #'
 #' @description
 #' Retries delivery of every checkpoint, closure and reopening in
-#' \code{.checkpoint/log.yml} that has not reached the remote yet.
-#' \code{\link{study_checkpoint}} does this on every call; use this function
-#' after a network outage, or once \code{study-setup --verify} has verified a
+#' `.checkpoint/log.yml` that has not reached the remote yet.
+#' [study_checkpoint()] does this on every call; use this function
+#' after a network outage, or once `study-setup --verify` has verified a
 #' manually entered identity. A promoted exploration's held checkpoints are
-#' delivered once \code{checkpoint: remote:} is set; promotion does not set it.
-#' On an exploration set up with \code{derived_from} that has not been
+#' delivered once `checkpoint: remote:` is set; promotion does not set it.
+#' On an exploration set up with `derived_from` that has not been
 #' promoted, it stops with an error and pushes nothing; run
-#' \code{\link{study_promote}} first.
+#' [study_promote()] first.
 #'
 #' @details
 #' An entry that a crash left half-written is settled first: completed when
-#' its tag exists, otherwise marked \code{abandoned}. Abandoned entries are
+#' its tag exists, otherwise marked `abandoned`. Abandoned entries are
 #' never pushed.
 #'
 #' @param root Character. Study root. Defaults to the study that contains the working
-#'   directory, found by its \code{_study.yml}; outside a study the function
+#'   directory, found by its `_study.yml`; outside a study the function
 #'   stops and writes nothing.
 #'
 #' @return A data frame, returned invisibly, with one row per logged event and
-#'   columns \code{type}, \code{tag}, \code{state}, \code{git}, \code{st} and
-#'   \code{reason}.
+#'   columns `type`, `tag`, `state`, `git`, `st` and
+#'   `reason`.
 #'
 #' @section Repairing a stuck delivery:
 #' Two failures leave an entry pending in a way that retrying
-#' \code{study_checkpoint_push()} cannot fix by itself. Each is reported as a
+#' `study_checkpoint_push()` cannot fix by itself. Each is reported as a
 #' warning that names the tag and points back here.
 #'
 #' \itemize{
-#'   \item \strong{Not on main} (a log write was lost after a replay).
+#'   \item **Not on main** (a log write was lost after a replay).
 #'   This one usually repairs itself. Delivery finds the entry's replayed
 #'   commit in one of three ways, in order: another entry in the log already
-#'   records the same old commit as its \code{replayed_from}; exactly one
-#'   commit on \code{main} carries the entry's own id (\code{checkpoint_id}
-#'   or \code{closure_id}); or exactly one commit on \code{main} carries the
+#'   records the same old commit as its `replayed_from`; exactly one
+#'   commit on `main` carries the entry's own id (`checkpoint_id`
+#'   or `closure_id`); or exactly one commit on `main` carries the
 #'   id in the old commit's own message. The last way covers a reopening,
-#'   whose \code{reopening_id} is only in its tag: it tags an existing commit,
+#'   whose `reopening_id` is only in its tag: it tags an existing commit,
 #'   a closure's or that of a checkpoint taken while the study was closed.
 #'   Delivery then points the entry at that commit, keeps the old value as
-#'   \code{replayed_from}, and delivers as normal. Only when none of these
+#'   `replayed_from`, and delivers as normal. Only when none of these
 #'   finds exactly one commit does the entry stay pending with a warning.
 #'   Then repair it by hand: look the id up with
-#'   \code{git -C .checkpoint/repo log --fixed-strings --grep=<id>
-#'   --format=\%H main}, choose the right commit, set the entry's
-#'   \code{git_commit} in \code{.checkpoint/log.yml} to it, and set its
-#'   \code{replayed_from} to the old \code{git_commit}. Then run
-#'   \code{study_checkpoint_push()} again. Do not skip \code{replayed_from}:
+#'   `git -C .checkpoint/repo log --fixed-strings --grep=<id>
+#'   --format=%H main`, choose the right commit, set the entry's
+#'   `git_commit` in `.checkpoint/log.yml` to it, and set its
+#'   `replayed_from` to the old `git_commit`. Then run
+#'   `study_checkpoint_push()` again. Do not skip `replayed_from`:
 #'   a later entry that names the same old commit, such as a reopening,
-#'   heals from it. If no such commit exists, set the entry's \code{state} to
-#'   \code{"abandoned"} instead; an abandoned entry is never delivered.
-#'   \item \strong{Unnumbered tag clash} (two copies of the study each
-#'   recorded the same unnumbered tag, for example \code{workspace_created}).
-#'   The two copies have diverged. Keep one copy's \code{.checkpoint/}
+#'   heals from it. If no such commit exists, set the entry's `state` to
+#'   `"abandoned"` instead; an abandoned entry is never delivered.
+#'   \item **Unnumbered tag clash** (two copies of the study each
+#'   recorded the same unnumbered tag, for example `workspace_created`).
+#'   The two copies have diverged. Keep one copy's `.checkpoint/`
 #'   directory, normally the one whose history is already on the remote,
-#'   move the other copy's \code{.checkpoint/} aside, and run
-#'   \code{study_checkpoint_push()} again from the kept copy.
+#'   move the other copy's `.checkpoint/` aside, and run
+#'   `study_checkpoint_push()` again from the kept copy.
 #' }
 #'
-#' @seealso \code{\link{study_checkpoint}}, \code{\link{study_promote}}
+#' @seealso [study_checkpoint()], [study_promote()]
 #'
 #' @examples
 #' \donttest{

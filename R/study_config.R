@@ -161,28 +161,28 @@
 #' Read the study manifest
 #'
 #' @description
-#' Walks up from \code{start} until a \code{_study.yml} is found, parses it,
+#' Walks up from `start` until a `_study.yml` is found, parses it,
 #' validates the requested identity or data contract, and returns the result
 #' with the study root attached.
 #'
 #' A study without a manifest must not render, so an absent
-#' \code{_study.yml} is an error rather than a set of defaults. The directories
+#' `_study.yml` is an error rather than a set of defaults. The directories
 #' walked are named in the error, because the usual cause is starting from
 #' outside the study tree.
 #'
-#' Study identity always requires \code{study}. With
-#' \code{require_data = TRUE}, \code{built} is also required. It must carry
+#' Study identity always requires `study`. With
+#' `require_data = TRUE`, `built` is also required. It must carry
 #' its file extension, because the reader dispatches on the extension.
 #'
 #' @param start Character. Directory to start the upward walk from. Defaults
-#'   to \code{getwd()}.
-#' @param require_data Logical. If \code{TRUE}, require the default dataset and
-#'   registered file. Use \code{FALSE} when only study identity is needed.
+#'   to `getwd()`.
+#' @param require_data Logical. If `TRUE`, require the default dataset and
+#'   registered file. Use `FALSE` when only study identity is needed.
 #'
-#' @return The manifest as a list, with \code{root} and \code{file} attached.
+#' @return The manifest as a list, with `root` and `file` attached.
 #'   Additive identity and named-dataset fields are retained.
 #'
-#' @seealso \code{\link{study_root}}, \code{\link{record_provenance}}
+#' @seealso [study_root()], [record_provenance()]
 #'
 #' @export
 #'

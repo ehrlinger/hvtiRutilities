@@ -8,7 +8,7 @@ get_label(label_map_df, variable)
 }
 \arguments{
 \item{label_map_df}{A data frame with \code{key} and \code{label} columns,
-as returned by \code{\link{label_map}}.}
+as returned by \code{\link[=label_map]{label_map()}}.}
 
 \item{variable}{A single character string: the variable name to look up.}
 }

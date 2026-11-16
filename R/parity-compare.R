@@ -3,7 +3,7 @@
 #' Errors -- never warns, never skips -- when the quantity is absent on either
 #' side. A comparison that cannot fail is worse than no comparison.
 #'
-#' The outcome is three-state. \code{R_BETTER} fires only for a log-likelihood
+#' The outcome is three-state. `R_BETTER` fires only for a log-likelihood
 #' that exceeds SAS's beyond tolerance: a multi-start optimizer regularly beats
 #' a single-start one, and recording that as a failure would train the reader
 #' to distrust a real improvement.
@@ -11,16 +11,16 @@
 #' @param quantity Name of the quantity, used in the report.
 #' @param r Value computed in R.
 #' @param sas Value from the SAS reference.
-#' @param class Tolerance class; see \code{\link{parity_tolerance}}.
-#' @param source Where the SAS value came from -- \code{"lst"} or
-#'   \code{"outhaz"}.
-#' @param digits For \code{class = "printed"}, the number of decimal places
+#' @param class Tolerance class; see [parity_tolerance()].
+#' @param source Where the SAS value came from -- `"lst"` or
+#'   `"outhaz"`.
+#' @param digits For `class = "printed"`, the number of decimal places
 #'   the reference was printed to, as a single non-negative whole number. The
 #'   tolerance becomes half of the last place.
 #' @section Relative discrepancy at a zero reference:
 #' When the SAS value is zero there is no relative scale. The reported
-#' \code{rel_diff} is \code{0} if the two agree exactly and \code{Inf}
-#' otherwise -- never \code{NA}, which \code{\link{parity_headline}} would
+#' `rel_diff` is `0` if the two agree exactly and `Inf`
+#' otherwise -- never `NA`, which [parity_headline()] would
 #' drop, reporting a real failure as no discrepancy at all.
 #' @return A one-row data frame.
 #' @export
@@ -83,10 +83,10 @@ compare_parity <- function(quantity, r, sas, class, source = "lst",
 #' means nothing was really compared -- so it is flagged rather than
 #' celebrated.
 #'
-#' @param data A data frame of \code{\link{compare_parity}} rows. Was
-#'   \code{df} before 2026-11; \code{df =} still works for one release, with a
+#' @param data A data frame of [compare_parity()] rows. Was
+#'   `df` before 2026-11; `df =` still works for one release, with a
 #'   warning.
-#' @param df Deprecated: the old name of \code{data}, kept for one release.
+#' @param df Deprecated: the old name of `data`, kept for one release.
 #' @return A single string.
 #' @export
 #' @examples

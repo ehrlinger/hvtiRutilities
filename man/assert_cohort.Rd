@@ -7,33 +7,33 @@
 assert_cohort(data, expected, time_col, event_col)
 }
 \arguments{
-\item{data}{A data frame. Was \code{d} before 2026-11; \code{d =} still
+\item{data}{A data frame. Was \code{d} before 2026-11; \verb{d =} still
 works for one release, with a warning.}
 
 \item{expected}{List containing nonnegative integer \code{n},
 \code{n_events} and \code{n_censored}.}
 
 \item{time_col}{Character scalar naming the time column. Was \code{time}
-before 2026-11; \code{time =} still works for one release, with a warning.}
+before 2026-11; \verb{time =} still works for one release, with a warning.}
 
 \item{event_col}{Character scalar naming the binary event column. Was
-\code{event} before 2026-11; \code{event =} still works for one release,
+\code{event} before 2026-11; \verb{event =} still works for one release,
 with a warning.}
 }
 \value{
 \code{invisible(TRUE)} on success; otherwise an error.
 }
 \description{
-Compares \code{\link{cohort_counts}} against explicitly supplied expected
+Compares \code{\link[=cohort_counts]{cohort_counts()}} against explicitly supplied expected
 counts and errors on any disagreement. Call it before any analysis that
 would otherwise run happily on an unreconciled cohort.
 }
 \section{Argument order}{
 
-\code{time_col, event_col}, as in \code{survival::Surv()}; it was
-\code{event, time} until 2026-11. A call passing both unnamed is an error,
-since the two orders read it oppositely; name \code{time_col =} and
-\code{event_col =}.
+\verb{time_col, event_col}, as in \code{survival::Surv()}; it was
+\verb{event, time} until 2026-11. A call passing both unnamed is an error,
+since the two orders read it oppositely; name \verb{time_col =} and
+\verb{event_col =}.
 }
 
 \examples{
@@ -42,5 +42,5 @@ expected <- list(n = 5L, n_events = 2L, n_censored = 3L)
 assert_cohort(d, expected, time_col = "iv_dead", event_col = "dead")
 }
 \seealso{
-\code{\link{cohort_counts}}
+\code{\link[=cohort_counts]{cohort_counts()}}
 }

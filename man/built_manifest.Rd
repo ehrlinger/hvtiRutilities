@@ -7,14 +7,14 @@
 built_manifest(cfg = study_config(), dataset = "study")
 }
 \arguments{
-\item{cfg}{List. A study manifest from \code{\link{study_config}}.}
+\item{cfg}{List. A study manifest from \code{\link[=study_config]{study_config()}}.}
 
 \item{dataset}{Character(1). Logical dataset name. Defaults to
 \code{"study"}. \code{"built"} is a second name for \code{"study"}.}
 }
 \value{
 A one-row data frame with columns \code{file}, \code{size_bytes},
-  \code{mtime} and \code{sha256}.
+\code{mtime} and \code{sha256}.
 }
 \description{
 Returns a one-row data frame identifying the built dataset by name, size,
@@ -35,5 +35,5 @@ built_manifest(study_config(root))
 unlink(root, recursive = TRUE)
 }
 \seealso{
-\code{\link{built_path}}, \code{\link{record_provenance}}
+\code{\link[=built_path]{built_path()}}, \code{\link[=record_provenance]{record_provenance()}}
 }

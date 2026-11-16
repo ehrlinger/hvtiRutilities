@@ -16,9 +16,9 @@ root.}
 Invisibly, the 40-character commit ID.
 }
 \description{
-Commits the same allow-listed snapshot \code{\link{study_checkpoint}} takes
+Commits the same allow-listed snapshot \code{\link[=study_checkpoint]{study_checkpoint()}} takes
 (code, identity and reproducibility files; never data or outputs) to this
-copy's render source ref in the private repository \code{.checkpoint/repo/},
+copy's render source ref in the private repository \verb{.checkpoint/repo/},
 and returns the commit. A render calls it before the job runs, so each
 figure can print the commit of the code that drew it.
 }
@@ -37,9 +37,9 @@ executable bit.
 
 A study whose snapshot is unchanged since the last render commit gets that
 commit back, so re-rendering adds no history and an unchanged job always
-prints the same commit. The ref is \code{refs/renders/<id>/source}, outside
-\code{refs/heads/}; records go to a separate ref (see
-\code{\link{study_render_record}}). The ID belongs to this copy of the study
+prints the same commit. The ref is \verb{refs/renders/<id>/source}, outside
+\verb{refs/heads/}; records go to a separate ref (see
+\code{\link[=study_render_record]{study_render_record()}}). The ID belongs to this copy of the study
 at this path on this host: a study copied or moved elsewhere gets a new one,
 and keeps the refs it brought with it. Nothing is tagged or pushed, and
 \code{main}, its tags, \code{HEAD} and the checkpoint working tree are never
@@ -49,7 +49,7 @@ or another render holds it.
 The commit only proves what the job was when the render began. A render
 that publishes outputs must also show that the code it executed matches
 the commit, and record what it published with
-\code{\link{study_render_record}}.
+\code{\link[=study_render_record]{study_render_record()}}.
 }
 \examples{
 \donttest{
@@ -70,5 +70,5 @@ if (nzchar(Sys.which("git"))) {
 }
 }
 \seealso{
-\code{\link{study_render_record}}, \code{\link{study_checkpoint}}
+\code{\link[=study_render_record]{study_render_record()}}, \code{\link[=study_checkpoint]{study_checkpoint()}}
 }

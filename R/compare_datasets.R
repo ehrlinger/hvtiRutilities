@@ -6,42 +6,42 @@
 #' and factor-level changes. This is useful for auditing data drift when a new
 #' extract arrives, and pairs naturally with the manifest system.
 #'
-#' \strong{Values are not compared.} Matching rows across two pulls needs a
+#' **Values are not compared.** Matching rows across two pulls needs a
 #' key, and this function takes none, so two datasets with the same shape,
 #' classes, labels and levels but different values compare as equal. The
-#' printed summary says so. Compare values on a key with \code{merge()} when
+#' printed summary says so. Compare values on a key with `merge()` when
 #' that is the question.
 #'
 #' @param old A data frame representing the previous version of the dataset.
 #' @param new A data frame representing the current version of the dataset.
 #' @param show_levels Logical. Include the level values themselves in the
-#'   result and the printed summary. Defaults to \code{FALSE}: a character
+#'   result and the printed summary. Defaults to `FALSE`: a character
 #'   identifier or free-text column read as a factor has row-level values as
 #'   its levels, so by default only level counts are reported.
 #'
 #' @return A list with the following elements:
 #' \describe{
-#'   \item{rows_old}{Number of rows in \code{old}}
-#'   \item{rows_new}{Number of rows in \code{new}}
-#'   \item{cols_added}{Character vector of column names present in \code{new}
-#'     but not \code{old}}
+#'   \item{rows_old}{Number of rows in `old`}
+#'   \item{rows_new}{Number of rows in `new`}
+#'   \item{cols_added}{Character vector of column names present in `new`
+#'     but not `old`}
 #'   \item{cols_dropped}{Character vector of column names present in
-#'     \code{old} but not \code{new}}
-#'   \item{type_changes}{Data frame with columns \code{variable},
-#'     \code{old_class}, \code{new_class} for shared columns whose primary
+#'     `old` but not `new`}
+#'   \item{type_changes}{Data frame with columns `variable`,
+#'     `old_class`, `new_class` for shared columns whose primary
 #'     class changed}
-#'   \item{label_changes}{Data frame with columns \code{variable},
-#'     \code{old_label}, \code{new_label} for shared columns whose label
+#'   \item{label_changes}{Data frame with columns `variable`,
+#'     `old_label`, `new_label` for shared columns whose label
 #'     changed}
-#'   \item{level_changes}{Data frame with columns \code{variable},
-#'     \code{old_n}, \code{new_n} (level counts), \code{n_added} and
-#'     \code{n_removed} for shared columns that are factors in both and whose
-#'     levels, or their order, changed. With \code{show_levels = TRUE} it also
-#'     has \code{old_levels} and \code{new_levels} (levels joined with
-#'     \code{", "}).}
+#'   \item{level_changes}{Data frame with columns `variable`,
+#'     `old_n`, `new_n` (level counts), `n_added` and
+#'     `n_removed` for shared columns that are factors in both and whose
+#'     levels, or their order, changed. With `show_levels = TRUE` it also
+#'     has `old_levels` and `new_levels` (levels joined with
+#'     `", "`).}
 #' }
 #'
-#' @seealso \code{\link{update_manifest}}, \code{\link{verify_manifest}}
+#' @seealso [update_manifest()], [verify_manifest()]
 #'
 #' @export
 #'

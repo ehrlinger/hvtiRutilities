@@ -20,23 +20,23 @@ followup_check(
 
 \item{time_cols}{Names of one or more follow-up interval columns, in years.
 Was \code{followup}, and briefly \code{time}, before 2026-11; both still
-work for one release, with a warning. The order was \code{event, time}
+work for one release, with a warning. The order was \verb{event, time}
 until then, so a call passing \code{time_cols} and \code{event_col} both
 unnamed is an error; name them.}
 
 \item{event_col}{Name of the event indicator: 1 or \code{TRUE} for an
 event, 0 or \code{FALSE} for censored. Missing values are allowed and
-counted. Was \code{event}; \code{event =} still works for one release.}
+counted. Was \code{event}; \verb{event =} still works for one release.}
 
 \item{id_col}{\code{NULL} (the default), or the name of one column to show
-in \code{review}. Was \code{identifier}; \code{identifier =} still works
+in \code{review}. Was \code{identifier}; \verb{identifier =} still works
 for one release.}
 
 \item{max_rows}{The most suspicious rows to return in \code{review}, in data
 order. Default 25.}
 
 \item{stats}{Character vector of SAS statistic keywords for the
-\code{means} tables, passed to \code{\link{proc_means}} and validated the
+\code{means} tables, passed to \code{\link[=proc_means]{proc_means()}} and validated the
 same way. Default
 \code{c("n", "nmiss", "mean", "std", "min", "p15", "median", "p85", "max")}.}
 
@@ -45,26 +45,26 @@ same way. Default
 }
 \value{
 An object of class \code{followup_check}, a list of four
-  components, three data frames and a list of three:
+components, three data frames and a list of three:
 \describe{
-  \item{\code{cohort}}{One row: \code{full}, \code{event}, \code{censored}
-    and \code{missing_event} counts.}
-  \item{\code{intervals}}{One row per interval: \code{missing},
-    \code{negative} and \code{zero} counts, then \code{min}, \code{q1},
-    \code{median}, \code{q3}, \code{mean}, \code{sd} and \code{max} of the
-    observed values.}
-  \item{\code{means}}{A named list, \code{full}, \code{event} and
-    \code{censored}, of \code{\link{proc_means}} tables over the
-    intervals, one column per statistic in \code{stats}.}
-  \item{\code{review}}{Up to \code{max_rows} suspicious rows, with the
-    event, the intervals and any \code{id_col}.}
+\item{\code{cohort}}{One row: \code{full}, \code{event}, \code{censored}
+and \code{missing_event} counts.}
+\item{\code{intervals}}{One row per interval: \code{missing},
+\code{negative} and \code{zero} counts, then \code{min}, \code{q1},
+\code{median}, \code{q3}, \code{mean}, \code{sd} and \code{max} of the
+observed values.}
+\item{\code{means}}{A named list, \code{full}, \code{event} and
+\code{censored}, of \code{\link[=proc_means]{proc_means()}} tables over the
+intervals, one column per statistic in \code{stats}.}
+\item{\code{review}}{Up to \code{max_rows} suspicious rows, with the
+event, the intervals and any \code{id_col}.}
 }
 }
 \description{
 Summarises an event indicator and its follow-up intervals the way the
 \code{dc-gfup} template reports them: counts for the whole cohort and its
 event and censored subsets, the missing, negative and zero intervals, a
-\code{\link{proc_means}} table for each subset, and the rows worth a second
+\code{\link[=proc_means]{proc_means()}} table for each subset, and the rows worth a second
 look. It checks recorded follow-up; it does not establish completeness
 against a close date.
 }
@@ -79,14 +79,14 @@ when its event is missing or any of its intervals is missing, negative or
 zero.
 
 The quartiles in \code{intervals} use R's default interpolated quantiles
-(\code{type = 7}), while \code{\link{proc_means}} uses the SAS
+(\code{type = 7}), while \code{\link[=proc_means]{proc_means()}} uses the SAS
 \code{QNTLDEF=5} estimator, so a median in the two tables can disagree on
 a small subset. The difference is deliberate: \code{intervals} is a quick
 screen, and \code{means} is the table to compare against SAS.
 
 \code{means} reports the 15th and 85th percentiles rather than the
 quartiles, because those are what the group's descriptive summaries show.
-SAS \code{PROC MEANS} prints no percentiles unless asked, so a parity
+SAS \verb{PROC MEANS} prints no percentiles unless asked, so a parity
 comparison names the same statistics on the SAS side, or passes the SAS
 job's list to \code{stats}.
 
@@ -101,6 +101,6 @@ fc$cohort
 fc$review
 }
 \seealso{
-\code{\link{proc_means}}, \code{\link{cohort_counts}}, which counts
-  the analysable cohort rather than checking follow-up.
+\code{\link[=proc_means]{proc_means()}}, \code{\link[=cohort_counts]{cohort_counts()}}, which counts
+the analysable cohort rather than checking follow-up.
 }

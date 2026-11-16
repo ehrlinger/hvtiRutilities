@@ -22,21 +22,21 @@ proc_univariate(
 \item{data}{A data frame, tibble, or similar tabular object.}
 
 \item{var_cols}{Character vector of columns to analyse, was \code{vars} before
-2026-11 (\code{vars =} still works for one release, with a warning).
+2026-11 (\verb{vars =} still works for one release, with a warning).
 \code{NULL} (default) selects every numeric column not named in
 \code{class_cols} or
 \code{weight_col}.}
 
 \item{class_cols}{Character vector of grouping columns, prepended to the
-result as leading columns. Was \code{class} before 2026-11; \code{class =} still
+result as leading columns. Was \code{class} before 2026-11; \verb{class =} still
 works for one release, with a warning. Rows with a missing value in any
 class variable are
 dropped, and levels follow \code{ORDER=INTERNAL}, as in
-\code{\link{proc_means}}. Unlike \code{proc_means()}, a level whose
+\code{\link[=proc_means]{proc_means()}}. Unlike \code{proc_means()}, a level whose
 every weight is missing has no row, as in SAS.}
 
 \item{stats}{Character vector of SAS statistic keywords: every keyword
-\code{\link{proc_means}} accepts, plus \code{"stdmean"}, \code{"t"},
+\code{\link[=proc_means]{proc_means()}} accepts, plus \code{"stdmean"}, \code{"t"},
 \code{"probt"}, \code{"msign"}, \code{"probm"}, \code{"signrank"},
 \code{"probs"}, \code{"normal"} and \code{"probn"}.}
 
@@ -45,18 +45,18 @@ every weight is missing has no row, as in SAS.}
 Observations whose weight is missing are excluded from every statistic
 except \code{nobs}, which counts them.}
 
-\item{pctlpts}{Numeric vector of percentile points in \code{[0, 100]},
-decimals allowed, or \code{NULL}. SAS \code{PCTLPTS=}.}
+\item{pctlpts}{Numeric vector of percentile points in \verb{[0, 100]},
+decimals allowed, or \code{NULL}. SAS \verb{PCTLPTS=}.}
 
 \item{pctlpre}{Single string prefixed to the \code{pctlpts} column names.
-SAS \code{PCTLPRE=}. The point follows with \code{.} replaced by
-\code{_}, so \code{2.5} gives \code{p2_5}.}
+SAS \verb{PCTLPRE=}. The point follows with \code{.} replaced by
+\verb{_}, so \code{2.5} gives \code{p2_5}.}
 
 \item{mu0}{Single finite number, the null value for \code{t},
-\code{msign} and \code{signrank}. SAS \code{MU0=}.}
+\code{msign} and \code{signrank}. SAS \verb{MU0=}.}
 
 \item{vardef}{The variance divisor: \code{"df"} (default), \code{"n"},
-\code{"wdf"} or \code{"weight"}. SAS \code{VARDEF=}.}
+\code{"wdf"} or \code{"weight"}. SAS \verb{VARDEF=}.}
 
 \item{weights}{Deprecated: the old name of \code{weight_col}, kept for one release.}
 
@@ -64,22 +64,22 @@ SAS \code{PCTLPRE=}. The point follows with \code{.} replaced by
 }
 \value{
 A data frame with one row per analysis variable per class
-  combination. Columns are the \code{class_cols} variables (when supplied), then
-  \code{variable}, \code{label}, then one column per \code{stats} keyword in
-  the order given, then one column per \code{pctlpts} point in the order
-  given. \code{n}, \code{nmiss} and \code{nobs} are integer; all others are
-  numeric.
+combination. Columns are the \code{class_cols} variables (when supplied), then
+\code{variable}, \code{label}, then one column per \code{stats} keyword in
+the order given, then one column per \code{pctlpts} point in the order
+given. \code{n}, \code{nmiss} and \code{nobs} are integer; all others are
+numeric.
 }
 \description{
-Produces the statistics data set SAS \code{PROC UNIVARIATE} writes with
-\code{OUTPUT OUT=}: one row per analysis variable (per class level), one
+Produces the statistics data set SAS \verb{PROC UNIVARIATE} writes with
+\verb{OUTPUT OUT=}: one row per analysis variable (per class level), one
 column per requested statistic in the order requested, then one column per
-\code{PCTLPTS=} percentile. Beyond \code{\link{proc_means}} it adds weighted
-and decimal percentiles, \code{VARDEF=}, and the tests for location and
+\verb{PCTLPTS=} percentile. Beyond \code{\link[=proc_means]{proc_means()}} it adds weighted
+and decimal percentiles, \verb{VARDEF=}, and the tests for location and
 normality.
 }
 \details{
-\strong{Weighting.} Weights apply as in \code{\link{proc_means}}, except
+\strong{Weighting.} Weights apply as in \code{\link[=proc_means]{proc_means()}}, except
 that the quantiles are weighted: \code{median}, \code{q1}, \code{q3},
 \code{qrange}, \code{pNN} and the \code{pctlpts} columns. The weighted
 percentile sorts the values with their cumulative weights \eqn{S_i}; the
@@ -101,24 +101,24 @@ than the adjusted ones.
 
 \strong{Statistics SAS does not compute are NA}, as SAS writes missing:
 \itemize{
-  \item \code{msign}, \code{probm}, \code{signrank}, \code{probs},
-    \code{normal}, \code{probn} when \code{weight_col} is given;
-  \item \code{t}, \code{probt}, \code{stderr} and \code{stdmean} when
-    \code{vardef} is not \code{"df"};
-  \item \code{skewness} and \code{kurtosis} when \code{vardef} is
-    \code{"wdf"} or \code{"weight"};
-  \item \code{normal} and \code{probn} above 2000 observations, with one
-    warning per call: SAS switches to a Kolmogorov D test there, which is
-    not ported;
-  \item \code{std}, \code{var}, \code{cv}, \code{stderr}, \code{stdmean},
-    \code{t}, \code{probt} at one observation, \code{skewness} below three
-    and \code{kurtosis} below four;
-  \item \code{t}, \code{probt}, \code{skewness}, \code{kurtosis},
-    \code{normal}, \code{probn} when every value is equal (\code{cv} is
-    then \code{0} unless the mean is zero, where it is \code{NA});
-  \item \code{msign}, \code{probm}, \code{signrank}, \code{probs} when no
-    value differs from \code{mu0};
-  \item \code{mode} when no value repeats among two or more values.
+\item \code{msign}, \code{probm}, \code{signrank}, \code{probs},
+\code{normal}, \code{probn} when \code{weight_col} is given;
+\item \code{t}, \code{probt}, \code{stderr} and \code{stdmean} when
+\code{vardef} is not \code{"df"};
+\item \code{skewness} and \code{kurtosis} when \code{vardef} is
+\code{"wdf"} or \code{"weight"};
+\item \code{normal} and \code{probn} above 2000 observations, with one
+warning per call: SAS switches to a Kolmogorov D test there, which is
+not ported;
+\item \code{std}, \code{var}, \code{cv}, \code{stderr}, \code{stdmean},
+\code{t}, \code{probt} at one observation, \code{skewness} below three
+and \code{kurtosis} below four;
+\item \code{t}, \code{probt}, \code{skewness}, \code{kurtosis},
+\code{normal}, \code{probn} when every value is equal (\code{cv} is
+then \code{0} unless the mean is zero, where it is \code{NA});
+\item \code{msign}, \code{probm}, \code{signrank}, \code{probs} when no
+value differs from \code{mu0};
+\item \code{mode} when no value repeats among two or more values.
 }
 
 \strong{Tests.} \code{t} is Student's t for the mean against \code{mu0};
@@ -146,5 +146,5 @@ proc_univariate(dta, var_cols = "bmi",
                 mu0 = 25)
 }
 \seealso{
-\code{\link{proc_means}} for the descriptive statistics alone.
+\code{\link[=proc_means]{proc_means()}} for the descriptive statistics alone.
 }

@@ -13,62 +13,62 @@
 #'
 #' @description
 #' Removes a leading integer code and its separator from the text of a
-#' variable's levels, so \code{"1. Yes"} prints as \code{"Yes"}. It is a
-#' display helper: it returns new text and \strong{never} rewrites the levels
+#' variable's levels, so `"1. Yes"` prints as `"Yes"`. It is a
+#' display helper: it returns new text and **never** rewrites the levels
 #' of the object it was given.
 #'
 #' @details
-#' \strong{A separator is required.} A leading integer is removed only when
-#' one of \code{.} \code{:} \code{=} \code{)} \code{-} follows it, with
+#' **A separator is required.** A leading integer is removed only when
+#' one of `.` `:` `=` `)` `-` follows it, with
 #' optional whitespace either side. A bare digit followed by a space is left
 #' alone.
 #'
-#' That restraint is the point. A rule general enough to turn \code{"0 No"}
-#' into \code{"No"} also turns \code{"1 vessel disease"}, \code{"2 vessel"} and
-#' \code{"3 vessel"} into \code{"vessel disease"}, \code{"vessel"} and
-#' \code{"vessel"} - three distinct levels becoming two identical strings.
-#' Nothing errors; a downstream \code{table()} or model merges them and the
+#' That restraint is the point. A rule general enough to turn `"0 No"`
+#' into `"No"` also turns `"1 vessel disease"`, `"2 vessel"` and
+#' `"3 vessel"` into `"vessel disease"`, `"vessel"` and
+#' `"vessel"` - three distinct levels becoming two identical strings.
+#' Nothing errors; a downstream `table()` or model merges them and the
 #' level count silently stops matching the data dictionary. The failure
 #' presents as data rather than as a bug.
 #'
-#' So the rule is biased: \strong{a missed strip is visible in the output and
-#' fixable by declaring the level text in \code{value_labels.yml} (see
-#' \code{\link{apply_value_labels}}); a wrong strip is silent and corrupts the
-#' level set.} Two consequences follow.
+#' So the rule is biased: **a missed strip is visible in the output and
+#' fixable by declaring the level text in `value_labels.yml` (see
+#' [apply_value_labels()]); a wrong strip is silent and corrupts the
+#' level set.** Two consequences follow.
 #' \itemize{
-#'   \item Unpunctuated \code{"0 No"} and \code{"1 Yes"} are \strong{not}
+#'   \item Unpunctuated `"0 No"` and `"1 Yes"` are **not**
 #'     stripped and still print with their prefix.
 #'   \item Text whose remainder begins with a digit is not stripped either,
-#'     because \code{"1-2 vessels"} matches leading-integer-then-hyphen and
-#'     would otherwise become \code{"2 vessels"}, colliding with a real
-#'     \code{"2 vessels"} level. Ranges are ordinary in this domain.
+#'     because `"1-2 vessels"` matches leading-integer-then-hyphen and
+#'     would otherwise become `"2 vessels"`, colliding with a real
+#'     `"2 vessels"` level. Ranges are ordinary in this domain.
 #' }
 #'
-#' \strong{Collisions revert rather than merge.} If stripping would bring two
-#' \emph{different} texts together - two codes carrying the same words, or a
+#' **Collisions revert rather than merge.** If stripping would bring two
+#' *different* texts together - two codes carrying the same words, or a
 #' stripped entry landing on one that was already bare - every entry involved
 #' keeps its original text and a warning names the text they collided on. The
 #' level set is preserved whatever the input, which is the guarantee this
 #' function is worth having for.
 #'
 #' Repeated copies of the same text are not a collision. Two occurrences of
-#' \code{"1. Yes"} both become \code{"Yes"} without complaint, because the
+#' `"1. Yes"` both become `"Yes"` without complaint, because the
 #' level set had one member before and has one after. That is what makes the
 #' function usable on a raw character column, where repeats are ordinary.
 #'
-#' Stripping never produces an empty string: \code{"1."} is returned unchanged.
+#' Stripping never produces an empty string: `"1."` is returned unchanged.
 #'
 #' @param x A character vector of level text, or a factor. Given a factor, the
-#'   function reads \code{levels(x)} and returns one element per level - it
+#'   function reads `levels(x)` and returns one element per level - it
 #'   does not return one element per observation, and it does not modify
-#'   \code{x}.
+#'   `x`.
 #'
 #' @return A character vector of display text: one element per input element,
-#'   or one per level when \code{x} is a factor. \code{NA} is returned as
-#'   \code{NA}.
+#'   or one per level when `x` is a factor. `NA` is returned as
+#'   `NA`.
 #'
-#' @seealso \code{\link{level_map}} to see what stripping would do across a
-#'   dataset, \code{\link{apply_value_labels}} for declaring level text
+#' @seealso [level_map()] to see what stripping would do across a
+#'   dataset, [apply_value_labels()] for declaring level text
 #'   outright rather than tidying it afterwards.
 #'
 #' @export
@@ -159,61 +159,61 @@ strip_level_prefix <- function(x) {
 #' @description
 #' One row per level of each discrete variable, giving the text as stored and
 #' the text that would be displayed once a leading code prefix is removed.
-#' Like \code{\link{strip_level_prefix}} it reports; it changes nothing.
+#' Like [strip_level_prefix()] it reports; it changes nothing.
 #'
 #' @details
-#' The shape deliberately mirrors \code{\link{label_map}} one level down:
-#' \code{level}, \code{level_full} and \code{stripped} read the same way as
-#' \code{label}, \code{label_full} and \code{truncated}. So
-#' \code{subset(level_map(data), stripped)} answers "which levels will print
-#' differently", exactly as \code{subset(label_map(data), truncated)} answers
+#' The shape deliberately mirrors [label_map()] one level down:
+#' `level`, `level_full` and `stripped` read the same way as
+#' `label`, `label_full` and `truncated`. So
+#' `subset(level_map(data), stripped)` answers "which levels will print
+#' differently", exactly as `subset(label_map(data), truncated)` answers
 #' the question for labels.
 #'
 #' Where the codes come from depends on what the column carries:
 #' \itemize{
-#'   \item a column with value labels - from \code{value_labels.yml} via
-#'     \code{\link{apply_value_labels}}, or from a SAS format catalog - gives
+#'   \item a column with value labels - from `value_labels.yml` via
+#'     [apply_value_labels()], or from a SAS format catalog - gives
 #'     the declared codes;
 #'   \item a factor gives its integer level positions, which is what the
 #'     column actually stores;
-#'   \item a character column has no codes, and \code{code} is \code{NA}.
+#'   \item a character column has no codes, and `code` is `NA`.
 #' }
 #'
 #' Plain numeric and logical columns contribute no rows: they have no level
 #' text for a prefix to sit in front of.
 #'
-#' \strong{High-cardinality columns are skipped, not expanded.} A character
+#' **High-cardinality columns are skipped, not expanded.** A character
 #' column of identifiers would otherwise contribute thousands of rows to a
-#' report meant to be read. Columns with more than \code{max_levels} distinct
+#' report meant to be read. Columns with more than `max_levels` distinct
 #' values are omitted and named in a warning, so a skip is never silent.
 #'
 #' @param data A data frame.
 #' @param var_cols Optional character vector of column names to report. Defaults
 #'   to every discrete column - factor, value-labelled, or character. Naming a
-#'   column that is not in \code{data} is an error. Was \code{vars} before 2026-11;
-#'   \code{vars =} still works for one release, with a warning.
+#'   column that is not in `data` is an error. Was `vars` before 2026-11;
+#'   `vars =` still works for one release, with a warning.
 #' @param max_levels Maximum distinct values a column may have before it is
 #'   skipped. A single positive whole number, finite; defaults to 20. To
 #'   report every column, pass a number at least as large as the widest one -
-#'   \code{Inf} is refused, because a threshold that never fires reads as a
+#'   `Inf` is refused, because a threshold that never fires reads as a
 #'   cap that is working.
 #'
-#' @param vars Deprecated: the old name of \code{var_cols}, kept for one release.
+#' @param vars Deprecated: the old name of `var_cols`, kept for one release.
 #' @return A data frame with one row per reported level and the columns
 #' \describe{
 #'   \item{key}{The variable name}
-#'   \item{code}{The code the level maps to, as character, or \code{NA}}
+#'   \item{code}{The code the level maps to, as character, or `NA`}
 #'   \item{level}{The text to display, with a prefix stripped where the rule
-#'     in \code{\link{strip_level_prefix}} allows it}
+#'     in [strip_level_prefix()] allows it}
 #'   \item{level_full}{The level text as stored, never modified}
-#'   \item{stripped}{Logical: \code{TRUE} where \code{level} differs from
-#'     \code{level_full}}
+#'   \item{stripped}{Logical: `TRUE` where `level` differs from
+#'     `level_full`}
 #' }
 #' Zero rows, with those columns, when nothing is reportable.
 #'
-#' @seealso \code{\link{strip_level_prefix}} for the rule itself,
-#'   \code{\link{label_map}} for the same idea applied to variable labels,
-#'   \code{\link{apply_value_labels}} for declaring level text outright.
+#' @seealso [strip_level_prefix()] for the rule itself,
+#'   [label_map()] for the same idea applied to variable labels,
+#'   [apply_value_labels()] for declaring level text outright.
 #'
 #' @export
 #'

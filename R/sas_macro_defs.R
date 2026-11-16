@@ -62,9 +62,9 @@
 #'
 #' @param file Character. Path to a `.sas` file.
 #'
-#' @return A \code{data.frame} with one row per macro definition and columns
-#'   \code{file}, \code{macro}, \code{params}, \code{body_hash},
-#'   \code{line_start}, and \code{line_end}. Macro and parameter names are
+#' @return A `data.frame` with one row per macro definition and columns
+#'   `file`, `macro`, `params`, `body_hash`,
+#'   `line_start`, and `line_end`. Macro and parameter names are
 #'   lowercased.
 #'
 #' @export sas_macro_defs

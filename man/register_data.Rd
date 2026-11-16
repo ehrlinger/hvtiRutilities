@@ -39,12 +39,12 @@ study dataset. Read the dataset back with
 
 \item{role}{Character(1). Takes one value, which picks the slot the dataset
 fills. \code{"study"}, the default when the argument is left out, registers
-the study's single main dataset. It is recorded under \code{built:} in
-\code{_study.yml} and read by \code{\link{read_built}()} with no
+the study's single main dataset. It is recorded under \verb{built:} in
+\verb{_study.yml} and read by \code{\link[=read_built]{read_built()}} with no
 arguments. A study has exactly one, so registering it a second time stops
 with "already registered". \code{"named"} adds another dataset under the
 name given in \code{dataset}. It is recorded under
-\code{additional_datasets:} and read with
+\verb{additional_datasets:} and read with
 \code{read_built(dataset = "<name>")}.}
 
 \item{population}{Character(1) or \code{NULL}. Population description.}
@@ -69,7 +69,7 @@ job) or \code{"combined"} (built by joining others).}
 \item{key_cols}{Character or \code{NULL}. The columns that make each row unique,
 such as \code{c("ccfid", "echo_date")}. Checked at registration, which
 stops if any row repeats on it. Jobs use it unless they set their own.
-Was \code{key} before 2026-11; \code{key =} still works for one release,
+Was \code{key} before 2026-11; \verb{key =} still works for one release,
 with a warning.}
 
 \item{parents}{Character or \code{NULL}. For \code{kind = "combined"} only:
@@ -82,7 +82,7 @@ with a warning, and will be removed in a later release. Giving both is
 an error.}
 
 \item{root}{Character. Study root or a directory beneath it. Defaults to the study that contains the working
-directory, found by its \code{_study.yml}; outside a study the function
+directory, found by its \verb{_study.yml}; outside a study the function
 stops and writes nothing.
 It comes last, after 2026-11; a call that passes an existing directory
 as its first argument, unnamed, is read in the old, root-first order for
@@ -94,14 +94,14 @@ An object of class \code{"study_status"}, returned visibly.
 \description{
 Completes the default study data contract or adds one distinctly named
 dataset. The function derives row and column counts from the file and
-replaces \code{_study.yml} and \code{manifest.yaml} only after both updated
+replaces \verb{_study.yml} and \code{manifest.yaml} only after both updated
 files have been prepared successfully.
 
 Registration converts the file once to a dated parquet in the same folder,
-\code{<name>_YYYYMMDD.parquet}, with its column record beside it as
-\code{<name>_YYYYMMDD.schema.csv}. That parquet is what \code{\link{read_built}}
+\verb{<name>_YYYYMMDD.parquet}, with its column record beside it as
+\verb{<name>_YYYYMMDD.schema.csv}. That parquet is what \code{\link[=read_built]{read_built()}}
 and the job templates read, so the source file may be rebuilt freely; run
-\code{\link{update_manifest}()} to register a rebuilt file as a new version.
+\code{\link[=update_manifest]{update_manifest()}} to register a rebuilt file as a new version.
 The date is the file's modification date unless \code{extract_date} is given.
 A release-aware registration
 (\code{catalog_dataset} and \code{release_id}) records the catalog's file as
@@ -110,12 +110,12 @@ it is and converts nothing.
 A dataset is registered once: registering it again stops with "already
 registered". So a study whose datasets are already registered adds
 \code{kind}, \code{key} or \code{parents} by editing that dataset's entry in
-\code{_study.yml}, then running \code{\link{update_manifest}()}. The key is
+\verb{_study.yml}, then running \code{\link[=update_manifest]{update_manifest()}}. The key is
 checked when the next version is registered. A combined dataset records its
 parents' versions only once its source has been rebuilt, and reads as out of
 date until then. A release-aware dataset is skipped by
 \code{update_manifest()}: its parents' versions are recorded when a release is
-adopted with \code{\link{adopt_data_update}()}, and its key is checked only at
+adopted with \code{\link[=adopt_data_update]{adopt_data_update()}}, and its key is checked only at
 registration.
 }
 \section{Where a subset goes}{
@@ -123,17 +123,17 @@ registration.
 A subset of the study dataset has three homes, and which to pick depends on
 who needs it.
 \itemize{
-  \item A \code{WHERE} condition in one job writes no file. The job's
-    \code{hvtiRtemplates::read_job_data()} applies the condition and records
-    it. Use this for a subset that only one job analyses.
-  \item An analysis set from \code{hvtiRdatabuild::write_analysis_set()} is
-    saved as \code{00_datasets/<name>.parquet} with \code{<name>.set.yml}
-    beside it, and is derived from the study dataset only. A job reads it with
-    \code{DATASET <- "built"} and \code{ANALYSIS_SET <- "<name>"}. Use this
-    for a subset of the study dataset that several jobs share.
-  \item A separately registered dataset, \code{role = "named"} with
-    \code{kind = "subset"}, is for a subset built some other way, such as
-    from a second source or by a script outside the study's build.
+\item A \code{WHERE} condition in one job writes no file. The job's
+\code{hvtiRtemplates::read_job_data()} applies the condition and records
+it. Use this for a subset that only one job analyses.
+\item An analysis set from \code{hvtiRdatabuild::write_analysis_set()} is
+saved as \verb{00_datasets/<name>.parquet} with \verb{<name>.set.yml}
+beside it, and is derived from the study dataset only. A job reads it with
+\code{DATASET <- "built"} and \code{ANALYSIS_SET <- "<name>"}. Use this
+for a subset of the study dataset that several jobs share.
+\item A separately registered dataset, \code{role = "named"} with
+\code{kind = "subset"}, is for a subset built some other way, such as
+from a second source or by a script outside the study's build.
 }
 Exclusions that define the cohort itself belong in the build job
 (\code{hvtiRtemplates::build_cohort()}), not in a subset.
@@ -172,6 +172,6 @@ unlink(root, recursive = TRUE)
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link{study_setup}}, \code{\link{study_config}},
-  \code{\link{update_manifest}}
+\code{\link[=study_setup]{study_setup()}}, \code{\link[=study_config]{study_config()}},
+\code{\link[=update_manifest]{update_manifest()}}
 }

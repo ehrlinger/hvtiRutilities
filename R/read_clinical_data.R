@@ -7,81 +7,81 @@
 #'
 #' @description
 #' A convenience wrapper that detects the file type, reads the data with the
-#' appropriate reader, and optionally runs \code{\link{r_data_types}} to
+#' appropriate reader, and optionally runs [r_data_types()] to
 #' convert column types. This saves novice users from having to remember
 #' which package reads which format and ensures labels are preserved.
 #'
 #' Supported formats:
 #' \describe{
-#'   \item{\code{.sas7bdat}}{SAS datasets via \code{haven::read_sas()}}
-#'   \item{\code{.csv}}{Comma-separated files via \code{utils::read.csv()} with
-#'     \code{check.names = FALSE}, so column names are preserved exactly as
+#'   \item{`.sas7bdat`}{SAS datasets via `haven::read_sas()`}
+#'   \item{`.csv`}{Comma-separated files via `utils::read.csv()` with
+#'     `check.names = FALSE`, so column names are preserved exactly as
 #'     written in the file (spaces, hyphens, and special characters are not
-#'     silently converted to \code{.}).}
-#'   \item{\code{.xlsx}, \code{.xls}}{Excel workbooks via
-#'     \code{readxl::read_excel()}}
-#'   \item{\code{.rds}}{R serialized objects via \code{readRDS()}}
-#'   \item{\code{.parquet}}{Parquet files via \code{arrow::read_parquet()}}
+#'     silently converted to `.`).}
+#'   \item{`.xlsx`, `.xls`}{Excel workbooks via
+#'     `readxl::read_excel()`}
+#'   \item{`.rds`}{R serialized objects via `readRDS()`}
+#'   \item{`.parquet`}{Parquet files via `arrow::read_parquet()`}
 #' }
 #'
 #' @details
-#' \strong{SAS format catalogs.} A \code{.sas7bdat} file stores a format's
-#' \emph{name} -- \code{YESNOF.} -- and not its values. The code-to-text
-#' mapping lives in a separate \code{.sas7bcat} catalog. Without one, reading
+#' **SAS format catalogs.** A `.sas7bdat` file stores a format's
+#' *name* -- `YESNOF.` -- and not its values. The code-to-text
+#' mapping lives in a separate `.sas7bcat` catalog. Without one, reading
 #' a SAS dataset yields numeric codes and no value labels, however the read is
 #' written, and no amount of downstream work can recover text that never
-#' arrived. Pass \code{catalog_file} to read the two together.
+#' arrived. Pass `catalog_file` to read the two together.
 #'
 #' A catalog on its own is only half the journey. With
-#' \code{convert_types = TRUE}, \code{\link{r_data_types}} discards value
-#' labels unless \code{use_value_labels = TRUE} is passed through \code{...},
+#' `convert_types = TRUE`, [r_data_types()] discards value
+#' labels unless `use_value_labels = TRUE` is passed through `...`,
 #' so supplying a catalog without it warns.
 #'
-#' \strong{Column types depend on the format.} Each reader decides its own
-#' types, and \code{read_clinical_data()} does not reconcile them:
+#' **Column types depend on the format.** Each reader decides its own
+#' types, and `read_clinical_data()` does not reconcile them:
 #' \itemize{
-#'   \item \code{.sas7bdat}: a date-formatted variable is \code{Date}, and a
-#'     formatted numeric is \code{haven_labelled} when a catalog is read.
-#'   \item \code{.xlsx}, \code{.xls}: a date cell is \code{POSIXct}, not
-#'     \code{Date}, and every number is double.
-#'   \item \code{.csv}: a date is \emph{character}. With
-#'     \code{convert_types = TRUE} it then becomes a factor, as every character
-#'     column does; convert it with \code{as.Date()} first, or name it in
-#'     \code{skip_cols}.
-#'   \item \code{.rds}, \code{.parquet}: the types that were written.
+#'   \item `.sas7bdat`: a date-formatted variable is `Date`, and a
+#'     formatted numeric is `haven_labelled` when a catalog is read.
+#'   \item `.xlsx`, `.xls`: a date cell is `POSIXct`, not
+#'     `Date`, and every number is double.
+#'   \item `.csv`: a date is *character*. With
+#'     `convert_types = TRUE` it then becomes a factor, as every character
+#'     column does; convert it with `as.Date()` first, or name it in
+#'     `skip_cols`.
+#'   \item `.rds`, `.parquet`: the types that were written.
 #' }
-#' \code{\link{r_data_types}} never alters a \code{Date} or \code{POSIXct}
+#' [r_data_types()] never alters a `Date` or `POSIXct`
 #' column.
 #'
-#' \strong{The dots go to \code{r_data_types()} only.} Reader options --
-#' \code{sheet}, \code{na}, \code{skip} -- are not passed to the reader. A
-#' name in \code{...} that \code{\link{r_data_types}} does not take is an
-#' error, and so is any argument in \code{...} when \code{convert_types} is
-#' \code{FALSE}, since it would otherwise be dropped without effect.
+#' **The dots go to `r_data_types()` only.** Reader options --
+#' `sheet`, `na`, `skip` -- are not passed to the reader. A
+#' name in `...` that [r_data_types()] does not take is an
+#' error, and so is any argument in `...` when `convert_types` is
+#' `FALSE`, since it would otherwise be dropped without effect.
 #'
 #' @param file Character. Path to the dataset file.
-#' @param convert_types Logical. Apply \code{\link{r_data_types}} to the data
-#'   after reading. Defaults to \code{FALSE}: the file is returned as read.
-#'   \code{TRUE} converts any two-valued numeric column to logical, which is
+#' @param convert_types Logical. Apply [r_data_types()] to the data
+#'   after reading. Defaults to `FALSE`: the file is returned as read.
+#'   `TRUE` converts any two-valued numeric column to logical, which is
 #'   wrong for 0/1 event and censoring flags, so type conversion belongs to a
 #'   declared variable-derivation step rather than to reading.
-#' @param ... Additional arguments passed to \code{\link{r_data_types}}
-#'   (e.g., \code{factor_size}, \code{skip_cols}, \code{binary_factor},
-#'   \code{use_value_labels}). Must be named. An error when
-#'   \code{convert_types = FALSE}, or for a name \code{r_data_types()} does
+#' @param ... Additional arguments passed to [r_data_types()]
+#'   (e.g., `factor_size`, `skip_cols`, `binary_factor`,
+#'   `use_value_labels`). Must be named. An error when
+#'   `convert_types = FALSE`, or for a name `r_data_types()` does
 #'   not take.
 #' @param catalog_file Character. Path to a SAS format catalog
-#'   (\code{.sas7bcat}), passed to \code{haven::read_sas()}. Defaults to
-#'   \code{NULL}, which is what was read before this argument existed, so no
-#'   existing call changes. Only valid for a \code{.sas7bdat} data file;
+#'   (`.sas7bcat`), passed to `haven::read_sas()`. Defaults to
+#'   `NULL`, which is what was read before this argument existed, so no
+#'   existing call changes. Only valid for a `.sas7bdat` data file;
 #'   supplying one with any other format is an error rather than a silent
-#'   no-op. Must be named, because it follows \code{...}.
+#'   no-op. Must be named, because it follows `...`.
 #'
 #' @return A data frame with labels preserved and (optionally) types
 #'   converted.
 #'
-#' @seealso \code{\link{r_data_types}} for details on type conversion,
-#'   \code{\link{label_map}} to extract labels after reading.
+#' @seealso [r_data_types()] for details on type conversion,
+#'   [label_map()] to extract labels after reading.
 #'
 #' @export
 #'

@@ -12,7 +12,7 @@ level_map(data, var_cols = NULL, max_levels = 20L, vars)
 \item{var_cols}{Optional character vector of column names to report. Defaults
 to every discrete column - factor, value-labelled, or character. Naming a
 column that is not in \code{data} is an error. Was \code{vars} before 2026-11;
-\code{vars =} still works for one release, with a warning.}
+\verb{vars =} still works for one release, with a warning.}
 
 \item{max_levels}{Maximum distinct values a column may have before it is
 skipped. A single positive whole number, finite; defaults to 20. To
@@ -25,23 +25,23 @@ cap that is working.}
 \value{
 A data frame with one row per reported level and the columns
 \describe{
-  \item{key}{The variable name}
-  \item{code}{The code the level maps to, as character, or \code{NA}}
-  \item{level}{The text to display, with a prefix stripped where the rule
-    in \code{\link{strip_level_prefix}} allows it}
-  \item{level_full}{The level text as stored, never modified}
-  \item{stripped}{Logical: \code{TRUE} where \code{level} differs from
-    \code{level_full}}
+\item{key}{The variable name}
+\item{code}{The code the level maps to, as character, or \code{NA}}
+\item{level}{The text to display, with a prefix stripped where the rule
+in \code{\link[=strip_level_prefix]{strip_level_prefix()}} allows it}
+\item{level_full}{The level text as stored, never modified}
+\item{stripped}{Logical: \code{TRUE} where \code{level} differs from
+\code{level_full}}
 }
 Zero rows, with those columns, when nothing is reportable.
 }
 \description{
 One row per level of each discrete variable, giving the text as stored and
 the text that would be displayed once a leading code prefix is removed.
-Like \code{\link{strip_level_prefix}} it reports; it changes nothing.
+Like \code{\link[=strip_level_prefix]{strip_level_prefix()}} it reports; it changes nothing.
 }
 \details{
-The shape deliberately mirrors \code{\link{label_map}} one level down:
+The shape deliberately mirrors \code{\link[=label_map]{label_map()}} one level down:
 \code{level}, \code{level_full} and \code{stripped} read the same way as
 \code{label}, \code{label_full} and \code{truncated}. So
 \code{subset(level_map(data), stripped)} answers "which levels will print
@@ -50,12 +50,12 @@ the question for labels.
 
 Where the codes come from depends on what the column carries:
 \itemize{
-  \item a column with value labels - from \code{value_labels.yml} via
-    \code{\link{apply_value_labels}}, or from a SAS format catalog - gives
-    the declared codes;
-  \item a factor gives its integer level positions, which is what the
-    column actually stores;
-  \item a character column has no codes, and \code{code} is \code{NA}.
+\item a column with value labels - from \code{value_labels.yml} via
+\code{\link[=apply_value_labels]{apply_value_labels()}}, or from a SAS format catalog - gives
+the declared codes;
+\item a factor gives its integer level positions, which is what the
+column actually stores;
+\item a character column has no codes, and \code{code} is \code{NA}.
 }
 
 Plain numeric and logical columns contribute no rows: they have no level
@@ -77,7 +77,7 @@ level_map(dta)
 subset(level_map(dta), stripped)
 }
 \seealso{
-\code{\link{strip_level_prefix}} for the rule itself,
-  \code{\link{label_map}} for the same idea applied to variable labels,
-  \code{\link{apply_value_labels}} for declaring level text outright.
+\code{\link[=strip_level_prefix]{strip_level_prefix()}} for the rule itself,
+\code{\link[=label_map]{label_map()}} for the same idea applied to variable labels,
+\code{\link[=apply_value_labels]{apply_value_labels()}} for declaring level text outright.
 }

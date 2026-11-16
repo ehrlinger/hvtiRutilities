@@ -10,7 +10,7 @@ study_declare(packages = character(0), root = NULL)
 \item{packages}{Character. Package names to declare.}
 
 \item{root}{Character(1). The study root. Defaults to the study that contains the working
-directory, found by its \code{_study.yml}; outside a study the function
+directory, found by its \verb{_study.yml}; outside a study the function
 stops and writes nothing.}
 }
 \value{

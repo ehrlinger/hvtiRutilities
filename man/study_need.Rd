@@ -29,7 +29,7 @@ the question and the error.}
 \item{r_upgrade}{Logical(1). Leave \code{FALSE}. A \code{renv.lock}
 snapshot is refused from an R whose major.minor
 differs from the R the lockfile records (see
-\code{\link{guard_snapshot}}). Set \code{TRUE} only when you are
+\code{\link[=guard_snapshot]{guard_snapshot()}}). Set \code{TRUE} only when you are
 deliberately moving the study to this session's R.}
 }
 \value{
@@ -38,7 +38,7 @@ The names of the packages installed, invisibly.
 \description{
 Called where a function needs a package the study may not have, such as
 \pkg{arrow} for registered data. In the study's active renv project the
-packages are declared (see \code{\link{study_declare}}); a missing one is
+packages are declared (see \code{\link[=study_declare]{study_declare()}}); a missing one is
 installed into the study's library after one question, when the session is
 interactive, and recorded in \code{renv.lock}. Otherwise the call stops and
 names \code{hvtiR::setup()}, which installs everything a study needs.
@@ -51,7 +51,7 @@ recorded too, because a restore would not bring it back otherwise. Recording
 takes one question, since the snapshot also moves every other package in the
 lock to the version in the library. The caller already has what it needs, so
 when the package cannot be recorded (the session is not interactive, the
-question is declined, \code{\link{guard_snapshot}} refuses, or the snapshot
+question is declined, \code{\link[=guard_snapshot]{guard_snapshot()}} refuses, or the snapshot
 fails) the call warns and carries on. Base packages, which renv never locks, are left out.
 
 An installed package is never upgraded, whatever its version: moving a

@@ -8,24 +8,24 @@ study_checkpoint_push(root = study_root())
 }
 \arguments{
 \item{root}{Character. Study root. Defaults to the study that contains the working
-directory, found by its \code{_study.yml}; outside a study the function
+directory, found by its \verb{_study.yml}; outside a study the function
 stops and writes nothing.}
 }
 \value{
 A data frame, returned invisibly, with one row per logged event and
-  columns \code{type}, \code{tag}, \code{state}, \code{git}, \code{st} and
-  \code{reason}.
+columns \code{type}, \code{tag}, \code{state}, \code{git}, \code{st} and
+\code{reason}.
 }
 \description{
 Retries delivery of every checkpoint, closure and reopening in
 \code{.checkpoint/log.yml} that has not reached the remote yet.
-\code{\link{study_checkpoint}} does this on every call; use this function
+\code{\link[=study_checkpoint]{study_checkpoint()}} does this on every call; use this function
 after a network outage, or once \code{study-setup --verify} has verified a
 manually entered identity. A promoted exploration's held checkpoints are
-delivered once \code{checkpoint: remote:} is set; promotion does not set it.
+delivered once \verb{checkpoint: remote:} is set; promotion does not set it.
 On an exploration set up with \code{derived_from} that has not been
 promoted, it stops with an error and pushes nothing; run
-\code{\link{study_promote}} first.
+\code{\link[=study_promote]{study_promote()}} first.
 }
 \details{
 An entry that a crash left half-written is settled first: completed when
@@ -39,33 +39,32 @@ Two failures leave an entry pending in a way that retrying
 warning that names the tag and points back here.
 
 \itemize{
-  \item \strong{Not on main} (a log write was lost after a replay).
-  This one usually repairs itself. Delivery finds the entry's replayed
-  commit in one of three ways, in order: another entry in the log already
-  records the same old commit as its \code{replayed_from}; exactly one
-  commit on \code{main} carries the entry's own id (\code{checkpoint_id}
-  or \code{closure_id}); or exactly one commit on \code{main} carries the
-  id in the old commit's own message. The last way covers a reopening,
-  whose \code{reopening_id} is only in its tag: it tags an existing commit,
-  a closure's or that of a checkpoint taken while the study was closed.
-  Delivery then points the entry at that commit, keeps the old value as
-  \code{replayed_from}, and delivers as normal. Only when none of these
-  finds exactly one commit does the entry stay pending with a warning.
-  Then repair it by hand: look the id up with
-  \code{git -C .checkpoint/repo log --fixed-strings --grep=<id>
-  --format=\%H main}, choose the right commit, set the entry's
-  \code{git_commit} in \code{.checkpoint/log.yml} to it, and set its
-  \code{replayed_from} to the old \code{git_commit}. Then run
-  \code{study_checkpoint_push()} again. Do not skip \code{replayed_from}:
-  a later entry that names the same old commit, such as a reopening,
-  heals from it. If no such commit exists, set the entry's \code{state} to
-  \code{"abandoned"} instead; an abandoned entry is never delivered.
-  \item \strong{Unnumbered tag clash} (two copies of the study each
-  recorded the same unnumbered tag, for example \code{workspace_created}).
-  The two copies have diverged. Keep one copy's \code{.checkpoint/}
-  directory, normally the one whose history is already on the remote,
-  move the other copy's \code{.checkpoint/} aside, and run
-  \code{study_checkpoint_push()} again from the kept copy.
+\item \strong{Not on main} (a log write was lost after a replay).
+This one usually repairs itself. Delivery finds the entry's replayed
+commit in one of three ways, in order: another entry in the log already
+records the same old commit as its \code{replayed_from}; exactly one
+commit on \code{main} carries the entry's own id (\code{checkpoint_id}
+or \code{closure_id}); or exactly one commit on \code{main} carries the
+id in the old commit's own message. The last way covers a reopening,
+whose \code{reopening_id} is only in its tag: it tags an existing commit,
+a closure's or that of a checkpoint taken while the study was closed.
+Delivery then points the entry at that commit, keeps the old value as
+\code{replayed_from}, and delivers as normal. Only when none of these
+finds exactly one commit does the entry stay pending with a warning.
+Then repair it by hand: look the id up with
+\verb{git -C .checkpoint/repo log --fixed-strings --grep=<id> --format=\%H main}, choose the right commit, set the entry's
+\code{git_commit} in \code{.checkpoint/log.yml} to it, and set its
+\code{replayed_from} to the old \code{git_commit}. Then run
+\code{study_checkpoint_push()} again. Do not skip \code{replayed_from}:
+a later entry that names the same old commit, such as a reopening,
+heals from it. If no such commit exists, set the entry's \code{state} to
+\code{"abandoned"} instead; an abandoned entry is never delivered.
+\item \strong{Unnumbered tag clash} (two copies of the study each
+recorded the same unnumbered tag, for example \code{workspace_created}).
+The two copies have diverged. Keep one copy's \verb{.checkpoint/}
+directory, normally the one whose history is already on the remote,
+move the other copy's \verb{.checkpoint/} aside, and run
+\code{study_checkpoint_push()} again from the kept copy.
 }
 }
 
@@ -91,5 +90,5 @@ if (nzchar(Sys.which("git"))) {
 
 }
 \seealso{
-\code{\link{study_checkpoint}}, \code{\link{study_promote}}
+\code{\link[=study_checkpoint]{study_checkpoint()}}, \code{\link[=study_promote]{study_promote()}}
 }

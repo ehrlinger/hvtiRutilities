@@ -12,7 +12,7 @@ the study root.}
 
 \item{role}{Character(1). The artifact's role in this job.}
 
-\item{cfg}{List. A study manifest from \code{\link{study_config}}.}
+\item{cfg}{List. A study manifest from \code{\link[=study_config]{study_config()}}.}
 }
 \value{
 A plain list containing one immutable-by-convention artifact record.
@@ -37,6 +37,6 @@ unlink(root, recursive = TRUE)
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link{provenance_data}},
-  \code{\link{capture_provenance}}
+\code{\link[=provenance_data]{provenance_data()}},
+\code{\link[=capture_provenance]{capture_provenance()}}
 }

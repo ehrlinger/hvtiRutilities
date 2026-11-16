@@ -21,12 +21,12 @@ macro rather than the first one in the file.}
 }
 \value{
 A character vector of unique variable names, lowercased, in the
-  order they appear in the block.
+order they appear in the block.
 }
 \description{
 The SAS jobs this package's callers reproduce specify their variables as
 blocks in the \code{.sas}: a phase name on its own line, then comma-separated
-names, terminated by a bare \code{;}.
+names, terminated by a bare \verb{;}.
 
 Reading them rather than transcribing them is the point. A transcribed list
 drifts from the job it claims to reproduce, and nothing catches it.
@@ -37,19 +37,19 @@ silent
 in both directions.} Measured on a real screen (\code{bh.dead_s3_JR.sas}):
 
 \itemize{
-\item Stripping \code{/*...*/} line by line leaves banner comments intact,
+\item Stripping \verb{/*...*/} line by line leaves banner comments intact,
 because
-\code{/***** Patient Variables *****/} contains \code{*} and so does not
+\verb{/***** Patient Variables *****/} contains \code{*} and so does not
 match a
-\code{[^*]*} body. The banner text then glues onto the \strong{first} name on
+\verb{[^*]*} body. The banner text then glues onto the \strong{first} name on
 the
 next line and that name vanishes: \code{female}, \code{afib_pr},
 \code{plvidd} and \code{size}
-  were all lost this way.
-  \item A \code{/* ... */} spanning two lines is never stripped at all, so a
+were all lost this way.
+\item A \verb{/* ... */} spanning two lines is never stripped at all, so a
 commented-\strong{out} variable is read as live: \code{avet_con} entered a
 screen
-  that way.
+that way.
 }
 
 Collapsing the block first and stripping lazily handles both, and that is
@@ -63,7 +63,7 @@ by a copy of it. \code{name/I} marks a variable forced into the model, and
 the
 suffix is an option on the name rather than part of it. Names are lowercased,
 because SAS variable names are case-insensitive and
-\code{\link{read_clinical_data}}
+\code{\link[=read_clinical_data]{read_clinical_data()}}
 lowercases them.
 }
 \examples{
@@ -72,5 +72,5 @@ sas <- c("\%macro final;", "  early", "    age, ln_age, /* dropped */",
 sas_variable_block(sas, "^\\\\s*early\\\\s*$", after = "^\\\\s*\%macro\\\\s+final")
 }
 \seealso{
-\code{\link{sas_path}}, \code{\link{covariate_audit}}
+\code{\link[=sas_path]{sas_path()}}, \code{\link[=covariate_audit]{covariate_audit()}}
 }

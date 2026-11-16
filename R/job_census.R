@@ -161,68 +161,68 @@
 #' @description
 #' Walks each root and returns one row per file. This is a filename-only
 #' sweep: no file is opened, nothing is parsed, and there is no
-#' \code{TemporalHazard} dependency.
+#' `TemporalHazard` dependency.
 #'
 #' @details
-#' \strong{Nothing is filtered out.} Placement and classification are columns,
+#' **Nothing is filtered out.** Placement and classification are columns,
 #' not reasons to drop a row, so a file this sweep cannot classify stays
 #' findable. A sweep that reports only what it kept makes a missing job
 #' indistinguishable from a job that does not exist. The one exception is
-#' tooling: a path with a \code{.git} or \code{.checkpoint} component holds
+#' tooling: a path with a `.git` or `.checkpoint` component holds
 #' version-control internals or a study checkpoint's mirror, not study files,
 #' and is not listed.
 #'
-#' A \code{scaffolded} name, \code{<subject>-<type>-<prefix>[-<qualifier>].qmd}
-#' as written by \code{hvtiRtemplates::add_job()}, is parsed with its
+#' A `scaffolded` name, `<subject>-<type>-<prefix>[-<qualifier>].qmd`
+#' as written by `hvtiRtemplates::add_job()`, is parsed with its
 #' qualifier. So is the template-first form,
-#' \code{<prefix>[.<qualifier>].<subject>.<type>.qmd}. The \code{-runner.R}
-#' (or \code{.runner.R}) that \code{add_job()} writes beside some reports
-#' takes the report's \code{stem}, so it counts as a file of that job rather
+#' `<prefix>[.<qualifier>].<subject>.<type>.qmd`. The `-runner.R`
+#' (or `.runner.R`) that `add_job()` writes beside some reports
+#' takes the report's `stem`, so it counts as a file of that job rather
 #' than as a second job.
 #'
-#' A legacy prefix listed in \code{\link{hvti_prefix_folds}} is reported as
-#' the prefix it folds into, so a \code{pm.*} file counts as \code{lm}.
-#' \code{stem} keeps the name as written, so a folded file stays findable.
+#' A legacy prefix listed in [hvti_prefix_folds()] is reported as
+#' the prefix it folds into, so a `pm.*` file counts as `lm`.
+#' `stem` keeps the name as written, so a folded file stays findable.
 #'
 #' There is deliberately no extension allowlist. See
-#' \code{vignette}-adjacent design note
-#' \code{dev/specs/2026-08-26-job-type-inventory-design.md}, section 4.4: a
+#' `vignette`-adjacent design note
+#' `dev/specs/2026-08-26-job-type-inventory-design.md`, section 4.4: a
 #' plausible default tuned on the hazard prefixes would have dropped every
 #' R-side job in the corpus.
 #'
-#' \code{folder_ok} is \code{folder == folder_expected}, and is therefore
-#' \code{NA} -- not \code{FALSE} -- whenever either side is unknown. An
+#' `folder_ok` is `folder == folder_expected`, and is therefore
+#' `NA` -- not `FALSE` -- whenever either side is unknown. An
 #' unplaced file has no folder and an unparsed name has no expected folder;
-#' neither is a misfiled job, and \code{!folder_ok} must not select them.
+#' neither is a misfiled job, and `!folder_ok` must not select them.
 #'
-#' \strong{Run this server-side.} It stats every file beneath \code{roots},
+#' **Run this server-side.** It stats every file beneath `roots`,
 #' which is metadata-latency-bound over an SMB mount -- a 40-file scan has
 #' timed out at two minutes over the share.
 #'
 #' @param roots Character. One or more directories to sweep. A root is a
-#'   directory that \emph{contains} studies, not a study itself: the study is
+#'   directory that *contains* studies, not a study itself: the study is
 #'   read as the path from the root down to the taxonomy folder's parent, so a
 #'   root that is itself a study leaves nothing to name it and every prefix
-#'   collapses to one study called \code{"."} (warned about). Each root must
+#'   collapses to one study called `"."` (warned about). Each root must
 #'   exist and be a directory, or this errors. A duplicate root is dropped; a
 #'   root nested inside another warns and the inner one is dropped, since its
 #'   files would otherwise be counted twice under two study labels.
 #'
-#' @return A data frame with one row per file and the columns \code{path},
-#'   \code{study}, \code{folder}, \code{status}, \code{depth}, \code{naming},
-#'   \code{prefix}, \code{is_template}, \code{qualifier1},
-#'   \code{qualifiers}, \code{n_qualifiers}, \code{stem}, \code{ext},
-#'   \code{prefix_class}, \code{folder_expected} and \code{folder_ok}.
-#'   The three qualifier columns carry the dot-fields of a \code{legacy}
+#' @return A data frame with one row per file and the columns `path`,
+#'   `study`, `folder`, `status`, `depth`, `naming`,
+#'   `prefix`, `is_template`, `qualifier1`,
+#'   `qualifiers`, `n_qualifiers`, `stem`, `ext`,
+#'   `prefix_class`, `folder_expected` and `folder_ok`.
+#'   The three qualifier columns carry the dot-fields of a `legacy`
 #'   name that lie between the prefix and the extension, or the trailing
-#'   qualifier field of a \code{scaffolded} name, and are \code{NA}
+#'   qualifier field of a `scaffolded` name, and are `NA`
 #'   (count zero) for every other convention. They are named by position
 #'   because the second field means a different thing in each taxonomy
-#'   folder; see \code{\link{hvti_taxonomy}} and the design note referenced
+#'   folder; see [hvti_taxonomy()] and the design note referenced
 #'   in \file{R/job_names.R}.
 #'   Zero rows if the roots hold no files.
 #'
-#' @seealso \code{\link{job_census}}, \code{\link{hvti_taxonomy}}
+#' @seealso [job_census()], [hvti_taxonomy()]
 #'
 #' @export
 #'
@@ -394,61 +394,61 @@ job_files <- function(roots) {
 #' prefix, which studies have run it and how many jobs each.
 #'
 #' @details
-#' Two count columns, deliberately. \code{n_jobs} counts distinct stems and is
-#' the honest unit -- the \code{.lst}, \code{.sas} and \code{.log} of one job
-#' are one job, and an editor backup does not create a second. \code{n_files}
+#' Two count columns, deliberately. `n_jobs` counts distinct stems and is
+#' the honest unit -- the `.lst`, `.sas` and `.log` of one job
+#' are one job, and an editor backup does not create a second. `n_files`
 #' counts rows, and exists because the hand-count this replaces counted files;
 #' keeping both means the new output can be reconciled against the table that
 #' already drove a decision.
 #'
-#' \strong{A template is not a job, by either marker.} \code{is_template} is
-#' strictly the legacy \code{tp.} prefix (spec section 4); a file written in
-#' the \code{template} naming convention (section 4.2, e.g.
-#' \code{03.01-ac.qmd}) is \emph{also} not a job, but with \code{is_template
-#' = FALSE}. \code{is_template_naming} carries that second signal, and the
+#' **A template is not a job, by either marker.** `is_template` is
+#' strictly the legacy `tp.` prefix (spec section 4); a file written in
+#' the `template` naming convention (section 4.2, e.g.
+#' `03.01-ac.qmd`) is *also* not a job, but with `is_template
+#' = FALSE`. `is_template_naming` carries that second signal, and the
 #' roll-up keys on both, so a template-convention file never shares a row
-#' with a genuine job at the same \code{(study, prefix, folder)} -- if it
+#' with a genuine job at the same `(study, prefix, folder)` -- if it
 #' did, that row could outlive the genuine job and still read as an
 #' attestation the distinct-studies gate (a prefix needs a second study
 #' running the real job before it is templatable) would wrongly count.
 #'
-#' The \code{job_files()} rows are kept on the result as the \code{"files"}
+#' The `job_files()` rows are kept on the result as the `"files"`
 #' attribute, so the accounting -- unplaced files, unknown prefixes, misfiled
 #' jobs -- stays reachable from the summary rather than being computed and
 #' thrown away.
 #'
-#' \strong{The roll-up cannot key every row}, and says so rather than
+#' **The roll-up cannot key every row**, and says so rather than
 #' shrinking quietly: a file with no study or no prefix has nothing to group
-#' by. Those rows are attached as the \code{"not_rolled_up"} attribute and
+#' by. Those rows are attached as the `"not_rolled_up"` attribute and
 #' counted on the first line of the print, because what was dropped is the
-#' \emph{union} of the unplaced and the unparsed and a reader cannot compute a
+#' *union* of the unplaced and the unparsed and a reader cannot compute a
 #' union from two separate totals.
 #'
-#' \strong{Subsetting.} A row subset (\code{x[i, ]}) keeps both attributes. A
-#' \emph{column} subset (\code{x[, j]}) drops them while leaving the class in
+#' **Subsetting.** A row subset (`x[i, ]`) keeps both attributes. A
+#' *column* subset (`x[, j]`) drops them while leaving the class in
 #' place, so the result still dispatches to this print method with nothing to
-#' print from; \code{print()} detects that and errors rather than reporting
-#' zeros. The printed coverage line (\code{"Rolled up N of M files"}) always
-#' describes the full original sweep, even from a row-subset \code{x}: its
-#' totals are fixed as an attribute when \code{job_census()} builds \code{x},
-#' not recomputed from \code{x$n_files} at print time.
+#' print from; `print()` detects that and errors rather than reporting
+#' zeros. The printed coverage line (`"Rolled up N of M files"`) always
+#' describes the full original sweep, even from a row-subset `x`: its
+#' totals are fixed as an attribute when `job_census()` builds `x`,
+#' not recomputed from `x$n_files` at print time.
 #'
-#' @param x Character roots to sweep -- see \code{\link{job_files}} for what a
-#'   root must be -- or a data frame returned by \code{\link{job_files}}. A
+#' @param x Character roots to sweep -- see [job_files()] for what a
+#'   root must be -- or a data frame returned by [job_files()]. A
 #'   data frame missing any of that function's 16 columns is an error, not a
 #'   silently empty census.
 #'
-#' @return A data frame of class \code{hvti_job_census} with one row per
-#'   \code{(study, prefix, folder, is_template, is_template_naming)} and
-#'   columns \code{n_jobs} and \code{n_files}. \code{is_template_naming} is
-#'   \code{TRUE} when the row's files use the \code{template} naming
-#'   convention (section 4.2) -- distinct from \code{is_template}, which is
-#'   strictly the legacy \code{tp.} marker. The originating \code{job_files()}
-#'   rows are attached as the \code{"files"} attribute, and the rows that
+#' @return A data frame of class `hvti_job_census` with one row per
+#'   `(study, prefix, folder, is_template, is_template_naming)` and
+#'   columns `n_jobs` and `n_files`. `is_template_naming` is
+#'   `TRUE` when the row's files use the `template` naming
+#'   convention (section 4.2) -- distinct from `is_template`, which is
+#'   strictly the legacy `tp.` marker. The originating `job_files()`
+#'   rows are attached as the `"files"` attribute, and the rows that
 #'   could not be rolled up -- those with no study or no prefix -- as the
-#'   \code{"not_rolled_up"} attribute.
+#'   `"not_rolled_up"` attribute.
 #'
-#' @seealso \code{\link{job_files}}
+#' @seealso [job_files()]
 #'
 #' @export
 #'
@@ -526,7 +526,7 @@ job_census <- function(x) {
   out
 }
 
-#' @param ... Ignored; present for S3 consistency with \code{print}.
+#' @param ... Ignored; present for S3 consistency with `print`.
 #' @rdname job_census
 #' @export
 print.hvti_job_census <- function(x, ...) {

@@ -426,14 +426,14 @@
 #'
 #' @description
 #' Returns the path of the sidecar belonging to a rendered output: the output
-#' path with its extension replaced by \code{.provenance.json}.
+#' path with its extension replaced by `.provenance.json`.
 #'
 #' @param path Character(1). Path to a rendered output.
 #'
 #' @return Character(1). The sidecar path.
 #'
-#' @seealso \code{\link{publish_provenance}},
-#'   \code{\link{record_provenance}}
+#' @seealso [publish_provenance()],
+#'   [record_provenance()]
 #'
 #' @export
 #'
@@ -449,28 +449,28 @@ provenance_path <- function(path) {
 #' Snapshot a registered data file for provenance
 #'
 #' @description
-#' Records the authoritative physical file selected by \code{dataset}. For a
-#' manifest entry with \code{role: "primary"}, this is the promoted Parquet
+#' Records the authoritative physical file selected by `dataset`. For a
+#' manifest entry with `role: "primary"`, this is the promoted Parquet
 #' file rather than the retired source, and for a dataset registered with
-#' \code{\link{register_data}} it is the registered version, the dated Parquet
+#' [register_data()] it is the registered version, the dated Parquet
 #' file, rather than the source it was converted from. The returned plain list contains the
 #' logical dataset name, a canonical study-relative path, its role, byte count,
 #' modification time, and SHA-256 hash.
 #'
 #' @param dataset Character(1). Logical registered dataset name.
-#'   \code{"built"} is a second name for \code{"study"}.
-#' @param cfg List. A study manifest from \code{\link{study_config}}.
+#'   `"built"` is a second name for `"study"`.
+#' @param cfg List. A study manifest from [study_config()].
 #' @param role Character(1). The file's role in this job.
-#' @param working Logical. If \code{TRUE}, record the working source file, as
-#'   \code{\link{read_built}(working = TRUE)} reads it.
+#' @param working Logical. If `TRUE`, record the working source file, as
+#'   [read_built()] reads it with `working = TRUE`.
 #'
 #' @return A plain list containing one immutable-by-convention data record.
-#'   A working read's record also carries \code{working = TRUE}. A registered
-#'   read's record carries no \code{working} element, so records written before
+#'   A working read's record also carries `working = TRUE`. A registered
+#'   read's record carries no `working` element, so records written before
 #'   1.5.12 read the same.
 #'
-#' @seealso \code{\link{provenance_artifact}},
-#'   \code{\link{capture_provenance}}
+#' @seealso [provenance_artifact()],
+#'   [capture_provenance()]
 #'
 #' @examplesIf requireNamespace("arrow", quietly = TRUE)
 #' root <- file.path(tempdir(), "provenance-data-example")
@@ -523,12 +523,12 @@ provenance_data <- function(dataset = "study", cfg = study_config(),
 #' @param path Character(1). Existing artifact path, absolute or relative to
 #'   the study root.
 #' @param role Character(1). The artifact's role in this job.
-#' @param cfg List. A study manifest from \code{\link{study_config}}.
+#' @param cfg List. A study manifest from [study_config()].
 #'
 #' @return A plain list containing one immutable-by-convention artifact record.
 #'
-#' @seealso \code{\link{provenance_data}},
-#'   \code{\link{capture_provenance}}
+#' @seealso [provenance_data()],
+#'   [capture_provenance()]
 #'
 #' @examplesIf requireNamespace("arrow", quietly = TRUE)
 #' root <- file.path(tempdir(), "provenance-artifact-example")
@@ -562,37 +562,37 @@ provenance_artifact <- function(path, role = "input", cfg = study_config()) {
 #' Freezes the study identity, executing R session, loaded packages, lockfile,
 #' and explicit data and artifact records. Each loaded package is recorded with
 #' its version and source, and a package installed from a git remote also
-#' records the commit it was built from (\code{sha}), because one version
+#' records the commit it was built from (`sha`), because one version
 #' number can cover more than one build. Capture never resolves a current
-#' dataset implicitly. Pass \code{list()} deliberately when a job has no known
+#' dataset implicitly. Pass `list()` deliberately when a job has no known
 #' direct data input.
 #'
 #' Capture does not write a sidecar or inspect a rendered output. Use
-#' \code{\link{publish_provenance}} only after the completed output exists.
+#' [publish_provenance()] only after the completed output exists.
 #'
 #' @param job Character(1). Stable job identity.
-#' @param data List of records returned by \code{\link{provenance_data}}.
+#' @param data List of records returned by [provenance_data()].
 #' @param artifacts List of records returned by
-#'   \code{\link{provenance_artifact}}.
+#'   [provenance_artifact()].
 #' @param extra Named list of job-specific fields. Reserved capture and
 #'   publication fields cannot be displaced.
-#' @param cfg List. A study manifest from \code{\link{study_config}}.
-#' @param seed The job's seed, one whole number, or \code{NA} (the default)
-#'   when the job sets none. Recorded as the common \code{seed} field, where
-#'   \code{NA} means "does not apply"; pass a seeded job's \code{SEED}.
+#' @param cfg List. A study manifest from [study_config()].
+#' @param seed The job's seed, one whole number, or `NA` (the default)
+#'   when the job sets none. Recorded as the common `seed` field, where
+#'   `NA` means "does not apply"; pass a seeded job's `SEED`.
 #'
 #' @return A captured provenance payload as a plain list. It opens with the
 #'   seven fields every hvtiR package's provenance record shares:
-#'   \code{package} (\code{"hvtiRutilities"}), \code{version}, \code{sha}
-#'   (the installed commit, or \code{NA}), \code{method} (here the
-#'   \code{job}), \code{seed} (the \code{seed} argument, \code{NA} unless the
-#'   job is seeded), \code{rng_kind} (\code{RNGkind()}) and \code{time} (when it
-#'   was captured, \code{POSIXct}). The render-specific fields follow. An
-#'   \code{extra} element with one of these seven names is an error. In the published JSON an unknown \code{sha} is
-#'   \code{null} and \code{time} is UTC in the form \code{rendered} uses.
+#'   `package` (`"hvtiRutilities"`), `version`, `sha`
+#'   (the installed commit, or `NA`), `method` (here the
+#'   `job`), `seed` (the `seed` argument, `NA` unless the
+#'   job is seeded), `rng_kind` (`RNGkind()`) and `time` (when it
+#'   was captured, `POSIXct`). The render-specific fields follow. An
+#'   `extra` element with one of these seven names is an error. In the published JSON an unknown `sha` is
+#'   `null` and `time` is UTC in the form `rendered` uses.
 #'
-#' @seealso \code{\link{publish_provenance}},
-#'   \code{\link{record_provenance}}
+#' @seealso [publish_provenance()],
+#'   [record_provenance()]
 #'
 #' @examplesIf requireNamespace("arrow", quietly = TRUE)
 #' root <- file.path(tempdir(), "capture-provenance-example")
@@ -671,12 +671,12 @@ capture_provenance <- function(job, data, artifacts = list(), extra = list(),
 #' recomputed during publication.
 #'
 #' @param path Character(1). Existing completed output path.
-#' @param payload A payload returned by \code{\link{capture_provenance}}.
+#' @param payload A payload returned by [capture_provenance()].
 #'
 #' @return Invisibly, the published record as a list.
 #'
-#' @seealso \code{\link{capture_provenance}},
-#'   \code{\link{record_provenance}}, \code{\link{provenance_path}}
+#' @seealso [capture_provenance()],
+#'   [record_provenance()], [provenance_path()]
 #'
 #' @examplesIf requireNamespace("arrow", quietly = TRUE)
 #' root <- file.path(tempdir(), "publish-provenance-example")
@@ -756,17 +756,17 @@ publish_provenance <- function(path, payload) {
 #' explicit provenance payload and immediately publishes it beside the output.
 #'
 #' @param path Character(1). Existing completed output path.
-#' @param data List of records returned by \code{\link{provenance_data}}.
+#' @param data List of records returned by [provenance_data()].
 #' @param artifacts List of records returned by
-#'   \code{\link{provenance_artifact}}.
+#'   [provenance_artifact()].
 #' @param extra Named list of job-specific fields. Reserved fields cannot be
 #'   displaced.
-#' @param cfg List. A study manifest from \code{\link{study_config}}.
+#' @param cfg List. A study manifest from [study_config()].
 #'
 #' @return Invisibly, the published record as a list.
 #'
-#' @seealso \code{\link{capture_provenance}},
-#'   \code{\link{publish_provenance}}, \code{\link{provenance_path}}
+#' @seealso [capture_provenance()],
+#'   [publish_provenance()], [provenance_path()]
 #'
 #' @examplesIf requireNamespace("arrow", quietly = TRUE)
 #' root <- file.path(tempdir(), "record-provenance-example")

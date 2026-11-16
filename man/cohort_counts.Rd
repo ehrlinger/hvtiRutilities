@@ -7,19 +7,19 @@
 cohort_counts(data, time_col, event_col)
 }
 \arguments{
-\item{data}{A data frame. Was \code{d} before 2026-11; \code{d =} still
+\item{data}{A data frame. Was \code{d} before 2026-11; \verb{d =} still
 works for one release, with a warning.}
 
 \item{time_col}{Character scalar naming the time column. Was \code{time}
-before 2026-11; \code{time =} still works for one release, with a warning.}
+before 2026-11; \verb{time =} still works for one release, with a warning.}
 
 \item{event_col}{Character scalar naming the binary event column. Was
-\code{event} before 2026-11; \code{event =} still works for one release,
+\code{event} before 2026-11; \verb{event =} still works for one release,
 with a warning.}
 }
 \value{
 A list with integer elements \code{n}, \code{n_events} and
-  \code{n_censored}.
+\code{n_censored}.
 }
 \description{
 Counts rows for which both explicitly supplied event and time columns are
@@ -30,15 +30,15 @@ or \code{0}/\code{1}. Rows missing either column are excluded from the
 analysable cohort.
 
 A zero or negative time is still counted, so the gate's numbers do not
-move, but it warns: \code{\link{followup_check}} flags the same rows for
+move, but it warns: \code{\link[=followup_check]{followup_check()}} flags the same rows for
 review, and the two should not disagree in silence.
 }
 \section{Argument order}{
 
-\code{time_col, event_col}, as in \code{survival::Surv()}. Until 2026-11 the
-order was \code{event, time}, so a call passing both unnamed means opposite
+\verb{time_col, event_col}, as in \code{survival::Surv()}. Until 2026-11 the
+order was \verb{event, time}, so a call passing both unnamed means opposite
 things in the two orders and is an error, whether or not \code{data} is
-named. Name them, \code{time_col =} and \code{event_col =}. One of the two
+named. Name them, \verb{time_col =} and \verb{event_col =}. One of the two
 unnamed reads the same in either order.
 }
 
@@ -47,5 +47,5 @@ d <- data.frame(dead = c(1, 1, 0, 0, 0), iv_dead = 1:5)
 cohort_counts(d, time_col = "iv_dead", event_col = "dead")
 }
 \seealso{
-\code{\link{assert_cohort}}
+\code{\link[=assert_cohort]{assert_cohort()}}
 }

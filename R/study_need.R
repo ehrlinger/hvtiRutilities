@@ -3,36 +3,36 @@
 #' @description
 #' Called where a function needs a package the study may not have, such as
 #' \pkg{arrow} for registered data. In the study's active renv project the
-#' packages are declared (see \code{\link{study_declare}}); a missing one is
+#' packages are declared (see [study_declare()]); a missing one is
 #' installed into the study's library after one question, when the session is
-#' interactive, and recorded in \code{renv.lock}. Otherwise the call stops and
-#' names \code{hvtiR::setup()}, which installs everything a study needs.
+#' interactive, and recorded in `renv.lock`. Otherwise the call stops and
+#' names `hvtiR::setup()`, which installs everything a study needs.
 #'
 #' Nothing is declared until every package is installed: if the user declines
-#' the install, or it fails, the study's \code{DESCRIPTION} is left as it was.
+#' the install, or it fails, the study's `DESCRIPTION` is left as it was.
 #'
-#' A package that is installed but absent from \code{renv.lock} is declared and
+#' A package that is installed but absent from `renv.lock` is declared and
 #' recorded too, because a restore would not bring it back otherwise. Recording
 #' takes one question, since the snapshot also moves every other package in the
 #' lock to the version in the library. The caller already has what it needs, so
 #' when the package cannot be recorded (the session is not interactive, the
-#' question is declined, \code{\link{guard_snapshot}} refuses, or the snapshot
+#' question is declined, [guard_snapshot()] refuses, or the snapshot
 #' fails) the call warns and carries on. Base packages, which renv never locks, are left out.
 #'
 #' An installed package is never upgraded, whatever its version: moving a
-#' study's package versions is \code{hvtiR::update()}'s job.
+#' study's package versions is `hvtiR::update()`'s job.
 #'
 #' @param packages Character. Package names.
 #' @param root Character(1). The study root; by default the study enclosing the
 #'   working directory, if any.
 #' @param caller Character(1). The function that needs the packages, named in
 #'   the question and the error.
-#' @param note Character(1) or \code{NULL}. Appended to the error.
+#' @param note Character(1) or `NULL`. Appended to the error.
 #' @param only_in_renv Logical(1). Do nothing outside an active renv study.
-#' @param r_upgrade Logical(1). Leave \code{FALSE}. A \code{renv.lock}
+#' @param r_upgrade Logical(1). Leave `FALSE`. A `renv.lock`
 #'   snapshot is refused from an R whose major.minor
 #'   differs from the R the lockfile records (see
-#'   \code{\link{guard_snapshot}}). Set \code{TRUE} only when you are
+#'   [guard_snapshot()]). Set `TRUE` only when you are
 #'   deliberately moving the study to this session's R.
 #' @return The names of the packages installed, invisibly.
 #' @export

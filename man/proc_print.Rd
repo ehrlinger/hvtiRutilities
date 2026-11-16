@@ -15,7 +15,7 @@ unique.}
 
 \item{var_cols}{Character or \code{NULL}. Columns to print for the matching
 rows, SAS \code{VAR}. \code{NULL} prints every column. Was \code{var} before
-2026-11; \code{var =} still works for one release, with a warning.}
+2026-11; \verb{var =} still works for one release, with a warning.}
 
 \item{max_rows}{A single positive whole number. At most this many matching
 rows are printed per condition; the count is always the full count.}
@@ -26,17 +26,17 @@ returns the counts.}
 }
 \value{
 A data frame with one row per condition and the columns
-  \code{label}, \code{n} (rows matching) and \code{n_missing} (rows for
-  which the condition was \code{NA}). Both counts are integer. The matching
-  rows are written to \code{stderr()} as a side effect and are not part of
-  the result.
+\code{label}, \code{n} (rows matching) and \code{n_missing} (rows for
+which the condition was \code{NA}). Both counts are integer. The matching
+rows are written to \code{stderr()} as a side effect and are not part of
+the result.
 }
 \description{
 Counts the rows that match each of a set of named conditions, and prints
 the matching rows to the console. It is the checking step a programmer
 runs after a build: write the build, cross-tab, spot a discrepancy, print
 the rows that look wrong. One call takes several conditions, as several
-SAS \code{PROC PRINT; WHERE} steps would.
+SAS \verb{PROC PRINT; WHERE} steps would.
 }
 \details{
 \strong{Matching rows go to the console, and only counts reach a report.}
@@ -45,7 +45,7 @@ the rows are written to \code{stderr()}, which knitr and Quarto do not
 capture: an interactive session shows them, and a render leaves them out
 of the HTML whatever the chunk's \code{message} or \code{warning} options
 say. What the function returns, and what a report prints, is one count per
-condition. This is where it differs from SAS, whose \code{PROC PRINT}
+condition. This is where it differs from SAS, whose \verb{PROC PRINT}
 output is the listing.
 
 Each condition is written \code{condition ~ "Label"}, the shape of a
@@ -69,5 +69,5 @@ proc_print(dta,
   var_cols = c("age", "dead", "iv_dead"))
 }
 \seealso{
-\code{\link{proc_freq}}, \code{\link{followup_check}}
+\code{\link[=proc_freq]{proc_freq()}}, \code{\link[=followup_check]{followup_check()}}
 }

@@ -12,18 +12,18 @@ sample_data(n = 100)
 \value{
 A data frame with \code{n} rows and 7 labeled columns:
 \describe{
-  \item{id}{Integer sequence (Patient Identifier)}
-  \item{boolean}{Integer 1/2 (Binary Indicator)}
-  \item{logical}{Character "F"/"T" (Logical Status)}
-  \item{f_real}{Uniform random values (Random Uniform Value)}
-  \item{float}{Normal random values (Random Normal Value)}
-  \item{char}{Character "male"/"female" (Gender)}
-  \item{factor}{Factor C1-C5 (Category Group)}
+\item{id}{Integer sequence (Patient Identifier)}
+\item{boolean}{Integer 1/2 (Binary Indicator)}
+\item{logical}{Character "F"/"T" (Logical Status)}
+\item{f_real}{Uniform random values (Random Uniform Value)}
+\item{float}{Normal random values (Random Normal Value)}
+\item{char}{Character "male"/"female" (Gender)}
+\item{factor}{Factor C1-C5 (Category Group)}
 }
 }
 \description{
 Creates a data frame with labeled columns of various types, suitable for
-demonstrating \code{\link{r_data_types}} and \code{\link{label_map}}.
+demonstrating \code{\link[=r_data_types]{r_data_types()}} and \code{\link[=label_map]{label_map()}}.
 }
 \examples{
 # Create and inspect labeled data

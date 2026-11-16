@@ -11,47 +11,47 @@ study_status(root = getwd())
 }
 \value{
 An object of class \code{"study_status"}: a list with \code{root},
-  \code{checks} (a data frame of \code{item}, \code{status} --
-  \code{"OK"}, \code{"MISSING"}, \code{"FAIL"}, \code{"UNVERIFIED"},
-  \code{"EXPLORATORY"},
-  \code{"CURRENT"},
-  \code{"UPDATE AVAILABLE"}, \code{"UPDATE STATUS UNKNOWN"},
-  \code{"OUT OF DATE"}, \code{"PENDING"}, \code{"CLOSED"}, or \code{"UNKNOWN"} -- and
-  \code{detail}). The five base rows are followed by release-aware update
-  rows, by dataset and update rows for each named dataset, and by the
-  \code{checkpoints} and \code{closure} rows when they apply.
-  \code{counts} lists \code{r_files}, \code{qmd},
-  \code{sas_jobs} and \code{sidecars}.
+\code{checks} (a data frame of \code{item}, \code{status} --
+\code{"OK"}, \code{"MISSING"}, \code{"FAIL"}, \code{"UNVERIFIED"},
+\code{"EXPLORATORY"},
+\code{"CURRENT"},
+\code{"UPDATE AVAILABLE"}, \code{"UPDATE STATUS UNKNOWN"},
+\code{"OUT OF DATE"}, \code{"PENDING"}, \code{"CLOSED"}, or \code{"UNKNOWN"} -- and
+\code{detail}). The five base rows are followed by release-aware update
+rows, by dataset and update rows for each named dataset, and by the
+\code{checkpoints} and \code{closure} rows when they apply.
+\code{counts} lists \code{r_files}, \code{qmd},
+\code{sas_jobs} and \code{sidecars}.
 }
 \description{
 Reports, without writing anything, whether a study has the four things a
-later result needs in order to be re-derivable: a valid \code{_study.yml},
+later result needs in order to be re-derivable: a valid \verb{_study.yml},
 an \code{renv.lock}, a \code{manifest.yaml} whose checksums still match the
 data, and a provenance sidecar for every \code{.qmd} or \code{.Rmd} source.
 
 Every finding is reported rather than raised. A study with no
-\code{_study.yml} is the thing this function exists to describe, so it must
+\verb{_study.yml} is the thing this function exists to describe, so it must
 not error on one. Checks that cannot run because an earlier one failed are
 reported \code{"MISSING"}, never \code{"FAIL"} -- a check that could not run
 is not a check that failed, and conflating the two makes the audit
 unreadable on exactly the legacy studies it is most needed for.
 
 \code{"EXPLORATORY"} means a study set up with \code{derived_from} that
-has not yet been promoted with \code{\link{study_promote}}.
+has not yet been promoted with \code{\link[=study_promote]{study_promote()}}.
 
-A \code{_study.yml} whose identity was entered by hand and not yet
+A \verb{_study.yml} whose identity was entered by hand and not yet
 confirmed against Study Tracker (\code{identity_verified: false}) is
 reported \code{"UNVERIFIED"}. A manifest without the field is a Tracker
 identity and is reported \code{"OK"}.
 
-A study that has been checkpointed (it has a \code{.checkpoint/}
+A study that has been checkpointed (it has a \verb{.checkpoint/}
 directory) adds a \code{checkpoints} row: \code{"OK"} when every
 checkpoint, closure and reopening has reached the remote, or
 \code{"PENDING"} when some are saved locally and not yet pushed. Its detail
 counts the recorded events, names the last tag, and counts those not yet
 pushed or not yet in ST. A closed study then adds a \code{closure} row with
 status \code{"CLOSED"} and the outcome and date of the latest closure; see
-\code{\link{study_close}}. This function never contacts the remote, so
+\code{\link[=study_close]{study_close()}}. This function never contacts the remote, so
 when one is configured that row adds \emph{as of the last fetch}. When a
 closure or reopening tag in this copy is not on its \code{main}, the state
 cannot be determined and the row has status \code{"UNKNOWN"}.
@@ -59,20 +59,20 @@ cannot be determined and the row has status \code{"UNKNOWN"}.
 The \code{manifest.yaml} row is \code{"PENDING"} when a dataset registered
 as a dated parquet has had its source file rebuilt since registration. Jobs
 keep reading the registered version; the detail names the datasets and
-\code{\link{update_manifest}()}, which registers the rebuild.
+\code{\link[=update_manifest]{update_manifest()}}, which registers the rebuild.
 
-A dataset that \code{_study.yml} names and \code{manifest.yaml} does not register as a dated version adds a
-\code{dated_version:<dataset>} row with status \code{"PENDING"}: a final render or an
+A dataset that \verb{_study.yml} names and \code{manifest.yaml} does not register as a dated version adds a
+\verb{dated_version:<dataset>} row with status \code{"PENDING"}: a final render or an
 \code{Rscript} job stops when it reads it, and a draft that reads it is marked a draft. The detail names
-\code{\link{update_manifest}()}. A dataset pinned to a catalog release adds no such row.
+\code{\link[=update_manifest]{update_manifest()}}. A dataset pinned to a catalog release adds no such row.
 
-Release-aware datasets add an \code{update:<dataset>} row with status
+Release-aware datasets add an \verb{update:<dataset>} row with status
 \code{"CURRENT"}, \code{"UPDATE AVAILABLE"},
 \code{"UPDATE STATUS UNKNOWN"}, or \code{"FAIL"}. Legacy studies retain
 the five base rows and their existing dataset rows.
 
 A combined dataset built from parents that have since been updated adds an
-\code{out_of_date:<dataset>} row with status \code{"OUT OF DATE"}. Its detail
+\verb{out_of_date:<dataset>} row with status \code{"OUT OF DATE"}. Its detail
 names the parents' recorded and current versions and the commands that bring
 the combined data up to date. A combined dataset with no recorded parent
 versions is reported the same way, with the parent versions shown as
@@ -80,12 +80,12 @@ versions is reported the same way, with the parent versions shown as
 \code{manifest.yaml} cannot be parsed, the row has status \code{"FAIL"}
 and the error as its detail.
 
-Unlike \code{\link{study_config}}, this function does \strong{not} walk up
+Unlike \code{\link[=study_config]{study_config()}}, this function does \strong{not} walk up
 the directory tree. It asks whether \code{root} itself is a study root, so
 that a subdirectory of a study is never mistaken for one.
 
 The provenance check matches sidecars to sources \strong{by file name},
-because \code{\link{record_provenance}} writes the sidecar beside the
+because \code{\link[=record_provenance]{record_provenance()}} writes the sidecar beside the
 rendered output and Quarto's output directory is usually not the source's
 directory. Two sources sharing a name therefore cannot be distinguished; the
 repeated names are reported in the check's detail so the gap is visible
@@ -98,5 +98,5 @@ study_status(root)
 unlink(root, recursive = TRUE)
 }
 \seealso{
-\code{\link{study_setup}}, \code{\link{study_checklist}}
+\code{\link[=study_setup]{study_setup()}}, \code{\link[=study_checklist]{study_checklist()}}
 }

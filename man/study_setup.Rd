@@ -24,7 +24,7 @@ study_setup(
 }
 \arguments{
 \item{root}{Character. Study root to create or adopt. When omitted, the
-study enclosing the working directory (found as \code{\link{study_root}}
+study enclosing the working directory (found as \code{\link[=study_root]{study_root()}}
 finds it) is used. Outside a study there is no default:
 \code{study_setup()} stops and writes nothing, so a new study always names
 its directory. Use \code{root = "."} with \code{adopt = TRUE} to set up
@@ -40,20 +40,20 @@ the current folder.}
 \item{study_creation_date}{Optional Study Tracker creation date.}
 
 \item{adopt}{Logical. Permit additive setup in an existing root. When the
-root already holds a \code{_study.yml} for the same Study Tracker ID and
+root already holds a \verb{_study.yml} for the same Study Tracker ID and
 the session is interactive, \code{study_setup()} asks whether to adopt it
 instead of stopping.}
 
 \item{identity_source}{Character(1). Where the identity values came
 from: \code{"tracker"} (the default), for a Study Tracker record, or
 \code{"manual"}, for values typed by hand while the Tracker was
-unavailable. A new \code{_study.yml} records it as
+unavailable. A new \verb{_study.yml} records it as
 \code{identity_source}, with \code{identity_verified} set to
 \code{TRUE} for \code{"tracker"} and \code{FALSE} for
-\code{"manual"}. An existing \code{_study.yml} is not rewritten, so
+\code{"manual"}. An existing \verb{_study.yml} is not rewritten, so
 adoption keeps the recorded source.}
 
-\item{cleanup}{Logical. Delete the study's \code{tp.*} template copies and
+\item{cleanup}{Logical. Delete the study's \verb{tp.*} template copies and
 \code{binder.summaries.doc}, and remove the template folders they leave
 empty. See Details. Defaults to \code{adopt}: adopting a study cleans it,
 including an adoption accepted at the prompt. Pass \code{FALSE} to adopt
@@ -74,37 +74,37 @@ warns, sets the study up without cleaning, and reports the skip in the
 
 \item{r_upgrade}{Logical(1). Leave \code{FALSE}. The renv snapshot is
 refused from an R whose major.minor differs from the R recorded in the
-study's \code{renv.lock} (see \code{\link{guard_snapshot}}), because it
+study's \code{renv.lock} (see \code{\link[=guard_snapshot]{guard_snapshot()}}), because it
 would rewrite the lock's R and drop packages. Set \code{TRUE} only when
 you are deliberately moving the study to this session's R.}
 
 \item{derived_from}{For an exploration of a registered study that has no
 Study Tracker record of its own: the parent's Study Tracker ID. The study
 gets a \code{provisional_id} and checkpoints locally until
-\code{\link{study_promote}} gives it its own ID.}
+\code{\link[=study_promote]{study_promote()}} gives it its own ID.}
 }
 \value{
 An object of class \code{"study_status"}, returned visibly. With
-  \code{cleanup = TRUE} it carries a \code{"cleanup"} attribute, a list of
-  \code{status} (exactly \code{"done"} or \code{"skipped"}), \code{reason}
-  (\code{NULL} when \code{status} is \code{"done"}), the \code{deleted}
-  files, the \code{removed_dirs} folders and the \code{left} files and
-  folders cleanup could not remove, all relative to the root.
-  With \code{renv = TRUE} it carries a \code{"renv"} attribute,
-  \code{"initialized"}, \code{"retained"} or \code{"repaired"}.
+\code{cleanup = TRUE} it carries a \code{"cleanup"} attribute, a list of
+\code{status} (exactly \code{"done"} or \code{"skipped"}), \code{reason}
+(\code{NULL} when \code{status} is \code{"done"}), the \code{deleted}
+files, the \code{removed_dirs} folders and the \code{left} files and
+folders cleanup could not remove, all relative to the root.
+With \code{renv = TRUE} it carries a \code{"renv"} attribute,
+\code{"initialized"}, \code{"retained"} or \code{"repaired"}.
 }
 \description{
 The usual entry point is \code{hvtiR::setup()}. Creates the numbered directory structure for a new study and writes an
-identity-only \code{_study.yml}. With \code{adopt = TRUE}, an existing
+identity-only \verb{_study.yml}. With \code{adopt = TRUE}, an existing
 study keeps its legacy or numbered directory layout and every existing
 initialization file.
 
-Data are deliberately not required. Call \code{\link{register_data}} after
+Data are deliberately not required. Call \code{\link[=register_data]{register_data()}} after
 the default or a named dataset exists.
 
 When the root holds no \code{.Rproj} file, one named for the root
 directory is written, so that opening the project and
-\code{\link{study_root}} agree on the study root. An existing project is
+\code{\link[=study_root]{study_root()}} agree on the study root. An existing project is
 left unchanged.
 
 With \code{cleanup = TRUE}, the template copies a legacy study carries are
@@ -118,7 +118,7 @@ copied in when a study is created, months before any analysis, and the
 corpus they came from is kept centrally, so no backup is made. A folder
 the deletions leave holding nothing (desktop litter such as
 \code{Thumbs.db} aside) is removed, whatever its name, as is an empty
-\code{templates} or \code{old_RF_templates*} folder; a folder still holding
+\code{templates} or \verb{old_RF_templates*} folder; a folder still holding
 other files stays, as does one holding any folder the cleanup did not
 empty, and a top-level study folder is never removed. Symbolic links are
 neither followed nor deleted, and folders named \code{.git},
@@ -130,7 +130,7 @@ cleanup is skipped with a warning.
 
 With \code{renv = TRUE}, the study's \code{renv} environment is set up
 after any cleanup, in a separate R process. A complete environment is
-kept: a \code{renv/} folder holding \code{activate.R}, a \code{.Rprofile}
+kept: a \verb{renv/} folder holding \code{activate.R}, a \code{.Rprofile}
 that sources it, and a \code{renv.lock} that parses as a lockfile. One
 interrupted after initialization (no lockfile yet) is resumed at the
 snapshot. A sound \code{renv.lock} whose \code{renv/activate.R} or
@@ -144,7 +144,7 @@ whose every record gives its own name as \code{Package}, a \code{Version}
 and a \code{Source}. Any other partial
 or invalid environment stops with an error.
 Otherwise the study \code{DESCRIPTION} is written (see
-\code{\link{study_declare}}), \code{renv::init(bare = TRUE)} creates the
+\code{\link[=study_declare]{study_declare()}}), \code{renv::init(bare = TRUE)} creates the
 environment, and the project is loaded and snapshotted explicitly in
 explicit mode, so \code{renv.lock} comes from the \code{DESCRIPTION} and
 not from a scan of the study's code. The study's \code{renv} does not use
@@ -180,6 +180,6 @@ unlink(c(root, corpus), recursive = TRUE)
 
 }
 \seealso{
-\code{\link{study_status}}, \code{\link{study_config}},
-  \code{\link{study_dir}}
+\code{\link[=study_status]{study_status()}}, \code{\link[=study_config]{study_config()}},
+\code{\link[=study_dir]{study_dir()}}
 }

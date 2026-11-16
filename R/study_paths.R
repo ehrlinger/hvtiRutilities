@@ -9,17 +9,17 @@
 #' Locate the study root
 #'
 #' @description
-#' Returns the absolute path of the directory holding \code{_study.yml}, found
-#' by walking up from \code{start}. Errors if there is none, naming the
-#' directories walked, or when \code{_study.yml} is invalid, as
-#' \code{\link{study_config}} reports it.
+#' Returns the absolute path of the directory holding `_study.yml`, found
+#' by walking up from `start`. Errors if there is none, naming the
+#' directories walked, or when `_study.yml` is invalid, as
+#' [study_config()] reports it.
 #'
 #' @param start Character. Directory to start the upward walk from. Defaults
-#'   to \code{getwd()}.
+#'   to `getwd()`.
 #'
 #' @return Character(1). The absolute path of the study root.
 #'
-#' @seealso \code{\link{study_config}}, \code{\link{sas_path}}
+#' @seealso [study_config()], [sas_path()]
 #'
 #' @export
 #'
@@ -45,13 +45,13 @@ study_root <- function(start = getwd()) {
 #' literal path: the same study is mounted at different absolute paths on the
 #' analysis server and on a laptop.
 #'
-#' @param ... Character. Path components, passed to \code{file.path()}.
+#' @param ... Character. Path components, passed to `file.path()`.
 #' @param start Character. Directory to start the upward walk from. Defaults
-#'   to \code{getwd()}.
+#'   to `getwd()`.
 #'
 #' @return Character(1). The joined path. It is not checked for existence.
 #'
-#' @seealso \code{\link{study_root}}
+#' @seealso [study_root()]
 #'
 #' @export
 #'

@@ -10,12 +10,12 @@ duplicate_keys(data, key_cols, order_by_cols = NULL, show_key = FALSE)
 \item{data}{A data frame.}
 
 \item{key_cols}{Names of the columns that should make each row unique. Was
-\code{key} before 2026-11; \code{key =} still works for one release, with a
+\code{key} before 2026-11; \verb{key =} still works for one release, with a
 warning.}
 
 \item{order_by_cols}{\code{NULL} (the default), or names of the columns that
 order the rows of a repeated key. Required for \code{keep}. Was
-\code{order_by}; \code{order_by =} still works for one release.}
+\code{order_by}; \verb{order_by =} still works for one release.}
 
 \item{show_key}{Include the key columns in \code{rows}? Default
 \code{FALSE}.}
@@ -23,17 +23,17 @@ order the rows of a repeated key. Required for \code{keep}. Was
 \value{
 An object of class \code{duplicate_keys}, a list of three:
 \describe{
-  \item{\code{summary}}{One row: \code{rows}, \code{keys} (distinct key
-    values), \code{repeated_keys}, \code{rows_in_repeats} and
-    \code{missing_keys} (rows missing any key column).}
-  \item{\code{rows}}{One row per row of \code{data} in a repeated key, in
-    data order: \code{row}, its row number in \code{data}; \code{.group},
-    numbering the repeated keys in order of appearance; \code{.rank}, its
-    place within the key by \code{order_by_cols} (\code{NA} without
-    \code{order_by_cols}); then the key columns when \code{show_key = TRUE}.}
-  \item{\code{keep}}{A logical vector, one per row of \code{data}:
-    \code{TRUE} for every row outside a repeated key and for the first row
-    of each repeated key. \code{NULL} without \code{order_by_cols}.}
+\item{\code{summary}}{One row: \code{rows}, \code{keys} (distinct key
+values), \code{repeated_keys}, \code{rows_in_repeats} and
+\code{missing_keys} (rows missing any key column).}
+\item{\code{rows}}{One row per row of \code{data} in a repeated key, in
+data order: \code{row}, its row number in \code{data}; \code{.group},
+numbering the repeated keys in order of appearance; \code{.rank}, its
+place within the key by \code{order_by_cols} (\code{NA} without
+\code{order_by_cols}); then the key columns when \code{show_key = TRUE}.}
+\item{\code{keep}}{A logical vector, one per row of \code{data}:
+\code{TRUE} for every row outside a repeated key and for the first row
+of each repeated key. \code{NULL} without \code{order_by_cols}.}
 }
 }
 \description{
@@ -57,7 +57,7 @@ an \code{order_by_cols} value, there is no first row to keep, and the function
 stops rather than pick one. Add a column that separates them, such as the
 time of the operation.
 
-A missing key value is treated as a value, as \code{\link{duplicated}}
+A missing key value is treated as a value, as \code{\link[=duplicated]{duplicated()}}
 treats it, so two rows missing the key repeat it. Missing keys are also
 counted in \code{summary}.
 
@@ -78,6 +78,6 @@ ops[dk$keep, ]
 ops[!dk$keep, ]
 }
 \seealso{
-\code{\link{register_data}}, whose \code{key_cols} argument refuses a
-  dataset that repeats it.
+\code{\link[=register_data]{register_data()}}, whose \code{key_cols} argument refuses a
+dataset that repeats it.
 }

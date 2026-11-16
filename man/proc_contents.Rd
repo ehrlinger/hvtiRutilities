@@ -17,15 +17,15 @@ of Variables and Attributes}; \code{"varnum"} keeps creation order. The
 \value{
 An object of class \code{proc_contents}: a list with two elements.
 \describe{
-  \item{header}{One-row data frame with \code{observations} (row count),
-    \code{variables} (column count), and \code{label} (dataset label, or
-    \code{NA})}
-  \item{variables}{Data frame with one row per column and the columns
-    \code{num} (creation position), \code{variable}, \code{type}
-    (\code{"Num"}/\code{"Char"}), \code{format} (SAS format, or \code{NA}),
-    \code{label}, \code{class} (R class), \code{n_unique} (distinct
-    non-\code{NA} values), and \code{pct_missing} (0-100, 1 decimal place,
-    or \code{NaN} when \code{data} has zero rows)}
+\item{header}{One-row data frame with \code{observations} (row count),
+\code{variables} (column count), and \code{label} (dataset label, or
+\code{NA})}
+\item{variables}{Data frame with one row per column and the columns
+\code{num} (creation position), \code{variable}, \code{type}
+(\code{"Num"}/\code{"Char"}), \code{format} (SAS format, or \code{NA}),
+\code{label}, \code{class} (R class), \code{n_unique} (distinct
+non-\code{NA} values), and \code{pct_missing} (0-100, 1 decimal place,
+or \code{NaN} when \code{data} has zero rows)}
 }
 
 \code{label} is never \code{NA}: it falls back to the variable's own name
@@ -39,7 +39,7 @@ rather than from this column, or they will record a fallback as though it
 were the dataset's own metadata.
 }
 \description{
-Reports the variable-level metadata that SAS \code{PROC CONTENTS} prints:
+Reports the variable-level metadata that SAS \verb{PROC CONTENTS} prints:
 creation position, name, SAS type, format, and label, alongside the R class
 and simple completeness counts.
 }
@@ -83,6 +83,6 @@ pc$variables
 proc_contents(dta, order = "varnum")$variables
 }
 \seealso{
-\code{\link{proc_means}} for numeric summaries,
-  \code{\link{data_dictionary}} for a flattened documentation table.
+\code{\link[=proc_means]{proc_means()}} for numeric summaries,
+\code{\link[=data_dictionary]{data_dictionary()}} for a flattened documentation table.
 }

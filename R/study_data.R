@@ -54,15 +54,15 @@
 #'
 #' @description
 #' Resolves the registered filename beneath the study's logical
-#' \code{datasets} directory. The path is not checked for existence.
+#' `datasets` directory. The path is not checked for existence.
 #'
-#' @param cfg List. A study manifest from \code{\link{study_config}}.
+#' @param cfg List. A study manifest from [study_config()].
 #' @param dataset Character(1). Logical dataset name. Defaults to
-#'   \code{"study"}. \code{"built"} is a second name for \code{"study"}.
+#'   `"study"`. `"built"` is a second name for `"study"`.
 #'
 #' @return Character(1). The path to the built dataset.
 #'
-#' @seealso \code{\link{built_manifest}}, \code{\link{read_built}}
+#' @seealso [built_manifest()], [read_built()]
 #'
 #' @export
 #'
@@ -93,14 +93,14 @@ built_path <- function(cfg = study_config(), dataset = "study") {
 #' modification time and SHA-256. This is the record that lets a later reader
 #' tell whether two results were produced from the same data.
 #'
-#' @param cfg List. A study manifest from \code{\link{study_config}}.
+#' @param cfg List. A study manifest from [study_config()].
 #' @param dataset Character(1). Logical dataset name. Defaults to
-#'   \code{"study"}. \code{"built"} is a second name for \code{"study"}.
+#'   `"study"`. `"built"` is a second name for `"study"`.
 #'
-#' @return A one-row data frame with columns \code{file}, \code{size_bytes},
-#'   \code{mtime} and \code{sha256}.
+#' @return A one-row data frame with columns `file`, `size_bytes`,
+#'   `mtime` and `sha256`.
 #'
-#' @seealso \code{\link{built_path}}, \code{\link{record_provenance}}
+#' @seealso [built_path()], [record_provenance()]
 #'
 #' @export
 #'
@@ -197,43 +197,43 @@ built_manifest <- function(cfg = study_config(), dataset = "study") {
 #' Read the study's built dataset
 #'
 #' @description
-#' Reads the dataset named in \code{_study.yml} and normalises its types so
+#' Reads the dataset named in `_study.yml` and normalises its types so
 #' that both available read paths deliver the same frame.
 #'
-#' For a dataset registered with \code{\link{register_data}}, the registered
+#' For a dataset registered with [register_data()], the registered
 #' version (a dated parquet) is read, after its checksum is checked. If the
 #' source file has been rebuilt since, the registered version is still read
-#' and a message of class \code{hvtiRutilities_source_changed} says so and
-#' names \code{\link{update_manifest}()}.
+#' and a message of class `hvtiRutilities_source_changed` says so and
+#' names [update_manifest()].
 #'
-#' A combined dataset (see \code{\link{register_data}}) is still read when a
+#' A combined dataset (see [register_data()]) is still read when a
 #' dataset it was built from has been updated since. A message of class
-#' \code{hvtiRutilities_parent_changed}, which inherits
-#' \code{hvtiRutilities_out_of_date}, names the parents' recorded and current
+#' `hvtiRutilities_parent_changed`, which inherits
+#' `hvtiRutilities_out_of_date`, names the parents' recorded and current
 #' versions and the commands that update it. A combined dataset with no
-#' recorded parent versions is reported the same way, as \code{unrecorded},
+#' recorded parent versions is reported the same way, as `unrecorded`,
 #' until it is rebuilt and registered again.
 #'
 #' Only a dated version is registered data. Any other read is a working read: it
 #' is allowed in the interactive console and in a draft render of a job in any
 #' stage folder of the study. It is refused in a final render (see below), in a
-#' script run with \code{Rscript}, and for a job at the study root or outside
+#' script run with `Rscript`, and for a job at the study root or outside
 #' the study. A permitted working read signals a message of class
-#' \code{hvtiRutilities_working_read}. Review a rebuilt source with
-#' \code{\link{review_built}()} and register it with
-#' \code{\link{update_manifest}()}. The release branch below is deprecated.
+#' `hvtiRutilities_working_read`. Review a rebuilt source with
+#' [review_built()] and register it with
+#' [update_manifest()]. The release branch below is deprecated.
 #'
 #' For a release-aware contract, the pinned release is verified before cache
 #' access. A later valid release emits a message of class
-#' \code{hvtiRutilities_update_available}; an unavailable catalog or invalid
-#' candidate emits \code{hvtiRutilities_update_status_unknown} and the pinned
+#' `hvtiRutilities_update_available`; an unavailable catalog or invalid
+#' candidate emits `hvtiRutilities_update_status_unknown` and the pinned
 #' data are still read. A changed pinned release errors with class
-#' \code{hvtiRutilities_release_integrity}. A withdrawn pin errors with class
-#' \code{hvtiRutilities_withdrawn_release} unless \code{allow_withdrawn} is
-#' \code{TRUE}.
+#' `hvtiRutilities_release_integrity`. A withdrawn pin errors with class
+#' `hvtiRutilities_withdrawn_release` unless `allow_withdrawn` is
+#' `TRUE`.
 #'
-#' The normalisation is not cosmetic. \code{\link{read_clinical_data}} converts
-#' SAS 0/1 numerics to logical while \code{haven::read_sas()} leaves them
+#' The normalisation is not cosmetic. [read_clinical_data()] converts
+#' SAS 0/1 numerics to logical while `haven::read_sas()` leaves them
 #' numeric, and downstream modelling code rejects a logical status vector
 #' outright — so without this the same document would run under one read path
 #' and fail under the other. Labelled vectors are likewise reduced to plain
@@ -241,44 +241,44 @@ built_manifest <- function(cfg = study_config(), dataset = "study") {
 #' print labels rather than names.
 #'
 #' A render counts as final when the environment variable
-#' \code{HVTI_TEMPLATE_STRICT} is set to anything but empty, \code{0},
-#' \code{false} or \code{no}, as hvtiRtemplates' \code{render_job(final = TRUE)}
-#' sets it. A final render, and a script run with \code{Rscript}, read
+#' `HVTI_TEMPLATE_STRICT` is set to anything but empty, `0`,
+#' `false` or `no`, as hvtiRtemplates' `render_job(final = TRUE)`
+#' sets it. A final render, and a script run with `Rscript`, read
 #' registered data only. A draft render of a job in any stage folder may read
 #' the working file.
 #'
-#' @param cfg List. A study manifest from \code{\link{study_config}}.
-#' @param refresh Logical. If \code{TRUE}, force a re-read from the source and
+#' @param cfg List. A study manifest from [study_config()].
+#' @param refresh Logical. If `TRUE`, force a re-read from the source and
 #'   a reconversion regardless of the manifest's role or cached stamp.
 #'   "The source changed" is not always something a timestamp can express --
-#'   a rebuild that preserves \code{mtime}, a restored backup, a correction
+#'   a rebuild that preserves `mtime`, a restored backup, a correction
 #'   applied out of band. Errors if the manifest entry has
-#'   \code{role: "primary"}: that role means the source has been retired and
+#'   `role: "primary"`: that role means the source has been retired and
 #'   the parquet is authoritative, so there is nothing to refresh from.
 #'   It also errors for a dataset registered as a dated parquet, and names
-#'   \code{\link{update_manifest}()}, which registers a rebuilt source.
+#'   [update_manifest()], which registers a rebuilt source.
 #' @param dataset Character(1). Logical dataset name. Defaults to
-#'   \code{"study"}. \code{"built"} is a second name for \code{"study"}.
-#' @param allow_withdrawn \strong{Deprecated.} A dated version is never
-#'   withdrawn, so there is nothing to allow. Logical. If \code{TRUE}, allow a deliberately pinned
+#'   `"study"`. `"built"` is a second name for `"study"`.
+#' @param allow_withdrawn **Deprecated.** A dated version is never
+#'   withdrawn, so there is nothing to allow. Logical. If `TRUE`, allow a deliberately pinned
 #'   withdrawn release to be read for revision work. The default is
-#'   \code{FALSE}.
-#' @param working Logical. If \code{TRUE}, read the working dataset as it stands
+#'   `FALSE`.
+#' @param working Logical. If `TRUE`, read the working dataset as it stands
 #'   rather than its registered version, writing nothing. Defaults to
-#'   \code{TRUE} when the environment variable \code{HVTI_DATA} is
-#'   \code{"working"}. Any read that is not of a dated version is a working read:
+#'   `TRUE` when the environment variable `HVTI_DATA` is
+#'   `"working"`. Any read that is not of a dated version is a working read:
 #'   it is allowed in the interactive console and in a draft render of a job in
 #'   any stage folder of the study. It is refused in a final render, where
-#'   \code{HVTI_TEMPLATE_STRICT} is set to anything but empty, \code{0},
-#'   \code{false} or \code{no}, as \code{render_job(final = TRUE)} sets it. It is
-#'   also refused in a script run with \code{Rscript}, and for a job at the study
+#'   `HVTI_TEMPLATE_STRICT` is set to anything but empty, `0`,
+#'   `false` or `no`, as `render_job(final = TRUE)` sets it. It is
+#'   also refused in a script run with `Rscript`, and for a job at the study
 #'   root or outside the study. A permitted working read signals a message of
-#'   class \code{hvtiRutilities_working_read}.
+#'   class `hvtiRutilities_working_read`.
 #'
 #' @return A data frame with lower-cased names, no logical columns and no
-#'   \code{haven_labelled} columns.
+#'   `haven_labelled` columns.
 #'
-#' @seealso \code{\link{built_manifest}}, \code{\link{assert_cohort}}
+#' @seealso [built_manifest()], [assert_cohort()]
 #'
 #' @export
 #'

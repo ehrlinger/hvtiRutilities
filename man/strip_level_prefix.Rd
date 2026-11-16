@@ -14,8 +14,8 @@ does not return one element per observation, and it does not modify
 }
 \value{
 A character vector of display text: one element per input element,
-  or one per level when \code{x} is a factor. \code{NA} is returned as
-  \code{NA}.
+or one per level when \code{x} is a factor. \code{NA} is returned as
+\code{NA}.
 }
 \description{
 Removes a leading integer code and its separator from the text of a
@@ -25,7 +25,7 @@ of the object it was given.
 }
 \details{
 \strong{A separator is required.} A leading integer is removed only when
-one of \code{.} \code{:} \code{=} \code{)} \code{-} follows it, with
+one of \code{.} \code{:} \code{=} \verb{)} \code{-} follows it, with
 optional whitespace either side. A bare digit followed by a space is left
 alone.
 
@@ -39,15 +39,15 @@ presents as data rather than as a bug.
 
 So the rule is biased: \strong{a missed strip is visible in the output and
 fixable by declaring the level text in \code{value_labels.yml} (see
-\code{\link{apply_value_labels}}); a wrong strip is silent and corrupts the
+\code{\link[=apply_value_labels]{apply_value_labels()}}); a wrong strip is silent and corrupts the
 level set.} Two consequences follow.
 \itemize{
-  \item Unpunctuated \code{"0 No"} and \code{"1 Yes"} are \strong{not}
-    stripped and still print with their prefix.
-  \item Text whose remainder begins with a digit is not stripped either,
-    because \code{"1-2 vessels"} matches leading-integer-then-hyphen and
-    would otherwise become \code{"2 vessels"}, colliding with a real
-    \code{"2 vessels"} level. Ranges are ordinary in this domain.
+\item Unpunctuated \code{"0 No"} and \code{"1 Yes"} are \strong{not}
+stripped and still print with their prefix.
+\item Text whose remainder begins with a digit is not stripped either,
+because \code{"1-2 vessels"} matches leading-integer-then-hyphen and
+would otherwise become \code{"2 vessels"}, colliding with a real
+\code{"2 vessels"} level. Ranges are ordinary in this domain.
 }
 
 \strong{Collisions revert rather than merge.} If stripping would bring two
@@ -79,7 +79,7 @@ strip_level_prefix(f)
 levels(f)
 }
 \seealso{
-\code{\link{level_map}} to see what stripping would do across a
-  dataset, \code{\link{apply_value_labels}} for declaring level text
-  outright rather than tidying it afterwards.
+\code{\link[=level_map]{level_map()}} to see what stripping would do across a
+dataset, \code{\link[=apply_value_labels]{apply_value_labels()}} for declaring level text
+outright rather than tidying it afterwards.
 }

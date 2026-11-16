@@ -14,7 +14,7 @@ study_checkpoint(
 }
 \arguments{
 \item{kind}{Character(1). A checkpoint kind. \code{study_promoted} is
-recorded by \code{\link{study_promote}}, and by hand only on a promoted
+recorded by \code{\link[=study_promote]{study_promote()}}, and by hand only on a promoted
 study whose promotion snapshot failed.}
 
 \item{note}{Optional character(1), stored with the checkpoint.}
@@ -25,39 +25,39 @@ single value, for example \code{list(journal = "JTCVS")}.}
 \item{occurred_at}{Date the event happened. Defaults to today.}
 
 \item{root}{Character. Study root. Defaults to the study that contains the working
-directory, found by its \code{_study.yml}; outside a study the function
+directory, found by its \verb{_study.yml}; outside a study the function
 stops and writes nothing.}
 }
 \value{
 An object of class \code{"study_checkpoint"}, returned invisibly,
-  with the tag, commit, file count, skipped files and delivery states.
+with the tag, commit, file count, skipped files and delivery states.
 }
 \description{
 Commits an allow-listed snapshot of the study (code, identity and
 reproducibility files) to a private git repository in
-\code{.checkpoint/repo/}, tags it with the checkpoint kind and, for a
+\verb{.checkpoint/repo/}, tags it with the checkpoint kind and, for a
 numbered kind, a sequence number, records it in the outbox \code{.checkpoint/log.yml}, and pushes it
-when \code{_study.yml} names a remote. Known data formats, credentials and
-symbolic links are never committed, even through \code{include:} patterns,
-and neither is anything under \code{00_datasets/} or \code{90_estimates/}
+when \verb{_study.yml} names a remote. Known data formats, credentials and
+symbolic links are never committed, even through \verb{include:} patterns,
+and neither is anything under \verb{00_datasets/} or \verb{90_estimates/}
 or an output file type. Files in
-\code{50_documents/} other than \code{.qmd} and \code{.bib} sources are not
+\verb{50_documents/} other than \code{.qmd} and \code{.bib} sources are not
 committed; \code{CHECKPOINT.yml} records their size and checksum.
 An exploration set up with \code{derived_from} is
 committed and tagged locally and pushed only after
-\code{\link{study_promote}}.
+\code{\link[=study_promote]{study_promote()}}.
 }
 \details{
 The kind comes from the StudyTracker checkpoint vocabulary, for example
 \code{"abstract_submitted"} or \code{"manuscript_submitted"}. Automatic
 kinds such as \code{"data_received"} are logged without a snapshot.
 A checkpoint is committed locally before anything is pushed, so an
-unreachable remote never loses one; \code{\link{study_checkpoint_push}}
+unreachable remote never loses one; \code{\link[=study_checkpoint_push]{study_checkpoint_push()}}
 retries later.
 
-One session at a time: this function, \code{\link{study_checkpoint_push}},
-\code{\link{study_close}}, \code{study_reopen()},
-\code{\link{study_promote}} and \code{\link{study_render_commit}} hold the lock
+One session at a time: this function, \code{\link[=study_checkpoint_push]{study_checkpoint_push()}},
+\code{\link[=study_close]{study_close()}}, \code{study_reopen()},
+\code{\link[=study_promote]{study_promote()}} and \code{\link[=study_render_commit]{study_render_commit()}} hold the lock
 \code{.checkpoint/lock} while they run. A call that finds it held by
 another session stops, naming the holder; retry once that session has
 finished. The holder refreshes the lock between phases (selection, the
@@ -89,6 +89,6 @@ if (nzchar(Sys.which("git"))) {
 }
 }
 \seealso{
-\code{\link{study_checkpoint_push}}, \code{\link{study_close}},
-  \code{\link{study_status}}
+\code{\link[=study_checkpoint_push]{study_checkpoint_push()}}, \code{\link[=study_close]{study_close()}},
+\code{\link[=study_status]{study_status()}}
 }

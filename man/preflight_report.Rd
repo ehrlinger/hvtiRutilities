@@ -11,7 +11,7 @@ preflight_report(extra = character(0))
 }
 \value{
 A data frame with columns \code{component}, \code{found},
-  \code{version} and \code{notes}.
+\code{version} and \code{notes}.
 }
 \description{
 Reports the version of every package a hazard-family analysis depends on.

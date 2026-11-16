@@ -5,49 +5,49 @@
 #' the matching rows to the console. It is the checking step a programmer
 #' runs after a build: write the build, cross-tab, spot a discrepancy, print
 #' the rows that look wrong. One call takes several conditions, as several
-#' SAS \code{PROC PRINT; WHERE} steps would.
+#' SAS `PROC PRINT; WHERE` steps would.
 #'
 #' @details
-#' \strong{Matching rows go to the console, and only counts reach a report.}
+#' **Matching rows go to the console, and only counts reach a report.**
 #' A targeted print shows patient rows, and a rendered report gets shared. So
-#' the rows are written to \code{stderr()}, which knitr and Quarto do not
+#' the rows are written to `stderr()`, which knitr and Quarto do not
 #' capture: an interactive session shows them, and a render leaves them out
-#' of the HTML whatever the chunk's \code{message} or \code{warning} options
+#' of the HTML whatever the chunk's `message` or `warning` options
 #' say. What the function returns, and what a report prints, is one count per
-#' condition. This is where it differs from SAS, whose \code{PROC PRINT}
+#' condition. This is where it differs from SAS, whose `PROC PRINT`
 #' output is the listing.
 #'
-#' Each condition is written \code{condition ~ "Label"}, the shape of a
-#' \code{bd} job's \code{EXCLUDE} rules, and is evaluated with the columns of
-#' \code{data} in scope, then the formula's environment. A condition that
-#' evaluates to \code{NA} for a row does not match it; those rows are counted
-#' in \code{n_missing}, so a check that cannot be decided for some patients
+#' Each condition is written `condition ~ "Label"`, the shape of a
+#' `bd` job's `EXCLUDE` rules, and is evaluated with the columns of
+#' `data` in scope, then the formula's environment. A condition that
+#' evaluates to `NA` for a row does not match it; those rows are counted
+#' in `n_missing`, so a check that cannot be decided for some patients
 #' says so instead of reading as clean. A condition that fails is an error
 #' naming its label. The error does not repeat R's own message, which can
 #' quote a data value. Warnings and messages raised while a condition is
 #' evaluated (a date parser listing the value it could not read, say) go to
-#' \code{stderr()} with the rows, for the same reason.
+#' `stderr()` with the rows, for the same reason.
 #'
 #' @param data A data frame.
-#' @param where A list of conditions, each \code{condition ~ "Label"} with a
+#' @param where A list of conditions, each `condition ~ "Label"` with a
 #'   single non-empty quoted label, or one such formula. Labels must be
 #'   unique.
-#' @param var_cols Character or \code{NULL}. Columns to print for the matching
-#'   rows, SAS \code{VAR}. \code{NULL} prints every column. Was \code{var} before
-#'   2026-11; \code{var =} still works for one release, with a warning.
+#' @param var_cols Character or `NULL`. Columns to print for the matching
+#'   rows, SAS `VAR`. `NULL` prints every column. Was `var` before
+#'   2026-11; `var =` still works for one release, with a warning.
 #' @param max_rows A single positive whole number. At most this many matching
 #'   rows are printed per condition; the count is always the full count.
-#' @param console A single \code{TRUE} or \code{FALSE}. \code{FALSE} writes
+#' @param console A single `TRUE` or `FALSE`. `FALSE` writes
 #'   nothing, neither rows nor the warnings a condition raises, and only
 #'   returns the counts.
 #'
 #' @return A data frame with one row per condition and the columns
-#'   \code{label}, \code{n} (rows matching) and \code{n_missing} (rows for
-#'   which the condition was \code{NA}). Both counts are integer. The matching
-#'   rows are written to \code{stderr()} as a side effect and are not part of
+#'   `label`, `n` (rows matching) and `n_missing` (rows for
+#'   which the condition was `NA`). Both counts are integer. The matching
+#'   rows are written to `stderr()` as a side effect and are not part of
 #'   the result.
 #'
-#' @seealso \code{\link{proc_freq}}, \code{\link{followup_check}}
+#' @seealso [proc_freq()], [followup_check()]
 #'
 #' @export
 #'

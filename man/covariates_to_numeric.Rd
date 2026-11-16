@@ -10,7 +10,7 @@ covariates_to_numeric(data, var_cols, vars)
 \item{data}{A data frame.}
 
 \item{var_cols}{Character vector of covariate names. Was \code{vars} before
-2026-11; \code{vars =} still works for one release, with a warning.}
+2026-11; \verb{vars =} still works for one release, with a warning.}
 
 \item{vars}{Deprecated: the old name of \code{var_cols}, kept for one release.}
 }
@@ -25,7 +25,7 @@ A factor with a genuinely non-numeric level is \strong{left alone} and will
 be
 dummy-coded -- the right outcome for a real categorical, and the wrong one
 for
-a mean-imputed binary. \code{\link{covariate_audit}}'s \code{action} column
+a mean-imputed binary. \code{\link[=covariate_audit]{covariate_audit()}}'s \code{action} column
 is where a
 reader sees which of the two happened; check it before reading any
 coefficient.
@@ -35,5 +35,5 @@ d <- data.frame(hx_htn = factor(c("0", "1", "0.714047")))
 str(covariates_to_numeric(d, "hx_htn"))
 }
 \seealso{
-\code{\link{covariate_audit}}
+\code{\link[=covariate_audit]{covariate_audit()}}
 }

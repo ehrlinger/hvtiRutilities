@@ -19,7 +19,7 @@ concept_of(
 \item{pool}{Character vector: the candidate pool \code{v} belongs to.}
 
 \item{affixes}{Character vector of regular expressions for the study's
-transformation affixes. See \code{\link{POOL_AFFIXES}}.}
+transformation affixes. See \code{\link[=POOL_AFFIXES]{POOL_AFFIXES()}}.}
 
 \item{plain_suffix}{Suffix carried by untransformed measurements.}
 
@@ -32,7 +32,7 @@ over every rule: it is the study saying so directly.}
 }
 \value{
 A character scalar: the concept, or \code{v} itself when no rule
-  applies.
+applies.
 }
 \description{
 A SAS candidate pool offers every transformation of a variable as a separate
@@ -70,14 +70,14 @@ a name absent by exact match:
 \itemize{
 \item \emph{Truncation} -- \code{effi} is a \strong{prefix} of \code{effic},
 so it can be found.
-  Handled automatically, but only when the stem prefixes exactly one pool
-  member that is not itself a derived form, and only when the stem is at
-  least \code{min_stem} characters. Ambiguity declines to group rather than
-  guessing.
+Handled automatically, but only when the stem prefixes exactly one pool
+member that is not itself a derived form, and only when the stem is at
+least \code{min_stem} characters. Ambiguity declines to group rather than
+guessing.
 \item \emph{Contraction} -- \code{arin} is not a prefix of \code{area_int}
 and no rule can find
-  it. Declare it via \code{aliases}, so the judgement is recorded in the job
-  rather than inferred by the function.
+it. Declare it via \code{aliases}, so the judgement is recorded in the job
+rather than inferred by the function.
 }
 
 Left ungrouped on a real screen, \code{effic} at 86.4\% and \code{ln_effi} at
@@ -106,6 +106,6 @@ pool <- c("age", "ln_age", "age2", "agee")
 vapply(pool, concept_of, character(1), pool = pool)
 }
 \seealso{
-\code{\link{concept_map}}, \code{\link{prune_to_one_form}},
-  \code{\link{selection_crowding}}
+\code{\link[=concept_map]{concept_map()}}, \code{\link[=prune_to_one_form]{prune_to_one_form()}},
+\code{\link[=selection_crowding]{selection_crowding()}}
 }

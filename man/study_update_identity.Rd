@@ -9,21 +9,21 @@ study_update_identity(identity, start = study_root())
 \arguments{
 \item{identity}{A named list from the Study Tracker record. It must hold
 \code{study_tracker_id}, equal to the manifest's (so an exploration set
-up with \code{derived_from} is promoted with \code{\link{study_promote}}
+up with \code{derived_from} is promoted with \code{\link[=study_promote]{study_promote()}}
 first), and \code{study}; it may
 hold \code{umbrella}, \code{owner}, \code{irb_number}, \code{cvir_no} and
 \code{study_creation_date}.}
 
 \item{start}{A directory inside the study; the study is found as
-\code{\link{study_config}} finds it. Defaults to the study that contains the working
-directory, found by its \code{_study.yml}; outside a study the function
+\code{\link[=study_config]{study_config()}} finds it. Defaults to the study that contains the working
+directory, found by its \verb{_study.yml}; outside a study the function
 stops and writes nothing.}
 }
 \value{
 The names of the keys whose values changed, invisibly.
 }
 \description{
-Writes a Study Tracker identity into an existing \code{_study.yml} and marks
+Writes a Study Tracker identity into an existing \verb{_study.yml} and marks
 it verified: \code{identity_source: tracker} and
 \code{identity_verified: true}. Every other key, including the data
 contract (\code{built}, \code{cohort}, \code{additional_datasets},
@@ -35,8 +35,8 @@ Study Tracker or compare the record with the typed identity; the caller
 does both, and passes the record only when they match. A field the record
 leaves \code{NULL} keeps its current value.
 
-The file is rewritten whole and atomically, as \code{\link{register_data}}
-rewrites it, so comments in \code{_study.yml} are not kept.
+The file is rewritten whole and atomically, as \code{\link[=register_data]{register_data()}}
+rewrites it, so comments in \verb{_study.yml} are not kept.
 }
 \examples{
 root <- file.path(tempdir(), "update-identity-example")
@@ -50,5 +50,5 @@ study_config(root, require_data = FALSE)$identity_verified
 unlink(root, recursive = TRUE)
 }
 \seealso{
-\code{\link{study_setup}}, \code{\link{study_status}}.
+\code{\link[=study_setup]{study_setup()}}, \code{\link[=study_status]{study_status()}}.
 }

@@ -7,26 +7,26 @@
 review_built(cfg = study_config(), dataset = "study")
 }
 \arguments{
-\item{cfg}{List. A study manifest from \code{\link{study_config}}.}
+\item{cfg}{List. A study manifest from \code{\link[=study_config]{study_config()}}.}
 
 \item{dataset}{Character(1). Logical dataset name. Defaults to
 \code{"study"}. \code{"built"} is a second name for \code{"study"}.}
 }
 \value{
 An object of class \code{"built_review"} with
-  \describe{
-    \item{dataset}{The logical dataset name.}
-    \item{registered}{The current version record from \code{manifest.yaml}.}
-    \item{working}{A list with the source file's \code{sha256}, \code{n_rows} and \code{n_cols}.}
-    \item{changed}{\code{TRUE} when the source differs from the registered version.}
-    \item{comparison}{A \code{\link{compare_datasets}} result, or \code{NULL} when unchanged.}
-  }
+\describe{
+\item{dataset}{The logical dataset name.}
+\item{registered}{The current version record from \code{manifest.yaml}.}
+\item{working}{A list with the source file's \code{sha256}, \code{n_rows} and \code{n_cols}.}
+\item{changed}{\code{TRUE} when the source differs from the registered version.}
+\item{comparison}{A \code{\link[=compare_datasets]{compare_datasets()}} result, or \code{NULL} when unchanged.}
+}
 }
 \description{
 Compares the working dataset, as it stands in the study's datasets folder,
 with its registered version, the dated parquet jobs read. It reads both and
 writes nothing. Run it after a rebuild and before
-\code{\link{update_manifest}()}, which registers the rebuilt file as the next
+\code{\link[=update_manifest]{update_manifest()}}, which registers the rebuilt file as the next
 version. It describes how the data changed; it does not certify that the
 new file is analytically or clinically correct.
 }
@@ -43,5 +43,5 @@ if (requireNamespace("arrow", quietly = TRUE)) {
 }
 }
 \seealso{
-\code{\link{update_manifest}}, \code{\link{read_built}}
+\code{\link[=update_manifest]{update_manifest()}}, \code{\link[=read_built]{read_built()}}
 }

@@ -1,11 +1,11 @@
 #' Generate a sample dataset for testing
 #'
 #' Creates a data frame with labeled columns of various types, suitable for
-#' demonstrating \code{\link{r_data_types}} and \code{\link{label_map}}.
+#' demonstrating [r_data_types()] and [label_map()].
 #'
-#' @param n Number of records to generate. Default \code{100}.
+#' @param n Number of records to generate. Default `100`.
 #'
-#' @return A data frame with \code{n} rows and 7 labeled columns:
+#' @return A data frame with `n` rows and 7 labeled columns:
 #' \describe{
 #'   \item{id}{Integer sequence (Patient Identifier)}
 #'   \item{boolean}{Integer 1/2 (Binary Indicator)}

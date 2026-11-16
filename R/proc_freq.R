@@ -1,92 +1,92 @@
 #' Frequency tables, in the style of SAS PROC FREQ
 #'
 #' @description
-#' Produces the table SAS \code{PROC FREQ} prints for a \code{TABLES}
+#' Produces the table SAS `PROC FREQ` prints for a `TABLES`
 #' statement: one row per observed combination of levels, with frequencies
 #' and percentages. One call is one table; a SAS step with several
-#' \code{TABLES} statements is several calls.
+#' `TABLES` statements is several calls.
 #'
 #' @details
-#' The last name in \code{table_cols} is the column variable, the one before it
+#' The last name in `table_cols` is the column variable, the one before it
 #' the row variable, and any earlier names are strata, as in SAS
-#' \code{TABLES a*b*c}.
+#' `TABLES a*b*c`.
 #'
-#' \strong{Percentages depend on \code{list}, not only the columns shown.}
+#' **Percentages depend on `list`, not only the columns shown.**
 #' For a crosstab of three or more variables, SAS prints one row-by-column
-#' table per stratum and computes \code{Percent} within that stratum. With
-#' \code{list = TRUE}, \code{Percent} is of the grand total. The two agree for
+#' table per stratum and computes `Percent` within that stratum. With
+#' `list = TRUE`, `Percent` is of the grand total. The two agree for
 #' one- and two-way tables and disagree from three variables on.
 #'
-#' \strong{Missing values sort first.} SAS treats missing as the smallest
-#' value, so under \code{missing = TRUE} the missing level heads the table and
-#' the cumulative columns count it first. \code{dplyr::count()} places
-#' \code{NA} last, which moves every cumulative value.
+#' **Missing values sort first.** SAS treats missing as the smallest
+#' value, so under `missing = TRUE` the missing level heads the table and
+#' the cumulative columns count it first. `dplyr::count()` places
+#' `NA` last, which moves every cumulative value.
 #'
-#' Rows follow SAS \code{ORDER=INTERNAL}: factors in declared level order,
+#' Rows follow SAS `ORDER=INTERNAL`: factors in declared level order,
 #' numbers by value, character values by byte value (the C locale, so
-#' \code{"B"} sorts before \code{"a"}). Unused factor levels are omitted, as
-#' SAS omits zero-count levels without \code{SPARSE}.
+#' `"B"` sorts before `"a"`). Unused factor levels are omitted, as
+#' SAS omits zero-count levels without `SPARSE`.
 #'
-#' A \code{haven_labelled} variable is grouped on its value label, as SAS
+#' A `haven_labelled` variable is grouped on its value label, as SAS
 #' forms levels from formatted values: stored codes sharing a label form one
-#' row, shown as the smallest of those codes, and a \code{<var>_label} column
+#' row, shown as the smallest of those codes, and a `<var>_label` column
 #' holding the label follows it. A value with no label is its own row.
-#' Variable labels on the \code{table_cols} columns are kept.
+#' Variable labels on the `table_cols` columns are kept.
 #'
-#' \strong{What counts as missing.} As in SAS, a blank or whitespace-only
-#' character value is missing, and so is \code{NaN}. SAS special missing
-#' values, read by \code{haven} as \code{\link[haven]{tagged_na}}, are
-#' separate missing levels in SAS order: \code{._}, then \code{.}, then
-#' \code{.A} to \code{.Z}.
+#' **What counts as missing.** As in SAS, a blank or whitespace-only
+#' character value is missing, and so is `NaN`. SAS special missing
+#' values, read by `haven` as [haven::tagged_na()], are
+#' separate missing levels in SAS order: `._`, then `.`, then
+#' `.A` to `.Z`.
 #'
-#' \strong{Where this differs from SAS.} Unlabelled doubles are grouped on
-#' their exact values, whereas SAS groups on the printed (\code{BEST12.})
+#' **Where this differs from SAS.** Unlabelled doubles are grouped on
+#' their exact values, whereas SAS groups on the printed (`BEST12.`)
 #' value, so values that differ past about 12 significant digits stay separate
 #' rows here. Non-positive weights are an error, whereas SAS drops zero
-#' weights and ignores negative ones; \code{\link{proc_means}} makes the same
+#' weights and ignores negative ones; [proc_means()] makes the same
 #' deliberate choice.
 #'
 #' Percentages are not rounded. SAS rounds only for display, and a rounded
-#' result would fail \code{\link{compare_parity}} against SAS output.
+#' result would fail [compare_parity()] against SAS output.
 #'
-#' Tests of association (\code{CHISQ}, \code{FISHER}, \code{MEASURES} and the
-#' rest) are deliberately absent, for the same reason \code{\link{proc_means}}
+#' Tests of association (`CHISQ`, `FISHER`, `MEASURES` and the
+#' rest) are deliberately absent, for the same reason [proc_means()]
 #' has no inference statistics.
 #'
 #' @param data A data frame.
 #' @param table_cols Character vector of one or more column names defining the
-#'   table. Was \code{tables} before 2026-11; \code{tables =} still works for one
+#'   table. Was `tables` before 2026-11; `tables =` still works for one
 #'   release, with a warning.
-#' @param missing Logical. \code{FALSE} (the SAS default) excludes rows with a
-#'   missing value in any \code{table_cols} variable from the table and from every
-#'   denominator, and reports their count in the \code{frequency_missing}
-#'   attribute. \code{TRUE}, SAS \code{/ MISSING}, treats missing as a level,
+#' @param missing Logical. `FALSE` (the SAS default) excludes rows with a
+#'   missing value in any `table_cols` variable from the table and from every
+#'   denominator, and reports their count in the `frequency_missing`
+#'   attribute. `TRUE`, SAS `/ MISSING`, treats missing as a level,
 #'   with each SAS special missing value a level of its own.
-#' @param list Logical. \code{TRUE}, SAS \code{/ LIST}, gives cumulative
+#' @param list Logical. `TRUE`, SAS `/ LIST`, gives cumulative
 #'   columns and percentages of the grand total for an n-way table. It has no
 #'   effect on a one-way table.
-#' @param weight_col Character or \code{NULL}. Name of a single numeric column of
-#'   weights, SAS \code{WEIGHT}. \code{Frequency} becomes the sum of weights.
+#' @param weight_col Character or `NULL`. Name of a single numeric column of
+#'   weights, SAS `WEIGHT`. `Frequency` becomes the sum of weights.
 #'   Rows with a missing weight are excluded entirely; non-positive weights
-#'   are an error, as in \code{\link{proc_means}}.
+#'   are an error, as in [proc_means()].
 #'
-#' @param weights Deprecated: the old name of \code{weight_col}, kept for one release.
-#' @param tables Deprecated: the old name of \code{table_cols}, kept for one release.
-#' @return A data frame with one column per \code{table_cols} variable (each
-#'   followed by a \code{<var>_label} column when the variable carries value
+#' @param weights Deprecated: the old name of `weight_col`, kept for one release.
+#' @param tables Deprecated: the old name of `table_cols`, kept for one release.
+#' @return A data frame with one column per `table_cols` variable (each
+#'   followed by a `<var>_label` column when the variable carries value
 #'   labels), then:
 #'   \itemize{
-#'     \item for a one-way table, or \code{list = TRUE}: \code{Frequency},
-#'       \code{Percent}, \code{Cum_Frequency}, \code{Cum_Percent};
-#'     \item for an n-way crosstab: \code{Frequency}, \code{Percent} (within
-#'       stratum), \code{Row_Percent}, \code{Col_Percent}.
+#'     \item for a one-way table, or `list = TRUE`: `Frequency`,
+#'       `Percent`, `Cum_Frequency`, `Cum_Percent`;
+#'     \item for an n-way crosstab: `Frequency`, `Percent` (within
+#'       stratum), `Row_Percent`, `Col_Percent`.
 #'   }
-#'   \code{Frequency} is integer when unweighted and double when weighted.
-#'   The attribute \code{frequency_missing} holds the count (or weight) of
-#'   excluded missing rows, and is \code{0} when none were excluded. A table
+#'   `Frequency` is integer when unweighted and double when weighted.
+#'   The attribute `frequency_missing` holds the count (or weight) of
+#'   excluded missing rows, and is `0` when none were excluded. A table
 #'   with no remaining rows is returned with zero rows, not an error.
 #'
-#' @seealso \code{\link{proc_means}}, \code{\link{proc_contents}}
+#' @seealso [proc_means()], [proc_contents()]
 #'
 #' @export
 #'
