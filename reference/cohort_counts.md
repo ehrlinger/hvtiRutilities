@@ -7,6 +7,12 @@ The event column must be logical or numeric binary coding:
 `FALSE`/`TRUE` or `0`/`1`. Rows missing either column are excluded from
 the analysable cohort.
 
+A zero or negative time is still counted, so the gate's numbers do not
+move, but it warns:
+[`followup_check`](https://ehrlinger.github.io/hvtiRutilities/reference/followup_check.md)
+flags the same rows for review, and the two should not disagree in
+silence.
+
 ## Usage
 
 ``` r

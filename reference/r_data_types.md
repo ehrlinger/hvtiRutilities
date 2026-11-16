@@ -27,7 +27,9 @@ r_data_types(
 
   Integer threshold for factor conversion. Numeric variables with fewer
   than this many unique values (but more than 2) will be converted to
-  factors. Must be between 2 and 50. Default is 10.
+  factors, so the default of 10 converts a column with 3 to 9 distinct
+  values. Must be a whole number from 2 to 50. Character columns are not
+  subject to it. Default is 10.
 
 - skip_vars:
 
@@ -74,10 +76,14 @@ Each column is converted by the first rule that matches, in this order:
     nonzero code to `TRUE`, so a 1/2 column would otherwise become
     `TRUE` for every row and silently lose one of its two categories.
 
-4.  Remaining character columns become factors.
+4.  Remaining character columns become factors, whatever their number of
+    distinct values: `factor_size` does not apply to them. A character
+    column that yields more than 50 levels – usually an identifier or
+    free text, not a category – warns, naming the column; pass it in
+    `skip_vars` to keep it as character.
 
-5.  Numeric columns with 3 to `factor_size` distinct values become
-    factors.
+5.  Numeric columns with more than 2 and fewer than `factor_size`
+    distinct values become factors.
 
 6.  Logical columns become factors when `binary_factor = TRUE`.
 

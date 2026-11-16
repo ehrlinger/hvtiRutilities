@@ -81,7 +81,7 @@
       <h1>PROC CONTENTS, MEANS, FREQ and UNIVARIATE in R</h1>
 
       <p class="author">John Ehrlinger</p>
-      <p class="date">2026-11-14</p>
+      <p class="date">2026-11-16</p>
 
       <small class="dont-index">Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/vignettes/sas-procedures.qmd" class="external-link"><code>vignettes/sas-procedures.qmd</code></a></small>
       <div class="d-none name"><code></code></div>
@@ -495,7 +495,8 @@ run;</code></pre>
 <span><span class="co">#&gt; Dataset Comparison</span></span>
 <span><span class="co">#&gt;   Rows: 100 -&gt; 120</span></span>
 <span><span class="co">#&gt;   Columns added:    creatinine </span></span>
-<span><span class="co">#&gt;   Columns dropped:  reop</span></span></code></pre></div>
+<span><span class="co">#&gt;   Columns dropped:  reop </span></span>
+<span><span class="co">#&gt;   Values were not compared.</span></span></code></pre></div>
 </div>
 <p>It reports four kinds of drift: row count, columns added or dropped, class changes on shared columns, and label changes on shared columns. The last one matters more than it sounds. A label that changes from “Baseline eGFR” to “eGFR at discharge” is the same column name measuring a different thing, and nothing but the label will tell you.</p>
 <p>The full result is a list, so you can act on any piece programmatically:</p>

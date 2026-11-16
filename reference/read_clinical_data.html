@@ -160,7 +160,9 @@ declared variable-derivation step rather than to reading.</p></dd>
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Additional arguments passed to <code><a href="r_data_types.html">r_data_types</a></code>
 (e.g., <code>factor_size</code>, <code>skip_vars</code>, <code>binary_factor</code>,
-<code>use_value_labels</code>). Ignored when <code>convert_types = FALSE</code>.</p></dd>
+<code>use_value_labels</code>). Must be named. An error when
+<code>convert_types = FALSE</code>, or for a name <code><a href="r_data_types.html">r_data_types()</a></code> does
+not take.</p></dd>
 
 
 <dt id="arg-catalog-file">catalog_file<a class="anchor" aria-label="anchor" href="#arg-catalog-file"></a></dt>
@@ -189,6 +191,23 @@ arrived. Pass <code>catalog_file</code> to read the two together.</p>
 <code>convert_types = TRUE</code>, <code><a href="r_data_types.html">r_data_types</a></code> discards value
 labels unless <code>use_value_labels = TRUE</code> is passed through <code>...</code>,
 so supplying a catalog without it warns.</p>
+<p><strong>Column types depend on the format.</strong> Each reader decides its own
+types, and <code>read_clinical_data()</code> does not reconcile them:</p><ul><li><p><code>.sas7bdat</code>: a date-formatted variable is <code>Date</code>, and a
+    formatted numeric is <code>haven_labelled</code> when a catalog is read.</p></li>
+<li><p><code>.xlsx</code>, <code>.xls</code>: a date cell is <code>POSIXct</code>, not
+    <code>Date</code>, and every number is double.</p></li>
+<li><p><code>.csv</code>: a date is <em>character</em>. With
+    <code>convert_types = TRUE</code> it then becomes a factor, as every character
+    column does; convert it with <code><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date()</a></code> first, or name it in
+    <code>skip_vars</code>.</p></li>
+<li><p><code>.rds</code>, <code>.parquet</code>: the types that were written.</p></li>
+</ul><p><code><a href="r_data_types.html">r_data_types</a></code> never alters a <code>Date</code> or <code>POSIXct</code>
+column.</p>
+<p><strong>The dots go to <code><a href="r_data_types.html">r_data_types()</a></code> only.</strong> Reader options –
+<code>sheet</code>, <code>na</code>, <code>skip</code> – are not passed to the reader. A
+name in <code>...</code> that <code><a href="r_data_types.html">r_data_types</a></code> does not take is an
+error, and so is any argument in <code>...</code> when <code>convert_types</code> is
+<code>FALSE</code>, since it would otherwise be dropped without effect.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

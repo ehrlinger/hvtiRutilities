@@ -10,7 +10,10 @@ When data is a label map (a data frame with key and
 label columns), the overrides are applied to the map. When
 data is any other data frame, labels are applied directly to
 the data via add_labels, which is the preferred
-data-first workflow."><meta property="og:description" content="Reads label overrides from a YAML file and applies them to a label map
+data-first workflow.
+In that mode a key naming a column the data does not have warns, as
+add_labels does; an overrides file shared by several
+datasets warns for each key the current one lacks."><meta property="og:description" content="Reads label overrides from a YAML file and applies them to a label map
 or directly to a data frame. This allows study-specific label
 replacements (e.g., abbreviations, corrections) to be configured
 externally rather than hard-coded in analysis scripts.
@@ -21,7 +24,10 @@ When data is a label map (a data frame with key and
 label columns), the overrides are applied to the map. When
 data is any other data frame, labels are applied directly to
 the data via add_labels, which is the preferred
-data-first workflow."></head><body>
+data-first workflow.
+In that mode a key naming a column the data does not have warns, as
+add_labels does; an overrides file shared by several
+datasets warns for each key the current one lacks."></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -91,7 +97,10 @@ it safe to call unconditionally in shared code.</p>
 <code>label</code> columns), the overrides are applied to the map. When
 <code>data</code> is any other data frame, labels are applied directly to
 the data via <code><a href="add_labels.html">add_labels</a></code>, which is the preferred
-data-first workflow.</p>
+data-first workflow.
+In that mode a key naming a column the data does not have warns, as
+<code><a href="add_labels.html">add_labels</a></code> does; an overrides file shared by several
+datasets warns for each key the current one lacks.</p>
     </div>
 
     <div class="section level2">
@@ -161,6 +170,7 @@ hard-coded replacements.</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># --- Directly on data (preferred) ---</span></span></span>
 <span class="r-in"><span><span class="va">dta</span> <span class="op">&lt;-</span> <span class="fu">apply_label_overrides</span><span class="op">(</span><span class="va">dta</span>, overrides_file <span class="op">=</span> <span class="va">tmp</span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>add_labels(): 1 name(s) not present in the data were not applied: bsa_ratio.</span>
 <span class="r-in"><span><span class="fu">labelled</span><span class="fu">::</span><span class="fu"><a href="https://larmarange.github.io/labelled/reference/var_label.html" class="external-link">var_label</a></span><span class="op">(</span><span class="va">dta</span><span class="op">$</span><span class="va">age</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Patient Age (years)"</span>
 <span class="r-in"><span></span></span>

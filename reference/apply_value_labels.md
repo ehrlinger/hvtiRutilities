@@ -66,7 +66,7 @@ survive `label_max` (see
 Declaring them here keeps the two jobs apart: the converter reads this
 file, and a table renderer reads the label.
 
-Two rules worth knowing before relying on the result:
+Three rules worth knowing before relying on the result:
 
 - **Value labels already on the column win.** A column that arrives
   labelled - from a catalogue, or from an earlier call - is left alone
@@ -76,6 +76,10 @@ Two rules worth knowing before relying on the result:
 - **A variable named in the file but absent from the data is reported.**
   A typo that quietly declares nothing is the failure this file is least
   able to notice.
+
+- **A factor column is left as read.** Its levels are already its text,
+  and value labels cannot be attached to a factor, so the variable is
+  named in a warning instead.
 
 The `ordered` key is reserved for the ordinal declaration and is
 **refused** rather than partly honoured. Ordinality is blocked on a

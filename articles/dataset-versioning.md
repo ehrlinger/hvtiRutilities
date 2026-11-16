@@ -501,6 +501,7 @@ compare_datasets(cohort_v1, cohort_v2)
 #>   Label changes:
 #>     dead: 'Death indicator (1=dead, 0=censored)' -> 'dead'
 #>     gfr_bs: 'Baseline eGFR (mL/min/1.73m2)' -> 'eGFR at discharge (mL/min/1.73m2)'
+#>   Values were not compared.
 ```
 
 Read that output in order of how much trouble each line will cause you.

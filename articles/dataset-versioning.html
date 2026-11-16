@@ -81,7 +81,7 @@
       <h1>Dataset Version Tracking with manifest.yaml</h1>
 
       <p class="author">John Ehrlinger</p>
-      <p class="date">2026-11-14</p>
+      <p class="date">2026-11-16</p>
 
       <small class="dont-index">Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/vignettes/dataset-versioning.qmd" class="external-link"><code>vignettes/dataset-versioning.qmd</code></a></small>
       <div class="d-none name"><code></code></div>
@@ -444,7 +444,8 @@
 <span><span class="co">#&gt;     dead: integer -&gt; logical</span></span>
 <span><span class="co">#&gt;   Label changes:</span></span>
 <span><span class="co">#&gt;     dead: 'Death indicator (1=dead, 0=censored)' -&gt; 'dead'</span></span>
-<span><span class="co">#&gt;     gfr_bs: 'Baseline eGFR (mL/min/1.73m2)' -&gt; 'eGFR at discharge (mL/min/1.73m2)'</span></span></code></pre></div>
+<span><span class="co">#&gt;     gfr_bs: 'Baseline eGFR (mL/min/1.73m2)' -&gt; 'eGFR at discharge (mL/min/1.73m2)'</span></span>
+<span><span class="co">#&gt;   Values were not compared.</span></span></code></pre></div>
 </div>
 <p>Read that output in order of how much trouble each line will cause you.</p>
 <p>Added and dropped columns are the easy ones; a model referencing <code>reop</code> will fail loudly on the next run. The type change on <code>dead</code> is worse, because <code>integer</code> to <code>logical</code> is a change most code will accept silently. Notice it also cost the column its label, which is how a type change usually announces itself in the audit.</p>

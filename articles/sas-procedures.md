@@ -647,7 +647,8 @@ compare_datasets(v1, v2)
 #> Dataset Comparison
 #>   Rows: 100 -> 120
 #>   Columns added:    creatinine 
-#>   Columns dropped:  reop
+#>   Columns dropped:  reop 
+#>   Values were not compared.
 ```
 
 It reports four kinds of drift: row count, columns added or dropped,

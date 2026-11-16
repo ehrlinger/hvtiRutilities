@@ -62,7 +62,10 @@ read_clinical_data(file, convert_types = FALSE, ..., catalog_file = NULL)
   Additional arguments passed to
   [`r_data_types`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
   (e.g., `factor_size`, `skip_vars`, `binary_factor`,
-  `use_value_labels`). Ignored when `convert_types = FALSE`.
+  `use_value_labels`). Must be named. An error when
+  `convert_types = FALSE`, or for a name
+  [`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
+  does not take.
 
 - catalog_file:
 
@@ -91,6 +94,34 @@ A catalog on its own is only half the journey. With
 [`r_data_types`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
 discards value labels unless `use_value_labels = TRUE` is passed through
 `...`, so supplying a catalog without it warns.
+
+**Column types depend on the format.** Each reader decides its own
+types, and `read_clinical_data()` does not reconcile them:
+
+- `.sas7bdat`: a date-formatted variable is `Date`, and a formatted
+  numeric is `haven_labelled` when a catalog is read.
+
+- `.xlsx`, `.xls`: a date cell is `POSIXct`, not `Date`, and every
+  number is double.
+
+- `.csv`: a date is *character*. With `convert_types = TRUE` it then
+  becomes a factor, as every character column does; convert it with
+  [`as.Date()`](https://rdrr.io/r/base/as.Date.html) first, or name it
+  in `skip_vars`.
+
+- `.rds`, `.parquet`: the types that were written.
+
+[`r_data_types`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
+never alters a `Date` or `POSIXct` column.
+
+**The dots go to
+[`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
+only.** Reader options – `sheet`, `na`, `skip` – are not passed to the
+reader. A name in `...` that
+[`r_data_types`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
+does not take is an error, and so is any argument in `...` when
+`convert_types` is `FALSE`, since it would otherwise be dropped without
+effect.
 
 ## See also
 

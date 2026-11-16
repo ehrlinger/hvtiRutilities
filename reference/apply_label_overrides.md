@@ -13,7 +13,11 @@ When `data` is a label map (a data frame with `key` and `label`
 columns), the overrides are applied to the map. When `data` is any other
 data frame, labels are applied directly to the data via
 [`add_labels`](https://ehrlinger.github.io/hvtiRutilities/reference/add_labels.md),
-which is the preferred data-first workflow.
+which is the preferred data-first workflow. In that mode a key naming a
+column the data does not have warns, as
+[`add_labels`](https://ehrlinger.github.io/hvtiRutilities/reference/add_labels.md)
+does; an overrides file shared by several datasets warns for each key
+the current one lacks.
 
 ## Usage
 
@@ -84,6 +88,7 @@ lmap[lmap$key == "age", ]
 
 # --- Directly on data (preferred) ---
 dta <- apply_label_overrides(dta, overrides_file = tmp)
+#> Warning: add_labels(): 1 name(s) not present in the data were not applied: bsa_ratio.
 labelled::var_label(dta$age)
 #> [1] "Patient Age (years)"
 

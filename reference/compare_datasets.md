@@ -1,14 +1,21 @@
 # Compare two versions of a dataset
 
 Summarises the differences between two data pulls of the same dataset:
-added or dropped columns, row count changes, type changes, and label
-changes. This is useful for auditing data drift when a new extract
-arrives, and pairs naturally with the manifest system.
+added or dropped columns, row count changes, type changes, label changes
+and factor-level changes. This is useful for auditing data drift when a
+new extract arrives, and pairs naturally with the manifest system.
+
+**Values are not compared.** Matching rows across two pulls needs a key,
+and this function takes none, so two datasets with the same shape,
+classes, labels and levels but different values compare as equal. The
+printed summary says so. Compare values on a key with
+[`merge()`](https://rdrr.io/r/base/merge.html) when that is the
+question.
 
 ## Usage
 
 ``` r
-compare_datasets(old, new)
+compare_datasets(old, new, show_levels = FALSE)
 ```
 
 ## Arguments
@@ -20,6 +27,13 @@ compare_datasets(old, new)
 - new:
 
   A data frame representing the current version of the dataset.
+
+- show_levels:
+
+  Logical. Include the level values themselves in the result and the
+  printed summary. Defaults to `FALSE`: a character identifier or
+  free-text column read as a factor has row-level values as its levels,
+  so by default only level counts are reported.
 
 ## Value
 
@@ -50,6 +64,13 @@ A list with the following elements:
 
   Data frame with columns `variable`, `old_label`, `new_label` for
   shared columns whose label changed
+
+- level_changes:
+
+  Data frame with columns `variable`, `old_n`, `new_n` (level counts),
+  `n_added` and `n_removed` for shared columns that are factors in both
+  and whose levels, or their order, changed. With `show_levels = TRUE`
+  it also has `old_levels` and `new_levels` (levels joined with `", "`).
 
 ## See also
 

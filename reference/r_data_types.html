@@ -89,7 +89,9 @@ various NA representations. Preserves variable labels from SAS/labelled data.</p
 <dt id="arg-factor-size">factor_size<a class="anchor" aria-label="anchor" href="#arg-factor-size"></a></dt>
 <dd><p>Integer threshold for factor conversion. Numeric variables
 with fewer than this many unique values (but more than 2) will be converted
-to factors. Must be between 2 and 50. Default is 10.</p></dd>
+to factors, so the default of 10 converts a column with 3 to 9 distinct
+values. Must be a whole number from 2 to 50. Character columns are not
+subject to it. Default is 10.</p></dd>
 
 
 <dt id="arg-skip-vars">skip_vars<a class="anchor" aria-label="anchor" href="#arg-skip-vars"></a></dt>
@@ -132,9 +134,13 @@ default becomes TRUE in a later release.</p></dd>
     <code>binary_factor</code>: <code><a href="https://rdrr.io/r/base/logical.html" class="external-link">as.logical()</a></code> maps every nonzero code to
     <code>TRUE</code>, so a 1/2 column would otherwise become <code>TRUE</code> for
     every row and silently lose one of its two categories.</p></li>
-<li><p>Remaining character columns become factors.</p></li>
-<li><p>Numeric columns with 3 to <code>factor_size</code> distinct values
-    become factors.</p></li>
+<li><p>Remaining character columns become factors, whatever their number
+    of distinct values: <code>factor_size</code> does not apply to them. A
+    character column that yields more than 50 levels – usually an
+    identifier or free text, not a category – warns, naming the column;
+    pass it in <code>skip_vars</code> to keep it as character.</p></li>
+<li><p>Numeric columns with more than 2 and fewer than <code>factor_size</code>
+    distinct values become factors.</p></li>
 <li><p>Logical columns become factors when <code>binary_factor = TRUE</code>.</p></li>
 </ol><p>Date, POSIXct, and POSIXlt columns are never altered by type conversion.</p>
 <p>Which rule fired on which column is recorded on the result and read back

@@ -143,13 +143,16 @@ a label carrying eight mutually exclusive options cannot survive
 <code>label_max</code> (see <code><a href="label_map.html">label_map</a></code>). Declaring them here keeps
 the two jobs apart: the converter reads this file, and a table renderer
 reads the label.</p>
-<p>Two rules worth knowing before relying on the result:</p><ul><li><p><strong>Value labels already on the column win.</strong> A column that
+<p>Three rules worth knowing before relying on the result:</p><ul><li><p><strong>Value labels already on the column win.</strong> A column that
     arrives labelled - from a catalogue, or from an earlier call - is left
     alone and the variable is named in a warning, so a declaration can
     never silently overwrite a mapping read from the source.</p></li>
 <li><p><strong>A variable named in the file but absent from the data is
     reported.</strong> A typo that quietly declares nothing is the failure this
     file is least able to notice.</p></li>
+<li><p><strong>A factor column is left as read.</strong> Its levels are already its
+    text, and value labels cannot be attached to a factor, so the variable
+    is named in a warning instead.</p></li>
 </ul><p>The <code>ordered</code> key is reserved for the ordinal declaration and is
 <strong>refused</strong> rather than partly honoured. Ordinality is blocked on a
 statistical decision; reserving the key now keeps one home for both
