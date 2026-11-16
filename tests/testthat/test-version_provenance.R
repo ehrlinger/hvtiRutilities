@@ -43,7 +43,7 @@ test_that("an older reader's rewrite keeps the map and adds no row", {
 test_that("a matching sidecar makes a bd version and moves beside its parquet", {
   s <- unregistered_study()
   write_build_sidecar(s$src)
-  suppressMessages(register_data(s$root, "built.csv"))
+  suppressMessages(register_data(root = s$root, "built.csv"))
   dir <- dirname(s$src)
   expect_false(file.exists(.build_sidecar_path(s$src)))
   expect_true(file.exists(file.path(dir, "built_20260915.build.yml")))
@@ -58,7 +58,7 @@ test_that("a matching sidecar makes a bd version and moves beside its parquet", 
 
 test_that("no sidecar gives legacy", {
   s <- unregistered_study()
-  suppressMessages(register_data(s$root, "built.csv"))
+  suppressMessages(register_data(root = s$root, "built.csv"))
   row <- .version_provenance(.read_manifest(file.path(s$root, "manifest.yaml")), "built_20260915.parquet")
   expect_identical(row, list(origin = "legacy"))
 })
@@ -66,7 +66,7 @@ test_that("no sidecar gives legacy", {
 test_that("a sidecar for other bytes gives legacy, says so, and stays put", {
   s <- unregistered_study()
   side <- write_build_sidecar(s$src, built_sha256 = strrep("0", 64))
-  expect_message(register_data(s$root, "built.csv"), "describes a different built.csv")
+  expect_message(register_data(root = s$root, "built.csv"), "describes a different built.csv")
   expect_true(file.exists(side))
   row <- .version_provenance(.read_manifest(file.path(s$root, "manifest.yaml")), "built_20260915.parquet")
   expect_identical(row$origin, "legacy")
@@ -77,12 +77,12 @@ test_that("an invalid or underived matching record stops and writes nothing", {
   dir <- dirname(s$src)
   before <- sort(list.files(dir))
   side <- write_build_sidecar(s$src, view = NULL)
-  expect_error(register_data(s$root, "built.csv"), "missing view")
+  expect_error(register_data(root = s$root, "built.csv"), "missing view")
   expect_identical(sort(list.files(dir)), before |> c(basename(side)) |> sort())
   expect_false(file.exists(file.path(s$root, "manifest.yaml")))
 
   write_build_sidecar(s$src, derived_after_overlay = FALSE)
-  expect_error(register_data(s$root, "built.csv"), "derivations were not recomputed")
+  expect_error(register_data(root = s$root, "built.csv"), "derivations were not recomputed")
   expect_identical(sort(list.files(dir)), before |> c(basename(side)) |> sort())
 })
 
@@ -112,7 +112,7 @@ test_that("a failed manifest write renames the record back to its sidecar", {
 test_that("a record with no built_sha256 is malformed, not stale", {
   s <- unregistered_study()
   write_build_sidecar(s$src, built_sha256 = NULL)
-  expect_error(register_data(s$root, "built.csv"), "built_sha256 must be a SHA-256")
+  expect_error(register_data(root = s$root, "built.csv"), "built_sha256 must be a SHA-256")
   expect_false(file.exists(file.path(s$root, "manifest.yaml")))
 })
 
@@ -132,7 +132,7 @@ test_that("a sidecar rewritten during registration is put back and nothing is re
     if (identical(basename(from), "built.build.yml")) cat("view: other\n", file = to, append = TRUE)
     ok
   })
-  expect_error(register_data(s$root, "built.csv"), "changed while it was being registered")
+  expect_error(register_data(root = s$root, "built.csv"), "changed while it was being registered")
   expect_true(file.exists(side))
   expect_false(file.exists(file.path(s$root, "manifest.yaml")))
 })
@@ -174,7 +174,7 @@ test_that("register_data puts the sidecar back when a later step fails", {
   s <- unregistered_study()
   side <- write_build_sidecar(s$src)
   local_mocked_bindings(.replace_study_pair = function(...) stop("rename failed"))
-  expect_error(suppressMessages(register_data(s$root, "built.csv")), "rename failed")
+  expect_error(suppressMessages(register_data(root = s$root, "built.csv")), "rename failed")
   expect_true(file.exists(side))
   expect_identical(list.files(dirname(s$src), pattern = "^built_"), character())
 })
@@ -182,7 +182,7 @@ test_that("register_data puts the sidecar back when a later step fails", {
 test_that("verify_manifest checks build records and stops on a changed or missing one", {
   s <- unregistered_study()
   write_build_sidecar(s$src)
-  suppressMessages(register_data(s$root, "built.csv"))
+  suppressMessages(register_data(root = s$root, "built.csv"))
   mp <- file.path(s$root, "manifest.yaml")
   rec <- file.path(dirname(s$src), "built_20260915.build.yml")
 
@@ -207,7 +207,7 @@ test_that("a provenance row for no recorded version fails", {
 
 test_that("a build record neither inflates study_status's entry count nor hides its FAIL", {
   s <- unregistered_study()
-  suppressMessages(register_data(s$root, "built.csv"))
+  suppressMessages(register_data(root = s$root, "built.csv"))
   count <- function() {
     d <- study_status(s$root)$checks
     d$detail[d$item == "manifest.yaml"]
@@ -217,7 +217,7 @@ test_that("a build record neither inflates study_status's entry count nor hides 
   unlink(s$root, recursive = TRUE)
   s <- unregistered_study()
   write_build_sidecar(s$src)
-  suppressMessages(register_data(s$root, "built.csv"))
+  suppressMessages(register_data(root = s$root, "built.csv"))
   expect_identical(sub(" verified.*", "", count()), before)
 
   cat("# edited\n", file = file.path(dirname(s$src), "built_20260915.build.yml"), append = TRUE)
@@ -242,7 +242,7 @@ test_that("a provenance row keyed by a sidecar name is an orphan, not a pass or 
 test_that("an invalid build record in a hand-edited manifest fails under the entry's label", {
   s <- unregistered_study()
   write_build_sidecar(s$src)
-  suppressMessages(register_data(s$root, "built.csv"))
+  suppressMessages(register_data(root = s$root, "built.csv"))
   mp <- file.path(s$root, "manifest.yaml")
   for (bad in list(list(record = "", record_sha256 = strrep("a", 64)),
                    list(record = "built_20260915.build.yml", record_sha256 = "nothex"),
@@ -328,7 +328,7 @@ test_that("a provenance field that is not a mapping is one failing row", {
 test_that("two invalid build records of one entry get distinct labels", {
   s <- unregistered_study()
   write_build_sidecar(s$src)
-  suppressMessages(register_data(s$root, "built.csv"))
+  suppressMessages(register_data(root = s$root, "built.csv"))
   path <- rebuild_source(s$root)
   write_build_sidecar(path)
   withr::with_dir(s$root, suppressMessages(update_manifest()))
@@ -346,7 +346,7 @@ test_that("two invalid build records of one entry get distinct labels", {
 test_that("study_status does not count a build record as an earlier version", {
   s <- unregistered_study()
   write_build_sidecar(s$src)
-  suppressMessages(register_data(s$root, "built.csv"))
+  suppressMessages(register_data(root = s$root, "built.csv"))
   d <- study_status(s$root)$checks
   expect_no_match(d$detail[d$item == "manifest.yaml"], "earlier versions", fixed = TRUE)
 })
@@ -410,7 +410,7 @@ test_that("provenance in a manifest with no datasets still fails", {
 test_that("an NA build record checksum fails instead of crashing", {
   s <- unregistered_study()
   write_build_sidecar(s$src)
-  suppressMessages(register_data(s$root, "built.csv"))
+  suppressMessages(register_data(root = s$root, "built.csv"))
   mp <- file.path(s$root, "manifest.yaml")
   m <- .read_manifest(mp)
   m$provenance[["built_20260915.parquet"]]$build$record_sha256 <- NA_character_
@@ -436,7 +436,7 @@ test_that("register_data keeps a sidecar written after the claim and files the c
     write_build_sidecar(s$src, view = "newer_v")
     stop("rename failed")
   })
-  expect_warning(expect_error(suppressMessages(register_data(s$root, "built.csv")), "rename failed"), "restored-")
+  expect_warning(expect_error(suppressMessages(register_data(root = s$root, "built.csv")), "rename failed"), "restored-")
   expect_identical(yaml::read_yaml(side)$view, "newer_v")
   kept <- list.files(dirname(s$src), pattern = "^built[.]build[.]yml[.]restored-", full.names = TRUE)
   expect_length(kept, 1L)
@@ -482,7 +482,7 @@ test_that("a record without schema 1 is foreign: left in place, the version is l
   s <- unregistered_study()
   side <- write_foreign_build_record(s$src)
   before <- readBin(side, "raw", file.size(side))
-  expect_message(register_data(s$root, "built.csv"), "not a build record this version reads (no schema: 1)", fixed = TRUE)
+  expect_message(register_data(root = s$root, "built.csv"), "not a build record this version reads (no schema: 1)", fixed = TRUE)
   expect_identical(readBin(side, "raw", file.size(side)), before)
   row <- .version_provenance(.read_manifest(file.path(s$root, "manifest.yaml")), "built_20260915.parquet")
   expect_identical(row$origin, "legacy")
@@ -491,7 +491,7 @@ test_that("a record without schema 1 is foreign: left in place, the version is l
 test_that("a record with another schema number is foreign too", {
   s <- unregistered_study()
   side <- write_build_sidecar(s$src, schema = 2L)
-  expect_message(register_data(s$root, "built.csv"), "no schema: 1", fixed = TRUE)
+  expect_message(register_data(root = s$root, "built.csv"), "no schema: 1", fixed = TRUE)
   expect_true(file.exists(side))
 })
 
@@ -622,10 +622,10 @@ test_that("a schema-1 record whose job is absolute or climbs out of the study is
   for (job in c("/Users/someone/study/00_datasets/bd.qmd", "~/study/bd.qmd", "C:/study/bd.qmd", "..\\bd.qmd",
                 "../bd.qmd", "00_datasets/../../bd.qmd")) {
     side <- write_build_sidecar(s$src, job = job)
-    expect_error(register_data(s$root, "built.csv"), "job must be the job file's study-relative path", info = job)
+    expect_error(register_data(root = s$root, "built.csv"), "job must be the job file's study-relative path", info = job)
     expect_true(file.exists(side))
     expect_false(file.exists(file.path(s$root, "manifest.yaml")))
   }
   write_build_sidecar(s$src, job = "00_datasets/bd.qmd")
-  expect_no_error(suppressMessages(register_data(s$root, "built.csv")))
+  expect_no_error(suppressMessages(register_data(root = s$root, "built.csv")))
 })

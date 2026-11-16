@@ -95,8 +95,8 @@ forgotten `document()` fails the PR rather than landing quietly.
   otherwise they land in the tarball as a NOTE. `ROADMAP.md` is listed for the same
   reason: it sits at the root but is not one of the files `R CMD check` expects there.
 - **`_study.yml` records registered datasets, not a study-wide cohort.**
-  `cohort_counts(d, event, time)` observes that job's cohort counts;
-  `assert_cohort(d, expected, event, time)` compares them with that job's reference. Reusing
+  `cohort_counts(data, time_col, event_col)` observes that job's cohort counts;
+  `assert_cohort(data, expected, time_col, event_col)` compares them with that job's reference. Reusing
   whole-dataset expected counts for a filtered job can pass when the three totals match even
   though the actual analysis cohort was never checked. Derive expected counts from the job's
   own reference.

@@ -17,23 +17,43 @@
 #' @param root The study root, or a directory beneath it. Defaults to the study that contains the working
 #'   directory, found by its \code{_study.yml}; outside a study the function
 #'   stops and writes nothing.
+#'   It comes last, after 2026-11; a call that passes an existing directory
+#'   as its first argument, unnamed, is read in the old, root-first order for
+#'   one release, with a warning.
 #' @param file The working file's name in the datasets folder, with its extension.
 #' @param built The old name of \code{file}, before 2026-11. It still works,
 #'   with a warning, and will be removed in a later release.
-#' @param key Columns that make a row unique, or \code{NULL} to leave
-#'   \code{key:} unset.
+#' @param key_cols Columns that make a row unique, or \code{NULL} to leave
+#'   \code{key:} unset. Was \code{key} before 2026-11; \code{key =} still
+#'   works for one release, with a warning.
 #' @return \code{TRUE}, invisibly, when the contract was written, or a
-#'   \code{key} was added to a declaration that had none;
+#'   \code{key_cols} was added to a declaration that had none;
 #'   \code{FALSE}, invisibly, when \code{file} was already declared.
 #'   Stops when the study already declares a different file or a different key.
 #' @examples
 #' root <- file.path(tempdir(), "declare-example")
 #' suppressMessages(study_setup(root, "Example", 1L, renv = FALSE))
 #' saveRDS(data.frame(ccfid = 1:3), file.path(study_dir("datasets", root), "study_cohort.rds"))
-#' declare_data(root, file = "study_cohort.rds", key = "ccfid")
+#' declare_data("study_cohort.rds", key_cols = "ccfid", root = root)
 #' unlink(root, recursive = TRUE)
 #' @export
-declare_data <- function(root = study_root(), file, key = NULL, built = NULL) {
+declare_data <- function(file, key_cols = NULL, built = NULL, root = study_root()) {
+  cl <- sys.call()
+  env <- parent.frame()
+  if (.hvti_old_call(cl, env, renamed = "key")) {
+    .hvti_deprecate("declare_data_key",
+                    "declare_data(): `key =` is now `key_cols =`, per the family rule that an argument naming ",
+                    "columns ends in _cols. The old name works for one more release.")
+  }
+  old_root <- .hvti_root_first(cl, env, declare_data, environment())
+  if (!is.null(old_root)) {
+    .hvti_deprecate("declare_data_root",
+                    "declare_data(): `root` is now the last argument. A first argument, unnamed, that is a ",
+                    "directory is read as the root for one more release; pass root = by name.")
+    return(.hvti_recall(cl, env, function(root, file, key, built) NULL, declare_data,
+                        c(key = "key_cols"), forced = list(root = old_root)))
+  }
+  key <- key_cols
   built <- .renamed_file_arg(if (missing(file)) NULL else file, built, "declare_data",
                              file_given = !missing(file), built_given = !missing(built))
   built <- .study_scalar(built, "file", TRUE, caller = "declare_data")
@@ -41,7 +61,7 @@ declare_data <- function(root = study_root(), file, key = NULL, built = NULL) {
     stop("declare_data(): file must be one filename with its extension", call. = FALSE)
   }
   if (!is.null(key) && (!is.character(key) || !length(key) || anyNA(key) || !all(nzchar(key)))) {
-    stop("declare_data(): key must be NULL or column names", call. = FALSE)
+    stop("declare_data(): key_cols must be NULL or column names", call. = FALSE)
   }
   cfg <- study_config(root, require_data = FALSE)
   # A path into the data folder, as tab completion gives it, names the same file (#276 review).

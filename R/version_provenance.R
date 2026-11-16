@@ -134,7 +134,7 @@
 # retired path is deprecated. Catalog releases are retired.
 .deprecated_arg <- function(fn, arg, instead) {
   warning(structure(
-    class = c("deprecatedWarning", "warning", "condition"),
+    class = c("hvtiRutilities_deprecated", "deprecatedWarning", "warning", "condition"),
     list(message = paste0(fn, "(", arg, " =) is deprecated: catalog releases are retired. Use ", instead,
                           " instead. It will be removed in a later release."),
          call = NULL)

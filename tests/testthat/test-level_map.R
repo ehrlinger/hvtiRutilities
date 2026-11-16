@@ -76,13 +76,13 @@ test_that("a frame with nothing discrete still returns the columns", {
 test_that("vars selects the columns to report", {
   d <- data.frame(a = factor(c("1. x", "2. y")), b = factor("3. z"))
 
-  expect_equal(unique(level_map(d, vars = "a")$key), "a")
+  expect_equal(unique(level_map(d, var_cols = "a")$key), "a")
 })
 
 test_that("an unknown variable is an error, not a silent empty result", {
   d <- data.frame(a = factor("1. x"))
 
-  expect_error(level_map(d, vars = "nope"), "nope")
+  expect_error(level_map(d, var_cols = "nope"), "nope")
 })
 
 test_that("a high-cardinality column is skipped and named", {

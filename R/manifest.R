@@ -112,8 +112,9 @@
 #'   all other file types supply this value explicitly.
 #' @param source Character. Free-text description of the data source (e.g.
 #'   \code{"Epic EMR, query v4.2, ICD mapping v3.2"}).
-#' @param sort_key Character. Column name(s) that define the canonical sort
-#'   order of the dataset.
+#' @param sort_key_cols Character. Column name(s) that define the canonical sort
+#'   order of the dataset, recorded as the entry's \code{sort_key}. Was \code{sort_key}
+#'   before 2026-11; \code{sort_key =} still works for one release, with a warning.
 #' @param n_cols Integer. Column count. Pass it from a frame already read; a
 #'   row count alone cannot detect a dropped column.
 #' @param schema_sha256 Character. SHA-256 of this dataset's schema sidecar,
@@ -154,7 +155,7 @@
 #'                  row.names = FALSE)
 #' manifest <- file.path(dir, "manifest.yaml")
 #' update_manifest(csv, manifest_path = manifest, extract_date = "2024-01-15",
-#'                 source = "Synthetic example", sort_key = "patient_id")
+#'                 source = "Synthetic example", sort_key_cols = "patient_id")
 #' cat(readLines(manifest), sep = "\n")
 #' verify_manifest(manifest, verbose = TRUE)
 #' unlink(dir, recursive = TRUE)
@@ -167,19 +168,25 @@ update_manifest <- function(file,
                             n_rows        = NULL,
                             n_cols        = NULL,
                             source        = NULL,
-                            sort_key      = NULL,
+                            sort_key_cols = NULL,
                             schema_sha256 = NULL,
                             role          = c("source", "primary"),
                             reader        = NULL,
                             verbose       = FALSE,
                             dataset       = NULL) {
+  # `sort_key` partially matches `sort_key_cols`, so R binds it; only the
+  # notice is needed. The manifest field keeps its name, `sort_key`.
+  if (.hvti_old_call(sys.call(), parent.frame(), renamed = "sort_key")) {
+    .hvti_deprecate("update_manifest_sort_key", "update_manifest(): `sort_key =` is now `sort_key_cols =`, ",
+                    "per the family rule that an argument naming columns ends in _cols. The old name works for one more release.")
+  }
   if (missing(file)) {
     # The no-file form registers whatever changed in the study; these describe
     # one file, so passing one here would be silently ignored.
-    single <- c("manifest_path", "n_rows", "n_cols", "source", "sort_key", "schema_sha256", "role",
+    single <- c("manifest_path", "n_rows", "n_cols", "source", "sort_key_cols", "schema_sha256", "role",
                 "reader", "verbose")
     absent <- c(missing(manifest_path), missing(n_rows), missing(n_cols), missing(source),
-                missing(sort_key), missing(schema_sha256), missing(role), missing(reader),
+                missing(sort_key_cols), missing(schema_sha256), missing(role), missing(reader),
                 missing(verbose))
     given <- single[!absent]
     if (length(given)) {
@@ -228,7 +235,7 @@ update_manifest <- function(file,
   if (!is.null(n_cols))        entry$n_cols        <- as.integer(n_cols)
   if (!is.null(schema_sha256)) entry$schema_sha256 <- schema_sha256
   if (!is.null(source))   entry$source   <- source
-  if (!is.null(sort_key)) entry$sort_key <- sort_key
+  if (!is.null(sort_key_cols)) entry$sort_key <- sort_key_cols
   if (!is.null(reader))   entry$reader   <- reader
 
   manifest <- if (file.exists(manifest_path)) {

@@ -29,7 +29,7 @@ test_that("proc_print accepts a single formula", {
 test_that("matching rows go to stderr, not stdout", {
   d <- fixture()
   err <- capture.output(
-    out <- capture.output(proc_print(d, age > 100 ~ "Implausible age", var = c("id", "age"))),
+    out <- capture.output(proc_print(d, age > 100 ~ "Implausible age", var_cols = c("id", "age"))),
     type = "message"
   )
   expect_true(any(grepl("PRINTME-B2", err, fixed = TRUE)))
@@ -38,7 +38,7 @@ test_that("matching rows go to stderr, not stdout", {
 
 test_that("var limits the printed columns and max_rows the printed rows", {
   err <- capture.output(
-    invisible(proc_print(fixture(), !is.na(age) ~ "Has age", var = "age", max_rows = 1L)),
+    invisible(proc_print(fixture(), !is.na(age) ~ "Has age", var_cols = "age", max_rows = 1L)),
     type = "message"
   )
   expect_false(any(grepl("PRINTME", err, fixed = TRUE)))
@@ -106,8 +106,8 @@ test_that("a failing condition names its label and withholds R's message", {
 
 test_that("var and max_rows are validated", {
   d <- fixture()
-  expect_error(proc_print(d, dead == 1 ~ "Died", var = "nope"), "not found in 'data': nope")
-  expect_error(proc_print(d, dead == 1 ~ "Died", var = character()), "'var' must be NULL")
+  expect_error(proc_print(d, dead == 1 ~ "Died", var_cols = "nope"), "not found in 'data': nope")
+  expect_error(proc_print(d, dead == 1 ~ "Died", var_cols = character()), "'var_cols' must be NULL")
   expect_error(proc_print(d, dead == 1 ~ "Died", max_rows = 0), "'max_rows'")
   expect_error(proc_print(d, dead == 1 ~ "Died", max_rows = 1.5), "'max_rows'")
 })

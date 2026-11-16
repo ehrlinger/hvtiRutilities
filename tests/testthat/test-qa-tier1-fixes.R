@@ -12,14 +12,14 @@ test_that("r_data_types() warns on a character column with more than 50 levels",
   expect_warning(out <- r_data_types(d, use_value_labels = FALSE),
                  "more than 50 levels: id\\.")
   expect_s3_class(out$id, "factor")
-  expect_no_warning(r_data_types(d, skip_vars = "id", use_value_labels = FALSE))
+  expect_no_warning(r_data_types(d, skip_cols = "id", use_value_labels = FALSE))
   expect_no_warning(r_data_types(d[1:50, ], use_value_labels = FALSE))
 })
 
 test_that("r_data_types() errors carry no call and name the unknown skip_vars", {
   e <- expect_error(r_data_types(list(), use_value_labels = FALSE))
   expect_null(conditionCall(e))
-  expect_error(r_data_types(mtcars, skip_vars = c("mpg", "nope"), use_value_labels = FALSE),
+  expect_error(r_data_types(mtcars, skip_cols = c("mpg", "nope"), use_value_labels = FALSE),
                "dataset: nope\\.")
 })
 
@@ -104,10 +104,10 @@ test_that("an empty study root resolves to the numbered layout", {
 
 test_that("cohort_counts() warns on zero or negative time but keeps the count", {
   d <- data.frame(dead = c(1, 0, 0), t = c(0, -1, 5))
-  expect_warning(cc <- cohort_counts(d, event = "dead", time = "t"),
+  expect_warning(cc <- cohort_counts(d, event_col = "dead", time_col = "t"),
                  "1 negative and 1 zero")
   expect_equal(cc$n, 3L)
-  expect_no_warning(cohort_counts(data.frame(dead = 1, t = 2), "dead", "t"))
+  expect_no_warning(cohort_counts(data.frame(dead = 1, t = 2), time_col = "t", event_col = "dead"))
 })
 
 test_that("covariates_to_numeric() warns about names not in the data", {

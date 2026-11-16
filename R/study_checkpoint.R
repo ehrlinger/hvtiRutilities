@@ -22,6 +22,8 @@
     vals <- unlist(v, use.names = FALSE)
     length(vals) > 0L && any(!is.na(vals) & nzchar(as.character(vals)))
   }, logical(1))
+  # Deliberately not .hvti_inform(): a caution about patient information is
+  # not silenced by quiet mode.
   if (any(given)) {
     message("note/reason/attributes leave the study folder (git and ST); ",
             "they must not contain patient information.")
@@ -137,7 +139,7 @@
   # rolling back to head_before would erase its work, so stop without the
   # undo. Nothing is logged or tagged yet; the next snapshot's sync rewrites
   # the working tree.
-  tryCatch(.cp_lock_touch(held), hvti_cp_lock_lost = function(e) {
+  tryCatch(.cp_lock_touch(held), hvtiRutilities_cp_lock_lost = function(e) {
     done <<- TRUE
     stop(e)
   })
@@ -303,8 +305,8 @@ study_checkpoint <- function(kind, note = NULL, attributes = NULL,
   # The automatic path returns early in .cp_record(), without the message.
   if (identical(kind, "manuscript_published") &&
         identical(row$trigger, "manual")) {
-    message("The study can now be closed as published: ",
-            "study_close(\"published\", publication = list(...))")
+    .hvti_inform("The study can now be closed as published: ",
+                 "study_close(\"published\", publication = list(...))")
   }
   invisible(final)
 }

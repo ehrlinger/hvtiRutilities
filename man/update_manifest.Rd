@@ -11,7 +11,7 @@ update_manifest(
   n_rows = NULL,
   n_cols = NULL,
   source = NULL,
-  sort_key = NULL,
+  sort_key_cols = NULL,
   schema_sha256 = NULL,
   role = c("source", "primary"),
   reader = NULL,
@@ -48,8 +48,9 @@ row count alone cannot detect a dropped column.}
 \item{source}{Character. Free-text description of the data source (e.g.
 \code{"Epic EMR, query v4.2, ICD mapping v3.2"}).}
 
-\item{sort_key}{Character. Column name(s) that define the canonical sort
-order of the dataset.}
+\item{sort_key_cols}{Character. Column name(s) that define the canonical sort
+order of the dataset, recorded as the entry's \code{sort_key}. Was \code{sort_key}
+before 2026-11; \code{sort_key =} still works for one release, with a warning.}
 
 \item{schema_sha256}{Character. SHA-256 of this dataset's schema sidecar,
 making the manifest-to-sidecar link tamper-evident.}
@@ -132,7 +133,7 @@ utils::write.csv(data.frame(patient_id = 1:3, age = c(61, 70, 55)), csv,
                  row.names = FALSE)
 manifest <- file.path(dir, "manifest.yaml")
 update_manifest(csv, manifest_path = manifest, extract_date = "2024-01-15",
-                source = "Synthetic example", sort_key = "patient_id")
+                source = "Synthetic example", sort_key_cols = "patient_id")
 cat(readLines(manifest), sep = "\n")
 verify_manifest(manifest, verbose = TRUE)
 unlink(dir, recursive = TRUE)

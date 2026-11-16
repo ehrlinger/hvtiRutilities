@@ -128,7 +128,7 @@ test_that("skip_vars with all columns skips all conversions", {
     b = c(1, 0, 1),
     stringsAsFactors = FALSE
   )
-  result <- r_data_types(dta, skip_vars = c("a", "b"))
+  result <- r_data_types(dta, skip_cols = c("a", "b"))
 
   expect_type(result$a, "character")
   expect_type(result$b, "double")
@@ -142,7 +142,7 @@ test_that("skip_vars preserves column order with non-contiguous columns", {
     d = c(4, 5, 6),
     stringsAsFactors = FALSE
   )
-  result <- r_data_types(dta, skip_vars = c("a", "d"))
+  result <- r_data_types(dta, skip_cols = c("a", "d"))
 
   expect_equal(names(result), c("a", "b", "c", "d"))
   expect_type(result$a, "character")  # Skipped
@@ -252,7 +252,7 @@ test_that("errors when skip_vars is not character", {
   dta <- data.frame(a = 1:3, b = 4:6)
 
   expect_error(
-    r_data_types(dta, skip_vars = 1),
+    r_data_types(dta, skip_cols = 1),
     "character vector"
   )
 })
@@ -342,7 +342,7 @@ test_that("preserves labels with skip_vars", {
   labelled::var_label(dta$a) <- "Label A"
   labelled::var_label(dta$b) <- "Label B"
 
-  result <- r_data_types(dta, skip_vars = "a")
+  result <- r_data_types(dta, skip_cols = "a")
 
   expect_equal(labelled::var_label(result$a), "Label A")
   expect_equal(labelled::var_label(result$b), "Label B")

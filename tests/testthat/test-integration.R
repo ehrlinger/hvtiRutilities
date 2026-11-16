@@ -75,7 +75,7 @@ test_that("skip_vars maintains label mapping consistency", {
   labelled::var_label(dta$skip) <- "Skip Label"
   labelled::var_label(dta$convert) <- "Convert Label"
 
-  converted <- r_data_types(dta, skip_vars = "skip")
+  converted <- r_data_types(dta, skip_cols = "skip")
   labels <- label_map(converted)
 
   expect_equal(nrow(labels), 3)
@@ -164,7 +164,7 @@ test_that("real-world workflow with messy data", {
   labelled::var_label(messy$score) <- "Composite Score"
 
   # Clean and convert
-  clean <- r_data_types(messy, factor_size = 5, skip_vars = "patient_id")
+  clean <- r_data_types(messy, factor_size = 5, skip_cols = "patient_id")
 
   # Verify conversions
   expect_type(clean$patient_id, "integer")  # Skipped

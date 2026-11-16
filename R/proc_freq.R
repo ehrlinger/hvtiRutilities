@@ -7,7 +7,7 @@
 #' \code{TABLES} statements is several calls.
 #'
 #' @details
-#' The last name in \code{tables} is the column variable, the one before it
+#' The last name in \code{table_cols} is the column variable, the one before it
 #' the row variable, and any earlier names are strata, as in SAS
 #' \code{TABLES a*b*c}.
 #'
@@ -31,7 +31,7 @@
 #' forms levels from formatted values: stored codes sharing a label form one
 #' row, shown as the smallest of those codes, and a \code{<var>_label} column
 #' holding the label follows it. A value with no label is its own row.
-#' Variable labels on the \code{tables} columns are kept.
+#' Variable labels on the \code{table_cols} columns are kept.
 #'
 #' \strong{What counts as missing.} As in SAS, a blank or whitespace-only
 #' character value is missing, and so is \code{NaN}. SAS special missing
@@ -54,22 +54,25 @@
 #' has no inference statistics.
 #'
 #' @param data A data frame.
-#' @param tables Character vector of one or more column names defining the
-#'   table.
+#' @param table_cols Character vector of one or more column names defining the
+#'   table. Was \code{tables} before 2026-11; \code{tables =} still works for one
+#'   release, with a warning.
 #' @param missing Logical. \code{FALSE} (the SAS default) excludes rows with a
-#'   missing value in any \code{tables} variable from the table and from every
+#'   missing value in any \code{table_cols} variable from the table and from every
 #'   denominator, and reports their count in the \code{frequency_missing}
 #'   attribute. \code{TRUE}, SAS \code{/ MISSING}, treats missing as a level,
 #'   with each SAS special missing value a level of its own.
 #' @param list Logical. \code{TRUE}, SAS \code{/ LIST}, gives cumulative
 #'   columns and percentages of the grand total for an n-way table. It has no
 #'   effect on a one-way table.
-#' @param weights Character or \code{NULL}. Name of a single numeric column of
+#' @param weight_col Character or \code{NULL}. Name of a single numeric column of
 #'   weights, SAS \code{WEIGHT}. \code{Frequency} becomes the sum of weights.
 #'   Rows with a missing weight are excluded entirely; non-positive weights
 #'   are an error, as in \code{\link{proc_means}}.
 #'
-#' @return A data frame with one column per \code{tables} variable (each
+#' @param weights Deprecated: the old name of \code{weight_col}, kept for one release.
+#' @param tables Deprecated: the old name of \code{table_cols}, kept for one release.
+#' @return A data frame with one column per \code{table_cols} variable (each
 #'   followed by a \code{<var>_label} column when the variable carries value
 #'   labels), then:
 #'   \itemize{
@@ -98,17 +101,31 @@
 #'
 #' # proc freq; table sex * dead / list;
 #' proc_freq(dta, c("sex", "dead"), list = TRUE)
-proc_freq <- function(data, tables, missing = FALSE, list = FALSE,
-                      weights = NULL) {
+proc_freq <- function(data, table_cols, missing = FALSE, list = FALSE,
+                      weight_col = NULL, weights, tables) {
+  if (!missing(weights)) {
+    if (!missing(weight_col)) .hvti_refuse_both("proc_freq", "weights", "weight_col")
+    .hvti_deprecate("proc_freq_weights", "proc_freq(): `weights =` is now `weight_col =`, per the family rule that an ",
+                    "argument naming one column ends in _col. The old name works for one more release.")
+    weight_col <- weights
+  }
+  weights <- weight_col
+  if (!missing(tables)) {
+    if (!missing(table_cols)) .hvti_refuse_both("proc_freq", "tables", "table_cols")
+    .hvti_deprecate("proc_freq_tables", "proc_freq(): `tables =` is now `table_cols =`, ",
+                    "per the family rule that an argument naming columns ends in _cols. The old name works for one more release.")
+    table_cols <- tables
+  }
+  tables <- table_cols
   if (!is.data.frame(data)) {
     stop("'data' must be a data frame.", call. = FALSE)
   }
   if (!is.character(tables) || length(tables) == 0L || anyNA(tables)) {
-    stop("'tables' must be a non-empty character vector of column names.",
+    stop("'table_cols' must be a non-empty character vector of column names.",
          call. = FALSE)
   }
   if (anyDuplicated(tables) > 0L) {
-    stop("'tables' names a column more than once: ",
+    stop("'table_cols' names a column more than once: ",
          paste(unique(tables[duplicated(tables)]), collapse = ", "),
          call. = FALSE)
   }
@@ -121,7 +138,7 @@ proc_freq <- function(data, tables, missing = FALSE, list = FALSE,
   ## Double, so integer weights cannot overflow rowsum() or sum().
   if (!is.null(wvec)) wvec <- as.numeric(wvec)
   if (!is.null(weights) && weights %in% tables) {
-    stop("Weight column '", weights, "' is also named in 'tables'. A column ",
+    stop("Weight column '", weights, "' is also named in 'table_cols'. A column ",
          "cannot be both a weight and a table variable.", call. = FALSE)
   }
 
@@ -222,7 +239,7 @@ proc_freq <- function(data, tables, missing = FALSE, list = FALSE,
   label_cols <- paste0(tables[has_labels], "_label")
   clash <- tables[tables %in% c(stat_cols, label_cols)]
   if (length(clash) > 0L) {
-    stop("'tables' names column(s) that clash with output columns: ",
+    stop("'table_cols' names column(s) that clash with output columns: ",
          paste(clash, collapse = ", "), call. = FALSE)
   }
   invisible(TRUE)

@@ -96,7 +96,7 @@ test_that("a lost lock in a snapshot stops without rolling back the other sessio
   root <- make_checkpoint_study(withr::local_tempdir())
   n <- 0L
   rolled_back <- FALSE
-  lost <- structure(class = c("hvti_cp_lock_lost", "error", "condition"),
+  lost <- structure(class = c("hvtiRutilities_cp_lock_lost", "hvti_cp_lock_lost", "error", "condition"),
                     list(message = "lock lost", call = NULL))
   testthat::local_mocked_bindings(
     .cp_lock_touch = function(held) {
@@ -105,7 +105,7 @@ test_that("a lost lock in a snapshot stops without rolling back the other sessio
     },
     .cp_rollback = function(...) rolled_back <<- TRUE
   )
-  expect_error(study_checkpoint("abstract_submitted", root = root), class = "hvti_cp_lock_lost")
+  expect_error(study_checkpoint("abstract_submitted", root = root), class = "hvtiRutilities_cp_lock_lost")
   expect_false(rolled_back)
   expect_length(.cp_log_read(root), 0L)
 })

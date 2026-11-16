@@ -279,7 +279,7 @@ dta <- generate_survival_data(n = 500, seed = 2024)
 # 2. Convert types
 dta_clean <- r_data_types(dta,
   factor_size = 5,
-  skip_vars   = c("ccfid", "iv_dead", "iv_reop", "iv_opyrs")
+  skip_cols   = c("ccfid", "iv_dead", "iv_reop", "iv_opyrs")
 )
 
 # 3. Create derived variables with labels
@@ -320,7 +320,7 @@ dta <- sample_data(n = 50)
 var_label(dta$char)
 
 # After conversion
-dta_clean <- r_data_types(dta, skip_vars = "id")
+dta_clean <- r_data_types(dta, skip_cols = "id")
 var_label(dta_clean$char)
 
 # Labels survive the round-trip

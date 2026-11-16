@@ -48,8 +48,8 @@ for (i in seq_len(nrow(scenarios))) {
     expect_setequal(pp_cols, names(pp_points))
 
     run <- function() {
-      proc_univariate(dta, vars = "x", class = class_col, stats = kw,
-                      weights = if (sc$weight == 1) "w" else NULL,
+      proc_univariate(dta, var_cols = "x", class_cols = class_col, stats = kw,
+                      weight_col = if (sc$weight == 1) "w" else NULL,
                       pctlpts = unname(pp_points[pp_cols]),
                       pctlpre = "pp_", mu0 = sc$mu0,
                       vardef = tolower(sc$vardef))

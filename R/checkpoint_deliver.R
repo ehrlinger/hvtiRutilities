@@ -292,13 +292,13 @@
   }
   .cp_log_write(root, log)
   if (identical(reason, "provisional")) {
-    message(length(pending), " checkpoint(s) saved locally and not pushed: ",
-            "this exploration has no Study Tracker ID yet. Run ",
-            "study_promote(<id>) once it is registered.")
+    .hvti_inform(length(pending), " checkpoint(s) saved locally and not pushed: ",
+                 "this exploration has no Study Tracker ID yet. Run ",
+                 "study_promote(<id>) once it is registered.")
   } else if (identical(reason, "identity unverified")) {
-    message(length(pending), " checkpoint(s) saved locally and not pushed: ",
-            "identity unverified. Run study-setup --verify, then ",
-            "study_checkpoint_push().")
+    .hvti_inform(length(pending), " checkpoint(s) saved locally and not pushed: ",
+                 "identity unverified. Run study-setup --verify, then ",
+                 "study_checkpoint_push().")
   } else if (!is.null(reason) && reason != "no remote configured") {
     tags <- unlist(lapply(log[pending], function(e) e$tag))
     advice <- .cp_or(repair, "Run study_checkpoint_push() to retry.")

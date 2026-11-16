@@ -603,7 +603,7 @@ test_that("a named release can be adopted before the default is registered", {
   study_setup(root, "Named release fixture", 42L, renv = FALSE)
   fx <- write_release_fixture(root)
   suppressWarnings(register_data(
-    root,
+    root = root,
     "cohort_20260920.csv",
     dataset = "named_data",
     role = "named",

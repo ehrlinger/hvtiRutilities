@@ -9,7 +9,8 @@ capture_provenance(
   data,
   artifacts = list(),
   extra = list(),
-  cfg = study_config()
+  cfg = study_config(),
+  seed = NA_integer_
 )
 }
 \arguments{
@@ -24,9 +25,21 @@ capture_provenance(
 publication fields cannot be displaced.}
 
 \item{cfg}{List. A study manifest from \code{\link{study_config}}.}
+
+\item{seed}{The job's seed, one whole number, or \code{NA} (the default)
+when the job sets none. Recorded as the common \code{seed} field, where
+\code{NA} means "does not apply"; pass a seeded job's \code{SEED}.}
 }
 \value{
-A captured provenance payload as a plain list.
+A captured provenance payload as a plain list. It opens with the
+  seven fields every hvtiR package's provenance record shares:
+  \code{package} (\code{"hvtiRutilities"}), \code{version}, \code{sha}
+  (the installed commit, or \code{NA}), \code{method} (here the
+  \code{job}), \code{seed} (the \code{seed} argument, \code{NA} unless the
+  job is seeded), \code{rng_kind} (\code{RNGkind()}) and \code{time} (when it
+  was captured, \code{POSIXct}). The render-specific fields follow. An
+  \code{extra} element with one of these seven names is an error. In the published JSON an unknown \code{sha} is
+  \code{null} and \code{time} is UTC in the form \code{rendered} uses.
 }
 \description{
 Freezes the study identity, executing R session, loaded packages, lockfile,
@@ -47,7 +60,7 @@ invisible(study_setup(root, study = "Example", study_tracker_id = 1L, renv = FAL
 utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
                  file.path(root, "00_datasets", "built.csv"),
                  row.names = FALSE)
-invisible(register_data(root, file = "built.csv"))
+invisible(register_data(file = "built.csv", root = root))
 cfg <- study_config(root)
 
 payload <- capture_provenance("death-hz-ac",

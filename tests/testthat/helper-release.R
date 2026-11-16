@@ -60,9 +60,9 @@ make_release_aware_study <- function(dir, pinned_sequence = 1L,
     testthat::skip_if_not_installed("arrow")
     default <- data.frame(dead = c(1L, 0L), iv_dead = 1:2)
     write.csv(default, file.path(fx$data_dir, "default.csv"), row.names = FALSE)
-    register_data(root, "default.csv")
+    register_data(root = root, "default.csv")
     suppressWarnings(register_data(
-      root,
+      root = root,
       release$file,
       dataset = "named_data",
       role = "named",
@@ -72,7 +72,7 @@ make_release_aware_study <- function(dir, pinned_sequence = 1L,
     fx$study_dataset <- "named_data"
   } else {
     suppressWarnings(register_data(
-      root,
+      root = root,
       release$file,
       catalog_dataset = "surgery_cohort",
       release_id = release$release_id
@@ -140,6 +140,6 @@ release_collision_study <- function(date, env = parent.frame()) {
   src <- file.path(fx$data_dir, "cohort.csv")
   utils::write.csv(data.frame(id = 1:2), src, row.names = FALSE)
   Sys.setFileTime(src, as.POSIXct(paste(date, "12:00:00"), tz = "UTC"))
-  suppressMessages(register_data(root, "cohort.csv"))
+  suppressMessages(register_data(root = root, "cohort.csv"))
   root
 }

@@ -70,9 +70,11 @@ imputed_levels <- function(x) {
 #' \code{noninteger_levels} means \strong{"not knowable here"}, not "none".
 #'
 #' @param data A data frame.
-#' @param vars Character vector of covariate names.
+#' @param var_cols Character vector of covariate names. Was \code{vars} before
+#'   2026-11; \code{vars =} still works for one release, with a warning.
 #' @param max_levels Integer. Columns with more distinct values than this are
 #' treated as continuous and their non-integer levels are reported as \code{NA}.
+#' @param vars Deprecated: the old name of \code{var_cols}, kept for one release.
 #'
 #' @return A data frame with columns \code{variable}, \code{storage},
 #'   \code{n_levels},
@@ -95,8 +97,14 @@ imputed_levels <- function(x) {
 #' d <- data.frame(hx_htn = factor(c("0", "1", "0.714047")),
 #'                 age = c(60, 71, 55))
 #' covariate_audit(d, c("hx_htn", "age"))
-covariate_audit <- function(data, vars, max_levels = 12L) {
-  vars <- unique(vars)
+covariate_audit <- function(data, var_cols, max_levels = 12L, vars) {
+  if (!missing(vars)) {
+    if (!missing(var_cols)) .hvti_refuse_both("covariate_audit", "vars", "var_cols")
+    .hvti_deprecate("covariate_audit_vars", "covariate_audit(): `vars =` is now `var_cols =`, ",
+                    "per the family rule that an argument naming columns ends in _cols. The old name works for one more release.")
+    var_cols <- vars
+  }
+  vars <- unique(var_cols)
   do.call(rbind, lapply(vars, function(v) {
     if (!v %in% names(data)) {
       return(data.frame(variable = v,
@@ -154,7 +162,9 @@ covariate_audit <- function(data, vars, max_levels = 12L) {
 #' coefficient.
 #'
 #' @param data A data frame.
-#' @param vars Character vector of covariate names.
+#' @param var_cols Character vector of covariate names. Was \code{vars} before
+#'   2026-11; \code{vars =} still works for one release, with a warning.
+#' @param vars Deprecated: the old name of \code{var_cols}, kept for one release.
 #'
 #' @return \code{data}, with the convertible columns coerced to numeric.
 #'
@@ -165,12 +175,19 @@ covariate_audit <- function(data, vars, max_levels = 12L) {
 #' @examples
 #' d <- data.frame(hx_htn = factor(c("0", "1", "0.714047")))
 #' str(covariates_to_numeric(d, "hx_htn"))
-covariates_to_numeric <- function(data, vars) {
+covariates_to_numeric <- function(data, var_cols, vars) {
+  if (!missing(vars)) {
+    if (!missing(var_cols)) .hvti_refuse_both("covariates_to_numeric", "vars", "var_cols")
+    .hvti_deprecate("covariates_to_numeric_vars", "covariates_to_numeric(): `vars =` is now `var_cols =`, ",
+                    "per the family rule that an argument naming columns ends in _cols. The old name works for one more release.")
+    var_cols <- vars
+  }
+  vars <- var_cols
   # A misspelt covariate used to drop out here without a word and reach the
   # model as whatever type it was read as, or not at all.
   unknown <- setdiff(unique(vars), names(data))
   if (length(unknown)) {
-    warning("covariates_to_numeric(): ", length(unknown), " name(s) in `vars` ",
+    warning("covariates_to_numeric(): ", length(unknown), " name(s) in `var_cols` ",
             "are not columns of `data` and were not converted: ",
             paste(unknown, collapse = ", "), ".", call. = FALSE)
   }

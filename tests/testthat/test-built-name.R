@@ -4,7 +4,7 @@ built_name_study <- function(env = parent.frame()) {
   suppressMessages(study_setup(root, "Built name", 42L, renv = FALSE))
   data_dir <- study_dir("datasets", root)
   utils::write.csv(data.frame(id = 1:3, dead = c(1L, 0L, 0L)), file.path(data_dir, "built.csv"), row.names = FALSE)
-  suppressMessages(register_data(root, "built.csv"))
+  suppressMessages(register_data(root = root, "built.csv"))
   root
 }
 
@@ -26,14 +26,14 @@ test_that("the default dataset may be registered under either name", {
   root <- file.path(withr::local_tempdir(), "study")
   suppressMessages(study_setup(root, "Register as built", 42L, renv = FALSE))
   utils::write.csv(data.frame(id = 1:2), file.path(study_dir("datasets", root), "b.csv"), row.names = FALSE)
-  suppressMessages(register_data(root, "b.csv", dataset = "built"))
+  suppressMessages(register_data(root = root, "b.csv", dataset = "built"))
   expect_identical(study_config(root)$built, "b.csv")
 })
 
 test_that("a named dataset may not be called built", {
   root <- built_name_study()
   utils::write.csv(data.frame(id = 1:2), file.path(study_dir("datasets", root), "x.csv"), row.names = FALSE)
-  expect_error(register_data(root, "x.csv", dataset = "built", role = "named"), "\"built\" is reserved", fixed = TRUE)
+  expect_error(register_data(root = root, "x.csv", dataset = "built", role = "named"), "\"built\" is reserved", fixed = TRUE)
 })
 
 test_that("an existing additional dataset named built stops with the way to rename it", {

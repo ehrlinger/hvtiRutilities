@@ -109,7 +109,7 @@ test_that("a parquet source is registered the same way, and is never the copy jo
   Sys.setFileTime(src, as.POSIXct("2026-09-15 12:00:00", tz = "UTC"))
   before <- digest::digest(src, algo = "sha256", file = TRUE)
 
-  suppressMessages(register_data(root, "built.parquet"))
+  suppressMessages(register_data(root = root, "built.parquet"))
 
   e <- manifest_entry_for(root, "built.parquet")
   expect_identical(e$parquet, "built_20260915.parquet")
@@ -128,7 +128,7 @@ test_that("a source already named with a date gets its own version name and is n
   Sys.setFileTime(src, as.POSIXct("2026-10-07 12:00:00", tz = "UTC"))
   before <- digest::digest(src, algo = "sha256", file = TRUE)
 
-  suppressMessages(register_data(root, "built_20261007.parquet"))
+  suppressMessages(register_data(root = root, "built_20261007.parquet"))
 
   e <- manifest_entry_for(root, "built_20261007.parquet")
   expect_false(identical(e$parquet, "built_20261007.parquet"))
@@ -144,7 +144,7 @@ test_that("register_data without arrow stops and writes nothing", {
   local_mocked_bindings(.arrow_available = function() FALSE, .package_installed = function(pkg) pkg != "arrow",
                         .need_root = function(root) NULL)
 
-  expect_error(register_data(root, "built.csv"), "hvtiR::setup()", fixed = TRUE)
+  expect_error(register_data(root = root, "built.csv"), "hvtiR::setup()", fixed = TRUE)
   expect_identical(yaml::read_yaml(file.path(root, "_study.yml")), before)
   expect_identical(list.files(study_dir("datasets", root)), "built.csv")
 })
@@ -154,7 +154,7 @@ test_that("a registration refused after conversion leaves no parquet behind", {
   # Registering the same file again under another name passes the early checks,
   # converts it (to built_20260915_r2.parquet), then is refused because the file
   # is already listed in manifest.yaml. The conversion must be cleaned up.
-  expect_error(register_data(root, "built.csv", dataset = "again", role = "named"), "already listed")
+  expect_error(register_data(root = root, "built.csv", dataset = "again", role = "named"), "already listed")
   expect_identical(list.files(study_dir("datasets", root), pattern = "[.]parquet$"), "built_20260915.parquet")
 })
 
@@ -276,7 +276,7 @@ test_that("a rebuilt parquet source is updated the same way", {
   src <- file.path(study_dir("datasets", root), "built.parquet")
   arrow::write_parquet(data.frame(id = 1:3), src)
   Sys.setFileTime(src, as.POSIXct("2026-09-15 12:00:00", tz = "UTC"))
-  suppressMessages(register_data(root, "built.parquet"))
+  suppressMessages(register_data(root = root, "built.parquet"))
   arrow::write_parquet(data.frame(id = 1:4), src)
   Sys.setFileTime(src, as.POSIXct("2026-10-07 12:00:00", tz = "UTC"))
   withr::local_dir(root)
@@ -309,7 +309,7 @@ test_that("update_manifest() keeps fields registration recorded", {
   suppressMessages(study_setup(root, "Source field", 42L, renv = FALSE))
   path <- file.path(study_dir("datasets", root), "built.csv")
   utils::write.csv(data.frame(id = 1:2), path, row.names = FALSE)
-  suppressMessages(register_data(root, "built.csv", source = "Synthetic"))
+  suppressMessages(register_data(root = root, "built.csv", source = "Synthetic"))
   utils::write.csv(data.frame(id = 1:3), path, row.names = FALSE)
   withr::local_dir(root)
   suppressMessages(update_manifest())
@@ -592,7 +592,7 @@ collision_study <- function(env = parent.frame()) {
   dir <- study_dir("datasets", root)
   utils::write.csv(data.frame(id = 1:3, DEAD = c(1L, 0L, 0L)), file.path(dir, "cohort.csv"), row.names = FALSE)
   Sys.setFileTime(file.path(dir, "cohort.csv"), as.POSIXct("2026-09-15 12:00:00", tz = "UTC"))
-  suppressMessages(register_data(root, "cohort.csv"))
+  suppressMessages(register_data(root = root, "cohort.csv"))
   legacy <- data.frame(id = 1:5, DEAD = 0L)
   utils::write.csv(legacy, file.path(dir, "cohort_20260915.csv"), row.names = FALSE)
   raw <- yaml::read_yaml(file.path(root, "_study.yml"))
@@ -612,7 +612,7 @@ test_that("a new version never takes another entry's read-cache name", {
   utils::write.csv(data.frame(id = 1:2), file.path(dir, "cohort.csv"), row.names = FALSE)
   Sys.setFileTime(file.path(dir, "cohort.csv"), as.POSIXct("2026-09-15 12:00:00", tz = "UTC"))
 
-  suppressMessages(register_data(root, "cohort.csv", dataset = "cohort", role = "named"))
+  suppressMessages(register_data(root = root, "cohort.csv", dataset = "cohort", role = "named"))
 
   e <- manifest_entry_for(root, "cohort.csv")
   expect_false(identical(e$parquet, "cohort_20260915.parquet"))
@@ -628,7 +628,7 @@ test_that("register_data refuses a file whose cache name is a registered version
   dir <- study_dir("datasets", root)
   utils::write.csv(data.frame(id = 1:2), file.path(dir, "built_20260915.csv"), row.names = FALSE)
 
-  expect_error(register_data(root, "built_20260915.csv", dataset = "other", role = "named"),
+  expect_error(register_data(root = root, "built_20260915.csv", dataset = "other", role = "named"),
                "is the registered version of built.csv")
   expect_identical(sort(list.files(dir, pattern = "[.]parquet$")), "built_20260915.parquet")
 })
@@ -639,7 +639,7 @@ test_that("register_data refuses a release whose cache name is a registered vers
   before <- readLines(file.path(root, "manifest.yaml"))
 
   suppressWarnings(expect_error(
-    register_data(root, "cohort_20260920.csv", dataset = "named_data", role = "named",
+    register_data(root = root, "cohort_20260920.csv", dataset = "named_data", role = "named",
                   catalog_dataset = "surgery_cohort", release_id = "surgery_cohort-20260920-r1"),
     "is the registered version of cohort.csv"
   ), classes = "deprecatedWarning")
@@ -650,7 +650,7 @@ test_that("adopt_data_update refuses a release whose cache name is a registered 
   root <- release_collision_study("2026-09-21")
   expect_identical(manifest_entry_for(root, "cohort.csv")$parquet, "cohort_20260921.parquet")
   suppressWarnings(
-    suppressMessages(register_data(root, "cohort_20260920.csv", dataset = "named_data", role = "named",
+    suppressMessages(register_data(root = root, "cohort_20260920.csv", dataset = "named_data", role = "named",
                                    catalog_dataset = "surgery_cohort", release_id = "surgery_cohort-20260920-r1")),
     classes = "deprecatedWarning"
   )
@@ -810,7 +810,7 @@ test_that("update_manifest() registers a dataset that a manifest.yaml lacks, wit
   s <- unregistered_study()
   other <- file.path(study_dir("datasets", s$root), "other.csv")
   utils::write.csv(data.frame(id = 1:2), other, row.names = FALSE)
-  suppressMessages(register_data(s$root, "other.csv", dataset = "other", role = "named"))
+  suppressMessages(register_data(root = s$root, "other.csv", dataset = "other", role = "named"))
   raw <- yaml::read_yaml(file.path(s$root, "_study.yml"))
   raw$built <- "built.csv"
   yaml::write_yaml(raw, file.path(s$root, "_study.yml"))
@@ -885,9 +885,9 @@ test_that("a mixed study (versioned, legacy, release-aware) updates, verifies an
 
   utils::write.csv(data.frame(id = 1:3, dead = c(1L, 0L, 0L)), file.path(dir, "built.csv"), row.names = FALSE)
   stamp(file.path(dir, "built.csv"), "2026-09-15 12:00:00")
-  suppressMessages(register_data(root, "built.csv"))
+  suppressMessages(register_data(root = root, "built.csv"))
   suppressWarnings(
-    suppressMessages(register_data(root, "cohort_20260920.csv", dataset = "named_data", role = "named",
+    suppressMessages(register_data(root = root, "cohort_20260920.csv", dataset = "named_data", role = "named",
                                    catalog_dataset = "surgery_cohort", release_id = "surgery_cohort-20260920-r1")),
     classes = "deprecatedWarning"
   )

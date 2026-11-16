@@ -4,16 +4,25 @@
 \alias{proc_freq}
 \title{Frequency tables, in the style of SAS PROC FREQ}
 \usage{
-proc_freq(data, tables, missing = FALSE, list = FALSE, weights = NULL)
+proc_freq(
+  data,
+  table_cols,
+  missing = FALSE,
+  list = FALSE,
+  weight_col = NULL,
+  weights,
+  tables
+)
 }
 \arguments{
 \item{data}{A data frame.}
 
-\item{tables}{Character vector of one or more column names defining the
-table.}
+\item{table_cols}{Character vector of one or more column names defining the
+table. Was \code{tables} before 2026-11; \code{tables =} still works for one
+release, with a warning.}
 
 \item{missing}{Logical. \code{FALSE} (the SAS default) excludes rows with a
-missing value in any \code{tables} variable from the table and from every
+missing value in any \code{table_cols} variable from the table and from every
 denominator, and reports their count in the \code{frequency_missing}
 attribute. \code{TRUE}, SAS \code{/ MISSING}, treats missing as a level,
 with each SAS special missing value a level of its own.}
@@ -22,13 +31,17 @@ with each SAS special missing value a level of its own.}
 columns and percentages of the grand total for an n-way table. It has no
 effect on a one-way table.}
 
-\item{weights}{Character or \code{NULL}. Name of a single numeric column of
+\item{weight_col}{Character or \code{NULL}. Name of a single numeric column of
 weights, SAS \code{WEIGHT}. \code{Frequency} becomes the sum of weights.
 Rows with a missing weight are excluded entirely; non-positive weights
 are an error, as in \code{\link{proc_means}}.}
+
+\item{weights}{Deprecated: the old name of \code{weight_col}, kept for one release.}
+
+\item{tables}{Deprecated: the old name of \code{table_cols}, kept for one release.}
 }
 \value{
-A data frame with one column per \code{tables} variable (each
+A data frame with one column per \code{table_cols} variable (each
   followed by a \code{<var>_label} column when the variable carries value
   labels), then:
   \itemize{
@@ -49,7 +62,7 @@ and percentages. One call is one table; a SAS step with several
 \code{TABLES} statements is several calls.
 }
 \details{
-The last name in \code{tables} is the column variable, the one before it
+The last name in \code{table_cols} is the column variable, the one before it
 the row variable, and any earlier names are strata, as in SAS
 \code{TABLES a*b*c}.
 
@@ -73,7 +86,7 @@ A \code{haven_labelled} variable is grouped on its value label, as SAS
 forms levels from formatted values: stored codes sharing a label form one
 row, shown as the smallest of those codes, and a \code{<var>_label} column
 holding the label follows it. A value with no label is its own row.
-Variable labels on the \code{tables} columns are kept.
+Variable labels on the \code{table_cols} columns are kept.
 
 \strong{What counts as missing.} As in SAS, a blank or whitespace-only
 character value is missing, and so is \code{NaN}. SAS special missing

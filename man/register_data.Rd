@@ -5,7 +5,6 @@
 \title{Register a study dataset}
 \usage{
 register_data(
-  root = study_root(),
   file,
   dataset = "study",
   role = c("study", "named"),
@@ -15,16 +14,13 @@ register_data(
   catalog_dataset = NULL,
   release_id = NULL,
   kind = NULL,
-  key = NULL,
+  key_cols = NULL,
   parents = NULL,
-  built = NULL
+  built = NULL,
+  root = study_root()
 )
 }
 \arguments{
-\item{root}{Character. Study root or a directory beneath it. Defaults to the study that contains the working
-directory, found by its \code{_study.yml}; outside a study the function
-stops and writes nothing.}
-
 \item{file}{Character(1). Dataset filename within the logical
 \code{datasets} directory, including its extension. A path into that
 folder is accepted too, such as \code{"00_datasets/built.csv"} (what
@@ -70,9 +66,11 @@ release this way: that would drop every registered version.}
 (many rows per patient, such as echoes or labs, joined to the cohort by a
 job) or \code{"combined"} (built by joining others).}
 
-\item{key}{Character or \code{NULL}. The columns that make each row unique,
+\item{key_cols}{Character or \code{NULL}. The columns that make each row unique,
 such as \code{c("ccfid", "echo_date")}. Checked at registration, which
-stops if any row repeats on it. Jobs use it unless they set their own.}
+stops if any row repeats on it. Jobs use it unless they set their own.
+Was \code{key} before 2026-11; \code{key =} still works for one release,
+with a warning.}
 
 \item{parents}{Character or \code{NULL}. For \code{kind = "combined"} only:
 the registered datasets it was built from. Their current versions are
@@ -82,6 +80,13 @@ recorded, so a later update to a parent marks this dataset out of date.
 \item{built}{The old name of \code{file}, before 2026-11. It still works,
 with a warning, and will be removed in a later release. Giving both is
 an error.}
+
+\item{root}{Character. Study root or a directory beneath it. Defaults to the study that contains the working
+directory, found by its \code{_study.yml}; outside a study the function
+stops and writes nothing.
+It comes last, after 2026-11; a call that passes an existing directory
+as its first argument, unnamed, is read in the old, root-first order for
+one release, with a warning.}
 }
 \value{
 An object of class \code{"study_status"}, returned visibly.
@@ -141,7 +146,7 @@ invisible(study_setup(root, study = "Example", study_tracker_id = 1L, renv = FAL
 utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
                  file.path(root, "00_datasets", "built.csv"),
                  row.names = FALSE)
-register_data(root, file = "built.csv", key = "ccfid")
+register_data(file = "built.csv", key_cols = "ccfid", root = root)
 # The CSV is kept; the registered version is a dated Parquet file.
 list.files(file.path(root, "00_datasets"))
 unlink(root, recursive = TRUE)
@@ -153,15 +158,15 @@ invisible(study_setup(root, study = "Example", study_tracker_id = 1L, renv = FAL
 utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
                  file.path(root, "00_datasets", "built.csv"),
                  row.names = FALSE)
-invisible(register_data(root, file = "built.csv", key = "ccfid"))
+invisible(register_data(file = "built.csv", key_cols = "ccfid", root = root))
 utils::write.csv(
   data.frame(ccfid = c(1, 1, 2), echo_date = c("2020-01-05", "2020-06-01", "2020-02-10"),
              lvef = c(55, 50, 60)),
   file.path(root, "00_datasets", "echo.csv"),
   row.names = FALSE
 )
-invisible(register_data(root, file = "echo.csv", dataset = "echo", role = "named",
-                        kind = "ancillary", key = c("ccfid", "echo_date")))
+invisible(register_data(file = "echo.csv", dataset = "echo", role = "named",
+                        kind = "ancillary", key_cols = c("ccfid", "echo_date"), root = root))
 read_built(study_config(root), dataset = "echo")
 unlink(root, recursive = TRUE)
 \dontshow{\}) # examplesIf}

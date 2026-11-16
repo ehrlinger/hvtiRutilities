@@ -4,15 +4,18 @@
 \alias{covariate_audit}
 \title{Audit what would happen to each covariate in a model}
 \usage{
-covariate_audit(data, vars, max_levels = 12L)
+covariate_audit(data, var_cols, max_levels = 12L, vars)
 }
 \arguments{
 \item{data}{A data frame.}
 
-\item{vars}{Character vector of covariate names.}
+\item{var_cols}{Character vector of covariate names. Was \code{vars} before
+2026-11; \code{vars =} still works for one release, with a warning.}
 
 \item{max_levels}{Integer. Columns with more distinct values than this are
 treated as continuous and their non-integer levels are reported as \code{NA}.}
+
+\item{vars}{Deprecated: the old name of \code{var_cols}, kept for one release.}
 }
 \value{
 A data frame with columns \code{variable}, \code{storage},

@@ -5,15 +5,15 @@ dta <- data.frame(x = c(1, 2, 3, 4), w = c(1, 1, 2, 0.5))
 
 test_that("proc_means() errors and messages carry over", {
   expect_error(proc_univariate(list(x = 1)), "'data' must be a data frame")
-  expect_error(proc_univariate(dta, vars = "nope"), "not found in 'data'")
-  expect_error(proc_univariate(data.frame(x = "a"), vars = "x"),
+  expect_error(proc_univariate(dta, var_cols = "nope"), "not found in 'data'")
+  expect_error(proc_univariate(data.frame(x = "a"), var_cols = "x"),
                "Non-numeric column")
-  expect_error(proc_univariate(dta, weights = "nope"), "not found in 'data'")
-  expect_error(proc_univariate(data.frame(x = 1, w = 0), vars = "x",
-                               weights = "w"),
+  expect_error(proc_univariate(dta, weight_col = "nope"), "not found in 'data'")
+  expect_error(proc_univariate(data.frame(x = 1, w = 0), var_cols = "x",
+                               weight_col = "w"),
                "non-positive value")
-  expect_error(proc_univariate(dta, vars = c("x", "w"), weights = "w"),
-               "also named in 'vars' or 'class'")
+  expect_error(proc_univariate(dta, var_cols = c("x", "w"), weight_col = "w"),
+               "also named in 'var_cols' or 'class_cols'")
 })
 
 test_that("an unknown keyword errors and lists the univariate keywords", {
@@ -55,7 +55,7 @@ test_that("a percentile name that duplicates a stats column errors", {
 
 test_that("a percentile name that duplicates a class column errors", {
   cls <- data.frame(x = c(1, 2, 3, 4), p50 = c("a", "a", "b", "b"))
-  expect_error(proc_univariate(cls, vars = "x", class = "p50", pctlpts = 50),
+  expect_error(proc_univariate(cls, var_cols = "x", class_cols = "p50", pctlpts = 50),
                "duplicate another output column: p50")
 })
 

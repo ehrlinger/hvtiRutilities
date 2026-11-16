@@ -32,7 +32,7 @@ The columns are:
     \code{"binary_factor"}, \code{"character_factor"},
     \code{"n_distinct_factor"}, \code{"unchanged"} or \code{"skipped"}.
     \code{"unchanged"} means every rule was tested and none fired;
-    \code{"skipped"} means the column was named in \code{skip_vars} and no
+    \code{"skipped"} means the column was named in \code{skip_cols} and no
     rule was tested.
   \item \code{level_source} -- \code{"value labels"} where the levels came
     from the column's own value labels, \code{"inference"} where they came
