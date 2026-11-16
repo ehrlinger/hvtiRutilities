@@ -95,3 +95,12 @@ test_that("the shared provenance record conforms: seven fields, stated types and
   bad <- rec[-3]
   expect_false(hvtiRutilities:::.hvti_provenance_conforms(bad))
 })
+
+test_that("an extra named like a common provenance field is refused, and an NA sha is null in JSON", {
+  expect_error(hvtiRutilities:::.provenance_validate_extra(list(seed = 1L)), "may not set `seed`")
+  path <- withr::local_tempfile(fileext = ".json")
+  hvtiRutilities:::.provenance_write_json(list(sha = "NA", time = as.POSIXct("2026-01-02 03:04:05", tz = "UTC")), path)
+  back <- jsonlite::read_json(path)
+  expect_null(back$sha)
+  expect_identical(back$time, "2026-01-02T03:04:05Z")
+})

@@ -316,6 +316,13 @@
     stop("capture_provenance(): `extra` must be a named list with unique, non-empty names.",
          call. = FALSE)
   }
+  # The seven common fields are new in 2026-11, so an extra of the same name
+  # was a caller's own value until now: refuse it rather than drop it unseen.
+  clash <- intersect(names(extra), names(.hvti_provenance_types()))
+  if (length(clash)) {
+    stop("capture_provenance(): `extra` may not set ", paste0("`", clash, "`", collapse = ", "),
+         ": the record's common fields carry those names. Rename the extra.", call. = FALSE)
+  }
   extra[setdiff(names(extra), .provenance_reserved())]
 }
 
@@ -394,7 +401,11 @@
 .provenance_write_json <- function(record, path) {
   # JSON has no NA and no time type: an unknown sha is written as null, never
   # the string "NA", and the time in the same UTC form as `rendered`.
-  if ("sha" %in% names(record) && length(record$sha) == 1L && is.na(record$sha)) record["sha"] <- list(NULL)
+  # A payload that went through another JSON writer first may already carry
+  # the string "NA".
+  if ("sha" %in% names(record) && length(record$sha) == 1L && (is.na(record$sha) || identical(record$sha, "NA"))) {
+    record["sha"] <- list(NULL)
+  }
   if (inherits(record$time, "POSIXct")) record$time <- format(record$time, "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")
   jsonlite::write_json(
     record,
@@ -573,8 +584,7 @@ provenance_artifact <- function(path, role = "input", cfg = study_config()) {
 #'   \code{job}), \code{seed} (\code{NA}: a render draws no random numbers of
 #'   its own), \code{rng_kind} (\code{RNGkind()}) and \code{time} (when it
 #'   was captured, \code{POSIXct}). The render-specific fields follow. An
-#'   \code{extra} element with one of these names is dropped, as one naming a
-#'   render field always was. In the published JSON an unknown \code{sha} is
+#'   \code{extra} element with one of these seven names is an error. In the published JSON an unknown \code{sha} is
 #'   \code{null} and \code{time} is UTC in the form \code{rendered} uses.
 #'
 #' @seealso \code{\link{publish_provenance}},
