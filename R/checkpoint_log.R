@@ -32,7 +32,7 @@
 # the tag message and to ST without a word.
 .cp_date <- function(x, what = "date") {
   ok <- length(x) == 1L && !is.na(x) &&
-    (inherits(x, c("Date", "POSIXt")) ||
+    ((inherits(x, c("Date", "POSIXt")) && is.finite(as.numeric(as.POSIXct(x)))) ||
        (is.character(x) && grepl("^[0-9]{4}-[0-9]{2}-[0-9]{2}$", x) &&
           !is.na(as.Date(x, format = "%Y-%m-%d"))))
   if (!ok) {
