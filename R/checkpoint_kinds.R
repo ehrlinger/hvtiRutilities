@@ -24,9 +24,9 @@
     kind = vapply(rows, function(r) as.character(r$kind), character(1)),
     # A non-scalar trigger is kept as written, pasted, so .cp_kind_check()
     # can name it rather than vapply failing on its length.
-    trigger = vapply(rows, function(r) paste(as.character(.cp_or(r$trigger, "manual")),
-                                             collapse = ", "),
-                     character(1)),
+    trigger = vapply(rows, function(r) {
+      paste(as.character(.cp_or(r$trigger, "manual")), collapse = ", ")
+    }, character(1)),
     numbered = vapply(rows, function(r) !isFALSE(r$numbered), logical(1)),
     retired = vapply(rows, function(r) isTRUE(r$retired), logical(1)),
     stringsAsFactors = FALSE
