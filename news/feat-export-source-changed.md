@@ -1,0 +1,1 @@
+* New `source_changed()` says whether a registered dataset's source has been rebuilt since it was registered, without reading any data. It is the check `read_built()` already makes before signalling `hvtiRutilities_source_changed`, exported so a report can say a newer build is waiting before it reads the data (hvtiRtemplates' top box).

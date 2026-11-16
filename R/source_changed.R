@@ -1,0 +1,48 @@
+#' Has a registered dataset been rebuilt since it was registered?
+#'
+#' @description
+#' Says whether a study dataset's source file has changed since its current
+#' version was registered with [register_data()] or [update_manifest()].
+#' Jobs keep reading the registered version until [update_manifest()]
+#' registers the rebuild, so a report can use this to say, before it reads any
+#' data, that a newer build is waiting.
+#'
+#' It reads no data. The source's size and modification time are compared with
+#' those recorded at registration, and the file is hashed only when they differ
+#' or cannot settle it, so a touch that changed no bytes is not reported.
+#' [read_built()] makes the same check, and signals
+#' `hvtiRutilities_source_changed` when it is `TRUE`.
+#'
+#' @param cfg List. A study manifest from [study_config()].
+#' @param dataset Character(1). Logical dataset name. Defaults to
+#'   `"study"`. `"built"` is a second name for `"study"`.
+#'
+#' @return `TRUE` when the source differs from the registered version.
+#'   `FALSE` when it matches, when the dataset has no registered dated
+#'   version, or when the source file is missing, since jobs then keep
+#'   reading the registered version and there is nothing newer to register.
+#'
+#' @seealso [review_built()] to compare the rebuild with the registered
+#'   version, [update_manifest()] to register it.
+#'
+#' @export
+#'
+#' @examples
+#' if (requireNamespace("arrow", quietly = TRUE)) {
+#'   root <- file.path(tempdir(), "source-changed-example")
+#'   suppressMessages(study_setup(root, "Example", 1L, renv = FALSE))
+#'   path <- file.path(study_dir("datasets", root), "example.csv")
+#'   write.csv(data.frame(DEAD = c(1, 0, 0), IV_DEAD = 1:3), path, row.names = FALSE)
+#'   suppressMessages(register_data("example.csv", root = root))
+#'   source_changed(study_config(root))
+#'   write.csv(data.frame(DEAD = c(1, 0, 0, 1), IV_DEAD = 1:4), path, row.names = FALSE)
+#'   source_changed(study_config(root))
+#'   unlink(root, recursive = TRUE)
+#' }
+source_changed <- function(cfg = study_config(), dataset = "study") {
+  dataset <- .canonical_dataset(dataset)
+  .study_dataset(cfg, dataset)
+  p <- built_path(cfg, dataset)
+  entry <- .manifest_entry(file.path(cfg$root, "manifest.yaml"), p)
+  isTRUE(.source_changed(p, entry))
+}
