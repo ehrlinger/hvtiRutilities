@@ -4,12 +4,17 @@
 \alias{compare_datasets}
 \title{Compare two versions of a dataset}
 \usage{
-compare_datasets(old, new)
+compare_datasets(old, new, show_levels = FALSE)
 }
 \arguments{
 \item{old}{A data frame representing the previous version of the dataset.}
 
 \item{new}{A data frame representing the current version of the dataset.}
+
+\item{show_levels}{Logical. Include the level values themselves in the
+result and the printed summary. Defaults to \code{FALSE}: a character
+identifier or free-text column read as a factor has row-level values as
+its levels, so by default only level counts are reported.}
 }
 \value{
 A list with the following elements:
@@ -27,9 +32,11 @@ A list with the following elements:
     \code{old_label}, \code{new_label} for shared columns whose label
     changed}
   \item{level_changes}{Data frame with columns \code{variable},
-    \code{old_levels}, \code{new_levels} (levels joined with
-    \code{", "}) for shared columns that are factors in both and whose
-    levels, or their order, changed}
+    \code{old_n}, \code{new_n} (level counts), \code{n_added} and
+    \code{n_removed} for shared columns that are factors in both and whose
+    levels, or their order, changed. With \code{show_levels = TRUE} it also
+    has \code{old_levels} and \code{new_levels} (levels joined with
+    \code{", "}).}
 }
 }
 \description{
