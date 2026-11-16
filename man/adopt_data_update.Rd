@@ -7,7 +7,7 @@
 adopt_data_update(cfg = study_config(), dataset = "study", release_id)
 }
 \arguments{
-\item{cfg}{List. A study manifest from \code{\link{study_config}}.}
+\item{cfg}{List. A study manifest from \code{\link[=study_config]{study_config()}}.}
 
 \item{dataset}{Character(1). Logical dataset name. Defaults to
 \code{"study"}. \code{"built"} is a second name for \code{"study"}.}
@@ -16,13 +16,13 @@ adopt_data_update(cfg = study_config(), dataset = "study", release_id)
 ID.}
 }
 \value{
-The updated \code{\link{study_status}} object, returned visibly.
+The updated \code{\link[=study_status]{study_status()}} object, returned visibly.
 }
 \description{
 \strong{Deprecated.} Catalog releases are retired; use
-\code{\link{update_manifest}}.
+\code{\link[=update_manifest]{update_manifest()}}.
 
-Repeats the candidate review and replaces \code{_study.yml} and
+Repeats the candidate review and replaces \verb{_study.yml} and
 \code{manifest.yaml} as one recoverable pair. The old dated release and its
 cache files remain on disk. Adoption does not make a Git commit.
 
@@ -47,6 +47,6 @@ unlink(root, recursive = TRUE)
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link{check_data_updates}},
-  \code{\link{review_data_update}}, \code{\link{register_data}}
+\code{\link[=check_data_updates]{check_data_updates()}},
+\code{\link[=review_data_update]{review_data_update()}}, \code{\link[=register_data]{register_data()}}
 }

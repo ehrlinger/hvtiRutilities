@@ -13,7 +13,7 @@ read_built(
 )
 }
 \arguments{
-\item{cfg}{List. A study manifest from \code{\link{study_config}}.}
+\item{cfg}{List. A study manifest from \code{\link[=study_config]{study_config()}}.}
 
 \item{refresh}{Logical. If \code{TRUE}, force a re-read from the source and
 a reconversion regardless of the manifest's role or cached stamp.
@@ -23,7 +23,7 @@ applied out of band. Errors if the manifest entry has
 \code{role: "primary"}: that role means the source has been retired and
 the parquet is authoritative, so there is nothing to refresh from.
 It also errors for a dataset registered as a dated parquet, and names
-\code{\link{update_manifest}()}, which registers a rebuilt source.}
+\code{\link[=update_manifest]{update_manifest()}}, which registers a rebuilt source.}
 
 \item{dataset}{Character(1). Logical dataset name. Defaults to
 \code{"study"}. \code{"built"} is a second name for \code{"study"}.}
@@ -47,19 +47,19 @@ class \code{hvtiRutilities_working_read}.}
 }
 \value{
 A data frame with lower-cased names, no logical columns and no
-  \code{haven_labelled} columns.
+\code{haven_labelled} columns.
 }
 \description{
-Reads the dataset named in \code{_study.yml} and normalises its types so
+Reads the dataset named in \verb{_study.yml} and normalises its types so
 that both available read paths deliver the same frame.
 
-For a dataset registered with \code{\link{register_data}}, the registered
+For a dataset registered with \code{\link[=register_data]{register_data()}}, the registered
 version (a dated parquet) is read, after its checksum is checked. If the
 source file has been rebuilt since, the registered version is still read
 and a message of class \code{hvtiRutilities_source_changed} says so and
-names \code{\link{update_manifest}()}.
+names \code{\link[=update_manifest]{update_manifest()}}.
 
-A combined dataset (see \code{\link{register_data}}) is still read when a
+A combined dataset (see \code{\link[=register_data]{register_data()}}) is still read when a
 dataset it was built from has been updated since. A message of class
 \code{hvtiRutilities_parent_changed}, which inherits
 \code{hvtiRutilities_out_of_date}, names the parents' recorded and current
@@ -73,8 +73,8 @@ stage folder of the study. It is refused in a final render (see below), in a
 script run with \code{Rscript}, and for a job at the study root or outside
 the study. A permitted working read signals a message of class
 \code{hvtiRutilities_working_read}. Review a rebuilt source with
-\code{\link{review_built}()} and register it with
-\code{\link{update_manifest}()}. The release branch below is deprecated.
+\code{\link[=review_built]{review_built()}} and register it with
+\code{\link[=update_manifest]{update_manifest()}}. The release branch below is deprecated.
 
 For a release-aware contract, the pinned release is verified before cache
 access. A later valid release emits a message of class
@@ -85,7 +85,7 @@ data are still read. A changed pinned release errors with class
 \code{hvtiRutilities_withdrawn_release} unless \code{allow_withdrawn} is
 \code{TRUE}.
 
-The normalisation is not cosmetic. \code{\link{read_clinical_data}} converts
+The normalisation is not cosmetic. \code{\link[=read_clinical_data]{read_clinical_data()}} converts
 SAS 0/1 numerics to logical while \code{haven::read_sas()} leaves them
 numeric, and downstream modelling code rejects a logical status vector
 outright — so without this the same document would run under one read path
@@ -112,5 +112,5 @@ if (requireNamespace("arrow", quietly = TRUE)) {
 }
 }
 \seealso{
-\code{\link{built_manifest}}, \code{\link{assert_cohort}}
+\code{\link[=built_manifest]{built_manifest()}}, \code{\link[=assert_cohort]{assert_cohort()}}
 }

@@ -8,7 +8,7 @@ apply_label_overrides(data, overrides_file = "labels_overrides.yml")
 }
 \arguments{
 \item{data}{A data frame: either a label map (with \code{key} and
-\code{label} columns, as returned by \code{\link{label_map}}), or any
+\code{label} columns, as returned by \code{\link[=label_map]{label_map()}}), or any
 data frame whose columns should be labeled directly.}
 
 \item{overrides_file}{Path to a YAML file containing label overrides.
@@ -16,10 +16,10 @@ Defaults to \code{"labels_overrides.yml"} in the current working directory.}
 }
 \value{
 When given a label map: the updated label map data frame.
-  When given a data frame: the data frame with labels applied via
-  \code{labelled::var_label()}.
-  In both cases, variables not mentioned in the YAML file are left
-  unchanged.
+When given a data frame: the data frame with labels applied via
+\code{labelled::var_label()}.
+In both cases, variables not mentioned in the YAML file are left
+unchanged.
 }
 \description{
 Reads label overrides from a YAML file and applies them to a label map
@@ -34,10 +34,10 @@ it safe to call unconditionally in shared code.
 When \code{data} is a label map (a data frame with \code{key} and
 \code{label} columns), the overrides are applied to the map. When
 \code{data} is any other data frame, labels are applied directly to
-the data via \code{\link{add_labels}}, which is the preferred
+the data via \code{\link[=add_labels]{add_labels()}}, which is the preferred
 data-first workflow.
 In that mode a key naming a column the data does not have warns, as
-\code{\link{add_labels}} does; an overrides file shared by several
+\code{\link[=add_labels]{add_labels()}} does; an overrides file shared by several
 datasets warns for each key the current one lacks.
 }
 \details{
@@ -51,7 +51,7 @@ cavv_area: "Common AVV Area"
 
 This design keeps study-specific label customizations in configuration
 rather than code. Each study gets its own \code{labels_overrides.yml}
-in the directory the analysis runs from, usually beside \code{_study.yml},
+in the directory the analysis runs from, usually beside \verb{_study.yml},
 and shared helper functions never contain
 hard-coded replacements.
 }
@@ -76,6 +76,6 @@ labelled::var_label(dta$age)
 unlink(tmp)
 }
 \seealso{
-\code{\link{add_labels}} for programmatic label updates,
-  \code{\link{label_map}} for extracting labels from data.
+\code{\link[=add_labels]{add_labels()}} for programmatic label updates,
+\code{\link[=label_map]{label_map()}} for extracting labels from data.
 }

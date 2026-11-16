@@ -7,8 +7,8 @@
 parity_headline(data, df)
 }
 \arguments{
-\item{data}{A data frame of \code{\link{compare_parity}} rows. Was
-\code{df} before 2026-11; \code{df =} still works for one release, with a
+\item{data}{A data frame of \code{\link[=compare_parity]{compare_parity()}} rows. Was
+\code{df} before 2026-11; \verb{df =} still works for one release, with a
 warning.}
 
 \item{df}{Deprecated: the old name of \code{data}, kept for one release.}

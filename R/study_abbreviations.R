@@ -80,16 +80,16 @@
 #'
 #' @description
 #' Merges the three abbreviation lists a job's labels can draw on, and checks
-#' the result, so that \code{\link{label_map}} shortens labels the same way in
+#' the result, so that [label_map()] shortens labels the same way in
 #' every job of a study:
 #' \enumerate{
-#'   \item \code{extra}, the job's own entries;
-#'   \item the study's \code{abbreviations:} mapping in \code{_study.yml};
+#'   \item `extra`, the job's own entries;
+#'   \item the study's `abbreviations:` mapping in `_study.yml`;
 #'   \item the group default list shipped with this package.
 #' }
 #' A higher level replaces a lower level's entry for the same phrase, compared
-#' ignoring case, and an entry of \code{null} (\code{NA} or \code{NULL} in
-#' \code{extra}) removes it.
+#' ignoring case, and an entry of `null` (`NA` or `NULL` in
+#' `extra`) removes it.
 #'
 #' @details
 #' Every list is checked before anything is merged, and every problem is
@@ -98,35 +98,35 @@
 #' merging, two phrases may not share an abbreviation, because the shortened
 #' label could then mean either; the error names both phrases and the level
 #' each came from. Abbreviations are compared ignoring case, with one
-#' exception for the house style: \code{R} for replacement and \code{r} for
-#' repair (\code{AVR}, \code{AVr}) may differ only in that last letter's case.
+#' exception for the house style: `R` for replacement and `r` for
+#' repair (`AVR`, `AVr`) may differ only in that last letter's case.
 #'
-#' One entry may list several spellings of a term, separated by \code{" | "}:
-#' \code{"Red blood cell | Red blood cells" = "RBC"}. The spellings share the
+#' One entry may list several spellings of a term, separated by `" | "`:
+#' `"Red blood cell | Red blood cells" = "RBC"`. The spellings share the
 #' entry's abbreviation, which is not a clash, and the first spelling is the
 #' expansion a key prints.
 #'
 #' The list is a display input. It is never written into the stored labels.
 #'
-#' @param cfg A study configuration, as returned by \code{\link{study_config}}.
+#' @param cfg A study configuration, as returned by [study_config()].
 #' @param extra The job's own entries: a named character vector or list,
-#'   phrase to abbreviation, with \code{NA} or \code{NULL} to remove a phrase
-#'   a lower level supplies. \code{NULL} for none.
-#' @param defaults \code{FALSE} leaves the group default list out.
+#'   phrase to abbreviation, with `NA` or `NULL` to remove a phrase
+#'   a lower level supplies. `NULL` for none.
+#' @param defaults `FALSE` leaves the group default list out.
 #'
 #' @return A named character vector, one element per spelling, phrase to
-#'   abbreviation, ready for \code{label_map(abbreviations = )}. Removed
+#'   abbreviation, ready for `label_map(abbreviations = )`. Removed
 #'   phrases do not appear. Two attributes of the same length:
 #'   \describe{
-#'     \item{source}{each entry's level: \code{"job"}, \code{"study"} or
-#'       \code{"default"};}
+#'     \item{source}{each entry's level: `"job"`, `"study"` or
+#'       `"default"`;}
 #'     \item{expansion}{the term each abbreviation stands for, the first
-#'       spelling of its entry, which \code{\link{label_map}} prints in its
+#'       spelling of its entry, which [label_map()] prints in its
 #'       key.}
 #'   }
 #'
-#' @seealso \code{\link{add_abbreviation}} to add to a study's list,
-#'   \code{\link{label_map}}, which applies it.
+#' @seealso [add_abbreviation()] to add to a study's list,
+#'   [label_map()], which applies it.
 #'
 #' @export
 #'
@@ -213,29 +213,29 @@ study_abbreviations <- function(cfg = study_config(), extra = NULL, defaults = T
 #' Add a phrase to a study's abbreviation list
 #'
 #' @description
-#' Writes one entry to the \code{abbreviations:} mapping in the study's
-#' \code{_study.yml}, replacing any entry for the same phrase, compared
-#' ignoring case. \code{abbreviation = NULL} writes a removal: the study then
+#' Writes one entry to the `abbreviations:` mapping in the study's
+#' `_study.yml`, replacing any entry for the same phrase, compared
+#' ignoring case. `abbreviation = NULL` writes a removal: the study then
 #' drops that phrase from the group default list.
 #'
 #' @details
 #' The entry is checked against the whole merged list, as
-#' \code{\link{study_abbreviations}} would check it, before anything is
+#' [study_abbreviations()] would check it, before anything is
 #' written; a refused entry leaves the file as it was. The file is rewritten
-#' whole, as \code{\link{register_data}} rewrites it, so comments in
-#' \code{_study.yml} are not kept.
+#' whole, as [register_data()] rewrites it, so comments in
+#' `_study.yml` are not kept.
 #'
 #' @param phrase The phrase, as it appears in labels.
-#' @param abbreviation Its abbreviation, or \code{NULL} to remove a default.
+#' @param abbreviation Its abbreviation, or `NULL` to remove a default.
 #' @param start A directory inside the study; the study is found as
-#'   \code{\link{study_config}} finds it. Defaults to the study that contains the working
-#'   directory, found by its \code{_study.yml}; outside a study the function
+#'   [study_config()] finds it. Defaults to the study that contains the working
+#'   directory, found by its `_study.yml`; outside a study the function
 #'   stops and writes nothing.
 #'
 #' @return The study's abbreviation list after the change, invisibly, as a
 #'   named list.
 #'
-#' @seealso \code{\link{study_abbreviations}}.
+#' @seealso [study_abbreviations()].
 #'
 #' @export
 #'

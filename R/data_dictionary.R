@@ -17,15 +17,15 @@
 #'   \item{label}{Descriptive label (falls back to variable name if unlabeled)}
 #'   \item{class}{Primary R class of the column}
 #'   \item{n_unique}{Number of unique non-NA values}
-#'   \item{pct_missing}{Percentage of rows that are \code{NA} (0-100)}
+#'   \item{pct_missing}{Percentage of rows that are `NA` (0-100)}
 #'   \item{summary}{Compact summary: min / median / max for numeric,
 #'     level counts for factor/character, TRUE percentage for logical}
 #' }
 #'
-#' @seealso \code{\link{proc_contents}} for the full SAS-style variable table,
-#'   \code{\link{proc_means}} for numeric summaries,
-#'   \code{\link{label_map}} for extracting labels only,
-#'   \code{\link{r_data_types}} for automatic type conversion before building
+#' @seealso [proc_contents()] for the full SAS-style variable table,
+#'   [proc_means()] for numeric summaries,
+#'   [label_map()] for extracting labels only,
+#'   [r_data_types()] for automatic type conversion before building
 #'   the dictionary.
 #'
 #' @export

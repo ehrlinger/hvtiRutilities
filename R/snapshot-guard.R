@@ -1,36 +1,36 @@
 #' Refuse a renv snapshot taken from the wrong R
 #'
 #' @description
-#' Stops before \code{renv::snapshot()} when the R running this session has a
+#' Stops before `renv::snapshot()` when the R running this session has a
 #' different major.minor version than the R recorded in the study's
-#' \code{renv.lock}. A snapshot from the wrong R rewrites the lockfile's R
+#' `renv.lock`. A snapshot from the wrong R rewrites the lockfile's R
 #' version and drops every locked package the session's library lacks. On
 #' 2026-10-22, R 4.6.1 snapshotted a study locked to R 4.5.3, and
 #' \pkg{boostmtree} and \pkg{ggBoostedTrees} fell out of its lockfile.
 #'
 #' A patch difference (4.5.1 against 4.5.3) passes, as does a study with no
-#' \code{renv.lock}.
+#' `renv.lock`.
 #'
-#' Use \code{r_upgrade = TRUE} only when you are deliberately moving the study
+#' Use `r_upgrade = TRUE` only when you are deliberately moving the study
 #' to a new R. The guard then still stops if any package in the lockfile is
 #' not installed in this session's library, because the snapshot would drop
-#' it; restore those first with \code{renv::restore()}.
+#' it; restore those first with `renv::restore()`.
 #'
-#' \code{\link{study_need}} and \code{\link{study_setup}} call this before
+#' [study_need()] and [study_setup()] call this before
 #' they snapshot, so you need to call it yourself only before a snapshot of
 #' your own.
 #'
-#' @param root Character(1). The study root, holding \code{renv.lock}.
+#' @param root Character(1). The study root, holding `renv.lock`.
 #' @param r_upgrade Logical(1). The study is being moved to this session's R
 #'   on purpose.
 #' @param session The R version of this session, a
-#'   \code{\link[base]{numeric_version}}. Defaults to the running R; set it
+#'   [base::numeric_version()]. Defaults to the running R; set it
 #'   only to test the guard.
 #' @param installed A function taking a package name and returning its
-#'   installed version, or \code{NA_character_} when it is not installed.
+#'   installed version, or `NA_character_` when it is not installed.
 #'   Defaults to a lookup in this session's library; set it only to test the
 #'   guard.
-#' @return \code{TRUE}, invisibly, when the snapshot may go ahead. Otherwise
+#' @return `TRUE`, invisibly, when the snapshot may go ahead. Otherwise
 #'   an error that names both R versions and the R to start.
 #' @export
 #' @examples

@@ -31,19 +31,19 @@
 #' Resolve a directory in the study layout
 #'
 #' @description
-#' Maps a logical study directory such as \code{"datasets"} to the numbered
+#' Maps a logical study directory such as `"datasets"` to the numbered
 #' spelling used by new studies or the bare spelling retained by legacy
 #' studies. A root containing both layouts is an error. A root containing
 #' neither -- a new or empty study -- resolves to the numbered spelling, as
-#' \code{\link{study_setup}} lays one out.
+#' [study_setup()] lays one out.
 #'
 #' @param folder Character. One logical study directory name.
-#' @param root Character. Study root. Defaults to \code{study_root()}.
+#' @param root Character. Study root. Defaults to `study_root()`.
 #'
 #' @return Character(1). The resolved directory path. Its existence is not
 #'   required.
 #'
-#' @seealso \code{\link{study_root}}, \code{\link{sas_path}}
+#' @seealso [study_root()], [sas_path()]
 #'
 #' @export
 #'

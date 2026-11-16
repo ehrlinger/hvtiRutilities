@@ -110,107 +110,107 @@
 #' @description
 #' Completes the default study data contract or adds one distinctly named
 #' dataset. The function derives row and column counts from the file and
-#' replaces \code{_study.yml} and \code{manifest.yaml} only after both updated
+#' replaces `_study.yml` and `manifest.yaml` only after both updated
 #' files have been prepared successfully.
 #'
 #' Registration converts the file once to a dated parquet in the same folder,
-#' \code{<name>_YYYYMMDD.parquet}, with its column record beside it as
-#' \code{<name>_YYYYMMDD.schema.csv}. That parquet is what \code{\link{read_built}}
+#' `<name>_YYYYMMDD.parquet`, with its column record beside it as
+#' `<name>_YYYYMMDD.schema.csv`. That parquet is what [read_built()]
 #' and the job templates read, so the source file may be rebuilt freely; run
-#' \code{\link{update_manifest}()} to register a rebuilt file as a new version.
-#' The date is the file's modification date unless \code{extract_date} is given.
+#' [update_manifest()] to register a rebuilt file as a new version.
+#' The date is the file's modification date unless `extract_date` is given.
 #' A release-aware registration
-#' (\code{catalog_dataset} and \code{release_id}) records the catalog's file as
+#' (`catalog_dataset` and `release_id`) records the catalog's file as
 #' it is and converts nothing.
 #'
 #' A dataset is registered once: registering it again stops with "already
 #' registered". So a study whose datasets are already registered adds
-#' \code{kind}, \code{key} or \code{parents} by editing that dataset's entry in
-#' \code{_study.yml}, then running \code{\link{update_manifest}()}. The key is
+#' `kind`, `key` or `parents` by editing that dataset's entry in
+#' `_study.yml`, then running [update_manifest()]. The key is
 #' checked when the next version is registered. A combined dataset records its
 #' parents' versions only once its source has been rebuilt, and reads as out of
 #' date until then. A release-aware dataset is skipped by
-#' \code{update_manifest()}: its parents' versions are recorded when a release is
-#' adopted with \code{\link{adopt_data_update}()}, and its key is checked only at
+#' `update_manifest()`: its parents' versions are recorded when a release is
+#' adopted with [adopt_data_update()], and its key is checked only at
 #' registration.
 #'
 #' @param root Character. Study root or a directory beneath it. Defaults to the study that contains the working
-#'   directory, found by its \code{_study.yml}; outside a study the function
+#'   directory, found by its `_study.yml`; outside a study the function
 #'   stops and writes nothing.
 #'   It comes last, after 2026-11; a call that passes an existing directory
 #'   as its first unnamed argument is read in the old, root-first order for
 #'   one release, with a warning.
 #' @param file Character(1). Dataset filename within the logical
-#'   \code{datasets} directory, including its extension. A path into that
-#'   folder is accepted too, such as \code{"00_datasets/built.csv"} (what
+#'   `datasets` directory, including its extension. A path into that
+#'   folder is accepted too, such as `"00_datasets/built.csv"` (what
 #'   file-name completion gives from the study root) or an absolute path, and
 #'   is recorded by its file name alone. A relative path is read against the
 #'   working directory, then the study root. A file in any other folder is
 #'   refused.
 #' @param dataset Character(1). The dataset's name. Choose it only with
-#'   \code{role = "named"}; \code{role = "study"} requires the default,
-#'   \code{dataset = "study"}. A name starts with a lowercase letter and uses
-#'   only lowercase letters, digits and underscores. \code{"study"} and
-#'   \code{"built"} are reserved, \code{"built"} being a second name for the
+#'   `role = "named"`; `role = "study"` requires the default,
+#'   `dataset = "study"`. A name starts with a lowercase letter and uses
+#'   only lowercase letters, digits and underscores. `"study"` and
+#'   `"built"` are reserved, `"built"` being a second name for the
 #'   study dataset. Read the dataset back with
-#'   \code{read_built(dataset = "<name>")}.
-#' @param built The old name of \code{file}, before 2026-11. It still works,
+#'   `read_built(dataset = "<name>")`.
+#' @param built The old name of `file`, before 2026-11. It still works,
 #'   with a warning, and will be removed in a later release. Giving both is
 #'   an error.
 #' @param role Character(1). Takes one value, which picks the slot the dataset
-#'   fills. \code{"study"}, the default when the argument is left out, registers
-#'   the study's single main dataset. It is recorded under \code{built:} in
-#'   \code{_study.yml} and read by \code{\link{read_built}()} with no
+#'   fills. `"study"`, the default when the argument is left out, registers
+#'   the study's single main dataset. It is recorded under `built:` in
+#'   `_study.yml` and read by [read_built()] with no
 #'   arguments. A study has exactly one, so registering it a second time stops
-#'   with "already registered". \code{"named"} adds another dataset under the
-#'   name given in \code{dataset}. It is recorded under
-#'   \code{additional_datasets:} and read with
-#'   \code{read_built(dataset = "<name>")}.
-#' @param population Character(1) or \code{NULL}. Population description.
-#' @param source Character(1) or \code{NULL}. Data-source description.
-#' @param extract_date Character, \code{Date}, or \code{NULL}. Extraction
+#'   with "already registered". `"named"` adds another dataset under the
+#'   name given in `dataset`. It is recorded under
+#'   `additional_datasets:` and read with
+#'   `read_built(dataset = "<name>")`.
+#' @param population Character(1) or `NULL`. Population description.
+#' @param source Character(1) or `NULL`. Data-source description.
+#' @param extract_date Character, `Date`, or `NULL`. Extraction
 #'   date. The file modification date is used when omitted.
-#' @param catalog_dataset,release_id \strong{Deprecated.} Catalog releases are retired;
-#'   use a build record sidecar and plain \code{register_data()}. Character(1) or \code{NULL}. Producer
+#' @param catalog_dataset,release_id **Deprecated.** Catalog releases are retired;
+#'   use a build record sidecar and plain `register_data()`. Character(1) or `NULL`. Producer
 #'   catalog dataset ID and exact published release ID. Supply both to make
 #'   the study contract release-aware, or neither for a legacy registration.
 #'   A dataset already registered as dated versions cannot be moved to a
 #'   release this way: that would drop every registered version.
-#' @param kind Character(1) or \code{NULL}. What the dataset is:
-#'   \code{"built"} (the study dataset), \code{"subset"}, \code{"ancillary"}
+#' @param kind Character(1) or `NULL`. What the dataset is:
+#'   `"built"` (the study dataset), `"subset"`, `"ancillary"`
 #'   (many rows per patient, such as echoes or labs, joined to the cohort by a
-#'   job) or \code{"combined"} (built by joining others).
-#' @param key Character or \code{NULL}. The columns that make each row unique,
-#'   such as \code{c("ccfid", "echo_date")}. Checked at registration, which
+#'   job) or `"combined"` (built by joining others).
+#' @param key Character or `NULL`. The columns that make each row unique,
+#'   such as `c("ccfid", "echo_date")`. Checked at registration, which
 #'   stops if any row repeats on it. Jobs use it unless they set their own.
-#' @param parents Character or \code{NULL}. For \code{kind = "combined"} only:
+#' @param parents Character or `NULL`. For `kind = "combined"` only:
 #'   the registered datasets it was built from. Their current versions are
 #'   recorded, so a later update to a parent marks this dataset out of date.
-#'   \code{"built"} is a second name for \code{"study"}.
+#'   `"built"` is a second name for `"study"`.
 #'
-#' @return An object of class \code{"study_status"}, returned visibly.
+#' @return An object of class `"study_status"`, returned visibly.
 #'
 #' @section Where a subset goes:
 #' A subset of the study dataset has three homes, and which to pick depends on
 #' who needs it.
 #' \itemize{
-#'   \item A \code{WHERE} condition in one job writes no file. The job's
-#'     \code{hvtiRtemplates::read_job_data()} applies the condition and records
+#'   \item A `WHERE` condition in one job writes no file. The job's
+#'     `hvtiRtemplates::read_job_data()` applies the condition and records
 #'     it. Use this for a subset that only one job analyses.
-#'   \item An analysis set from \code{hvtiRdatabuild::write_analysis_set()} is
-#'     saved as \code{00_datasets/<name>.parquet} with \code{<name>.set.yml}
+#'   \item An analysis set from `hvtiRdatabuild::write_analysis_set()` is
+#'     saved as `00_datasets/<name>.parquet` with `<name>.set.yml`
 #'     beside it, and is derived from the study dataset only. A job reads it with
-#'     \code{DATASET <- "built"} and \code{ANALYSIS_SET <- "<name>"}. Use this
+#'     `DATASET <- "built"` and `ANALYSIS_SET <- "<name>"`. Use this
 #'     for a subset of the study dataset that several jobs share.
-#'   \item A separately registered dataset, \code{role = "named"} with
-#'     \code{kind = "subset"}, is for a subset built some other way, such as
+#'   \item A separately registered dataset, `role = "named"` with
+#'     `kind = "subset"`, is for a subset built some other way, such as
 #'     from a second source or by a script outside the study's build.
 #' }
 #' Exclusions that define the cohort itself belong in the build job
-#' (\code{hvtiRtemplates::build_cohort()}), not in a subset.
+#' (`hvtiRtemplates::build_cohort()`), not in a subset.
 #'
-#' @seealso \code{\link{study_setup}}, \code{\link{study_config}},
-#'   \code{\link{update_manifest}}
+#' @seealso [study_setup()], [study_config()],
+#'   [update_manifest()]
 #'
 #' @examplesIf requireNamespace("arrow", quietly = TRUE)
 #' root <- file.path(tempdir(), "register-data-example")

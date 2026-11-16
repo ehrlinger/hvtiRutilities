@@ -15,35 +15,35 @@ table.}
 \item{missing}{Logical. \code{FALSE} (the SAS default) excludes rows with a
 missing value in any \code{tables} variable from the table and from every
 denominator, and reports their count in the \code{frequency_missing}
-attribute. \code{TRUE}, SAS \code{/ MISSING}, treats missing as a level,
+attribute. \code{TRUE}, SAS \verb{/ MISSING}, treats missing as a level,
 with each SAS special missing value a level of its own.}
 
-\item{list}{Logical. \code{TRUE}, SAS \code{/ LIST}, gives cumulative
+\item{list}{Logical. \code{TRUE}, SAS \verb{/ LIST}, gives cumulative
 columns and percentages of the grand total for an n-way table. It has no
 effect on a one-way table.}
 
 \item{weights}{Character or \code{NULL}. Name of a single numeric column of
 weights, SAS \code{WEIGHT}. \code{Frequency} becomes the sum of weights.
 Rows with a missing weight are excluded entirely; non-positive weights
-are an error, as in \code{\link{proc_means}}.}
+are an error, as in \code{\link[=proc_means]{proc_means()}}.}
 }
 \value{
 A data frame with one column per \code{tables} variable (each
-  followed by a \code{<var>_label} column when the variable carries value
-  labels), then:
-  \itemize{
-    \item for a one-way table, or \code{list = TRUE}: \code{Frequency},
-      \code{Percent}, \code{Cum_Frequency}, \code{Cum_Percent};
-    \item for an n-way crosstab: \code{Frequency}, \code{Percent} (within
-      stratum), \code{Row_Percent}, \code{Col_Percent}.
-  }
-  \code{Frequency} is integer when unweighted and double when weighted.
-  The attribute \code{frequency_missing} holds the count (or weight) of
-  excluded missing rows, and is \code{0} when none were excluded. A table
-  with no remaining rows is returned with zero rows, not an error.
+followed by a \verb{<var>_label} column when the variable carries value
+labels), then:
+\itemize{
+\item for a one-way table, or \code{list = TRUE}: \code{Frequency},
+\code{Percent}, \code{Cum_Frequency}, \code{Cum_Percent};
+\item for an n-way crosstab: \code{Frequency}, \code{Percent} (within
+stratum), \code{Row_Percent}, \code{Col_Percent}.
+}
+\code{Frequency} is integer when unweighted and double when weighted.
+The attribute \code{frequency_missing} holds the count (or weight) of
+excluded missing rows, and is \code{0} when none were excluded. A table
+with no remaining rows is returned with zero rows, not an error.
 }
 \description{
-Produces the table SAS \code{PROC FREQ} prints for a \code{TABLES}
+Produces the table SAS \verb{PROC FREQ} prints for a \code{TABLES}
 statement: one row per observed combination of levels, with frequencies
 and percentages. One call is one table; a SAS step with several
 \code{TABLES} statements is several calls.
@@ -51,7 +51,7 @@ and percentages. One call is one table; a SAS step with several
 \details{
 The last name in \code{tables} is the column variable, the one before it
 the row variable, and any earlier names are strata, as in SAS
-\code{TABLES a*b*c}.
+\verb{TABLES a*b*c}.
 
 \strong{Percentages depend on \code{list}, not only the columns shown.}
 For a crosstab of three or more variables, SAS prints one row-by-column
@@ -71,13 +71,13 @@ SAS omits zero-count levels without \code{SPARSE}.
 
 A \code{haven_labelled} variable is grouped on its value label, as SAS
 forms levels from formatted values: stored codes sharing a label form one
-row, shown as the smallest of those codes, and a \code{<var>_label} column
+row, shown as the smallest of those codes, and a \verb{<var>_label} column
 holding the label follows it. A value with no label is its own row.
 Variable labels on the \code{tables} columns are kept.
 
 \strong{What counts as missing.} As in SAS, a blank or whitespace-only
 character value is missing, and so is \code{NaN}. SAS special missing
-values, read by \code{haven} as \code{\link[haven]{tagged_na}}, are
+values, read by \code{haven} as \code{\link[haven:tagged_na]{haven::tagged_na()}}, are
 separate missing levels in SAS order: \code{._}, then \code{.}, then
 \code{.A} to \code{.Z}.
 
@@ -85,14 +85,14 @@ separate missing levels in SAS order: \code{._}, then \code{.}, then
 their exact values, whereas SAS groups on the printed (\code{BEST12.})
 value, so values that differ past about 12 significant digits stay separate
 rows here. Non-positive weights are an error, whereas SAS drops zero
-weights and ignores negative ones; \code{\link{proc_means}} makes the same
+weights and ignores negative ones; \code{\link[=proc_means]{proc_means()}} makes the same
 deliberate choice.
 
 Percentages are not rounded. SAS rounds only for display, and a rounded
-result would fail \code{\link{compare_parity}} against SAS output.
+result would fail \code{\link[=compare_parity]{compare_parity()}} against SAS output.
 
 Tests of association (\code{CHISQ}, \code{FISHER}, \code{MEASURES} and the
-rest) are deliberately absent, for the same reason \code{\link{proc_means}}
+rest) are deliberately absent, for the same reason \code{\link[=proc_means]{proc_means()}}
 has no inference statistics.
 }
 \examples{
@@ -108,5 +108,5 @@ proc_freq(dta, c("sex", "dead"))
 proc_freq(dta, c("sex", "dead"), list = TRUE)
 }
 \seealso{
-\code{\link{proc_means}}, \code{\link{proc_contents}}
+\code{\link[=proc_means]{proc_means()}}, \code{\link[=proc_contents]{proc_contents()}}
 }

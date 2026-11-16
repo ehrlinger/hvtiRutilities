@@ -20,14 +20,14 @@ tuned until things pass. Three regimes:
 }
 \details{
 \itemize{
-  \item \strong{Printed references are intervals, not numbers.} When SAS
-    prints \code{-239.194}, the value that produced it lies in
-    \code{[-239.1945, -239.1935)}. Half a unit in the last printed place
-    is a floor that is derived.
-  \item \strong{Stored references carry machine precision}, so that floor
-    does not apply. What remains is that two implementations run different
-    optimizers on the same likelihood and converge to different points.
-  \item \strong{Counts are exact, or there is a bug.}
+\item \strong{Printed references are intervals, not numbers.} When SAS
+prints \code{-239.194}, the value that produced it lies in
+\verb{[-239.1945, -239.1935)}. Half a unit in the last printed place
+is a floor that is derived.
+\item \strong{Stored references carry machine precision}, so that floor
+does not apply. What remains is that two implementations run different
+optimizers on the same likelihood and converge to different points.
+\item \strong{Counts are exact, or there is a bug.}
 }
 }
 \examples{

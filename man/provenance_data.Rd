@@ -15,24 +15,24 @@ provenance_data(
 \item{dataset}{Character(1). Logical registered dataset name.
 \code{"built"} is a second name for \code{"study"}.}
 
-\item{cfg}{List. A study manifest from \code{\link{study_config}}.}
+\item{cfg}{List. A study manifest from \code{\link[=study_config]{study_config()}}.}
 
 \item{role}{Character(1). The file's role in this job.}
 
 \item{working}{Logical. If \code{TRUE}, record the working source file, as
-\code{\link{read_built}(working = TRUE)} reads it.}
+\code{\link[=read_built]{read_built()}} reads it with \code{working = TRUE}.}
 }
 \value{
 A plain list containing one immutable-by-convention data record.
-  A working read's record also carries \code{working = TRUE}. A registered
-  read's record carries no \code{working} element, so records written before
-  1.5.12 read the same.
+A working read's record also carries \code{working = TRUE}. A registered
+read's record carries no \code{working} element, so records written before
+1.5.12 read the same.
 }
 \description{
 Records the authoritative physical file selected by \code{dataset}. For a
 manifest entry with \code{role: "primary"}, this is the promoted Parquet
 file rather than the retired source, and for a dataset registered with
-\code{\link{register_data}} it is the registered version, the dated Parquet
+\code{\link[=register_data]{register_data()}} it is the registered version, the dated Parquet
 file, rather than the source it was converted from. The returned plain list contains the
 logical dataset name, a canonical study-relative path, its role, byte count,
 modification time, and SHA-256 hash.
@@ -53,6 +53,6 @@ unlink(root, recursive = TRUE)
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link{provenance_artifact}},
-  \code{\link{capture_provenance}}
+\code{\link[=provenance_artifact]{provenance_artifact()}},
+\code{\link[=capture_provenance]{capture_provenance()}}
 }

@@ -20,27 +20,27 @@ apply to a variable name filled in for a missing label.}
 each name is a phrase and each value is that phrase's abbreviation:
 \code{c("Left ventricular" = "LV")}. Used only on labels over the cap, and
 for a shared heading in place of its initials. An \code{expansion}
-attribute, as \code{\link{study_abbreviations}} returns, names the term
+attribute, as \code{\link[=study_abbreviations]{study_abbreviations()}} returns, names the term
 each abbreviation stands for in the key. A word-like abbreviation such as
 \code{"Preop"} takes the case of the text it replaces.}
 }
 \value{
 A data frame with five columns, and an \code{abbreviations}
-  attribute: a data frame of \code{abbreviation} and \code{expansion} for
-  every abbreviation the labels show, with no rows when there are none.
+attribute: a data frame of \code{abbreviation} and \code{expansion} for
+every abbreviation the labels show, with no rows when there are none.
 \describe{
-  \item{key}{Character vector of variable names from the input dataset}
-  \item{label}{Character vector of labels fit to print: the variable label
-    cut to \code{label_max}, or the variable's own name where the source
-    carries no label}
-  \item{label_full}{The label as the source carried it, never truncated,
-    or the variable name where there is none}
-  \item{truncated}{Logical: \code{TRUE} where \code{label} was cut from
-    \code{label_full}. Always \code{FALSE} for a filled variable name.
-    \code{subset(x, truncated)} is the report of what was cut}
-  \item{over_cap}{Logical: \code{TRUE} where \code{label} is longer than
-    \code{label_max} because every shorter form collided with another
-    label. \code{subset(x, over_cap)} is the report}
+\item{key}{Character vector of variable names from the input dataset}
+\item{label}{Character vector of labels fit to print: the variable label
+cut to \code{label_max}, or the variable's own name where the source
+carries no label}
+\item{label_full}{The label as the source carried it, never truncated,
+or the variable name where there is none}
+\item{truncated}{Logical: \code{TRUE} where \code{label} was cut from
+\code{label_full}. Always \code{FALSE} for a filled variable name.
+\code{subset(x, truncated)} is the report of what was cut}
+\item{over_cap}{Logical: \code{TRUE} where \code{label} is longer than
+\code{label_max} because every shorter form collided with another
+label. \code{subset(x, over_cap)} is the report}
 }
 }
 \description{
@@ -52,17 +52,17 @@ variable labels, or any dataset labeled with the \code{labelled} package.
 A warning is issued when more than 50\% of columns carry no label at all.
 This typically indicates the data was imported from a source without labels
 (e.g., plain CSV) and labels should be supplied via
-\code{\link{add_labels}} or a \code{labels_overrides.yml} file (see
-\code{\link{apply_label_overrides}}). A variable whose real label happens
+\code{\link[=add_labels]{add_labels()}} or a \code{labels_overrides.yml} file (see
+\code{\link[=apply_label_overrides]{apply_label_overrides()}}). A variable whose real label happens
 to equal its own name does \strong{not} count towards the threshold: the
 absent label is read as \code{NA} rather than filled, so the two cases are
-distinguishable here even though \code{\link{proc_contents}} cannot tell
+distinguishable here even though \code{\link[=proc_contents]{proc_contents()}} cannot tell
 them apart.
 
 Labels longer than \code{label_max} are cut for display. The cut breaks on
 a word boundary and is marked with \code{...}, and the source text is kept
 in \code{label_full} - truncation is a view, not a change to the data.
-\code{\link{dataset_schema}} deliberately has no such parameter: it records
+\code{\link[=dataset_schema]{dataset_schema()}} deliberately has no such parameter: it records
 the label as the source carried it, because a schema sidecar outlives the
 source dataset.
 
@@ -78,22 +78,21 @@ Within one map, labels that differ in \code{label_full} always differ in
 \code{label}. Each step below runs only on labels still over the cap or
 still colliding:
 \enumerate{
-  \item A heading, the text before the first \code{": "}, \code{" - "} or
-    \code{"; "}, shared by two or more labels, one of them over the cap, is
-    abbreviated in every label that carries it: to its entry in
-    \code{abbreviations}, or else to the initials of its words, skipping
-    small words such as "of" and "and". \code{"Surgical procedure"} becomes
-    \code{"SP"}. A one-word heading is left alone, and two headings with the
-    same initials are neither abbreviated.
-  \item Any phrase in \code{abbreviations} is applied, whole words and
-    ignoring case, to a label still over the cap. A label that fits is never
-    abbreviated this way.
-  \item The label is cut on a word boundary and marked.
-  \item Cut labels that still collide keep both ends, \code{"Ascending aorta
-    ... plus arch"}.
-  \item A label that still collides is shown whole, over the cap, and
-    \code{over_cap} marks it: a long label is a layout problem a reader can
-    see, two identical labels a wrong figure nobody can.
+\item A heading, the text before the first \code{": "}, \code{" - "} or
+\code{"; "}, shared by two or more labels, one of them over the cap, is
+abbreviated in every label that carries it: to its entry in
+\code{abbreviations}, or else to the initials of its words, skipping
+small words such as "of" and "and". \code{"Surgical procedure"} becomes
+\code{"SP"}. A one-word heading is left alone, and two headings with the
+same initials are neither abbreviated.
+\item Any phrase in \code{abbreviations} is applied, whole words and
+ignoring case, to a label still over the cap. A label that fits is never
+abbreviated this way.
+\item The label is cut on a word boundary and marked.
+\item Cut labels that still collide keep both ends, \code{"Ascending aorta ... plus arch"}.
+\item A label that still collides is shown whole, over the cap, and
+\code{over_cap} marks it: a long label is a layout problem a reader can
+see, two identical labels a wrong figure nobody can.
 }
 The abbreviations actually shown come back as the \code{abbreviations}
 attribute, to print as a key beneath a figure or table, and per variable as
@@ -135,8 +134,8 @@ lmap$label
 attr(lmap, "abbreviations")
 }
 \seealso{
-\code{\link{get_label}} for looking up a single label,
-  \code{\link{add_labels}} for registering labels for derived variables,
-  \code{\link{apply_label_overrides}} for applying study-specific overrides
-  from a YAML file.
+\code{\link[=get_label]{get_label()}} for looking up a single label,
+\code{\link[=add_labels]{add_labels()}} for registering labels for derived variables,
+\code{\link[=apply_label_overrides]{apply_label_overrides()}} for applying study-specific overrides
+from a YAML file.
 }

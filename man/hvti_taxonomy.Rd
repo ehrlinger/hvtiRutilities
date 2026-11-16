@@ -8,11 +8,11 @@ hvti_taxonomy()
 }
 \value{
 A data frame with columns \code{prefix}, \code{name}, \code{folder},
-  \code{description} and \code{umbrella}. \code{prefix} is \code{NA} for the
-  one row that names an artifact kind rather than an analysis type.
-  \code{umbrella} is logical: \code{TRUE} for the legacy umbrella prefixes
-  \code{rf} and \code{rfsrc}, for which no template is owed; \code{FALSE} for
-  every other prefix; \code{NA} for the artifact row.
+\code{description} and \code{umbrella}. \code{prefix} is \code{NA} for the
+one row that names an artifact kind rather than an analysis type.
+\code{umbrella} is logical: \code{TRUE} for the legacy umbrella prefixes
+\code{rf} and \code{rfsrc}, for which no template is owed; \code{FALSE} for
+every other prefix; \code{NA} for the artifact row.
 }
 \description{
 The prefix system inherited from the original CORR analysis binder. The
@@ -27,30 +27,30 @@ by the test suite against the templates actually present.
 included, as of 2026-09-03.}
 
 A template directory and a numbered study directory are both spelled
-\code{<NN>_<folder>}, as in \code{20_distributions}; a legacy study keeps
-the bare name, as in \code{distributions}, and \code{\link{study_dir}}
+\verb{<NN>_<folder>}, as in \verb{20_distributions}; a legacy study keeps
+the bare name, as in \code{distributions}, and \code{\link[=study_dir]{study_dir()}}
 resolves either. The name after the digits, or the bare name, must be a
 \code{folder} in this table. \code{hvtiRtemplates} tests
 that every template directory names one, so renaming or removing a folder
 that holds a template turns its CI red. The digits are \emph{assigned}, not
-derived from this table. They are hardcoded in \code{\link{study_dir}}'s
+derived from this table. They are hardcoded in \code{\link[=study_dir]{study_dir()}}'s
 layout map here and in the template directory names there, and
 \code{estimates} is \code{90} though it is the table's fifth folder, because
 it holds saved output rather than jobs. Reordering rows, or folders, changes
 nothing downstream.
 
 \emph{Adding or renaming} a folder is not free on the study side.
-\code{\link{study_dir}} knows only the folders in its own layout map, and a
+\code{\link[=study_dir]{study_dir()}} knows only the folders in its own layout map, and a
 test compares that map's names with \code{unique(hvti_taxonomy()$folder)},
 so a folder added here and not there turns this package's CI red rather
 than becoming one \code{study_dir()} refuses as unknown. The test compares
 names only; the new folder's digits still have to be assigned in the map.
 
-Templates carry no ordinal. They were once named \code{<NN>.<MM>-<prefix>},
+Templates carry no ordinal. They were once named \verb{<NN>.<MM>-<prefix>},
 with \code{NN} taken from this table's folder order through a hardcoded map
 in \code{hvtiRtemplates}; the ordinal and that map were both retired on
 2026-09-03 (\code{hvtiRtemplates:dev/specs/2026-09-03-template-identity-design.md}).
-A template is now \code{<prefix>[-<qualifier>].qmd}, and the catalog that
+A template is now \verb{<prefix>[-<qualifier>].qmd}, and the catalog that
 lists them is \code{hvtiRtemplates}' own \code{inst/extdata/templates.json}.
 
 History, kept because it is why the digits are assigned: moving \code{hs}
@@ -62,9 +62,9 @@ before its 1.1.0, is the same template as \code{04.05-bh}.
 
 \strong{\code{hs} is filed under \code{graphs}, which reads oddly for a job
 named "setup".} It was moved there from \code{analyses} on 2026-08-29 on the
-corpus rather than on the name: all ten \code{tp.hs.*} templates in the SAS
-library and ten of the eleven R \code{hs} jobs in \code{/studies} sit in
-\code{graphs/}. It computes patient-level predictions that the plotting jobs
+corpus rather than on the name: all ten \verb{tp.hs.*} templates in the SAS
+library and ten of the eleven R \code{hs} jobs in \verb{/studies} sit in
+\verb{graphs/}. It computes patient-level predictions that the plotting jobs
 beside it consume, in the \code{setup} / \code{uses_setup} pairing the
 corpus uses throughout. See
 \code{hvtiRtemplates:dev/specs/2026-08-29-hs-template-design.md}.
@@ -107,7 +107,7 @@ templated. They stay in the table so a census can still resolve the corpus
 that uses them, which is not small: \code{rfsrc} measures 131 studies and
 2,295 jobs, more than \code{rf} (47), \code{rfs} (25) and \code{rfc} (19)
 combined, twice over. Deleting the rows was rejected on two grounds.
-\code{\link{hvti_prefix_folds}} cannot express the demotion, because a fold
+\code{\link[=hvti_prefix_folds]{hvti_prefix_folds()}} cannot express the demotion, because a fold
 is one-to-one and \code{rfsrc} spans all three outcomes, so there is no
 single prefix to fold it into. And an absent prefix reads to the census as
 one nobody documented, which is the opposite of what a superseded name
@@ -130,7 +130,7 @@ taxonomy prefix has a catalog row exempts them by reading the
 \code{hvtiR} 1.2.0.
 
 \strong{\code{sid} and \code{vt} are filed under \code{analyses} with the
-rest of the family}, and compose on the \code{rf*} jobs rather than
+rest of the family}, and compose on the \verb{rf*} jobs rather than
 replacing them. The \code{rfc}/\code{rfs} folder contradiction is
 deliberately NOT settled here: the taxonomy says \code{analyses} while the
 SAS library files them under \code{graphs} and \code{documents}, and the

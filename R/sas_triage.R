@@ -146,35 +146,33 @@
 #' Triage a directory of legacy SAS macro files
 #'
 #' @description
-#' Applies an ordered rule ladder to every SAS source file in \code{dir} and
-#' returns one row per macro definition, each carrying a \code{decision} and the
-#' \code{evidence} that justifies it.
+#' Applies an ordered rule ladder to every SAS source file in `dir` and
+#' returns one row per macro definition, each carrying a `decision` and the
+#' `evidence` that justifies it.
 #'
 #' @details
-#' Only the top level of \code{dir} is scanned; subdirectories are ignored.
+#' Only the top level of `dir` is scanned; subdirectories are ignored.
 #'
 #' Candidate files are selected by excluding known non-source suffixes (logs,
 #' listings, documents, binary data sets, numbered RCS backups) rather than by
-#' matching \code{.sas}. The library names files with dots as word separators
-#' -- \code{deciles.hazard} and \code{lm.cprobs} are names, not stems with
+#' matching `.sas`. The library names files with dots as word separators
+#' -- `deciles.hazard` and `lm.cprobs` are names, not stems with
 #' extensions -- and many macro files carry no extension at all, so a
-#' \code{.sas}-only pattern silently omits them.
+#' `.sas`-only pattern silently omits them.
 #'
 #' File-level rules, applied first, in order:
 #' \enumerate{
-#'   \item \code{Copy of *} -- drop, as a filename-prefix duplicate.
-#'   \item \code{*.sas~} -- drop, as an editor backup superseded by construction.
-#'   \item Fails \code{.sas_lint()} -- drop, citing the specific lint failure.
+#'   \item `Copy of *` -- drop, as a filename-prefix duplicate.
+#'   \item `*.sas~` -- drop, as an editor backup superseded by construction.
+#'   \item Fails `.sas_lint()` -- drop, citing the specific lint failure.
 #' }
 #'
 #' Definition-level rules, applied per macro name across surviving files:
-#' \enumerate{
-#'   \item[4.] Defined in exactly one file -- canonical.
-#'   \item[5.] Defined in several files, all bodies hashing identically --
-#'     canonical, recording every defining file.
-#'   \item[6.] Defined in several files with two or more distinct bodies --
-#'     \strong{ambiguous}. No canonical file is chosen.
-#' }
+#' * **4.** Defined in exactly one file -- canonical.
+#' * **5.** Defined in several files, all bodies hashing identically --
+#'   canonical, recording every defining file.
+#' * **6.** Defined in several files with two or more distinct bodies --
+#'   **ambiguous**. No canonical file is chosen.
 #'
 #' Rule 6 never auto-resolves. Modification dates and visibility are attached as
 #' evidence for a human, never consumed as a tiebreaker, because a tool that
@@ -182,22 +180,22 @@
 #' Filesystem mtime is deliberately never consulted: the corpus froze in 2019
 #' and lives on a network volume where timestamps do not survive copies.
 #'
-#' Ambiguity is resolved by a human writing an entry into \code{overrides} and
+#' Ambiguity is resolved by a human writing an entry into `overrides` and
 #' re-running. This makes the result reproducible and auditable.
 #'
 #' @param dir Character. Path to a directory of SAS source files. Use a local clone;
 #'   the canonical library lives on a network volume where file operations are
 #'   slow.
-#' @param overrides Character or \code{NULL}. Path to a `macro_overrides.yaml`
-#'   recording human decisions. Each entry requires \code{macro},
-#'   \code{canonical_file}, \code{rationale}, \code{decided_by}, and
-#'   \code{decided_on}.
+#' @param overrides Character or `NULL`. Path to a `macro_overrides.yaml`
+#'   recording human decisions. Each entry requires `macro`,
+#'   `canonical_file`, `rationale`, `decided_by`, and
+#'   `decided_on`.
 #'
-#' @return A \code{data.frame} with one row per macro definition and columns
-#'   \code{file}, \code{macro}, \code{params}, \code{body_hash},
-#'   \code{line_start}, \code{line_end}, \code{visibility}, \code{decision},
-#'   \code{rule}, and \code{evidence}. Rows are sorted by \code{macro} then
-#'   \code{file}, so the result is deterministic.
+#' @return A `data.frame` with one row per macro definition and columns
+#'   `file`, `macro`, `params`, `body_hash`,
+#'   `line_start`, `line_end`, `visibility`, `decision`,
+#'   `rule`, and `evidence`. Rows are sorted by `macro` then
+#'   `file`, so the result is deterministic.
 #'
 #' @export sas_triage
 #'

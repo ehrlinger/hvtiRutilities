@@ -9,7 +9,7 @@ publish_provenance(path, payload)
 \arguments{
 \item{path}{Character(1). Existing completed output path.}
 
-\item{payload}{A payload returned by \code{\link{capture_provenance}}.}
+\item{payload}{A payload returned by \code{\link[=capture_provenance]{capture_provenance()}}.}
 }
 \value{
 Invisibly, the published record as a list.
@@ -42,6 +42,6 @@ unlink(root, recursive = TRUE)
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link{capture_provenance}},
-  \code{\link{record_provenance}}, \code{\link{provenance_path}}
+\code{\link[=capture_provenance]{capture_provenance()}},
+\code{\link[=record_provenance]{record_provenance()}}, \code{\link[=provenance_path]{provenance_path()}}
 }

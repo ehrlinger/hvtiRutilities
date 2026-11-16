@@ -7,128 +7,128 @@
 #' README and drifted from the files it described; as a function it is checked
 #' by the test suite against the templates actually present.
 #'
-#' \strong{Folder names are load-bearing. Row order is not, folder order
-#' included, as of 2026-09-03.}
+#' **Folder names are load-bearing. Row order is not, folder order
+#' included, as of 2026-09-03.**
 #'
 #' A template directory and a numbered study directory are both spelled
-#' \code{<NN>_<folder>}, as in \code{20_distributions}; a legacy study keeps
-#' the bare name, as in \code{distributions}, and \code{\link{study_dir}}
+#' `<NN>_<folder>`, as in `20_distributions`; a legacy study keeps
+#' the bare name, as in `distributions`, and [study_dir()]
 #' resolves either. The name after the digits, or the bare name, must be a
-#' \code{folder} in this table. \code{hvtiRtemplates} tests
+#' `folder` in this table. `hvtiRtemplates` tests
 #' that every template directory names one, so renaming or removing a folder
-#' that holds a template turns its CI red. The digits are \emph{assigned}, not
-#' derived from this table. They are hardcoded in \code{\link{study_dir}}'s
+#' that holds a template turns its CI red. The digits are *assigned*, not
+#' derived from this table. They are hardcoded in [study_dir()]'s
 #' layout map here and in the template directory names there, and
-#' \code{estimates} is \code{90} though it is the table's fifth folder, because
+#' `estimates` is `90` though it is the table's fifth folder, because
 #' it holds saved output rather than jobs. Reordering rows, or folders, changes
 #' nothing downstream.
 #'
-#' \emph{Adding or renaming} a folder is not free on the study side.
-#' \code{\link{study_dir}} knows only the folders in its own layout map, and a
-#' test compares that map's names with \code{unique(hvti_taxonomy()$folder)},
+#' *Adding or renaming* a folder is not free on the study side.
+#' [study_dir()] knows only the folders in its own layout map, and a
+#' test compares that map's names with `unique(hvti_taxonomy()$folder)`,
 #' so a folder added here and not there turns this package's CI red rather
-#' than becoming one \code{study_dir()} refuses as unknown. The test compares
+#' than becoming one `study_dir()` refuses as unknown. The test compares
 #' names only; the new folder's digits still have to be assigned in the map.
 #'
-#' Templates carry no ordinal. They were once named \code{<NN>.<MM>-<prefix>},
-#' with \code{NN} taken from this table's folder order through a hardcoded map
-#' in \code{hvtiRtemplates}; the ordinal and that map were both retired on
-#' 2026-09-03 (\code{hvtiRtemplates:dev/specs/2026-09-03-template-identity-design.md}).
-#' A template is now \code{<prefix>[-<qualifier>].qmd}, and the catalog that
-#' lists them is \code{hvtiRtemplates}' own \code{inst/extdata/templates.json}.
+#' Templates carry no ordinal. They were once named `<NN>.<MM>-<prefix>`,
+#' with `NN` taken from this table's folder order through a hardcoded map
+#' in `hvtiRtemplates`; the ordinal and that map were both retired on
+#' 2026-09-03 (`hvtiRtemplates:dev/specs/2026-09-03-template-identity-design.md`).
+#' A template is now `<prefix>[-<qualifier>].qmd`, and the catalog that
+#' lists them is `hvtiRtemplates`' own `inst/extdata/templates.json`.
 #'
-#' History, kept because it is why the digits are assigned: moving \code{hs}
-#' out of \code{analyses} in 1.1.6 shifted \code{bh} from sixth to fifth while
-#' its shipped filename stayed \code{04.06}, and nothing caught it. \code{bh}
-#' was renumbered \code{04.05}. Identity derived from a row position breaks when
-#' an upstream row moves. A job named \code{04.06-bh}, from \code{hvtiRtemplates}
-#' before its 1.1.0, is the same template as \code{04.05-bh}.
+#' History, kept because it is why the digits are assigned: moving `hs`
+#' out of `analyses` in 1.1.6 shifted `bh` from sixth to fifth while
+#' its shipped filename stayed `04.06`, and nothing caught it. `bh`
+#' was renumbered `04.05`. Identity derived from a row position breaks when
+#' an upstream row moves. A job named `04.06-bh`, from `hvtiRtemplates`
+#' before its 1.1.0, is the same template as `04.05-bh`.
 #'
-#' \strong{\code{hs} is filed under \code{graphs}, which reads oddly for a job
-#' named "setup".} It was moved there from \code{analyses} on 2026-08-29 on the
-#' corpus rather than on the name: all ten \code{tp.hs.*} templates in the SAS
-#' library and ten of the eleven R \code{hs} jobs in \code{/studies} sit in
-#' \code{graphs/}. It computes patient-level predictions that the plotting jobs
-#' beside it consume, in the \code{setup} / \code{uses_setup} pairing the
+#' **`hs` is filed under `graphs`, which reads oddly for a job
+#' named "setup".** It was moved there from `analyses` on 2026-08-29 on the
+#' corpus rather than on the name: all ten `tp.hs.*` templates in the SAS
+#' library and ten of the eleven R `hs` jobs in `/studies` sit in
+#' `graphs/`. It computes patient-level predictions that the plotting jobs
+#' beside it consume, in the `setup` / `uses_setup` pairing the
 #' corpus uses throughout. See
-#' \code{hvtiRtemplates:dev/specs/2026-08-29-hs-template-design.md}.
+#' `hvtiRtemplates:dev/specs/2026-08-29-hs-template-design.md`.
 #'
-#' \strong{\code{si} and \code{mi} are two prefixes, not one, and that is the
-#' point.} 223 studies call single mean imputation, 326 call multiple
+#' **`si` and `mi` are two prefixes, not one, and that is the
+#' point.** 223 studies call single mean imputation, 326 call multiple
 #' imputation, and 18 call both. They are different methods with different
 #' inferential properties, and 18 studies running both means one prefix could
-#' not label them unambiguously. \code{mi} is safe here only because it is
-#' \emph{paired}: standing alone it reads as multiple imputation to a
+#' not label them unambiguously. `mi` is safe here only because it is
+#' *paired*: standing alone it reads as multiple imputation to a
 #' statistician, so using it for the single-imputation job would misname
 #' exactly the thing the split exists to distinguish.
 #'
-#' \strong{Neither replaces \code{vars}, whose description still says
-#' "imputations" on purpose.} \code{vars} is the job that enhances a dataset
+#' **Neither replaces `vars`, whose description still says
+#' "imputations" on purpose.** `vars` is the job that enhances a dataset
 #' with temporary variables, imputations and propensity terms together --
-#' porting \code{vars.sas} found mean imputation across 394 variables inside
-#' it. \code{si} and \code{mi} name jobs whose \emph{whole purpose} is
-#' imputation. A job that imputes as one step among several is \code{vars};
-#' a job that exists to impute is \code{si} or \code{mi}.
+#' porting `vars.sas` found mean imputation across 394 variables inside
+#' it. `si` and `mi` name jobs whose *whole purpose* is
+#' imputation. A job that imputes as one step among several is `vars`;
+#' a job that exists to impute is `si` or `mi`.
 #'
-#' \code{folder} names two different things. For most rows it is the analysis
-#' type's home folder, matched to a job prefix. One row, \code{estimates}, is an
+#' `folder` names two different things. For most rows it is the analysis
+#' type's home folder, matched to a job prefix. One row, `estimates`, is an
 #' artifact kind rather than a job type: it holds serialized fits and cached
 #' results written by one job and read by a later one in the same set, and no
-#' analysis produces it directly. That row's \code{prefix} is \code{NA}, not a
+#' analysis produces it directly. That row's `prefix` is `NA`, not a
 #' string, because there is no prefix to assign it.
 #'
-#' \strong{The random forest family splits on the OUTCOME axis, not the
-#' package axis.} \code{rfs}, \code{rfc} and \code{rfr} name the survival,
+#' **The random forest family splits on the OUTCOME axis, not the
+#' package axis.** `rfs`, `rfc` and `rfr` name the survival,
 #' classification and regression outcomes, which is the split
-#' \code{bh}/\code{bl}/\code{bc}/\code{bn}/\code{bq}/\code{br} and
-#' \code{pm}/\code{rm}/\code{cm} already use. It is a rename of a distinction
+#' `bh`/`bl`/`bc`/`bn`/`bq`/`br` and
+#' `pm`/`rm`/`cm` already use. It is a rename of a distinction
 #' the corpus draws already, not a new one imposed: the jobs carry the outcome
-#' in field two today, as \code{tp.rfsrc.survival.R} and its siblings.
+#' in field two today, as `tp.rfsrc.survival.R` and its siblings.
 #'
-#' \strong{\code{rf} and \code{rfsrc} are retained as legacy umbrella rows.}
+#' **`rf` and `rfsrc` are retained as legacy umbrella rows.**
 #' They named the same set as each other, on the package axis, and neither is
 #' templated. They stay in the table so a census can still resolve the corpus
-#' that uses them, which is not small: \code{rfsrc} measures 131 studies and
-#' 2,295 jobs, more than \code{rf} (47), \code{rfs} (25) and \code{rfc} (19)
+#' that uses them, which is not small: `rfsrc` measures 131 studies and
+#' 2,295 jobs, more than `rf` (47), `rfs` (25) and `rfc` (19)
 #' combined, twice over. Deleting the rows was rejected on two grounds.
-#' \code{\link{hvti_prefix_folds}} cannot express the demotion, because a fold
-#' is one-to-one and \code{rfsrc} spans all three outcomes, so there is no
+#' [hvti_prefix_folds()] cannot express the demotion, because a fold
+#' is one-to-one and `rfsrc` spans all three outcomes, so there is no
 #' single prefix to fold it into. And an absent prefix reads to the census as
 #' one nobody documented, which is the opposite of what a superseded name
-#' means. Demoted here means \emph{never templated}, and since 2026-09-18 it is
-#' machine-readable as well as worded: the \code{umbrella} column is \code{TRUE}
+#' means. Demoted here means *never templated*, and since 2026-09-18 it is
+#' machine-readable as well as worded: the `umbrella` column is `TRUE`
 #' on exactly these two rows, so a consumer can exempt them without
 #' hard-coding a list. The two rows keep
 #' distinct descriptions so a census hit on a legacy job can still say which
 #' spelling it used.
 #'
-#' \strong{The demotion is recorded here, and only here.} Until 2026-09-19
-#' \code{hvtiR}'s job catalog also marked \code{rf} and \code{rfsrc} with a
-#' \code{retire} disposition, which coincided with this demotion by decision.
-#' That catalog has moved to \code{hvtiRtemplates} as its template catalog,
-#' read by \code{hvtiRtemplates::template_catalog()}, where every row is a
-#' template owed in that package. It has no \code{retire} disposition, and
-#' \code{rf} and \code{rfsrc} have no row at all; its guard that every
+#' **The demotion is recorded here, and only here.** Until 2026-09-19
+#' `hvtiR`'s job catalog also marked `rf` and `rfsrc` with a
+#' `retire` disposition, which coincided with this demotion by decision.
+#' That catalog has moved to `hvtiRtemplates` as its template catalog,
+#' read by `hvtiRtemplates::template_catalog()`, where every row is a
+#' template owed in that package. It has no `retire` disposition, and
+#' `rf` and `rfsrc` have no row at all; its guard that every
 #' taxonomy prefix has a catalog row exempts them by reading the
-#' \code{umbrella} column above. \code{hvtiR::jobs()} was removed in
-#' \code{hvtiR} 1.2.0.
+#' `umbrella` column above. `hvtiR::jobs()` was removed in
+#' `hvtiR` 1.2.0.
 #'
-#' \strong{\code{sid} and \code{vt} are filed under \code{analyses} with the
-#' rest of the family}, and compose on the \code{rf*} jobs rather than
-#' replacing them. The \code{rfc}/\code{rfs} folder contradiction is
-#' deliberately NOT settled here: the taxonomy says \code{analyses} while the
-#' SAS library files them under \code{graphs} and \code{documents}, and the
+#' **`sid` and `vt` are filed under `analyses` with the
+#' rest of the family**, and compose on the `rf*` jobs rather than
+#' replacing them. The `rfc`/`rfs` folder contradiction is
+#' deliberately NOT settled here: the taxonomy says `analyses` while the
+#' SAS library files them under `graphs` and `documents`, and the
 #' 2026-08-27 census found the same contradiction corpus-wide for
-#' \code{ac}/\code{hz}. It is a systemic open question with its own spec owed,
+#' `ac`/`hz`. It is a systemic open question with its own spec owed,
 #' and the ML batch is not blocked waiting on it. See
-#' \code{hvtiRtemplates:dev/specs/2026-09-17-ml-family-roadmap-design.md}.
+#' `hvtiRtemplates:dev/specs/2026-09-17-ml-family-roadmap-design.md`.
 #'
-#' @return A data frame with columns \code{prefix}, \code{name}, \code{folder},
-#'   \code{description} and \code{umbrella}. \code{prefix} is \code{NA} for the
+#' @return A data frame with columns `prefix`, `name`, `folder`,
+#'   `description` and `umbrella`. `prefix` is `NA` for the
 #'   one row that names an artifact kind rather than an analysis type.
-#'   \code{umbrella} is logical: \code{TRUE} for the legacy umbrella prefixes
-#'   \code{rf} and \code{rfsrc}, for which no template is owed; \code{FALSE} for
-#'   every other prefix; \code{NA} for the artifact row.
+#'   `umbrella` is logical: `TRUE` for the legacy umbrella prefixes
+#'   `rf` and `rfsrc`, for which no template is owed; `FALSE` for
+#'   every other prefix; `NA` for the artifact row.
 #' @export
 #' @examples
 #' head(hvti_taxonomy())
@@ -197,7 +197,7 @@ hvti_taxonomy <- function() {
 #' Second fields that are not analysis prefixes
 #'
 #' Some file names lead with a utility name rather than an analysis prefix —
-#' \code{plots}, \code{PPTs}. They are listed here so the test suite can tell "not a
+#' `plots`, `PPTs`. They are listed here so the test suite can tell "not a
 #' prefix" apart from "a prefix nobody documented". Without this distinction
 #' the taxonomy either fills with non-prefixes or stops catching real
 #' omissions.
@@ -214,19 +214,19 @@ hvti_non_prefixes <- function() {
 #'
 #' @description
 #' A legacy prefix that names the same job as a prefix in
-#' \code{\link{hvti_taxonomy}}, so a census counts its files under that
-#' prefix. \code{pm} folds into \code{lm}: a review of the job catalog on
-#' 2026-09-11 found that the propensity work filed as \code{pm} belongs with
-#' the logistic models in \code{lm}.
+#' [hvti_taxonomy()], so a census counts its files under that
+#' prefix. `pm` folds into `lm`: a review of the job catalog on
+#' 2026-09-11 found that the propensity work filed as `pm` belongs with
+#' the logistic models in `lm`.
 #'
 #' @details
 #' The map is stored, never derived. A fold is a judgement about what a legacy
 #' name means, and a rule that inferred it from spelling would also fold names
-#' that merely look alike. Every name is absent from \code{hvti_taxonomy()}
+#' that merely look alike. Every name is absent from `hvti_taxonomy()`
 #' and every value is present in it; the tests pin both.
 #'
-#' @return A named character vector, \code{c(legacy = prefix)}.
-#' @seealso \code{\link{job_files}}, which applies it.
+#' @return A named character vector, `c(legacy = prefix)`.
+#' @seealso [job_files()], which applies it.
 #' @export
 #' @examples
 #' hvti_prefix_folds()

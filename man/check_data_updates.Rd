@@ -7,26 +7,26 @@
 check_data_updates(cfg = study_config(), dataset = NULL)
 }
 \arguments{
-\item{cfg}{List. A study manifest from \code{\link{study_config}}.}
+\item{cfg}{List. A study manifest from \code{\link[=study_config]{study_config()}}.}
 
 \item{dataset}{Character(1) or \code{NULL}. Logical dataset name. When
 omitted, check every release-aware dataset in the study.}
 }
 \value{
 An object of class \code{"data_update_report"}: a data frame with
-  columns \code{dataset}, \code{scope}, \code{pinned_release_id},
-  \code{candidate_release_id}, \code{sequence}, \code{file}, \code{status},
-  \code{is_latest}, and \code{detail}. Status is one of \code{"CURRENT"},
-  \code{"UPDATE AVAILABLE"}, \code{"UPDATE STATUS UNKNOWN"},
-  \code{"WITHDRAWN"}, or \code{"FAIL"}.
+columns \code{dataset}, \code{scope}, \code{pinned_release_id},
+\code{candidate_release_id}, \code{sequence}, \code{file}, \code{status},
+\code{is_latest}, and \code{detail}. Status is one of \code{"CURRENT"},
+\code{"UPDATE AVAILABLE"}, \code{"UPDATE STATUS UNKNOWN"},
+\code{"WITHDRAWN"}, or \code{"FAIL"}.
 }
 \description{
 \strong{Deprecated.} Catalog releases are retired; use
-\code{\link{study_status}} or \code{\link{verify_manifest}}.
+\code{\link[=study_status]{study_status()}} or \code{\link[=verify_manifest]{verify_manifest()}}.
 
 Compares each release-aware dataset contract with its producer-owned
 catalog. The check verifies the pinned release and every later published
-candidate without changing \code{_study.yml}, \code{manifest.yaml}, or any
+candidate without changing \verb{_study.yml}, \code{manifest.yaml}, or any
 cache file. Legacy dataset contracts have no update rows.
 }
 \examples{
@@ -47,6 +47,6 @@ unlink(root, recursive = TRUE)
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link{review_data_update}},
-  \code{\link{adopt_data_update}}, \code{\link{read_built}}
+\code{\link[=review_data_update]{review_data_update()}},
+\code{\link[=adopt_data_update]{adopt_data_update()}}, \code{\link[=read_built]{read_built()}}
 }

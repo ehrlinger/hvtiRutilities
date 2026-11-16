@@ -24,7 +24,7 @@ variable holding a quoted call.}
 
 \item{dir}{Character(1). An existing directory. Defaults to the estimates
 folder of the study that contains the working directory, found by its
-\code{_study.yml}; outside a study the function stops and writes nothing.}
+\verb{_study.yml}; outside a study the function stops and writes nothing.}
 
 \item{refit}{Logical(1). \code{TRUE} recomputes and overwrites the file only
 when it is stale or unkeyed; a valid cache is still loaded, not
@@ -37,7 +37,7 @@ Details.}
 }
 \value{
 The result of \code{code}, computed or loaded, with its key attached
-  as attribute \code{hvtiRutilities_cache_key}.
+as attribute \code{hvtiRutilities_cache_key}.
 }
 \description{
 Runs an expensive computation (a random forest, a varPro fit, an
@@ -51,7 +51,7 @@ lists what changed. It never returns a stale result.
 \details{
 \code{code} is not evaluated on a cache hit. It can be written inline, as a
 single call or a \code{\{\}} block of several steps, or passed as a
-variable holding a \code{\link[base]{quote}}d call built beforehand. Both
+variable holding a call built beforehand with \code{\link[base:quote]{base::quote()}}. Both
 forms give the same key for the same computation. Passing an object that has
 already been computed is an error, because the cache could never skip it.
 
@@ -73,7 +73,7 @@ code still counts as an input. Values read indirectly (inside the body of a
 function it calls, or through \code{get()}) are not seen; pass such values
 into the code as arguments. The exception is a function defined in the
 global environment
-(as in a shared \code{_common.R}): its own body is part of the key, so
+(as in a shared \verb{_common.R}): its own body is part of the key, so
 editing it invalidates a cache that calls it, even though values it in turn
 reads indirectly are still not seen. This reaches only one level deep: a
 global helper is part of the key only through its own body, not through the
@@ -121,7 +121,7 @@ because there would be nothing to cache.
 When \code{seed} is given, \code{cache_fit()} calls \code{set.seed(seed)}
 before the code runs and again after it, even when it fails, and calls it
 once when the result is loaded instead. If the code changes the generator
-with \code{\link{RNGkind}}, the kinds in use when \code{cache_fit()} was
+with \code{\link[=RNGkind]{RNGkind()}}, the kinds in use when \code{cache_fit()} was
 called are put back before that second call. A computed and a loaded result
 therefore leave the global random number stream in the same state, the one
 \code{set.seed(seed)} sets, so code after \code{cache_fit()} draws the
@@ -141,8 +141,8 @@ with \code{refit = TRUE}.
 The result is written to a temporary file and renamed into place, so an
 interrupted run never leaves a partial file. When \code{dir} lies inside a
 study, a provenance sidecar carrying the key and the completed cache file's
-hash is published with \code{\link{capture_provenance}} and
-\code{\link{publish_provenance}}. The cache records an explicit empty data
+hash is published with \code{\link[=capture_provenance]{capture_provenance()}} and
+\code{\link[=publish_provenance]{publish_provenance()}}. The cache records an explicit empty data
 list rather than inferring that the currently registered dataset was an
 input to the computation.
 }
@@ -156,6 +156,6 @@ identical(first, again)
 unlink(dir, recursive = TRUE)
 }
 \seealso{
-\code{\link{capture_provenance}},
-  \code{\link{publish_provenance}}, \code{\link{study_dir}}
+\code{\link[=capture_provenance]{capture_provenance()}},
+\code{\link[=publish_provenance]{publish_provenance()}}, \code{\link[=study_dir]{study_dir()}}
 }

@@ -15,15 +15,15 @@ registered file. Use \code{FALSE} when only study identity is needed.}
 }
 \value{
 The manifest as a list, with \code{root} and \code{file} attached.
-  Additive identity and named-dataset fields are retained.
+Additive identity and named-dataset fields are retained.
 }
 \description{
-Walks up from \code{start} until a \code{_study.yml} is found, parses it,
+Walks up from \code{start} until a \verb{_study.yml} is found, parses it,
 validates the requested identity or data contract, and returns the result
 with the study root attached.
 
 A study without a manifest must not render, so an absent
-\code{_study.yml} is an error rather than a set of defaults. The directories
+\verb{_study.yml} is an error rather than a set of defaults. The directories
 walked are named in the error, because the usual cause is starting from
 outside the study tree.
 
@@ -43,5 +43,5 @@ cfg$study
 unlink(root, recursive = TRUE)
 }
 \seealso{
-\code{\link{study_root}}, \code{\link{record_provenance}}
+\code{\link[=study_root]{study_root()}}, \code{\link[=record_provenance]{record_provenance()}}
 }

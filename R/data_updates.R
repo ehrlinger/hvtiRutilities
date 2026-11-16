@@ -314,27 +314,27 @@
 #' Check a study for published dataset updates
 #'
 #' @description
-#' \strong{Deprecated.} Catalog releases are retired; use
-#' \code{\link{study_status}} or \code{\link{verify_manifest}}.
+#' **Deprecated.** Catalog releases are retired; use
+#' [study_status()] or [verify_manifest()].
 #'
 #' Compares each release-aware dataset contract with its producer-owned
 #' catalog. The check verifies the pinned release and every later published
-#' candidate without changing \code{_study.yml}, \code{manifest.yaml}, or any
+#' candidate without changing `_study.yml`, `manifest.yaml`, or any
 #' cache file. Legacy dataset contracts have no update rows.
 #'
-#' @param cfg List. A study manifest from \code{\link{study_config}}.
-#' @param dataset Character(1) or \code{NULL}. Logical dataset name. When
+#' @param cfg List. A study manifest from [study_config()].
+#' @param dataset Character(1) or `NULL`. Logical dataset name. When
 #'   omitted, check every release-aware dataset in the study.
 #'
-#' @return An object of class \code{"data_update_report"}: a data frame with
-#'   columns \code{dataset}, \code{scope}, \code{pinned_release_id},
-#'   \code{candidate_release_id}, \code{sequence}, \code{file}, \code{status},
-#'   \code{is_latest}, and \code{detail}. Status is one of \code{"CURRENT"},
-#'   \code{"UPDATE AVAILABLE"}, \code{"UPDATE STATUS UNKNOWN"},
-#'   \code{"WITHDRAWN"}, or \code{"FAIL"}.
+#' @return An object of class `"data_update_report"`: a data frame with
+#'   columns `dataset`, `scope`, `pinned_release_id`,
+#'   `candidate_release_id`, `sequence`, `file`, `status`,
+#'   `is_latest`, and `detail`. Status is one of `"CURRENT"`,
+#'   `"UPDATE AVAILABLE"`, `"UPDATE STATUS UNKNOWN"`,
+#'   `"WITHDRAWN"`, or `"FAIL"`.
 #'
-#' @seealso \code{\link{review_data_update}},
-#'   \code{\link{adopt_data_update}}, \code{\link{read_built}}
+#' @seealso [review_data_update()],
+#'   [adopt_data_update()], [read_built()]
 #'
 #' @export
 #'
@@ -471,29 +471,29 @@ check_data_updates <- function(cfg = study_config(), dataset = NULL) {
 #' Review one published dataset release
 #'
 #' @description
-#' \strong{Deprecated.} Catalog releases are retired; use
-#' \code{\link{review_built}}.
+#' **Deprecated.** Catalog releases are retired; use
+#' [review_built()].
 #'
 #' Verifies the pinned release and one exact, newer candidate, then compares
 #' their structure. Review reads the source files directly; it does not write
 #' caches or change either study manifest. It describes data drift, but it
 #' does not certify that a candidate is analytically or clinically correct.
 #'
-#' @param cfg List. A study manifest from \code{\link{study_config}}.
+#' @param cfg List. A study manifest from [study_config()].
 #' @param dataset Character(1). Logical dataset name. Defaults to
-#'   \code{"study"}. \code{"built"} is a second name for \code{"study"}.
+#'   `"study"`. `"built"` is a second name for `"study"`.
 #' @param release_id Character(1). Exact candidate release ID. The value
-#'   \code{"latest"} is not accepted as an alias.
+#'   `"latest"` is not accepted as an alias.
 #'
-#' @return An object of class \code{"data_update_review"} with
+#' @return An object of class `"data_update_review"` with
 #'   \describe{
 #'     \item{dataset}{The logical study dataset name.}
 #'     \item{pinned,candidate}{The catalog records for both releases.}
-#'     \item{comparison}{A \code{\link{compare_datasets}} result.}
+#'     \item{comparison}{A [compare_datasets()] result.}
 #'   }
 #'
-#' @seealso \code{\link{check_data_updates}},
-#'   \code{\link{adopt_data_update}}
+#' @seealso [check_data_updates()],
+#'   [adopt_data_update()]
 #'
 #' @export
 #'
@@ -621,27 +621,27 @@ print.data_update_review <- function(x, ...) {
 #' Adopt one published dataset release
 #'
 #' @description
-#' \strong{Deprecated.} Catalog releases are retired; use
-#' \code{\link{update_manifest}}.
+#' **Deprecated.** Catalog releases are retired; use
+#' [update_manifest()].
 #'
-#' Repeats the candidate review and replaces \code{_study.yml} and
-#' \code{manifest.yaml} as one recoverable pair. The old dated release and its
+#' Repeats the candidate review and replaces `_study.yml` and
+#' `manifest.yaml` as one recoverable pair. The old dated release and its
 #' cache files remain on disk. Adoption does not make a Git commit.
 #'
 #' The candidate must be named by its exact release ID. The value
-#' \code{"latest"} is never accepted, because the reviewed release and the
+#' `"latest"` is never accepted, because the reviewed release and the
 #' adopted release must be the same object.
 #'
-#' @param cfg List. A study manifest from \code{\link{study_config}}.
+#' @param cfg List. A study manifest from [study_config()].
 #' @param dataset Character(1). Logical dataset name. Defaults to
-#'   \code{"study"}. \code{"built"} is a second name for \code{"study"}.
+#'   `"study"`. `"built"` is a second name for `"study"`.
 #' @param release_id Character(1). Exact, newer, published candidate release
 #'   ID.
 #'
-#' @return The updated \code{\link{study_status}} object, returned visibly.
+#' @return The updated [study_status()] object, returned visibly.
 #'
-#' @seealso \code{\link{check_data_updates}},
-#'   \code{\link{review_data_update}}, \code{\link{register_data}}
+#' @seealso [check_data_updates()],
+#'   [review_data_update()], [register_data()]
 #'
 #' @export
 #'

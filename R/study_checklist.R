@@ -5,20 +5,20 @@
 #' Render a study audit as a markdown checklist
 #'
 #' @description
-#' Turns a \code{\link{study_status}} result into markdown: one checkbox per
-#' check, ticked where the check passed (\code{"OK"}) or the study is closed
-#' (\code{"CLOSED"}) and left open otherwise, with the detail alongside. File
+#' Turns a [study_status()] result into markdown: one checkbox per
+#' check, ticked where the check passed (`"OK"`) or the study is closed
+#' (`"CLOSED"`) and left open otherwise, with the detail alongside. File
 #' counts follow.
 #'
-#' @param status An object of class \code{"study_status"}, from
-#'   \code{\link{study_status}} or \code{\link{study_setup}}.
-#' @param path Character(1) or \code{NULL}. Where to write the markdown. When
-#'   \code{NULL} (default) the lines are returned instead of written.
+#' @param status An object of class `"study_status"`, from
+#'   [study_status()] or [study_setup()].
+#' @param path Character(1) or `NULL`. Where to write the markdown. When
+#'   `NULL` (default) the lines are returned instead of written.
 #'
-#' @return When \code{path} is \code{NULL}, a character vector of markdown
-#'   lines. Otherwise \code{path}, invisibly, after writing.
+#' @return When `path` is `NULL`, a character vector of markdown
+#'   lines. Otherwise `path`, invisibly, after writing.
 #'
-#' @seealso \code{\link{study_status}}, \code{\link{study_setup}}
+#' @seealso [study_status()], [study_setup()]
 #'
 #' @export
 #'

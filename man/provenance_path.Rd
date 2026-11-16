@@ -20,6 +20,6 @@ path with its extension replaced by \code{.provenance.json}.
 provenance_path("_output/death-hz-ac.html")
 }
 \seealso{
-\code{\link{publish_provenance}},
-  \code{\link{record_provenance}}
+\code{\link[=publish_provenance]{publish_provenance()}},
+\code{\link[=record_provenance]{record_provenance()}}
 }

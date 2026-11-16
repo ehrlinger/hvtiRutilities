@@ -7,7 +7,7 @@
 review_data_update(cfg = study_config(), dataset = "study", release_id)
 }
 \arguments{
-\item{cfg}{List. A study manifest from \code{\link{study_config}}.}
+\item{cfg}{List. A study manifest from \code{\link[=study_config]{study_config()}}.}
 
 \item{dataset}{Character(1). Logical dataset name. Defaults to
 \code{"study"}. \code{"built"} is a second name for \code{"study"}.}
@@ -17,15 +17,15 @@ review_data_update(cfg = study_config(), dataset = "study", release_id)
 }
 \value{
 An object of class \code{"data_update_review"} with
-  \describe{
-    \item{dataset}{The logical study dataset name.}
-    \item{pinned,candidate}{The catalog records for both releases.}
-    \item{comparison}{A \code{\link{compare_datasets}} result.}
-  }
+\describe{
+\item{dataset}{The logical study dataset name.}
+\item{pinned,candidate}{The catalog records for both releases.}
+\item{comparison}{A \code{\link[=compare_datasets]{compare_datasets()}} result.}
+}
 }
 \description{
 \strong{Deprecated.} Catalog releases are retired; use
-\code{\link{review_built}}.
+\code{\link[=review_built]{review_built()}}.
 
 Verifies the pinned release and one exact, newer candidate, then compares
 their structure. Review reads the source files directly; it does not write
@@ -49,6 +49,6 @@ unlink(root, recursive = TRUE)
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link{check_data_updates}},
-  \code{\link{adopt_data_update}}
+\code{\link[=check_data_updates]{check_data_updates()}},
+\code{\link[=adopt_data_update]{adopt_data_update()}}
 }

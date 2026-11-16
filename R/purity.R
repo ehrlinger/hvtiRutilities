@@ -18,7 +18,7 @@
 #' Report top-level executable code in an R directory
 #'
 #' @description
-#' Parses every \code{.R} file in \code{dir} and reports any top-level
+#' Parses every `.R` file in `dir` and reports any top-level
 #' expression that is not an assignment. Function definitions and constants
 #' pass; calls do not.
 #'

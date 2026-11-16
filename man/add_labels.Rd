@@ -8,7 +8,7 @@ add_labels(label_map_df, new_labels)
 }
 \arguments{
 \item{label_map_df}{A data frame with \code{key} and \code{label} columns
-(as returned by \code{\link{label_map}}), \strong{or} any data frame
+(as returned by \code{\link[=label_map]{label_map()}}), \strong{or} any data frame
 to which labels should be applied directly.}
 
 \item{new_labels}{A named character vector where names are variable names
@@ -16,8 +16,8 @@ and values are descriptive labels.}
 }
 \value{
 When given a label map: the updated label map data frame.
-  When given a data frame: the data frame with labels applied via
-  \code{labelled::var_label()}.
+When given a data frame: the data frame with labels applied via
+\code{labelled::var_label()}.
 }
 \description{
 Registers new labels in an existing label map, or applies labels directly
@@ -52,6 +52,6 @@ dta <- add_labels(dta, c(age_group = "Age Group (<40, 40-60, >60)"))
 labelled::var_label(dta$age_group)
 }
 \seealso{
-\code{\link{label_map}} to extract a label map from data,
-  \code{\link{apply_label_overrides}} for bulk overrides from YAML.
+\code{\link[=label_map]{label_map()}} to extract a label map from data,
+\code{\link[=apply_label_overrides]{apply_label_overrides()}} for bulk overrides from YAML.
 }

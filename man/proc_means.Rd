@@ -43,23 +43,23 @@ this fails loudly rather than encode a guess.}
 }
 \value{
 A data frame with one row per analysis variable per class
-  combination. Columns are the \code{class} variables (when supplied), then
-  \code{variable}, \code{label}, then one column per requested statistic in
-  the order given by \code{stats}. Count statistics (\code{n},
-  \code{nmiss}) are integer; all others are numeric.
+combination. Columns are the \code{class} variables (when supplied), then
+\code{variable}, \code{label}, then one column per requested statistic in
+the order given by \code{stats}. Count statistics (\code{n},
+\code{nmiss}) are integer; all others are numeric.
 }
 \description{
-Produces the table SAS \code{PROC MEANS} prints: one row per analysis
+Produces the table SAS \verb{PROC MEANS} prints: one row per analysis
 variable, one column per requested statistic, in the order requested.
 
-The default statistics are \strong{not} SAS's. \code{PROC MEANS} with no
+The default statistics are \strong{not} SAS's. \verb{PROC MEANS} with no
 statistic list prints N, mean, standard deviation, minimum and maximum, and
 no percentiles. The HVTI group reports the 15th and 85th percentiles
 alongside the median in its descriptive summaries, rather than the
 quartiles, so the default here adds \code{p15}, \code{median} and
 \code{p85}. A SAS parity comparison must therefore name the same
 statistics on both sides: pass the SAS job's list to \code{stats}, or add
-\code{P15 MEDIAN P85} to the SAS \code{PROC MEANS} statement.
+\verb{P15 MEDIAN P85} to the SAS \verb{PROC MEANS} statement.
 }
 \details{
 Quantiles use \code{stats::quantile(type = 2)}, which is the R equivalent of
@@ -74,21 +74,21 @@ With \code{vars = NULL} all numeric columns are analysed, matching SAS's
 behaviour when the \code{VAR} statement is omitted. Logical columns are not
 \code{is.numeric()} in R and so are excluded from that default set; naming
 one in \code{vars} coerces it to 0/1, making \code{mean} a proportion as
-\code{PROC MEANS} would give.
+\verb{PROC MEANS} would give.
 
 Rows are ordered by analysis variable first, then by class level. A factor
 class variable orders by its declared level order rather than
 alphabetically, matching SAS's default \code{ORDER=INTERNAL}; this keeps
 ordered clinical scales such as NYHA class in their clinical sequence.
 
-Weights do not apply uniformly, and this follows \code{PROC MEANS} rather
+Weights do not apply uniformly, and this follows \verb{PROC MEANS} rather
 than being a simplification. Weighted: \code{mean}, \code{std}, \code{var},
 \code{cv}, \code{stderr}, \code{sum}, \code{uss}, \code{css},
 \code{skewness}, \code{kurtosis}, \code{sumwgt}. Unweighted: \code{n},
 \code{nmiss}, \code{nobs}, \code{min}, \code{max}, \code{range},
 \code{mode}, and every quantile -- \code{median}, \code{q1}, \code{q3},
-\code{pNN} and \code{qrange}. \code{PROC MEANS} does not compute weighted
-quantiles at all; that is \code{PROC UNIVARIATE}. So
+\code{pNN} and \code{qrange}. \verb{PROC MEANS} does not compute weighted
+quantiles at all; that is \verb{PROC UNIVARIATE}. So
 \code{proc_means(d, stats = "median", weights = "wt")} returns the
 \emph{unweighted} median.
 
@@ -100,7 +100,7 @@ the square root of the count. \code{skewness} and \code{kurtosis} are
 the adjusted Fisher-Pearson forms SAS uses, not R's naive moment ratios, and
 are \code{NA} for a constant column rather than \code{NaN}.
 
-The \code{PROC UNIVARIATE} inference statistics (\code{NORMAL}, \code{PROBN},
+The \verb{PROC UNIVARIATE} inference statistics (\code{NORMAL}, \code{PROBN},
 \code{T}, \code{PROBT}, \code{MSIGN}, \code{PROBM}, \code{SIGNRANK},
 \code{PROBS}) are deliberately absent: they would make this a
 hypothesis-testing function rather than a summary one. \code{CLM}, the
@@ -125,5 +125,5 @@ proc_means(dta, vars = "age", stats = c("n", "sumwgt", "mean"),
            weights = "wt")
 }
 \seealso{
-\code{\link{proc_contents}} for variable metadata.
+\code{\link[=proc_contents]{proc_contents()}} for variable metadata.
 }

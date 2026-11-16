@@ -160,63 +160,63 @@
 #' Close or reopen a study
 #'
 #' @description
-#' \code{study_close()} records how a study ended: it takes a final
-#' checkpoint snapshot, tags it \code{closed-<outcome>-<n>} and records a
+#' `study_close()` records how a study ended: it takes a final
+#' checkpoint snapshot, tags it `closed-<outcome>-<n>` and records a
 #' closure in the outbox. It does not make the study read-only: the folder
 #' stays writable, and a checkpoint taken on a closed study is still recorded,
 #' with a warning. The closure tag is what fixes the code as it stood at
-#' closure. \code{study_reopen()} records a reopening and tags the current
-#' snapshot \code{reopened-<n>}; the next checkpoint snapshots as
+#' closure. `study_reopen()` records a reopening and tags the current
+#' snapshot `reopened-<n>`; the next checkpoint snapshots as
 #' usual. A study may be closed and reopened any number of times, and every
 #' cycle is kept.
 #'
 #' @details
 #' The outcomes follow the StudyTracker closure rules:
 #' \itemize{
-#'   \item \code{"published"} needs \code{publication} (\code{title},
-#'     \code{journal}, \code{accepted_on}, \code{published_on}, and at least
-#'     one of \code{doi} and \code{pmid}) and an earlier
-#'     \code{"manuscript_published"} checkpoint.
-#'   \item \code{"superseded"} needs \code{superseded_by}, the ST number of
+#'   \item `"published"` needs `publication` (`title`,
+#'     `journal`, `accepted_on`, `published_on`, and at least
+#'     one of `doi` and `pmid`) and an earlier
+#'     `"manuscript_published"` checkpoint.
+#'   \item `"superseded"` needs `superseded_by`, the ST number of
 #'     the study that replaced it.
-#'   \item \code{"not_published"} and \code{"abandoned"} need nothing further.
+#'   \item `"not_published"` and `"abandoned"` need nothing further.
 #' }
 #' These rules are checked before anything is written, so a close made
 #' offline fails at once rather than when the outbox is delivered.
 #'
-#' Whether the study is closed is read from the latest \code{closed-*} or
-#' \code{reopened-*} tag on the checkpoint history, counting tags pushed from
+#' Whether the study is closed is read from the latest `closed-*` or
+#' `reopened-*` tag on the checkpoint history, counting tags pushed from
 #' other copies of the study. Before deciding, both functions sync with the
 #' remote, delivering any pending checkpoints first. On an exploration set up
-#' with \code{derived_from}, nothing is delivered: the closure or reopening is
-#' committed and tagged locally and held until \code{\link{study_promote}}, and
+#' with `derived_from`, nothing is delivered: the closure or reopening is
+#' committed and tagged locally and held until [study_promote()], and
 #' the closure state is this copy's. When the remote cannot
 #' be reached, a message says that the closure state is from this copy's last
 #' fetch and may be out of date. When a closure or reopening tag in this copy
 #' is not on its history, which an interrupted delivery can leave, the state
 #' cannot be determined and both functions stop; run
-#' \code{\link{study_checkpoint_push}} while the remote is reachable.
+#' [study_checkpoint_push()] while the remote is reachable.
 #'
-#' \code{reason} is written to the snapshot, the tag and the outbox, so it
+#' `reason` is written to the snapshot, the tag and the outbox, so it
 #' leaves the study folder. A message says so whenever it is given: it must
 #' not contain patient information.
 #'
-#' @param outcome Character(1). One of \code{"published"},
-#'   \code{"not_published"}, \code{"superseded"} or \code{"abandoned"}.
-#' @param reason Optional character(1). For \code{study_reopen()}, required.
+#' @param outcome Character(1). One of `"published"`,
+#'   `"not_published"`, `"superseded"` or `"abandoned"`.
+#' @param reason Optional character(1). For `study_reopen()`, required.
 #' @param publication Named list of publication details; required for
-#'   \code{"published"}.
+#'   `"published"`.
 #' @param superseded_by One whole positive number, the ST number, given as an
-#'   integer, a double or a string; required for \code{"superseded"}.
+#'   integer, a double or a string; required for `"superseded"`.
 #' @param closed_at,reopened_at Date of the event. Defaults to today.
 #' @param new_lead Optional character(1), the username of a new study lead.
 #' @param root Character. Study root. Defaults to the study that contains the working
-#'   directory, found by its \code{_study.yml}; outside a study the function
+#'   directory, found by its `_study.yml`; outside a study the function
 #'   stops and writes nothing.
 #'
-#' @return An object of class \code{"study_checkpoint"}, returned invisibly.
+#' @return An object of class `"study_checkpoint"`, returned invisibly.
 #'
-#' @seealso \code{\link{study_checkpoint}}, \code{\link{study_status}}
+#' @seealso [study_checkpoint()], [study_status()]
 #'
 #' @export
 #'

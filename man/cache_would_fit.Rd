@@ -24,7 +24,7 @@ variable holding a quoted call.}
 
 \item{dir}{Character(1). An existing directory. Defaults to the estimates
 folder of the study that contains the working directory, found by its
-\code{_study.yml}; outside a study the function stops and writes nothing.}
+\verb{_study.yml}; outside a study the function stops and writes nothing.}
 
 \item{refit}{Logical(1). \code{TRUE} recomputes and overwrites the file only
 when it is stale or unkeyed; a valid cache is still loaded, not
@@ -37,11 +37,11 @@ Details.}
 }
 \value{
 \code{TRUE} if \code{cache_fit()} with the same arguments would run
-  \code{code}, \code{FALSE} if it would load the cached result or stop on a
-  stale or unkeyed file without computing.
+\code{code}, \code{FALSE} if it would load the cached result or stop on a
+stale or unkeyed file without computing.
 }
 \description{
-Answers, without computing anything, whether \code{\link{cache_fit}} called
+Answers, without computing anything, whether \code{\link[=cache_fit]{cache_fit()}} called
 with the same arguments would run its computation. A job uses it to guard a
 resource, memory or cores, only when a fit will actually run, rather than
 refusing a session for a fit it would simply load from the cache.
@@ -55,19 +55,19 @@ decides what a stale or unkeyed file does. Write the call exactly as the
 \code{cache_would_fit("forest", rfsrc(f, data = d), seed = 1)} before
 \code{cache_fit("forest", rfsrc(f, data = d), seed = 1)}. \code{code} is
 captured as \code{cache_fit()} captures it, by substitution, and is never
-evaluated: inline code and a variable holding a \code{\link[base]{quote}}d
-call both work, and an already-computed object is refused as it is there.
-The same rule about wrappers applies; see \code{\link{cache_fit}}.
+evaluated: inline code and a variable holding a call quoted with
+\code{\link[base:quote]{base::quote()}} both work, and an already-computed object is refused as it is there.
+The same rule about wrappers applies; see \code{\link[=cache_fit]{cache_fit()}}.
 
 The answer comes from the same internal decision \code{cache_fit()} makes,
 not from a copy of it, so the two cannot drift apart:
 \itemize{
-  \item no file: \code{TRUE};
-  \item a file whose key matches: \code{FALSE}, whatever \code{refit} is,
-    because a valid cache is loaded even under \code{refit = TRUE};
-  \item a stale file (the code, an input, the seed or a package version
-    changed) or an unkeyed or unreadable file: \code{TRUE} with
-    \code{refit = TRUE}, and \code{FALSE} without it.
+\item no file: \code{TRUE};
+\item a file whose key matches: \code{FALSE}, whatever \code{refit} is,
+because a valid cache is loaded even under \code{refit = TRUE};
+\item a stale file (the code, an input, the seed or a package version
+changed) or an unkeyed or unreadable file: \code{TRUE} with
+\code{refit = TRUE}, and \code{FALSE} without it.
 }
 The last case is deliberate. Without \code{refit}, \code{cache_fit()} stops
 on a stale or unkeyed file before it computes anything, so nothing will run
@@ -95,5 +95,5 @@ cache_would_fit("sorted", sort(x), dir = dir, refit = TRUE)
 unlink(dir, recursive = TRUE)
 }
 \seealso{
-\code{\link{cache_fit}}
+\code{\link[=cache_fit]{cache_fit()}}
 }

@@ -2,21 +2,21 @@
 #' Write the canonical macro manifest
 #'
 #' @description
-#' Serialises a \code{sas_triage()} decision table to YAML, one entry per macro
+#' Serialises a `sas_triage()` decision table to YAML, one entry per macro
 #' name, recording its status and every file that defines it.
 #'
 #' @details
-#' The manifest deliberately contains \strong{no timestamp}. It describes a
+#' The manifest deliberately contains **no timestamp**. It describes a
 #' frozen 2019 corpus, and a generated-on field would defeat the byte-for-byte
 #' reproducibility that makes the manifest trustworthy as a reviewed artifact.
 #' Run metadata belongs in the report, not here. This diverges from
-#' \code{\link{update_manifest}}, whose \code{extract_date} is meaningful
+#' [update_manifest()], whose `extract_date` is meaningful
 #' because the datasets it tracks genuinely change over time.
 #'
-#' @param x A \code{data.frame} returned by \code{\link{sas_triage}}.
+#' @param x A `data.frame` returned by [sas_triage()].
 #' @param path Character. Destination `.yaml` path.
 #'
-#' @return Invisibly, \code{path}.
+#' @return Invisibly, `path`.
 #'
 #' @export write_macro_manifest
 #'
@@ -71,38 +71,38 @@ write_macro_manifest <- function(x, path) {
 #'
 #' @description
 #' Reports every macro name defined in more than one file, with its distinct
-#' body count and defining files. In SAS, \code{\%include}-ing two files that
+#' body count and defining files. In SAS, `%include`-ing two files that
 #' define the same macro means the second silently shadows the first, so this
 #' report is a prerequisite for building a trustworthy SAS harness.
 #'
 #' @details
-#' The report ends with a \strong{Provenance} section derived from the scanned
+#' The report ends with a **Provenance** section derived from the scanned
 #' corpus rather than from the clock: a fingerprint over every
 #' (macro, file, body hash) triple and the excluded-directory list, the file,
 #' definition and name counts, and the package version.
 #'
 #' A generated-on field would defeat the byte-for-byte reproducibility that
 #' makes the artifact reviewable, which is why neither this report nor
-#' \code{\link{write_macro_manifest}} carries one. An artifact with no identity
+#' [write_macro_manifest()] carries one. An artifact with no identity
 #' at all is the opposite failure: a committed report and a design's prose can
 #' disagree with nothing to say which is stale. An input-derived stamp avoids
 #' both, because it is a function of the inputs alone.
 #'
-#' Determinism is therefore over the corpus \emph{and} the package version, not
+#' Determinism is therefore over the corpus *and* the package version, not
 #' the corpus alone: re-running under a different version changes the version
 #' row, by design, because that is what attributes the artifact to a build. The
 #' fingerprint itself depends only on the corpus, so it stays comparable across
 #' versions.
 #'
-#' The fingerprint follows content, not location. \code{\link{sas_triage}}
+#' The fingerprint follows content, not location. [sas_triage()]
 #' records file basenames, so re-scanning the same corpus from a different
 #' mount point yields the same value and a share remount does not invalidate
 #' every committed report.
 #'
-#' @param x A \code{data.frame} returned by \code{\link{sas_triage}}.
-#' @param path Character. Destination \code{.md} path.
+#' @param x A `data.frame` returned by [sas_triage()].
+#' @param path Character. Destination `.md` path.
 #'
-#' @return Invisibly, \code{path}.
+#' @return Invisibly, `path`.
 #'
 #' @export write_collision_report
 #'

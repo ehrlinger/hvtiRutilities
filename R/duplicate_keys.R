@@ -1,57 +1,57 @@
 #' Find rows that repeat a key, and choose which to keep
 #'
 #' @description
-#' Lists the rows of \code{data} that share a value of \code{key}, such as a
+#' Lists the rows of `data` that share a value of `key`, such as a
 #' patient with two operations on the same day under the key
-#' \code{c("ccfid", "dt_surg")}. Given \code{order_by}, it also marks the
+#' `c("ccfid", "dt_surg")`. Given `order_by`, it also marks the
 #' first row of each repeated key to keep, which is how the SAS jobs resolve
 #' them: the first operation is kept and the second is treated as a
 #' complication of it.
 #'
 #' @details
-#' \code{data} is never changed. Subset it with \code{keep}:
-#' \code{data[dk$keep, ]} is unique on \code{key}, and \code{data[!dk$keep, ]}
+#' `data` is never changed. Subset it with `keep`:
+#' `data[dk$keep, ]` is unique on `key`, and `data[!dk$keep, ]`
 #' holds the rows set aside, to record or to carry as complications. Drop rows
 #' in the build, where corrections belong, not in a study job.
 #'
 #' "First" means first when the rows of a repeated key are sorted by the
-#' \code{order_by} columns, in ascending order. When the first two rows of a
-#' repeated key tie on \code{order_by}, or a row in a repeated key is missing
-#' an \code{order_by} value, there is no first row to keep, and the function
+#' `order_by` columns, in ascending order. When the first two rows of a
+#' repeated key tie on `order_by`, or a row in a repeated key is missing
+#' an `order_by` value, there is no first row to keep, and the function
 #' stops rather than pick one. Add a column that separates them, such as the
 #' time of the operation.
 #'
-#' A missing key value is treated as a value, as \code{\link{duplicated}}
+#' A missing key value is treated as a value, as [duplicated()]
 #' treats it, so two rows missing the key repeat it. Missing keys are also
-#' counted in \code{summary}.
+#' counted in `summary`.
 #'
-#' Key values are left out of \code{rows} unless \code{show_key = TRUE},
-#' because a key is usually a patient identifier. Use \code{rows$row} to look
-#' at the rows in \code{data}.
+#' Key values are left out of `rows` unless `show_key = TRUE`,
+#' because a key is usually a patient identifier. Use `rows$row` to look
+#' at the rows in `data`.
 #'
 #' @param data A data frame.
 #' @param key Names of the columns that should make each row unique.
-#' @param order_by \code{NULL} (the default), or names of the columns that
-#'   order the rows of a repeated key. Required for \code{keep}.
-#' @param show_key Include the key columns in \code{rows}? Default
-#'   \code{FALSE}.
+#' @param order_by `NULL` (the default), or names of the columns that
+#'   order the rows of a repeated key. Required for `keep`.
+#' @param show_key Include the key columns in `rows`? Default
+#'   `FALSE`.
 #'
-#' @return An object of class \code{duplicate_keys}, a list of three:
+#' @return An object of class `duplicate_keys`, a list of three:
 #' \describe{
-#'   \item{\code{summary}}{One row: \code{rows}, \code{keys} (distinct key
-#'     values), \code{repeated_keys}, \code{rows_in_repeats} and
-#'     \code{missing_keys} (rows missing any key column).}
-#'   \item{\code{rows}}{One row per row of \code{data} in a repeated key, in
-#'     data order: \code{row}, its row number in \code{data}; \code{.group},
-#'     numbering the repeated keys in order of appearance; \code{.rank}, its
-#'     place within the key by \code{order_by} (\code{NA} without
-#'     \code{order_by}); then the key columns when \code{show_key = TRUE}.}
-#'   \item{\code{keep}}{A logical vector, one per row of \code{data}:
-#'     \code{TRUE} for every row outside a repeated key and for the first row
-#'     of each repeated key. \code{NULL} without \code{order_by}.}
+#'   \item{`summary`}{One row: `rows`, `keys` (distinct key
+#'     values), `repeated_keys`, `rows_in_repeats` and
+#'     `missing_keys` (rows missing any key column).}
+#'   \item{`rows`}{One row per row of `data` in a repeated key, in
+#'     data order: `row`, its row number in `data`; `.group`,
+#'     numbering the repeated keys in order of appearance; `.rank`, its
+#'     place within the key by `order_by` (`NA` without
+#'     `order_by`); then the key columns when `show_key = TRUE`.}
+#'   \item{`keep`}{A logical vector, one per row of `data`:
+#'     `TRUE` for every row outside a repeated key and for the first row
+#'     of each repeated key. `NULL` without `order_by`.}
 #' }
 #'
-#' @seealso \code{\link{register_data}}, whose \code{key} argument refuses a
+#' @seealso [register_data()], whose `key` argument refuses a
 #'   dataset that repeats it.
 #'
 #' @examples

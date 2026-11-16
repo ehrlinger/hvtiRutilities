@@ -6,8 +6,8 @@
 #'
 #' Creates a simulated dataset that mimics a cardiac surgery cohort, suitable
 #' for testing survival analysis workflows in \file{rf.survival.study.qmd}.
-#' Variable labels are attached via \code{labelled::var_label()} so they are
-#' compatible with \code{haven} and \code{hvtiRutilities::label_map()}.
+#' Variable labels are attached via `labelled::var_label()` so they are
+#' compatible with `haven` and `hvtiRutilities::label_map()`.
 #'
 #' @details
 #' Survival times are drawn from a Weibull distribution (shape = 1.5,
@@ -17,53 +17,53 @@
 #' modelled via a logistic function of bypass time and NYHA class.
 #'
 #' The returned data frame includes the five columns excluded from
-#' \code{model_data} in the template (\code{ccfid}, \code{reop},
-#' \code{iv_reop}, \code{origin_year}, \code{iv_opyrs}), plus the survival
-#' outcome (\code{iv_dead}, \code{dead}) and 17 clinical predictors spanning
+#' `model_data` in the template (`ccfid`, `reop`,
+#' `iv_reop`, `origin_year`, `iv_opyrs`), plus the survival
+#' outcome (`iv_dead`, `dead`) and 17 clinical predictors spanning
 #' demographics, pre-operative labs,
 #' cardiac function, and surgical variables.
 #'
-#' With a \code{seed}, the function calls \code{set.seed(seed)} and draws from
-#' there, so the same \code{seed} and \code{n} always give the same data. The
+#' With a `seed`, the function calls `set.seed(seed)` and draws from
+#' there, so the same `seed` and `n` always give the same data. The
 #' global stream is left where the simulation ended, as any seeded R code
 #' leaves it; set a seed again before later code that needs its own
-#' reproducible draws. With \code{seed = NULL} the function sets no seed and
+#' reproducible draws. With `seed = NULL` the function sets no seed and
 #' draws from the caller's stream, so
-#' \code{set.seed(s); generate_survival_data(seed = NULL)} reproduces
-#' \code{generate_survival_data(seed = s)}.
+#' `set.seed(s); generate_survival_data(seed = NULL)` reproduces
+#' `generate_survival_data(seed = s)`.
 #'
-#' @param n Integer. Number of patients to simulate. Default \code{500}.
-#' @param seed \code{NULL} or an integer passed to \code{\link{set.seed}}.
-#'   Default \code{1024}. \code{NULL} draws from the caller's random number
+#' @param n Integer. Number of patients to simulate. Default `500`.
+#' @param seed `NULL` or an integer passed to [set.seed()].
+#'   Default `1024`. `NULL` draws from the caller's random number
 #'   stream instead.
 #'
-#' @return A \code{data.frame} with \code{n} rows and 24 columns:
+#' @return A `data.frame` with `n` rows and 24 columns:
 #' \describe{
-#'   \item{ccfid}{Character. Patient identifier (\code{"PT00001"}, …).}
-#'   \item{origin_year}{Integer. Calendar year corresponding to \code{iv_opyrs = 0}
+#'   \item{ccfid}{Character. Patient identifier (`"PT00001"`, …).}
+#'   \item{origin_year}{Integer. Calendar year corresponding to `iv_opyrs = 0`
 #'     (randomly sampled between 1998 and 2018).}
 #'   \item{iv_opyrs}{Numeric. Observation interval length in years measured
-#'     from \code{origin_year}; always greater than or equal to \code{iv_dead}.}
+#'     from `origin_year`; always greater than or equal to `iv_dead`.}
 #'   \item{iv_dead}{Numeric. Observed follow-up time in years (min of true
 #'     survival time and administrative censoring time).}
-#'   \item{dead}{Integer. Event indicator: \code{1} = death, \code{0} =
+#'   \item{dead}{Integer. Event indicator: `1` = death, `0` =
 #'     censored.}
-#'   \item{reop}{Integer. Reoperation indicator: \code{1} = yes,
-#'     \code{0} = no.}
-#'   \item{iv_reop}{Numeric. Time to reoperation (years); \code{NA} if no
+#'   \item{reop}{Integer. Reoperation indicator: `1` = yes,
+#'     `0` = no.}
+#'   \item{iv_reop}{Numeric. Time to reoperation (years); `NA` if no
 #'     reoperation.}
 #'   \item{age}{Numeric. Age at surgery in years (range 1–85).}
-#'   \item{sex}{Factor. \code{"Male"} / \code{"Female"} (55 / 45 \%).}
+#'   \item{sex}{Factor. `"Male"` / `"Female"` (55 / 45 %).}
 #'   \item{bmi}{Numeric. Body mass index in kg/m² (range 15–50).}
 #'   \item{hgb_bs}{Numeric. Baseline hemoglobin in g/dL (range 6–18).}
 #'   \item{wbc_bs}{Numeric. Baseline WBC count in K/µL (range 1.5–20).}
 #'   \item{plate_bs}{Numeric. Baseline platelet count in K/µL (range 50–500).}
 #'   \item{gfr_bs}{Numeric. Baseline eGFR in mL/min/1.73 m² (range 10–120).}
-#'   \item{lvefvs_b}{Numeric. Baseline LV ejection fraction in \% (range
+#'   \item{lvefvs_b}{Numeric. Baseline LV ejection fraction in % (range
 #'     15–75).}
 #'   \item{lvmass_b}{Numeric. Baseline LV mass in g (range 60–400).}
 #'   \item{lvmsi_b}{Numeric. Baseline LV mass index in g/m² (range 40–220);
-#'     derived as \code{lvmass_b / (bmi * 0.5)}.}
+#'     derived as `lvmass_b / (bmi * 0.5)`.}
 #'   \item{stvoli_b}{Numeric. Baseline systolic stroke-volume index in mL/m²
 #'     (range 20–110).}
 #'   \item{stvold_b}{Numeric. Baseline diastolic stroke-volume index in mL/m²
@@ -71,18 +71,18 @@
 #'   \item{bypass_time}{Numeric. Cardiopulmonary bypass time in minutes
 #'     (range 20–240).}
 #'   \item{xclamp_time}{Numeric. Aortic cross-clamp time in minutes; sampled
-#'     as 50–75 \% of \code{bypass_time}.}
+#'     as 50–75 % of `bypass_time`.}
 #'   \item{nyha_class}{Ordered factor. NYHA functional class I–IV.}
-#'   \item{diabetes}{Factor. Diabetes mellitus: \code{"No"} / \code{"Yes"}
-#'     (75 / 25 \%).}
-#'   \item{hypertension}{Factor. Hypertension: \code{"No"} / \code{"Yes"}
-#'     (55 / 45 \%).}
+#'   \item{diabetes}{Factor. Diabetes mellitus: `"No"` / `"Yes"`
+#'     (75 / 25 %).}
+#'   \item{hypertension}{Factor. Hypertension: `"No"` / `"Yes"`
+#'     (55 / 45 %).}
 #' }
 #'
 #' @seealso
-#' \code{\link[randomForestSRC]{rfsrc}},
-#' \code{\link[survival]{Surv}},
-#' \code{\link[haven]{read_sas}}
+#' [randomForestSRC::rfsrc()],
+#' [survival::Surv()],
+#' [haven::read_sas()]
 #'
 #' @importFrom labelled var_label
 #' @importFrom stats rnorm rweibull runif rbinom plogis

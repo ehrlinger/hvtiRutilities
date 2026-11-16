@@ -8,17 +8,17 @@ study_checklist(status, path = NULL)
 }
 \arguments{
 \item{status}{An object of class \code{"study_status"}, from
-\code{\link{study_status}} or \code{\link{study_setup}}.}
+\code{\link[=study_status]{study_status()}} or \code{\link[=study_setup]{study_setup()}}.}
 
 \item{path}{Character(1) or \code{NULL}. Where to write the markdown. When
 \code{NULL} (default) the lines are returned instead of written.}
 }
 \value{
 When \code{path} is \code{NULL}, a character vector of markdown
-  lines. Otherwise \code{path}, invisibly, after writing.
+lines. Otherwise \code{path}, invisibly, after writing.
 }
 \description{
-Turns a \code{\link{study_status}} result into markdown: one checkbox per
+Turns a \code{\link[=study_status]{study_status()}} result into markdown: one checkbox per
 check, ticked where the check passed (\code{"OK"}) or the study is closed
 (\code{"CLOSED"}) and left open otherwise, with the detail alongside. File
 counts follow.
@@ -30,5 +30,5 @@ cat(study_checklist(study_status(root)), sep = "\n")
 unlink(root, recursive = TRUE)
 }
 \seealso{
-\code{\link{study_status}}, \code{\link{study_setup}}
+\code{\link[=study_status]{study_status()}}, \code{\link[=study_setup]{study_setup()}}
 }

@@ -12,26 +12,26 @@ add_abbreviation(phrase, abbreviation, start = study_root())
 \item{abbreviation}{Its abbreviation, or \code{NULL} to remove a default.}
 
 \item{start}{A directory inside the study; the study is found as
-\code{\link{study_config}} finds it. Defaults to the study that contains the working
-directory, found by its \code{_study.yml}; outside a study the function
+\code{\link[=study_config]{study_config()}} finds it. Defaults to the study that contains the working
+directory, found by its \verb{_study.yml}; outside a study the function
 stops and writes nothing.}
 }
 \value{
 The study's abbreviation list after the change, invisibly, as a
-  named list.
+named list.
 }
 \description{
-Writes one entry to the \code{abbreviations:} mapping in the study's
-\code{_study.yml}, replacing any entry for the same phrase, compared
+Writes one entry to the \verb{abbreviations:} mapping in the study's
+\verb{_study.yml}, replacing any entry for the same phrase, compared
 ignoring case. \code{abbreviation = NULL} writes a removal: the study then
 drops that phrase from the group default list.
 }
 \details{
 The entry is checked against the whole merged list, as
-\code{\link{study_abbreviations}} would check it, before anything is
+\code{\link[=study_abbreviations]{study_abbreviations()}} would check it, before anything is
 written; a refused entry leaves the file as it was. The file is rewritten
-whole, as \code{\link{register_data}} rewrites it, so comments in
-\code{_study.yml} are not kept.
+whole, as \code{\link[=register_data]{register_data()}} rewrites it, so comments in
+\verb{_study.yml} are not kept.
 }
 \examples{
 root <- file.path(tempdir(), "add-abbrev-example")
@@ -41,5 +41,5 @@ add_abbreviation("Ejection fraction", NULL, start = root)
 unlink(root, recursive = TRUE)
 }
 \seealso{
-\code{\link{study_abbreviations}}.
+\code{\link[=study_abbreviations]{study_abbreviations()}}.
 }

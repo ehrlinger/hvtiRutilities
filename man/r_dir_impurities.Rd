@@ -11,8 +11,8 @@ r_dir_impurities(dir)
 }
 \value{
 A character vector of complaints, one per offending expression,
-  empty when the directory is clean. The caller decides whether to warn or
-  to fail.
+empty when the directory is clean. The caller decides whether to warn or
+to fail.
 }
 \description{
 Parses every \code{.R} file in \code{dir} and reports any top-level

@@ -7,7 +7,7 @@
 cohort_counts(data, time, event)
 }
 \arguments{
-\item{data}{A data frame. Was \code{d} before 2026-11; \code{d =} still
+\item{data}{A data frame. Was \code{d} before 2026-11; \verb{d =} still
 works for one release, with a warning.}
 
 \item{time}{Character scalar naming the time column.}
@@ -16,7 +16,7 @@ works for one release, with a warning.}
 }
 \value{
 A list with integer elements \code{n}, \code{n_events} and
-  \code{n_censored}.
+\code{n_censored}.
 }
 \description{
 Counts rows for which both explicitly supplied event and time columns are
@@ -27,15 +27,15 @@ or \code{0}/\code{1}. Rows missing either column are excluded from the
 analysable cohort.
 
 A zero or negative time is still counted, so the gate's numbers do not
-move, but it warns: \code{\link{followup_check}} flags the same rows for
+move, but it warns: \code{\link[=followup_check]{followup_check()}} flags the same rows for
 review, and the two should not disagree in silence.
 }
 \section{Argument order}{
 
-\code{time, event}, as in \code{survival::Surv()}. Until 2026-11 the order
-was \code{event, time}. For one release a call passing both unnamed is read
-in the old order, with a warning; name them, \code{time =} and
-\code{event =}, and the call means the same before and after.
+\verb{time, event}, as in \code{survival::Surv()}. Until 2026-11 the order
+was \verb{event, time}. For one release a call passing both unnamed is read
+in the old order, with a warning; name them, \verb{time =} and
+\verb{event =}, and the call means the same before and after.
 }
 
 \examples{
@@ -43,5 +43,5 @@ d <- data.frame(dead = c(1, 1, 0, 0, 0), iv_dead = 1:5)
 cohort_counts(d, time = "iv_dead", event = "dead")
 }
 \seealso{
-\code{\link{assert_cohort}}
+\code{\link[=assert_cohort]{assert_cohort()}}
 }

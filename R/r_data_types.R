@@ -136,38 +136,38 @@
 #' @details
 #' Each column is converted by the first rule that matches, in this order:
 #' \enumerate{
-#'   \item When \code{use_value_labels = TRUE} and the column carries value
+#'   \item When `use_value_labels = TRUE` and the column carries value
 #'     labels, they become the factor levels. This runs ahead of every rule
 #'     below: a declared type is not subject to a threshold on distinct
 #'     values.
-#'   \item Character strings "NA", "na", "Na" and "nA" become \code{NA}.
+#'   \item Character strings "NA", "na", "Na" and "nA" become `NA`.
 #'   \item Numeric or integer columns with exactly 2 distinct values become
-#'     logical, or factors when \code{binary_factor = TRUE} -- but only when
+#'     logical, or factors when `binary_factor = TRUE` -- but only when
 #'     the two values are 0 and 1. Any other 2-distinct-value coding (a
 #'     SAS-style 1/2, say) becomes a factor outright, regardless of
-#'     \code{binary_factor}: \code{as.logical()} maps every nonzero code to
-#'     \code{TRUE}, so a 1/2 column would otherwise become \code{TRUE} for
+#'     `binary_factor`: `as.logical()` maps every nonzero code to
+#'     `TRUE`, so a 1/2 column would otherwise become `TRUE` for
 #'     every row and silently lose one of its two categories.
 #'   \item Remaining character columns become factors, whatever their number
-#'     of distinct values: \code{factor_size} does not apply to them. A
+#'     of distinct values: `factor_size` does not apply to them. A
 #'     character column that yields more than 50 levels -- usually an
 #'     identifier or free text, not a category -- warns, naming the column;
-#'     pass it in \code{skip_vars} to keep it as character.
-#'   \item Numeric columns with more than 2 and fewer than \code{factor_size}
+#'     pass it in `skip_vars` to keep it as character.
+#'   \item Numeric columns with more than 2 and fewer than `factor_size`
 #'     distinct values become factors.
-#'   \item Logical columns become factors when \code{binary_factor = TRUE}.
+#'   \item Logical columns become factors when `binary_factor = TRUE`.
 #' }
 #'
 #' Date, POSIXct, and POSIXlt columns are never altered by type conversion.
 #'
 #' Which rule fired on which column is recorded on the result and read back
-#' with \code{\link{type_conversion_report}}.
+#' with [type_conversion_report()].
 #'
 #' @param data A data frame, tibble, data.table, or similar tabular object.
-#'   Was \code{dataset} before 2026-11; \code{dataset =} still works for one
+#'   Was `dataset` before 2026-11; `dataset =` still works for one
 #'   release, with a warning.
-#' @param dataset Deprecated: the old name of \code{data}. Kept as an argument
-#'   for one release so \code{dataset =} still reaches the deprecation notice.
+#' @param dataset Deprecated: the old name of `data`. Kept as an argument
+#'   for one release so `dataset =` still reaches the deprecation notice.
 #' @param factor_size Integer threshold for factor conversion. Numeric variables
 #'   with fewer than this many unique values (but more than 2) will be converted
 #'   to factors, so the default of 10 converts a column with 3 to 9 distinct
@@ -179,17 +179,17 @@
 #'   factors instead of logical. Default is FALSE (convert to logical).
 #' @param use_value_labels Logical. If TRUE, a column carrying value labels --
 #'   what \pkg{haven} reads from a SAS numeric-plus-format variable -- is
-#'   converted through \code{\link[labelled]{to_factor}}, so the level text is
+#'   converted through [labelled::to_factor()], so the level text is
 #'   kept. If FALSE the value labels are dropped and the numeric codes are
 #'   converted instead. Default is FALSE, which warns once per session; the
 #'   default becomes TRUE in a later release.
 #'
-#' @return An object of the same class as \code{data} with columns
+#' @return An object of the same class as `data` with columns
 #'   converted according to the function's rules. Variable labels are
 #'   preserved. The result carries a per-column conversion report, read with
-#'   \code{\link{type_conversion_report}}.
+#'   [type_conversion_report()].
 #'
-#' @seealso \code{\link{type_conversion_report}} for the record of which rule
+#' @seealso [type_conversion_report()] for the record of which rule
 #'   fired on which column.
 #'
 #' @export r_data_types

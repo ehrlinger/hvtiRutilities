@@ -16,7 +16,7 @@ POOL_PLAIN_SUFFIX
 POOL_MIN_STEM
 }
 \description{
-Defaults for \code{\link{concept_of}}, \code{\link{concept_map}} and friends,
+Defaults for \code{\link[=concept_of]{concept_of()}}, \code{\link[=concept_map]{concept_map()}} and friends,
 describing the
 naming conventions a legacy \code{vars.sas} uses: \code{ln_} (log),
 \code{in_} (inverse),

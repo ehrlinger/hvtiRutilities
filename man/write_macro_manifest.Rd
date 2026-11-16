@@ -7,9 +7,9 @@
 write_macro_manifest(x, path)
 }
 \arguments{
-\item{x}{A \code{data.frame} returned by \code{\link{sas_triage}}.}
+\item{x}{A \code{data.frame} returned by \code{\link[=sas_triage]{sas_triage()}}.}
 
-\item{path}{Character. Destination `.yaml` path.}
+\item{path}{Character. Destination \code{.yaml} path.}
 }
 \value{
 Invisibly, \code{path}.
@@ -23,7 +23,7 @@ The manifest deliberately contains \strong{no timestamp}. It describes a
 frozen 2019 corpus, and a generated-on field would defeat the byte-for-byte
 reproducibility that makes the manifest trustworthy as a reviewed artifact.
 Run metadata belongs in the report, not here. This diverges from
-\code{\link{update_manifest}}, whose \code{extract_date} is meaningful
+\code{\link[=update_manifest]{update_manifest()}}, whose \code{extract_date} is meaningful
 because the datasets it tracks genuinely change over time.
 }
 \examples{

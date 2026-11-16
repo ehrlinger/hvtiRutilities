@@ -14,22 +14,22 @@ compare_datasets(old, new)
 \value{
 A list with the following elements:
 \describe{
-  \item{rows_old}{Number of rows in \code{old}}
-  \item{rows_new}{Number of rows in \code{new}}
-  \item{cols_added}{Character vector of column names present in \code{new}
-    but not \code{old}}
-  \item{cols_dropped}{Character vector of column names present in
-    \code{old} but not \code{new}}
-  \item{type_changes}{Data frame with columns \code{variable},
-    \code{old_class}, \code{new_class} for shared columns whose primary
-    class changed}
-  \item{label_changes}{Data frame with columns \code{variable},
-    \code{old_label}, \code{new_label} for shared columns whose label
-    changed}
-  \item{level_changes}{Data frame with columns \code{variable},
-    \code{old_levels}, \code{new_levels} (levels joined with
-    \code{", "}) for shared columns that are factors in both and whose
-    levels, or their order, changed}
+\item{rows_old}{Number of rows in \code{old}}
+\item{rows_new}{Number of rows in \code{new}}
+\item{cols_added}{Character vector of column names present in \code{new}
+but not \code{old}}
+\item{cols_dropped}{Character vector of column names present in
+\code{old} but not \code{new}}
+\item{type_changes}{Data frame with columns \code{variable},
+\code{old_class}, \code{new_class} for shared columns whose primary
+class changed}
+\item{label_changes}{Data frame with columns \code{variable},
+\code{old_label}, \code{new_label} for shared columns whose label
+changed}
+\item{level_changes}{Data frame with columns \code{variable},
+\code{old_levels}, \code{new_levels} (levels joined with
+\code{", "}) for shared columns that are factors in both and whose
+levels, or their order, changed}
 }
 }
 \description{
@@ -60,5 +60,5 @@ diff$cols_added
 diff$cols_dropped
 }
 \seealso{
-\code{\link{update_manifest}}, \code{\link{verify_manifest}}
+\code{\link[=update_manifest]{update_manifest()}}, \code{\link[=verify_manifest]{verify_manifest()}}
 }

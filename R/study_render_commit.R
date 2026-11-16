@@ -193,9 +193,9 @@
 
 #' Commit the study's code before a render
 #'
-#' Commits the same allow-listed snapshot \code{\link{study_checkpoint}} takes
+#' Commits the same allow-listed snapshot [study_checkpoint()] takes
 #' (code, identity and reproducibility files; never data or outputs) to this
-#' copy's render source ref in the private repository \code{.checkpoint/repo/},
+#' copy's render source ref in the private repository `.checkpoint/repo/`,
 #' and returns the commit. A render calls it before the job runs, so each
 #' figure can print the commit of the code that drew it.
 #'
@@ -214,27 +214,27 @@
 #'
 #' A study whose snapshot is unchanged since the last render commit gets that
 #' commit back, so re-rendering adds no history and an unchanged job always
-#' prints the same commit. The ref is \code{refs/renders/<id>/source}, outside
-#' \code{refs/heads/}; records go to a separate ref (see
-#' \code{\link{study_render_record}}). The ID belongs to this copy of the study
+#' prints the same commit. The ref is `refs/renders/<id>/source`, outside
+#' `refs/heads/`; records go to a separate ref (see
+#' [study_render_record()]). The ID belongs to this copy of the study
 #' at this path on this host: a study copied or moved elsewhere gets a new one,
 #' and keeps the refs it brought with it. Nothing is tagged or pushed, and
-#' \code{main}, its tags, \code{HEAD} and the checkpoint working tree are never
+#' `main`, its tags, `HEAD` and the checkpoint working tree are never
 #' touched. The call takes the checkpoint lock, so it stops while a checkpoint
 #' or another render holds it.
 #'
 #' The commit only proves what the job was when the render began. A render
 #' that publishes outputs must also show that the code it executed matches
 #' the commit, and record what it published with
-#' \code{\link{study_render_record}}.
+#' [study_render_record()].
 #'
 #' @param job Character(1). The job being rendered, relative to the study
 #'   root.
-#' @param root Character(1). The study root. Default \code{study_root()}.
+#' @param root Character(1). The study root. Default `study_root()`.
 #'
 #' @return Invisibly, the 40-character commit ID.
 #'
-#' @seealso \code{\link{study_render_record}}, \code{\link{study_checkpoint}}
+#' @seealso [study_render_record()], [study_checkpoint()]
 #'
 #' @examples
 #' \donttest{
@@ -303,36 +303,36 @@ study_render_commit <- function(job, root = study_root()) {
 #' again.
 #'
 #' @details
-#' The record is written as \code{.hvti-renders/<render_id>.json} in a new
-#' commit on \code{refs/renders/<id>/records}, and every later record commit
-#' carries it, so the ref's tip holds every record. A \code{render_id} already
+#' The record is written as `.hvti-renders/<render_id>.json` in a new
+#' commit on `refs/renders/<id>/records`, and every later record commit
+#' carries it, so the ref's tip holds every record. A `render_id` already
 #' recorded stops the call; a record is never replaced. The record names
-#' \code{commit}, \code{job}, the time, \code{extra} (typically the render's
-#' provenance) and, for each file in \code{outputs}, its path relative to the
+#' `commit`, `job`, the time, `extra` (typically the render's
+#' provenance) and, for each file in `outputs`, its path relative to the
 #' study root and its sha256. A render that fails should publish nothing and
 #' record nothing.
 #'
-#' Everything is checked before the ref moves. \code{commit} must be on a
+#' Everything is checked before the ref moves. `commit` must be on a
 #' render source ref in this repository, which holds only source snapshots
 #' that passed their checks: this copy's, or one it inherited, so a render
-#' that straddles a move of the study still records. \code{job} must be a
+#' that straddles a move of the study still records. `job` must be a
 #' code file in that commit. Each output must be a regular file inside the
-#' study (not a folder, named pipe, socket or device): an absolute path elsewhere, a \code{..} escape or a
+#' study (not a folder, named pipe, socket or device): an absolute path elsewhere, a `..` escape or a
 #' symbolic link that resolves outside the study stops the call. An output
 #' that disappears or changes while it is hashed stops it too.
 #'
 #' @param render_id Character(1). The render's identifier; names the record.
 #' @param commit Character(1). The 40-character commit from
-#'   \code{\link{study_render_commit}} that the outputs print.
+#'   [study_render_commit()] that the outputs print.
 #' @param job Character(1). The job rendered, relative to the study root.
 #' @param outputs Character. Paths of the published files inside the study,
 #'   absolute or relative to the study root; each must exist.
-#' @param extra List. Further fields for the record. Default \code{list()}.
-#' @param root Character(1). The study root. Default \code{study_root()}.
+#' @param extra List. Further fields for the record. Default `list()`.
+#' @param root Character(1). The study root. Default `study_root()`.
 #'
 #' @return Invisibly, the record as a list.
 #'
-#' @seealso \code{\link{study_render_commit}}
+#' @seealso [study_render_commit()]
 #'
 #' @examples
 #' \donttest{

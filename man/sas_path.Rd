@@ -34,5 +34,5 @@ sas_path("datasets", start = root)
 unlink(root, recursive = TRUE)
 }
 \seealso{
-\code{\link{study_root}}
+\code{\link[=study_root]{study_root()}}
 }

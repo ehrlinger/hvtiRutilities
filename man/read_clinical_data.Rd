@@ -9,13 +9,13 @@ read_clinical_data(file, convert_types = FALSE, ..., catalog_file = NULL)
 \arguments{
 \item{file}{Character. Path to the dataset file.}
 
-\item{convert_types}{Logical. Apply \code{\link{r_data_types}} to the data
+\item{convert_types}{Logical. Apply \code{\link[=r_data_types]{r_data_types()}} to the data
 after reading. Defaults to \code{FALSE}: the file is returned as read.
 \code{TRUE} converts any two-valued numeric column to logical, which is
 wrong for 0/1 event and censoring flags, so type conversion belongs to a
 declared variable-derivation step rather than to reading.}
 
-\item{...}{Additional arguments passed to \code{\link{r_data_types}}
+\item{...}{Additional arguments passed to \code{\link[=r_data_types]{r_data_types()}}
 (e.g., \code{factor_size}, \code{skip_vars}, \code{binary_factor},
 \code{use_value_labels}). Must be named. An error when
 \code{convert_types = FALSE}, or for a name \code{r_data_types()} does
@@ -30,25 +30,25 @@ no-op. Must be named, because it follows \code{...}.}
 }
 \value{
 A data frame with labels preserved and (optionally) types
-  converted.
+converted.
 }
 \description{
 A convenience wrapper that detects the file type, reads the data with the
-appropriate reader, and optionally runs \code{\link{r_data_types}} to
+appropriate reader, and optionally runs \code{\link[=r_data_types]{r_data_types()}} to
 convert column types. This saves novice users from having to remember
 which package reads which format and ensures labels are preserved.
 
 Supported formats:
 \describe{
-  \item{\code{.sas7bdat}}{SAS datasets via \code{haven::read_sas()}}
-  \item{\code{.csv}}{Comma-separated files via \code{utils::read.csv()} with
-    \code{check.names = FALSE}, so column names are preserved exactly as
-    written in the file (spaces, hyphens, and special characters are not
-    silently converted to \code{.}).}
-  \item{\code{.xlsx}, \code{.xls}}{Excel workbooks via
-    \code{readxl::read_excel()}}
-  \item{\code{.rds}}{R serialized objects via \code{readRDS()}}
-  \item{\code{.parquet}}{Parquet files via \code{arrow::read_parquet()}}
+\item{\code{.sas7bdat}}{SAS datasets via \code{haven::read_sas()}}
+\item{\code{.csv}}{Comma-separated files via \code{utils::read.csv()} with
+\code{check.names = FALSE}, so column names are preserved exactly as
+written in the file (spaces, hyphens, and special characters are not
+silently converted to \code{.}).}
+\item{\code{.xlsx}, \code{.xls}}{Excel workbooks via
+\code{readxl::read_excel()}}
+\item{\code{.rds}}{R serialized objects via \code{readRDS()}}
+\item{\code{.parquet}}{Parquet files via \code{arrow::read_parquet()}}
 }
 }
 \details{
@@ -60,29 +60,29 @@ written, and no amount of downstream work can recover text that never
 arrived. Pass \code{catalog_file} to read the two together.
 
 A catalog on its own is only half the journey. With
-\code{convert_types = TRUE}, \code{\link{r_data_types}} discards value
+\code{convert_types = TRUE}, \code{\link[=r_data_types]{r_data_types()}} discards value
 labels unless \code{use_value_labels = TRUE} is passed through \code{...},
 so supplying a catalog without it warns.
 
 \strong{Column types depend on the format.} Each reader decides its own
 types, and \code{read_clinical_data()} does not reconcile them:
 \itemize{
-  \item \code{.sas7bdat}: a date-formatted variable is \code{Date}, and a
-    formatted numeric is \code{haven_labelled} when a catalog is read.
-  \item \code{.xlsx}, \code{.xls}: a date cell is \code{POSIXct}, not
-    \code{Date}, and every number is double.
-  \item \code{.csv}: a date is \emph{character}. With
-    \code{convert_types = TRUE} it then becomes a factor, as every character
-    column does; convert it with \code{as.Date()} first, or name it in
-    \code{skip_vars}.
-  \item \code{.rds}, \code{.parquet}: the types that were written.
+\item \code{.sas7bdat}: a date-formatted variable is \code{Date}, and a
+formatted numeric is \code{haven_labelled} when a catalog is read.
+\item \code{.xlsx}, \code{.xls}: a date cell is \code{POSIXct}, not
+\code{Date}, and every number is double.
+\item \code{.csv}: a date is \emph{character}. With
+\code{convert_types = TRUE} it then becomes a factor, as every character
+column does; convert it with \code{as.Date()} first, or name it in
+\code{skip_vars}.
+\item \code{.rds}, \code{.parquet}: the types that were written.
 }
-\code{\link{r_data_types}} never alters a \code{Date} or \code{POSIXct}
+\code{\link[=r_data_types]{r_data_types()}} never alters a \code{Date} or \code{POSIXct}
 column.
 
 \strong{The dots go to \code{r_data_types()} only.} Reader options --
 \code{sheet}, \code{na}, \code{skip} -- are not passed to the reader. A
-name in \code{...} that \code{\link{r_data_types}} does not take is an
+name in \code{...} that \code{\link[=r_data_types]{r_data_types()}} does not take is an
 error, and so is any argument in \code{...} when \code{convert_types} is
 \code{FALSE}, since it would otherwise be dropped without effect.
 }
@@ -109,6 +109,6 @@ str(dta)
 unlink(tmp)
 }
 \seealso{
-\code{\link{r_data_types}} for details on type conversion,
-  \code{\link{label_map}} to extract labels after reading.
+\code{\link[=r_data_types]{r_data_types()}} for details on type conversion,
+\code{\link[=label_map]{label_map()}} to extract labels after reading.
 }

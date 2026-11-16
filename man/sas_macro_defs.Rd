@@ -7,31 +7,31 @@
 sas_macro_defs(file)
 }
 \arguments{
-\item{file}{Character. Path to a `.sas` file.}
+\item{file}{Character. Path to a \code{.sas} file.}
 }
 \value{
 A \code{data.frame} with one row per macro definition and columns
-  \code{file}, \code{macro}, \code{params}, \code{body_hash},
-  \code{line_start}, and \code{line_end}. Macro and parameter names are
-  lowercased.
+\code{file}, \code{macro}, \code{params}, \code{body_hash},
+\code{line_start}, and \code{line_end}. Macro and parameter names are
+lowercased.
 }
 \description{
-Scans a `.sas` file and returns one row for each `%macro`...`%mend` pair it
-contains. SAS files in the legacy CORR library are macro *collections*, not
+Scans a \code{.sas} file and returns one row for each \verb{\%macro}...\verb{\%mend} pair it
+contains. SAS files in the legacy CORR library are macro \emph{collections}, not
 single macros, so a file routinely defines several.
 }
 \details{
 Matching is case-insensitive: SAS macro names are case-insensitive and the
-legacy corpus mixes `%macro skip;` with `%MACRO MRG;` freely. Nested
-definitions are handled by depth counting, so an inner `%mend` does not
+legacy corpus mixes \verb{\%macro skip;} with \verb{\%MACRO MRG;} freely. Nested
+definitions are handled by depth counting, so an inner \verb{\%mend} does not
 terminate an outer macro.
 
 The body hash is a SHA-256 digest of the definition with case folded and
 whitespace runs collapsed. Two definitions with the same hash are
 semantically identical up to formatting.
 
-An unmatched `%macro` is an error, never a silently truncated body. A file
-containing no `%macro` at all is likewise an error.
+An unmatched \verb{\%macro} is an error, never a silently truncated body. A file
+containing no \verb{\%macro} at all is likewise an error.
 }
 \examples{
 f <- system.file("extdata", "example_macro.sas", package = "hvtiRutilities")

@@ -16,15 +16,15 @@ capture_provenance(
 \arguments{
 \item{job}{Character(1). Stable job identity.}
 
-\item{data}{List of records returned by \code{\link{provenance_data}}.}
+\item{data}{List of records returned by \code{\link[=provenance_data]{provenance_data()}}.}
 
 \item{artifacts}{List of records returned by
-\code{\link{provenance_artifact}}.}
+\code{\link[=provenance_artifact]{provenance_artifact()}}.}
 
 \item{extra}{Named list of job-specific fields. Reserved capture and
 publication fields cannot be displaced.}
 
-\item{cfg}{List. A study manifest from \code{\link{study_config}}.}
+\item{cfg}{List. A study manifest from \code{\link[=study_config]{study_config()}}.}
 
 \item{seed}{The job's seed, one whole number, or \code{NA} (the default)
 when the job sets none. Recorded as the common \code{seed} field, where
@@ -32,14 +32,14 @@ when the job sets none. Recorded as the common \code{seed} field, where
 }
 \value{
 A captured provenance payload as a plain list. It opens with the
-  seven fields every hvtiR package's provenance record shares:
-  \code{package} (\code{"hvtiRutilities"}), \code{version}, \code{sha}
-  (the installed commit, or \code{NA}), \code{method} (here the
-  \code{job}), \code{seed} (the \code{seed} argument, \code{NA} unless the
-  job is seeded), \code{rng_kind} (\code{RNGkind()}) and \code{time} (when it
-  was captured, \code{POSIXct}). The render-specific fields follow. An
-  \code{extra} element with one of these seven names is an error. In the published JSON an unknown \code{sha} is
-  \code{null} and \code{time} is UTC in the form \code{rendered} uses.
+seven fields every hvtiR package's provenance record shares:
+\code{package} (\code{"hvtiRutilities"}), \code{version}, \code{sha}
+(the installed commit, or \code{NA}), \code{method} (here the
+\code{job}), \code{seed} (the \code{seed} argument, \code{NA} unless the
+job is seeded), \code{rng_kind} (\code{RNGkind()}) and \code{time} (when it
+was captured, \code{POSIXct}). The render-specific fields follow. An
+\code{extra} element with one of these seven names is an error. In the published JSON an unknown \code{sha} is
+\code{null} and \code{time} is UTC in the form \code{rendered} uses.
 }
 \description{
 Freezes the study identity, executing R session, loaded packages, lockfile,
@@ -51,7 +51,7 @@ dataset implicitly. Pass \code{list()} deliberately when a job has no known
 direct data input.
 
 Capture does not write a sidecar or inspect a rendered output. Use
-\code{\link{publish_provenance}} only after the completed output exists.
+\code{\link[=publish_provenance]{publish_provenance()}} only after the completed output exists.
 }
 \examples{
 \dontshow{if (requireNamespace("arrow", quietly = TRUE)) withAutoprint(\{ # examplesIf}
@@ -71,6 +71,6 @@ unlink(root, recursive = TRUE)
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link{publish_provenance}},
-  \code{\link{record_provenance}}
+\code{\link[=publish_provenance]{publish_provenance()}},
+\code{\link[=record_provenance]{record_provenance()}}
 }

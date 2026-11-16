@@ -8,29 +8,29 @@
 #' Counts rows for which both explicitly supplied event and time columns are
 #' present, and the events among them.
 #'
-#' The event column must be logical or numeric binary coding: \code{FALSE}/\code{TRUE}
-#' or \code{0}/\code{1}. Rows missing either column are excluded from the
+#' The event column must be logical or numeric binary coding: `FALSE`/`TRUE`
+#' or `0`/`1`. Rows missing either column are excluded from the
 #' analysable cohort.
 #'
 #' A zero or negative time is still counted, so the gate's numbers do not
-#' move, but it warns: \code{\link{followup_check}} flags the same rows for
+#' move, but it warns: [followup_check()] flags the same rows for
 #' review, and the two should not disagree in silence.
 #'
-#' @param data A data frame. Was \code{d} before 2026-11; \code{d =} still
+#' @param data A data frame. Was `d` before 2026-11; `d =` still
 #'   works for one release, with a warning.
 #' @param time Character scalar naming the time column.
 #' @param event Character scalar naming the binary event column.
 #'
 #' @section Argument order:
-#' \code{time, event}, as in \code{survival::Surv()}. Until 2026-11 the order
-#' was \code{event, time}. For one release a call passing both unnamed is read
-#' in the old order, with a warning; name them, \code{time =} and
-#' \code{event =}, and the call means the same before and after.
+#' `time, event`, as in `survival::Surv()`. Until 2026-11 the order
+#' was `event, time`. For one release a call passing both unnamed is read
+#' in the old order, with a warning; name them, `time =` and
+#' `event =`, and the call means the same before and after.
 #'
-#' @return A list with integer elements \code{n}, \code{n_events} and
-#'   \code{n_censored}.
+#' @return A list with integer elements `n`, `n_events` and
+#'   `n_censored`.
 #'
-#' @seealso \code{\link{assert_cohort}}
+#' @seealso [assert_cohort()]
 #'
 #' @export
 #'
@@ -104,25 +104,25 @@ cohort_counts <- function(data, time, event) {
 #' Assert the cohort matches a job-level expectation
 #'
 #' @description
-#' Compares \code{\link{cohort_counts}} against explicitly supplied expected
+#' Compares [cohort_counts()] against explicitly supplied expected
 #' counts and errors on any disagreement. Call it before any analysis that
 #' would otherwise run happily on an unreconciled cohort.
 #'
-#' @param data A data frame. Was \code{d} before 2026-11; \code{d =} still
+#' @param data A data frame. Was `d` before 2026-11; `d =` still
 #'   works for one release, with a warning.
-#' @param expected List containing nonnegative integer \code{n},
-#'   \code{n_events} and \code{n_censored}.
+#' @param expected List containing nonnegative integer `n`,
+#'   `n_events` and `n_censored`.
 #' @param time Character scalar naming the time column.
 #' @param event Character scalar naming the binary event column.
 #'
 #' @section Argument order:
-#' \code{time, event}, as in \code{survival::Surv()}; it was \code{event,
-#' time} until 2026-11. For one release a call passing all four arguments
+#' `time, event`, as in `survival::Surv()`; it was `event,
+#' time` until 2026-11. For one release a call passing all four arguments
 #' unnamed is read in the old order, with a warning.
 #'
-#' @return \code{invisible(TRUE)} on success; otherwise an error.
+#' @return `invisible(TRUE)` on success; otherwise an error.
 #'
-#' @seealso \code{\link{cohort_counts}}
+#' @seealso [cohort_counts()]
 #'
 #' @export
 #'

@@ -20,17 +20,17 @@ order the rows of a repeated key. Required for \code{keep}.}
 \value{
 An object of class \code{duplicate_keys}, a list of three:
 \describe{
-  \item{\code{summary}}{One row: \code{rows}, \code{keys} (distinct key
-    values), \code{repeated_keys}, \code{rows_in_repeats} and
-    \code{missing_keys} (rows missing any key column).}
-  \item{\code{rows}}{One row per row of \code{data} in a repeated key, in
-    data order: \code{row}, its row number in \code{data}; \code{.group},
-    numbering the repeated keys in order of appearance; \code{.rank}, its
-    place within the key by \code{order_by} (\code{NA} without
-    \code{order_by}); then the key columns when \code{show_key = TRUE}.}
-  \item{\code{keep}}{A logical vector, one per row of \code{data}:
-    \code{TRUE} for every row outside a repeated key and for the first row
-    of each repeated key. \code{NULL} without \code{order_by}.}
+\item{\code{summary}}{One row: \code{rows}, \code{keys} (distinct key
+values), \code{repeated_keys}, \code{rows_in_repeats} and
+\code{missing_keys} (rows missing any key column).}
+\item{\code{rows}}{One row per row of \code{data} in a repeated key, in
+data order: \code{row}, its row number in \code{data}; \code{.group},
+numbering the repeated keys in order of appearance; \code{.rank}, its
+place within the key by \code{order_by} (\code{NA} without
+\code{order_by}); then the key columns when \code{show_key = TRUE}.}
+\item{\code{keep}}{A logical vector, one per row of \code{data}:
+\code{TRUE} for every row outside a repeated key and for the first row
+of each repeated key. \code{NULL} without \code{order_by}.}
 }
 }
 \description{
@@ -54,7 +54,7 @@ an \code{order_by} value, there is no first row to keep, and the function
 stops rather than pick one. Add a column that separates them, such as the
 time of the operation.
 
-A missing key value is treated as a value, as \code{\link{duplicated}}
+A missing key value is treated as a value, as \code{\link[=duplicated]{duplicated()}}
 treats it, so two rows missing the key repeat it. Missing keys are also
 counted in \code{summary}.
 
@@ -75,6 +75,6 @@ ops[dk$keep, ]
 ops[!dk$keep, ]
 }
 \seealso{
-\code{\link{register_data}}, whose \code{key} argument refuses a
-  dataset that repeats it.
+\code{\link[=register_data]{register_data()}}, whose \code{key} argument refuses a
+dataset that repeats it.
 }

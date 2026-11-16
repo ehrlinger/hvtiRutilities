@@ -15,15 +15,15 @@ record_provenance(
 \arguments{
 \item{path}{Character(1). Existing completed output path.}
 
-\item{data}{List of records returned by \code{\link{provenance_data}}.}
+\item{data}{List of records returned by \code{\link[=provenance_data]{provenance_data()}}.}
 
 \item{artifacts}{List of records returned by
-\code{\link{provenance_artifact}}.}
+\code{\link[=provenance_artifact]{provenance_artifact()}}.}
 
 \item{extra}{Named list of job-specific fields. Reserved fields cannot be
 displaced.}
 
-\item{cfg}{List. A study manifest from \code{\link{study_config}}.}
+\item{cfg}{List. A study manifest from \code{\link[=study_config]{study_config()}}.}
 }
 \value{
 Invisibly, the published record as a list.
@@ -52,6 +52,6 @@ unlink(root, recursive = TRUE)
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link{capture_provenance}},
-  \code{\link{publish_provenance}}, \code{\link{provenance_path}}
+\code{\link[=capture_provenance]{capture_provenance()}},
+\code{\link[=publish_provenance]{publish_provenance()}}, \code{\link[=provenance_path]{provenance_path()}}
 }

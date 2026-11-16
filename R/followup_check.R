@@ -2,70 +2,70 @@
 #'
 #' @description
 #' Summarises an event indicator and its follow-up intervals the way the
-#' \code{dc-gfup} template reports them: counts for the whole cohort and its
+#' `dc-gfup` template reports them: counts for the whole cohort and its
 #' event and censored subsets, the missing, negative and zero intervals, a
-#' \code{\link{proc_means}} table for each subset, and the rows worth a second
+#' [proc_means()] table for each subset, and the rows worth a second
 #' look. It checks recorded follow-up; it does not establish completeness
 #' against a close date.
 #'
 #' @details
 #' Every argument is checked before anything is computed, and every column
-#' that is not in \code{data} is named in one error, so a job with three
+#' that is not in `data` is named in one error, so a job with three
 #' misspellings says so once.
 #'
-#' A row with a missing event is counted in \code{missing_event} and belongs
-#' to neither the event nor the censored subset. A row is \emph{suspicious}
+#' A row with a missing event is counted in `missing_event` and belongs
+#' to neither the event nor the censored subset. A row is *suspicious*
 #' when its event is missing or any of its intervals is missing, negative or
 #' zero.
 #'
-#' The quartiles in \code{intervals} use R's default interpolated quantiles
-#' (\code{type = 7}), while \code{\link{proc_means}} uses the SAS
-#' \code{QNTLDEF=5} estimator, so a median in the two tables can disagree on
-#' a small subset. The difference is deliberate: \code{intervals} is a quick
-#' screen, and \code{means} is the table to compare against SAS.
+#' The quartiles in `intervals` use R's default interpolated quantiles
+#' (`type = 7`), while [proc_means()] uses the SAS
+#' `QNTLDEF=5` estimator, so a median in the two tables can disagree on
+#' a small subset. The difference is deliberate: `intervals` is a quick
+#' screen, and `means` is the table to compare against SAS.
 #'
-#' \code{means} reports the 15th and 85th percentiles rather than the
+#' `means` reports the 15th and 85th percentiles rather than the
 #' quartiles, because those are what the group's descriptive summaries show.
-#' SAS \code{PROC MEANS} prints no percentiles unless asked, so a parity
+#' SAS `PROC MEANS` prints no percentiles unless asked, so a parity
 #' comparison names the same statistics on the SAS side, or passes the SAS
-#' job's list to \code{stats}.
+#' job's list to `stats`.
 #'
-#' Identifiers are never included unless named in \code{identifier}. Check the
-#' result before sharing a report that shows \code{review} with one.
+#' Identifiers are never included unless named in `identifier`. Check the
+#' result before sharing a report that shows `review` with one.
 #'
 #' @param data A data frame, one row per patient.
 #' @param time Names of one or more follow-up interval columns, in years.
-#'   Was \code{followup} before 2026-11; \code{followup =} still works for one
+#'   Was `followup` before 2026-11; `followup =` still works for one
 #'   release, with a warning.
-#' @param event Name of the event indicator: 1 or \code{TRUE} for an event, 0
-#'   or \code{FALSE} for censored. Missing values are allowed and counted.
-#' @param identifier \code{NULL} (the default), or the name of one column to
-#'   show in \code{review}.
-#' @param max_rows The most suspicious rows to return in \code{review}, in data
+#' @param event Name of the event indicator: 1 or `TRUE` for an event, 0
+#'   or `FALSE` for censored. Missing values are allowed and counted.
+#' @param identifier `NULL` (the default), or the name of one column to
+#'   show in `review`.
+#' @param max_rows The most suspicious rows to return in `review`, in data
 #'   order. Default 25.
 #' @param stats Character vector of SAS statistic keywords for the
-#'   \code{means} tables, passed to \code{\link{proc_means}} and validated the
+#'   `means` tables, passed to [proc_means()] and validated the
 #'   same way. Default
-#'   \code{c("n", "nmiss", "mean", "std", "min", "p15", "median", "p85", "max")}.
+#'   `c("n", "nmiss", "mean", "std", "min", "p15", "median", "p85", "max")`.
 #'
-#' @param followup Deprecated: the old name of \code{time}, kept for one release.
-#' @return An object of class \code{followup_check}, a list of four
+#' @param followup Deprecated: the old name of `time`, kept for one release.
+#' @return An object of class `followup_check`, a list of four
 #'   components, three data frames and a list of three:
 #' \describe{
-#'   \item{\code{cohort}}{One row: \code{full}, \code{event}, \code{censored}
-#'     and \code{missing_event} counts.}
-#'   \item{\code{intervals}}{One row per interval: \code{missing},
-#'     \code{negative} and \code{zero} counts, then \code{min}, \code{q1},
-#'     \code{median}, \code{q3}, \code{mean}, \code{sd} and \code{max} of the
+#'   \item{`cohort`}{One row: `full`, `event`, `censored`
+#'     and `missing_event` counts.}
+#'   \item{`intervals`}{One row per interval: `missing`,
+#'     `negative` and `zero` counts, then `min`, `q1`,
+#'     `median`, `q3`, `mean`, `sd` and `max` of the
 #'     observed values.}
-#'   \item{\code{means}}{A named list, \code{full}, \code{event} and
-#'     \code{censored}, of \code{\link{proc_means}} tables over the
-#'     intervals, one column per statistic in \code{stats}.}
-#'   \item{\code{review}}{Up to \code{max_rows} suspicious rows, with the
-#'     event, the intervals and any \code{identifier}.}
+#'   \item{`means`}{A named list, `full`, `event` and
+#'     `censored`, of [proc_means()] tables over the
+#'     intervals, one column per statistic in `stats`.}
+#'   \item{`review`}{Up to `max_rows` suspicious rows, with the
+#'     event, the intervals and any `identifier`.}
 #' }
 #'
-#' @seealso \code{\link{proc_means}}, \code{\link{cohort_counts}}, which counts
+#' @seealso [proc_means()], [cohort_counts()], which counts
 #'   the analysable cohort rather than checking follow-up.
 #'
 #' @examples

@@ -7,7 +7,7 @@
 assert_cohort(data, expected, time, event)
 }
 \arguments{
-\item{data}{A data frame. Was \code{d} before 2026-11; \code{d =} still
+\item{data}{A data frame. Was \code{d} before 2026-11; \verb{d =} still
 works for one release, with a warning.}
 
 \item{expected}{List containing nonnegative integer \code{n},
@@ -21,14 +21,13 @@ works for one release, with a warning.}
 \code{invisible(TRUE)} on success; otherwise an error.
 }
 \description{
-Compares \code{\link{cohort_counts}} against explicitly supplied expected
+Compares \code{\link[=cohort_counts]{cohort_counts()}} against explicitly supplied expected
 counts and errors on any disagreement. Call it before any analysis that
 would otherwise run happily on an unreconciled cohort.
 }
 \section{Argument order}{
 
-\code{time, event}, as in \code{survival::Surv()}; it was \code{event,
-time} until 2026-11. For one release a call passing all four arguments
+\verb{time, event}, as in \code{survival::Surv()}; it was \verb{event, time} until 2026-11. For one release a call passing all four arguments
 unnamed is read in the old order, with a warning.
 }
 
@@ -38,5 +37,5 @@ expected <- list(n = 5L, n_events = 2L, n_censored = 3L)
 assert_cohort(d, expected, time = "iv_dead", event = "dead")
 }
 \seealso{
-\code{\link{cohort_counts}}
+\code{\link[=cohort_counts]{cohort_counts()}}
 }

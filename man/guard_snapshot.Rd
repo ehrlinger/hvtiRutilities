@@ -18,7 +18,7 @@ guard_snapshot(
 on purpose.}
 
 \item{session}{The R version of this session, a
-\code{\link[base]{numeric_version}}. Defaults to the running R; set it
+\code{\link[base:numeric_version]{base::numeric_version()}}. Defaults to the running R; set it
 only to test the guard.}
 
 \item{installed}{A function taking a package name and returning its
@@ -28,7 +28,7 @@ guard.}
 }
 \value{
 \code{TRUE}, invisibly, when the snapshot may go ahead. Otherwise
-  an error that names both R versions and the R to start.
+an error that names both R versions and the R to start.
 }
 \description{
 Stops before \code{renv::snapshot()} when the R running this session has a
@@ -46,7 +46,7 @@ to a new R. The guard then still stops if any package in the lockfile is
 not installed in this session's library, because the snapshot would drop
 it; restore those first with \code{renv::restore()}.
 
-\code{\link{study_need}} and \code{\link{study_setup}} call this before
+\code{\link[=study_need]{study_need()}} and \code{\link[=study_setup]{study_setup()}} call this before
 they snapshot, so you need to call it yourself only before a snapshot of
 your own.
 }

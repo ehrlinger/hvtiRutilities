@@ -7,7 +7,7 @@
 study_abbreviations(cfg = study_config(), extra = NULL, defaults = TRUE)
 }
 \arguments{
-\item{cfg}{A study configuration, as returned by \code{\link{study_config}}.}
+\item{cfg}{A study configuration, as returned by \code{\link[=study_config]{study_config()}}.}
 
 \item{extra}{The job's own entries: a named character vector or list,
 phrase to abbreviation, with \code{NA} or \code{NULL} to remove a phrase
@@ -17,24 +17,24 @@ a lower level supplies. \code{NULL} for none.}
 }
 \value{
 A named character vector, one element per spelling, phrase to
-  abbreviation, ready for \code{label_map(abbreviations = )}. Removed
-  phrases do not appear. Two attributes of the same length:
-  \describe{
-    \item{source}{each entry's level: \code{"job"}, \code{"study"} or
-      \code{"default"};}
-    \item{expansion}{the term each abbreviation stands for, the first
-      spelling of its entry, which \code{\link{label_map}} prints in its
-      key.}
-  }
+abbreviation, ready for \code{label_map(abbreviations = )}. Removed
+phrases do not appear. Two attributes of the same length:
+\describe{
+\item{source}{each entry's level: \code{"job"}, \code{"study"} or
+\code{"default"};}
+\item{expansion}{the term each abbreviation stands for, the first
+spelling of its entry, which \code{\link[=label_map]{label_map()}} prints in its
+key.}
+}
 }
 \description{
 Merges the three abbreviation lists a job's labels can draw on, and checks
-the result, so that \code{\link{label_map}} shortens labels the same way in
+the result, so that \code{\link[=label_map]{label_map()}} shortens labels the same way in
 every job of a study:
 \enumerate{
-  \item \code{extra}, the job's own entries;
-  \item the study's \code{abbreviations:} mapping in \code{_study.yml};
-  \item the group default list shipped with this package.
+\item \code{extra}, the job's own entries;
+\item the study's \verb{abbreviations:} mapping in \verb{_study.yml};
+\item the group default list shipped with this package.
 }
 A higher level replaces a lower level's entry for the same phrase, compared
 ignoring case, and an entry of \code{null} (\code{NA} or \code{NULL} in
@@ -66,6 +66,6 @@ study_abbreviations(study_config(root, require_data = FALSE),
 unlink(root, recursive = TRUE)
 }
 \seealso{
-\code{\link{add_abbreviation}} to add to a study's list,
-  \code{\link{label_map}}, which applies it.
+\code{\link[=add_abbreviation]{add_abbreviation()}} to add to a study's list,
+\code{\link[=label_map]{label_map()}}, which applies it.
 }

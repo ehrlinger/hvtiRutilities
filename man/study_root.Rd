@@ -14,10 +14,10 @@ to \code{getwd()}.}
 Character(1). The absolute path of the study root.
 }
 \description{
-Returns the absolute path of the directory holding \code{_study.yml}, found
+Returns the absolute path of the directory holding \verb{_study.yml}, found
 by walking up from \code{start}. Errors if there is none, naming the
-directories walked, or when \code{_study.yml} is invalid, as
-\code{\link{study_config}} reports it.
+directories walked, or when \verb{_study.yml} is invalid, as
+\code{\link[=study_config]{study_config()}} reports it.
 }
 \examples{
 root <- file.path(tempdir(), "study-root-example")
@@ -30,5 +30,5 @@ study_root(root)
 unlink(root, recursive = TRUE)
 }
 \seealso{
-\code{\link{study_config}}, \code{\link{sas_path}}
+\code{\link[=study_config]{study_config()}}, \code{\link[=sas_path]{sas_path()}}
 }

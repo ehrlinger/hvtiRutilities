@@ -11,17 +11,17 @@ sas_triage(dir, overrides = NULL)
 the canonical library lives on a network volume where file operations are
 slow.}
 
-\item{overrides}{Character or \code{NULL}. Path to a `macro_overrides.yaml`
+\item{overrides}{Character or \code{NULL}. Path to a \code{macro_overrides.yaml}
 recording human decisions. Each entry requires \code{macro},
 \code{canonical_file}, \code{rationale}, \code{decided_by}, and
 \code{decided_on}.}
 }
 \value{
 A \code{data.frame} with one row per macro definition and columns
-  \code{file}, \code{macro}, \code{params}, \code{body_hash},
-  \code{line_start}, \code{line_end}, \code{visibility}, \code{decision},
-  \code{rule}, and \code{evidence}. Rows are sorted by \code{macro} then
-  \code{file}, so the result is deterministic.
+\code{file}, \code{macro}, \code{params}, \code{body_hash},
+\code{line_start}, \code{line_end}, \code{visibility}, \code{decision},
+\code{rule}, and \code{evidence}. Rows are sorted by \code{macro} then
+\code{file}, so the result is deterministic.
 }
 \description{
 Applies an ordered rule ladder to every SAS source file in \code{dir} and
@@ -40,18 +40,18 @@ extensions -- and many macro files carry no extension at all, so a
 
 File-level rules, applied first, in order:
 \enumerate{
-  \item \code{Copy of *} -- drop, as a filename-prefix duplicate.
-  \item \code{*.sas~} -- drop, as an editor backup superseded by construction.
-  \item Fails \code{.sas_lint()} -- drop, citing the specific lint failure.
+\item \verb{Copy of *} -- drop, as a filename-prefix duplicate.
+\item \verb{*.sas~} -- drop, as an editor backup superseded by construction.
+\item Fails \code{.sas_lint()} -- drop, citing the specific lint failure.
 }
 
 Definition-level rules, applied per macro name across surviving files:
-\enumerate{
-  \item[4.] Defined in exactly one file -- canonical.
-  \item[5.] Defined in several files, all bodies hashing identically --
-    canonical, recording every defining file.
-  \item[6.] Defined in several files with two or more distinct bodies --
-    \strong{ambiguous}. No canonical file is chosen.
+\itemize{
+\item \strong{4.} Defined in exactly one file -- canonical.
+\item \strong{5.} Defined in several files, all bodies hashing identically --
+canonical, recording every defining file.
+\item \strong{6.} Defined in several files with two or more distinct bodies --
+\strong{ambiguous}. No canonical file is chosen.
 }
 
 Rule 6 never auto-resolves. Modification dates and visibility are attached as

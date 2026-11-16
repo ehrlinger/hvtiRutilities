@@ -8,16 +8,16 @@ get_labels(label_map_df, variables)
 }
 \arguments{
 \item{label_map_df}{A data frame with \code{key} and \code{label} columns,
-as returned by \code{\link{label_map}}.}
+as returned by \code{\link[=label_map]{label_map()}}.}
 
 \item{variables}{A character vector of variable names to look up.}
 }
 \value{
 A named character vector with names equal to \code{variables}
-  and values equal to the corresponding labels.
+and values equal to the corresponding labels.
 }
 \description{
-A vectorized companion to \code{\link{get_label}}. Returns a named character
+A vectorized companion to \code{\link[=get_label]{get_label()}}. Returns a named character
 vector of labels for one or more variable names, making it convenient to
 label axes, table columns, or multi-panel plots in a single call.
 
@@ -37,6 +37,6 @@ headers <- get_labels(lmap, vars)
 print(headers)
 }
 \seealso{
-\code{\link{get_label}} for single-variable lookup,
-  \code{\link{label_map}} to extract a label map from data.
+\code{\link[=get_label]{get_label()}} for single-variable lookup,
+\code{\link[=label_map]{label_map()}} to extract a label map from data.
 }

@@ -17,35 +17,35 @@
 #' Record a verified study identity
 #'
 #' @description
-#' Writes a Study Tracker identity into an existing \code{_study.yml} and marks
-#' it verified: \code{identity_source: tracker} and
-#' \code{identity_verified: true}. Every other key, including the data
-#' contract (\code{built}, \code{cohort}, \code{additional_datasets},
-#' \code{population}, \code{citation}), keeps its value.
+#' Writes a Study Tracker identity into an existing `_study.yml` and marks
+#' it verified: `identity_source: tracker` and
+#' `identity_verified: true`. Every other key, including the data
+#' contract (`built`, `cohort`, `additional_datasets`,
+#' `population`, `citation`), keeps its value.
 #'
 #' @details
 #' This is the write step of verifying a manual identity. It does not read
 #' Study Tracker or compare the record with the typed identity; the caller
 #' does both, and passes the record only when they match. A field the record
-#' leaves \code{NULL} keeps its current value.
+#' leaves `NULL` keeps its current value.
 #'
-#' The file is rewritten whole and atomically, as \code{\link{register_data}}
-#' rewrites it, so comments in \code{_study.yml} are not kept.
+#' The file is rewritten whole and atomically, as [register_data()]
+#' rewrites it, so comments in `_study.yml` are not kept.
 #'
 #' @param identity A named list from the Study Tracker record. It must hold
-#'   \code{study_tracker_id}, equal to the manifest's (so an exploration set
-#'   up with \code{derived_from} is promoted with \code{\link{study_promote}}
-#'   first), and \code{study}; it may
-#'   hold \code{umbrella}, \code{owner}, \code{irb_number}, \code{cvir_no} and
-#'   \code{study_creation_date}.
+#'   `study_tracker_id`, equal to the manifest's (so an exploration set
+#'   up with `derived_from` is promoted with [study_promote()]
+#'   first), and `study`; it may
+#'   hold `umbrella`, `owner`, `irb_number`, `cvir_no` and
+#'   `study_creation_date`.
 #' @param start A directory inside the study; the study is found as
-#'   \code{\link{study_config}} finds it. Defaults to the study that contains the working
-#'   directory, found by its \code{_study.yml}; outside a study the function
+#'   [study_config()] finds it. Defaults to the study that contains the working
+#'   directory, found by its `_study.yml`; outside a study the function
 #'   stops and writes nothing.
 #'
 #' @return The names of the keys whose values changed, invisibly.
 #'
-#' @seealso \code{\link{study_setup}}, \code{\link{study_status}}.
+#' @seealso [study_setup()], [study_status()].
 #'
 #' @export
 #'

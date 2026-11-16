@@ -15,13 +15,13 @@ verify_manifest(
 \arguments{
 \item{manifest_path}{Character. Path to the manifest YAML file. Defaults to
 the study's \code{manifest.yaml} when run inside a study (a
-\code{_study.yml} here or above), and to \code{"manifest.yaml"} in the
+\verb{_study.yml} here or above), and to \code{"manifest.yaml"} in the
 working directory otherwise.}
 
 \item{data_dir}{Character. Directory holding the dataset files. When
 supplied, it is used exactly as given. When \code{NULL} (default), the
-manifest directory is inspected once. \code{00_datasets/} supports the
-numbered layout created by \code{\link{study_setup}}, \code{datasets/}
+manifest directory is inspected once. \verb{00_datasets/} supports the
+numbered layout created by \code{\link[=study_setup]{study_setup()}}, \verb{datasets/}
 supports an adopted legacy layout, and a manifest with neither uses its
 own directory. Outside a study, an empty nested directory does not displace
 files beside the manifest. Both dataset directories together are a mixed
@@ -33,35 +33,35 @@ proceeding.  Set to \code{FALSE} to collect all errors and report them
 together as a warning.}
 
 \item{verbose}{Logical. If \code{TRUE}, report each passing entry via
-\code{\link[base]{message}}.  Defaults to \code{FALSE} so that scripted or
+\code{\link[base:message]{base::message()}}.  Defaults to \code{FALSE} so that scripted or
 looped calls stay silent; the same information is always available in the
 returned data frame.  Failures are reported through \code{stop()} or
 \code{warning()} regardless of this setting.}
 
 \item{strict}{Logical. If \code{TRUE}, an entry whose row count could not be
-  re-derived is reported as \code{"FAIL"} rather than passing on its
-  checksum alone, and the message names which of the three causes applies:
-  no count recorded in the manifest, a file type whose rows cannot be
-  counted, or heavy row counting left disabled.  Defaults to \code{FALSE},
-  which preserves the permissive behaviour described above.
+re-derived is reported as \code{"FAIL"} rather than passing on its
+checksum alone, and the message names which of the three causes applies:
+no count recorded in the manifest, a file type whose rows cannot be
+counted, or heavy row counting left disabled.  Defaults to \code{FALSE},
+which preserves the permissive behaviour described above.
 
-  Use it where the question is "did every check actually run", not "is the
-  data intact": a release gate, an archival gate, or a hand-off where a
-  downstream reader will treat \code{"OK"} as meaning fully verified. Under
-  the default, \code{"OK"} can mean "checksum verified, row count not
-  examined", and the \code{row_count_checked} column is the only thing that
-  distinguishes the two.}
+Use it where the question is "did every check actually run", not "is the
+data intact": a release gate, an archival gate, or a hand-off where a
+downstream reader will treat \code{"OK"} as meaning fully verified. Under
+the default, \code{"OK"} can mean "checksum verified, row count not
+examined", and the \code{row_count_checked} column is the only thing that
+distinguishes the two.}
 }
 \value{
 Invisibly returns a data frame with columns \code{file},
-  \code{status} (\code{"OK"} or \code{"FAIL"}), \code{message}, and
-  \code{row_count_checked} (logical; \code{TRUE} when the row count was
-  re-derived from the file and compared with the manifest; also \code{TRUE}
-  for a build-record row whose checksum was verified, since a record has no
-  row count).
+\code{status} (\code{"OK"} or \code{"FAIL"}), \code{message}, and
+\code{row_count_checked} (logical; \code{TRUE} when the row count was
+re-derived from the file and compared with the manifest; also \code{TRUE}
+for a build-record row whose checksum was verified, since a record has no
+row count).
 }
 \description{
-Reads a \code{manifest.yaml} produced by \code{\link{update_manifest}} and,
+Reads a \code{manifest.yaml} produced by \code{\link[=update_manifest]{update_manifest()}} and,
 for every entry, confirms that (a) the file exists, (b) its SHA-256
 checksum matches the recorded value, and (c) its row count matches.
 Supported formats for automatic row-count verification: CSV
@@ -91,14 +91,14 @@ the message names which of the three it was.  A build-record row (see
 below) sets \code{row_count_checked} to \code{TRUE} once its checksum is
 verified, because a record has no row count.
 
-For a dataset registered with \code{\link{register_data}}, every registered
+For a dataset registered with \code{\link[=register_data]{register_data()}}, every registered
 version (the current dated parquet and each earlier one) is checked, and its
 row count is re-derived from the parquet footer when the version records a
 count and the footer can be read. When either fails the entry can still
 pass, with \code{row_count_checked} \code{FALSE}; use \code{strict = TRUE}
 to fail such an entry instead. A source file rebuilt since registration is
 reported with status \code{"PENDING"} and never stops: jobs keep reading the
-registered version until \code{\link{update_manifest}()} registers the new
+registered version until \code{\link[=update_manifest]{update_manifest()}} registers the new
 one.
 
 Call this function at the top of every analysis script or Quarto document
@@ -126,5 +126,5 @@ unlink(dir, recursive = TRUE)
 
 }
 \seealso{
-\code{\link{update_manifest}}
+\code{\link[=update_manifest]{update_manifest()}}
 }
