@@ -242,10 +242,13 @@
 # when the filesystem resolves sub-second mtimes, as .cache_valid() reasons;
 # otherwise, or when the stat differs, the hash decides, so a touch without a
 # change is not reported. A missing source is not a change: jobs keep reading
-# the registered version.
-.source_changed <- function(source_path, entry) {
+# the registered version. `exact = TRUE` skips the stat and always hashes: a
+# same-size copy that preserves the recorded mtime (cp -p, a restore) passes
+# the stat, and the exported source_changed() promises "differs", not "looks
+# untouched".
+.source_changed <- function(source_path, entry, exact = FALSE) {
   if (!.is_versioned(entry) || !file.exists(source_path)) return(FALSE)
-  if (!is.null(entry$source_size) && !is.null(entry$source_mtime)) {
+  if (!exact && !is.null(entry$source_size) && !is.null(entry$source_mtime)) {
     info <- file.info(source_path)
     mtime <- as.numeric(info$mtime)
     same_size <- identical(as.numeric(entry$source_size), as.numeric(info$size))

@@ -7,11 +7,14 @@
 #' registers the rebuild, so a report can use this to say, before it reads any
 #' data, that a newer build is waiting.
 #'
-#' It reads no data. The source's size and modification time are compared with
-#' those recorded at registration, and the file is hashed only when they differ
-#' or cannot settle it, so a touch that changed no bytes is not reported.
-#' [read_built()] makes the same check, and signals
-#' `hvtiRutilities_source_changed` when it is `TRUE`.
+#' It reads no data, but it hashes the source file and compares the SHA-256
+#' with the one recorded at registration, so the answer is about the bytes: a
+#' touch that changed nothing is not reported, and a same-size replacement that
+#' kept the old modification time (a copy or restore that preserves dates) is.
+#' The cost is one pass over the source file. [read_built()] signals
+#' `hvtiRutilities_source_changed` for a changed source, but settles an
+#' unchanged size and modification time without hashing, so it can miss the
+#' preserved-date case that this function catches.
 #'
 #' @param cfg List. A study manifest from [study_config()].
 #' @param dataset Character(1). Logical dataset name. Defaults to
@@ -44,5 +47,5 @@ source_changed <- function(cfg = study_config(), dataset = "study") {
   .study_dataset(cfg, dataset)
   p <- built_path(cfg, dataset)
   entry <- .manifest_entry(file.path(cfg$root, "manifest.yaml"), p)
-  isTRUE(.source_changed(p, entry))
+  isTRUE(.source_changed(p, entry, exact = TRUE))
 }
