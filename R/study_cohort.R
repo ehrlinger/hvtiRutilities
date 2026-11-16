@@ -23,9 +23,10 @@
 #'
 #' @section Argument order:
 #' \code{time, event}, as in \code{survival::Surv()}. Until 2026-11 the order
-#' was \code{event, time}. For one release a call passing both unnamed is read
-#' in the old order, with a warning; name them, \code{time =} and
-#' \code{event =}, and the call means the same before and after.
+#' was \code{event, time}, so a call passing both unnamed means opposite things
+#' in the two orders and is an error, whether or not \code{data} is named.
+#' Name them, \code{time =} and \code{event =}, and the call means the same
+#' before and after. One of the two unnamed reads the same in either order.
 #'
 #' @return A list with integer elements \code{n}, \code{n_events} and
 #'   \code{n_censored}.
@@ -40,11 +41,11 @@
 cohort_counts <- function(data, time, event) {
   cl <- sys.call()
   env <- parent.frame()
-  if (.hvti_old_call(cl, env, renamed = "d", positional = 3L)) {
+  .hvti_refuse_ambiguous_order(cl, env, cohort_counts, "cohort_counts", "(data, time, event)")
+  if (.hvti_old_call(cl, env, renamed = "d")) {
     .hvti_deprecate("cohort_counts_args",
-                    "cohort_counts(): the arguments are now (data, time, event), as in survival::Surv(). ",
-                    "`d =` is now `data =`, and two unnamed arguments after the data are read in the ",
-                    "old order, event then time, for one more release. Name them: time =, event =.")
+                    "cohort_counts(): the arguments are now (data, time, event), as in survival::Surv(), ",
+                    "and `d =` is now `data =`. Name time = and event =.")
     return(.hvti_recall(cl, env, function(d, event, time) NULL, cohort_counts, c(d = "data")))
   }
   d <- data
@@ -117,8 +118,8 @@ cohort_counts <- function(data, time, event) {
 #'
 #' @section Argument order:
 #' \code{time, event}, as in \code{survival::Surv()}; it was \code{event,
-#' time} until 2026-11. For one release a call passing all four arguments
-#' unnamed is read in the old order, with a warning.
+#' time} until 2026-11. A call passing both unnamed is an error, since the two
+#' orders read it oppositely; name \code{time =} and \code{event =}.
 #'
 #' @return \code{invisible(TRUE)} on success; otherwise an error.
 #'
@@ -133,11 +134,11 @@ cohort_counts <- function(data, time, event) {
 assert_cohort <- function(data, expected, time, event) {
   cl <- sys.call()
   env <- parent.frame()
-  if (.hvti_old_call(cl, env, renamed = "d", positional = 4L)) {
+  .hvti_refuse_ambiguous_order(cl, env, assert_cohort, "assert_cohort", "(data, expected, time, event)")
+  if (.hvti_old_call(cl, env, renamed = "d")) {
     .hvti_deprecate("assert_cohort_args",
                     "assert_cohort(): the arguments are now (data, expected, time, event), as in ",
-                    "survival::Surv(). `d =` is now `data =`, and four unnamed arguments are read in the ",
-                    "old order, event then time, for one more release. Name them: time =, event =.")
+                    "survival::Surv(), and `d =` is now `data =`. Name time = and event =.")
     return(.hvti_recall(cl, env, function(d, expected, event, time) NULL, assert_cohort,
                         c(d = "data")))
   }

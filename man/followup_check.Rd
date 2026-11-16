@@ -19,7 +19,9 @@ followup_check(
 
 \item{time}{Names of one or more follow-up interval columns, in years.
 Was \code{followup} before 2026-11; \code{followup =} still works for one
-release, with a warning.}
+release, with a warning. The order was \code{event, time} until then, so
+a call passing \code{time} and \code{event} both unnamed is an error;
+name them.}
 
 \item{event}{Name of the event indicator: 1 or \code{TRUE} for an event, 0
 or \code{FALSE} for censored. Missing values are allowed and counted.}

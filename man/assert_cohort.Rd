@@ -28,8 +28,8 @@ would otherwise run happily on an unreconciled cohort.
 \section{Argument order}{
 
 \code{time, event}, as in \code{survival::Surv()}; it was \code{event,
-time} until 2026-11. For one release a call passing all four arguments
-unnamed is read in the old order, with a warning.
+time} until 2026-11. A call passing both unnamed is an error, since the two
+orders read it oppositely; name \code{time =} and \code{event =}.
 }
 
 \examples{
