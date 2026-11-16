@@ -24,6 +24,10 @@ present, and the events among them.
 The event column must be logical or numeric binary coding: \code{FALSE}/\code{TRUE}
 or \code{0}/\code{1}. Rows missing either column are excluded from the
 analysable cohort.
+
+A zero or negative time is still counted, so the gate's numbers do not
+move, but it warns: \code{\link{followup_check}} flags the same rows for
+review, and the two should not disagree in silence.
 }
 \examples{
 d <- data.frame(dead = c(1, 1, 0, 0, 0), iv_dead = 1:5)

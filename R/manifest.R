@@ -317,7 +317,12 @@ update_manifest <- function(file,
 # Inside a study, the study's manifest; elsewhere, manifest.yaml here. A job run
 # from a subfolder used to check a manifest.yaml in its own folder.
 .default_manifest_path <- function() {
-  cfg <- tryCatch(study_config(require_data = FALSE), error = function(e) NULL)
+  # Only a missing _study.yml means "not in a study"; a malformed one is an
+  # error to report, not a reason to check some other manifest.
+  cfg <- tryCatch(study_config(require_data = FALSE), error = function(e) {
+    if (!grepl("no _study.yml found", conditionMessage(e), fixed = TRUE)) stop(e)
+    NULL
+  })
   if (is.null(cfg)) "manifest.yaml" else file.path(cfg$root, "manifest.yaml")
 }
 
@@ -592,7 +597,7 @@ verify_manifest <- function(manifest_path = .default_manifest_path(),
                             verbose       = FALSE,
                             strict        = FALSE) {
   if (!file.exists(manifest_path)) {
-    stop("Manifest file not found: ", manifest_path)
+    stop("verify_manifest(): manifest file not found: ", manifest_path, call. = FALSE)
   }
 
   manifest <- .read_manifest(manifest_path)

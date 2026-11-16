@@ -104,7 +104,8 @@ test_that("apply_label_overrides on data ignores non-existent columns", {
   dta <- data.frame(age = 1:3)
   labelled::var_label(dta$age) <- "Patient Age"
 
-  result <- apply_label_overrides(dta, overrides_file = tmp)
+  expect_warning(result <- apply_label_overrides(dta, overrides_file = tmp),
+                 "not applied: nonexistent")
   expect_equal(labelled::var_label(result$age), "Patient Age")
   expect_equal(ncol(result), 1)
 })

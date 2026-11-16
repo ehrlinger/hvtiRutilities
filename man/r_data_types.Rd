@@ -17,7 +17,9 @@ r_data_types(
 
 \item{factor_size}{Integer threshold for factor conversion. Numeric variables
 with fewer than this many unique values (but more than 2) will be converted
-to factors. Must be between 2 and 50. Default is 10.}
+to factors, so the default of 10 converts a column with 3 to 9 distinct
+values. Must be a whole number from 2 to 50. Character columns are not
+subject to it. Default is 10.}
 
 \item{skip_vars}{Character vector of column names to exclude from conversion.
 These columns will remain unchanged. Default is NULL (convert all columns).}
@@ -58,9 +60,13 @@ Each column is converted by the first rule that matches, in this order:
     \code{binary_factor}: \code{as.logical()} maps every nonzero code to
     \code{TRUE}, so a 1/2 column would otherwise become \code{TRUE} for
     every row and silently lose one of its two categories.
-  \item Remaining character columns become factors.
-  \item Numeric columns with 3 to \code{factor_size} distinct values
-    become factors.
+  \item Remaining character columns become factors, whatever their number
+    of distinct values: \code{factor_size} does not apply to them. A
+    character column that yields more than 50 levels -- usually an
+    identifier or free text, not a category -- warns, naming the column;
+    pass it in \code{skip_vars} to keep it as character.
+  \item Numeric columns with more than 2 and fewer than \code{factor_size}
+    distinct values become factors.
   \item Logical columns become factors when \code{binary_factor = TRUE}.
 }
 

@@ -12,6 +12,10 @@
 #' or \code{0}/\code{1}. Rows missing either column are excluded from the
 #' analysable cohort.
 #'
+#' A zero or negative time is still counted, so the gate's numbers do not
+#' move, but it warns: \code{\link{followup_check}} flags the same rows for
+#' review, and the two should not disagree in silence.
+#'
 #' @param d A data frame.
 #' @param event Character scalar naming the binary event column.
 #' @param time Character scalar naming the time column.
@@ -54,6 +58,19 @@ cohort_counts <- function(d, event, time) {
   if (!binary) {
     stop(
       "cohort_counts(): event column must be binary 0/1 or FALSE/TRUE",
+      call. = FALSE
+    )
+  }
+
+  # followup_check() flags a zero or negative interval for review; the gate
+  # counts what it is given, but says so rather than passing such rows as
+  # ordinary analysable time.
+  t_ok <- d[[time]][ok]
+  if (is.numeric(t_ok) && any(t_ok <= 0)) {
+    warning(
+      "cohort_counts(): ", sum(t_ok < 0), " negative and ", sum(t_ok == 0),
+      " zero value(s) of `", time, "` are counted as analysable. Review them ",
+      "with followup_check().",
       call. = FALSE
     )
   }

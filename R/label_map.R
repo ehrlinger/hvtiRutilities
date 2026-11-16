@@ -702,7 +702,15 @@ add_labels <- function(label_map_df, new_labels) {
     return(.refresh_truncation(label_map_df, new_keys))
   }
 
-  # Apply labels directly to the data frame via labelled
+  # Apply labels directly to the data frame via labelled. A name the data
+  # does not have is most often a typo, and labelling nothing is not what the
+  # caller asked for, so it is named as apply_value_labels() names its own.
+  unknown <- setdiff(names(new_labels), names(label_map_df))
+  if (length(unknown)) {
+    warning("add_labels(): ", length(unknown), " name(s) not present in the ",
+            "data were not applied: ", paste(unknown, collapse = ", "), ".",
+            call. = FALSE)
+  }
   for (nm in names(new_labels)) {
     if (nm %in% names(label_map_df)) {
       labelled::var_label(label_map_df[[nm]]) <- new_labels[[nm]]
@@ -729,6 +737,9 @@ add_labels <- function(label_map_df, new_labels) {
 #' \code{data} is any other data frame, labels are applied directly to
 #' the data via \code{\link{add_labels}}, which is the preferred
 #' data-first workflow.
+#' In that mode a key naming a column the data does not have warns, as
+#' \code{\link{add_labels}} does; an overrides file shared by several
+#' datasets warns for each key the current one lacks.
 #'
 #' @param data A data frame: either a label map (with \code{key} and
 #'   \code{label} columns, as returned by \code{\link{label_map}}), or any

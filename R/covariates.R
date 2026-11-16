@@ -166,6 +166,14 @@ covariate_audit <- function(data, vars, max_levels = 12L) {
 #' d <- data.frame(hx_htn = factor(c("0", "1", "0.714047")))
 #' str(covariates_to_numeric(d, "hx_htn"))
 covariates_to_numeric <- function(data, vars) {
+  # A misspelt covariate used to drop out here without a word and reach the
+  # model as whatever type it was read as, or not at all.
+  unknown <- setdiff(unique(vars), names(data))
+  if (length(unknown)) {
+    warning("covariates_to_numeric(): ", length(unknown), " name(s) in `vars` ",
+            "are not columns of `data` and were not converted: ",
+            paste(unknown, collapse = ", "), ".", call. = FALSE)
+  }
   for (v in intersect(unique(vars), names(data))) {
     col <- data[[v]]
     if (!is.factor(col)) next

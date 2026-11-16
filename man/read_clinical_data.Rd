@@ -17,7 +17,9 @@ declared variable-derivation step rather than to reading.}
 
 \item{...}{Additional arguments passed to \code{\link{r_data_types}}
 (e.g., \code{factor_size}, \code{skip_vars}, \code{binary_factor},
-\code{use_value_labels}). Ignored when \code{convert_types = FALSE}.}
+\code{use_value_labels}). Must be named. An error when
+\code{convert_types = FALSE}, or for a name \code{r_data_types()} does
+not take.}
 
 \item{catalog_file}{Character. Path to a SAS format catalog
 (\code{.sas7bcat}), passed to \code{haven::read_sas()}. Defaults to
@@ -61,6 +63,28 @@ A catalog on its own is only half the journey. With
 \code{convert_types = TRUE}, \code{\link{r_data_types}} discards value
 labels unless \code{use_value_labels = TRUE} is passed through \code{...},
 so supplying a catalog without it warns.
+
+\strong{Column types depend on the format.} Each reader decides its own
+types, and \code{read_clinical_data()} does not reconcile them:
+\itemize{
+  \item \code{.sas7bdat}: a date-formatted variable is \code{Date}, and a
+    formatted numeric is \code{haven_labelled} when a catalog is read.
+  \item \code{.xlsx}, \code{.xls}: a date cell is \code{POSIXct}, not
+    \code{Date}, and every number is double.
+  \item \code{.csv}: a date is \emph{character}. With
+    \code{convert_types = TRUE} it then becomes a factor, as every character
+    column does; convert it with \code{as.Date()} first, or name it in
+    \code{skip_vars}.
+  \item \code{.rds}, \code{.parquet}: the types that were written.
+}
+\code{\link{r_data_types}} never alters a \code{Date} or \code{POSIXct}
+column.
+
+\strong{The dots go to \code{r_data_types()} only.} Reader options --
+\code{sheet}, \code{na}, \code{skip} -- are not passed to the reader. A
+name in \code{...} that \code{\link{r_data_types}} does not take is an
+error, and so is any argument in \code{...} when \code{convert_types} is
+\code{FALSE}, since it would otherwise be dropped without effect.
 }
 \examples{
 # Read a CSV

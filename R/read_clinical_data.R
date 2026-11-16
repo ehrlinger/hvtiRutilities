@@ -37,6 +37,28 @@
 #' labels unless \code{use_value_labels = TRUE} is passed through \code{...},
 #' so supplying a catalog without it warns.
 #'
+#' \strong{Column types depend on the format.} Each reader decides its own
+#' types, and \code{read_clinical_data()} does not reconcile them:
+#' \itemize{
+#'   \item \code{.sas7bdat}: a date-formatted variable is \code{Date}, and a
+#'     formatted numeric is \code{haven_labelled} when a catalog is read.
+#'   \item \code{.xlsx}, \code{.xls}: a date cell is \code{POSIXct}, not
+#'     \code{Date}, and every number is double.
+#'   \item \code{.csv}: a date is \emph{character}. With
+#'     \code{convert_types = TRUE} it then becomes a factor, as every character
+#'     column does; convert it with \code{as.Date()} first, or name it in
+#'     \code{skip_vars}.
+#'   \item \code{.rds}, \code{.parquet}: the types that were written.
+#' }
+#' \code{\link{r_data_types}} never alters a \code{Date} or \code{POSIXct}
+#' column.
+#'
+#' \strong{The dots go to \code{r_data_types()} only.} Reader options --
+#' \code{sheet}, \code{na}, \code{skip} -- are not passed to the reader. A
+#' name in \code{...} that \code{\link{r_data_types}} does not take is an
+#' error, and so is any argument in \code{...} when \code{convert_types} is
+#' \code{FALSE}, since it would otherwise be dropped without effect.
+#'
 #' @param file Character. Path to the dataset file.
 #' @param convert_types Logical. Apply \code{\link{r_data_types}} to the data
 #'   after reading. Defaults to \code{FALSE}: the file is returned as read.
@@ -45,7 +67,9 @@
 #'   declared variable-derivation step rather than to reading.
 #' @param ... Additional arguments passed to \code{\link{r_data_types}}
 #'   (e.g., \code{factor_size}, \code{skip_vars}, \code{binary_factor},
-#'   \code{use_value_labels}). Ignored when \code{convert_types = FALSE}.
+#'   \code{use_value_labels}). Must be named. An error when
+#'   \code{convert_types = FALSE}, or for a name \code{r_data_types()} does
+#'   not take.
 #' @param catalog_file Character. Path to a SAS format catalog
 #'   (\code{.sas7bcat}), passed to \code{haven::read_sas()}. Defaults to
 #'   \code{NULL}, which is what was read before this argument existed, so no
@@ -94,6 +118,32 @@ read_clinical_data <- function(file, convert_types = FALSE, ...,
       "old behaviour, or FALSE to silence this warning.",
       call. = FALSE
     )
+  }
+
+  # The dots reach r_data_types() and nothing else, so a reader option such as
+  # sheet = 2 or na = "." used to vanish without a word when convert_types was
+  # FALSE, and failed as an opaque "unused argument" when it was TRUE.
+  dots <- list(...)
+  if (length(dots)) {
+    dot_names <- names(dots)
+    if (is.null(dot_names) || any(!nzchar(dot_names))) {
+      stop("read_clinical_data(): arguments in `...` must be named; they are ",
+           "passed to r_data_types().", call. = FALSE)
+    }
+    if (!isTRUE(convert_types)) {
+      stop("read_clinical_data(): `...` (", paste(dot_names, collapse = ", "),
+           ") is passed only to r_data_types(), which does not run when ",
+           "`convert_types` is FALSE. Drop them, or pass convert_types = TRUE.",
+           call. = FALSE)
+    }
+    unknown <- setdiff(dot_names, setdiff(names(formals(r_data_types)), "dataset"))
+    if (length(unknown)) {
+      stop("read_clinical_data(): r_data_types() has no argument ",
+           paste0("`", unknown, "`", collapse = ", "), ". Arguments in `...` ",
+           "are not passed to the file reader, so reader options such as ",
+           "`sheet` or `na` cannot be set here; read the file directly instead.",
+           call. = FALSE)
+    }
   }
 
   # Supplying a catalog states an intent -- the code-to-text mapping is

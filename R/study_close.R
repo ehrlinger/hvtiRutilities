@@ -278,7 +278,7 @@ study_close <- function(outcome, reason = NULL, publication = NULL,
     type = "closure", closure_id = uuid::UUIDgenerate(),
     st_id = .cp_or(study$st_id, study$provisional_id),
     workspace_id = study$workspace_id, outcome = outcome,
-    closed_at = .cp_date(closed_at), reason = reason,
+    closed_at = .cp_date(closed_at, "study_close(): `closed_at`"), reason = reason,
     publication = publication, superseded_by = superseded_by,
     git_commit = NULL, tag = NULL, state = NULL,
     delivery = list(git = "none", st = "pending")
@@ -326,7 +326,7 @@ study_reopen <- function(reason, new_lead = NULL, reopened_at = Sys.Date(),
     type = "reopening", reopening_id = uuid::UUIDgenerate(),
     st_id = .cp_or(study$st_id, study$provisional_id),
     workspace_id = study$workspace_id,
-    reopened_at = .cp_date(reopened_at), reason = reason, new_lead = new_lead,
+    reopened_at = .cp_date(reopened_at, "study_reopen(): `reopened_at`"), reason = reason, new_lead = new_lead,
     git_commit = NULL, tag = tag, state = "committing",
     delivery = list(git = "pending", st = "pending")
   )

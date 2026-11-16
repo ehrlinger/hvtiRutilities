@@ -40,7 +40,7 @@
 #' the two jobs apart: the converter reads this file, and a table renderer
 #' reads the label.
 #'
-#' Two rules worth knowing before relying on the result:
+#' Three rules worth knowing before relying on the result:
 #' \itemize{
 #'   \item \strong{Value labels already on the column win.} A column that
 #'     arrives labelled - from a catalogue, or from an earlier call - is left
@@ -49,6 +49,9 @@
 #'   \item \strong{A variable named in the file but absent from the data is
 #'     reported.} A typo that quietly declares nothing is the failure this
 #'     file is least able to notice.
+#'   \item \strong{A factor column is left as read.} Its levels are already its
+#'     text, and value labels cannot be attached to a factor, so the variable
+#'     is named in a warning instead.
 #' }
 #'
 #' The \code{ordered} key is reserved for the ordinal declaration and is
@@ -118,6 +121,24 @@ apply_value_labels <- function(data,
 
   declared <- intersect(names(decl), names(data))
   skipped <- character(0)
+
+  # A factor already carries its level text and labelled cannot attach value
+  # labels to one; the bare labelled error named neither the file nor the
+  # column, so factors are left as read and named, like labelled columns.
+  factors <- declared[vapply(declared, function(v) is.factor(data[[v]]), logical(1))]
+  if (length(factors) > 0) {
+    warning(
+      sprintf(
+        paste0("%d variable(s) are already factors and were left as read: %s. ",
+               "A factor's levels are its labels; %s applies to numeric or ",
+               "character codes."),
+        length(factors), paste(factors, collapse = ", "),
+        basename(value_labels_file)
+      ),
+      call. = FALSE
+    )
+    declared <- setdiff(declared, factors)
+  }
 
   for (v in declared) {
     if (length(labelled::val_labels(data[[v]])) > 0) {
@@ -195,7 +216,7 @@ apply_value_labels <- function(data,
   codes <- names(entry)
   text <- vapply(entry, as.character, character(1), USE.NAMES = FALSE)
 
-  if (is.character(column) || is.factor(column)) {
+  if (is.character(column)) {
     return(stats::setNames(codes, text))
   }
 

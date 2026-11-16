@@ -23,6 +23,13 @@
 # the remote URL is echoed in git output and warnings, so a URL whose
 # userinfo carries a password is refused. The message does not repeat it.
 .cp_check_remote <- function(remote, caller) {
+  # An empty or non-scalar remote used to surface later as "remote
+  # unreachable", a network fault that no retry could clear.
+  if (!is.null(remote) &&
+        !(is.character(remote) && length(remote) == 1L && !is.na(remote) && nzchar(remote))) {
+    stop(caller, "(): checkpoint: remote: in _study.yml must be one non-empty URL or path",
+         call. = FALSE)
+  }
   if (!is.null(remote) &&
         any(grepl("^[A-Za-z][A-Za-z0-9+.-]*://[^/@]*:[^/@]*@", remote))) {
     stop(caller, "(): the checkpoint remote URL must not carry a password ",

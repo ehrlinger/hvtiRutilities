@@ -47,8 +47,15 @@
   if (!dir.exists(file.path(repo, ".git"))) return(FALSE)
   res <- .cp_git(repo, c("rev-parse", "--git-dir"))
   if (!res$ok || !identical(res$out[1], ".git")) {
-    stop(".checkpoint/repo is not a valid git repository: its .git directory ",
-         "is incomplete. Delete .checkpoint/repo and run again; the next ",
+    # git's own text comes first: a safe.directory ("dubious ownership")
+    # refusal is not an incomplete .git, and deleting the repo for it would
+    # lose checkpoints not yet pushed.
+    stop(".checkpoint/repo is not usable as a git repository. git said: ",
+         if (res$ok) paste0("git dir is ", res$out[1]) else .cp_last(res$out), ". ",
+         "If git reports dubious ownership, add the folder with ",
+         "`git config --global --add safe.directory <path>`. Otherwise its ",
+         ".git directory is incomplete: check study_status() for checkpoints ",
+         "not yet pushed, then delete .checkpoint/repo and run again; the next ",
          "checkpoint recreates it, from the remote when one is set. On Windows, ",
          "clear the read-only attribute on its files first (git writes them ",
          "read-only), or the delete leaves them behind.", call. = FALSE)

@@ -319,7 +319,7 @@ study_checkpoint <- function(kind, note = NULL, attributes = NULL,
     type = "checkpoint", checkpoint_id = uuid::UUIDgenerate(),
     st_id = .cp_or(study$st_id, study$provisional_id),
     workspace_id = study$workspace_id, kind = kind,
-    occurred_at = .cp_date(occurred_at), trigger = row$trigger,
+    occurred_at = .cp_date(occurred_at, "study_checkpoint(): `occurred_at`"), trigger = row$trigger,
     artifact = NULL, git_commit = NULL, note = note, attributes = attributes,
     tag = NULL, state = NULL, delivery = list(git = "none", st = "pending")
   )
