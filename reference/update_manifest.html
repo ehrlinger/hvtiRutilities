@@ -13,8 +13,8 @@ versions when its own rebuilt source is registered. One whose parents have
 since been updated, or that records no parent versions, is listed as out of
 date in a message after the table until its source is rebuilt and
 update_manifest() is run again. Name one dataset with dataset.
-Release-aware datasets are skipped; use review_data_update and
-adopt_data_update. A key violation on one dataset stops the
+Release-aware datasets are skipped; use review_data_update() and
+adopt_data_update(). A key violation on one dataset stops the
 whole run and leaves every dataset as it was.
 A single file: update_manifest(file, ...) records a SHA-256
 checksum, row count, extract date and optional provenance fields for one
@@ -46,8 +46,8 @@ versions when its own rebuilt source is registered. One whose parents have
 since been updated, or that records no parent versions, is listed as out of
 date in a message after the table until its source is rebuilt and
 update_manifest() is run again. Name one dataset with dataset.
-Release-aware datasets are skipped; use review_data_update and
-adopt_data_update. A key violation on one dataset stops the
+Release-aware datasets are skipped; use review_data_update() and
+adopt_data_update(). A key violation on one dataset stops the
 whole run and leaves every dataset as it was.
 A single file: update_manifest(file, ...) records a SHA-256
 checksum, row count, extract date and optional provenance fields for one
@@ -138,8 +138,8 @@ versions when its own rebuilt source is registered. One whose parents have
 since been updated, or that records no parent versions, is listed as out of
 date in a message after the table until its source is rebuilt and
 <code>update_manifest()</code> is run again. Name one dataset with <code>dataset</code>.
-Release-aware datasets are skipped; use <code><a href="review_data_update.html">review_data_update</a></code> and
-<code><a href="adopt_data_update.html">adopt_data_update</a></code>. A key violation on one dataset stops the
+Release-aware datasets are skipped; use <code><a href="review_data_update.html">review_data_update()</a></code> and
+<code><a href="adopt_data_update.html">adopt_data_update()</a></code>. A key violation on one dataset stops the
 whole run and leaves every dataset as it was.</p>
 <p><strong>A single file</strong>: <code>update_manifest(file, ...)</code> records a SHA-256
 checksum, row count, extract date and optional provenance fields for one
@@ -191,7 +191,7 @@ register every changed dataset; see the description.</p></dd>
 <dd><p>Character. Path to the manifest YAML file.
 Created if it does not exist. <code>NULL</code> (the default) writes the
 enclosing study's <code>manifest.yaml</code> at its root, the manifest the
-no-argument form and <code><a href="verify_manifest.html">verify_manifest</a></code> use, and only for a
+no-argument form and <code><a href="verify_manifest.html">verify_manifest()</a></code> use, and only for a
 file in the study's datasets folder, where that manifest's entries are
 resolved. Outside a study, or for a file anywhere else, there is no
 default: name the manifest, or the call stops and writes nothing.</p></dd>
@@ -254,7 +254,7 @@ source is retired. <code>NULL</code> (default) omits the field.</p></dd>
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
 <dd><p>Logical. If <code>TRUE</code>, report which manifest entry was
-added or updated via <code><a href="https://rdrr.io/r/base/message.html" class="external-link">message</a></code>.  Defaults to
+added or updated via <code><a href="https://rdrr.io/r/base/message.html" class="external-link">base::message()</a></code>.  Defaults to
 <code>FALSE</code> so that scripted or looped calls stay silent.</p></dd>
 
 
@@ -268,15 +268,15 @@ registered dataset to update; <code>NULL</code> updates every one that changed.
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>With <code>file</code>, invisibly returns the updated manifest as a named
-  list. With no <code>file</code>, invisibly returns a data frame with one row per
-  dataset and columns <code>dataset</code>, <code>action</code> (<code>"registered"</code>,
-  <code>"migrated"</code>, <code>"unchanged"</code>, <code>"skipped"</code> or
-  <code>"missing"</code>, for a source that is not on disk and has no registered
-  version) and <code>detail</code>.</p>
+list. With no <code>file</code>, invisibly returns a data frame with one row per
+dataset and columns <code>dataset</code>, <code>action</code> (<code>"registered"</code>,
+<code>"migrated"</code>, <code>"unchanged"</code>, <code>"skipped"</code> or
+<code>"missing"</code>, for a source that is not on disk and has no registered
+version) and <code>detail</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="verify_manifest.html">verify_manifest</a></code></p></div>
+    <div class="dont-index"><p><code><a href="verify_manifest.html">verify_manifest()</a></code></p></div>
     </div>
 
     <div class="section level2">

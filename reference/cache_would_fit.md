@@ -1,7 +1,7 @@
 # Would cache_fit() compute, or load?
 
 Answers, without computing anything, whether
-[`cache_fit`](https://ehrlinger.github.io/hvtiRutilities/reference/cache_fit.md)
+[`cache_fit()`](https://ehrlinger.github.io/hvtiRutilities/reference/cache_fit.md)
 called with the same arguments would run its computation. A job uses it
 to guard a resource, memory or cores, only when a fit will actually run,
 rather than refusing a session for a fit it would simply load from the
@@ -77,10 +77,11 @@ call it guards, for example
 as
 [`cache_fit()`](https://ehrlinger.github.io/hvtiRutilities/reference/cache_fit.md)
 captures it, by substitution, and is never evaluated: inline code and a
-variable holding a [`quote`](https://rdrr.io/r/base/substitute.html)d
-call both work, and an already-computed object is refused as it is
-there. The same rule about wrappers applies; see
-[`cache_fit`](https://ehrlinger.github.io/hvtiRutilities/reference/cache_fit.md).
+variable holding a call quoted with
+[`base::quote()`](https://rdrr.io/r/base/substitute.html) both work, and
+an already-computed object is refused as it is there. The same rule
+about wrappers applies; see
+[`cache_fit()`](https://ehrlinger.github.io/hvtiRutilities/reference/cache_fit.md).
 
 The answer comes from the same internal decision
 [`cache_fit()`](https://ehrlinger.github.io/hvtiRutilities/reference/cache_fit.md)
@@ -115,7 +116,7 @@ again by
 
 ## See also
 
-[`cache_fit`](https://ehrlinger.github.io/hvtiRutilities/reference/cache_fit.md)
+[`cache_fit()`](https://ehrlinger.github.io/hvtiRutilities/reference/cache_fit.md)
 
 ## Examples
 

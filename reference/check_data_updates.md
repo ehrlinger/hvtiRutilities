@@ -1,9 +1,9 @@
 # Check a study for published dataset updates
 
 **Deprecated.** Catalog releases are retired; use
-[`study_status`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md)
+[`study_status()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md)
 or
-[`verify_manifest`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md).
+[`verify_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md).
 
 Compares each release-aware dataset contract with its producer-owned
 catalog. The check verifies the pinned release and every later published
@@ -21,7 +21,7 @@ check_data_updates(cfg = study_config(), dataset = NULL)
 - cfg:
 
   List. A study manifest from
-  [`study_config`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md).
+  [`study_config()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md).
 
 - dataset:
 
@@ -38,9 +38,9 @@ of `"CURRENT"`, `"UPDATE AVAILABLE"`, `"UPDATE STATUS UNKNOWN"`,
 
 ## See also
 
-[`review_data_update`](https://ehrlinger.github.io/hvtiRutilities/reference/review_data_update.md),
-[`adopt_data_update`](https://ehrlinger.github.io/hvtiRutilities/reference/adopt_data_update.md),
-[`read_built`](https://ehrlinger.github.io/hvtiRutilities/reference/read_built.md)
+[`review_data_update()`](https://ehrlinger.github.io/hvtiRutilities/reference/review_data_update.md),
+[`adopt_data_update()`](https://ehrlinger.github.io/hvtiRutilities/reference/adopt_data_update.md),
+[`read_built()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_built.md)
 
 ## Examples
 
@@ -62,10 +62,10 @@ check_data_updates(cfg)
 #> [7] status               is_latest            detail              
 #> <0 rows> (or 0-length row.names)
 study_status(root)
-#> Study: /tmp/RtmpT6gx1g/check-data-updates-example
+#> Study: /tmp/Rtmpoh72Jx/check-data-updates-example
 #> 
 #> [x] _study.yml — study: Example
-#> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Example", study_tracker_id = 1L, root = "/tmp/RtmpT6gx1g/check-data-updates-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first
+#> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Example", study_tracker_id = 1L, root = "/tmp/Rtmpoh72Jx/check-data-updates-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first
 #> [x] manifest.yaml — 1 dataset entry verified by checksum
 #> [x] dataset — built.csv, registered as built_20261116.parquet
 #> [ ] provenance — no .qmd/.Rmd sources found; 0 sidecars

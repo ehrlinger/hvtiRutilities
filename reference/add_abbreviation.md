@@ -24,7 +24,7 @@ add_abbreviation(phrase, abbreviation, start = study_root())
 - start:
 
   A directory inside the study; the study is found as
-  [`study_config`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md)
+  [`study_config()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md)
   finds it. Defaults to the study that contains the working directory,
   found by its `_study.yml`; outside a study the function stops and
   writes nothing.
@@ -37,25 +37,25 @@ list.
 ## Details
 
 The entry is checked against the whole merged list, as
-[`study_abbreviations`](https://ehrlinger.github.io/hvtiRutilities/reference/study_abbreviations.md)
+[`study_abbreviations()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_abbreviations.md)
 would check it, before anything is written; a refused entry leaves the
 file as it was. The file is rewritten whole, as
-[`register_data`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md)
+[`register_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md)
 rewrites it, so comments in `_study.yml` are not kept.
 
 ## See also
 
-[`study_abbreviations`](https://ehrlinger.github.io/hvtiRutilities/reference/study_abbreviations.md).
+[`study_abbreviations()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_abbreviations.md).
 
 ## Examples
 
 ``` r
 root <- file.path(tempdir(), "add-abbrev-example")
 study_setup(root, "Abbreviation example", 1L, renv = FALSE)
-#> Study: /tmp/RtmpT6gx1g/add-abbrev-example
+#> Study: /tmp/Rtmpoh72Jx/add-abbrev-example
 #> 
 #> [x] _study.yml — study: Abbreviation example
-#> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Abbreviation example", study_tracker_id = 1L, root = "/tmp/RtmpT6gx1g/add-abbrev-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first
+#> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Abbreviation example", study_tracker_id = 1L, root = "/tmp/Rtmpoh72Jx/add-abbrev-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first
 #> [ ] manifest.yaml — no manifest.yaml; register_data() creates it
 #> [ ] dataset — no default dataset registered; run register_data()
 #> [ ] provenance — no .qmd/.Rmd sources found; 0 sidecars

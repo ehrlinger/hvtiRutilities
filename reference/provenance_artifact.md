@@ -24,7 +24,7 @@ provenance_artifact(path, role = "input", cfg = study_config())
 - cfg:
 
   List. A study manifest from
-  [`study_config`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md).
+  [`study_config()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md).
 
 ## Value
 
@@ -32,8 +32,8 @@ A plain list containing one immutable-by-convention artifact record.
 
 ## See also
 
-[`provenance_data`](https://ehrlinger.github.io/hvtiRutilities/reference/provenance_data.md),
-[`capture_provenance`](https://ehrlinger.github.io/hvtiRutilities/reference/capture_provenance.md)
+[`provenance_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/provenance_data.md),
+[`capture_provenance()`](https://ehrlinger.github.io/hvtiRutilities/reference/capture_provenance.md)
 
 ## Examples
 
@@ -52,7 +52,7 @@ str(provenance_artifact("30_analyses/fit.R", role = "code", cfg = cfg))
 #>  $ path  : chr "30_analyses/fit.R"
 #>  $ role  : chr "code"
 #>  $ bytes : num 7
-#>  $ mtime : chr "2026-11-16T19:05:08Z"
+#>  $ mtime : chr "2026-11-16T19:07:58Z"
 #>  $ sha256: chr "66b7dd2c95677966d7e30532fe17ac4642554f6ca9c4165274d8438fd9c5a283"
 unlink(root, recursive = TRUE)
 ```

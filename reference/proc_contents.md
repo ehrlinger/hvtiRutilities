@@ -83,9 +83,9 @@ display should handle `NaN` explicitly.
 
 ## See also
 
-[`proc_means`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
+[`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
 for numeric summaries,
-[`data_dictionary`](https://ehrlinger.github.io/hvtiRutilities/reference/data_dictionary.md)
+[`data_dictionary()`](https://ehrlinger.github.io/hvtiRutilities/reference/data_dictionary.md)
 for a flattened documentation table.
 
 ## Examples

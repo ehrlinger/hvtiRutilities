@@ -84,7 +84,7 @@ compatible with <code>haven</code> and <code><a href="label_map.html">hvtiRutili
 
 
 <dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
-<dd><p><code>NULL</code> or an integer passed to <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></code>.
+<dd><p><code>NULL</code> or an integer passed to <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code>.
 Default <code>1024</code>. <code>NULL</code> draws from the caller's random number
 stream instead.</p></dd>
 
@@ -94,88 +94,88 @@ stream instead.</p></dd>
     <p>A <code>data.frame</code> with <code>n</code> rows and 24 columns:</p><dl><dt>ccfid</dt>
 <dd><p>Character. Patient identifier (<code>"PT00001"</code>, …).</p></dd>
 
-  <dt>origin_year</dt>
+<dt>origin_year</dt>
 <dd><p>Integer. Calendar year corresponding to <code>iv_opyrs = 0</code>
-    (randomly sampled between 1998 and 2018).</p></dd>
+(randomly sampled between 1998 and 2018).</p></dd>
 
-  <dt>iv_opyrs</dt>
+<dt>iv_opyrs</dt>
 <dd><p>Numeric. Observation interval length in years measured
-    from <code>origin_year</code>; always greater than or equal to <code>iv_dead</code>.</p></dd>
+from <code>origin_year</code>; always greater than or equal to <code>iv_dead</code>.</p></dd>
 
-  <dt>iv_dead</dt>
+<dt>iv_dead</dt>
 <dd><p>Numeric. Observed follow-up time in years (min of true
-    survival time and administrative censoring time).</p></dd>
+survival time and administrative censoring time).</p></dd>
 
-  <dt>dead</dt>
+<dt>dead</dt>
 <dd><p>Integer. Event indicator: <code>1</code> = death, <code>0</code> =
-    censored.</p></dd>
+censored.</p></dd>
 
-  <dt>reop</dt>
+<dt>reop</dt>
 <dd><p>Integer. Reoperation indicator: <code>1</code> = yes,
-    <code>0</code> = no.</p></dd>
+<code>0</code> = no.</p></dd>
 
-  <dt>iv_reop</dt>
+<dt>iv_reop</dt>
 <dd><p>Numeric. Time to reoperation (years); <code>NA</code> if no
-    reoperation.</p></dd>
+reoperation.</p></dd>
 
-  <dt>age</dt>
+<dt>age</dt>
 <dd><p>Numeric. Age at surgery in years (range 1–85).</p></dd>
 
-  <dt>sex</dt>
+<dt>sex</dt>
 <dd><p>Factor. <code>"Male"</code> / <code>"Female"</code> (55 / 45 %).</p></dd>
 
-  <dt>bmi</dt>
+<dt>bmi</dt>
 <dd><p>Numeric. Body mass index in kg/m² (range 15–50).</p></dd>
 
-  <dt>hgb_bs</dt>
+<dt>hgb_bs</dt>
 <dd><p>Numeric. Baseline hemoglobin in g/dL (range 6–18).</p></dd>
 
-  <dt>wbc_bs</dt>
+<dt>wbc_bs</dt>
 <dd><p>Numeric. Baseline WBC count in K/µL (range 1.5–20).</p></dd>
 
-  <dt>plate_bs</dt>
+<dt>plate_bs</dt>
 <dd><p>Numeric. Baseline platelet count in K/µL (range 50–500).</p></dd>
 
-  <dt>gfr_bs</dt>
+<dt>gfr_bs</dt>
 <dd><p>Numeric. Baseline eGFR in mL/min/1.73 m² (range 10–120).</p></dd>
 
-  <dt>lvefvs_b</dt>
+<dt>lvefvs_b</dt>
 <dd><p>Numeric. Baseline LV ejection fraction in % (range
-    15–75).</p></dd>
+15–75).</p></dd>
 
-  <dt>lvmass_b</dt>
+<dt>lvmass_b</dt>
 <dd><p>Numeric. Baseline LV mass in g (range 60–400).</p></dd>
 
-  <dt>lvmsi_b</dt>
+<dt>lvmsi_b</dt>
 <dd><p>Numeric. Baseline LV mass index in g/m² (range 40–220);
-    derived as <code>lvmass_b / (bmi * 0.5)</code>.</p></dd>
+derived as <code>lvmass_b / (bmi * 0.5)</code>.</p></dd>
 
-  <dt>stvoli_b</dt>
+<dt>stvoli_b</dt>
 <dd><p>Numeric. Baseline systolic stroke-volume index in mL/m²
-    (range 20–110).</p></dd>
+(range 20–110).</p></dd>
 
-  <dt>stvold_b</dt>
+<dt>stvold_b</dt>
 <dd><p>Numeric. Baseline diastolic stroke-volume index in mL/m²
-    (range 40–180).</p></dd>
+(range 40–180).</p></dd>
 
-  <dt>bypass_time</dt>
+<dt>bypass_time</dt>
 <dd><p>Numeric. Cardiopulmonary bypass time in minutes
-    (range 20–240).</p></dd>
+(range 20–240).</p></dd>
 
-  <dt>xclamp_time</dt>
+<dt>xclamp_time</dt>
 <dd><p>Numeric. Aortic cross-clamp time in minutes; sampled
-    as 50–75 % of <code>bypass_time</code>.</p></dd>
+as 50–75 % of <code>bypass_time</code>.</p></dd>
 
-  <dt>nyha_class</dt>
+<dt>nyha_class</dt>
 <dd><p>Ordered factor. NYHA functional class I–IV.</p></dd>
 
-  <dt>diabetes</dt>
+<dt>diabetes</dt>
 <dd><p>Factor. Diabetes mellitus: <code>"No"</code> / <code>"Yes"</code>
-    (75 / 25 %).</p></dd>
+(75 / 25 %).</p></dd>
 
-  <dt>hypertension</dt>
+<dt>hypertension</dt>
 <dd><p>Factor. Hypertension: <code>"No"</code> / <code>"Yes"</code>
-    (55 / 45 %).</p></dd>
+(55 / 45 %).</p></dd>
 
 
 </dl></div>
@@ -203,9 +203,9 @@ draws from the caller's stream, so
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="https://www.randomforestsrc.org//reference/rfsrc.html" class="external-link">rfsrc</a></code>,
-<code><a href="https://rdrr.io/pkg/survival/man/Surv.html" class="external-link">Surv</a></code>,
-<code><a href="https://haven.tidyverse.org/reference/read_sas.html" class="external-link">read_sas</a></code></p></div>
+    <div class="dont-index"><p><code><a href="https://www.randomforestsrc.org//reference/rfsrc.html" class="external-link">randomForestSRC::rfsrc()</a></code>,
+<code><a href="https://rdrr.io/pkg/survival/man/Surv.html" class="external-link">survival::Surv()</a></code>,
+<code><a href="https://haven.tidyverse.org/reference/read_sas.html" class="external-link">haven::read_sas()</a></code></p></div>
     </div>
 
     <div class="section level2">

@@ -27,7 +27,7 @@ study_render_record(
 - commit:
 
   Character(1). The 40-character commit from
-  [`study_render_commit`](https://ehrlinger.github.io/hvtiRutilities/reference/study_render_commit.md)
+  [`study_render_commit()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_render_commit.md)
   that the outputs print.
 
 - job:
@@ -76,7 +76,7 @@ too.
 
 ## See also
 
-[`study_render_commit`](https://ehrlinger.github.io/hvtiRutilities/reference/study_render_commit.md)
+[`study_render_commit()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_render_commit.md)
 
 ## Examples
 

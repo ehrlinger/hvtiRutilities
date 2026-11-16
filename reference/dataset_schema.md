@@ -27,7 +27,7 @@ A data frame with columns `num` (creation position, integer),
 
 `label` and `format` are read from the column attributes directly and
 are `NA` when the source carries none. This is the difference from
-[`proc_contents`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_contents.md),
+[`proc_contents()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_contents.md),
 which fills an absent label with the variable's own name: right for a
 printed listing, wrong for a record that outlives the source dataset.
 
@@ -37,7 +37,7 @@ sidecar's hash meaningful.
 
 ## See also
 
-[`proc_contents`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_contents.md)
+[`proc_contents()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_contents.md)
 for a printable listing that also summarises completeness.
 
 ## Examples

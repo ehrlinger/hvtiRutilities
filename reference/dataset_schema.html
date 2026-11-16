@@ -86,15 +86,15 @@ against.</p>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A data frame with columns <code>num</code> (creation position, integer),
-  <code>variable</code>, <code>class</code> (first R class), <code>type</code>
-  (<code>"Num"</code>/<code>"Char"</code>), <code>format</code> (SAS format or <code>NA</code>) and
-  <code>label</code> (or <code>NA</code>).</p>
+<code>variable</code>, <code>class</code> (first R class), <code>type</code>
+(<code>"Num"</code>/<code>"Char"</code>), <code>format</code> (SAS format or <code>NA</code>) and
+<code>label</code> (or <code>NA</code>).</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p><code>label</code> and <code>format</code> are read from the column attributes directly
 and are <code>NA</code> when the source carries none. This is the difference from
-<code><a href="proc_contents.html">proc_contents</a></code>, which fills an absent label with the variable's
+<code><a href="proc_contents.html">proc_contents()</a></code>, which fills an absent label with the variable's
 own name: right for a printed listing, wrong for a record that outlives the
 source dataset.</p>
 <p>Nothing here describes the data, only its shape. Two reads of an unchanged
@@ -103,8 +103,8 @@ meaningful.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="proc_contents.html">proc_contents</a></code> for a printable listing that also
-  summarises completeness.</p></div>
+    <div class="dont-index"><p><code><a href="proc_contents.html">proc_contents()</a></code> for a printable listing that also
+summarises completeness.</p></div>
     </div>
 
     <div class="section level2">

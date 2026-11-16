@@ -16,7 +16,7 @@ sas_macro_signature(file)
 
 - file:
 
-  Character. Path to a \`.sas\` file.
+  Character. Path to a `.sas` file.
 
 ## Value
 

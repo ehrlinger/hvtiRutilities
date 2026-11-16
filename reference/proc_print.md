@@ -73,8 +73,8 @@ for the same reason.
 
 ## See also
 
-[`proc_freq`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_freq.md),
-[`followup_check`](https://ehrlinger.github.io/hvtiRutilities/reference/followup_check.md)
+[`proc_freq()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_freq.md),
+[`followup_check()`](https://ehrlinger.github.io/hvtiRutilities/reference/followup_check.md)
 
 ## Examples
 

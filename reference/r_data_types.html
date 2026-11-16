@@ -113,7 +113,7 @@ factors instead of logical. Default is FALSE (convert to logical).</p></dd>
 <dt id="arg-use-value-labels">use_value_labels<a class="anchor" aria-label="anchor" href="#arg-use-value-labels"></a></dt>
 <dd><p>Logical. If TRUE, a column carrying value labels –
 what <span class="pkg">haven</span> reads from a SAS numeric-plus-format variable – is
-converted through <code><a href="https://larmarange.github.io/labelled/reference/to_factor.html" class="external-link">to_factor</a></code>, so the level text is
+converted through <code><a href="https://larmarange.github.io/labelled/reference/to_factor.html" class="external-link">labelled::to_factor()</a></code>, so the level text is
 kept. If FALSE the value labels are dropped and the numeric codes are
 converted instead. Default is FALSE, which warns once per session; the
 default becomes TRUE in a later release.</p></dd>
@@ -131,40 +131,40 @@ for one release so <code>dataset =</code> still reaches the deprecation notice.<
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>An object of the same class as <code>data</code> with columns
-  converted according to the function's rules. Variable labels are
-  preserved. The result carries a per-column conversion report, read with
-  <code><a href="type_conversion_report.html">type_conversion_report</a></code>.</p>
+converted according to the function's rules. Variable labels are
+preserved. The result carries a per-column conversion report, read with
+<code><a href="type_conversion_report.html">type_conversion_report()</a></code>.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>Each column is converted by the first rule that matches, in this order:</p><ol><li><p>When <code>use_value_labels = TRUE</code> and the column carries value
-    labels, they become the factor levels. This runs ahead of every rule
-    below: a declared type is not subject to a threshold on distinct
-    values.</p></li>
+labels, they become the factor levels. This runs ahead of every rule
+below: a declared type is not subject to a threshold on distinct
+values.</p></li>
 <li><p>Character strings "NA", "na", "Na" and "nA" become <code>NA</code>.</p></li>
 <li><p>Numeric or integer columns with exactly 2 distinct values become
-    logical, or factors when <code>binary_factor = TRUE</code> – but only when
-    the two values are 0 and 1. Any other 2-distinct-value coding (a
-    SAS-style 1/2, say) becomes a factor outright, regardless of
-    <code>binary_factor</code>: <code><a href="https://rdrr.io/r/base/logical.html" class="external-link">as.logical()</a></code> maps every nonzero code to
-    <code>TRUE</code>, so a 1/2 column would otherwise become <code>TRUE</code> for
-    every row and silently lose one of its two categories.</p></li>
+logical, or factors when <code>binary_factor = TRUE</code> – but only when
+the two values are 0 and 1. Any other 2-distinct-value coding (a
+SAS-style 1/2, say) becomes a factor outright, regardless of
+<code>binary_factor</code>: <code><a href="https://rdrr.io/r/base/logical.html" class="external-link">as.logical()</a></code> maps every nonzero code to
+<code>TRUE</code>, so a 1/2 column would otherwise become <code>TRUE</code> for
+every row and silently lose one of its two categories.</p></li>
 <li><p>Remaining character columns become factors, whatever their number
-    of distinct values: <code>factor_size</code> does not apply to them. A
-    character column that yields more than 50 levels – usually an
-    identifier or free text, not a category – warns, naming the column;
-    pass it in <code>skip_cols</code> to keep it as character.</p></li>
+of distinct values: <code>factor_size</code> does not apply to them. A
+character column that yields more than 50 levels – usually an
+identifier or free text, not a category – warns, naming the column;
+pass it in <code>skip_cols</code> to keep it as character.</p></li>
 <li><p>Numeric columns with more than 2 and fewer than <code>factor_size</code>
-    distinct values become factors.</p></li>
+distinct values become factors.</p></li>
 <li><p>Logical columns become factors when <code>binary_factor = TRUE</code>.</p></li>
 </ol><p>Date, POSIXct, and POSIXlt columns are never altered by type conversion.</p>
 <p>Which rule fired on which column is recorded on the result and read back
-with <code><a href="type_conversion_report.html">type_conversion_report</a></code>.</p>
+with <code><a href="type_conversion_report.html">type_conversion_report()</a></code>.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="type_conversion_report.html">type_conversion_report</a></code> for the record of which rule
-  fired on which column.</p></div>
+    <div class="dont-index"><p><code><a href="type_conversion_report.html">type_conversion_report()</a></code> for the record of which rule
+fired on which column.</p></div>
     </div>
 
     <div class="section level2">

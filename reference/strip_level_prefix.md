@@ -40,7 +40,7 @@ presents as data rather than as a bug.
 
 So the rule is biased: **a missed strip is visible in the output and
 fixable by declaring the level text in `value_labels.yml` (see
-[`apply_value_labels`](https://ehrlinger.github.io/hvtiRutilities/reference/apply_value_labels.md));
+[`apply_value_labels()`](https://ehrlinger.github.io/hvtiRutilities/reference/apply_value_labels.md));
 a wrong strip is silent and corrupts the level set.** Two consequences
 follow.
 
@@ -68,9 +68,9 @@ Stripping never produces an empty string: `"1."` is returned unchanged.
 
 ## See also
 
-[`level_map`](https://ehrlinger.github.io/hvtiRutilities/reference/level_map.md)
+[`level_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/level_map.md)
 to see what stripping would do across a dataset,
-[`apply_value_labels`](https://ehrlinger.github.io/hvtiRutilities/reference/apply_value_labels.md)
+[`apply_value_labels()`](https://ehrlinger.github.io/hvtiRutilities/reference/apply_value_labels.md)
 for declaring level text outright rather than tidying it afterwards.
 
 ## Examples

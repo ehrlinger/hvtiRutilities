@@ -6,12 +6,12 @@ directory structure for a new study and writes an identity-only
 numbered directory layout and every existing initialization file.
 
 Data are deliberately not required. Call
-[`register_data`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md)
+[`register_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md)
 after the default or a named dataset exists.
 
 When the root holds no `.Rproj` file, one named for the root directory
 is written, so that opening the project and
-[`study_root`](https://ehrlinger.github.io/hvtiRutilities/reference/study_root.md)
+[`study_root()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_root.md)
 agree on the study root. An existing project is left unchanged.
 
 With `cleanup = TRUE`, the template copies a legacy study carries are
@@ -50,7 +50,7 @@ as at least major.minor, and a `Packages` object whose every record
 gives its own name as `Package`, a `Version` and a `Source`. Any other
 partial or invalid environment stops with an error. Otherwise the study
 `DESCRIPTION` is written (see
-[`study_declare`](https://ehrlinger.github.io/hvtiRutilities/reference/study_declare.md)),
+[`study_declare()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_declare.md)),
 `renv::init(bare = TRUE)` creates the environment, and the project is
 loaded and snapshotted explicitly in explicit mode, so `renv.lock` comes
 from the `DESCRIPTION` and not from a scan of the study's code. The
@@ -87,7 +87,7 @@ study_setup(
 
   Character. Study root to create or adopt. When omitted, the study
   enclosing the working directory (found as
-  [`study_root`](https://ehrlinger.github.io/hvtiRutilities/reference/study_root.md)
+  [`study_root()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_root.md)
   finds it) is used. Outside a study there is no default:
   `study_setup()` stops and writes nothing, so a new study always names
   its directory. Use `root = "."` with `adopt = TRUE` to set up the
@@ -156,7 +156,7 @@ study_setup(
   Logical(1). Leave `FALSE`. The renv snapshot is refused from an R
   whose major.minor differs from the R recorded in the study's
   `renv.lock` (see
-  [`guard_snapshot`](https://ehrlinger.github.io/hvtiRutilities/reference/guard_snapshot.md)),
+  [`guard_snapshot()`](https://ehrlinger.github.io/hvtiRutilities/reference/guard_snapshot.md)),
   because it would rewrite the lock's R and drop packages. Set `TRUE`
   only when you are deliberately moving the study to this session's R.
 
@@ -165,7 +165,7 @@ study_setup(
   For an exploration of a registered study that has no Study Tracker
   record of its own: the parent's Study Tracker ID. The study gets a
   `provisional_id` and checkpoints locally until
-  [`study_promote`](https://ehrlinger.github.io/hvtiRutilities/reference/study_promote.md)
+  [`study_promote()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_promote.md)
   gives it its own ID.
 
 ## Value
@@ -180,19 +180,19 @@ root. With `renv = TRUE` it carries a `"renv"` attribute,
 
 ## See also
 
-[`study_status`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md),
-[`study_config`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md),
-[`study_dir`](https://ehrlinger.github.io/hvtiRutilities/reference/study_dir.md)
+[`study_status()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md),
+[`study_config()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md),
+[`study_dir()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_dir.md)
 
 ## Examples
 
 ``` r
 root <- file.path(tempdir(), "study-setup-example")
 study_setup(root, study = "Example", study_tracker_id = 1L, renv = FALSE)
-#> Study: /tmp/RtmpT6gx1g/study-setup-example
+#> Study: /tmp/Rtmpoh72Jx/study-setup-example
 #> 
 #> [x] _study.yml — study: Example
-#> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Example", study_tracker_id = 1L, root = "/tmp/RtmpT6gx1g/study-setup-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first
+#> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Example", study_tracker_id = 1L, root = "/tmp/Rtmpoh72Jx/study-setup-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first
 #> [ ] manifest.yaml — no manifest.yaml; register_data() creates it
 #> [ ] dataset — no default dataset registered; run register_data()
 #> [ ] provenance — no .qmd/.Rmd sources found; 0 sidecars

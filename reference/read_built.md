@@ -4,7 +4,7 @@ Reads the dataset named in `_study.yml` and normalises its types so that
 both available read paths deliver the same frame.
 
 For a dataset registered with
-[`register_data`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md),
+[`register_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md),
 the registered version (a dated parquet) is read, after its checksum is
 checked. If the source file has been rebuilt since, the registered
 version is still read and a message of class
@@ -12,7 +12,7 @@ version is still read and a message of class
 [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md).
 
 A combined dataset (see
-[`register_data`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md))
+[`register_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md))
 is still read when a dataset it was built from has been updated since. A
 message of class `hvtiRutilities_parent_changed`, which inherits
 `hvtiRutilities_out_of_date`, names the parents' recorded and current
@@ -40,7 +40,7 @@ data are still read. A changed pinned release errors with class
 `hvtiRutilities_withdrawn_release` unless `allow_withdrawn` is `TRUE`.
 
 The normalisation is not cosmetic.
-[`read_clinical_data`](https://ehrlinger.github.io/hvtiRutilities/reference/read_clinical_data.md)
+[`read_clinical_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_clinical_data.md)
 converts SAS 0/1 numerics to logical while
 [`haven::read_sas()`](https://haven.tidyverse.org/reference/read_sas.html)
 leaves them numeric, and downstream modelling code rejects a logical
@@ -72,7 +72,7 @@ read_built(
 - cfg:
 
   List. A study manifest from
-  [`study_config`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md).
+  [`study_config()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md).
 
 - refresh:
 
@@ -120,8 +120,8 @@ A data frame with lower-cased names, no logical columns and no
 
 ## See also
 
-[`built_manifest`](https://ehrlinger.github.io/hvtiRutilities/reference/built_manifest.md),
-[`assert_cohort`](https://ehrlinger.github.io/hvtiRutilities/reference/assert_cohort.md)
+[`built_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/built_manifest.md),
+[`assert_cohort()`](https://ehrlinger.github.io/hvtiRutilities/reference/assert_cohort.md)
 
 ## Examples
 

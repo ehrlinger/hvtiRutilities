@@ -3,7 +3,7 @@
 Summarises an event indicator and its follow-up intervals the way the
 `dc-gfup` template reports them: counts for the whole cohort and its
 event and censored subsets, the missing, negative and zero intervals, a
-[`proc_means`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
+[`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
 table for each subset, and the rows worth a second look. It checks
 recorded follow-up; it does not establish completeness against a close
 date.
@@ -57,7 +57,7 @@ followup_check(
 
   Character vector of SAS statistic keywords for the `means` tables,
   passed to
-  [`proc_means`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
+  [`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
   and validated the same way. Default
   `c("n", "nmiss", "mean", "std", "min", "p15", "median", "p85", "max")`.
 
@@ -84,7 +84,7 @@ data frames and a list of three:
 - `means`:
 
   A named list, `full`, `event` and `censored`, of
-  [`proc_means`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
+  [`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
   tables over the intervals, one column per statistic in `stats`.
 
 - `review`:
@@ -105,7 +105,7 @@ zero.
 
 The quartiles in `intervals` use R's default interpolated quantiles
 (`type = 7`), while
-[`proc_means`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
+[`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
 uses the SAS `QNTLDEF=5` estimator, so a median in the two tables can
 disagree on a small subset. The difference is deliberate: `intervals` is
 a quick screen, and `means` is the table to compare against SAS.
@@ -121,8 +121,8 @@ result before sharing a report that shows `review` with one.
 
 ## See also
 
-[`proc_means`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md),
-[`cohort_counts`](https://ehrlinger.github.io/hvtiRutilities/reference/cohort_counts.md),
+[`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md),
+[`cohort_counts()`](https://ehrlinger.github.io/hvtiRutilities/reference/cohort_counts.md),
 which counts the analysable cohort rather than checking follow-up.
 
 ## Examples

@@ -25,12 +25,12 @@ record_provenance(
 - data:
 
   List of records returned by
-  [`provenance_data`](https://ehrlinger.github.io/hvtiRutilities/reference/provenance_data.md).
+  [`provenance_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/provenance_data.md).
 
 - artifacts:
 
   List of records returned by
-  [`provenance_artifact`](https://ehrlinger.github.io/hvtiRutilities/reference/provenance_artifact.md).
+  [`provenance_artifact()`](https://ehrlinger.github.io/hvtiRutilities/reference/provenance_artifact.md).
 
 - extra:
 
@@ -40,7 +40,7 @@ record_provenance(
 - cfg:
 
   List. A study manifest from
-  [`study_config`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md).
+  [`study_config()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md).
 
 ## Value
 
@@ -48,9 +48,9 @@ Invisibly, the published record as a list.
 
 ## See also
 
-[`capture_provenance`](https://ehrlinger.github.io/hvtiRutilities/reference/capture_provenance.md),
-[`publish_provenance`](https://ehrlinger.github.io/hvtiRutilities/reference/publish_provenance.md),
-[`provenance_path`](https://ehrlinger.github.io/hvtiRutilities/reference/provenance_path.md)
+[`capture_provenance()`](https://ehrlinger.github.io/hvtiRutilities/reference/capture_provenance.md),
+[`publish_provenance()`](https://ehrlinger.github.io/hvtiRutilities/reference/publish_provenance.md),
+[`provenance_path()`](https://ehrlinger.github.io/hvtiRutilities/reference/provenance_path.md)
 
 ## Examples
 

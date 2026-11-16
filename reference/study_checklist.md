@@ -1,7 +1,7 @@
 # Render a study audit as a markdown checklist
 
 Turns a
-[`study_status`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md)
+[`study_status()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md)
 result into markdown: one checkbox per check, ticked where the check
 passed (`"OK"`) or the study is closed (`"CLOSED"`) and left open
 otherwise, with the detail alongside. File counts follow.
@@ -17,9 +17,9 @@ study_checklist(status, path = NULL)
 - status:
 
   An object of class `"study_status"`, from
-  [`study_status`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md)
+  [`study_status()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md)
   or
-  [`study_setup`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md).
+  [`study_setup()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md).
 
 - path:
 
@@ -33,8 +33,8 @@ When `path` is `NULL`, a character vector of markdown lines. Otherwise
 
 ## See also
 
-[`study_status`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md),
-[`study_setup`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md)
+[`study_status()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md),
+[`study_setup()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md)
 
 ## Examples
 
@@ -44,7 +44,7 @@ dir.create(root, showWarnings = FALSE)
 cat(study_checklist(study_status(root)), sep = "\n")
 #> # Study readiness
 #> 
-#> Study root: `/tmp/RtmpT6gx1g/study-checklist-example`
+#> Study root: `/tmp/Rtmpoh72Jx/study-checklist-example`
 #> 
 #> ## Checks
 #> 

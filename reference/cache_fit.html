@@ -131,13 +131,13 @@ Details.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>The result of <code>code</code>, computed or loaded, with its key attached
-  as attribute <code>hvtiRutilities_cache_key</code>.</p>
+as attribute <code>hvtiRutilities_cache_key</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p><code>code</code> is not evaluated on a cache hit. It can be written inline, as a
 single call or a <code><a href="https://rdrr.io/r/base/Paren.html" class="external-link">{}</a></code> block of several steps, or passed as a
-variable holding a <code><a href="https://rdrr.io/r/base/substitute.html" class="external-link">quote</a></code>d call built beforehand. Both
+variable holding a call built beforehand with <code><a href="https://rdrr.io/r/base/substitute.html" class="external-link">base::quote()</a></code>. Both
 forms give the same key for the same computation. Passing an object that has
 already been computed is an error, because the cache could never skip it.</p>
 <p><code>code</code> must be written in the call to <code>cache_fit()</code> itself. A
@@ -199,7 +199,7 @@ because there would be nothing to cache.</p>
 <p>When <code>seed</code> is given, <code>cache_fit()</code> calls <code>set.seed(seed)</code>
 before the code runs and again after it, even when it fails, and calls it
 once when the result is loaded instead. If the code changes the generator
-with <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">RNGkind</a></code>, the kinds in use when <code>cache_fit()</code> was
+with <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">RNGkind()</a></code>, the kinds in use when <code>cache_fit()</code> was
 called are put back before that second call. A computed and a loaded result
 therefore leave the global random number stream in the same state, the one
 <code>set.seed(seed)</code> sets, so code after <code>cache_fit()</code> draws the
@@ -217,15 +217,15 @@ with <code>refit = TRUE</code>.</p>
 <p>The result is written to a temporary file and renamed into place, so an
 interrupted run never leaves a partial file. When <code>dir</code> lies inside a
 study, a provenance sidecar carrying the key and the completed cache file's
-hash is published with <code><a href="capture_provenance.html">capture_provenance</a></code> and
-<code><a href="publish_provenance.html">publish_provenance</a></code>. The cache records an explicit empty data
+hash is published with <code><a href="capture_provenance.html">capture_provenance()</a></code> and
+<code><a href="publish_provenance.html">publish_provenance()</a></code>. The cache records an explicit empty data
 list rather than inferring that the currently registered dataset was an
 input to the computation.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="capture_provenance.html">capture_provenance</a></code>,
-  <code><a href="publish_provenance.html">publish_provenance</a></code>, <code><a href="study_dir.html">study_dir</a></code></p></div>
+    <div class="dont-index"><p><code><a href="capture_provenance.html">capture_provenance()</a></code>,
+<code><a href="publish_provenance.html">publish_provenance()</a></code>, <code><a href="study_dir.html">study_dir()</a></code></p></div>
     </div>
 
     <div class="section level2">

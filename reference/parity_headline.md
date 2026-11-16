@@ -17,7 +17,7 @@ parity_headline(data, df)
 - data:
 
   A data frame of
-  [`compare_parity`](https://ehrlinger.github.io/hvtiRutilities/reference/compare_parity.md)
+  [`compare_parity()`](https://ehrlinger.github.io/hvtiRutilities/reference/compare_parity.md)
   rows. Was `df` before 2026-11; `df =` still works for one release,
   with a warning.
 

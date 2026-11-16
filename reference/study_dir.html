@@ -3,11 +3,11 @@
 spelling used by new studies or the bare spelling retained by legacy
 studies. A root containing both layouts is an error. A root containing
 neither – a new or empty study – resolves to the numbered spelling, as
-study_setup lays one out."><meta property="og:description" content="Maps a logical study directory such as &quot;datasets&quot; to the numbered
+study_setup() lays one out."><meta property="og:description" content="Maps a logical study directory such as &quot;datasets&quot; to the numbered
 spelling used by new studies or the bare spelling retained by legacy
 studies. A root containing both layouts is an error. A root containing
 neither – a new or empty study – resolves to the numbered spelling, as
-study_setup lays one out."></head><body>
+study_setup() lays one out."></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -70,7 +70,7 @@ study_setup lays one out."></head><body>
 spelling used by new studies or the bare spelling retained by legacy
 studies. A root containing both layouts is an error. A root containing
 neither – a new or empty study – resolves to the numbered spelling, as
-<code><a href="study_setup.html">study_setup</a></code> lays one out.</p>
+<code><a href="study_setup.html">study_setup()</a></code> lays one out.</p>
     </div>
 
     <div class="section level2">
@@ -93,11 +93,11 @@ neither – a new or empty study – resolves to the numbered spelling, as
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>Character(1). The resolved directory path. Its existence is not
-  required.</p>
+required.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="study_root.html">study_root</a></code>, <code><a href="sas_path.html">sas_path</a></code></p></div>
+    <div class="dont-index"><p><code><a href="study_root.html">study_root()</a></code>, <code><a href="sas_path.html">sas_path()</a></code></p></div>
     </div>
 
     <div class="section level2">
@@ -106,7 +106,7 @@ neither – a new or empty study – resolves to the numbered spelling, as
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">root</span>, <span class="st">"00_datasets"</span><span class="op">)</span>, recursive <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
 <span class="r-in"><span>           showWarnings <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">study_dir</span><span class="op">(</span><span class="st">"datasets"</span>, <span class="va">root</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "/tmp/RtmpT6gx1g/numbered-study-layout/00_datasets"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "/tmp/Rtmpoh72Jx/numbered-study-layout/00_datasets"</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/unlink.html" class="external-link">unlink</a></span><span class="op">(</span><span class="va">root</span>, recursive <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 </code></pre></div>
     </div>

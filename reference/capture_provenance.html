@@ -7,7 +7,7 @@ number can cover more than one build. Capture never resolves a current
 dataset implicitly. Pass list() deliberately when a job has no known
 direct data input.
 Capture does not write a sidecar or inspect a rendered output. Use
-publish_provenance only after the completed output exists."><meta property="og:description" content="Freezes the study identity, executing R session, loaded packages, lockfile,
+publish_provenance() only after the completed output exists."><meta property="og:description" content="Freezes the study identity, executing R session, loaded packages, lockfile,
 and explicit data and artifact records. Each loaded package is recorded with
 its version and source, and a package installed from a git remote also
 records the commit it was built from (sha), because one version
@@ -15,7 +15,7 @@ number can cover more than one build. Capture never resolves a current
 dataset implicitly. Pass list() deliberately when a job has no known
 direct data input.
 Capture does not write a sidecar or inspect a rendered output. Use
-publish_provenance only after the completed output exists."></head><body>
+publish_provenance() only after the completed output exists."></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -82,7 +82,7 @@ number can cover more than one build. Capture never resolves a current
 dataset implicitly. Pass <code><a href="https://rdrr.io/r/base/list.html" class="external-link">list()</a></code> deliberately when a job has no known
 direct data input.</p>
 <p>Capture does not write a sidecar or inspect a rendered output. Use
-<code><a href="publish_provenance.html">publish_provenance</a></code> only after the completed output exists.</p>
+<code><a href="publish_provenance.html">publish_provenance()</a></code> only after the completed output exists.</p>
     </div>
 
     <div class="section level2">
@@ -106,12 +106,12 @@ direct data input.</p>
 
 
 <dt id="arg-data">data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>
-<dd><p>List of records returned by <code><a href="provenance_data.html">provenance_data</a></code>.</p></dd>
+<dd><p>List of records returned by <code><a href="provenance_data.html">provenance_data()</a></code>.</p></dd>
 
 
 <dt id="arg-artifacts">artifacts<a class="anchor" aria-label="anchor" href="#arg-artifacts"></a></dt>
 <dd><p>List of records returned by
-<code><a href="provenance_artifact.html">provenance_artifact</a></code>.</p></dd>
+<code><a href="provenance_artifact.html">provenance_artifact()</a></code>.</p></dd>
 
 
 <dt id="arg-extra">extra<a class="anchor" aria-label="anchor" href="#arg-extra"></a></dt>
@@ -120,7 +120,7 @@ publication fields cannot be displaced.</p></dd>
 
 
 <dt id="arg-cfg">cfg<a class="anchor" aria-label="anchor" href="#arg-cfg"></a></dt>
-<dd><p>List. A study manifest from <code><a href="study_config.html">study_config</a></code>.</p></dd>
+<dd><p>List. A study manifest from <code><a href="study_config.html">study_config()</a></code>.</p></dd>
 
 
 <dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
@@ -132,19 +132,19 @@ when the job sets none. Recorded as the common <code>seed</code> field, where
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A captured provenance payload as a plain list. It opens with the
-  seven fields every hvtiR package's provenance record shares:
-  <code>package</code> (<code>"hvtiRutilities"</code>), <code>version</code>, <code>sha</code>
-  (the installed commit, or <code>NA</code>), <code>method</code> (here the
-  <code>job</code>), <code>seed</code> (the <code>seed</code> argument, <code>NA</code> unless the
-  job is seeded), <code>rng_kind</code> (<code><a href="https://rdrr.io/r/base/Random.html" class="external-link">RNGkind()</a></code>) and <code>time</code> (when it
-  was captured, <code>POSIXct</code>). The render-specific fields follow. An
-  <code>extra</code> element with one of these seven names is an error. In the published JSON an unknown <code>sha</code> is
-  <code>null</code> and <code>time</code> is UTC in the form <code>rendered</code> uses.</p>
+seven fields every hvtiR package's provenance record shares:
+<code>package</code> (<code>"hvtiRutilities"</code>), <code>version</code>, <code>sha</code>
+(the installed commit, or <code>NA</code>), <code>method</code> (here the
+<code>job</code>), <code>seed</code> (the <code>seed</code> argument, <code>NA</code> unless the
+job is seeded), <code>rng_kind</code> (<code><a href="https://rdrr.io/r/base/Random.html" class="external-link">RNGkind()</a></code>) and <code>time</code> (when it
+was captured, <code>POSIXct</code>). The render-specific fields follow. An
+<code>extra</code> element with one of these seven names is an error. In the published JSON an unknown <code>sha</code> is
+<code>null</code> and <code>time</code> is UTC in the form <code>rendered</code> uses.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="publish_provenance.html">publish_provenance</a></code>,
-  <code><a href="record_provenance.html">record_provenance</a></code></p></div>
+    <div class="dont-index"><p><code><a href="publish_provenance.html">publish_provenance()</a></code>,
+<code><a href="record_provenance.html">record_provenance()</a></code></p></div>
     </div>
 
     <div class="section level2">

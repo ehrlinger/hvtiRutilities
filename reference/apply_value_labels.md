@@ -4,7 +4,7 @@ Reads a study's `value_labels.yml` and attaches the declared
 code-to-text mappings to the matching columns as value labels, via
 [`labelled::val_labels()`](https://larmarange.github.io/labelled/reference/val_labels.html).
 It declares; it does not convert. Pass the result to
-[`r_data_types`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
+[`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
 with `use_value_labels = TRUE` to turn the declarations into factors
 with text levels.
 
@@ -62,7 +62,7 @@ deliberately **not** the display label. Level definitions crammed into a
 variable label are what forced them to be reconstructed by hand in every
 table, and a label carrying eight mutually exclusive options cannot
 survive `label_max` (see
-[`label_map`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)).
+[`label_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)).
 Declaring them here keeps the two jobs apart: the converter reads this
 file, and a table renderer reads the label.
 
@@ -88,12 +88,12 @@ declarations without pre-empting it.
 
 ## See also
 
-[`r_data_types`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
+[`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
 for converting declarations to factors,
-[`apply_label_overrides`](https://ehrlinger.github.io/hvtiRutilities/reference/apply_label_overrides.md)
+[`apply_label_overrides()`](https://ehrlinger.github.io/hvtiRutilities/reference/apply_label_overrides.md)
 for the same pattern one level up - declaring *variable* labels rather
 than value labels,
-[`read_clinical_data`](https://ehrlinger.github.io/hvtiRutilities/reference/read_clinical_data.md)
+[`read_clinical_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_clinical_data.md)
 for the `catalog_file` argument that would supply these mappings if a
 catalogue existed.
 

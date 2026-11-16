@@ -34,7 +34,7 @@ prefix and the extension, or the trailing qualifier field of a
 `scaffolded` name, and are `NA` (count zero) for every other convention.
 They are named by position because the second field means a different
 thing in each taxonomy folder; see
-[`hvti_taxonomy`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_taxonomy.md)
+[`hvti_taxonomy()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_taxonomy.md)
 and the design note referenced in `R/job_names.R`. Zero rows if the
 roots hold no files.
 
@@ -57,7 +57,7 @@ report's `stem`, so it counts as a file of that job rather than as a
 second job.
 
 A legacy prefix listed in
-[`hvti_prefix_folds`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_prefix_folds.md)
+[`hvti_prefix_folds()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_prefix_folds.md)
 is reported as the prefix it folds into, so a `pm.*` file counts as
 `lm`. `stem` keeps the name as written, so a folded file stays findable.
 
@@ -77,8 +77,8 @@ at two minutes over the share.
 
 ## See also
 
-[`job_census`](https://ehrlinger.github.io/hvtiRutilities/reference/job_census.md),
-[`hvti_taxonomy`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_taxonomy.md)
+[`job_census()`](https://ehrlinger.github.io/hvtiRutilities/reference/job_census.md),
+[`hvti_taxonomy()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_taxonomy.md)
 
 ## Examples
 

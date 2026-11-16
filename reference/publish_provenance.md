@@ -20,7 +20,7 @@ publish_provenance(path, payload)
 - payload:
 
   A payload returned by
-  [`capture_provenance`](https://ehrlinger.github.io/hvtiRutilities/reference/capture_provenance.md).
+  [`capture_provenance()`](https://ehrlinger.github.io/hvtiRutilities/reference/capture_provenance.md).
 
 ## Value
 
@@ -28,9 +28,9 @@ Invisibly, the published record as a list.
 
 ## See also
 
-[`capture_provenance`](https://ehrlinger.github.io/hvtiRutilities/reference/capture_provenance.md),
-[`record_provenance`](https://ehrlinger.github.io/hvtiRutilities/reference/record_provenance.md),
-[`provenance_path`](https://ehrlinger.github.io/hvtiRutilities/reference/provenance_path.md)
+[`capture_provenance()`](https://ehrlinger.github.io/hvtiRutilities/reference/capture_provenance.md),
+[`record_provenance()`](https://ehrlinger.github.io/hvtiRutilities/reference/record_provenance.md),
+[`provenance_path()`](https://ehrlinger.github.io/hvtiRutilities/reference/provenance_path.md)
 
 ## Examples
 

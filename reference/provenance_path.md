@@ -21,8 +21,8 @@ Character(1). The sidecar path.
 
 ## See also
 
-[`publish_provenance`](https://ehrlinger.github.io/hvtiRutilities/reference/publish_provenance.md),
-[`record_provenance`](https://ehrlinger.github.io/hvtiRutilities/reference/record_provenance.md)
+[`publish_provenance()`](https://ehrlinger.github.io/hvtiRutilities/reference/publish_provenance.md),
+[`record_provenance()`](https://ehrlinger.github.io/hvtiRutilities/reference/record_provenance.md)
 
 ## Examples
 

@@ -105,7 +105,7 @@ concepts – and the paper the job comes from reports <strong>concepts</strong>.
 
 <dt id="arg-affixes">affixes<a class="anchor" aria-label="anchor" href="#arg-affixes"></a></dt>
 <dd><p>Character vector of regular expressions for the study's
-transformation affixes. See <code><a href="pool_conventions.html">POOL_AFFIXES</a></code>.</p></dd>
+transformation affixes. See <code><a href="pool_conventions.html">POOL_AFFIXES()</a></code>.</p></dd>
 
 
 <dt id="arg-plain-suffix">plain_suffix<a class="anchor" aria-label="anchor" href="#arg-plain-suffix"></a></dt>
@@ -126,7 +126,7 @@ over every rule: it is the study saying so directly.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A character scalar: the concept, or <code>v</code> itself when no rule
-  applies.</p>
+applies.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -152,14 +152,14 @@ truncates the stem when it names a derivative, so stripping the affix yields
 a name absent by exact match:</p>
 <ul><li><p><em>Truncation</em> – <code>effi</code> is a <strong>prefix</strong> of <code>effic</code>,
 so it can be found.
-  Handled automatically, but only when the stem prefixes exactly one pool
-  member that is not itself a derived form, and only when the stem is at
-  least <code>min_stem</code> characters. Ambiguity declines to group rather than
-  guessing.</p></li>
+Handled automatically, but only when the stem prefixes exactly one pool
+member that is not itself a derived form, and only when the stem is at
+least <code>min_stem</code> characters. Ambiguity declines to group rather than
+guessing.</p></li>
 <li><p><em>Contraction</em> – <code>arin</code> is not a prefix of <code>area_int</code>
 and no rule can find
-  it. Declare it via <code>aliases</code>, so the judgement is recorded in the job
-  rather than inferred by the function.</p></li>
+it. Declare it via <code>aliases</code>, so the judgement is recorded in the job
+rather than inferred by the function.</p></li>
 </ul><p>Left ungrouped on a real screen, <code>effic</code> at 86.4% and <code>ln_effi</code> at
 60.8% were
 both reported as retained risk factors at r = 0.9988, and <code>in_arin</code> at
@@ -183,8 +183,8 @@ new datasets simply never need them.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="concept_map.html">concept_map</a></code>, <code><a href="prune_to_one_form.html">prune_to_one_form</a></code>,
-  <code><a href="selection_crowding.html">selection_crowding</a></code></p></div>
+    <div class="dont-index"><p><code><a href="concept_map.html">concept_map()</a></code>, <code><a href="prune_to_one_form.html">prune_to_one_form()</a></code>,
+<code><a href="selection_crowding.html">selection_crowding()</a></code></p></div>
     </div>
 
     <div class="section level2">

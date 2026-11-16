@@ -15,9 +15,9 @@ or that records no parent versions, is listed as out of date in a
 message after the table until its source is rebuilt and
 `update_manifest()` is run again. Name one dataset with `dataset`.
 Release-aware datasets are skipped; use
-[`review_data_update`](https://ehrlinger.github.io/hvtiRutilities/reference/review_data_update.md)
+[`review_data_update()`](https://ehrlinger.github.io/hvtiRutilities/reference/review_data_update.md)
 and
-[`adopt_data_update`](https://ehrlinger.github.io/hvtiRutilities/reference/adopt_data_update.md).
+[`adopt_data_update()`](https://ehrlinger.github.io/hvtiRutilities/reference/adopt_data_update.md).
 A key violation on one dataset stops the whole run and leaves every
 dataset as it was.
 
@@ -70,7 +70,7 @@ update_manifest(
   Character. Path to the manifest YAML file. Created if it does not
   exist. `NULL` (the default) writes the enclosing study's
   `manifest.yaml` at its root, the manifest the no-argument form and
-  [`verify_manifest`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md)
+  [`verify_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md)
   use, and only for a file in the study's datasets folder, where that
   manifest's entries are resolved. Outside a study, or for a file
   anywhere else, there is no default: name the manifest, or the call
@@ -133,8 +133,8 @@ update_manifest(
 - verbose:
 
   Logical. If `TRUE`, report which manifest entry was added or updated
-  via [`message`](https://rdrr.io/r/base/message.html). Defaults to
-  `FALSE` so that scripted or looped calls stay silent.
+  via [`base::message()`](https://rdrr.io/r/base/message.html). Defaults
+  to `FALSE` so that scripted or looped calls stay silent.
 
 - dataset:
 
@@ -152,7 +152,7 @@ disk and has no registered version) and `detail`.
 
 ## See also
 
-[`verify_manifest`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md)
+[`verify_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md)
 
 ## Examples
 

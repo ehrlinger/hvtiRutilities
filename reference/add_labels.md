@@ -24,7 +24,7 @@ add_labels(label_map_df, new_labels)
 - label_map_df:
 
   A data frame with `key` and `label` columns (as returned by
-  [`label_map`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)),
+  [`label_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)),
   **or** any data frame to which labels should be applied directly.
 
 - new_labels:
@@ -40,9 +40,9 @@ data frame: the data frame with labels applied via
 
 ## See also
 
-[`label_map`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)
+[`label_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)
 to extract a label map from data,
-[`apply_label_overrides`](https://ehrlinger.github.io/hvtiRutilities/reference/apply_label_overrides.md)
+[`apply_label_overrides()`](https://ehrlinger.github.io/hvtiRutilities/reference/apply_label_overrides.md)
 for bulk overrides from YAML.
 
 ## Examples

@@ -12,7 +12,7 @@ even through `include:` patterns, and neither is anything under
 `CHECKPOINT.yml` records their size and checksum. An exploration set up
 with `derived_from` is committed and tagged locally and pushed only
 after
-[`study_promote`](https://ehrlinger.github.io/hvtiRutilities/reference/study_promote.md).
+[`study_promote()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_promote.md).
 
 ## Usage
 
@@ -31,7 +31,7 @@ study_checkpoint(
 - kind:
 
   Character(1). A checkpoint kind. `study_promoted` is recorded by
-  [`study_promote`](https://ehrlinger.github.io/hvtiRutilities/reference/study_promote.md),
+  [`study_promote()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_promote.md),
   and by hand only on a promoted study whose promotion snapshot failed.
 
 - note:
@@ -65,16 +65,16 @@ The kind comes from the StudyTracker checkpoint vocabulary, for example
 as `"data_received"` are logged without a snapshot. A checkpoint is
 committed locally before anything is pushed, so an unreachable remote
 never loses one;
-[`study_checkpoint_push`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checkpoint_push.md)
+[`study_checkpoint_push()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checkpoint_push.md)
 retries later.
 
 One session at a time: this function,
-[`study_checkpoint_push`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checkpoint_push.md),
-[`study_close`](https://ehrlinger.github.io/hvtiRutilities/reference/study_close.md),
+[`study_checkpoint_push()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checkpoint_push.md),
+[`study_close()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_close.md),
 [`study_reopen()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_close.md),
-[`study_promote`](https://ehrlinger.github.io/hvtiRutilities/reference/study_promote.md)
+[`study_promote()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_promote.md)
 and
-[`study_render_commit`](https://ehrlinger.github.io/hvtiRutilities/reference/study_render_commit.md)
+[`study_render_commit()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_render_commit.md)
 hold the lock `.checkpoint/lock` while they run. A call that finds it
 held by another session stops, naming the holder; retry once that
 session has finished. The holder refreshes the lock between phases
@@ -88,9 +88,9 @@ either is given: they must not contain patient information.
 
 ## See also
 
-[`study_checkpoint_push`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checkpoint_push.md),
-[`study_close`](https://ehrlinger.github.io/hvtiRutilities/reference/study_close.md),
-[`study_status`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md)
+[`study_checkpoint_push()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checkpoint_push.md),
+[`study_close()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_close.md),
+[`study_status()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md)
 
 ## Examples
 

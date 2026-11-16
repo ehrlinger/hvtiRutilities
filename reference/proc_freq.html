@@ -115,7 +115,7 @@ effect on a one-way table.</p></dd>
 <dd><p>Character or <code>NULL</code>. Name of a single numeric column of
 weights, SAS <code>WEIGHT</code>. <code>Frequency</code> becomes the sum of weights.
 Rows with a missing weight are excluded entirely; non-positive weights
-are an error, as in <code><a href="proc_means.html">proc_means</a></code>.</p></dd>
+are an error, as in <code><a href="proc_means.html">proc_means()</a></code>.</p></dd>
 
 
 <dt id="arg-weights">weights<a class="anchor" aria-label="anchor" href="#arg-weights"></a></dt>
@@ -129,15 +129,15 @@ are an error, as in <code><a href="proc_means.html">proc_means</a></code>.</p></
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A data frame with one column per <code>table_cols</code> variable (each
-  followed by a <code>&lt;var&gt;_label</code> column when the variable carries value
-  labels), then:</p><ul><li><p>for a one-way table, or <code>list = TRUE</code>: <code>Frequency</code>,
-      <code>Percent</code>, <code>Cum_Frequency</code>, <code>Cum_Percent</code>;</p></li>
+followed by a <code>&lt;var&gt;_label</code> column when the variable carries value
+labels), then:</p><ul><li><p>for a one-way table, or <code>list = TRUE</code>: <code>Frequency</code>,
+<code>Percent</code>, <code>Cum_Frequency</code>, <code>Cum_Percent</code>;</p></li>
 <li><p>for an n-way crosstab: <code>Frequency</code>, <code>Percent</code> (within
-      stratum), <code>Row_Percent</code>, <code>Col_Percent</code>.</p></li>
+stratum), <code>Row_Percent</code>, <code>Col_Percent</code>.</p></li>
 </ul><p><code>Frequency</code> is integer when unweighted and double when weighted.
-  The attribute <code>frequency_missing</code> holds the count (or weight) of
-  excluded missing rows, and is <code>0</code> when none were excluded. A table
-  with no remaining rows is returned with zero rows, not an error.</p>
+The attribute <code>frequency_missing</code> holds the count (or weight) of
+excluded missing rows, and is <code>0</code> when none were excluded. A table
+with no remaining rows is returned with zero rows, not an error.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -164,24 +164,24 @@ holding the label follows it. A value with no label is its own row.
 Variable labels on the <code>table_cols</code> columns are kept.</p>
 <p><strong>What counts as missing.</strong> As in SAS, a blank or whitespace-only
 character value is missing, and so is <code>NaN</code>. SAS special missing
-values, read by <code>haven</code> as <code><a href="https://haven.tidyverse.org/reference/tagged_na.html" class="external-link">tagged_na</a></code>, are
+values, read by <code>haven</code> as <code><a href="https://haven.tidyverse.org/reference/tagged_na.html" class="external-link">haven::tagged_na()</a></code>, are
 separate missing levels in SAS order: <code>._</code>, then <code>.</code>, then
 <code>.A</code> to <code>.Z</code>.</p>
 <p><strong>Where this differs from SAS.</strong> Unlabelled doubles are grouped on
 their exact values, whereas SAS groups on the printed (<code>BEST12.</code>)
 value, so values that differ past about 12 significant digits stay separate
 rows here. Non-positive weights are an error, whereas SAS drops zero
-weights and ignores negative ones; <code><a href="proc_means.html">proc_means</a></code> makes the same
+weights and ignores negative ones; <code><a href="proc_means.html">proc_means()</a></code> makes the same
 deliberate choice.</p>
 <p>Percentages are not rounded. SAS rounds only for display, and a rounded
-result would fail <code><a href="compare_parity.html">compare_parity</a></code> against SAS output.</p>
+result would fail <code><a href="compare_parity.html">compare_parity()</a></code> against SAS output.</p>
 <p>Tests of association (<code>CHISQ</code>, <code>FISHER</code>, <code>MEASURES</code> and the
-rest) are deliberately absent, for the same reason <code><a href="proc_means.html">proc_means</a></code>
+rest) are deliberately absent, for the same reason <code><a href="proc_means.html">proc_means()</a></code>
 has no inference statistics.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="proc_means.html">proc_means</a></code>, <code><a href="proc_contents.html">proc_contents</a></code></p></div>
+    <div class="dont-index"><p><code><a href="proc_means.html">proc_means()</a></code>, <code><a href="proc_contents.html">proc_contents()</a></code></p></div>
     </div>
 
     <div class="section level2">

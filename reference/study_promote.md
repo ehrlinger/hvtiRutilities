@@ -8,7 +8,7 @@ the lineage to the parent study is kept. When the study has a checkpoint
 repository and a remote, the checkpoints held locally while the study
 was provisional are delivered at once, with the `study_promoted`
 checkpoint described below, and
-[`study_checkpoint_push`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checkpoint_push.md)
+[`study_checkpoint_push()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checkpoint_push.md)
 retries anything still pending; their tags are unchanged. Checkpoint
 commits and tag messages made while the study was provisional keep the
 provisional ID; they are pushed unchanged.
@@ -28,7 +28,7 @@ study_promote(study_tracker_id, start = ".")
 - start:
 
   A directory in the study. The study is found as by
-  [`study_config`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md).
+  [`study_config()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md).
 
 ## Value
 
@@ -48,7 +48,7 @@ tagged `study_promoted`, and delivers it with the held checkpoints,
 printing the usual delivery messages, so the promoted `_study.yml`
 reaches the remote and a second copy of the study reads it as promoted.
 Without a remote it stays pending until
-[`study_checkpoint_push`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checkpoint_push.md).
+[`study_checkpoint_push()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checkpoint_push.md).
 A study with no checkpoint repository yet takes no snapshot; its first
 checkpoint carries the promoted manifest. With a repository, git must be
 available and the `study_promoted` kind must not be retired; both are
@@ -68,8 +68,8 @@ does.
 
 ## See also
 
-[`study_setup`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md),
-[`study_update_identity`](https://ehrlinger.github.io/hvtiRutilities/reference/study_update_identity.md)
+[`study_setup()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md),
+[`study_update_identity()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_update_identity.md)
 
 ## Examples
 

@@ -39,7 +39,7 @@ the total cannot distinguish a mean-imputed binary (one such level, in a
 minority of rows) from an inverse transformation whose several
 non-integer levels are ordinary data. A blank means "no such level";
 `NA` means "not looked for". `action` is what
-[`covariates_to_numeric`](https://ehrlinger.github.io/hvtiRutilities/reference/covariates_to_numeric.md)
+[`covariates_to_numeric()`](https://ehrlinger.github.io/hvtiRutilities/reference/covariates_to_numeric.md)
 would do, and an `action` beginning `ERROR` marks a variable that must
 not be fitted.
 
@@ -79,8 +79,8 @@ and the paired `ms_*` indicator is the only record that it happened. So
 
 ## See also
 
-[`covariates_to_numeric`](https://ehrlinger.github.io/hvtiRutilities/reference/covariates_to_numeric.md),
-[`imputed_levels`](https://ehrlinger.github.io/hvtiRutilities/reference/imputed_levels.md)
+[`covariates_to_numeric()`](https://ehrlinger.github.io/hvtiRutilities/reference/covariates_to_numeric.md),
+[`imputed_levels()`](https://ehrlinger.github.io/hvtiRutilities/reference/imputed_levels.md)
 
 ## Examples
 

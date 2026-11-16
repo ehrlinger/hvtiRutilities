@@ -105,7 +105,7 @@ macro rather than the first one in the file.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A character vector of unique variable names, lowercased, in the
-  order they appear in the block.</p>
+order they appear in the block.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -120,11 +120,11 @@ match a
 the
 next line and that name vanishes: <code>female</code>, <code>afib_pr</code>,
 <code>plvidd</code> and <code>size</code>
-  were all lost this way.</p></li>
+were all lost this way.</p></li>
 <li><p>A <code>/* ... */</code> spanning two lines is never stripped at all, so a
 commented-<strong>out</strong> variable is read as live: <code>avet_con</code> entered a
 screen
-  that way.</p></li>
+that way.</p></li>
 </ul><p>Collapsing the block first and stripping lazily handles both, and that is
 what this function does.</p>
 <p>Three name forms are normalised. <code>name=value</code> appears where a job
@@ -135,12 +135,12 @@ by a copy of it. <code>name/I</code> marks a variable forced into the model, and
 the
 suffix is an option on the name rather than part of it. Names are lowercased,
 because SAS variable names are case-insensitive and
-<code><a href="read_clinical_data.html">read_clinical_data</a></code>
+<code><a href="read_clinical_data.html">read_clinical_data()</a></code>
 lowercases them.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="sas_path.html">sas_path</a></code>, <code><a href="covariate_audit.html">covariate_audit</a></code></p></div>
+    <div class="dont-index"><p><code><a href="sas_path.html">sas_path()</a></code>, <code><a href="covariate_audit.html">covariate_audit()</a></code></p></div>
     </div>
 
     <div class="section level2">

@@ -65,11 +65,11 @@ attribute `hvtiRutilities_cache_key`.
 
 `code` is not evaluated on a cache hit. It can be written inline, as a
 single call or a [`{}`](https://rdrr.io/r/base/Paren.html) block of
-several steps, or passed as a variable holding a
-[`quote`](https://rdrr.io/r/base/substitute.html)d call built
-beforehand. Both forms give the same key for the same computation.
-Passing an object that has already been computed is an error, because
-the cache could never skip it.
+several steps, or passed as a variable holding a call built beforehand
+with [`base::quote()`](https://rdrr.io/r/base/substitute.html). Both
+forms give the same key for the same computation. Passing an object that
+has already been computed is an error, because the cache could never
+skip it.
 
 `code` must be written in the call to `cache_fit()` itself. A wrapper
 function that forwards its own argument, e.g.
@@ -136,7 +136,7 @@ because there would be nothing to cache.
 When `seed` is given, `cache_fit()` calls `set.seed(seed)` before the
 code runs and again after it, even when it fails, and calls it once when
 the result is loaded instead. If the code changes the generator with
-[`RNGkind`](https://rdrr.io/r/base/Random.html), the kinds in use when
+[`RNGkind()`](https://rdrr.io/r/base/Random.html), the kinds in use when
 `cache_fit()` was called are put back before that second call. A
 computed and a loaded result therefore leave the global random number
 stream in the same state, the one `set.seed(seed)` sets, so code after
@@ -156,17 +156,17 @@ The result is written to a temporary file and renamed into place, so an
 interrupted run never leaves a partial file. When `dir` lies inside a
 study, a provenance sidecar carrying the key and the completed cache
 file's hash is published with
-[`capture_provenance`](https://ehrlinger.github.io/hvtiRutilities/reference/capture_provenance.md)
+[`capture_provenance()`](https://ehrlinger.github.io/hvtiRutilities/reference/capture_provenance.md)
 and
-[`publish_provenance`](https://ehrlinger.github.io/hvtiRutilities/reference/publish_provenance.md).
+[`publish_provenance()`](https://ehrlinger.github.io/hvtiRutilities/reference/publish_provenance.md).
 The cache records an explicit empty data list rather than inferring that
 the currently registered dataset was an input to the computation.
 
 ## See also
 
-[`capture_provenance`](https://ehrlinger.github.io/hvtiRutilities/reference/capture_provenance.md),
-[`publish_provenance`](https://ehrlinger.github.io/hvtiRutilities/reference/publish_provenance.md),
-[`study_dir`](https://ehrlinger.github.io/hvtiRutilities/reference/study_dir.md)
+[`capture_provenance()`](https://ehrlinger.github.io/hvtiRutilities/reference/capture_provenance.md),
+[`publish_provenance()`](https://ehrlinger.github.io/hvtiRutilities/reference/publish_provenance.md),
+[`study_dir()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_dir.md)
 
 ## Examples
 

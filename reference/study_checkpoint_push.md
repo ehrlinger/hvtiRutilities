@@ -2,14 +2,14 @@
 
 Retries delivery of every checkpoint, closure and reopening in
 `.checkpoint/log.yml` that has not reached the remote yet.
-[`study_checkpoint`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checkpoint.md)
+[`study_checkpoint()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checkpoint.md)
 does this on every call; use this function after a network outage, or
 once `study-setup --verify` has verified a manually entered identity. A
 promoted exploration's held checkpoints are delivered once
 `checkpoint: remote:` is set; promotion does not set it. On an
 exploration set up with `derived_from` that has not been promoted, it
 stops with an error and pushes nothing; run
-[`study_promote`](https://ehrlinger.github.io/hvtiRutilities/reference/study_promote.md)
+[`study_promote()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_promote.md)
 first.
 
 ## Usage
@@ -74,8 +74,8 @@ warning that names the tag and points back here.
 
 ## See also
 
-[`study_checkpoint`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checkpoint.md),
-[`study_promote`](https://ehrlinger.github.io/hvtiRutilities/reference/study_promote.md)
+[`study_checkpoint()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checkpoint.md),
+[`study_promote()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_promote.md)
 
 ## Examples
 

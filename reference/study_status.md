@@ -14,7 +14,7 @@ unreadable on exactly the legacy studies it is most needed for.
 
 `"EXPLORATORY"` means a study set up with `derived_from` that has not
 yet been promoted with
-[`study_promote`](https://ehrlinger.github.io/hvtiRutilities/reference/study_promote.md).
+[`study_promote()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_promote.md).
 
 A `_study.yml` whose identity was entered by hand and not yet confirmed
 against Study Tracker (`identity_verified: false`) is reported
@@ -28,7 +28,7 @@ locally and not yet pushed. Its detail counts the recorded events, names
 the last tag, and counts those not yet pushed or not yet in ST. A closed
 study then adds a `closure` row with status `"CLOSED"` and the outcome
 and date of the latest closure; see
-[`study_close`](https://ehrlinger.github.io/hvtiRutilities/reference/study_close.md).
+[`study_close()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_close.md).
 This function never contacts the remote, so when one is configured that
 row adds *as of the last fetch*. When a closure or reopening tag in this
 copy is not on its `main`, the state cannot be determined and the row
@@ -62,14 +62,14 @@ as `unrecorded`. If that check itself cannot run, for example because
 error as its detail.
 
 Unlike
-[`study_config`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md),
+[`study_config()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md),
 this function does **not** walk up the directory tree. It asks whether
 `root` itself is a study root, so that a subdirectory of a study is
 never mistaken for one.
 
 The provenance check matches sidecars to sources **by file name**,
 because
-[`record_provenance`](https://ehrlinger.github.io/hvtiRutilities/reference/record_provenance.md)
+[`record_provenance()`](https://ehrlinger.github.io/hvtiRutilities/reference/record_provenance.md)
 writes the sidecar beside the rendered output and Quarto's output
 directory is usually not the source's directory. Two sources sharing a
 name therefore cannot be distinguished; the repeated names are reported
@@ -101,8 +101,8 @@ dataset, and by the `checkpoints` and `closure` rows when they apply.
 
 ## See also
 
-[`study_setup`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md),
-[`study_checklist`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checklist.md)
+[`study_setup()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md),
+[`study_checklist()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checklist.md)
 
 ## Examples
 
@@ -110,7 +110,7 @@ dataset, and by the `checkpoints` and `closure` rows when they apply.
 root <- file.path(tempdir(), "study-status-example")
 dir.create(root, showWarnings = FALSE)
 study_status(root)
-#> Study: /tmp/RtmpT6gx1g/study-status-example
+#> Study: /tmp/Rtmpoh72Jx/study-status-example
 #> 
 #> [ ] _study.yml — no _study.yml at this root; recovery may be available with study-setup --recover; if its Tracker ID cannot be inferred, run study-setup 42 --recover
 #> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first

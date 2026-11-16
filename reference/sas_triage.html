@@ -83,7 +83,7 @@ slow.</p></dd>
 
 
 <dt id="arg-overrides">overrides<a class="anchor" aria-label="anchor" href="#arg-overrides"></a></dt>
-<dd><p>Character or <code>NULL</code>. Path to a `macro_overrides.yaml`
+<dd><p>Character or <code>NULL</code>. Path to a <code>macro_overrides.yaml</code>
 recording human decisions. Each entry requires <code>macro</code>,
 <code>canonical_file</code>, <code>rationale</code>, <code>decided_by</code>, and
 <code>decided_on</code>.</p></dd>
@@ -92,10 +92,10 @@ recording human decisions. Each entry requires <code>macro</code>,
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A <code>data.frame</code> with one row per macro definition and columns
-  <code>file</code>, <code>macro</code>, <code>params</code>, <code>body_hash</code>,
-  <code>line_start</code>, <code>line_end</code>, <code>visibility</code>, <code>decision</code>,
-  <code>rule</code>, and <code>evidence</code>. Rows are sorted by <code>macro</code> then
-  <code>file</code>, so the result is deterministic.</p>
+<code>file</code>, <code>macro</code>, <code>params</code>, <code>body_hash</code>,
+<code>line_start</code>, <code>line_end</code>, <code>visibility</code>, <code>decision</code>,
+<code>rule</code>, and <code>evidence</code>. Rows are sorted by <code>macro</code> then
+<code>file</code>, so the result is deterministic.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -109,12 +109,12 @@ extensions – and many macro files carry no extension at all, so a
 <p>File-level rules, applied first, in order:</p><ol><li><p><code>Copy of *</code> – drop, as a filename-prefix duplicate.</p></li>
 <li><p><code>*.sas~</code> – drop, as an editor backup superseded by construction.</p></li>
 <li><p>Fails <code>.sas_lint()</code> – drop, citing the specific lint failure.</p></li>
-</ol><p>Definition-level rules, applied per macro name across surviving files:</p><ol><li><p>[4.] Defined in exactly one file – canonical.</p></li>
-<li><p>[5.] Defined in several files, all bodies hashing identically –
-    canonical, recording every defining file.</p></li>
-<li><p>[6.] Defined in several files with two or more distinct bodies –
-    <strong>ambiguous</strong>. No canonical file is chosen.</p></li>
-</ol><p>Rule 6 never auto-resolves. Modification dates and visibility are attached as
+</ol><p>Definition-level rules, applied per macro name across surviving files:</p><ul><li><p><strong>4.</strong> Defined in exactly one file – canonical.</p></li>
+<li><p><strong>5.</strong> Defined in several files, all bodies hashing identically –
+canonical, recording every defining file.</p></li>
+<li><p><strong>6.</strong> Defined in several files with two or more distinct bodies –
+<strong>ambiguous</strong>. No canonical file is chosen.</p></li>
+</ul><p>Rule 6 never auto-resolves. Modification dates and visibility are attached as
 evidence for a human, never consumed as a tiebreaker, because a tool that
 silently picks a winner launders a coin-flip into a committed artifact.
 Filesystem mtime is deliberately never consulted: the corpus froze in 2019

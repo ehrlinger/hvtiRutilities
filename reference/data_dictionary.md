@@ -51,13 +51,13 @@ A data frame with one row per variable and the following columns:
 
 ## See also
 
-[`proc_contents`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_contents.md)
+[`proc_contents()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_contents.md)
 for the full SAS-style variable table,
-[`proc_means`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
+[`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
 for numeric summaries,
-[`label_map`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)
+[`label_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)
 for extracting labels only,
-[`r_data_types`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
+[`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
 for automatic type conversion before building the dictionary.
 
 ## Examples

@@ -1,7 +1,7 @@
 # Look up labels for multiple variables at once
 
 A vectorized companion to
-[`get_label`](https://ehrlinger.github.io/hvtiRutilities/reference/get_label.md).
+[`get_label()`](https://ehrlinger.github.io/hvtiRutilities/reference/get_label.md).
 Returns a named character vector of labels for one or more variable
 names, making it convenient to label axes, table columns, or multi-panel
 plots in a single call.
@@ -20,7 +20,7 @@ get_labels(label_map_df, variables)
 - label_map_df:
 
   A data frame with `key` and `label` columns, as returned by
-  [`label_map`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md).
+  [`label_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md).
 
 - variables:
 
@@ -33,9 +33,9 @@ equal to the corresponding labels.
 
 ## See also
 
-[`get_label`](https://ehrlinger.github.io/hvtiRutilities/reference/get_label.md)
+[`get_label()`](https://ehrlinger.github.io/hvtiRutilities/reference/get_label.md)
 for single-variable lookup,
-[`label_map`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)
+[`label_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)
 to extract a label map from data.
 
 ## Examples

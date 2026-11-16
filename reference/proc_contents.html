@@ -91,16 +91,16 @@ of Variables and Attributes</em>; <code>"varnum"</code> keeps creation order. Th
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>An object of class <code>proc_contents</code>: a list with two elements.</p><dl><dt>header</dt>
 <dd><p>One-row data frame with <code>observations</code> (row count),
-    <code>variables</code> (column count), and <code>label</code> (dataset label, or
-    <code>NA</code>)</p></dd>
+<code>variables</code> (column count), and <code>label</code> (dataset label, or
+<code>NA</code>)</p></dd>
 
-  <dt>variables</dt>
+<dt>variables</dt>
 <dd><p>Data frame with one row per column and the columns
-    <code>num</code> (creation position), <code>variable</code>, <code>type</code>
-    (<code>"Num"</code>/<code>"Char"</code>), <code>format</code> (SAS format, or <code>NA</code>),
-    <code>label</code>, <code>class</code> (R class), <code>n_unique</code> (distinct
-    non-<code>NA</code> values), and <code>pct_missing</code> (0-100, 1 decimal place,
-    or <code>NaN</code> when <code>data</code> has zero rows)</p></dd>
+<code>num</code> (creation position), <code>variable</code>, <code>type</code>
+(<code>"Num"</code>/<code>"Char"</code>), <code>format</code> (SAS format, or <code>NA</code>),
+<code>label</code>, <code>class</code> (R class), <code>n_unique</code> (distinct
+non-<code>NA</code> values), and <code>pct_missing</code> (0-100, 1 decimal place,
+or <code>NaN</code> when <code>data</code> has zero rows)</p></dd>
 
 
 </dl><p><code>label</code> is never <code>NA</code>: it falls back to the variable's own name
@@ -143,8 +143,8 @@ column for display should handle <code>NaN</code> explicitly.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="proc_means.html">proc_means</a></code> for numeric summaries,
-  <code><a href="data_dictionary.html">data_dictionary</a></code> for a flattened documentation table.</p></div>
+    <div class="dont-index"><p><code><a href="proc_means.html">proc_means()</a></code> for numeric summaries,
+<code><a href="data_dictionary.html">data_dictionary()</a></code> for a flattened documentation table.</p></div>
     </div>
 
     <div class="section level2">

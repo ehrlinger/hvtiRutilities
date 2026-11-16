@@ -10,7 +10,7 @@ current dataset implicitly. Pass
 no known direct data input.
 
 Capture does not write a sidecar or inspect a rendered output. Use
-[`publish_provenance`](https://ehrlinger.github.io/hvtiRutilities/reference/publish_provenance.md)
+[`publish_provenance()`](https://ehrlinger.github.io/hvtiRutilities/reference/publish_provenance.md)
 only after the completed output exists.
 
 ## Usage
@@ -35,12 +35,12 @@ capture_provenance(
 - data:
 
   List of records returned by
-  [`provenance_data`](https://ehrlinger.github.io/hvtiRutilities/reference/provenance_data.md).
+  [`provenance_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/provenance_data.md).
 
 - artifacts:
 
   List of records returned by
-  [`provenance_artifact`](https://ehrlinger.github.io/hvtiRutilities/reference/provenance_artifact.md).
+  [`provenance_artifact()`](https://ehrlinger.github.io/hvtiRutilities/reference/provenance_artifact.md).
 
 - extra:
 
@@ -50,7 +50,7 @@ capture_provenance(
 - cfg:
 
   List. A study manifest from
-  [`study_config`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md).
+  [`study_config()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md).
 
 - seed:
 
@@ -73,8 +73,8 @@ uses.
 
 ## See also
 
-[`publish_provenance`](https://ehrlinger.github.io/hvtiRutilities/reference/publish_provenance.md),
-[`record_provenance`](https://ehrlinger.github.io/hvtiRutilities/reference/record_provenance.md)
+[`publish_provenance()`](https://ehrlinger.github.io/hvtiRutilities/reference/publish_provenance.md),
+[`record_provenance()`](https://ehrlinger.github.io/hvtiRutilities/reference/record_provenance.md)
 
 ## Examples
 

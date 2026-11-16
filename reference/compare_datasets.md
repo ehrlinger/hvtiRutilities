@@ -74,8 +74,8 @@ A list with the following elements:
 
 ## See also
 
-[`update_manifest`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md),
-[`verify_manifest`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md)
+[`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md),
+[`verify_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md)
 
 ## Examples
 

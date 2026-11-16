@@ -26,7 +26,7 @@ compare_parity(quantity, r, sas, class, source = "lst", digits = NA_integer_)
 - class:
 
   Tolerance class; see
-  [`parity_tolerance`](https://ehrlinger.github.io/hvtiRutilities/reference/parity_tolerance.md).
+  [`parity_tolerance()`](https://ehrlinger.github.io/hvtiRutilities/reference/parity_tolerance.md).
 
 - source:
 
@@ -54,7 +54,7 @@ the reader to distrust a real improvement.
 When the SAS value is zero there is no relative scale. The reported
 `rel_diff` is `0` if the two agree exactly and `Inf` otherwise – never
 `NA`, which
-[`parity_headline`](https://ehrlinger.github.io/hvtiRutilities/reference/parity_headline.md)
+[`parity_headline()`](https://ehrlinger.github.io/hvtiRutilities/reference/parity_headline.md)
 would drop, reporting a real failure as no discrepancy at all.
 
 ## Examples

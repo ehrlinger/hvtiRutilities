@@ -50,7 +50,7 @@ proc_freq(
   Character or `NULL`. Name of a single numeric column of weights, SAS
   `WEIGHT`. `Frequency` becomes the sum of weights. Rows with a missing
   weight are excluded entirely; non-positive weights are an error, as in
-  [`proc_means`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md).
+  [`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md).
 
 - weights:
 
@@ -108,31 +108,32 @@ labels on the `table_cols` columns are kept.
 **What counts as missing.** As in SAS, a blank or whitespace-only
 character value is missing, and so is `NaN`. SAS special missing values,
 read by `haven` as
-[`tagged_na`](https://haven.tidyverse.org/reference/tagged_na.html), are
-separate missing levels in SAS order: `._`, then `.`, then `.A` to `.Z`.
+[`haven::tagged_na()`](https://haven.tidyverse.org/reference/tagged_na.html),
+are separate missing levels in SAS order: `._`, then `.`, then `.A` to
+`.Z`.
 
 **Where this differs from SAS.** Unlabelled doubles are grouped on their
 exact values, whereas SAS groups on the printed (`BEST12.`) value, so
 values that differ past about 12 significant digits stay separate rows
 here. Non-positive weights are an error, whereas SAS drops zero weights
 and ignores negative ones;
-[`proc_means`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
+[`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
 makes the same deliberate choice.
 
 Percentages are not rounded. SAS rounds only for display, and a rounded
 result would fail
-[`compare_parity`](https://ehrlinger.github.io/hvtiRutilities/reference/compare_parity.md)
+[`compare_parity()`](https://ehrlinger.github.io/hvtiRutilities/reference/compare_parity.md)
 against SAS output.
 
 Tests of association (`CHISQ`, `FISHER`, `MEASURES` and the rest) are
 deliberately absent, for the same reason
-[`proc_means`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
+[`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
 has no inference statistics.
 
 ## See also
 
-[`proc_means`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md),
-[`proc_contents`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_contents.md)
+[`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md),
+[`proc_contents()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_contents.md)
 
 ## Examples
 

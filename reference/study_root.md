@@ -3,7 +3,7 @@
 Returns the absolute path of the directory holding `_study.yml`, found
 by walking up from `start`. Errors if there is none, naming the
 directories walked, or when `_study.yml` is invalid, as
-[`study_config`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md)
+[`study_config()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md)
 reports it.
 
 ## Usage
@@ -25,8 +25,8 @@ Character(1). The absolute path of the study root.
 
 ## See also
 
-[`study_config`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md),
-[`sas_path`](https://ehrlinger.github.io/hvtiRutilities/reference/sas_path.md)
+[`study_config()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md),
+[`sas_path()`](https://ehrlinger.github.io/hvtiRutilities/reference/sas_path.md)
 
 ## Examples
 
@@ -38,6 +38,6 @@ yaml::write_yaml(
   file.path(root, "_study.yml")
 )
 study_root(root)
-#> [1] "/tmp/RtmpT6gx1g/study-root-example"
+#> [1] "/tmp/Rtmpoh72Jx/study-root-example"
 unlink(root, recursive = TRUE)
 ```

@@ -1,7 +1,7 @@
 # Verify all datasets listed in a manifest
 
 Reads a `manifest.yaml` produced by
-[`update_manifest`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
+[`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
 and, for every entry, confirms that (a) the file exists, (b) its SHA-256
 checksum matches the recorded value, and (c) its row count matches.
 Supported formats for automatic row-count verification: CSV (`.csv`),
@@ -32,7 +32,7 @@ sets `row_count_checked` to `TRUE` once its checksum is verified,
 because a record has no row count.
 
 For a dataset registered with
-[`register_data`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md),
+[`register_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md),
 every registered version (the current dated parquet and each earlier
 one) is checked, and its row count is re-derived from the parquet footer
 when the version records a count and the footer can be read. When either
@@ -72,7 +72,7 @@ verify_manifest(
   used exactly as given. When `NULL` (default), the manifest directory
   is inspected once. `00_datasets/` supports the numbered layout created
   by
-  [`study_setup`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md),
+  [`study_setup()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md),
   `datasets/` supports an adopted legacy layout, and a manifest with
   neither uses its own directory. Outside a study, an empty nested
   directory does not displace files beside the manifest. Both dataset
@@ -89,10 +89,10 @@ verify_manifest(
 - verbose:
 
   Logical. If `TRUE`, report each passing entry via
-  [`message`](https://rdrr.io/r/base/message.html). Defaults to `FALSE`
-  so that scripted or looped calls stay silent; the same information is
-  always available in the returned data frame. Failures are reported
-  through [`stop()`](https://rdrr.io/r/base/stop.html) or
+  [`base::message()`](https://rdrr.io/r/base/message.html). Defaults to
+  `FALSE` so that scripted or looped calls stay silent; the same
+  information is always available in the returned data frame. Failures
+  are reported through [`stop()`](https://rdrr.io/r/base/stop.html) or
   [`warning()`](https://rdrr.io/r/base/warning.html) regardless of this
   setting.
 
@@ -122,7 +122,7 @@ record has no row count).
 
 ## See also
 
-[`update_manifest`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
+[`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
 
 ## Examples
 

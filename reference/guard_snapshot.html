@@ -11,7 +11,7 @@ Use r_upgrade = TRUE only when you are deliberately moving the study
 to a new R. The guard then still stops if any package in the lockfile is
 not installed in this session's library, because the snapshot would drop
 it; restore those first with renv::restore().
-study_need and study_setup call this before
+study_need() and study_setup() call this before
 they snapshot, so you need to call it yourself only before a snapshot of
 your own."><meta property="og:description" content="Stops before renv::snapshot() when the R running this session has a
 different major.minor version than the R recorded in the study's
@@ -25,7 +25,7 @@ Use r_upgrade = TRUE only when you are deliberately moving the study
 to a new R. The guard then still stops if any package in the lockfile is
 not installed in this session's library, because the snapshot would drop
 it; restore those first with renv::restore().
-study_need and study_setup call this before
+study_need() and study_setup() call this before
 they snapshot, so you need to call it yourself only before a snapshot of
 your own."></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -98,7 +98,7 @@ version and drops every locked package the session's library lacks. On
 to a new R. The guard then still stops if any package in the lockfile is
 not installed in this session's library, because the snapshot would drop
 it; restore those first with <code><a href="https://rstudio.github.io/renv/reference/restore.html" class="external-link">renv::restore()</a></code>.</p>
-<p><code><a href="study_need.html">study_need</a></code> and <code><a href="study_setup.html">study_setup</a></code> call this before
+<p><code><a href="study_need.html">study_need()</a></code> and <code><a href="study_setup.html">study_setup()</a></code> call this before
 they snapshot, so you need to call it yourself only before a snapshot of
 your own.</p>
     </div>
@@ -128,7 +128,7 @@ on purpose.</p></dd>
 
 <dt id="arg-session">session<a class="anchor" aria-label="anchor" href="#arg-session"></a></dt>
 <dd><p>The R version of this session, a
-<code><a href="https://rdrr.io/r/base/numeric_version.html" class="external-link">numeric_version</a></code>. Defaults to the running R; set it
+<code><a href="https://rdrr.io/r/base/numeric_version.html" class="external-link">base::numeric_version()</a></code>. Defaults to the running R; set it
 only to test the guard.</p></dd>
 
 
@@ -142,7 +142,7 @@ guard.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p><code>TRUE</code>, invisibly, when the snapshot may go ahead. Otherwise
-  an error that names both R versions and the R to start.</p>
+an error that names both R versions and the R to start.</p>
     </div>
 
     <div class="section level2">

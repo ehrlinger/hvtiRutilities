@@ -16,7 +16,7 @@ clean_labels(label_map_df, overrides_file = "labels_overrides.yml")
 - label_map_df:
 
   A data frame (label map or dataset) passed to
-  [`apply_label_overrides`](https://ehrlinger.github.io/hvtiRutilities/reference/apply_label_overrides.md).
+  [`apply_label_overrides()`](https://ehrlinger.github.io/hvtiRutilities/reference/apply_label_overrides.md).
 
 - overrides_file:
 

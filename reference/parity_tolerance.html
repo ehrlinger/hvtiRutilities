@@ -87,12 +87,12 @@ tuned until things pass. Three regimes:</p>
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
 
 <ul><li><p><strong>Printed references are intervals, not numbers.</strong> When SAS
-    prints <code>-239.194</code>, the value that produced it lies in
-    <code>[-239.1945, -239.1935)</code>. Half a unit in the last printed place
-    is a floor that is derived.</p></li>
+prints <code>-239.194</code>, the value that produced it lies in
+<code>[-239.1945, -239.1935)</code>. Half a unit in the last printed place
+is a floor that is derived.</p></li>
 <li><p><strong>Stored references carry machine precision</strong>, so that floor
-    does not apply. What remains is that two implementations run different
-    optimizers on the same likelihood and converge to different points.</p></li>
+does not apply. What remains is that two implementations run different
+optimizers on the same likelihood and converge to different points.</p></li>
 <li><p><strong>Counts are exact, or there is a bug.</strong></p></li>
 </ul></div>
 

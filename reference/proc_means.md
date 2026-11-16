@@ -130,7 +130,7 @@ give `Inf`.
 
 ## See also
 
-[`proc_contents`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_contents.md)
+[`proc_contents()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_contents.md)
 for variable metadata.
 
 ## Examples

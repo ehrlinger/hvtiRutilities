@@ -20,9 +20,9 @@ sas_triage(dir, overrides = NULL)
 
 - overrides:
 
-  Character or `NULL`. Path to a \`macro_overrides.yaml\` recording
-  human decisions. Each entry requires `macro`, `canonical_file`,
-  `rationale`, `decided_by`, and `decided_on`.
+  Character or `NULL`. Path to a `macro_overrides.yaml` recording human
+  decisions. Each entry requires `macro`, `canonical_file`, `rationale`,
+  `decided_by`, and `decided_on`.
 
 ## Value
 
@@ -52,13 +52,13 @@ File-level rules, applied first, in order:
 
 Definition-level rules, applied per macro name across surviving files:
 
-1.  \[4.\] Defined in exactly one file – canonical.
+- **4.** Defined in exactly one file – canonical.
 
-2.  \[5.\] Defined in several files, all bodies hashing identically –
-    canonical, recording every defining file.
+- **5.** Defined in several files, all bodies hashing identically –
+  canonical, recording every defining file.
 
-3.  \[6.\] Defined in several files with two or more distinct bodies –
-    **ambiguous**. No canonical file is chosen.
+- **6.** Defined in several files with two or more distinct bodies –
+  **ambiguous**. No canonical file is chosen.
 
 Rule 6 never auto-resolves. Modification dates and visibility are
 attached as evidence for a human, never consumed as a tiebreaker,

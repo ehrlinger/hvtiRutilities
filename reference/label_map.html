@@ -6,16 +6,16 @@ variable labels, or any dataset labeled with the labelled package.
 A warning is issued when more than 50% of columns carry no label at all.
 This typically indicates the data was imported from a source without labels
 (e.g., plain CSV) and labels should be supplied via
-add_labels or a labels_overrides.yml file (see
-apply_label_overrides). A variable whose real label happens
+add_labels() or a labels_overrides.yml file (see
+apply_label_overrides()). A variable whose real label happens
 to equal its own name does not count towards the threshold: the
 absent label is read as NA rather than filled, so the two cases are
-distinguishable here even though proc_contents cannot tell
+distinguishable here even though proc_contents() cannot tell
 them apart.
 Labels longer than label_max are cut for display. The cut breaks on
 a word boundary and is marked with ..., and the source text is kept
 in label_full - truncation is a view, not a change to the data.
-dataset_schema deliberately has no such parameter: it records
+dataset_schema() deliberately has no such parameter: it records
 the label as the source carried it, because a schema sidecar outlives the
 source dataset.
 The variable-name fallback is exempt from the cap. A name standing
@@ -29,21 +29,20 @@ Within one map, labels that differ in label_full always differ in
 label. Each step below runs only on labels still over the cap or
 still colliding:
 A heading, the text before the first &quot;: &quot;, &quot; - &quot; or
-    &quot;; &quot;, shared by two or more labels, one of them over the cap, is
-    abbreviated in every label that carries it: to its entry in
-    abbreviations, or else to the initials of its words, skipping
-    small words such as &quot;of&quot; and &quot;and&quot;. &quot;Surgical procedure&quot; becomes
-    &quot;SP&quot;. A one-word heading is left alone, and two headings with the
-    same initials are neither abbreviated.
+&quot;; &quot;, shared by two or more labels, one of them over the cap, is
+abbreviated in every label that carries it: to its entry in
+abbreviations, or else to the initials of its words, skipping
+small words such as &quot;of&quot; and &quot;and&quot;. &quot;Surgical procedure&quot; becomes
+&quot;SP&quot;. A one-word heading is left alone, and two headings with the
+same initials are neither abbreviated.
 Any phrase in abbreviations is applied, whole words and
-    ignoring case, to a label still over the cap. A label that fits is never
-    abbreviated this way.
+ignoring case, to a label still over the cap. A label that fits is never
+abbreviated this way.
 The label is cut on a word boundary and marked.
-Cut labels that still collide keep both ends, &quot;Ascending aorta
-    ... plus arch&quot;.
+Cut labels that still collide keep both ends, &quot;Ascending aorta ... plus arch&quot;.
 A label that still collides is shown whole, over the cap, and
-    over_cap marks it: a long label is a layout problem a reader can
-    see, two identical labels a wrong figure nobody can.
+over_cap marks it: a long label is a layout problem a reader can
+see, two identical labels a wrong figure nobody can.
 The abbreviations actually shown come back as the abbreviations
 attribute, to print as a key beneath a figure or table, and per variable as
 the abbreviations_by_key attribute (key, abbreviation,
@@ -55,16 +54,16 @@ variable labels, or any dataset labeled with the labelled package.
 A warning is issued when more than 50% of columns carry no label at all.
 This typically indicates the data was imported from a source without labels
 (e.g., plain CSV) and labels should be supplied via
-add_labels or a labels_overrides.yml file (see
-apply_label_overrides). A variable whose real label happens
+add_labels() or a labels_overrides.yml file (see
+apply_label_overrides()). A variable whose real label happens
 to equal its own name does not count towards the threshold: the
 absent label is read as NA rather than filled, so the two cases are
-distinguishable here even though proc_contents cannot tell
+distinguishable here even though proc_contents() cannot tell
 them apart.
 Labels longer than label_max are cut for display. The cut breaks on
 a word boundary and is marked with ..., and the source text is kept
 in label_full - truncation is a view, not a change to the data.
-dataset_schema deliberately has no such parameter: it records
+dataset_schema() deliberately has no such parameter: it records
 the label as the source carried it, because a schema sidecar outlives the
 source dataset.
 The variable-name fallback is exempt from the cap. A name standing
@@ -78,21 +77,20 @@ Within one map, labels that differ in label_full always differ in
 label. Each step below runs only on labels still over the cap or
 still colliding:
 A heading, the text before the first &quot;: &quot;, &quot; - &quot; or
-    &quot;; &quot;, shared by two or more labels, one of them over the cap, is
-    abbreviated in every label that carries it: to its entry in
-    abbreviations, or else to the initials of its words, skipping
-    small words such as &quot;of&quot; and &quot;and&quot;. &quot;Surgical procedure&quot; becomes
-    &quot;SP&quot;. A one-word heading is left alone, and two headings with the
-    same initials are neither abbreviated.
+&quot;; &quot;, shared by two or more labels, one of them over the cap, is
+abbreviated in every label that carries it: to its entry in
+abbreviations, or else to the initials of its words, skipping
+small words such as &quot;of&quot; and &quot;and&quot;. &quot;Surgical procedure&quot; becomes
+&quot;SP&quot;. A one-word heading is left alone, and two headings with the
+same initials are neither abbreviated.
 Any phrase in abbreviations is applied, whole words and
-    ignoring case, to a label still over the cap. A label that fits is never
-    abbreviated this way.
+ignoring case, to a label still over the cap. A label that fits is never
+abbreviated this way.
 The label is cut on a word boundary and marked.
-Cut labels that still collide keep both ends, &quot;Ascending aorta
-    ... plus arch&quot;.
+Cut labels that still collide keep both ends, &quot;Ascending aorta ... plus arch&quot;.
 A label that still collides is shown whole, over the cap, and
-    over_cap marks it: a long label is a layout problem a reader can
-    see, two identical labels a wrong figure nobody can.
+over_cap marks it: a long label is a layout problem a reader can
+see, two identical labels a wrong figure nobody can.
 The abbreviations actually shown come back as the abbreviations
 attribute, to print as a key beneath a figure or table, and per variable as
 the abbreviations_by_key attribute (key, abbreviation,
@@ -163,16 +161,16 @@ variable labels, or any dataset labeled with the <code>labelled</code> package.<
 <p>A warning is issued when more than 50% of columns carry no label at all.
 This typically indicates the data was imported from a source without labels
 (e.g., plain CSV) and labels should be supplied via
-<code><a href="add_labels.html">add_labels</a></code> or a <code>labels_overrides.yml</code> file (see
-<code><a href="apply_label_overrides.html">apply_label_overrides</a></code>). A variable whose real label happens
+<code><a href="add_labels.html">add_labels()</a></code> or a <code>labels_overrides.yml</code> file (see
+<code><a href="apply_label_overrides.html">apply_label_overrides()</a></code>). A variable whose real label happens
 to equal its own name does <strong>not</strong> count towards the threshold: the
 absent label is read as <code>NA</code> rather than filled, so the two cases are
-distinguishable here even though <code><a href="proc_contents.html">proc_contents</a></code> cannot tell
+distinguishable here even though <code><a href="proc_contents.html">proc_contents()</a></code> cannot tell
 them apart.</p>
 <p>Labels longer than <code>label_max</code> are cut for display. The cut breaks on
 a word boundary and is marked with <code>...</code>, and the source text is kept
 in <code>label_full</code> - truncation is a view, not a change to the data.
-<code><a href="dataset_schema.html">dataset_schema</a></code> deliberately has no such parameter: it records
+<code><a href="dataset_schema.html">dataset_schema()</a></code> deliberately has no such parameter: it records
 the label as the source carried it, because a schema sidecar outlives the
 source dataset.</p>
 <p>The variable-name fallback is <strong>exempt</strong> from the cap. A name standing
@@ -185,21 +183,20 @@ can make two labels identical once their distinguishing ends are cut off.
 Within one map, labels that differ in <code>label_full</code> always differ in
 <code>label</code>. Each step below runs only on labels still over the cap or
 still colliding:</p><ol><li><p>A heading, the text before the first <code>": "</code>, <code>" - "</code> or
-    <code>"; "</code>, shared by two or more labels, one of them over the cap, is
-    abbreviated in every label that carries it: to its entry in
-    <code>abbreviations</code>, or else to the initials of its words, skipping
-    small words such as "of" and "and". <code>"Surgical procedure"</code> becomes
-    <code>"SP"</code>. A one-word heading is left alone, and two headings with the
-    same initials are neither abbreviated.</p></li>
+<code>"; "</code>, shared by two or more labels, one of them over the cap, is
+abbreviated in every label that carries it: to its entry in
+<code>abbreviations</code>, or else to the initials of its words, skipping
+small words such as "of" and "and". <code>"Surgical procedure"</code> becomes
+<code>"SP"</code>. A one-word heading is left alone, and two headings with the
+same initials are neither abbreviated.</p></li>
 <li><p>Any phrase in <code>abbreviations</code> is applied, whole words and
-    ignoring case, to a label still over the cap. A label that fits is never
-    abbreviated this way.</p></li>
+ignoring case, to a label still over the cap. A label that fits is never
+abbreviated this way.</p></li>
 <li><p>The label is cut on a word boundary and marked.</p></li>
-<li><p>Cut labels that still collide keep both ends, <code>"Ascending aorta
-    ... plus arch"</code>.</p></li>
+<li><p>Cut labels that still collide keep both ends, <code>"Ascending aorta ... plus arch"</code>.</p></li>
 <li><p>A label that still collides is shown whole, over the cap, and
-    <code>over_cap</code> marks it: a long label is a layout problem a reader can
-    see, two identical labels a wrong figure nobody can.</p></li>
+<code>over_cap</code> marks it: a long label is a layout problem a reader can
+see, two identical labels a wrong figure nobody can.</p></li>
 </ol><p>The abbreviations actually shown come back as the <code>abbreviations</code>
 attribute, to print as a key beneath a figure or table, and per variable as
 the <code>abbreviations_by_key</code> attribute (<code>key</code>, <code>abbreviation</code>,
@@ -234,7 +231,7 @@ apply to a variable name filled in for a missing label.</p></dd>
 each name is a phrase and each value is that phrase's abbreviation:
 <code>c("Left ventricular" = "LV")</code>. Used only on labels over the cap, and
 for a shared heading in place of its initials. An <code>expansion</code>
-attribute, as <code><a href="study_abbreviations.html">study_abbreviations</a></code> returns, names the term
+attribute, as <code><a href="study_abbreviations.html">study_abbreviations()</a></code> returns, names the term
 each abbreviation stands for in the key. A word-like abbreviation such as
 <code>"Preop"</code> takes the case of the text it replaces.</p></dd>
 
@@ -242,37 +239,37 @@ each abbreviation stands for in the key. A word-like abbreviation such as
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A data frame with five columns, and an <code>abbreviations</code>
-  attribute: a data frame of <code>abbreviation</code> and <code>expansion</code> for
-  every abbreviation the labels show, with no rows when there are none.</p><dl><dt>key</dt>
+attribute: a data frame of <code>abbreviation</code> and <code>expansion</code> for
+every abbreviation the labels show, with no rows when there are none.</p><dl><dt>key</dt>
 <dd><p>Character vector of variable names from the input dataset</p></dd>
 
-  <dt>label</dt>
+<dt>label</dt>
 <dd><p>Character vector of labels fit to print: the variable label
-    cut to <code>label_max</code>, or the variable's own name where the source
-    carries no label</p></dd>
+cut to <code>label_max</code>, or the variable's own name where the source
+carries no label</p></dd>
 
-  <dt>label_full</dt>
+<dt>label_full</dt>
 <dd><p>The label as the source carried it, never truncated,
-    or the variable name where there is none</p></dd>
+or the variable name where there is none</p></dd>
 
-  <dt>truncated</dt>
+<dt>truncated</dt>
 <dd><p>Logical: <code>TRUE</code> where <code>label</code> was cut from
-    <code>label_full</code>. Always <code>FALSE</code> for a filled variable name.
-    <code>subset(x, truncated)</code> is the report of what was cut</p></dd>
+<code>label_full</code>. Always <code>FALSE</code> for a filled variable name.
+<code>subset(x, truncated)</code> is the report of what was cut</p></dd>
 
-  <dt>over_cap</dt>
+<dt>over_cap</dt>
 <dd><p>Logical: <code>TRUE</code> where <code>label</code> is longer than
-    <code>label_max</code> because every shorter form collided with another
-    label. <code>subset(x, over_cap)</code> is the report</p></dd>
+<code>label_max</code> because every shorter form collided with another
+label. <code>subset(x, over_cap)</code> is the report</p></dd>
 
 
 </dl></div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="get_label.html">get_label</a></code> for looking up a single label,
-  <code><a href="add_labels.html">add_labels</a></code> for registering labels for derived variables,
-  <code><a href="apply_label_overrides.html">apply_label_overrides</a></code> for applying study-specific overrides
-  from a YAML file.</p></div>
+    <div class="dont-index"><p><code><a href="get_label.html">get_label()</a></code> for looking up a single label,
+<code><a href="add_labels.html">add_labels()</a></code> for registering labels for derived variables,
+<code><a href="apply_label_overrides.html">apply_label_overrides()</a></code> for applying study-specific overrides
+from a YAML file.</p></div>
     </div>
 
     <div class="section level2">

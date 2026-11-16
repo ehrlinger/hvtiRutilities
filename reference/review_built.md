@@ -19,7 +19,7 @@ review_built(cfg = study_config(), dataset = "study")
 - cfg:
 
   List. A study manifest from
-  [`study_config`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md).
+  [`study_config()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md).
 
 - dataset:
 
@@ -49,13 +49,13 @@ An object of class `"built_review"` with
 - comparison:
 
   A
-  [`compare_datasets`](https://ehrlinger.github.io/hvtiRutilities/reference/compare_datasets.md)
+  [`compare_datasets()`](https://ehrlinger.github.io/hvtiRutilities/reference/compare_datasets.md)
   result, or `NULL` when unchanged.
 
 ## See also
 
-[`update_manifest`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md),
-[`read_built`](https://ehrlinger.github.io/hvtiRutilities/reference/read_built.md)
+[`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md),
+[`read_built()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_built.md)
 
 ## Examples
 

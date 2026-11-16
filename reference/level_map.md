@@ -3,7 +3,7 @@
 One row per level of each discrete variable, giving the text as stored
 and the text that would be displayed once a leading code prefix is
 removed. Like
-[`strip_level_prefix`](https://ehrlinger.github.io/hvtiRutilities/reference/strip_level_prefix.md)
+[`strip_level_prefix()`](https://ehrlinger.github.io/hvtiRutilities/reference/strip_level_prefix.md)
 it reports; it changes nothing.
 
 ## Usage
@@ -52,7 +52,7 @@ A data frame with one row per reported level and the columns
 - level:
 
   The text to display, with a prefix stripped where the rule in
-  [`strip_level_prefix`](https://ehrlinger.github.io/hvtiRutilities/reference/strip_level_prefix.md)
+  [`strip_level_prefix()`](https://ehrlinger.github.io/hvtiRutilities/reference/strip_level_prefix.md)
   allows it
 
 - level_full:
@@ -68,7 +68,7 @@ Zero rows, with those columns, when nothing is reportable.
 ## Details
 
 The shape deliberately mirrors
-[`label_map`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)
+[`label_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)
 one level down: `level`, `level_full` and `stripped` read the same way
 as `label`, `label_full` and `truncated`. So
 `subset(level_map(data), stripped)` answers "which levels will print
@@ -78,7 +78,7 @@ the question for labels.
 Where the codes come from depends on what the column carries:
 
 - a column with value labels - from `value_labels.yml` via
-  [`apply_value_labels`](https://ehrlinger.github.io/hvtiRutilities/reference/apply_value_labels.md),
+  [`apply_value_labels()`](https://ehrlinger.github.io/hvtiRutilities/reference/apply_value_labels.md),
   or from a SAS format catalog - gives the declared codes;
 
 - a factor gives its integer level positions, which is what the column
@@ -96,11 +96,11 @@ values are omitted and named in a warning, so a skip is never silent.
 
 ## See also
 
-[`strip_level_prefix`](https://ehrlinger.github.io/hvtiRutilities/reference/strip_level_prefix.md)
+[`strip_level_prefix()`](https://ehrlinger.github.io/hvtiRutilities/reference/strip_level_prefix.md)
 for the rule itself,
-[`label_map`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)
+[`label_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)
 for the same idea applied to variable labels,
-[`apply_value_labels`](https://ehrlinger.github.io/hvtiRutilities/reference/apply_value_labels.md)
+[`apply_value_labels()`](https://ehrlinger.github.io/hvtiRutilities/reference/apply_value_labels.md)
 for declaring level text outright.
 
 ## Examples

@@ -86,7 +86,7 @@ new file is analytically or clinically correct.</p>
 
 
 <dl><dt id="arg-cfg">cfg<a class="anchor" aria-label="anchor" href="#arg-cfg"></a></dt>
-<dd><p>List. A study manifest from <code><a href="study_config.html">study_config</a></code>.</p></dd>
+<dd><p>List. A study manifest from <code><a href="study_config.html">study_config()</a></code>.</p></dd>
 
 
 <dt id="arg-dataset">dataset<a class="anchor" aria-label="anchor" href="#arg-dataset"></a></dt>
@@ -99,23 +99,23 @@ new file is analytically or clinically correct.</p>
     <p>An object of class <code>"built_review"</code> with</p><dl><dt>dataset</dt>
 <dd><p>The logical dataset name.</p></dd>
 
-    <dt>registered</dt>
+<dt>registered</dt>
 <dd><p>The current version record from <code>manifest.yaml</code>.</p></dd>
 
-    <dt>working</dt>
+<dt>working</dt>
 <dd><p>A list with the source file's <code>sha256</code>, <code>n_rows</code> and <code>n_cols</code>.</p></dd>
 
-    <dt>changed</dt>
+<dt>changed</dt>
 <dd><p><code>TRUE</code> when the source differs from the registered version.</p></dd>
 
-    <dt>comparison</dt>
-<dd><p>A <code><a href="compare_datasets.html">compare_datasets</a></code> result, or <code>NULL</code> when unchanged.</p></dd>
+<dt>comparison</dt>
+<dd><p>A <code><a href="compare_datasets.html">compare_datasets()</a></code> result, or <code>NULL</code> when unchanged.</p></dd>
 
 
 </dl></div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="update_manifest.html">update_manifest</a></code>, <code><a href="read_built.html">read_built</a></code></p></div>
+    <div class="dont-index"><p><code><a href="update_manifest.html">update_manifest()</a></code>, <code><a href="read_built.html">read_built()</a></code></p></div>
     </div>
 
     <div class="section level2">

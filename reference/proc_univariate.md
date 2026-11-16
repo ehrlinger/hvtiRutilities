@@ -4,7 +4,7 @@ Produces the statistics data set SAS `PROC UNIVARIATE` writes with
 `OUTPUT OUT=`: one row per analysis variable (per class level), one
 column per requested statistic in the order requested, then one column
 per `PCTLPTS=` percentile. Beyond
-[`proc_means`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
+[`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
 it adds weighted and decimal percentiles, `VARDEF=`, and the tests for
 location and normality.
 
@@ -45,7 +45,7 @@ proc_univariate(
   leading columns. Was `class` before 2026-11; `class =` still works for
   one release, with a warning. Rows with a missing value in any class
   variable are dropped, and levels follow `ORDER=INTERNAL`, as in
-  [`proc_means`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md).
+  [`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md).
   Unlike
   [`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md),
   a level whose every weight is missing has no row, as in SAS.
@@ -53,7 +53,7 @@ proc_univariate(
 - stats:
 
   Character vector of SAS statistic keywords: every keyword
-  [`proc_means`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
+  [`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
   accepts, plus `"stdmean"`, `"t"`, `"probt"`, `"msign"`, `"probm"`,
   `"signrank"`, `"probs"`, `"normal"` and `"probn"`.
 
@@ -103,7 +103,7 @@ one column per `pctlpts` point in the order given. `n`, `nmiss` and
 ## Details
 
 **Weighting.** Weights apply as in
-[`proc_means`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md),
+[`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md),
 except that the quantiles are weighted: `median`, `q1`, `q3`, `qrange`,
 `pNN` and the `pctlpts` columns. The weighted percentile sorts the
 values with their cumulative weights \\S_i\\; the 0th percentile is the
@@ -157,7 +157,7 @@ machine precision. At two observations both are `1`, as SAS reports.
 
 ## See also
 
-[`proc_means`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
+[`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
 for the descriptive statistics alone.
 
 ## Examples

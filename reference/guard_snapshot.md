@@ -18,9 +18,9 @@ not installed in this session's library, because the snapshot would drop
 it; restore those first with
 [`renv::restore()`](https://rstudio.github.io/renv/reference/restore.html).
 
-[`study_need`](https://ehrlinger.github.io/hvtiRutilities/reference/study_need.md)
+[`study_need()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_need.md)
 and
-[`study_setup`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md)
+[`study_setup()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md)
 call this before they snapshot, so you need to call it yourself only
 before a snapshot of your own.
 
@@ -48,7 +48,7 @@ guard_snapshot(
 - session:
 
   The R version of this session, a
-  [`numeric_version`](https://rdrr.io/r/base/numeric_version.html).
+  [`base::numeric_version()`](https://rdrr.io/r/base/numeric_version.html).
   Defaults to the running R; set it only to test the guard.
 
 - installed:

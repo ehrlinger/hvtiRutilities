@@ -18,14 +18,14 @@ study_update_identity(identity, start = study_root())
   A named list from the Study Tracker record. It must hold
   `study_tracker_id`, equal to the manifest's (so an exploration set up
   with `derived_from` is promoted with
-  [`study_promote`](https://ehrlinger.github.io/hvtiRutilities/reference/study_promote.md)
+  [`study_promote()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_promote.md)
   first), and `study`; it may hold `umbrella`, `owner`, `irb_number`,
   `cvir_no` and `study_creation_date`.
 
 - start:
 
   A directory inside the study; the study is found as
-  [`study_config`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md)
+  [`study_config()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md)
   finds it. Defaults to the study that contains the working directory,
   found by its `_study.yml`; outside a study the function stops and
   writes nothing.
@@ -42,13 +42,13 @@ does both, and passes the record only when they match. A field the
 record leaves `NULL` keeps its current value.
 
 The file is rewritten whole and atomically, as
-[`register_data`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md)
+[`register_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md)
 rewrites it, so comments in `_study.yml` are not kept.
 
 ## See also
 
-[`study_setup`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md),
-[`study_status`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md).
+[`study_setup()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md),
+[`study_status()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md).
 
 ## Examples
 
@@ -56,10 +56,10 @@ rewrites it, so comments in `_study.yml` are not kept.
 root <- file.path(tempdir(), "update-identity-example")
 study_setup(root, "Typed title", 42L, identity_source = "manual",
             renv = FALSE)
-#> Study: /tmp/RtmpT6gx1g/update-identity-example
+#> Study: /tmp/Rtmpoh72Jx/update-identity-example
 #> 
 #> [~] _study.yml — study: Typed title; identity entered by hand, confirm it with study-setup --verify
-#> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Typed title", study_tracker_id = 42L, root = "/tmp/RtmpT6gx1g/update-identity-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first
+#> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Typed title", study_tracker_id = 42L, root = "/tmp/Rtmpoh72Jx/update-identity-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first
 #> [ ] manifest.yaml — no manifest.yaml; register_data() creates it
 #> [ ] dataset — no default dataset registered; run register_data()
 #> [ ] provenance — no .qmd/.Rmd sources found; 0 sidecars

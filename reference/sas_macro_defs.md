@@ -1,8 +1,8 @@
 # Extract every macro definition from a SAS file
 
-Scans a \`.sas\` file and returns one row for each \` contains. SAS
-files in the legacy CORR library are macro \*collections\*, not single
-macros, so a file routinely defines several.
+Scans a `.sas` file and returns one row for each `%macro`...`%mend` pair
+it contains. SAS files in the legacy CORR library are macro
+*collections*, not single macros, so a file routinely defines several.
 
 ## Usage
 
@@ -14,7 +14,7 @@ sas_macro_defs(file)
 
 - file:
 
-  Character. Path to a \`.sas\` file.
+  Character. Path to a `.sas` file.
 
 ## Value
 
@@ -25,14 +25,16 @@ parameter names are lowercased.
 ## Details
 
 Matching is case-insensitive: SAS macro names are case-insensitive and
-the legacy corpus mixes \` definitions are handled by depth counting, so
-an inner \` terminate an outer macro.
+the legacy corpus mixes `%macro skip;` with `%MACRO MRG;` freely. Nested
+definitions are handled by depth counting, so an inner `%mend` does not
+terminate an outer macro.
 
 The body hash is a SHA-256 digest of the definition with case folded and
 whitespace runs collapsed. Two definitions with the same hash are
 semantically identical up to formatting.
 
-An unmatched \` containing no \`
+An unmatched `%macro` is an error, never a silently truncated body. A
+file containing no `%macro` at all is likewise an error.
 
 ## Examples
 

@@ -2,9 +2,9 @@
 
 Creates a data frame with labeled columns of various types, suitable for
 demonstrating
-[`r_data_types`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
+[`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
 and
-[`label_map`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md).
+[`label_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md).
 
 ## Usage
 

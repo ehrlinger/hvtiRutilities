@@ -16,11 +16,11 @@ write_macro_manifest(x, path)
 - x:
 
   A `data.frame` returned by
-  [`sas_triage`](https://ehrlinger.github.io/hvtiRutilities/reference/sas_triage.md).
+  [`sas_triage()`](https://ehrlinger.github.io/hvtiRutilities/reference/sas_triage.md).
 
 - path:
 
-  Character. Destination \`.yaml\` path.
+  Character. Destination `.yaml` path.
 
 ## Value
 
@@ -33,7 +33,7 @@ frozen 2019 corpus, and a generated-on field would defeat the
 byte-for-byte reproducibility that makes the manifest trustworthy as a
 reviewed artifact. Run metadata belongs in the report, not here. This
 diverges from
-[`update_manifest`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md),
+[`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md),
 whose `extract_date` is meaningful because the datasets it tracks
 genuinely change over time.
 

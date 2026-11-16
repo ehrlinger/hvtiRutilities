@@ -22,7 +22,7 @@ generate_survival_data(n = 500, seed = 1024)
 - seed:
 
   `NULL` or an integer passed to
-  [`set.seed`](https://rdrr.io/r/base/Random.html). Default `1024`.
+  [`set.seed()`](https://rdrr.io/r/base/Random.html). Default `1024`.
   `NULL` draws from the caller's random number stream instead.
 
 ## Value
@@ -156,9 +156,9 @@ stream, so `set.seed(s); generate_survival_data(seed = NULL)` reproduces
 
 ## See also
 
-[`rfsrc`](https://www.randomforestsrc.org//reference/rfsrc.html),
-[`Surv`](https://rdrr.io/pkg/survival/man/Surv.html),
-[`read_sas`](https://haven.tidyverse.org/reference/read_sas.html)
+[`randomForestSRC::rfsrc()`](https://www.randomforestsrc.org//reference/rfsrc.html),
+[`survival::Surv()`](https://rdrr.io/pkg/survival/man/Surv.html),
+[`haven::read_sas()`](https://haven.tidyverse.org/reference/read_sas.html)
 
 ## Examples
 

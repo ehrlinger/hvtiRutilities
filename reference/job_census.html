@@ -77,8 +77,8 @@ prefix, which studies have run it and how many jobs each.</p>
 
 
 <dl><dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
-<dd><p>Character roots to sweep – see <code><a href="job_files.html">job_files</a></code> for what a
-root must be – or a data frame returned by <code><a href="job_files.html">job_files</a></code>. A
+<dd><p>Character roots to sweep – see <code><a href="job_files.html">job_files()</a></code> for what a
+root must be – or a data frame returned by <code><a href="job_files.html">job_files()</a></code>. A
 data frame missing any of that function's 16 columns is an error, not a
 silently empty census.</p></dd>
 
@@ -90,14 +90,14 @@ silently empty census.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A data frame of class <code>hvti_job_census</code> with one row per
-  <code>(study, prefix, folder, is_template, is_template_naming)</code> and
-  columns <code>n_jobs</code> and <code>n_files</code>. <code>is_template_naming</code> is
-  <code>TRUE</code> when the row's files use the <code>template</code> naming
-  convention (section 4.2) – distinct from <code>is_template</code>, which is
-  strictly the legacy <code>tp.</code> marker. The originating <code><a href="job_files.html">job_files()</a></code>
-  rows are attached as the <code>"files"</code> attribute, and the rows that
-  could not be rolled up – those with no study or no prefix – as the
-  <code>"not_rolled_up"</code> attribute.</p>
+<code>(study, prefix, folder, is_template, is_template_naming)</code> and
+columns <code>n_jobs</code> and <code>n_files</code>. <code>is_template_naming</code> is
+<code>TRUE</code> when the row's files use the <code>template</code> naming
+convention (section 4.2) – distinct from <code>is_template</code>, which is
+strictly the legacy <code>tp.</code> marker. The originating <code><a href="job_files.html">job_files()</a></code>
+rows are attached as the <code>"files"</code> attribute, and the rows that
+could not be rolled up – those with no study or no prefix – as the
+<code>"not_rolled_up"</code> attribute.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -110,8 +110,7 @@ already drove a decision.</p>
 <p><strong>A template is not a job, by either marker.</strong> <code>is_template</code> is
 strictly the legacy <code>tp.</code> prefix (spec section 4); a file written in
 the <code>template</code> naming convention (section 4.2, e.g.
-<code>03.01-ac.qmd</code>) is <em>also</em> not a job, but with <code>is_template
-= FALSE</code>. <code>is_template_naming</code> carries that second signal, and the
+<code>03.01-ac.qmd</code>) is <em>also</em> not a job, but with <code>is_template = FALSE</code>. <code>is_template_naming</code> carries that second signal, and the
 roll-up keys on both, so a template-convention file never shares a row
 with a genuine job at the same <code>(study, prefix, folder)</code> – if it
 did, that row could outlive the genuine job and still read as an
@@ -138,7 +137,7 @@ not recomputed from <code>x$n_files</code> at print time.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="job_files.html">job_files</a></code></p></div>
+    <div class="dont-index"><p><code><a href="job_files.html">job_files()</a></code></p></div>
     </div>
 
     <div class="section level2">

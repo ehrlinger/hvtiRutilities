@@ -5,14 +5,14 @@ The event column must be logical or numeric binary coding: FALSE/TRUE
 or 0/1. Rows missing either column are excluded from the
 analysable cohort.
 A zero or negative time is still counted, so the gate's numbers do not
-move, but it warns: followup_check flags the same rows for
+move, but it warns: followup_check() flags the same rows for
 review, and the two should not disagree in silence."><meta property="og:description" content="Counts rows for which both explicitly supplied event and time columns are
 present, and the events among them.
 The event column must be logical or numeric binary coding: FALSE/TRUE
 or 0/1. Rows missing either column are excluded from the
 analysable cohort.
 A zero or negative time is still counted, so the gate's numbers do not
-move, but it warns: followup_check flags the same rows for
+move, but it warns: followup_check() flags the same rows for
 review, and the two should not disagree in silence."></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
@@ -78,7 +78,7 @@ present, and the events among them.</p>
 or <code>0</code>/<code>1</code>. Rows missing either column are excluded from the
 analysable cohort.</p>
 <p>A zero or negative time is still counted, so the gate's numbers do not
-move, but it warns: <code><a href="followup_check.html">followup_check</a></code> flags the same rows for
+move, but it warns: <code><a href="followup_check.html">followup_check()</a></code> flags the same rows for
 review, and the two should not disagree in silence.</p>
     </div>
 
@@ -110,7 +110,7 @@ with a warning.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A list with integer elements <code>n</code>, <code>n_events</code> and
-  <code>n_censored</code>.</p>
+<code>n_censored</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="argument-order">Argument order<a class="anchor" aria-label="anchor" href="#argument-order"></a></h2>
@@ -124,7 +124,7 @@ unnamed reads the same in either order.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="assert_cohort.html">assert_cohort</a></code></p></div>
+    <div class="dont-index"><p><code><a href="assert_cohort.html">assert_cohort()</a></code></p></div>
     </div>
 
     <div class="section level2">

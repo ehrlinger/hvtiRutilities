@@ -12,10 +12,10 @@ making it safe to call unconditionally in shared code.
 When `data` is a label map (a data frame with `key` and `label`
 columns), the overrides are applied to the map. When `data` is any other
 data frame, labels are applied directly to the data via
-[`add_labels`](https://ehrlinger.github.io/hvtiRutilities/reference/add_labels.md),
+[`add_labels()`](https://ehrlinger.github.io/hvtiRutilities/reference/add_labels.md),
 which is the preferred data-first workflow. In that mode a key naming a
 column the data does not have warns, as
-[`add_labels`](https://ehrlinger.github.io/hvtiRutilities/reference/add_labels.md)
+[`add_labels()`](https://ehrlinger.github.io/hvtiRutilities/reference/add_labels.md)
 does; an overrides file shared by several datasets warns for each key
 the current one lacks.
 
@@ -31,7 +31,7 @@ apply_label_overrides(data, overrides_file = "labels_overrides.yml")
 
   A data frame: either a label map (with `key` and `label` columns, as
   returned by
-  [`label_map`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)),
+  [`label_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)),
   or any data frame whose columns should be labeled directly.
 
 - overrides_file:
@@ -63,9 +63,9 @@ shared helper functions never contain hard-coded replacements.
 
 ## See also
 
-[`add_labels`](https://ehrlinger.github.io/hvtiRutilities/reference/add_labels.md)
+[`add_labels()`](https://ehrlinger.github.io/hvtiRutilities/reference/add_labels.md)
 for programmatic label updates,
-[`label_map`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)
+[`label_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)
 for extracting labels from data.
 
 ## Examples

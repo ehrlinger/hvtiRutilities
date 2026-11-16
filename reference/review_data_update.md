@@ -1,7 +1,7 @@
 # Review one published dataset release
 
 **Deprecated.** Catalog releases are retired; use
-[`review_built`](https://ehrlinger.github.io/hvtiRutilities/reference/review_built.md).
+[`review_built()`](https://ehrlinger.github.io/hvtiRutilities/reference/review_built.md).
 
 Verifies the pinned release and one exact, newer candidate, then
 compares their structure. Review reads the source files directly; it
@@ -20,7 +20,7 @@ review_data_update(cfg = study_config(), dataset = "study", release_id)
 - cfg:
 
   List. A study manifest from
-  [`study_config`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md).
+  [`study_config()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md).
 
 - dataset:
 
@@ -47,13 +47,13 @@ An object of class `"data_update_review"` with
 - comparison:
 
   A
-  [`compare_datasets`](https://ehrlinger.github.io/hvtiRutilities/reference/compare_datasets.md)
+  [`compare_datasets()`](https://ehrlinger.github.io/hvtiRutilities/reference/compare_datasets.md)
   result.
 
 ## See also
 
-[`check_data_updates`](https://ehrlinger.github.io/hvtiRutilities/reference/check_data_updates.md),
-[`adopt_data_update`](https://ehrlinger.github.io/hvtiRutilities/reference/adopt_data_update.md)
+[`check_data_updates()`](https://ehrlinger.github.io/hvtiRutilities/reference/check_data_updates.md),
+[`adopt_data_update()`](https://ehrlinger.github.io/hvtiRutilities/reference/adopt_data_update.md)
 
 ## Examples
 

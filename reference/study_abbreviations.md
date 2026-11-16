@@ -2,7 +2,7 @@
 
 Merges the three abbreviation lists a job's labels can draw on, and
 checks the result, so that
-[`label_map`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)
+[`label_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)
 shortens labels the same way in every job of a study:
 
 1.  `extra`, the job's own entries;
@@ -26,7 +26,7 @@ study_abbreviations(cfg = study_config(), extra = NULL, defaults = TRUE)
 - cfg:
 
   A study configuration, as returned by
-  [`study_config`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md).
+  [`study_config()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md).
 
 - extra:
 
@@ -52,7 +52,7 @@ do not appear. Two attributes of the same length:
 
   the term each abbreviation stands for, the first spelling of its
   entry, which
-  [`label_map`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)
+  [`label_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)
   prints in its key.
 
 ## Details
@@ -75,9 +75,9 @@ The list is a display input. It is never written into the stored labels.
 
 ## See also
 
-[`add_abbreviation`](https://ehrlinger.github.io/hvtiRutilities/reference/add_abbreviation.md)
+[`add_abbreviation()`](https://ehrlinger.github.io/hvtiRutilities/reference/add_abbreviation.md)
 to add to a study's list,
-[`label_map`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md),
+[`label_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md),
 which applies it.
 
 ## Examples
@@ -85,10 +85,10 @@ which applies it.
 ``` r
 root <- file.path(tempdir(), "abbrev-example")
 study_setup(root, "Abbreviation example", 1L, renv = FALSE)
-#> Study: /tmp/RtmpT6gx1g/abbrev-example
+#> Study: /tmp/Rtmpoh72Jx/abbrev-example
 #> 
 #> [x] _study.yml — study: Abbreviation example
-#> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Abbreviation example", study_tracker_id = 1L, root = "/tmp/RtmpT6gx1g/abbrev-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first
+#> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Abbreviation example", study_tracker_id = 1L, root = "/tmp/Rtmpoh72Jx/abbrev-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first
 #> [ ] manifest.yaml — no manifest.yaml; register_data() creates it
 #> [ ] dataset — no default dataset registered; run register_data()
 #> [ ] provenance — no .qmd/.Rmd sources found; 0 sidecars

@@ -4,7 +4,7 @@ Maps a logical study directory such as `"datasets"` to the numbered
 spelling used by new studies or the bare spelling retained by legacy
 studies. A root containing both layouts is an error. A root containing
 neither – a new or empty study – resolves to the numbered spelling, as
-[`study_setup`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md)
+[`study_setup()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md)
 lays one out.
 
 ## Usage
@@ -31,8 +31,8 @@ required.
 
 ## See also
 
-[`study_root`](https://ehrlinger.github.io/hvtiRutilities/reference/study_root.md),
-[`sas_path`](https://ehrlinger.github.io/hvtiRutilities/reference/sas_path.md)
+[`study_root()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_root.md),
+[`sas_path()`](https://ehrlinger.github.io/hvtiRutilities/reference/sas_path.md)
 
 ## Examples
 
@@ -41,6 +41,6 @@ root <- file.path(tempdir(), "numbered-study-layout")
 dir.create(file.path(root, "00_datasets"), recursive = TRUE,
            showWarnings = FALSE)
 study_dir("datasets", root)
-#> [1] "/tmp/RtmpT6gx1g/numbered-study-layout/00_datasets"
+#> [1] "/tmp/Rtmpoh72Jx/numbered-study-layout/00_datasets"
 unlink(root, recursive = TRUE)
 ```

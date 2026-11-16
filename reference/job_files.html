@@ -90,18 +90,18 @@ files would otherwise be counted twice under two study labels.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A data frame with one row per file and the columns <code>path</code>,
-  <code>study</code>, <code>folder</code>, <code>status</code>, <code>depth</code>, <code>naming</code>,
-  <code>prefix</code>, <code>is_template</code>, <code>qualifier1</code>,
-  <code>qualifiers</code>, <code>n_qualifiers</code>, <code>stem</code>, <code>ext</code>,
-  <code>prefix_class</code>, <code>folder_expected</code> and <code>folder_ok</code>.
-  The three qualifier columns carry the dot-fields of a <code>legacy</code>
-  name that lie between the prefix and the extension, or the trailing
-  qualifier field of a <code>scaffolded</code> name, and are <code>NA</code>
-  (count zero) for every other convention. They are named by position
-  because the second field means a different thing in each taxonomy
-  folder; see <code><a href="hvti_taxonomy.html">hvti_taxonomy</a></code> and the design note referenced
-  in <code class="file">R/job_names.R</code>.
-  Zero rows if the roots hold no files.</p>
+<code>study</code>, <code>folder</code>, <code>status</code>, <code>depth</code>, <code>naming</code>,
+<code>prefix</code>, <code>is_template</code>, <code>qualifier1</code>,
+<code>qualifiers</code>, <code>n_qualifiers</code>, <code>stem</code>, <code>ext</code>,
+<code>prefix_class</code>, <code>folder_expected</code> and <code>folder_ok</code>.
+The three qualifier columns carry the dot-fields of a <code>legacy</code>
+name that lie between the prefix and the extension, or the trailing
+qualifier field of a <code>scaffolded</code> name, and are <code>NA</code>
+(count zero) for every other convention. They are named by position
+because the second field means a different thing in each taxonomy
+folder; see <code><a href="hvti_taxonomy.html">hvti_taxonomy()</a></code> and the design note referenced
+in <code class="file">R/job_names.R</code>.
+Zero rows if the roots hold no files.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -119,7 +119,7 @@ qualifier. So is the template-first form,
 (or <code>.runner.R</code>) that <code>add_job()</code> writes beside some reports
 takes the report's <code>stem</code>, so it counts as a file of that job rather
 than as a second job.</p>
-<p>A legacy prefix listed in <code><a href="hvti_prefix_folds.html">hvti_prefix_folds</a></code> is reported as
+<p>A legacy prefix listed in <code><a href="hvti_prefix_folds.html">hvti_prefix_folds()</a></code> is reported as
 the prefix it folds into, so a <code>pm.*</code> file counts as <code>lm</code>.
 <code>stem</code> keeps the name as written, so a folded file stays findable.</p>
 <p>There is deliberately no extension allowlist. See
@@ -137,7 +137,7 @@ timed out at two minutes over the share.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="job_census.html">job_census</a></code>, <code><a href="hvti_taxonomy.html">hvti_taxonomy</a></code></p></div>
+    <div class="dont-index"><p><code><a href="job_census.html">job_census()</a></code>, <code><a href="hvti_taxonomy.html">hvti_taxonomy()</a></code></p></div>
     </div>
 
     <div class="section level2">

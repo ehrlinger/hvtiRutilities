@@ -1,7 +1,7 @@
 # Commit the study's code before a render
 
 Commits the same allow-listed snapshot
-[`study_checkpoint`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checkpoint.md)
+[`study_checkpoint()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checkpoint.md)
 takes (code, identity and reproducibility files; never data or outputs)
 to this copy's render source ref in the private repository
 `.checkpoint/repo/`, and returns the commit. A render calls it before
@@ -46,7 +46,7 @@ A study whose snapshot is unchanged since the last render commit gets
 that commit back, so re-rendering adds no history and an unchanged job
 always prints the same commit. The ref is `refs/renders/<id>/source`,
 outside `refs/heads/`; records go to a separate ref (see
-[`study_render_record`](https://ehrlinger.github.io/hvtiRutilities/reference/study_render_record.md)).
+[`study_render_record()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_render_record.md)).
 The ID belongs to this copy of the study at this path on this host: a
 study copied or moved elsewhere gets a new one, and keeps the refs it
 brought with it. Nothing is tagged or pushed, and `main`, its tags,
@@ -57,12 +57,12 @@ holds it.
 The commit only proves what the job was when the render began. A render
 that publishes outputs must also show that the code it executed matches
 the commit, and record what it published with
-[`study_render_record`](https://ehrlinger.github.io/hvtiRutilities/reference/study_render_record.md).
+[`study_render_record()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_render_record.md).
 
 ## See also
 
-[`study_render_record`](https://ehrlinger.github.io/hvtiRutilities/reference/study_render_record.md),
-[`study_checkpoint`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checkpoint.md)
+[`study_render_record()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_render_record.md),
+[`study_checkpoint()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_checkpoint.md)
 
 ## Examples
 
@@ -82,6 +82,6 @@ if (nzchar(Sys.which("git"))) {
   })
   unlink(root, recursive = TRUE)
 }
-#> [1] "7f30a55"
+#> [1] "bd98656"
 # }
 ```

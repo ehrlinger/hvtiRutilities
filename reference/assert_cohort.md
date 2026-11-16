@@ -1,7 +1,7 @@
 # Assert the cohort matches a job-level expectation
 
 Compares
-[`cohort_counts`](https://ehrlinger.github.io/hvtiRutilities/reference/cohort_counts.md)
+[`cohort_counts()`](https://ehrlinger.github.io/hvtiRutilities/reference/cohort_counts.md)
 against explicitly supplied expected counts and errors on any
 disagreement. Call it before any analysis that would otherwise run
 happily on an unreconciled cohort.
@@ -47,7 +47,7 @@ since the two orders read it oppositely; name `time_col =` and
 
 ## See also
 
-[`cohort_counts`](https://ehrlinger.github.io/hvtiRutilities/reference/cohort_counts.md)
+[`cohort_counts()`](https://ehrlinger.github.io/hvtiRutilities/reference/cohort_counts.md)
 
 ## Examples
 

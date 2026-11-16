@@ -148,11 +148,11 @@ stops and writes nothing.</p></dd>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>The outcomes follow the StudyTracker closure rules:</p><ul><li><p><code>"published"</code> needs <code>publication</code> (<code>title</code>,
-    <code>journal</code>, <code>accepted_on</code>, <code>published_on</code>, and at least
-    one of <code>doi</code> and <code>pmid</code>) and an earlier
-    <code>"manuscript_published"</code> checkpoint.</p></li>
+<code>journal</code>, <code>accepted_on</code>, <code>published_on</code>, and at least
+one of <code>doi</code> and <code>pmid</code>) and an earlier
+<code>"manuscript_published"</code> checkpoint.</p></li>
 <li><p><code>"superseded"</code> needs <code>superseded_by</code>, the ST number of
-    the study that replaced it.</p></li>
+the study that replaced it.</p></li>
 <li><p><code>"not_published"</code> and <code>"abandoned"</code> need nothing further.</p></li>
 </ul><p>These rules are checked before anything is written, so a close made
 offline fails at once rather than when the outbox is delivered.</p>
@@ -161,20 +161,20 @@ offline fails at once rather than when the outbox is delivered.</p>
 other copies of the study. Before deciding, both functions sync with the
 remote, delivering any pending checkpoints first. On an exploration set up
 with <code>derived_from</code>, nothing is delivered: the closure or reopening is
-committed and tagged locally and held until <code><a href="study_promote.html">study_promote</a></code>, and
+committed and tagged locally and held until <code><a href="study_promote.html">study_promote()</a></code>, and
 the closure state is this copy's. When the remote cannot
 be reached, a message says that the closure state is from this copy's last
 fetch and may be out of date. When a closure or reopening tag in this copy
 is not on its history, which an interrupted delivery can leave, the state
 cannot be determined and both functions stop; run
-<code><a href="study_checkpoint_push.html">study_checkpoint_push</a></code> while the remote is reachable.</p>
+<code><a href="study_checkpoint_push.html">study_checkpoint_push()</a></code> while the remote is reachable.</p>
 <p><code>reason</code> is written to the snapshot, the tag and the outbox, so it
 leaves the study folder. A message says so whenever it is given: it must
 not contain patient information.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="study_checkpoint.html">study_checkpoint</a></code>, <code><a href="study_status.html">study_status</a></code></p></div>
+    <div class="dont-index"><p><code><a href="study_checkpoint.html">study_checkpoint()</a></code>, <code><a href="study_status.html">study_status()</a></code></p></div>
     </div>
 
     <div class="section level2">

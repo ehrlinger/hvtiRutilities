@@ -16,7 +16,7 @@ write_collision_report(x, path)
 - x:
 
   A `data.frame` returned by
-  [`sas_triage`](https://ehrlinger.github.io/hvtiRutilities/reference/sas_triage.md).
+  [`sas_triage()`](https://ehrlinger.github.io/hvtiRutilities/reference/sas_triage.md).
 
 - path:
 
@@ -35,7 +35,7 @@ definition and name counts, and the package version.
 
 A generated-on field would defeat the byte-for-byte reproducibility that
 makes the artifact reviewable, which is why neither this report nor
-[`write_macro_manifest`](https://ehrlinger.github.io/hvtiRutilities/reference/write_macro_manifest.md)
+[`write_macro_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/write_macro_manifest.md)
 carries one. An artifact with no identity at all is the opposite
 failure: a committed report and a design's prose can disagree with
 nothing to say which is stale. An input-derived stamp avoids both,
@@ -48,7 +48,7 @@ a build. The fingerprint itself depends only on the corpus, so it stays
 comparable across versions.
 
 The fingerprint follows content, not location.
-[`sas_triage`](https://ehrlinger.github.io/hvtiRutilities/reference/sas_triage.md)
+[`sas_triage()`](https://ehrlinger.github.io/hvtiRutilities/reference/sas_triage.md)
 records file basenames, so re-scanning the same corpus from a different
 mount point yields the same value and a share remount does not
 invalidate every committed report.

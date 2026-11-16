@@ -2,7 +2,7 @@
 
 A convenience wrapper that detects the file type, reads the data with
 the appropriate reader, and optionally runs
-[`r_data_types`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
+[`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
 to convert column types. This saves novice users from having to remember
 which package reads which format and ensures labels are preserved.
 
@@ -51,7 +51,7 @@ read_clinical_data(file, convert_types = FALSE, ..., catalog_file = NULL)
 - convert_types:
 
   Logical. Apply
-  [`r_data_types`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
+  [`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
   to the data after reading. Defaults to `FALSE`: the file is returned
   as read. `TRUE` converts any two-valued numeric column to logical,
   which is wrong for 0/1 event and censoring flags, so type conversion
@@ -60,7 +60,7 @@ read_clinical_data(file, convert_types = FALSE, ..., catalog_file = NULL)
 - ...:
 
   Additional arguments passed to
-  [`r_data_types`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
+  [`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
   (e.g., `factor_size`, `skip_cols`, `binary_factor`,
   `use_value_labels`). Must be named. An error when
   `convert_types = FALSE`, or for a name
@@ -91,7 +91,7 @@ amount of downstream work can recover text that never arrived. Pass
 
 A catalog on its own is only half the journey. With
 `convert_types = TRUE`,
-[`r_data_types`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
+[`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
 discards value labels unless `use_value_labels = TRUE` is passed through
 `...`, so supplying a catalog without it warns.
 
@@ -111,23 +111,23 @@ types, and `read_clinical_data()` does not reconcile them:
 
 - `.rds`, `.parquet`: the types that were written.
 
-[`r_data_types`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
+[`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
 never alters a `Date` or `POSIXct` column.
 
 **The dots go to
 [`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
 only.** Reader options – `sheet`, `na`, `skip` – are not passed to the
 reader. A name in `...` that
-[`r_data_types`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
+[`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
 does not take is an error, and so is any argument in `...` when
 `convert_types` is `FALSE`, since it would otherwise be dropped without
 effect.
 
 ## See also
 
-[`r_data_types`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
+[`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
 for details on type conversion,
-[`label_map`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)
+[`label_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)
 to extract labels after reading.
 
 ## Examples

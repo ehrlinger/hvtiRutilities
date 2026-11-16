@@ -51,7 +51,7 @@ r_data_types(
 
   Logical. If TRUE, a column carrying value labels – what haven reads
   from a SAS numeric-plus-format variable – is converted through
-  [`to_factor`](https://larmarange.github.io/labelled/reference/to_factor.html),
+  [`labelled::to_factor()`](https://larmarange.github.io/labelled/reference/to_factor.html),
   so the level text is kept. If FALSE the value labels are dropped and
   the numeric codes are converted instead. Default is FALSE, which warns
   once per session; the default becomes TRUE in a later release.
@@ -70,7 +70,7 @@ r_data_types(
 An object of the same class as `data` with columns converted according
 to the function's rules. Variable labels are preserved. The result
 carries a per-column conversion report, read with
-[`type_conversion_report`](https://ehrlinger.github.io/hvtiRutilities/reference/type_conversion_report.md).
+[`type_conversion_report()`](https://ehrlinger.github.io/hvtiRutilities/reference/type_conversion_report.md).
 
 ## Details
 
@@ -106,11 +106,11 @@ Date, POSIXct, and POSIXlt columns are never altered by type conversion.
 
 Which rule fired on which column is recorded on the result and read back
 with
-[`type_conversion_report`](https://ehrlinger.github.io/hvtiRutilities/reference/type_conversion_report.md).
+[`type_conversion_report()`](https://ehrlinger.github.io/hvtiRutilities/reference/type_conversion_report.md).
 
 ## See also
 
-[`type_conversion_report`](https://ehrlinger.github.io/hvtiRutilities/reference/type_conversion_report.md)
+[`type_conversion_report()`](https://ehrlinger.github.io/hvtiRutilities/reference/type_conversion_report.md)
 for the record of which rule fired on which column.
 
 ## Examples

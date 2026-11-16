@@ -9,7 +9,7 @@ the analysable cohort.
 
 A zero or negative time is still counted, so the gate's numbers do not
 move, but it warns:
-[`followup_check`](https://ehrlinger.github.io/hvtiRutilities/reference/followup_check.md)
+[`followup_check()`](https://ehrlinger.github.io/hvtiRutilities/reference/followup_check.md)
 flags the same rows for review, and the two should not disagree in
 silence.
 
@@ -51,7 +51,7 @@ two unnamed reads the same in either order.
 
 ## See also
 
-[`assert_cohort`](https://ehrlinger.github.io/hvtiRutilities/reference/assert_cohort.md)
+[`assert_cohort()`](https://ehrlinger.github.io/hvtiRutilities/reference/assert_cohort.md)
 
 ## Examples
 

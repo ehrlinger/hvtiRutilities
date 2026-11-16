@@ -7,7 +7,7 @@ and workspace_id stay, so the lineage to the parent study is kept.
 When the study has a checkpoint repository and a remote, the checkpoints
 held locally while the study was provisional are delivered at once, with
 the study_promoted checkpoint described below, and
-study_checkpoint_push retries anything still pending; their
+study_checkpoint_push() retries anything still pending; their
 tags are unchanged. Checkpoint commits and tag messages made while the study was provisional
 keep the provisional ID; they are pushed unchanged."><meta property="og:description" content="An exploration set up with study_setup(derived_from = ) has a
 provisional_id and no Study Tracker ID of its own. Once the Tracker
@@ -17,7 +17,7 @@ and workspace_id stay, so the lineage to the parent study is kept.
 When the study has a checkpoint repository and a remote, the checkpoints
 held locally while the study was provisional are delivered at once, with
 the study_promoted checkpoint described below, and
-study_checkpoint_push retries anything still pending; their
+study_checkpoint_push() retries anything still pending; their
 tags are unchanged. Checkpoint commits and tag messages made while the study was provisional
 keep the provisional ID; they are pushed unchanged."></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -86,7 +86,7 @@ and <code>workspace_id</code> stay, so the lineage to the parent study is kept.
 When the study has a checkpoint repository and a remote, the checkpoints
 held locally while the study was provisional are delivered at once, with
 the <code>study_promoted</code> checkpoint described below, and
-<code><a href="study_checkpoint_push.html">study_checkpoint_push</a></code> retries anything still pending; their
+<code><a href="study_checkpoint_push.html">study_checkpoint_push()</a></code> retries anything still pending; their
 tags are unchanged. Checkpoint commits and tag messages made while the study was provisional
 keep the provisional ID; they are pushed unchanged.</p>
     </div>
@@ -107,18 +107,18 @@ integer.</p></dd>
 
 <dt id="arg-start">start<a class="anchor" aria-label="anchor" href="#arg-start"></a></dt>
 <dd><p>A directory in the study. The study is found as by
-<code><a href="study_config.html">study_config</a></code>.</p></dd>
+<code><a href="study_config.html">study_config()</a></code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>The number of checkpoint entries rewritten, invisibly; the
-  <code>study_promoted</code> checkpoint is not counted. A rerun
-  after an interrupted promotion rewrites the entries again, and the
-  provisional ID already recorded is kept. A study that is already
-  promoted, or whose <code class="file">_study.yml</code> still has a legacy <code>st_id</code>
-  key, is refused, as is one whose checkpoint repository is not on
-  <code>main</code>. A rerun with a different ID rewrites every entry to it.</p>
+<code>study_promoted</code> checkpoint is not counted. A rerun
+after an interrupted promotion rewrites the entries again, and the
+provisional ID already recorded is kept. A study that is already
+promoted, or whose <code class="file">_study.yml</code> still has a legacy <code>st_id</code>
+key, is refused, as is one whose checkpoint repository is not on
+<code>main</code>. A rerun with a different ID rewrites every entry to it.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -128,7 +128,7 @@ study, tagged <code>study_promoted</code>, and delivers it with the held
 checkpoints, printing the usual delivery messages, so the promoted
 <code class="file">_study.yml</code> reaches the remote and a second copy of the study reads
 it as promoted. Without a remote it stays pending until
-<code><a href="study_checkpoint_push.html">study_checkpoint_push</a></code>. A study with no checkpoint repository
+<code><a href="study_checkpoint_push.html">study_checkpoint_push()</a></code>. A study with no checkpoint repository
 yet takes no snapshot; its first checkpoint carries the promoted manifest.
 With a repository, git must be available and the <code>study_promoted</code>
 kind must not be retired; both are checked before anything is written.
@@ -145,7 +145,7 @@ kind has been retired.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="study_setup.html">study_setup</a></code>, <code><a href="study_update_identity.html">study_update_identity</a></code></p></div>
+    <div class="dont-index"><p><code><a href="study_setup.html">study_setup()</a></code>, <code><a href="study_update_identity.html">study_update_identity()</a></code></p></div>
     </div>
 
     <div class="section level2">

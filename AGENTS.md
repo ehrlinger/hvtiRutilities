@@ -61,12 +61,14 @@ the PR rather than landing quietly.
 
 ## Rules for this repo
 
-- **Roxygen here is Rd markup, not markdown.** `DESCRIPTION` has no
-  `Roxygen: list(markdown = TRUE)`, so backticks, `**bold**`, `*` bullet
-  lists and `[fn()]` links land **literally** in the generated `.Rd` and
-  render as garbage in the help page. Use `\code{}`, `\strong{}`,
-  `\emph{}`, `\itemize{}` and `\link{}`. This shipped twice in one week
-  and was caught by review both times.
+- **Roxygen here is markdown** (`Roxygen: list(markdown = TRUE)` in
+  `DESCRIPTION`), per the family API rubric, since 2026-11. It was Rd
+  markup before, and older blocks may still carry Rd macros (`\code{}`,
+  `\link{}`), which markdown mode passes through unchanged; write new
+  prose in markdown. Two traps the conversion hit: a percent sign is
+  written plain, `%`, since roxygen escapes it, and a `\%` lands in the
+  `.Rd` as `\\%`, which starts an Rd comment; and a backslash inside
+  backticks is written once per backslash wanted on the help page.
 - **Every exported object must be added to `_pkgdown.yml`.** The
   `reference:` index is explicit — 16 titled sections covering 40
   exports — and pkgdown **errors**, not warns, on a topic that is

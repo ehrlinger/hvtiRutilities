@@ -78,7 +78,7 @@ kept as an alias for backward compatibility.</p>
 
 <dl><dt id="arg-label-map-df">label_map_df<a class="anchor" aria-label="anchor" href="#arg-label-map-df"></a></dt>
 <dd><p>A data frame (label map or dataset) passed to
-<code><a href="apply_label_overrides.html">apply_label_overrides</a></code>.</p></dd>
+<code><a href="apply_label_overrides.html">apply_label_overrides()</a></code>.</p></dd>
 
 
 <dt id="arg-overrides-file">overrides_file<a class="anchor" aria-label="anchor" href="#arg-overrides-file"></a></dt>
@@ -89,10 +89,10 @@ Defaults to <code>"labels_overrides.yml"</code>.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>When given a label map: the updated label map data frame.
-  When given a data frame: the data frame with labels applied via
-  <code><a href="https://larmarange.github.io/labelled/reference/var_label.html" class="external-link">labelled::var_label()</a></code>.
-  In both cases, variables not mentioned in the YAML file are left
-  unchanged.</p>
+When given a data frame: the data frame with labels applied via
+<code><a href="https://larmarange.github.io/labelled/reference/var_label.html" class="external-link">labelled::var_label()</a></code>.
+In both cases, variables not mentioned in the YAML file are left
+unchanged.</p>
     </div>
 
     <div class="section level2">

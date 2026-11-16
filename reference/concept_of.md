@@ -35,7 +35,7 @@ concept_of(
 
   Character vector of regular expressions for the study's transformation
   affixes. See
-  [`POOL_AFFIXES`](https://ehrlinger.github.io/hvtiRutilities/reference/pool_conventions.md).
+  [`POOL_AFFIXES()`](https://ehrlinger.github.io/hvtiRutilities/reference/pool_conventions.md).
 
 - plain_suffix:
 
@@ -104,9 +104,9 @@ expectation is that new datasets simply never need them.
 
 ## See also
 
-[`concept_map`](https://ehrlinger.github.io/hvtiRutilities/reference/concept_map.md),
-[`prune_to_one_form`](https://ehrlinger.github.io/hvtiRutilities/reference/prune_to_one_form.md),
-[`selection_crowding`](https://ehrlinger.github.io/hvtiRutilities/reference/selection_crowding.md)
+[`concept_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/concept_map.md),
+[`prune_to_one_form()`](https://ehrlinger.github.io/hvtiRutilities/reference/prune_to_one_form.md),
+[`selection_crowding()`](https://ehrlinger.github.io/hvtiRutilities/reference/selection_crowding.md)
 
 ## Examples
 

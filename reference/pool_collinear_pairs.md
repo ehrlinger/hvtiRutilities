@@ -1,7 +1,7 @@
 # Candidate pairs carrying the same information under unrelated names
 
 **What this catches that pruning cannot.**
-[`concept_map`](https://ehrlinger.github.io/hvtiRutilities/reference/concept_map.md)
+[`concept_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/concept_map.md)
 groups *transformations*, by stripping a known affix and finding the
 parent. Two candidates that are numerically the same information but
 share no affix relationship are invisible to it.
@@ -54,8 +54,8 @@ model can identify.
 
 ## See also
 
-[`concept_map`](https://ehrlinger.github.io/hvtiRutilities/reference/concept_map.md),
-[`prune_to_one_form`](https://ehrlinger.github.io/hvtiRutilities/reference/prune_to_one_form.md)
+[`concept_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/concept_map.md),
+[`prune_to_one_form()`](https://ehrlinger.github.io/hvtiRutilities/reference/prune_to_one_form.md)
 
 ## Examples
 

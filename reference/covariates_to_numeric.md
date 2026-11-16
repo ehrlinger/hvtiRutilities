@@ -6,7 +6,7 @@ model linearly the way the SAS job specifies.
 A factor with a genuinely non-numeric level is **left alone** and will
 be dummy-coded – the right outcome for a real categorical, and the wrong
 one for a mean-imputed binary.
-[`covariate_audit`](https://ehrlinger.github.io/hvtiRutilities/reference/covariate_audit.md)'s
+[`covariate_audit()`](https://ehrlinger.github.io/hvtiRutilities/reference/covariate_audit.md)'s
 `action` column is where a reader sees which of the two happened; check
 it before reading any coefficient.
 
@@ -37,7 +37,7 @@ covariates_to_numeric(data, var_cols, vars)
 
 ## See also
 
-[`covariate_audit`](https://ehrlinger.github.io/hvtiRutilities/reference/covariate_audit.md)
+[`covariate_audit()`](https://ehrlinger.github.io/hvtiRutilities/reference/covariate_audit.md)
 
 ## Examples
 

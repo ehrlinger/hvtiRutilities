@@ -16,7 +16,7 @@ get_label(label_map_df, variable)
 - label_map_df:
 
   A data frame with `key` and `label` columns, as returned by
-  [`label_map`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md).
+  [`label_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md).
 
 - variable:
 

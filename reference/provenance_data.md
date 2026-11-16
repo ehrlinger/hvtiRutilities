@@ -3,7 +3,7 @@
 Records the authoritative physical file selected by `dataset`. For a
 manifest entry with `role: "primary"`, this is the promoted Parquet file
 rather than the retired source, and for a dataset registered with
-[`register_data`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md)
+[`register_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md)
 it is the registered version, the dated Parquet file, rather than the
 source it was converted from. The returned plain list contains the
 logical dataset name, a canonical study-relative path, its role, byte
@@ -30,7 +30,7 @@ provenance_data(
 - cfg:
 
   List. A study manifest from
-  [`study_config`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md).
+  [`study_config()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md).
 
 - role:
 
@@ -39,8 +39,8 @@ provenance_data(
 - working:
 
   Logical. If `TRUE`, record the working source file, as
-  [`read_built`](https://ehrlinger.github.io/hvtiRutilities/reference/read_built.md)`(working = TRUE)`
-  reads it.
+  [`read_built()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_built.md)
+  reads it with `working = TRUE`.
 
 ## Value
 
@@ -51,8 +51,8 @@ read the same.
 
 ## See also
 
-[`provenance_artifact`](https://ehrlinger.github.io/hvtiRutilities/reference/provenance_artifact.md),
-[`capture_provenance`](https://ehrlinger.github.io/hvtiRutilities/reference/capture_provenance.md)
+[`provenance_artifact()`](https://ehrlinger.github.io/hvtiRutilities/reference/provenance_artifact.md),
+[`capture_provenance()`](https://ehrlinger.github.io/hvtiRutilities/reference/capture_provenance.md)
 
 ## Examples
 
@@ -72,7 +72,7 @@ str(provenance_data("study", cfg = cfg))
 #>  $ path   : chr "00_datasets/built_20261116.parquet"
 #>  $ role   : chr "analysis"
 #>  $ bytes  : num 1162
-#>  $ mtime  : chr "2026-11-16T19:05:08Z"
+#>  $ mtime  : chr "2026-11-16T19:07:59Z"
 #>  $ sha256 : chr "a70fb80222cc62fdad5ebd24da671563bdd084a939a6c2fe792e5d11b218cca3"
 unlink(root, recursive = TRUE)
 ```

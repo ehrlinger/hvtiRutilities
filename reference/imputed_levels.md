@@ -22,7 +22,7 @@ A character vector of the offending levels, possibly empty.
 
 ## See also
 
-[`covariate_audit`](https://ehrlinger.github.io/hvtiRutilities/reference/covariate_audit.md)
+[`covariate_audit()`](https://ehrlinger.github.io/hvtiRutilities/reference/covariate_audit.md)
 
 ## Examples
 

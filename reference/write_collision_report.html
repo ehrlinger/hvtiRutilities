@@ -80,7 +80,7 @@ report is a prerequisite for building a trustworthy SAS harness.</p>
 
 
 <dl><dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
-<dd><p>A <code>data.frame</code> returned by <code><a href="sas_triage.html">sas_triage</a></code>.</p></dd>
+<dd><p>A <code>data.frame</code> returned by <code><a href="sas_triage.html">sas_triage()</a></code>.</p></dd>
 
 
 <dt id="arg-path">path<a class="anchor" aria-label="anchor" href="#arg-path"></a></dt>
@@ -99,7 +99,7 @@ corpus rather than from the clock: a fingerprint over every
 definition and name counts, and the package version.</p>
 <p>A generated-on field would defeat the byte-for-byte reproducibility that
 makes the artifact reviewable, which is why neither this report nor
-<code><a href="write_macro_manifest.html">write_macro_manifest</a></code> carries one. An artifact with no identity
+<code><a href="write_macro_manifest.html">write_macro_manifest()</a></code> carries one. An artifact with no identity
 at all is the opposite failure: a committed report and a design's prose can
 disagree with nothing to say which is stale. An input-derived stamp avoids
 both, because it is a function of the inputs alone.</p>
@@ -108,7 +108,7 @@ the corpus alone: re-running under a different version changes the version
 row, by design, because that is what attributes the artifact to a build. The
 fingerprint itself depends only on the corpus, so it stays comparable across
 versions.</p>
-<p>The fingerprint follows content, not location. <code><a href="sas_triage.html">sas_triage</a></code>
+<p>The fingerprint follows content, not location. <code><a href="sas_triage.html">sas_triage()</a></code>
 records file basenames, so re-scanning the same corpus from a different
 mount point yields the same value and a share remount does not invalidate
 every committed report.</p>

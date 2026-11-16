@@ -89,7 +89,7 @@ drops that phrase from the group default list.</p>
 
 <dt id="arg-start">start<a class="anchor" aria-label="anchor" href="#arg-start"></a></dt>
 <dd><p>A directory inside the study; the study is found as
-<code><a href="study_config.html">study_config</a></code> finds it. Defaults to the study that contains the working
+<code><a href="study_config.html">study_config()</a></code> finds it. Defaults to the study that contains the working
 directory, found by its <code>_study.yml</code>; outside a study the function
 stops and writes nothing.</p></dd>
 
@@ -97,29 +97,29 @@ stops and writes nothing.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>The study's abbreviation list after the change, invisibly, as a
-  named list.</p>
+named list.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>The entry is checked against the whole merged list, as
-<code><a href="study_abbreviations.html">study_abbreviations</a></code> would check it, before anything is
+<code><a href="study_abbreviations.html">study_abbreviations()</a></code> would check it, before anything is
 written; a refused entry leaves the file as it was. The file is rewritten
-whole, as <code><a href="register_data.html">register_data</a></code> rewrites it, so comments in
+whole, as <code><a href="register_data.html">register_data()</a></code> rewrites it, so comments in
 <code>_study.yml</code> are not kept.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="study_abbreviations.html">study_abbreviations</a></code>.</p></div>
+    <div class="dont-index"><p><code><a href="study_abbreviations.html">study_abbreviations()</a></code>.</p></div>
     </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">root</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"add-abbrev-example"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="study_setup.html">study_setup</a></span><span class="op">(</span><span class="va">root</span>, <span class="st">"Abbreviation example"</span>, <span class="fl">1L</span>, renv <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Study: /tmp/RtmpT6gx1g/add-abbrev-example</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Study: /tmp/Rtmpoh72Jx/add-abbrev-example</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [x] _study.yml — study: Abbreviation example</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Abbreviation example", study_tracker_id = 1L, root = "/tmp/RtmpT6gx1g/add-abbrev-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Abbreviation example", study_tracker_id = 1L, root = "/tmp/Rtmpoh72Jx/add-abbrev-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [ ] manifest.yaml — no manifest.yaml; register_data() creates it</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [ ] dataset — no default dataset registered; run register_data()</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [ ] provenance — no .qmd/.Rmd sources found; 0 sidecars</span>

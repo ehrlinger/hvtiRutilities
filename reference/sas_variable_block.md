@@ -66,13 +66,13 @@ be inherited by a copy of it. `name/I` marks a variable forced into the
 model, and the suffix is an option on the name rather than part of it.
 Names are lowercased, because SAS variable names are case-insensitive
 and
-[`read_clinical_data`](https://ehrlinger.github.io/hvtiRutilities/reference/read_clinical_data.md)
+[`read_clinical_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_clinical_data.md)
 lowercases them.
 
 ## See also
 
-[`sas_path`](https://ehrlinger.github.io/hvtiRutilities/reference/sas_path.md),
-[`covariate_audit`](https://ehrlinger.github.io/hvtiRutilities/reference/covariate_audit.md)
+[`sas_path()`](https://ehrlinger.github.io/hvtiRutilities/reference/sas_path.md),
+[`covariate_audit()`](https://ehrlinger.github.io/hvtiRutilities/reference/covariate_audit.md)
 
 ## Examples
 

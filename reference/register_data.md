@@ -8,7 +8,7 @@ have been prepared successfully.
 Registration converts the file once to a dated parquet in the same
 folder, `<name>_YYYYMMDD.parquet`, with its column record beside it as
 `<name>_YYYYMMDD.schema.csv`. That parquet is what
-[`read_built`](https://ehrlinger.github.io/hvtiRutilities/reference/read_built.md)
+[`read_built()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_built.md)
 and the job templates read, so the source file may be rebuilt freely;
 run
 [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
@@ -170,9 +170,9 @@ Exclusions that define the cohort itself belong in the build job
 
 ## See also
 
-[`study_setup`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md),
-[`study_config`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md),
-[`update_manifest`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
+[`study_setup()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md),
+[`study_config()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md),
+[`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
 
 ## Examples
 
@@ -183,10 +183,10 @@ utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
                  file.path(root, "00_datasets", "built.csv"),
                  row.names = FALSE)
 register_data(file = "built.csv", key_cols = "ccfid", root = root)
-#> Study: /tmp/RtmpT6gx1g/register-data-example
+#> Study: /tmp/Rtmpoh72Jx/register-data-example
 #> 
 #> [x] _study.yml — study: Example
-#> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Example", study_tracker_id = 1L, root = "/tmp/RtmpT6gx1g/register-data-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first
+#> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Example", study_tracker_id = 1L, root = "/tmp/Rtmpoh72Jx/register-data-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first
 #> [x] manifest.yaml — 1 dataset entry verified by checksum
 #> [x] dataset — built.csv, registered as built_20261116.parquet
 #> [ ] provenance — no .qmd/.Rmd sources found; 0 sidecars

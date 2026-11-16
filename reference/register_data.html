@@ -5,7 +5,7 @@ replaces _study.yml and manifest.yaml only after both updated
 files have been prepared successfully.
 Registration converts the file once to a dated parquet in the same folder,
 &amp;lt;name&amp;gt;_YYYYMMDD.parquet, with its column record beside it as
-&amp;lt;name&amp;gt;_YYYYMMDD.schema.csv. That parquet is what read_built
+&amp;lt;name&amp;gt;_YYYYMMDD.schema.csv. That parquet is what read_built()
 and the job templates read, so the source file may be rebuilt freely; run
 update_manifest() to register a rebuilt file as a new version.
 The date is the file's modification date unless extract_date is given.
@@ -27,7 +27,7 @@ replaces _study.yml and manifest.yaml only after both updated
 files have been prepared successfully.
 Registration converts the file once to a dated parquet in the same folder,
 &amp;lt;name&amp;gt;_YYYYMMDD.parquet, with its column record beside it as
-&amp;lt;name&amp;gt;_YYYYMMDD.schema.csv. That parquet is what read_built
+&amp;lt;name&amp;gt;_YYYYMMDD.schema.csv. That parquet is what read_built()
 and the job templates read, so the source file may be rebuilt freely; run
 update_manifest() to register a rebuilt file as a new version.
 The date is the file's modification date unless extract_date is given.
@@ -108,7 +108,7 @@ replaces <code>_study.yml</code> and <code>manifest.yaml</code> only after both 
 files have been prepared successfully.</p>
 <p>Registration converts the file once to a dated parquet in the same folder,
 <code>&lt;name&gt;_YYYYMMDD.parquet</code>, with its column record beside it as
-<code>&lt;name&gt;_YYYYMMDD.schema.csv</code>. That parquet is what <code><a href="read_built.html">read_built</a></code>
+<code>&lt;name&gt;_YYYYMMDD.schema.csv</code>. That parquet is what <code><a href="read_built.html">read_built()</a></code>
 and the job templates read, so the source file may be rebuilt freely; run
 <code><a href="update_manifest.html">update_manifest()</a></code> to register a rebuilt file as a new version.
 The date is the file's modification date unless <code>extract_date</code> is given.
@@ -251,23 +251,23 @@ one release, with a warning.</p></dd>
 
 <p>A subset of the study dataset has three homes, and which to pick depends on
 who needs it.</p><ul><li><p>A <code>WHERE</code> condition in one job writes no file. The job's
-    <code>hvtiRtemplates::read_job_data()</code> applies the condition and records
-    it. Use this for a subset that only one job analyses.</p></li>
+<code>hvtiRtemplates::read_job_data()</code> applies the condition and records
+it. Use this for a subset that only one job analyses.</p></li>
 <li><p>An analysis set from <code>hvtiRdatabuild::write_analysis_set()</code> is
-    saved as <code>00_datasets/&lt;name&gt;.parquet</code> with <code>&lt;name&gt;.set.yml</code>
-    beside it, and is derived from the study dataset only. A job reads it with
-    <code>DATASET &lt;- "built"</code> and <code>ANALYSIS_SET &lt;- "&lt;name&gt;"</code>. Use this
-    for a subset of the study dataset that several jobs share.</p></li>
+saved as <code>00_datasets/&lt;name&gt;.parquet</code> with <code>&lt;name&gt;.set.yml</code>
+beside it, and is derived from the study dataset only. A job reads it with
+<code>DATASET &lt;- "built"</code> and <code>ANALYSIS_SET &lt;- "&lt;name&gt;"</code>. Use this
+for a subset of the study dataset that several jobs share.</p></li>
 <li><p>A separately registered dataset, <code>role = "named"</code> with
-    <code>kind = "subset"</code>, is for a subset built some other way, such as
-    from a second source or by a script outside the study's build.</p></li>
+<code>kind = "subset"</code>, is for a subset built some other way, such as
+from a second source or by a script outside the study's build.</p></li>
 </ul><p>Exclusions that define the cohort itself belong in the build job
 (<code>hvtiRtemplates::build_cohort()</code>), not in a subset.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="study_setup.html">study_setup</a></code>, <code><a href="study_config.html">study_config</a></code>,
-  <code><a href="update_manifest.html">update_manifest</a></code></p></div>
+    <div class="dont-index"><p><code><a href="study_setup.html">study_setup()</a></code>, <code><a href="study_config.html">study_config()</a></code>,
+<code><a href="update_manifest.html">update_manifest()</a></code></p></div>
     </div>
 
     <div class="section level2">
@@ -278,10 +278,10 @@ who needs it.</p><ul><li><p>A <code>WHERE</code> condition in one job writes no 
 <span class="r-in"><span>                 <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">root</span>, <span class="st">"00_datasets"</span>, <span class="st">"built.csv"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>                 row.names <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">register_data</span><span class="op">(</span>file <span class="op">=</span> <span class="st">"built.csv"</span>, key_cols <span class="op">=</span> <span class="st">"ccfid"</span>, root <span class="op">=</span> <span class="va">root</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Study: /tmp/RtmpT6gx1g/register-data-example</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Study: /tmp/Rtmpoh72Jx/register-data-example</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [x] _study.yml — study: Example</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Example", study_tracker_id = 1L, root = "/tmp/RtmpT6gx1g/register-data-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Example", study_tracker_id = 1L, root = "/tmp/Rtmpoh72Jx/register-data-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [x] manifest.yaml — 1 dataset entry verified by checksum</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [x] dataset — built.csv, registered as built_20261116.parquet</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [ ] provenance — no .qmd/.Rmd sources found; 0 sidecars</span>

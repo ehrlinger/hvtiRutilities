@@ -1,8 +1,8 @@
 # Affix conventions for grouping a SAS candidate pool into concepts
 
 Defaults for
-[`concept_of`](https://ehrlinger.github.io/hvtiRutilities/reference/concept_of.md),
-[`concept_map`](https://ehrlinger.github.io/hvtiRutilities/reference/concept_map.md)
+[`concept_of()`](https://ehrlinger.github.io/hvtiRutilities/reference/concept_of.md),
+[`concept_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/concept_map.md)
 and friends, describing the naming conventions a legacy `vars.sas` uses:
 `ln_` (log), `in_` (inverse), `in2` (inverse squared) and a trailing `2`
 (squared).

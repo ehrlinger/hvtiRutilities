@@ -30,7 +30,7 @@ Character(1). The joined path. It is not checked for existence.
 
 ## See also
 
-[`study_root`](https://ehrlinger.github.io/hvtiRutilities/reference/study_root.md)
+[`study_root()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_root.md)
 
 ## Examples
 
@@ -43,6 +43,6 @@ yaml::write_yaml(
   file.path(root, "_study.yml")
 )
 sas_path("datasets", start = root)
-#> [1] "/tmp/RtmpT6gx1g/sas-path-example/datasets"
+#> [1] "/tmp/Rtmpoh72Jx/sas-path-example/datasets"
 unlink(root, recursive = TRUE)
 ```

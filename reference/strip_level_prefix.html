@@ -89,8 +89,8 @@ does not return one element per observation, and it does not modify
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A character vector of display text: one element per input element,
-  or one per level when <code>x</code> is a factor. <code>NA</code> is returned as
-  <code>NA</code>.</p>
+or one per level when <code>x</code> is a factor. <code>NA</code> is returned as
+<code>NA</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -107,13 +107,13 @@ level count silently stops matching the data dictionary. The failure
 presents as data rather than as a bug.</p>
 <p>So the rule is biased: <strong>a missed strip is visible in the output and
 fixable by declaring the level text in <code>value_labels.yml</code> (see
-<code><a href="apply_value_labels.html">apply_value_labels</a></code>); a wrong strip is silent and corrupts the
+<code><a href="apply_value_labels.html">apply_value_labels()</a></code>); a wrong strip is silent and corrupts the
 level set.</strong> Two consequences follow.</p><ul><li><p>Unpunctuated <code>"0 No"</code> and <code>"1 Yes"</code> are <strong>not</strong>
-    stripped and still print with their prefix.</p></li>
+stripped and still print with their prefix.</p></li>
 <li><p>Text whose remainder begins with a digit is not stripped either,
-    because <code>"1-2 vessels"</code> matches leading-integer-then-hyphen and
-    would otherwise become <code>"2 vessels"</code>, colliding with a real
-    <code>"2 vessels"</code> level. Ranges are ordinary in this domain.</p></li>
+because <code>"1-2 vessels"</code> matches leading-integer-then-hyphen and
+would otherwise become <code>"2 vessels"</code>, colliding with a real
+<code>"2 vessels"</code> level. Ranges are ordinary in this domain.</p></li>
 </ul><p><strong>Collisions revert rather than merge.</strong> If stripping would bring two
 <em>different</em> texts together - two codes carrying the same words, or a
 stripped entry landing on one that was already bare - every entry involved
@@ -128,9 +128,9 @@ function usable on a raw character column, where repeats are ordinary.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="level_map.html">level_map</a></code> to see what stripping would do across a
-  dataset, <code><a href="apply_value_labels.html">apply_value_labels</a></code> for declaring level text
-  outright rather than tidying it afterwards.</p></div>
+    <div class="dont-index"><p><code><a href="level_map.html">level_map()</a></code> to see what stripping would do across a
+dataset, <code><a href="apply_value_labels.html">apply_value_labels()</a></code> for declaring level text
+outright rather than tidying it afterwards.</p></div>
     </div>
 
     <div class="section level2">

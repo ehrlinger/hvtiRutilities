@@ -23,12 +23,12 @@ concept_map(pool, prefer = character(0), aliases = character(0), ...)
 - aliases:
 
   Named character vector, as for
-  [`concept_of`](https://ehrlinger.github.io/hvtiRutilities/reference/concept_of.md).
+  [`concept_of()`](https://ehrlinger.github.io/hvtiRutilities/reference/concept_of.md).
 
 - ...:
 
   Passed to
-  [`concept_of`](https://ehrlinger.github.io/hvtiRutilities/reference/concept_of.md).
+  [`concept_of()`](https://ehrlinger.github.io/hvtiRutilities/reference/concept_of.md).
 
 ## Value
 
@@ -48,8 +48,8 @@ visible rather than implied.
 
 ## See also
 
-[`concept_of`](https://ehrlinger.github.io/hvtiRutilities/reference/concept_of.md),
-[`prune_to_one_form`](https://ehrlinger.github.io/hvtiRutilities/reference/prune_to_one_form.md)
+[`concept_of()`](https://ehrlinger.github.io/hvtiRutilities/reference/concept_of.md),
+[`prune_to_one_form()`](https://ehrlinger.github.io/hvtiRutilities/reference/prune_to_one_form.md)
 
 ## Examples
 

@@ -8,19 +8,19 @@ variable labels, or any dataset labeled with the `labelled` package.
 A warning is issued when more than 50% of columns carry no label at all.
 This typically indicates the data was imported from a source without
 labels (e.g., plain CSV) and labels should be supplied via
-[`add_labels`](https://ehrlinger.github.io/hvtiRutilities/reference/add_labels.md)
+[`add_labels()`](https://ehrlinger.github.io/hvtiRutilities/reference/add_labels.md)
 or a `labels_overrides.yml` file (see
-[`apply_label_overrides`](https://ehrlinger.github.io/hvtiRutilities/reference/apply_label_overrides.md)).
+[`apply_label_overrides()`](https://ehrlinger.github.io/hvtiRutilities/reference/apply_label_overrides.md)).
 A variable whose real label happens to equal its own name does **not**
 count towards the threshold: the absent label is read as `NA` rather
 than filled, so the two cases are distinguishable here even though
-[`proc_contents`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_contents.md)
+[`proc_contents()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_contents.md)
 cannot tell them apart.
 
 Labels longer than `label_max` are cut for display. The cut breaks on a
 word boundary and is marked with `...`, and the source text is kept in
 `label_full` - truncation is a view, not a change to the data.
-[`dataset_schema`](https://ehrlinger.github.io/hvtiRutilities/reference/dataset_schema.md)
+[`dataset_schema()`](https://ehrlinger.github.io/hvtiRutilities/reference/dataset_schema.md)
 deliberately has no such parameter: it records the label as the source
 carried it, because a schema sidecar outlives the source dataset.
 
@@ -91,7 +91,7 @@ label_map(data, label_max = 40, abbreviations = NULL)
   `c("Left ventricular" = "LV")`. Used only on labels over the cap, and
   for a shared heading in place of its initials. An `expansion`
   attribute, as
-  [`study_abbreviations`](https://ehrlinger.github.io/hvtiRutilities/reference/study_abbreviations.md)
+  [`study_abbreviations()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_abbreviations.md)
   returns, names the term each abbreviation stands for in the key. A
   word-like abbreviation such as `"Preop"` takes the case of the text it
   replaces.
@@ -131,11 +131,11 @@ labels show, with no rows when there are none.
 
 ## See also
 
-[`get_label`](https://ehrlinger.github.io/hvtiRutilities/reference/get_label.md)
+[`get_label()`](https://ehrlinger.github.io/hvtiRutilities/reference/get_label.md)
 for looking up a single label,
-[`add_labels`](https://ehrlinger.github.io/hvtiRutilities/reference/add_labels.md)
+[`add_labels()`](https://ehrlinger.github.io/hvtiRutilities/reference/add_labels.md)
 for registering labels for derived variables,
-[`apply_label_overrides`](https://ehrlinger.github.io/hvtiRutilities/reference/apply_label_overrides.md)
+[`apply_label_overrides()`](https://ehrlinger.github.io/hvtiRutilities/reference/apply_label_overrides.md)
 for applying study-specific overrides from a YAML file.
 
 ## Examples

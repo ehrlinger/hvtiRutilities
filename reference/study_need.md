@@ -3,7 +3,7 @@
 Called where a function needs a package the study may not have, such as
 arrow for registered data. In the study's active renv project the
 packages are declared (see
-[`study_declare`](https://ehrlinger.github.io/hvtiRutilities/reference/study_declare.md));
+[`study_declare()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_declare.md));
 a missing one is installed into the study's library after one question,
 when the session is interactive, and recorded in `renv.lock`. Otherwise
 the call stops and names `hvtiR::setup()`, which installs everything a
@@ -19,7 +19,7 @@ Recording takes one question, since the snapshot also moves every other
 package in the lock to the version in the library. The caller already
 has what it needs, so when the package cannot be recorded (the session
 is not interactive, the question is declined,
-[`guard_snapshot`](https://ehrlinger.github.io/hvtiRutilities/reference/guard_snapshot.md)
+[`guard_snapshot()`](https://ehrlinger.github.io/hvtiRutilities/reference/guard_snapshot.md)
 refuses, or the snapshot fails) the call warns and carries on. Base
 packages, which renv never locks, are left out.
 
@@ -67,7 +67,7 @@ study_need(
 
   Logical(1). Leave `FALSE`. A `renv.lock` snapshot is refused from an R
   whose major.minor differs from the R the lockfile records (see
-  [`guard_snapshot`](https://ehrlinger.github.io/hvtiRutilities/reference/guard_snapshot.md)).
+  [`guard_snapshot()`](https://ehrlinger.github.io/hvtiRutilities/reference/guard_snapshot.md)).
   Set `TRUE` only when you are deliberately moving the study to this
   session's R.
 

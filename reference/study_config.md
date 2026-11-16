@@ -38,8 +38,8 @@ identity and named-dataset fields are retained.
 
 ## See also
 
-[`study_root`](https://ehrlinger.github.io/hvtiRutilities/reference/study_root.md),
-[`record_provenance`](https://ehrlinger.github.io/hvtiRutilities/reference/record_provenance.md)
+[`study_root()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_root.md),
+[`record_provenance()`](https://ehrlinger.github.io/hvtiRutilities/reference/record_provenance.md)
 
 ## Examples
 

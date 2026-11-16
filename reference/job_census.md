@@ -17,9 +17,9 @@ print(x, ...)
 - x:
 
   Character roots to sweep – see
-  [`job_files`](https://ehrlinger.github.io/hvtiRutilities/reference/job_files.md)
+  [`job_files()`](https://ehrlinger.github.io/hvtiRutilities/reference/job_files.md)
   for what a root must be – or a data frame returned by
-  [`job_files`](https://ehrlinger.github.io/hvtiRutilities/reference/job_files.md).
+  [`job_files()`](https://ehrlinger.github.io/hvtiRutilities/reference/job_files.md).
   A data frame missing any of that function's 16 columns is an error,
   not a silently empty census.
 
@@ -85,7 +85,7 @@ time.
 
 ## See also
 
-[`job_files`](https://ehrlinger.github.io/hvtiRutilities/reference/job_files.md)
+[`job_files()`](https://ehrlinger.github.io/hvtiRutilities/reference/job_files.md)
 
 ## Examples
 

@@ -30,20 +30,20 @@ included, as of 2026-09-03.**
 A template directory and a numbered study directory are both spelled
 `<NN>_<folder>`, as in `20_distributions`; a legacy study keeps the bare
 name, as in `distributions`, and
-[`study_dir`](https://ehrlinger.github.io/hvtiRutilities/reference/study_dir.md)
+[`study_dir()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_dir.md)
 resolves either. The name after the digits, or the bare name, must be a
 `folder` in this table. `hvtiRtemplates` tests that every template
 directory names one, so renaming or removing a folder that holds a
 template turns its CI red. The digits are *assigned*, not derived from
 this table. They are hardcoded in
-[`study_dir`](https://ehrlinger.github.io/hvtiRutilities/reference/study_dir.md)'s
+[`study_dir()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_dir.md)'s
 layout map here and in the template directory names there, and
 `estimates` is `90` though it is the table's fifth folder, because it
 holds saved output rather than jobs. Reordering rows, or folders,
 changes nothing downstream.
 
 *Adding or renaming* a folder is not free on the study side.
-[`study_dir`](https://ehrlinger.github.io/hvtiRutilities/reference/study_dir.md)
+[`study_dir()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_dir.md)
 knows only the folders in its own layout map, and a test compares that
 map's names with `unique(hvti_taxonomy()$folder)`, so a folder added
 here and not there turns this package's CI red rather than becoming one
@@ -112,7 +112,7 @@ templated. They stay in the table so a census can still resolve the
 corpus that uses them, which is not small: `rfsrc` measures 131 studies
 and 2,295 jobs, more than `rf` (47), `rfs` (25) and `rfc` (19) combined,
 twice over. Deleting the rows was rejected on two grounds.
-[`hvti_prefix_folds`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_prefix_folds.md)
+[`hvti_prefix_folds()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_prefix_folds.md)
 cannot express the demotion, because a fold is one-to-one and `rfsrc`
 spans all three outcomes, so there is no single prefix to fold it into.
 And an absent prefix reads to the census as one nobody documented, which

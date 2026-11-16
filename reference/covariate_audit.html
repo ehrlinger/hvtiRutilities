@@ -100,14 +100,14 @@ treated as continuous and their non-integer levels are reported as <code>NA</cod
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A data frame with columns <code>variable</code>, <code>storage</code>,
-  <code>n_levels</code>,
+<code>n_levels</code>,
 <code>noninteger_levels</code> and <code>action</code>. <code>noninteger_levels</code> reports
 <code>value (rows)</code> <strong>per level</strong>: per level rather than as a total
 because the
-  total cannot distinguish a mean-imputed binary (one such level, in a
-  minority of rows) from an inverse transformation whose several non-integer
+total cannot distinguish a mean-imputed binary (one such level, in a
+minority of rows) from an inverse transformation whose several non-integer
 levels are ordinary data. A blank means "no such level"; <code>NA</code> means "not
-looked for". <code>action</code> is what <code><a href="covariates_to_numeric.html">covariates_to_numeric</a></code> would
+looked for". <code>action</code> is what <code><a href="covariates_to_numeric.html">covariates_to_numeric()</a></code> would
 do, and an
 <code>action</code> beginning <code>ERROR</code> marks a variable that must not be
 fitted.</p>
@@ -152,7 +152,7 @@ indicator is the only record that it happened. So <code>NA</code> in
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="covariates_to_numeric.html">covariates_to_numeric</a></code>, <code><a href="imputed_levels.html">imputed_levels</a></code></p></div>
+    <div class="dont-index"><p><code><a href="covariates_to_numeric.html">covariates_to_numeric()</a></code>, <code><a href="imputed_levels.html">imputed_levels()</a></code></p></div>
     </div>
 
     <div class="section level2">

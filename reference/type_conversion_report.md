@@ -1,7 +1,7 @@
 # Read the per-column type-conversion report
 
 Returns the record
-[`r_data_types`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
+[`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
 attaches to its result: one row per column, naming the rule that fired
 and where the levels came from.
 
@@ -16,7 +16,7 @@ type_conversion_report(x)
 - x:
 
   An object returned by
-  [`r_data_types`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md).
+  [`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md).
 
 ## Value
 
@@ -59,7 +59,7 @@ result.
 
 ## See also
 
-[`r_data_types`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
+[`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
 
 ## Examples
 

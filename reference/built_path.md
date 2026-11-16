@@ -14,7 +14,7 @@ built_path(cfg = study_config(), dataset = "study")
 - cfg:
 
   List. A study manifest from
-  [`study_config`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md).
+  [`study_config()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md).
 
 - dataset:
 
@@ -27,8 +27,8 @@ Character(1). The path to the built dataset.
 
 ## See also
 
-[`built_manifest`](https://ehrlinger.github.io/hvtiRutilities/reference/built_manifest.md),
-[`read_built`](https://ehrlinger.github.io/hvtiRutilities/reference/read_built.md)
+[`built_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/built_manifest.md),
+[`read_built()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_built.md)
 
 ## Examples
 
@@ -41,6 +41,6 @@ yaml::write_yaml(
   file.path(root, "_study.yml")
 )
 built_path(study_config(root))
-#> [1] "/tmp/RtmpT6gx1g/built-path-example/datasets/example.sas7bdat"
+#> [1] "/tmp/Rtmpoh72Jx/built-path-example/datasets/example.sas7bdat"
 unlink(root, recursive = TRUE)
 ```

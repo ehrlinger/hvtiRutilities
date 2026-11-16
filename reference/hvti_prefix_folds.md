@@ -1,7 +1,7 @@
 # Legacy prefixes folded into a taxonomy prefix
 
 A legacy prefix that names the same job as a prefix in
-[`hvti_taxonomy`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_taxonomy.md),
+[`hvti_taxonomy()`](https://ehrlinger.github.io/hvtiRutilities/reference/hvti_taxonomy.md),
 so a census counts its files under that prefix. `pm` folds into `lm`: a
 review of the job catalog on 2026-09-11 found that the propensity work
 filed as `pm` belongs with the logistic models in `lm`.
@@ -26,7 +26,7 @@ and every value is present in it; the tests pin both.
 
 ## See also
 
-[`job_files`](https://ehrlinger.github.io/hvtiRutilities/reference/job_files.md),
+[`job_files()`](https://ehrlinger.github.io/hvtiRutilities/reference/job_files.md),
 which applies it.
 
 ## Examples

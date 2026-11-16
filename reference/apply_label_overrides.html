@@ -9,10 +9,10 @@ it safe to call unconditionally in shared code.
 When data is a label map (a data frame with key and
 label columns), the overrides are applied to the map. When
 data is any other data frame, labels are applied directly to
-the data via add_labels, which is the preferred
+the data via add_labels(), which is the preferred
 data-first workflow.
 In that mode a key naming a column the data does not have warns, as
-add_labels does; an overrides file shared by several
+add_labels() does; an overrides file shared by several
 datasets warns for each key the current one lacks."><meta property="og:description" content="Reads label overrides from a YAML file and applies them to a label map
 or directly to a data frame. This allows study-specific label
 replacements (e.g., abbreviations, corrections) to be configured
@@ -23,10 +23,10 @@ it safe to call unconditionally in shared code.
 When data is a label map (a data frame with key and
 label columns), the overrides are applied to the map. When
 data is any other data frame, labels are applied directly to
-the data via add_labels, which is the preferred
+the data via add_labels(), which is the preferred
 data-first workflow.
 In that mode a key naming a column the data does not have warns, as
-add_labels does; an overrides file shared by several
+add_labels() does; an overrides file shared by several
 datasets warns for each key the current one lacks."></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
@@ -96,10 +96,10 @@ it safe to call unconditionally in shared code.</p>
 <p>When <code>data</code> is a label map (a data frame with <code>key</code> and
 <code>label</code> columns), the overrides are applied to the map. When
 <code>data</code> is any other data frame, labels are applied directly to
-the data via <code><a href="add_labels.html">add_labels</a></code>, which is the preferred
+the data via <code><a href="add_labels.html">add_labels()</a></code>, which is the preferred
 data-first workflow.
 In that mode a key naming a column the data does not have warns, as
-<code><a href="add_labels.html">add_labels</a></code> does; an overrides file shared by several
+<code><a href="add_labels.html">add_labels()</a></code> does; an overrides file shared by several
 datasets warns for each key the current one lacks.</p>
     </div>
 
@@ -114,7 +114,7 @@ datasets warns for each key the current one lacks.</p>
 
 <dl><dt id="arg-data">data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>
 <dd><p>A data frame: either a label map (with <code>key</code> and
-<code>label</code> columns, as returned by <code><a href="label_map.html">label_map</a></code>), or any
+<code>label</code> columns, as returned by <code><a href="label_map.html">label_map()</a></code>), or any
 data frame whose columns should be labeled directly.</p></dd>
 
 
@@ -126,10 +126,10 @@ Defaults to <code>"labels_overrides.yml"</code> in the current working directory
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>When given a label map: the updated label map data frame.
-  When given a data frame: the data frame with labels applied via
-  <code><a href="https://larmarange.github.io/labelled/reference/var_label.html" class="external-link">labelled::var_label()</a></code>.
-  In both cases, variables not mentioned in the YAML file are left
-  unchanged.</p>
+When given a data frame: the data frame with labels applied via
+<code><a href="https://larmarange.github.io/labelled/reference/var_label.html" class="external-link">labelled::var_label()</a></code>.
+In both cases, variables not mentioned in the YAML file are left
+unchanged.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -147,8 +147,8 @@ hard-coded replacements.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="add_labels.html">add_labels</a></code> for programmatic label updates,
-  <code><a href="label_map.html">label_map</a></code> for extracting labels from data.</p></div>
+    <div class="dont-index"><p><code><a href="add_labels.html">add_labels()</a></code> for programmatic label updates,
+<code><a href="label_map.html">label_map()</a></code> for extracting labels from data.</p></div>
     </div>
 
     <div class="section level2">

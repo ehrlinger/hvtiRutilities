@@ -72,8 +72,8 @@ function stops rather than pick one. Add a column that separates them,
 such as the time of the operation.
 
 A missing key value is treated as a value, as
-[`duplicated`](https://rdrr.io/r/base/duplicated.html) treats it, so two
-rows missing the key repeat it. Missing keys are also counted in
+[`duplicated()`](https://rdrr.io/r/base/duplicated.html) treats it, so
+two rows missing the key repeat it. Missing keys are also counted in
 `summary`.
 
 Key values are left out of `rows` unless `show_key = TRUE`, because a
@@ -82,7 +82,7 @@ in `data`.
 
 ## See also
 
-[`register_data`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md),
+[`register_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md),
 whose `key_cols` argument refuses a dataset that repeats it.
 
 ## Examples
