@@ -16,7 +16,8 @@ local({
   env <- asNamespace("hvtiRutilities")$.hvti_deprecated
   flags <- c("convert_types", "use_value_labels", "release_contract", "cohort_counts_args", "assert_cohort_args",
              "followup_check_args", "r_data_types_dataset", "parity_headline_df", "register_data_root",
-             "declare_data_root", "proc_means_weights", "proc_freq_weights", "proc_univariate_weights")
+             "declare_data_root", "proc_means_weights", "proc_freq_weights", "proc_univariate_weights",
+             "duplicate_keys_args", "declare_data_key", "register_data_key")
   for (flag in flags) {
     assign(flag, TRUE, envir = env)
   }

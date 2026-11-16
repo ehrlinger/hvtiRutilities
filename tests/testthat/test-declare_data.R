@@ -7,7 +7,7 @@ declare_fixture <- function(env = parent.frame()) {
 
 test_that("declare_data() writes the contract and registers nothing", {
   root <- declare_fixture()
-  expect_true(declare_data(root = root, file = "study_cohort.rds", key = "ccfid"))
+  expect_true(declare_data(root = root, file = "study_cohort.rds", key_cols = "ccfid"))
   yml <- yaml::read_yaml(file.path(root, "_study.yml"))
   expect_identical(yml$built, "study_cohort.rds")
   expect_identical(yml$key, "ccfid")
@@ -16,14 +16,14 @@ test_that("declare_data() writes the contract and registers nothing", {
 
 test_that("declaring the same file again is a no-op, and another file stops", {
   root <- declare_fixture()
-  declare_data(root = root, file = "study_cohort.rds", key = "ccfid")
-  expect_false(declare_data(root = root, file = "study_cohort.rds", key = "ccfid"))
+  declare_data(root = root, file = "study_cohort.rds", key_cols = "ccfid")
+  expect_false(declare_data(root = root, file = "study_cohort.rds", key_cols = "ccfid"))
   expect_error(declare_data(root = root, file = "other.rds"), "already declares study_cohort.rds")
 })
 
 test_that("a declared dataset registers its first version through update_manifest()", {
   root <- declare_fixture()
-  declare_data(root = root, file = "study_cohort.rds", key = "ccfid")
+  declare_data(root = root, file = "study_cohort.rds", key_cols = "ccfid")
   withr::local_dir(root)
   out <- update_manifest(dataset = "study")
   expect_identical(out$action[[1L]], "registered")
@@ -33,13 +33,13 @@ test_that("declare_data() checks its arguments", {
   root <- declare_fixture()
   expect_error(declare_data(root = root, file = "no_ext"), "one filename with its extension")
   expect_error(declare_data(root = root, file = "missing.rds"), "dataset is missing")
-  expect_error(declare_data(root = root, file = "study_cohort.rds", key = NA_character_), "key")
+  expect_error(declare_data(root = root, file = "study_cohort.rds", key_cols = NA_character_), "key")
 })
 
 test_that("a contract the next study_config() would reject is not written", {
   root <- declare_fixture()
   before <- readLines(file.path(root, "_study.yml"))
-  expect_error(declare_data(root = root, file = "study_cohort.rds", key = c("ccfid", "ccfid")))
+  expect_error(declare_data(root = root, file = "study_cohort.rds", key_cols = c("ccfid", "ccfid")))
   expect_identical(readLines(file.path(root, "_study.yml")), before)
 })
 
@@ -47,7 +47,7 @@ test_that("a fresh study gets an empty manifest that verify_manifest() accepts",
   root <- declare_fixture()
   mpath <- file.path(root, "manifest.yaml")
   expect_false(file.exists(mpath))
-  declare_data(root = root, file = "study_cohort.rds", key = "ccfid")
+  declare_data(root = root, file = "study_cohort.rds", key_cols = "ccfid")
   expect_true(file.exists(mpath))
   expect_length(yaml::read_yaml(mpath)$datasets, 0L)
   out <- verify_manifest(mpath)
@@ -60,13 +60,13 @@ test_that("an existing manifest is left untouched", {
   mpath <- file.path(root, "manifest.yaml")
   writeLines(c("# kept", "datasets: {}"), mpath)
   before <- readBin(mpath, "raw", file.size(mpath))
-  declare_data(root = root, file = "study_cohort.rds", key = "ccfid")
+  declare_data(root = root, file = "study_cohort.rds", key_cols = "ccfid")
   expect_identical(readBin(mpath, "raw", file.size(mpath)), before)
 })
 
 test_that("a study declared before declare_data() wrote a manifest gets one on re-declaring", {
   root <- declare_fixture()
-  declare_data(root = root, file = "study_cohort.rds", key = "ccfid")
+  declare_data(root = root, file = "study_cohort.rds", key_cols = "ccfid")
   unlink(file.path(root, "manifest.yaml"))
   expect_false(declare_data(root = root, file = "study_cohort.rds"))
   expect_length(yaml::read_yaml(file.path(root, "manifest.yaml"))$datasets, 0L)
@@ -74,21 +74,21 @@ test_that("a study declared before declare_data() wrote a manifest gets one on r
 
 test_that("re-declaring with a different key stops rather than ignoring it", {
   root <- declare_fixture()
-  declare_data(root = root, file = "study_cohort.rds", key = "ccfid")
-  expect_error(declare_data(root = root, file = "study_cohort.rds", key = "mrn"), "with key ccfid")
+  declare_data(root = root, file = "study_cohort.rds", key_cols = "ccfid")
+  expect_error(declare_data(root = root, file = "study_cohort.rds", key_cols = "mrn"), "with key ccfid")
   expect_identical(yaml::read_yaml(file.path(root, "_study.yml"))$key, "ccfid")
 })
 
 test_that("re-declaring with a key records it when none was declared", {
   root <- declare_fixture()
   declare_data(root = root, file = "study_cohort.rds")
-  expect_true(declare_data(root = root, file = "study_cohort.rds", key = "ccfid"))
+  expect_true(declare_data(root = root, file = "study_cohort.rds", key_cols = "ccfid"))
   expect_identical(yaml::read_yaml(file.path(root, "_study.yml"))$key, "ccfid")
 })
 
 test_that("a draft render of a declared, unregistered dataset caches nothing and leaves the manifest empty", {
   root <- declare_fixture()
-  declare_data(root = root, file = "study_cohort.rds", key = "ccfid")
+  declare_data(root = root, file = "study_cohort.rds", key_cols = "ccfid")
   job <- file.path(study_dir("analyses", root), "km", "km.qmd")
   local_mocked_bindings(.is_interactive = function() FALSE, .job_file = function() job,
                         .knitr_input = function() job)
@@ -120,7 +120,7 @@ test_that("declare_data() takes a path into the data folder, as tab completion g
   root <- declare_fixture()
   withr::local_dir(root)
   leaf <- basename(study_dir("datasets", root))
-  expect_true(declare_data(root = root, file = file.path(leaf, "study_cohort.rds"), key = "ccfid"))
+  expect_true(declare_data(root = root, file = file.path(leaf, "study_cohort.rds"), key_cols = "ccfid"))
   expect_identical(yaml::read_yaml(file.path(root, "_study.yml"))$built, "study_cohort.rds")
   expect_error(declare_data(root = root, file = "elsewhere/study_cohort.rds"), "data folder")
 })

@@ -36,7 +36,7 @@ b <- data.frame(ev = c(1, 1, 0), tt = c(1, 1, 1))
 b_want <- list(n = 3L, n_events = 2L, n_censored = 1L)
 
 test_that("two unnamed survival arguments are refused on every call, in either order", {
-  refused <- "pass `time_col =` and `event_col =` by name"
+  refused <- "pass `time_cols? =` and `event_col =` by name"
   for (attempt in 1:2) {
     expect_error(cohort_counts(b, "tt", "ev"), refused)
     expect_error(cohort_counts(b, "ev", "tt"), refused)
@@ -62,7 +62,7 @@ test_that("one unnamed survival argument binds the same under every name, and ne
       expect_true(assert_cohort(b, b_want, time_col = "tt", "ev"))
       expect_identical(followup_check(b, event_col = "ev", "tt")$cohort$event, 2L)
       expect_identical(followup_check(data = b, "tt", event_col = "ev")$cohort$event, 2L)
-      expect_identical(followup_check(b, time_col = "tt", "ev")$cohort$event, 2L)
+      expect_identical(followup_check(b, time_cols = "tt", "ev")$cohort$event, 2L)
       # Old names, as hvtiRdatabuild and hvtiRtemplates still write them.
       expect_identical(cohort_counts(b, event = "ev", time = "tt"), b_want)
       expect_identical(cohort_counts(b, "tt", event = "ev"), b_want)
@@ -78,22 +78,46 @@ test_that("one unnamed survival argument binds the same under every name, and ne
 })
 
 test_that("followup_check() takes time_col, event_col and id_col; the old names warn once", {
-  new <- followup_check(d, time_col = "iv_dead", event_col = "dead")
+  new <- followup_check(d, time_cols = "iv_dead", event_col = "dead")
   local_fresh_notice("followup_check_args")
   expect_warning(old <- followup_check(d, event = "dead", followup = "iv_dead"), class = "hvtiRutilities_deprecated")
   expect_equal(old$cohort, new$cohort)
   expect_no_warning(followup_check(d, event = "dead", time = "iv_dead", identifier = "dead"))
-  expect_identical(names(followup_check(d, time_col = "iv_dead", event_col = "dead", id_col = "dead",
+  expect_identical(names(followup_check(d, time_cols = "iv_dead", event_col = "dead", id_col = "dead",
                                         max_rows = 1L)$review),
                    names(suppressWarnings(followup_check(d, event = "dead", followup = "iv_dead",
                                                          identifier = "dead", max_rows = 1L))$review))
   # Errors name each argument as the caller wrote it while the shim lives.
   expect_error(followup_check(d, event = "dead", followup = character()), "`followup` must name")
   expect_error(followup_check(d, event = "dead", time = character()), "`time` must name")
-  expect_error(followup_check(d, time_col = character(), event_col = "dead"), "`time_col` must name")
+  expect_error(followup_check(d, time_cols = character(), event_col = "dead"), "`time_cols` must name")
   expect_error(followup_check(d, event = c("dead", "iv_dead"), followup = "iv_dead"), "`event` must name one column")
-  expect_error(followup_check(d, event_col = c("dead", "iv_dead"), time_col = "iv_dead"), "`event_col` must name one column")
+  expect_error(followup_check(d, event_col = c("dead", "iv_dead"), time_cols = "iv_dead"), "`event_col` must name one column")
   expect_error(followup_check(d, event = "dead", followup = "iv_dead", identifier = c("a", "b")), "`identifier`")
+})
+
+test_that("key_cols and order_by_cols: duplicate_keys(), declare_data() and register_data(); the old names warn once", {
+  ops <- data.frame(id = c(1, 1, 2), dt = c(1, 1, 2), t = c(2, 1, 1))
+  new <- duplicate_keys(ops, key_cols = c("id", "dt"), order_by_cols = "t")
+  local_fresh_notice("duplicate_keys_args")
+  expect_warning(old <- duplicate_keys(ops, key = c("id", "dt"), order_by = "t"), "`key_cols =` and `order_by_cols =`")
+  expect_identical(old, new)
+  expect_identical(duplicate_keys(ops, c("id", "dt"), "t"), new)
+  expect_no_warning(duplicate_keys(ops, key = c("id", "dt"), order_by = "t"))
+  expect_error(duplicate_keys(ops, key_cols = character()), "`key_cols` must name")
+
+  skip_if_not_installed("arrow")
+  root <- file.path(withr::local_tempdir(), "k")
+  suppressMessages(study_setup(root, "Key cols", 9L, renv = FALSE))
+  utils::write.csv(data.frame(ccfid = 1:3), file.path(study_dir("datasets", root), "built.csv"), row.names = FALSE)
+  local_fresh_notice("declare_data_key")
+  expect_warning(expect_true(declare_data("built.csv", key = "ccfid", root = root)), "`key =` is now `key_cols =`")
+  expect_identical(study_config(root, require_data = FALSE)$data$key, "ccfid")
+  root <- file.path(withr::local_tempdir(), "k2")
+  suppressMessages(study_setup(root, "Key cols 2", 10L, renv = FALSE))
+  utils::write.csv(data.frame(ccfid = 1:3), file.path(study_dir("datasets", root), "built.csv"), row.names = FALSE)
+  local_fresh_notice("register_data_key")
+  expect_warning(suppressMessages(register_data("built.csv", key = "ccfid", root = root)), "`key =` is now `key_cols =`")
 })
 
 test_that("proc_means(), proc_freq() and proc_univariate() take weight_col; weights = warns once", {
@@ -133,7 +157,7 @@ test_that("register_data() and declare_data() take root last and still read a ro
   local_fresh_notice("declare_data_root")
   expect_warning(expect_true(declare_data(root, file = "built.csv", key = "ccfid")),
                  "`root` is now the last argument")
-  expect_false(declare_data("built.csv", key = "ccfid", root = root))
+  expect_false(declare_data("built.csv", key_cols = "ccfid", root = root))
   root <- file.path(withr::local_tempdir(), "s2")
   suppressMessages(study_setup(root, "Root last 2", 8L, renv = FALSE))
   utils::write.csv(data.frame(ccfid = 1:3), file.path(study_dir("datasets", root), "built.csv"),
@@ -255,6 +279,6 @@ test_that("a root-first call evaluates its root once and writes to that study on
     calls$n <- calls$n + 1L
     "built.csv"
   }
-  expect_true(declare_data(next_file(), key = "ccfid", root = roots[[1]]))
+  expect_true(declare_data(next_file(), key_cols = "ccfid", root = roots[[1]]))
   expect_identical(calls$n, 1L)
 })

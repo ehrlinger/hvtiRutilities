@@ -1,8 +1,9 @@
 * Argument names and order follow the family API rubric. Each rename works for one more release with a once-per-session warning of class `hvtiRutilities_deprecated` (and `deprecatedWarning`):
-  * An argument that names one column ends in `_col`.
+  * An argument that names one column ends in `_col`, and one that takes one or more columns in `_cols`.
   * `cohort_counts(data, time_col, event_col)` and `assert_cohort(data, expected, time_col, event_col)`: `d`, `time` and `event` are now `data`, `time_col` and `event_col`, and the time column comes before the event column, as in `survival::Surv()`. **A call that passes both columns unnamed is now an error**, whether or not `data` is named, since the old order and the new read it oppositely; name them. One of the two unnamed reads the same either way and still works.
-  * `followup_check(data, time_col, event_col, id_col, ...)`: `followup` is now `time_col` and comes before `event_col`, which was `event`; `identifier` is now `id_col`. Both columns unnamed is an error here too. Errors name each argument as the call wrote it.
+  * `followup_check(data, time_cols, event_col, id_col, ...)`: `followup` is now `time_cols` and comes before `event_col`, which was `event`; `identifier` is now `id_col`. Both columns unnamed is an error here too. Errors name each argument as the call wrote it.
   * `proc_means()`, `proc_freq()` and `proc_univariate()`: `weights` is now `weight_col`, in the same position.
+  * `declare_data()`, `register_data()` and `duplicate_keys()`: `key` is now `key_cols`; `duplicate_keys()`'s `order_by` is now `order_by_cols`.
   * `r_data_types(data, ...)` (was `dataset`) and `parity_headline(data)` (was `df`).
   * `register_data()` and `declare_data()` take `root` last. A call whose first unnamed argument is an existing directory is read in the old, root-first order for this release, with that argument evaluated once; pass `root =` by name.
 * Condition classes carry the package name: a lost checkpoint lock is `hvtiRutilities_cp_lock_lost` (still also `hvti_cp_lock_lost` for this release), and every deprecation notice is `hvtiRutilities_deprecated`.
