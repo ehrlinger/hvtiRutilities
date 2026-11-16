@@ -399,12 +399,13 @@
 }
 
 .provenance_write_json <- function(record, path) {
-  # JSON has no NA and no time type: an unknown sha is written as null, never
-  # the string "NA", and the time in the same UTC form as `rendered`.
-  # A payload that went through another JSON writer first may already carry
-  # the string "NA".
-  if ("sha" %in% names(record) && length(record$sha) == 1L && (is.na(record$sha) || identical(record$sha, "NA"))) {
-    record["sha"] <- list(NULL)
+  # JSON has no NA and no time type: an unknown sha or an unseeded job's seed
+  # is written as null, never the string "NA", and the time in the same UTC
+  # form as `rendered`. A payload that went through another JSON writer first
+  # may already carry the string "NA".
+  for (field in intersect(c("sha", "seed"), names(record))) {
+    value <- record[[field]]
+    if (length(value) == 1L && (is.na(value) || identical(value, "NA"))) record[field] <- list(NULL)
   }
   if (inherits(record$time, "POSIXct")) record$time <- format(record$time, "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")
   jsonlite::write_json(
@@ -576,13 +577,16 @@ provenance_artifact <- function(path, role = "input", cfg = study_config()) {
 #' @param extra Named list of job-specific fields. Reserved capture and
 #'   publication fields cannot be displaced.
 #' @param cfg List. A study manifest from \code{\link{study_config}}.
+#' @param seed The job's seed, one whole number, or \code{NA} (the default)
+#'   when the job sets none. Recorded as the common \code{seed} field, where
+#'   \code{NA} means "does not apply"; pass a seeded job's \code{SEED}.
 #'
 #' @return A captured provenance payload as a plain list. It opens with the
 #'   seven fields every hvtiR package's provenance record shares:
 #'   \code{package} (\code{"hvtiRutilities"}), \code{version}, \code{sha}
 #'   (the installed commit, or \code{NA}), \code{method} (here the
-#'   \code{job}), \code{seed} (\code{NA}: a render draws no random numbers of
-#'   its own), \code{rng_kind} (\code{RNGkind()}) and \code{time} (when it
+#'   \code{job}), \code{seed} (the \code{seed} argument, \code{NA} unless the
+#'   job is seeded), \code{rng_kind} (\code{RNGkind()}) and \code{time} (when it
 #'   was captured, \code{POSIXct}). The render-specific fields follow. An
 #'   \code{extra} element with one of these seven names is an error. In the published JSON an unknown \code{sha} is
 #'   \code{null} and \code{time} is UTC in the form \code{rendered} uses.
@@ -607,8 +611,13 @@ provenance_artifact <- function(path, role = "input", cfg = study_config()) {
 #'
 #' @export
 capture_provenance <- function(job, data, artifacts = list(), extra = list(),
-                               cfg = study_config()) {
+                               cfg = study_config(), seed = NA_integer_) {
   .provenance_scalar_character(job, "job", "capture_provenance")
+  if (!is.atomic(seed) || length(seed) != 1L ||
+        (!is.na(seed) && (!is.numeric(seed) || !is.finite(seed) || seed != round(seed)))) {
+    stop("capture_provenance(): `seed` must be one whole number, or NA when the job sets none.",
+         call. = FALSE)
+  }
   if (missing(data)) {
     stop("capture_provenance(): `data` is required; pass `list()` deliberately for no direct data.",
          call. = FALSE)
@@ -628,9 +637,11 @@ capture_provenance <- function(job, data, artifacts = list(), extra = list(),
   }
 
   now <- Sys.time()
-  # The family's seven common fields first; a render draws no random numbers
-  # of its own, so seed is NA and method is the job.
-  record <- c(.hvti_provenance_core(method = job, time = now), list(
+  # The family's seven common fields first. method duplicates job and time
+  # duplicates rendered on purpose: the seven are the cross-package contract
+  # and job/rendered are what existing readers of this record use, so neither
+  # pair may be "deduplicated" away.
+  record <- c(.hvti_provenance_core(method = job, seed = seed, time = now), list(
     job = job,
     rendered = format(now, "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"),
     study = list(

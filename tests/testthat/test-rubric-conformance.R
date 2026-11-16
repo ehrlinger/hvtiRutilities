@@ -99,11 +99,35 @@ test_that("the shared provenance record conforms: seven fields, stated types and
   expect_false(hvtiRutilities:::.hvti_provenance_conforms(bad))
 })
 
-test_that("an extra named like a common provenance field is refused, and an NA sha is null in JSON", {
+test_that("an extra named like a common provenance field is refused, and an NA sha or seed is null in JSON", {
   expect_error(hvtiRutilities:::.provenance_validate_extra(list(seed = 1L)), "may not set `seed`")
   path <- withr::local_tempfile(fileext = ".json")
-  hvtiRutilities:::.provenance_write_json(list(sha = "NA", time = as.POSIXct("2026-01-02 03:04:05", tz = "UTC")), path)
+  record <- list(sha = "NA", seed = NA_integer_, time = as.POSIXct("2026-01-02 03:04:05", tz = "UTC"))
+  hvtiRutilities:::.provenance_write_json(record, path)
   back <- jsonlite::read_json(path)
   expect_null(back$sha)
+  expect_null(back$seed)
   expect_identical(back$time, "2026-01-02T03:04:05Z")
+})
+
+test_that("capture_provenance() records a seeded job's seed, and NA when it sets none", {
+  root <- versioned_study()
+  cfg <- study_config(root)
+  expect_identical(capture_provenance("job-x", data = list(), cfg = cfg)$seed, NA_integer_)
+  rec <- capture_provenance("job-x", data = list(), cfg = cfg, seed = 42)
+  expect_identical(rec$seed, 42L)
+  expect_true(hvtiRutilities:::.hvti_provenance_conforms(rec))
+  for (bad in list(1.5, c(1, 2), "1", Inf, NULL)) {
+    expect_error(capture_provenance("job-x", data = list(), cfg = cfg, seed = bad), "`seed` must be")
+  }
+})
+
+test_that("a seeded cache_fit() inside a study records its seed in the sidecar", {
+  root <- versioned_study()
+  dir <- study_dir("estimates", root)
+  dir.create(dir, showWarnings = FALSE, recursive = TRUE)
+  cache_fit("draw", stats::runif(3), seed = 7, dir = dir)
+  expect_identical(jsonlite::read_json(provenance_path(file.path(dir, "draw.rds")))$seed, 7L)
+  cache_fit("plain", sum(1:3), dir = dir)
+  expect_null(jsonlite::read_json(provenance_path(file.path(dir, "plain.rds")))$seed)
 })

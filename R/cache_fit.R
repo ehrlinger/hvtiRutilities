@@ -524,7 +524,8 @@ cache_fit <- function(name, code, seed = NULL, dir = study_dir("estimates"),
       job = tools::file_path_sans_ext(basename(path)),
       data = list(),
       extra = list(cache_key = key),
-      cfg = cfg
+      cfg = cfg,
+      seed = if (is.null(key$seed)) NA_integer_ else key$seed
     )
   }, error = function(e) .cache_provenance_rethrow(e, path))
 }
