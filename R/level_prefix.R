@@ -188,15 +188,17 @@ strip_level_prefix <- function(x) {
 #' values are omitted and named in a warning, so a skip is never silent.
 #'
 #' @param data A data frame.
-#' @param vars Optional character vector of column names to report. Defaults
+#' @param var_cols Optional character vector of column names to report. Defaults
 #'   to every discrete column - factor, value-labelled, or character. Naming a
-#'   column that is not in \code{data} is an error.
+#'   column that is not in \code{data} is an error. Was \code{vars} before 2026-11;
+#'   \code{vars =} still works for one release, with a warning.
 #' @param max_levels Maximum distinct values a column may have before it is
 #'   skipped. A single positive whole number, finite; defaults to 20. To
 #'   report every column, pass a number at least as large as the widest one -
 #'   \code{Inf} is refused, because a threshold that never fires reads as a
 #'   cap that is working.
 #'
+#' @param vars Deprecated: the old name of \code{var_cols}, kept for one release.
 #' @return A data frame with one row per reported level and the columns
 #' \describe{
 #'   \item{key}{The variable name}
@@ -224,7 +226,13 @@ strip_level_prefix <- function(x) {
 #'
 #' # Which levels will print differently
 #' subset(level_map(dta), stripped)
-level_map <- function(data, vars = NULL, max_levels = 20L) {
+level_map <- function(data, var_cols = NULL, max_levels = 20L, vars) {
+  if (!missing(vars)) {
+    .hvti_deprecate("level_map_vars", "level_map(): `vars =` is now `var_cols =`, ",
+                    "per the family rule that an argument naming columns ends in _cols. The old name works for one more release.")
+    var_cols <- vars
+  }
+  vars <- var_cols
   if (!is.data.frame(data)) {
     stop("'data' must be a data frame.", call. = FALSE)
   }

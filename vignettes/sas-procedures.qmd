@@ -176,7 +176,7 @@ so `proc_means()` adds `p15`, `median` and `p85` between the minimum and the
 maximum:
 
 ```{r means-default}
-proc_means(dta, vars = c("age", "bmi", "gfr_bs"))
+proc_means(dta, var_cols = c("age", "bmi", "gfr_bs"))
 ```
 
 That makes the default a departure from SAS on purpose, and a parity check has
@@ -189,7 +189,7 @@ you leave out the `VAR` statement. Ask for specific statistics and you get them
 in the order you asked, the same way a `PROC MEANS` statistic list works:
 
 ```{r means-stats}
-proc_means(dta, vars = c("age", "bmi"),
+proc_means(dta, var_cols = c("age", "bmi"),
            stats = c("n", "nmiss", "mean", "median", "q1", "q3"))
 ```
 
@@ -198,7 +198,7 @@ The keywords are SAS keywords, among them `n`, `nmiss`, `mean`, `std`, `min`,
 a percentile between 1 and 99; `?proc_means` lists the rest.
 
 ```{r means-pctl}
-proc_means(dta, vars = "bypass_time", stats = c("p5", "p50", "p95"))
+proc_means(dta, var_cols = "bypass_time", stats = c("p5", "p50", "p95"))
 ```
 
 ### Stratifying with `class`
@@ -213,7 +213,7 @@ run;
 ```
 
 ```{r means-class}
-proc_means(dta, vars = "age", class = "nyha_class",
+proc_means(dta, var_cols = "age", class_cols = "nyha_class",
            stats = c("n", "mean", "std", "median", "q1", "q3"))
 ```
 
@@ -230,7 +230,7 @@ Rows are ordered by analysis variable first, then by class level, so a
 multi-variable request stays readable:
 
 ```{r means-class-multi}
-proc_means(dta, vars = c("age", "bmi"), class = "sex",
+proc_means(dta, var_cols = c("age", "bmi"), class_cols = "sex",
            stats = c("n", "mean", "std"))
 ```
 
@@ -265,7 +265,7 @@ off.
 `pNN` reproduce SAS. On our cohort the gap is small but real:
 
 ```{r quantile-real}
-proc_means(dta, vars = "age", stats = c("q1", "median", "q3"))
+proc_means(dta, var_cols = "age", stats = c("q1", "median", "q3"))
 
 quantile(dta$age, c(0.25, 0.5, 0.75), type = 7, names = FALSE)
 ```
@@ -286,7 +286,7 @@ proportion, as `PROC MEANS` would report for a 0/1 numeric flag:
 
 ```{r means-logical}
 flags <- data.frame(complication = c(TRUE, FALSE, TRUE, TRUE, FALSE))
-proc_means(flags, vars = "complication", stats = c("n", "mean", "sum"))
+proc_means(flags, var_cols = "complication", stats = c("n", "mean", "sum"))
 ```
 
 ## Do the Categories Look Right? `proc_freq()`
@@ -384,7 +384,7 @@ named the way SAS names it, with the decimal point turned into an underscore:
 wdta <- dta
 wdta$wt <- ifelse(wdta$sex == "Female", 2, 1)
 
-proc_univariate(wdta, vars = "age", stats = c("n", "sumwgt"),
+proc_univariate(wdta, var_cols = "age", stats = c("n", "sumwgt"),
                 weight_col = "wt", pctlpts = c(2.5, 16, 50, 84, 97.5),
                 pctlpre = "p_")
 ```
@@ -398,9 +398,9 @@ With `weights`, `proc_univariate()` weights `median`, `q1`, `q3`, `qrange`,
 ```{r univ-weighted}
 w4 <- data.frame(x = c(1, 2, 3, 4), wt = c(1, 3, 1, 1))
 
-proc_means(w4, vars = "x", stats = "median", weight_col = "wt")
+proc_means(w4, var_cols = "x", stats = "median", weight_col = "wt")
 
-proc_univariate(w4, vars = "x", stats = "median", weight_col = "wt")
+proc_univariate(w4, var_cols = "x", stats = "median", weight_col = "wt")
 ```
 
 The weighted rule is not `QNTLDEF=5` with weights added. SAS sorts the values,
@@ -422,10 +422,10 @@ is `DF`, and `skewness` and `kurtosis` are missing under `WDF` and `WEIGHT`.
 `proc_univariate()` returns `NA` in the same places:
 
 ```{r univ-vardef}
-proc_univariate(wdta, vars = "age", weight_col = "wt",
+proc_univariate(wdta, var_cols = "age", weight_col = "wt",
                 stats = c("std", "stdmean", "skewness"), vardef = "wdf")
 
-proc_univariate(wdta, vars = "age", weight_col = "wt",
+proc_univariate(wdta, var_cols = "age", weight_col = "wt",
                 stats = c("std", "stdmean", "skewness"))
 ```
 
@@ -437,7 +437,7 @@ the sum of the weights, not of the number of observations.
 `mu0` is SAS `MU0=`, the null value for the three location tests:
 
 ```{r univ-tests}
-proc_univariate(dta, vars = "bmi", mu0 = 25,
+proc_univariate(dta, var_cols = "bmi", mu0 = 25,
                 stats = c("mean", "t", "probt", "msign", "probm",
                           "signrank", "probs", "normal", "probn"))
 ```

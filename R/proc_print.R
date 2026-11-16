@@ -32,8 +32,9 @@
 #' @param where A list of conditions, each \code{condition ~ "Label"} with a
 #'   single non-empty quoted label, or one such formula. Labels must be
 #'   unique.
-#' @param var Character or \code{NULL}. Columns to print for the matching
-#'   rows, SAS \code{VAR}. \code{NULL} prints every column.
+#' @param var_cols Character or \code{NULL}. Columns to print for the matching
+#'   rows, SAS \code{VAR}. \code{NULL} prints every column. Was \code{var} before
+#'   2026-11; \code{var =} still works for one release, with a warning.
 #' @param max_rows A single positive whole number. At most this many matching
 #'   rows are printed per condition; the count is always the full count.
 #' @param console A single \code{TRUE} or \code{FALSE}. \code{FALSE} writes
@@ -57,8 +58,14 @@
 #' proc_print(dta,
 #'   where = list(age > 80 ~ "Older than 80",
 #'                dead == 1 & iv_dead < 1 ~ "Death in the first year"),
-#'   var = c("age", "dead", "iv_dead"))
-proc_print <- function(data, where, var = NULL, max_rows = 25L, console = TRUE) {
+#'   var_cols = c("age", "dead", "iv_dead"))
+proc_print <- function(data, where, var_cols = NULL, max_rows = 25L, console = TRUE) {
+  # `var` partially matches `var_cols`, so R binds it; only the notice is needed.
+  if (.hvti_old_call(sys.call(), parent.frame(), renamed = "var")) {
+    .hvti_deprecate("proc_print_var", "proc_print(): `var =` is now `var_cols =`, ",
+                    "per the family rule that an argument naming columns ends in _cols. The old name works for one more release.")
+  }
+  var <- var_cols
   if (!is.data.frame(data)) {
     stop("'data' must be a data frame.", call. = FALSE)
   }
@@ -66,7 +73,7 @@ proc_print <- function(data, where, var = NULL, max_rows = 25L, console = TRUE) 
   .check_flag(console, "console")
   if (!is.null(var)) {
     if (!is.character(var) || length(var) == 0L || anyNA(var)) {
-      stop("'var' must be NULL or a non-empty character vector of column names.",
+      stop("'var_cols' must be NULL or a non-empty character vector of column names.",
            call. = FALSE)
     }
     .check_columns(var, data)

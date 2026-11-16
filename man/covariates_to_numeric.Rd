@@ -4,12 +4,15 @@
 \alias{covariates_to_numeric}
 \title{Apply what covariate_audit() reports}
 \usage{
-covariates_to_numeric(data, vars)
+covariates_to_numeric(data, var_cols, vars)
 }
 \arguments{
 \item{data}{A data frame.}
 
-\item{vars}{Character vector of covariate names.}
+\item{var_cols}{Character vector of covariate names. Was \code{vars} before
+2026-11; \code{vars =} still works for one release, with a warning.}
+
+\item{vars}{Deprecated: the old name of \code{var_cols}, kept for one release.}
 }
 \value{
 \code{data}, with the convertible columns coerced to numeric.

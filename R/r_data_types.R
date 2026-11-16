@@ -152,7 +152,7 @@
 #'     of distinct values: \code{factor_size} does not apply to them. A
 #'     character column that yields more than 50 levels -- usually an
 #'     identifier or free text, not a category -- warns, naming the column;
-#'     pass it in \code{skip_vars} to keep it as character.
+#'     pass it in \code{skip_cols} to keep it as character.
 #'   \item Numeric columns with more than 2 and fewer than \code{factor_size}
 #'     distinct values become factors.
 #'   \item Logical columns become factors when \code{binary_factor = TRUE}.
@@ -173,10 +173,13 @@
 #'   to factors, so the default of 10 converts a column with 3 to 9 distinct
 #'   values. Must be a whole number from 2 to 50. Character columns are not
 #'   subject to it. Default is 10.
-#' @param skip_vars Character vector of column names to exclude from conversion.
+#' @param skip_cols Character vector of column names to exclude from conversion.
 #'   These columns will remain unchanged. Default is NULL (convert all columns).
+#'   Was \code{skip_vars} before 2026-11; \code{skip_vars =} still works for one
+#'   release, with a warning.
 #' @param binary_factor Logical. If TRUE, binary variables are converted to
 #'   factors instead of logical. Default is FALSE (convert to logical).
+#' @param skip_vars Deprecated: the old name of \code{skip_cols}, kept for one release.
 #' @param use_value_labels Logical. If TRUE, a column carrying value labels --
 #'   what \pkg{haven} reads from a SAS numeric-plus-format variable -- is
 #'   converted through \code{\link[labelled]{to_factor}}, so the level text is
@@ -209,7 +212,7 @@
 #'
 #' # Skip specific columns
 #' mtcars_partial <- r_data_types(datasets::mtcars,
-#'                                skip_vars = c("vs", "am"),
+#'                                skip_cols = c("vs", "am"),
 #'                                use_value_labels = FALSE)
 #' str(mtcars_partial$vs)  # Still numeric (unchanged)
 #'
@@ -231,19 +234,26 @@
 #' type_conversion_report(converted)
 r_data_types <- function(data,
                          factor_size = 10,
-                         skip_vars = NULL,
+                         skip_cols = NULL,
                          binary_factor = FALSE,
                          use_value_labels = FALSE,
-                         dataset) {
+                         dataset,
+                         skip_vars) {
   cl <- sys.call()
   env <- parent.frame()
   if (.hvti_old_call(cl, env, renamed = "dataset")) {
     .hvti_deprecate("r_data_types_dataset",
                     "r_data_types(): `dataset =` is now `data =`. The old name works for one more release.")
-    return(.hvti_recall(cl, env, function(dataset, factor_size, skip_vars, binary_factor, use_value_labels) NULL,
+    return(.hvti_recall(cl, env, function(dataset, factor_size, skip_cols, binary_factor, use_value_labels, skip_vars) NULL,
                         r_data_types, c(dataset = "data")))
   }
   dataset <- data
+  if (!missing(skip_vars)) {
+    .hvti_deprecate("r_data_types_skip_vars", "r_data_types(): `skip_vars =` is now `skip_cols =`, ",
+                    "per the family rule that an argument naming columns ends in _cols. The old name works for one more release.")
+    skip_cols <- skip_vars
+  }
+  skip_vars <- skip_cols
 
   if (missing(use_value_labels) &&
         is.null(.hvti_deprecated$use_value_labels)) {
@@ -276,10 +286,10 @@ r_data_types <- function(data,
 
   if (!is.null(skip_vars)) {
     if (!is.character(skip_vars)) {
-      stop("r_data_types(): 'skip_vars' must be a character vector of column names.", call. = FALSE)
+      stop("r_data_types(): 'skip_cols' must be a character vector of column names.", call. = FALSE)
     }
     if (any(!(skip_vars %in% colnames(dataset)))) {
-      stop("r_data_types(): One or more columns in 'skip_vars' not found in dataset: ",
+      stop("r_data_types(): One or more columns in 'skip_cols' not found in dataset: ",
            paste(setdiff(skip_vars, colnames(dataset)), collapse = ", "), ".",
            call. = FALSE)
     }
@@ -320,7 +330,7 @@ r_data_types <- function(data,
       "r_data_types(): character column(s) converted to a factor with more ",
       "than ", .character_level_warn, " levels: ",
       paste(names(converted)[many], collapse = ", "), ". An identifier or ",
-      "free-text column is not a category; pass it in 'skip_vars' to keep it ",
+      "free-text column is not a category; pass it in 'skip_cols' to keep it ",
       "as character.",
       call. = FALSE
     )

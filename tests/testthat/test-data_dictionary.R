@@ -109,7 +109,7 @@ test_that("data_dictionary handles single-column data frame", {
 
 test_that("data_dictionary works after r_data_types conversion", {
   dta <- sample_data(n = 50)
-  dta_clean <- r_data_types(dta, skip_vars = "id")
+  dta_clean <- r_data_types(dta, skip_cols = "id")
   dict <- data_dictionary(dta_clean)
 
   expect_equal(nrow(dict), ncol(dta_clean))

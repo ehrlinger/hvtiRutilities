@@ -24,7 +24,7 @@
 #'
 #' # Full workflow: generate, convert types, extract labels
 #' dta <- sample_data(n = 100)
-#' dta_clean <- r_data_types(dta, skip_vars = "id")
+#' dta_clean <- r_data_types(dta, skip_cols = "id")
 #' lmap <- label_map(dta_clean)
 #' print(lmap)
 #'

@@ -32,7 +32,7 @@ test_that("read_clinical_data passes ... to r_data_types", {
   on.exit(unlink(tmp))
   write.csv(mtcars, tmp, row.names = FALSE)
 
-  result <- read_clinical_data(tmp, convert_types = TRUE, skip_vars = c("vs", "am"))
+  result <- read_clinical_data(tmp, convert_types = TRUE, skip_cols = c("vs", "am"))
 
   # Skipped vars stay numeric
   expect_true(is.numeric(result$vs))

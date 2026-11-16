@@ -29,7 +29,7 @@ test_that("proc_means selects only numeric columns by default", {
 })
 
 test_that("proc_means carries variable labels", {
-  res <- proc_means(sample_data(n = 20), vars = "float")
+  res <- proc_means(sample_data(n = 20), var_cols = "float")
   expect_equal(res$label, "Random Normal Value")
 })
 
@@ -109,7 +109,7 @@ test_that("proc_means returns NA std for a single observation", {
 
 test_that("proc_means summarises a logical column when named explicitly", {
   dta <- data.frame(flag = c(TRUE, TRUE, FALSE, FALSE))
-  res <- proc_means(dta, vars = "flag", stats = c("n", "mean"))
+  res <- proc_means(dta, var_cols = "flag", stats = c("n", "mean"))
 
   expect_equal(res$n, 4L)
   expect_equal(res$mean, 0.5)
@@ -148,13 +148,13 @@ test_that("proc_means errors on an unknown statistic keyword", {
 
 test_that("proc_means errors on a missing column name", {
   dta <- data.frame(a = c(1, 2))
-  expect_error(proc_means(dta, vars = "nope"), "not found in 'data'")
-  expect_error(proc_means(dta, class = "nope"), "not found in 'data'")
+  expect_error(proc_means(dta, var_cols = "nope"), "not found in 'data'")
+  expect_error(proc_means(dta, class_cols = "nope"), "not found in 'data'")
 })
 
 test_that("proc_means errors when vars names a non-numeric column", {
   dta <- data.frame(chr = c("x", "y"), stringsAsFactors = FALSE)
-  expect_error(proc_means(dta, vars = "chr"), "Non-numeric column")
+  expect_error(proc_means(dta, var_cols = "chr"), "Non-numeric column")
 })
 
 test_that("proc_means warns and returns zero rows when nothing is numeric", {
@@ -176,7 +176,7 @@ test_that("proc_means prepends class columns and groups rows", {
     val = c(1, 3, 10, 30),
     stringsAsFactors = FALSE
   )
-  res <- proc_means(dta, class = "trt", stats = c("n", "mean"))
+  res <- proc_means(dta, class_cols = "trt", stats = c("n", "mean"))
 
   expect_named(res, c("trt", "variable", "label", "n", "mean"))
   expect_equal(res$trt, c("A", "B"))
@@ -185,7 +185,7 @@ test_that("proc_means prepends class columns and groups rows", {
 
 test_that("proc_means excludes class variables from the default var set", {
   dta <- data.frame(grp = c(1, 1, 2, 2), val = c(1, 2, 3, 4))
-  res <- proc_means(dta, class = "grp")
+  res <- proc_means(dta, class_cols = "grp")
 
   expect_equal(unique(res$variable), "val")
 })
@@ -196,7 +196,7 @@ test_that("proc_means drops rows with a missing class value", {
     val = c(1, 3, 100, 5),
     stringsAsFactors = FALSE
   )
-  res <- proc_means(dta, class = "trt", stats = c("n", "mean"))
+  res <- proc_means(dta, class_cols = "trt", stats = c("n", "mean"))
 
   expect_equal(res$trt, c("A", "B"))
   expect_equal(res$n, c(2L, 1L))
@@ -210,7 +210,7 @@ test_that("proc_means orders rows by variable then class level", {
     y = c(5, 6, 7, 8),
     stringsAsFactors = FALSE
   )
-  res <- proc_means(dta, class = "trt", stats = "n")
+  res <- proc_means(dta, class_cols = "trt", stats = "n")
 
   expect_equal(res$variable, c("x", "x", "y", "y"))
   expect_equal(res$trt, c("A", "B", "A", "B"))
@@ -223,7 +223,7 @@ test_that("proc_means supports two class variables", {
     val = c(10, 20, 30, 40),
     stringsAsFactors = FALSE
   )
-  res <- proc_means(dta, class = c("a", "b"), stats = "mean")
+  res <- proc_means(dta, class_cols = c("a", "b"), stats = "mean")
 
   expect_named(res, c("a", "b", "variable", "label", "mean"))
   expect_equal(nrow(res), 4L)
@@ -235,7 +235,7 @@ test_that("proc_means handles a factor class variable", {
     grp = factor(c("lo", "hi", "lo", "hi"), levels = c("lo", "hi")),
     val = c(1, 10, 3, 30)
   )
-  res <- proc_means(dta, class = "grp", stats = "mean")
+  res <- proc_means(dta, class_cols = "grp", stats = "mean")
 
   expect_equal(nrow(res), 2L)
   expect_equal(res$mean[res$grp == "lo"], 2)
@@ -247,14 +247,14 @@ test_that("proc_means handles a factor class variable", {
 test_that("proc_means keeps variable labels under class stratification", {
   dta <- data.frame(grp = c("A", "A", "B", "B"), age = c(50, 60, 70, 80))
   labelled::var_label(dta$age) <- "Age at surgery (years)"
-  res <- proc_means(dta, class = "grp", stats = "n")
+  res <- proc_means(dta, class_cols = "grp", stats = "n")
 
   expect_equal(unique(res$label), "Age at surgery (years)")
 })
 
 test_that("proc_means returns a zero-row frame when every class value is NA", {
   dta <- data.frame(grp = c(NA_character_, NA_character_), val = c(1, 2))
-  expect_warning(res <- proc_means(dta, class = "grp", stats = c("n", "mean")),
+  expect_warning(res <- proc_means(dta, class_cols = "grp", stats = c("n", "mean")),
                  "All rows dropped")
 
   expect_s3_class(res, "data.frame")
@@ -265,7 +265,7 @@ test_that("proc_means returns a zero-row frame when every class value is NA", {
 
 test_that("proc_means groups by value, not string rendering", {
   d <- data.frame(g = c(0.1 + 0.2, 0.3, 0.1 + 0.2), v = c(1, 2, 3))
-  res <- proc_means(d, class = "g", stats = c("n", "mean"))
+  res <- proc_means(d, class_cols = "g", stats = c("n", "mean"))
 
   expect_equal(res$n, c(1L, 2L))
 })
@@ -276,7 +276,7 @@ test_that("proc_means orders factor class levels by level order, not alphabetica
                  levels = c("zebra", "apple")),
     val = c(1, 2, 3, 4)
   )
-  res <- proc_means(dta, class = "grp", stats = "n")
+  res <- proc_means(dta, class_cols = "grp", stats = "n")
 
   expect_equal(as.character(res$grp), c("zebra", "apple"))
 })

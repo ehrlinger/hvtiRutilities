@@ -123,9 +123,9 @@ test_that("key_cols and order_by_cols: duplicate_keys(), declare_data() and regi
 test_that("proc_means(), proc_freq() and proc_univariate() take weight_col; weights = warns once", {
   w <- data.frame(x = c(1, 2, 3, 4), g = c("a", "a", "b", "b"), wt = c(1, 2, 1, 4))
   cases <- list(
-    proc_means = function(...) proc_means(w, vars = "x", stats = c("n", "mean"), ...),
+    proc_means = function(...) proc_means(w, var_cols = "x", stats = c("n", "mean"), ...),
     proc_freq = function(...) proc_freq(w, "g", ...),
-    proc_univariate = function(...) proc_univariate(w, vars = "x", stats = c("n", "mean"), ...)
+    proc_univariate = function(...) proc_univariate(w, var_cols = "x", stats = c("n", "mean"), ...)
   )
   for (fn in names(cases)) {
     new <- cases[[fn]](weight_col = "wt")
@@ -281,4 +281,72 @@ test_that("a root-first call evaluates its root once and writes to that study on
   }
   expect_true(declare_data(next_file(), key_cols = "ccfid", root = roots[[1]]))
   expect_identical(calls$n, 1L)
+})
+
+test_that("multi-column arguments take *_cols; the old names warn once and give the same result", {
+  w <- data.frame(x = c(1, 2, 3, 4), g = c("a", "a", "b", "b"), f = factor(c("1", "2", "1", "2")),
+                  s = c("u", "v", "u", "v"))
+  # Each case: the call with the new name, the same call with the old name, and the notice key.
+  cases <- list(
+    covariate_audit = list(function() covariate_audit(w, var_cols = "f"),
+                           function() covariate_audit(w, vars = "f"), "covariate_audit_vars"),
+    covariates_to_numeric = list(function() covariates_to_numeric(w, var_cols = "f"),
+                                 function() covariates_to_numeric(w, vars = "f"), "covariates_to_numeric_vars"),
+    level_map = list(function() level_map(w, var_cols = "f"),
+                     function() level_map(w, vars = "f"), "level_map_vars"),
+    proc_means = list(function() proc_means(w, var_cols = "x", class_cols = "g", stats = c("n", "mean")),
+                      function() proc_means(w, vars = "x", class = "g", stats = c("n", "mean")), "proc_means_cols"),
+    proc_univariate = list(function() proc_univariate(w, var_cols = "x", class_cols = "g", stats = c("n", "mean")),
+                           function() proc_univariate(w, vars = "x", class = "g", stats = c("n", "mean")),
+                           "proc_univariate_cols"),
+    proc_freq = list(function() proc_freq(w, table_cols = c("g", "s")),
+                     function() proc_freq(w, tables = c("g", "s")), "proc_freq_tables"),
+    proc_print = list(function() proc_print(w, x > 2 ~ "big", var_cols = "x", console = FALSE),
+                      function() proc_print(w, x > 2 ~ "big", var = "x", console = FALSE), "proc_print_var"),
+    r_data_types = list(function() r_data_types(w, skip_cols = "s", use_value_labels = FALSE),
+                        function() r_data_types(w, skip_vars = "s", use_value_labels = FALSE), "r_data_types_skip_vars")
+  )
+  for (fn in names(cases)) {
+    new <- cases[[fn]][[1L]]()
+    local_fresh_notice(cases[[fn]][[3L]])
+    expect_warning(old <- cases[[fn]][[2L]](), "_cols =`", class = "hvtiRutilities_deprecated", info = fn)
+    expect_identical(old, new, info = fn)
+    expect_no_warning(cases[[fn]][[2L]]())
+  }
+})
+
+test_that("only class = in proc_means() is enough to warn, and positional calls bind as before", {
+  w <- data.frame(x = c(1, 2, 3, 4), g = c("a", "a", "b", "b"))
+  local_fresh_notice("proc_means_cols")
+  expect_warning(proc_means(w, "x", class = "g", stats = "n"), "`class =`", class = "hvtiRutilities_deprecated")
+  # The second and third positional arguments are still the analysis and class columns.
+  expect_identical(proc_means(w, "x", "g", stats = "n"), proc_means(w, var_cols = "x", class_cols = "g", stats = "n"))
+  expect_identical(proc_freq(w, "g"), proc_freq(w, table_cols = "g"))
+  expect_identical(level_map(data.frame(f = factor("a")), "f"), level_map(data.frame(f = factor("a")), var_cols = "f"))
+  expect_identical(r_data_types(w, 10, "g", use_value_labels = FALSE),
+                   r_data_types(w, skip_cols = "g", use_value_labels = FALSE))
+})
+
+test_that("r_data_types() takes both old names at once: dataset = and skip_vars =", {
+  w <- data.frame(x = c(1, 2, 3, 4), s = c("u", "v", "u", "v"))
+  local_fresh_notice("r_data_types_dataset")
+  local_fresh_notice("r_data_types_skip_vars")
+  expect_warning(expect_warning(old <- r_data_types(dataset = w, skip_vars = "s", use_value_labels = FALSE),
+                                "`dataset =`"), "`skip_vars =`")
+  expect_identical(old, r_data_types(w, skip_cols = "s", use_value_labels = FALSE))
+})
+
+test_that("update_manifest() takes sort_key_cols and still records the field as sort_key", {
+  dir <- withr::local_tempdir()
+  csv <- file.path(dir, "d.csv")
+  utils::write.csv(data.frame(id = 1:3), csv, row.names = FALSE)
+  mpath <- file.path(dir, "manifest.yaml")
+  update_manifest(csv, manifest_path = mpath, sort_key_cols = "id")
+  expect_identical(yaml::read_yaml(mpath)$datasets[[1L]]$sort_key, "id")
+  local_fresh_notice("update_manifest_sort_key")
+  expect_warning(update_manifest(csv, manifest_path = mpath, sort_key = c("id", "x")), "`sort_key =` is now `sort_key_cols =`",
+                 class = "hvtiRutilities_deprecated")
+  expect_identical(yaml::read_yaml(mpath)$datasets[[1L]]$sort_key, c("id", "x"))
+  # The no-file form still refuses a single-file argument under its new name.
+  expect_error(update_manifest(sort_key_cols = "id"), "sort_key_cols")
 })

@@ -12,14 +12,14 @@ test_that("r_data_types() warns on a character column with more than 50 levels",
   expect_warning(out <- r_data_types(d, use_value_labels = FALSE),
                  "more than 50 levels: id\\.")
   expect_s3_class(out$id, "factor")
-  expect_no_warning(r_data_types(d, skip_vars = "id", use_value_labels = FALSE))
+  expect_no_warning(r_data_types(d, skip_cols = "id", use_value_labels = FALSE))
   expect_no_warning(r_data_types(d[1:50, ], use_value_labels = FALSE))
 })
 
 test_that("r_data_types() errors carry no call and name the unknown skip_vars", {
   e <- expect_error(r_data_types(list(), use_value_labels = FALSE))
   expect_null(conditionCall(e))
-  expect_error(r_data_types(mtcars, skip_vars = c("mpg", "nope"), use_value_labels = FALSE),
+  expect_error(r_data_types(mtcars, skip_cols = c("mpg", "nope"), use_value_labels = FALSE),
                "dataset: nope\\.")
 })
 

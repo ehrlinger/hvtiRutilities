@@ -289,7 +289,7 @@
     manifest_path = manifest,
     extract_date  = entry$extract_date %||% Sys.Date(),
     source        = entry$source,
-    sort_key      = entry$sort_key,
+    sort_key_cols = entry$sort_key,
     n_rows        = nrow(d),
     n_cols        = ncol(d),
     schema_sha256 = if (file.exists(derived$schema)) {

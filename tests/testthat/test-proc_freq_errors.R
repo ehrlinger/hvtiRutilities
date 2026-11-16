@@ -32,7 +32,7 @@ test_that("missing and list must be a single TRUE or FALSE", {
 
 test_that("a weight column cannot also be a table variable", {
   expect_error(proc_freq(d, c("g", "wt"), weight_col = "wt"),
-               "also named in 'tables'")
+               "also named in 'table_cols'")
 })
 
 test_that("weights must name a numeric column", {
