@@ -31,11 +31,11 @@
 #'
 #' @param data A data frame.
 #' @param key_cols Names of the columns that should make each row unique. Was
-#'   \code{key_cols} before 2026-11; \code{key =} still works for one release, with a
+#'   \code{key} before 2026-11; \code{key =} still works for one release, with a
 #'   warning.
 #' @param order_by_cols \code{NULL} (the default), or names of the columns that
 #'   order the rows of a repeated key. Required for \code{keep}. Was
-#'   \code{order_by_cols}; \code{order_by =} still works for one release.
+#'   \code{order_by}; \code{order_by =} still works for one release.
 #' @param show_key Include the key columns in \code{rows}? Default
 #'   \code{FALSE}.
 #'
