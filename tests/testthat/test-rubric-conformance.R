@@ -35,6 +35,9 @@ test_that("followup_check() takes time = and maps followup = to it", {
   expect_warning(old <- followup_check(d, event = "dead", followup = "iv_dead"), class = "deprecatedWarning")
   expect_equal(old$cohort, new$cohort)
   expect_equal(followup_check(d, "dead", "iv_dead")$intervals, new$intervals)
+  # An old-name caller's errors still name `followup` while the shim lives.
+  expect_error(followup_check(d, event = "dead", followup = character()), "`followup` must name")
+  expect_error(followup_check(d, time = character(), event = "dead"), "`time` must name")
 })
 
 test_that("r_data_types() and parity_headline() take data =", {

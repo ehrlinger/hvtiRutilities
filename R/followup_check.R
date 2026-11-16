@@ -85,15 +85,23 @@ followup_check <- function(data, time, event, identifier = NULL, max_rows = 25L,
                     "followup_check(): the arguments are now (data, time, event, ...), as in survival::Surv(). ",
                     "`followup =` is now `time =`, and two unnamed arguments after the data are read in the ",
                     "old order, event then follow-up, for one more release. Name them: time =, event =.")
+    # Errors name the argument the caller wrote, so an old `followup =` caller
+    # still reads `followup` in them for the one release the shim lives.
+    arg <- if ("followup" %in% names(.hvti_call_args(cl, env))) "followup" else "time"
     return(.hvti_recall(cl, env,
                         function(data, event, followup, identifier = NULL, max_rows = 25L, stats) NULL,
-                        followup_check, c(followup = "time")))
+                        function(...) .followup_check(..., arg = arg), c(followup = "time")))
   }
+  .followup_check(data, time, event, identifier, max_rows, stats)
+}
+
+.followup_check <- function(data, time, event, identifier = NULL, max_rows = 25L,
+                            stats = eval(formals(followup_check)$stats), arg = "time") {
   followup <- time
   if (!is.data.frame(data)) stop("`data` must be a data frame.", call. = FALSE)
   field_names <- function(x) is.character(x) && length(x) > 0L && !anyNA(x) && all(nzchar(x)) && !anyDuplicated(x)
   if (!field_names(event) || length(event) != 1L) stop("`event` must name one column.", call. = FALSE)
-  if (!field_names(followup)) stop("`time` must name one or more distinct columns.", call. = FALSE)
+  if (!field_names(followup)) stop("`", arg, "` must name one or more distinct columns.", call. = FALSE)
   if (!is.null(identifier) && (!field_names(identifier) || length(identifier) != 1L)) {
     stop("`identifier` must be NULL or one column name.", call. = FALSE)
   }
@@ -113,7 +121,7 @@ followup_check <- function(data, time, event, identifier = NULL, max_rows = 25L,
   }
   not_numeric <- followup[!vapply(data[followup], is.numeric, logical(1L))]
   if (length(not_numeric)) {
-    stop("`time` columns must be numeric: ", paste(not_numeric, collapse = ", "), call. = FALSE)
+    stop("`", arg, "` columns must be numeric: ", paste(not_numeric, collapse = ", "), call. = FALSE)
   }
 
   cohort <- data.frame(full = nrow(data), event = sum(ev == 1, na.rm = TRUE),
