@@ -48,7 +48,7 @@ test_that("an unverified identity is committed but never pushed", {
   set_study_keys(root, identity_verified = FALSE,
                  checkpoint = list(remote = bare))
   expect_message(study_checkpoint("abstract_submitted", root = root),
-                 "identity unverified")
+                 "identity unverified. Run study_verify")
   expect_length(git_out(bare, c("tag", "-l")), 0L)
   expect_equal(.cp_log_read(root)[[1]]$delivery$reason, "identity unverified")
   set_study_keys(root, identity_verified = TRUE)

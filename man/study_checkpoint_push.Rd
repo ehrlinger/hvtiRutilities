@@ -20,7 +20,7 @@ columns \code{type}, \code{tag}, \code{state}, \code{git}, \code{st} and
 Retries delivery of every checkpoint, closure and reopening in
 \code{.checkpoint/log.yml} that has not reached the remote yet.
 \code{\link[=study_checkpoint]{study_checkpoint()}} does this on every call; use this function
-after a network outage, or once \code{study-setup --verify} has verified a
+after a network outage, or once \code{\link[=study_verify]{study_verify()}} has verified a
 manually entered identity. A promoted exploration's held checkpoints are
 delivered once \verb{checkpoint: remote:} is set; promotion does not set it.
 On an exploration set up with \code{derived_from} that has not been
