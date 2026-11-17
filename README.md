@@ -33,7 +33,7 @@ hvtiRutilities provides utility functions for working with clinical research dat
 
 - **`proc_means()`**: SAS `PROC MEANS` in R
   - SAS statistic keywords (`n`, `nmiss`, `mean`, `std`, `min`, `max`, `median`, `q1`, `q3`, `pNN`, ...), defaulting to SAS's five plus the group's `p15`, `median` and `p85`
-  - `class =` stratification, dropping missing class levels as SAS does
+  - `class_cols =` stratification, dropping missing class levels as SAS does
   - Quantiles use SAS's `QNTLDEF=5` definition, not R's default
 
 - **`label_map()`**: Extract variable labels from labeled datasets
