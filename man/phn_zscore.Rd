@@ -25,8 +25,10 @@ BSA by \code{\link[=bsa_haycock]{bsa_haycock()}}.}
 \value{
 A \code{data.frame} with one row per element of \code{x} and columns
 \code{structure}, \code{x}, \code{units}, \code{bsa} (m^2), \code{predicted} (the normal value for
-that BSA, in \code{units}), and \code{z}. \code{predicted} and \code{z} are \code{NA} where \code{x} or
-BSA is \code{NA}.
+that BSA, in \code{units}), and \code{z}. \code{z} is \code{NA} where \code{x} or BSA is \code{NA};
+\code{predicted} does not depend on \code{x}, and is \code{NA} where BSA is \code{NA}. Both
+are \code{NA} for a missing BSA even for the ratios, whose z-scores do not
+otherwise depend on BSA.
 }
 \description{
 Computes body-surface-area-adjusted z-scores for pediatric echocardiographic
@@ -43,7 +45,8 @@ distributed with no residual dependence on BSA. So
 with \code{alpha}, \code{mean} and \code{sd} from the paper's Table 2 (see
 \code{\link[=phn_zscore_table]{phn_zscore_table()}}). The predicted normal value is \code{mean * BSA^alpha}.
 For the three ratios (\code{LVMTV}, \code{LVTTD}, \code{LVSI}) \code{alpha} is 0, so BSA
-does not change their z-scores, though it must still be given.
+does not change their z-scores, though it must still be given, and a
+missing BSA gives \code{NA}.
 }
 \details{
 \strong{BSA.} Give \code{bsa} directly, or \code{height_cm} and \code{weight_kg}, from which BSA

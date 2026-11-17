@@ -118,6 +118,24 @@ test_that("missing values propagate as NA", {
   expect_equal(is.na(r$predicted), c(FALSE, FALSE, TRUE))
 })
 
+test_that("a missing BSA gives NA for the ratios too", {
+  r <- phn_zscore(c(1.6, 1.6), "LVSI", "none", bsa = c(NA_real_, 0.5))
+  expect_equal(is.na(r$z), c(TRUE, FALSE))
+  expect_equal(is.na(r$predicted), c(TRUE, FALSE))
+  h <- phn_zscore(1.6, "LVSI", "none", height_cm = NA_real_, weight_kg = 5)
+  expect_true(is.na(h$z))
+})
+
+test_that("non-finite BSA, height and weight are refused", {
+  expect_error(phn_zscore(10, "ANN", "mm", bsa = Inf), "positive and finite")
+  # NaN is missing in R (is.na(NaN) is TRUE), so it propagates like NA.
+  expect_true(is.na(phn_zscore(10, "ANN", "mm", bsa = NaN)$z))
+  expect_error(phn_zscore(10, "ANN", "mm", height_cm = Inf, weight_kg = 5), "positive and finite")
+  expect_error(bsa_haycock(Inf, 5), "positive and finite")
+  expect_error(bsa_haycock(60, -Inf), "positive and finite")
+  expect_true(is.na(bsa_haycock(NA_real_, 5)))
+})
+
 test_that("bsa and height/weight give the same answer", {
   b <- bsa_haycock(75, 9.4)
   expect_equal(phn_zscore(12, "ANN", "mm", height_cm = 75, weight_kg = 9.4)$z,

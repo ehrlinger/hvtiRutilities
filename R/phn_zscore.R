@@ -134,8 +134,9 @@ bsa_haycock <- function(height_cm, weight_kg) {
   if (!length(height_cm) %in% c(1L, n) || !length(weight_kg) %in% c(1L, n)) {
     stop("bsa_haycock(): `height_cm` and `weight_kg` must have the same length, or length 1.", call. = FALSE)
   }
-  if (any(height_cm <= 0, na.rm = TRUE) || any(weight_kg <= 0, na.rm = TRUE)) {
-    stop("bsa_haycock(): `height_cm` and `weight_kg` must be positive.", call. = FALSE)
+  bad <- function(v) any(!is.na(v) & (!is.finite(v) | v <= 0))
+  if (bad(height_cm) || bad(weight_kg)) {
+    stop("bsa_haycock(): `height_cm` and `weight_kg` must be positive and finite (or `NA`).", call. = FALSE)
   }
   0.024265 * weight_kg^0.5378 * height_cm^0.3964
 }
@@ -184,7 +185,8 @@ phn_zscore_table <- function() {
 #' with `alpha`, `mean` and `sd` from the paper's Table 2 (see
 #' [phn_zscore_table()]). The predicted normal value is `mean * BSA^alpha`.
 #' For the three ratios (`LVMTV`, `LVTTD`, `LVSI`) `alpha` is 0, so BSA
-#' does not change their z-scores, though it must still be given.
+#' does not change their z-scores, though it must still be given, and a
+#' missing BSA gives `NA`.
 #'
 #' @details
 #' **BSA.** Give `bsa` directly, or `height_cm` and `weight_kg`, from which BSA
@@ -233,8 +235,10 @@ phn_zscore_table <- function() {
 #'
 #' @return A `data.frame` with one row per element of `x` and columns
 #'   `structure`, `x`, `units`, `bsa` (m^2), `predicted` (the normal value for
-#'   that BSA, in `units`), and `z`. `predicted` and `z` are `NA` where `x` or
-#'   BSA is `NA`.
+#'   that BSA, in `units`), and `z`. `z` is `NA` where `x` or BSA is `NA`;
+#'   `predicted` does not depend on `x`, and is `NA` where BSA is `NA`. Both
+#'   are `NA` for a missing BSA even for the ratios, whose z-scores do not
+#'   otherwise depend on BSA.
 #'
 #' @references
 #' Lopez L, Colan S, Stylianou M, et al. Relationship of echocardiographic
@@ -291,7 +295,9 @@ phn_zscore <- function(x, structure, units, bsa = NULL, height_cm = NULL, weight
     bsa <- bsa_haycock(recycle(height_cm, "height_cm"), recycle(weight_kg, "weight_kg"))
   } else {
     if (!is.numeric(bsa)) stop("phn_zscore(): `bsa` must be numeric.", call. = FALSE)
-    if (any(bsa <= 0, na.rm = TRUE)) stop("phn_zscore(): `bsa` must be positive.", call. = FALSE)
+    if (any(!is.na(bsa) & (!is.finite(bsa) | bsa <= 0))) {
+      stop("phn_zscore(): `bsa` must be positive and finite (or `NA`).", call. = FALSE)
+    }
     bsa <- recycle(bsa, "bsa")
   }
 
@@ -312,7 +318,9 @@ phn_zscore <- function(x, structure, units, bsa = NULL, height_cm = NULL, weight
     allowed[[units[i]]]
   }, numeric(1))
 
-  scale <- bsa^coef$alpha
+  # A missing BSA gives NA for every structure, the ratios included, where
+  # alpha = 0 and NA^0 would otherwise be 1.
+  scale <- ifelse(is.na(bsa), NA_real_, bsa^coef$alpha)
   z <- (x * to_table / scale - coef$mean) / coef$sd
   predicted <- coef$mean * scale / to_table
 
