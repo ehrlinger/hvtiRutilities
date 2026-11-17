@@ -89,6 +89,18 @@ Generate labeled sample and synthetic datasets
 - [`sample_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/sample_data.md)
   : Generate a sample dataset for testing
 
+## Echocardiographic Z-Scores
+
+Pediatric Heart Network BSA-adjusted z-scores and Haycock body surface
+area
+
+- [`phn_zscore()`](https://ehrlinger.github.io/hvtiRutilities/reference/phn_zscore.md)
+  : Pediatric Heart Network echocardiographic z-scores
+- [`phn_zscore_table()`](https://ehrlinger.github.io/hvtiRutilities/reference/phn_zscore_table.md)
+  : The Pediatric Heart Network z-score coefficients
+- [`bsa_haycock()`](https://ehrlinger.github.io/hvtiRutilities/reference/bsa_haycock.md)
+  : Body surface area by the Haycock formula
+
 ## SAS Macro Canonicalization
 
 Inventory a legacy SAS macro library and resolve name collisions
