@@ -18,8 +18,8 @@
 #' @return The sorted declared package names, invisibly.
 #' @export
 #' @examples
-#' root <- file.path(tempdir(), "declare-example")
-#' dir.create(root, showWarnings = FALSE)
+#' root <- tempfile("declare-example")
+#' dir.create(root)
 #' study_declare("arrow", root)
 #' unlink(root, recursive = TRUE)
 study_declare <- function(packages = character(0), root = NULL) {

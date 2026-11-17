@@ -90,9 +90,10 @@ For this vignette we work in a temporary directory that mimics a real project's
 `datasets/` folder.
 
 ```{r}
-datasets_dir <- file.path(tempdir(), "datasets")
-dir.create(datasets_dir, showWarnings = FALSE)
-manifest_path <- file.path(tempdir(), "manifest.yaml")
+work_dir <- tempfile("dataset-versioning")
+datasets_dir <- file.path(work_dir, "datasets")
+dir.create(datasets_dir, recursive = TRUE)
+manifest_path <- file.path(work_dir, "manifest.yaml")
 ```
 
 ## Registering Datasets
@@ -461,7 +462,7 @@ an extract once you know it moved.
 
 ```{r}
 #| include: false
-unlink(c(datasets_dir, manifest_path), recursive = TRUE)
+unlink(work_dir, recursive = TRUE)
 ```
 
 ## Session Information

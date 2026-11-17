@@ -64,8 +64,8 @@ Ambiguity is resolved by a human writing an entry into \code{overrides} and
 re-running. This makes the result reproducible and auditable.
 }
 \examples{
-d <- file.path(tempdir(), "macros")
-dir.create(d, showWarnings = FALSE)
+d <- tempfile("macros")
+dir.create(d)
 writeLines(c("\%macro hello(x);", "  \%put &x;", "\%mend hello;"),
            file.path(d, "hello.sas"))
 sas_triage(d)

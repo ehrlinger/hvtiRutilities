@@ -200,8 +200,8 @@
 #' @export sas_triage
 #'
 #' @examples
-#' d <- file.path(tempdir(), "macros")
-#' dir.create(d, showWarnings = FALSE)
+#' d <- tempfile("macros")
+#' dir.create(d)
 #' writeLines(c("%macro hello(x);", "  %put &x;", "%mend hello;"),
 #'            file.path(d, "hello.sas"))
 #' sas_triage(d)

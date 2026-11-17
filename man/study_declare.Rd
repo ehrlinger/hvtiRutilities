@@ -28,8 +28,8 @@ is rewritten only when the set changes, and a \code{DESCRIPTION} that is not a s
 \code{Type: Project}) is never edited.
 }
 \examples{
-root <- file.path(tempdir(), "declare-example")
-dir.create(root, showWarnings = FALSE)
+root <- tempfile("declare-example")
+dir.create(root)
 study_declare("arrow", root)
 unlink(root, recursive = TRUE)
 }
