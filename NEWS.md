@@ -1,3 +1,7 @@
+# hvtiRutilities 1.5.26
+
+* New `phn_zscore()` computes Pediatric Heart Network (PHN) echocardiographic z-scores adjusted for body surface area, and the normal value for each child's BSA, for all 34 structures of the PHN Normal Echocardiogram Database (Lopez et al., *Circ Cardiovasc Imaging* 2017): the aortic annulus, root, sinotubular junction and ascending aorta, the arch, the pulmonary annulus and arteries, the mitral and tricuspid diameters and areas, the coronary arteries, and the LV dimensions, areas, volumes and mass. It takes BSA, or height and weight at the echo. `units` is required, so a measurement in mm is never scored against a norm in cm. `phn_zscore_table()` returns the published coefficients (Table 2), and `bsa_haycock()` the Haycock BSA the PHN used. Results match the paper's worked example and the ParameterZ PHN calculator on every structure.
+
 # hvtiRutilities 1.5.25
 
 * New `study_verify()` and `study_recover()` run the qhsprograms `study-setup --verify` and `--recover` commands from R on the LRI servers, so a hint that sends a user to verify or recover no longer sends them to the shell. `study_verify()` loads the Study Tracker credentials into that command's process only. `study_recover()` dry-runs first and writes only with `yes = TRUE` or a yes at an interactive prompt.
