@@ -56,10 +56,11 @@ invalidate every committed report.
 ## Examples
 
 ``` r
-# \donttest{
-d <- system.file("extdata", "macros", package = "hvtiRutilities")
-if (nzchar(d)) {
-  write_collision_report(sas_triage(d), tempfile(fileext = ".md"))
-}
-# }
+d <- tempfile("macros")
+dir.create(d)
+writeLines(c("%macro hello(x);", "  %put &x;", "%mend hello;"),
+           file.path(d, "hello.sas"))
+out <- file.path(d, "collisions.md")
+write_collision_report(sas_triage(d), out)
+unlink(d, recursive = TRUE)
 ```

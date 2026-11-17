@@ -540,7 +540,7 @@ proc_univariate(wdta, var_cols = "age", stats = c("n", "sumwgt"),
 
 ### Weighted Quantiles Follow a Different Rule
 
-With `weights`,
+With `weight_col`,
 [`proc_univariate()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_univariate.md)
 weights `median`, `q1`, `q3`, `qrange`, `pNN` and every `pctlpts`
 column.
@@ -618,7 +618,7 @@ proc_univariate(dta, var_cols = "bmi", mu0 = 25,
 signed rank test, with an exact p-value when 20 or fewer values differ
 from `mu0`. `normal` is the Shapiro-Wilk statistic.
 
-Three limits come from SAS. Under `weights`, SAS computes only the t
+Three limits come from SAS. Under `weight_col`, SAS computes only the t
 test, so the sign, signed rank and normality columns are `NA`. Above
 2000 observations SAS replaces Shapiro-Wilk with a Kolmogorov D test,
 which is not ported, so `normal` and `probn` are `NA` there and the call

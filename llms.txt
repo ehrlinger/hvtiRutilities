@@ -36,7 +36,8 @@ working with SAS datasets in R.
   - SAS statistic keywords (`n`, `nmiss`, `mean`, `std`, `min`, `max`,
     `median`, `q1`, `q3`, `pNN`, …), defaulting to SAS’s five plus the
     group’s `p15`, `median` and `p85`
-  - `class =` stratification, dropping missing class levels as SAS does
+  - `class_cols =` stratification, dropping missing class levels as SAS
+    does
   - Quantiles use SAS’s `QNTLDEF=5` definition, not R’s default
 - **[`label_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/label_map.md)**:
   Extract variable labels from labeled datasets

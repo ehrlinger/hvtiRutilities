@@ -36,7 +36,8 @@ The sorted declared package names, invisibly.
 ## Examples
 
 ``` r
-root <- file.path(tempdir(), "declare-example")
-dir.create(root, showWarnings = FALSE)
+root <- tempfile("declare-example")
+dir.create(root)
 study_declare("arrow", root)
+unlink(root, recursive = TRUE)
 ```

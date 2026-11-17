@@ -82,6 +82,6 @@ if (nzchar(Sys.which("git"))) {
   })
   unlink(root, recursive = TRUE)
 }
-#> [1] "88ce4d7"
+#> [1] "bf03d31"
 # }
 ```

@@ -81,7 +81,7 @@
       <h1>PROC CONTENTS, MEANS, FREQ and UNIVARIATE in R</h1>
 
       <p class="author">John Ehrlinger</p>
-      <p class="date">2026-11-16</p>
+      <p class="date">2026-11-17</p>
 
       <small class="dont-index">Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/vignettes/sas-procedures.qmd" class="external-link"><code>vignettes/sas-procedures.qmd</code></a></small>
       <div class="d-none name"><code></code></div>
@@ -432,7 +432,7 @@ run;</code></pre>
 </div>
 <section class="level3"><h3 id="weighted-quantiles-follow-a-different-rule">Weighted Quantiles Follow a Different Rule<a class="anchor" aria-label="anchor" href="#weighted-quantiles-follow-a-different-rule"></a>
 </h3>
-<p>With <code>weights</code>, <code><a href="../reference/proc_univariate.html">proc_univariate()</a></code> weights <code>median</code>, <code>q1</code>, <code>q3</code>, <code>qrange</code>, <code>pNN</code> and every <code>pctlpts</code> column. <code><a href="../reference/proc_means.html">proc_means()</a></code> does not, because <code>PROC MEANS</code> does not. The same call can therefore give two medians:</p>
+<p>With <code>weight_col</code>, <code><a href="../reference/proc_univariate.html">proc_univariate()</a></code> weights <code>median</code>, <code>q1</code>, <code>q3</code>, <code>qrange</code>, <code>pNN</code> and every <code>pctlpts</code> column. <code><a href="../reference/proc_means.html">proc_means()</a></code> does not, because <code>PROC MEANS</code> does not. The same call can therefore give two medians:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">w4</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">3</span>, <span class="fl">4</span><span class="op">)</span>, wt <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">3</span>, <span class="fl">1</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
@@ -477,7 +477,7 @@ run;</code></pre>
 <span><span class="co">#&gt; 1 4.544338e-05     3978 3.971077e-07 0.9954021 0.8071198</span></span></code></pre></div>
 </div>
 <p><code>t</code> is Student’s t, <code>msign</code> the sign test and <code>signrank</code> the Wilcoxon signed rank test, with an exact p-value when 20 or fewer values differ from <code>mu0</code>. <code>normal</code> is the Shapiro-Wilk statistic.</p>
-<p>Three limits come from SAS. Under <code>weights</code>, SAS computes only the t test, so the sign, signed rank and normality columns are <code>NA</code>. Above 2000 observations SAS replaces Shapiro-Wilk with a Kolmogorov D test, which is not ported, so <code>normal</code> and <code>probn</code> are <code>NA</code> there and the call warns once. And R’s <code><a href="https://rdrr.io/r/stats/shapiro.test.html" class="external-link">shapiro.test()</a></code> implements a later revision of the algorithm than SAS does: <code>normal</code> agrees with SAS to about eight decimal places, and <code>probn</code> slightly less closely.</p>
+<p>Three limits come from SAS. Under <code>weight_col</code>, SAS computes only the t test, so the sign, signed rank and normality columns are <code>NA</code>. Above 2000 observations SAS replaces Shapiro-Wilk with a Kolmogorov D test, which is not ported, so <code>normal</code> and <code>probn</code> are <code>NA</code> there and the call warns once. And R’s <code><a href="https://rdrr.io/r/stats/shapiro.test.html" class="external-link">shapiro.test()</a></code> implements a later revision of the algorithm than SAS does: <code>normal</code> agrees with SAS to about eight decimal places, and <code>probn</code> slightly less closely.</p>
 </section></section><section class="level2"><h2 id="did-the-extract-change-compare_datasets">Did the Extract Change? <code>compare_datasets()</code>
 <a class="anchor" aria-label="anchor" href="#did-the-extract-change-compare_datasets"></a>
 </h2>

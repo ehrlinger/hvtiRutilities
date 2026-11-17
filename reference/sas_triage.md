@@ -73,8 +73,16 @@ re-running. This makes the result reproducible and auditable.
 ## Examples
 
 ``` r
-# \donttest{
-d <- system.file("extdata", "macros", package = "hvtiRutilities")
-if (nzchar(d)) sas_triage(d)
-# }
+d <- tempfile("macros")
+dir.create(d)
+writeLines(c("%macro hello(x);", "  %put &x;", "%mend hello;"),
+           file.path(d, "hello.sas"))
+sas_triage(d)
+#>        file macro params
+#> 1 hello.sas hello      x
+#>                                                          body_hash line_start
+#> 1 ded3cd363b9234ffbe919780e5848d5bcfcdf6d31fc357561bc2509cdeebfa5e          1
+#>   line_end visibility  decision rule     evidence
+#> 1        3     public canonical    4 defined once
+unlink(d, recursive = TRUE)
 ```

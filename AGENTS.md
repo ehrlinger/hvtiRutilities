@@ -12,7 +12,7 @@ affordances live in `CLAUDE.md`, which imports this file.
 
 ## Definition of done
 
-- `devtools::test()` passes. 42 test files against 30 source files; a
+- `devtools::test()` passes. 111 test files against 80 source files; a
   change without a test is not done.
 - `devtools::check()` is **0 errors, 0 warnings, 0 notes**. It reached
   0/0/0 on 2026-08-20; do not let a NOTE creep back and become “the
@@ -70,7 +70,7 @@ the PR rather than landing quietly.
   `.Rd` as `\\%`, which starts an Rd comment; and a backslash inside
   backticks is written once per backslash wanted on the help page.
 - **Every exported object must be added to `_pkgdown.yml`.** The
-  `reference:` index is explicit — 16 titled sections covering 40
+  `reference:` index is explicit — 21 titled sections covering 94
   exports — and pkgdown **errors**, not warns, on a topic that is
   missing from it. The site build is a required check. ⚠️ Its sibling
   `hvtiRtemplates` deliberately does the **opposite** and has no

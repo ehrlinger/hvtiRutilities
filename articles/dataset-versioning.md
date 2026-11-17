@@ -87,9 +87,10 @@ project’s `datasets/` folder.
 
 ``` r
 
-datasets_dir <- file.path(tempdir(), "datasets")
-dir.create(datasets_dir, showWarnings = FALSE)
-manifest_path <- file.path(tempdir(), "manifest.yaml")
+work_dir <- tempfile("dataset-versioning")
+datasets_dir <- file.path(work_dir, "datasets")
+dir.create(datasets_dir, recursive = TRUE)
+manifest_path <- file.path(work_dir, "manifest.yaml")
 ```
 
 ## Registering Datasets

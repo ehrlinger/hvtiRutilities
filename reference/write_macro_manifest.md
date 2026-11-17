@@ -40,10 +40,11 @@ genuinely change over time.
 ## Examples
 
 ``` r
-# \donttest{
-d <- system.file("extdata", "macros", package = "hvtiRutilities")
-if (nzchar(d)) {
-  write_macro_manifest(sas_triage(d), tempfile(fileext = ".yaml"))
-}
-# }
+d <- tempfile("macros")
+dir.create(d)
+writeLines(c("%macro hello(x);", "  %put &x;", "%mend hello;"),
+           file.path(d, "hello.sas"))
+out <- file.path(d, "manifest.yaml")
+write_macro_manifest(sas_triage(d), out)
+unlink(d, recursive = TRUE)
 ```
