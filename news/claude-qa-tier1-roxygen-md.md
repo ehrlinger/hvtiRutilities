@@ -1,1 +1,0 @@
-* The documentation source is now roxygen markdown (`Roxygen: list(markdown = TRUE)`), per the family API rubric. The help pages say the same things; cross-references render as `fn()` links, and a few places where Rd mode printed markdown literally (backticks around file names, `**ambiguous**` in `sas_triage()`) now render as intended.

@@ -1,3 +1,60 @@
+# hvtiRutilities 1.5.24
+
+* `r_data_types()` documents its numeric threshold as the code applies it: more than 2 and fewer than `factor_size` distinct values, so the default of 10 converts 3 to 9. Character columns are not subject to `factor_size`; one that becomes a factor with more than 50 levels (an identifier or free text) now warns, naming the column. Its argument errors no longer carry the call, and an unknown `skip_vars` name is named.
+
+* `read_clinical_data()` refuses arguments in `...` it cannot honour. They reach `r_data_types()` only, so a reader option such as `sheet = 2` or `na = "."` was dropped without a word when `convert_types = FALSE`, and failed as "unused argument" when `TRUE`. Unnamed dots, any dots with `convert_types = FALSE`, and a name `r_data_types()` does not take are now errors. The help documents the column types each format returns: a date is `Date` from SAS, `POSIXct` from Excel and character from CSV.
+
+* `study_status()` reports closure as `UNKNOWN` when git fails, rather than reading the failure as an open study.
+
+* `compare_datasets()` also compares the levels of shared factor columns (new `level_changes` element). It reports level counts only (old and new count, how many added and removed, or an order change), never the levels themselves, since an identifier or free-text column read as a factor has patient-level values as its levels; `show_levels = TRUE` adds them. Its printed summary says that values were not compared, rather than "No differences detected" for two datasets whose values may differ.
+
+* `verify_manifest()` and the other functions defaulting to the study manifest pass on a malformed `_study.yml` instead of quietly checking `manifest.yaml` in the working directory. Only a missing `_study.yml` means "not in a study".
+
+* `add_labels()` on a data frame, and so `apply_label_overrides()` on a data frame, warns about names not present in the data instead of dropping them silently.
+
+* `study_dir()` resolves a root that has neither layout's folders to the numbered spelling new studies use, so `study_dir("estimates")` in a fresh study is `90_estimates`, not a bare `estimates`.
+
+* `cohort_counts()` and `assert_cohort()` warn when analysable rows have a zero or negative time, which `followup_check()` flags for review. The counts are unchanged.
+
+* `covariates_to_numeric()` warns about names in `vars` that are not columns of the data instead of skipping them silently.
+
+* `apply_value_labels()` leaves a factor column as read and names it in a warning, instead of stopping with labelled's "Value labels cannot be applied to factors".
+
+* Checkpoints: `occurred_at`, `closed_at` and `reopened_at` must be one finite `Date`, date-time or `"YYYY-MM-DD"` string; `"01/02/2026"` was logged as year 1. A checkpoint of a kind whose live `trigger` is not `manual` or `auto` is an error rather than an automatic kind; other kinds are unaffected. An empty or non-scalar `checkpoint: remote:` is a configuration error rather than "remote unreachable". An unusable `.checkpoint/repo` reports git's own message and the `safe.directory` fix before advising a delete.
+
+* Argument names and order follow the family API rubric. Each rename works for one more release with a once-per-session warning of class `hvtiRutilities_deprecated` (and `deprecatedWarning`):
+  * An argument that names one column ends in `_col`, and one that takes one or more columns in `_cols`.
+  * `cohort_counts(data, time_col, event_col)` and `assert_cohort(data, expected, time_col, event_col)`: `d`, `time` and `event` are now `data`, `time_col` and `event_col`, and the time column comes before the event column, as in `survival::Surv()`. **A call that passes both columns unnamed is now an error**, whether or not `data` is named, since the old order and the new read it oppositely; name them. One of the two unnamed reads the same either way and still works.
+  * `followup_check(data, time_cols, event_col, id_col, ...)`: `followup` is now `time_cols` and comes before `event_col`, which was `event`; `identifier` is now `id_col`. Both columns unnamed is an error here too. Errors name each argument as the call wrote it.
+  * `proc_means()`, `proc_freq()` and `proc_univariate()`: `weights` is now `weight_col`, in the same position.
+  * `declare_data()`, `register_data()` and `duplicate_keys()`: `key` is now `key_cols`; `duplicate_keys()`'s `order_by` is now `order_by_cols`.
+  * `r_data_types(data, ...)` (was `dataset`) and `parity_headline(data)` (was `df`).
+  * `register_data()` and `declare_data()` take `root` last. A call whose first argument is unnamed and an existing directory is read in the old, root-first order for this release, with that argument evaluated once; pass `root =` by name.
+  * A renamed argument given under both its old and its new name in one call is an error, rather than one silently winning.
+  * An abbreviated argument name that used to match one formal may now match the old and the new name both, and R stops with "argument matches multiple formal arguments": `weight =` in `proc_means()`, `proc_freq()` and `proc_univariate()`, and `id =` in `followup_check()`. Write the full new name.
+* Condition classes carry the package name: a lost checkpoint lock is `hvtiRutilities_cp_lock_lost` (still also `hvti_cp_lock_lost` for this release), and every deprecation notice is `hvtiRutilities_deprecated`.
+* `options(hvti.quiet = TRUE)` silences the informational messages from `cache_fit()`, `update_manifest()`'s registration summary and the checkpoint functions. Warnings and errors are never silenced, and neither is the reminder that checkpoint notes must not contain patient information.
+* `capture_provenance()` opens its record with the seven fields every hvtiR package's provenance shares: `package`, `version`, `sha`, `method` (the job), `seed`, `rng_kind` and `time`. A new `seed` argument records a seeded job's seed, and `cache_fit()` passes its own; an unseeded job's `seed` and an unknown `sha` are `null` in the published JSON.
+
+* The documentation source is now roxygen markdown (`Roxygen: list(markdown = TRUE)`), per the family API rubric. The help pages say the same things; cross-references render as `fn()` links, and a few places where Rd mode printed markdown literally (backticks around file names, `**ambiguous**` in `sas_triage()`) now render as intended.
+
+* The arguments that take one or more columns now end in `_cols`, per the family API rubric. Each old name works for one more release with a once-per-session warning of class `hvtiRutilities_deprecated`, and each new name keeps the old one's position, so positional calls bind as before:
+  * `vars` is now `var_cols` in `covariate_audit()`, `covariates_to_numeric()`, `level_map()`, `proc_means()` and `proc_univariate()`.
+  * `class` is now `class_cols` in `proc_means()` and `proc_univariate()`.
+  * `tables` is now `table_cols` in `proc_freq()`.
+  * `var` is now `var_cols` in `proc_print()`.
+  * `skip_vars` is now `skip_cols` in `r_data_types()`, and through it in `read_clinical_data(...)`.
+  * `sort_key` is now `sort_key_cols` in `update_manifest()`. The field it writes in `manifest.yaml` is still `sort_key`.
+  * An old and a new name given together is an error, not one silently winning.
+  * Two abbreviations that used to match one formal now match the old and the new name both, and R stops with "argument matches multiple formal arguments": `var =` in `covariate_audit()`, `covariates_to_numeric()`, `level_map()`, `proc_means()` and `proc_univariate()`, and `table =` in `proc_freq()`. Write the full new name.
+
+* New `source_changed()` says whether a registered dataset's source has been rebuilt since it was registered, without reading any data, so a report can say a newer build is waiting before it reads the data (hvtiRtemplates' top box).
+* `read_built()`, `update_manifest()` and `source_changed()` now settle whether a registered dataset's source changed by its SHA-256 alone. The size-and-modification-time shortcut is gone: it called a same-size replacement that kept the recorded modification time (a copy or restore that preserves dates) unchanged, so jobs read the old version with no notice and `update_manifest()` would not register the new one. The cost is one hash of the source per read of a registered dataset. `update_manifest()` no longer rewrites the manifest, or asks for a commit, when a source was only touched.
+
+* The README and the SAS procedures vignette use the new argument names, `class_cols` and `weight_col`, rather than the deprecated `class` and `weights`.
+
+* The `sas_triage()`, `write_macro_manifest()` and `write_collision_report()` examples now run: they looked for a macro library under `inst/extdata` that the package does not ship, so they did nothing. Each builds a one-macro library in a directory of its own made with `tempfile()`. Those examples, `study_declare()`'s and the dataset versioning vignette write only under such a directory and remove only it, never a fixed name under `tempdir()` that may hold your own files.
+
 # hvtiRutilities 1.5.23
 
 * The renv-repair tests write their sound lock under the running R rather than R 4.6.0, so they pass on R 4.5 (the oldrel check) as well.
