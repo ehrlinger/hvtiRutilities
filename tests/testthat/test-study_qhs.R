@@ -34,14 +34,13 @@ test_that("study_verify runs study-setup --verify with the credentials loaded", 
   expect_true(shQuote(qhs$paths$tracker_env) %in% args)
   expect_true(shQuote(qhs$paths$command) %in% args)
   expect_true(shQuote("--verify") %in% args)
-  expect_false(shQuote("--yes") %in% args)
   expect_true(shQuote(normalizePath(root)) %in% args)
 })
 
-test_that("study_verify passes --yes only when asked to replace", {
+test_that("study_verify never passes --yes, which would refuse a mismatch", {
   qhs <- local_qhs()
-  study_verify(withr::local_tempdir(), replace = TRUE)
-  expect_true(shQuote("--yes") %in% qhs$calls()[[1]]$args)
+  study_verify(withr::local_tempdir())
+  expect_false(shQuote("--yes") %in% qhs$calls()[[1]]$args)
 })
 
 test_that("study_verify stops before running without a credentials file", {

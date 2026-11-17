@@ -59,12 +59,12 @@
 #' file the function stops and says so.
 #'
 #' When the typed identity differs from the record, the differences are
-#' printed and nothing changes. Check them, then call again with
-#' `replace = TRUE` to take the Study Tracker values.
+#' printed. The command offers to replace the typed identity only when it
+#' can ask at a terminal: in R started from a terminal it asks; in RStudio
+#' it cannot, and nothing changes. Correct `_study.yml` to match the record
+#' and call again.
 #'
 #' @param root The study root. Defaults to the working directory.
-#' @param replace `TRUE` to replace a typed identity that differs from the
-#'   Study Tracker record. Defaults to `FALSE`.
 #'
 #' @return `TRUE`, invisibly, once the identity is verified. Stops with an
 #'   error otherwise.
@@ -79,10 +79,10 @@
 #' }
 #'
 #' @export
-study_verify <- function(root = getwd(), replace = FALSE) {
+study_verify <- function(root = getwd()) {
   root <- normalizePath(root, mustWork = TRUE)
   .qhs_study_setup("study_verify",
-                   c("--verify", if (isTRUE(replace)) "--yes", root),
+                   c("--verify", root),
                    tracker = TRUE)
 }
 
