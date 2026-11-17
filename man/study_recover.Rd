@@ -4,13 +4,15 @@
 \alias{study_recover}
 \title{Recover a missing \verb{_study.yml} from CORR_STUDIES}
 \usage{
-study_recover(st_id = NULL, root = getwd())
+study_recover(st_id = NULL, root = getwd(), yes = FALSE)
 }
 \arguments{
 \item{st_id}{The Study Tracker ID, a whole number. Leave it \code{NULL} when
 the command can infer it from the study's repository.}
 
 \item{root}{The study root. Defaults to the working directory.}
+
+\item{yes}{\code{TRUE} to restore without asking. Defaults to \code{FALSE}.}
 }
 \value{
 \code{TRUE}, invisibly, once the files are restored; \code{FALSE},
@@ -22,8 +24,10 @@ study's repository in the CORR_STUDIES project.
 }
 \details{
 Runs the qhsprograms \code{study-setup --recover} command on the LRI servers.
-It first runs a dry run that prints what it would restore; in an
-interactive session it then asks before writing anything. Recovery from
+It first runs a dry run that prints what it would restore, then writes
+only with consent: \code{yes = TRUE}, or a yes to the question it asks in an
+interactive session. A non-interactive call without \code{yes = TRUE} stops
+after the dry run and writes nothing. Recovery from
 CORR_STUDIES is planned and not yet available; until it is, the command
 stops with its reason.
 }

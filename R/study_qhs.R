@@ -94,14 +94,17 @@ study_verify <- function(root = getwd(), replace = FALSE) {
 #'
 #' @details
 #' Runs the qhsprograms `study-setup --recover` command on the LRI servers.
-#' It first runs a dry run that prints what it would restore; in an
-#' interactive session it then asks before writing anything. Recovery from
+#' It first runs a dry run that prints what it would restore, then writes
+#' only with consent: `yes = TRUE`, or a yes to the question it asks in an
+#' interactive session. A non-interactive call without `yes = TRUE` stops
+#' after the dry run and writes nothing. Recovery from
 #' CORR_STUDIES is planned and not yet available; until it is, the command
 #' stops with its reason.
 #'
 #' @param st_id The Study Tracker ID, a whole number. Leave it `NULL` when
 #'   the command can infer it from the study's repository.
 #' @param root The study root. Defaults to the working directory.
+#' @param yes `TRUE` to restore without asking. Defaults to `FALSE`.
 #'
 #' @return `TRUE`, invisibly, once the files are restored; `FALSE`,
 #'   invisibly, when the restore is declined. Stops with an error otherwise.
@@ -116,7 +119,7 @@ study_verify <- function(root = getwd(), replace = FALSE) {
 #' }
 #'
 #' @export
-study_recover <- function(st_id = NULL, root = getwd()) {
+study_recover <- function(st_id = NULL, root = getwd(), yes = FALSE) {
   if (!is.null(st_id) && !.study_whole_id(st_id)) {
     stop("study_recover(): st_id must be one positive whole number.",
          call. = FALSE)
@@ -125,8 +128,14 @@ study_recover <- function(st_id = NULL, root = getwd()) {
   args <- c("--recover", if (!is.null(st_id)) format(st_id, scientific = FALSE),
             root)
   .qhs_study_setup("study_recover", c(args, "--dry-run"))
-  declined <- interactive() &&
-    !isTRUE(utils::askYesNo("Restore these files?", default = FALSE))
-  if (declined) return(invisible(FALSE))
+  if (!isTRUE(yes)) {
+    if (!interactive()) {
+      stop("study_recover(): wrote nothing. Check the dry run above, then ",
+           "call again with yes = TRUE.", call. = FALSE)
+    }
+    if (!isTRUE(utils::askYesNo("Restore these files?", default = FALSE))) {
+      return(invisible(FALSE))
+    }
+  }
   .qhs_study_setup("study_recover", c(args, "--yes"))
 }

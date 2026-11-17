@@ -66,7 +66,7 @@ test_that("study_recover dry-runs, then restores without the credentials", {
   qhs <- local_qhs()
   root <- withr::local_tempdir()
 
-  expect_true(study_recover(42, root))
+  expect_true(study_recover(42, root, yes = TRUE))
 
   calls <- qhs$calls()
   expect_length(calls, 2L)
@@ -89,4 +89,12 @@ test_that("study_recover rejects a Study Tracker ID that is not whole", {
   qhs <- local_qhs()
   expect_error(study_recover(42.5, withr::local_tempdir()), "whole number")
   expect_length(qhs$calls(), 0L)
+})
+
+test_that("study_recover writes nothing without consent when not interactive", {
+  qhs <- local_qhs()
+  expect_error(study_recover(42, withr::local_tempdir()), "yes = TRUE")
+  calls <- qhs$calls()
+  expect_length(calls, 1L)
+  expect_true(shQuote("--dry-run") %in% calls[[1]]$args)
 })
