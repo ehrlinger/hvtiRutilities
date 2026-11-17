@@ -23,14 +23,14 @@
 #' demographics, pre-operative labs,
 #' cardiac function, and surgical variables.
 #'
-#' With a `seed`, the function calls `set.seed(seed)` and draws from
-#' there, so the same `seed` and `n` always give the same data. The
-#' global stream is left where the simulation ended, as any seeded R code
-#' leaves it; set a seed again before later code that needs its own
-#' reproducible draws. With `seed = NULL` the function sets no seed and
-#' draws from the caller's stream, so
-#' `set.seed(s); generate_survival_data(seed = NULL)` reproduces
-#' `generate_survival_data(seed = s)`.
+#' With a `seed`, the default included, the function calls `set.seed(seed)`
+#' and draws from there, so the same `seed` and `n` always give the same
+#' data. It then puts the caller's random number stream back as it found it,
+#' even when it fails, so generating example data never changes what later
+#' code draws; an unseeded session stays unseeded. With `seed = NULL` the
+#' function sets no seed and draws from the caller's stream, advancing it as
+#' any random draw does, so `set.seed(s); generate_survival_data(seed = NULL)`
+#' reproduces `generate_survival_data(seed = s)`.
 #'
 #' @param n Integer. Number of patients to simulate. Default `500`.
 #' @param seed `NULL` or an integer passed to [set.seed()].
@@ -99,7 +99,11 @@
 #' model_data <- dta[, !names(dta) %in% c("ccfid", "reop", "iv_reop",
 #'   "origin_year", "iv_opyrs")]
 generate_survival_data <- function(n = 500, seed = 1024) {
-  if (!is.null(seed)) set.seed(seed)
+  if (!is.null(seed)) {
+    # The caller's stream is put back on exit, so a seeded call has no side effect.
+    withr::local_preserve_seed()
+    set.seed(seed)
+  }
 
   ## ---- Patient IDs ----
   ccfid <- paste0("PT", formatC(seq_len(n), width = 5, flag = "0"))

@@ -79,14 +79,12 @@
 #' because there would be nothing to cache.
 #'
 #' When `seed` is given, `cache_fit()` calls `set.seed(seed)`
-#' before the code runs and again after it, even when it fails, and calls it
-#' once when the result is loaded instead. If the code changes the generator
-#' with [RNGkind()], the kinds in use when `cache_fit()` was
-#' called are put back before that second call. A computed and a loaded result
-#' therefore leave the global random number stream in the same state, the one
-#' `set.seed(seed)` sets, so code after `cache_fit()` draws the
-#' same numbers whether or not the cache was hit. Seed any later random step yourself rather than relying on
-#' that state. When `seed` is `NULL`, `cache_fit()` sets no
+#' before the code runs and afterwards puts the caller's random number stream
+#' back as it found it, even when the code fails or changes the generator with
+#' [RNGkind()]; an unseeded session stays unseeded. A loaded result runs no code
+#' and leaves the stream alone. A seeded `cache_fit()` therefore has no effect on
+#' what later code draws, whether or not the cache was hit. Seed any later
+#' random step yourself. When `seed` is `NULL`, `cache_fit()` sets no
 #' seed: the code draws from the caller's stream, and a loaded result leaves
 #' the stream untouched. If that code consumes random numbers, the result is
 #' still saved, with a warning of class
@@ -147,7 +145,6 @@ cache_fit <- function(name, code, seed = NULL, dir = study_dir("estimates"),
     plan$action,
     load = {
       .hvti_inform("cache_fit(): loaded '", name, "' from cache")
-      if (!is.null(plan$seed)) set.seed(plan$seed)
       return(.cache_attach(plan$stored$value, plan$stored$key))
     },
     unkeyed = .cache_abort("unkeyed", name, plan$path),
@@ -291,31 +288,20 @@ cache_fit <- function(name, code, seed = NULL, dir = study_dir("estimates"),
   value
 }
 
-# Reseeds under the generator kinds in `kinds`, restoring them only when they
-# changed. RNGkind() warns whenever sample.kind = "Rounding" is set, and the
-# caller already had that warning when they chose it.
-.cache_reseed <- function(seed, kinds) {
-  if (!identical(RNGkind(), kinds)) {
-    suppressWarnings(RNGkind(kinds[1L], kinds[2L], kinds[3L]))
-  }
-  set.seed(seed)
-}
-
-# Runs the code in a child scope of the caller. With a seed, set.seed() runs
-# before the code and again on exit, error included, so a computation leaves
-# the stream where a cache hit does (cache_fit() seeds a hit too). A hit never
-# runs the code, so it always seeds under the caller's generator kinds; the exit
-# handler first puts back the kinds the code found on entry, in case it changed
-# them (an RNGkind("L'Ecuyer-CMRG") for parallel work, say). Nothing saves or
-# restores .Random.seed in the global environment. Without a seed, compares
+# Runs the code in a child scope of the caller. With a seed, the caller's
+# .Random.seed is saved, set.seed() runs under the caller's generator kinds, and
+# the saved state is put back on exit, error included, or removed if the session
+# had none. .Random.seed carries the generator kinds, so a computation that
+# changes them (an RNGkind("L'Ecuyer-CMRG") for parallel work, say) leaves the
+# caller's in place too. A hit never runs the code and touches nothing, so a
+# computed and a loaded result leave the stream alike. Without a seed, compares
 # .Random.seed before and after to detect random number use anywhere in the
 # computation, including inside compiled package code.
 .cache_run <- function(code, env, seed) {
   scope <- new.env(parent = env)
   if (!is.null(seed)) {
-    kinds <- RNGkind()
+    withr::local_preserve_seed()
     set.seed(seed)
-    on.exit(.cache_reseed(seed, kinds), add = TRUE)
     value <- eval(code, envir = scope)
     return(list(value = value, reproducible = TRUE))
   }

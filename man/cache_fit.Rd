@@ -119,14 +119,12 @@ The computation must return a value; a result of \code{NULL} is an error,
 because there would be nothing to cache.
 
 When \code{seed} is given, \code{cache_fit()} calls \code{set.seed(seed)}
-before the code runs and again after it, even when it fails, and calls it
-once when the result is loaded instead. If the code changes the generator
-with \code{\link[=RNGkind]{RNGkind()}}, the kinds in use when \code{cache_fit()} was
-called are put back before that second call. A computed and a loaded result
-therefore leave the global random number stream in the same state, the one
-\code{set.seed(seed)} sets, so code after \code{cache_fit()} draws the
-same numbers whether or not the cache was hit. Seed any later random step yourself rather than relying on
-that state. When \code{seed} is \code{NULL}, \code{cache_fit()} sets no
+before the code runs and afterwards puts the caller's random number stream
+back as it found it, even when the code fails or changes the generator with
+\code{\link[=RNGkind]{RNGkind()}}; an unseeded session stays unseeded. A loaded result runs no code
+and leaves the stream alone. A seeded \code{cache_fit()} therefore has no effect on
+what later code draws, whether or not the cache was hit. Seed any later
+random step yourself. When \code{seed} is \code{NULL}, \code{cache_fit()} sets no
 seed: the code draws from the caller's stream, and a loaded result leaves
 the stream untouched. If that code consumes random numbers, the result is
 still saved, with a warning of class

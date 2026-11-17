@@ -76,14 +76,14 @@ outcome (\code{iv_dead}, \code{dead}) and 17 clinical predictors spanning
 demographics, pre-operative labs,
 cardiac function, and surgical variables.
 
-With a \code{seed}, the function calls \code{set.seed(seed)} and draws from
-there, so the same \code{seed} and \code{n} always give the same data. The
-global stream is left where the simulation ended, as any seeded R code
-leaves it; set a seed again before later code that needs its own
-reproducible draws. With \code{seed = NULL} the function sets no seed and
-draws from the caller's stream, so
-\verb{set.seed(s); generate_survival_data(seed = NULL)} reproduces
-\code{generate_survival_data(seed = s)}.
+With a \code{seed}, the default included, the function calls \code{set.seed(seed)}
+and draws from there, so the same \code{seed} and \code{n} always give the same
+data. It then puts the caller's random number stream back as it found it,
+even when it fails, so generating example data never changes what later
+code draws; an unseeded session stays unseeded. With \code{seed = NULL} the
+function sets no seed and draws from the caller's stream, advancing it as
+any random draw does, so \verb{set.seed(s); generate_survival_data(seed = NULL)}
+reproduces \code{generate_survival_data(seed = s)}.
 }
 \examples{
 dta <- generate_survival_data(n = 200, seed = 42)

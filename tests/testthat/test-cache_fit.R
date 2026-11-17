@@ -212,35 +212,45 @@ test_that("a seed reproduces the result", {
   expect_true(attr(a, "hvtiRutilities_cache_key")$reproducible)
 })
 
-test_that("a seeded fit leaves the stream in one state, computed or loaded", {
+test_that("a seeded fit leaves the caller's stream as it found it, computed or loaded", {
   dir <- withr::local_tempdir()
   withr::local_seed(1)
   n <- 5
-  set.seed(42)
-  seeded <- get(".Random.seed", envir = globalenv())
-
   set.seed(7)
+  before <- get(".Random.seed", envir = globalenv())
   suppressMessages(cache_fit("r6", stats::runif(n), seed = 42, dir = dir))
-  expect_identical(get(".Random.seed", envir = globalenv()), seeded)
+  expect_identical(get(".Random.seed", envir = globalenv()), before)
 
   set.seed(8)
+  before <- get(".Random.seed", envir = globalenv())
   expect_message(cache_fit("r6", stats::runif(n), seed = 42, dir = dir),
                  "loaded")
-  expect_identical(get(".Random.seed", envir = globalenv()), seeded)
+  expect_identical(get(".Random.seed", envir = globalenv()), before)
 })
 
-test_that("a seeded fit that fails still leaves the stream seeded", {
+test_that("a seeded fit that fails still leaves the caller's stream as it found it", {
   dir <- withr::local_tempdir()
   withr::local_seed(1)
-  set.seed(42)
-  seeded <- get(".Random.seed", envir = globalenv())
   set.seed(7)
+  before <- get(".Random.seed", envir = globalenv())
   expect_error(cache_fit("r8", {
     stats::runif(3)
     stop("boom")
   }, seed = 42, dir = dir), "boom")
-  expect_identical(get(".Random.seed", envir = globalenv()), seeded)
+  expect_identical(get(".Random.seed", envir = globalenv()), before)
   expect_false(file.exists(file.path(dir, "r8.rds")))
+})
+
+test_that("a seeded fit leaves an unseeded session unseeded", {
+  dir <- withr::local_tempdir()
+  withr::local_preserve_seed()
+  if (exists(".Random.seed", envir = globalenv(), inherits = FALSE)) {
+    rm(".Random.seed", envir = globalenv())
+  }
+  suppressMessages(cache_fit("r11", stats::runif(3), seed = 42, dir = dir))
+  expect_false(exists(".Random.seed", envir = globalenv(), inherits = FALSE))
+  expect_message(cache_fit("r11", stats::runif(3), seed = 42, dir = dir), "loaded")
+  expect_false(exists(".Random.seed", envir = globalenv(), inherits = FALSE))
 })
 
 test_that("a seeded fit that switches generators leaves the caller's", {
@@ -248,8 +258,6 @@ test_that("a seeded fit that switches generators leaves the caller's", {
   withr::local_seed(1)
   entry <- RNGkind()
   withr::defer(suppressWarnings(RNGkind(entry[1], entry[2], entry[3])))
-  set.seed(42)
-  seeded <- get(".Random.seed", envir = globalenv())
   # Uniform, normal and sample kinds all change inside the computation.
   switch_kinds <- quote({
     suppressWarnings(RNGkind("L'Ecuyer-CMRG", "Box-Muller", "Rounding"))
@@ -260,21 +268,16 @@ test_that("a seeded fit that switches generators leaves the caller's", {
     stop("boom")
   })
 
-  set.seed(7)
-  suppressMessages(cache_fit("r9", switch_kinds, seed = 42, dir = dir))
-  expect_identical(RNGkind(), entry)
-  expect_identical(get(".Random.seed", envir = globalenv()), seeded)
-
-  set.seed(8)
-  expect_message(cache_fit("r9", switch_kinds, seed = 42, dir = dir),
-                 "loaded")
-  expect_identical(RNGkind(), entry)
-  expect_identical(get(".Random.seed", envir = globalenv()), seeded)
-
-  set.seed(9)
-  expect_error(cache_fit("r10", failing, seed = 42, dir = dir), "boom")
-  expect_identical(RNGkind(), entry)
-  expect_identical(get(".Random.seed", envir = globalenv()), seeded)
+  for (step in list(list("r9", switch_kinds, NA), list("r9", switch_kinds, "loaded"), list("r10", failing, "boom"))) {
+    set.seed(7)
+    before <- get(".Random.seed", envir = globalenv())
+    run <- function() eval(bquote(cache_fit(.(step[[1]]), .(step[[2]]), seed = 42, dir = dir)))
+    if (is.na(step[[3]])) suppressMessages(run())
+    else if (step[[3]] == "loaded") expect_message(run(), "loaded")
+    else expect_error(run(), "boom")
+    expect_identical(RNGkind(), entry)
+    expect_identical(get(".Random.seed", envir = globalenv()), before)
+  }
 })
 
 test_that("without a seed the code draws from the caller's stream", {
