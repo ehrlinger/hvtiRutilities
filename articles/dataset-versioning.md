@@ -76,7 +76,7 @@ if (requireNamespace("hvtiRutilities", quietly = TRUE)) {
   pkgload::load_all(export_all = FALSE, helpers = FALSE, quiet = TRUE)
 }
 #> 
-#>  hvtiRutilities 1.5.23 
+#>  hvtiRutilities 1.5.24 
 #>  
 #>  Type hvtiRutilities.news() to see new features, changes, and bug fixes. 
 #> 
@@ -580,7 +580,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] hvtiRutilities_1.5.23
+#> [1] hvtiRutilities_1.5.24
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] vctrs_0.7.3      cli_3.6.6        knitr_1.52       rlang_1.3.0     
@@ -590,5 +590,5 @@ sessionInfo()
 #> [17] fastmap_1.2.0    yaml_2.3.12      lifecycle_1.0.5  compiler_4.6.2  
 #> [21] dplyr_1.2.1      pkgconfig_2.0.3  labelled_2.16.1  digest_0.6.39   
 #> [25] R6_2.6.1         tidyselect_1.2.1 pillar_1.11.1    magrittr_2.0.5  
-#> [29] tools_4.6.2
+#> [29] withr_3.0.3      tools_4.6.2
 ```

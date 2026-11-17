@@ -1,5 +1,263 @@
 # Changelog
 
+## hvtiRutilities 1.5.24
+
+- A seeded call no longer changes the caller’s random number stream.
+  [`generate_survival_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/generate_survival_data.md)
+  with a seed, its default `seed = 1024` included, and
+  [`cache_fit()`](https://ehrlinger.github.io/hvtiRutilities/reference/cache_fit.md)
+  with a seed draw from `set.seed(seed)` as before and then put the
+  caller’s `.Random.seed` back as they found it, even on error, or
+  remove it if the session had none;
+  [`cache_fit()`](https://ehrlinger.github.io/hvtiRutilities/reference/cache_fit.md)
+  restores the caller’s generator kinds as well. The data and the fitted
+  results are unchanged. **Compatibility:** code that drew random
+  numbers after one of these calls without setting its own seed drew
+  from `set.seed(seed)` and now draws from wherever the caller’s stream
+  was, so its numbers change; seed that step yourself. A
+  [`cache_fit()`](https://ehrlinger.github.io/hvtiRutilities/reference/cache_fit.md)
+  hit no longer calls
+  [`set.seed()`](https://rdrr.io/r/base/Random.html), and computed and
+  loaded results still leave the stream alike. With `seed = NULL` both
+  functions draw from, and advance, the caller’s stream as before.
+
+- [`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
+  documents its numeric threshold as the code applies it: more than 2
+  and fewer than `factor_size` distinct values, so the default of 10
+  converts 3 to 9. Character columns are not subject to `factor_size`;
+  one that becomes a factor with more than 50 levels (an identifier or
+  free text) now warns, naming the column. Its argument errors no longer
+  carry the call, and an unknown `skip_vars` name is named.
+
+- [`read_clinical_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_clinical_data.md)
+  refuses arguments in `...` it cannot honour. They reach
+  [`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
+  only, so a reader option such as `sheet = 2` or `na = "."` was dropped
+  without a word when `convert_types = FALSE`, and failed as “unused
+  argument” when `TRUE`. Unnamed dots, any dots with
+  `convert_types = FALSE`, and a name
+  [`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md)
+  does not take are now errors. The help documents the column types each
+  format returns: a date is `Date` from SAS, `POSIXct` from Excel and
+  character from CSV.
+
+- [`study_status()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md)
+  reports closure as `UNKNOWN` when git fails, rather than reading the
+  failure as an open study.
+
+- [`compare_datasets()`](https://ehrlinger.github.io/hvtiRutilities/reference/compare_datasets.md)
+  also compares the levels of shared factor columns (new `level_changes`
+  element). It reports level counts only (old and new count, how many
+  added and removed, or an order change), never the levels themselves,
+  since an identifier or free-text column read as a factor has
+  patient-level values as its levels; `show_levels = TRUE` adds them.
+  Its printed summary says that values were not compared, rather than
+  “No differences detected” for two datasets whose values may differ.
+
+- [`verify_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/verify_manifest.md)
+  and the other functions defaulting to the study manifest pass on a
+  malformed `_study.yml` instead of quietly checking `manifest.yaml` in
+  the working directory. Only a missing `_study.yml` means “not in a
+  study”.
+
+- [`add_labels()`](https://ehrlinger.github.io/hvtiRutilities/reference/add_labels.md)
+  on a data frame, and so
+  [`apply_label_overrides()`](https://ehrlinger.github.io/hvtiRutilities/reference/apply_label_overrides.md)
+  on a data frame, warns about names not present in the data instead of
+  dropping them silently.
+
+- [`study_dir()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_dir.md)
+  resolves a root that has neither layout’s folders to the numbered
+  spelling new studies use, so `study_dir("estimates")` in a fresh study
+  is `90_estimates`, not a bare `estimates`.
+
+- [`cohort_counts()`](https://ehrlinger.github.io/hvtiRutilities/reference/cohort_counts.md)
+  and
+  [`assert_cohort()`](https://ehrlinger.github.io/hvtiRutilities/reference/assert_cohort.md)
+  warn when analysable rows have a zero or negative time, which
+  [`followup_check()`](https://ehrlinger.github.io/hvtiRutilities/reference/followup_check.md)
+  flags for review. The counts are unchanged.
+
+- [`covariates_to_numeric()`](https://ehrlinger.github.io/hvtiRutilities/reference/covariates_to_numeric.md)
+  warns about names in `vars` that are not columns of the data instead
+  of skipping them silently.
+
+- [`apply_value_labels()`](https://ehrlinger.github.io/hvtiRutilities/reference/apply_value_labels.md)
+  leaves a factor column as read and names it in a warning, instead of
+  stopping with labelled’s “Value labels cannot be applied to factors”.
+
+- Checkpoints: `occurred_at`, `closed_at` and `reopened_at` must be one
+  finite `Date`, date-time or `"YYYY-MM-DD"` string; `"01/02/2026"` was
+  logged as year 1. A checkpoint of a kind whose live `trigger` is not
+  `manual` or `auto` is an error rather than an automatic kind; other
+  kinds are unaffected. An empty or non-scalar `checkpoint: remote:` is
+  a configuration error rather than “remote unreachable”. An unusable
+  `.checkpoint/repo` reports git’s own message and the `safe.directory`
+  fix before advising a delete.
+
+- Argument names and order follow the family API rubric. Each rename
+  works for one more release with a once-per-session warning of class
+  `hvtiRutilities_deprecated` (and `deprecatedWarning`):
+
+  - An argument that names one column ends in `_col`, and one that takes
+    one or more columns in `_cols`.
+  - `cohort_counts(data, time_col, event_col)` and
+    `assert_cohort(data, expected, time_col, event_col)`: `d`, `time`
+    and `event` are now `data`, `time_col` and `event_col`, and the time
+    column comes before the event column, as in
+    [`survival::Surv()`](https://rdrr.io/pkg/survival/man/Surv.html).
+    **A call that passes both columns unnamed is now an error**, whether
+    or not `data` is named, since the old order and the new read it
+    oppositely; name them. One of the two unnamed reads the same either
+    way and still works.
+  - `followup_check(data, time_cols, event_col, id_col, ...)`:
+    `followup` is now `time_cols` and comes before `event_col`, which
+    was `event`; `identifier` is now `id_col`. Both columns unnamed is
+    an error here too. Errors name each argument as the call wrote it.
+  - [`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md),
+    [`proc_freq()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_freq.md)
+    and
+    [`proc_univariate()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_univariate.md):
+    `weights` is now `weight_col`, in the same position.
+  - [`declare_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/declare_data.md),
+    [`register_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md)
+    and
+    [`duplicate_keys()`](https://ehrlinger.github.io/hvtiRutilities/reference/duplicate_keys.md):
+    `key` is now `key_cols`;
+    [`duplicate_keys()`](https://ehrlinger.github.io/hvtiRutilities/reference/duplicate_keys.md)’s
+    `order_by` is now `order_by_cols`.
+  - `r_data_types(data, ...)` (was `dataset`) and
+    `parity_headline(data)` (was `df`).
+  - [`register_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md)
+    and
+    [`declare_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/declare_data.md)
+    take `root` last. A call whose first argument is unnamed and an
+    existing directory is read in the old, root-first order for this
+    release, with that argument evaluated once; pass `root =` by name.
+  - A renamed argument given under both its old and its new name in one
+    call is an error, rather than one silently winning.
+  - An abbreviated argument name that used to match one formal may now
+    match the old and the new name both, and R stops with “argument
+    matches multiple formal arguments”: `weight =` in
+    [`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md),
+    [`proc_freq()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_freq.md)
+    and
+    [`proc_univariate()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_univariate.md),
+    and `id =` in
+    [`followup_check()`](https://ehrlinger.github.io/hvtiRutilities/reference/followup_check.md).
+    Write the full new name.
+
+- Condition classes carry the package name: a lost checkpoint lock is
+  `hvtiRutilities_cp_lock_lost` (still also `hvti_cp_lock_lost` for this
+  release), and every deprecation notice is `hvtiRutilities_deprecated`.
+
+- `options(hvti.quiet = TRUE)` silences the informational messages from
+  [`cache_fit()`](https://ehrlinger.github.io/hvtiRutilities/reference/cache_fit.md),
+  [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)’s
+  registration summary and the checkpoint functions. Warnings and errors
+  are never silenced, and neither is the reminder that checkpoint notes
+  must not contain patient information.
+
+- [`capture_provenance()`](https://ehrlinger.github.io/hvtiRutilities/reference/capture_provenance.md)
+  opens its record with the seven fields every hvtiR package’s
+  provenance shares: `package`, `version`, `sha`, `method` (the job),
+  `seed`, `rng_kind` and `time`. A new `seed` argument records a seeded
+  job’s seed, and
+  [`cache_fit()`](https://ehrlinger.github.io/hvtiRutilities/reference/cache_fit.md)
+  passes its own; an unseeded job’s `seed` and an unknown `sha` are
+  `null` in the published JSON.
+
+- The documentation source is now roxygen markdown
+  (`Roxygen: list(markdown = TRUE)`), per the family API rubric. The
+  help pages say the same things; cross-references render as `fn()`
+  links, and a few places where Rd mode printed markdown literally
+  (backticks around file names, `**ambiguous**` in
+  [`sas_triage()`](https://ehrlinger.github.io/hvtiRutilities/reference/sas_triage.md))
+  now render as intended.
+
+- The arguments that take one or more columns now end in `_cols`, per
+  the family API rubric. Each old name works for one more release with a
+  once-per-session warning of class `hvtiRutilities_deprecated`, and
+  each new name keeps the old one’s position, so positional calls bind
+  as before:
+
+  - `vars` is now `var_cols` in
+    [`covariate_audit()`](https://ehrlinger.github.io/hvtiRutilities/reference/covariate_audit.md),
+    [`covariates_to_numeric()`](https://ehrlinger.github.io/hvtiRutilities/reference/covariates_to_numeric.md),
+    [`level_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/level_map.md),
+    [`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
+    and
+    [`proc_univariate()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_univariate.md).
+  - `class` is now `class_cols` in
+    [`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
+    and
+    [`proc_univariate()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_univariate.md).
+  - `tables` is now `table_cols` in
+    [`proc_freq()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_freq.md).
+  - `var` is now `var_cols` in
+    [`proc_print()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_print.md).
+  - `skip_vars` is now `skip_cols` in
+    [`r_data_types()`](https://ehrlinger.github.io/hvtiRutilities/reference/r_data_types.md),
+    and through it in `read_clinical_data(...)`.
+  - `sort_key` is now `sort_key_cols` in
+    [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md).
+    The field it writes in `manifest.yaml` is still `sort_key`.
+  - An old and a new name given together is an error, not one silently
+    winning.
+  - Two abbreviations that used to match one formal now match the old
+    and the new name both, and R stops with “argument matches multiple
+    formal arguments”: `var =` in
+    [`covariate_audit()`](https://ehrlinger.github.io/hvtiRutilities/reference/covariate_audit.md),
+    [`covariates_to_numeric()`](https://ehrlinger.github.io/hvtiRutilities/reference/covariates_to_numeric.md),
+    [`level_map()`](https://ehrlinger.github.io/hvtiRutilities/reference/level_map.md),
+    [`proc_means()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_means.md)
+    and
+    [`proc_univariate()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_univariate.md),
+    and `table =` in
+    [`proc_freq()`](https://ehrlinger.github.io/hvtiRutilities/reference/proc_freq.md).
+    Write the full new name.
+
+- New
+  [`source_changed()`](https://ehrlinger.github.io/hvtiRutilities/reference/source_changed.md)
+  says whether a registered dataset’s source has been rebuilt since it
+  was registered, without reading any data, so a report can say a newer
+  build is waiting before it reads the data (hvtiRtemplates’ top box).
+
+- [`read_built()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_built.md),
+  [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
+  and
+  [`source_changed()`](https://ehrlinger.github.io/hvtiRutilities/reference/source_changed.md)
+  now settle whether a registered dataset’s source changed by its
+  SHA-256 alone. The size-and-modification-time shortcut is gone: it
+  called a same-size replacement that kept the recorded modification
+  time (a copy or restore that preserves dates) unchanged, so jobs read
+  the old version with no notice and
+  [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
+  would not register the new one. The cost is one hash of the source per
+  read of a registered dataset.
+  [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
+  no longer rewrites the manifest, or asks for a commit, when a source
+  was only touched.
+
+- The README and the SAS procedures vignette use the new argument names,
+  `class_cols` and `weight_col`, rather than the deprecated `class` and
+  `weights`.
+
+- The
+  [`sas_triage()`](https://ehrlinger.github.io/hvtiRutilities/reference/sas_triage.md),
+  [`write_macro_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/write_macro_manifest.md)
+  and
+  [`write_collision_report()`](https://ehrlinger.github.io/hvtiRutilities/reference/write_collision_report.md)
+  examples now run: they looked for a macro library under `inst/extdata`
+  that the package does not ship, so they did nothing. Each builds a
+  one-macro library in a directory of its own made with
+  [`tempfile()`](https://rdrr.io/r/base/tempfile.html). Those examples,
+  [`study_declare()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_declare.md)’s
+  and the dataset versioning vignette write only under such a directory
+  and remove only it, never a fixed name under
+  [`tempdir()`](https://rdrr.io/r/base/tempfile.html) that may hold your
+  own files.
+
 ## hvtiRutilities 1.5.23
 
 - The renv-repair tests write their sound lock under the running R

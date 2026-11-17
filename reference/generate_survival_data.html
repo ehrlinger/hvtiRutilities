@@ -13,7 +13,7 @@ compatible with haven and hvtiRutilities::label_map()."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.23</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.24</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -192,14 +192,14 @@ modelled via a logistic function of bypass time and NYHA class.</p>
 outcome (<code>iv_dead</code>, <code>dead</code>) and 17 clinical predictors spanning
 demographics, pre-operative labs,
 cardiac function, and surgical variables.</p>
-<p>With a <code>seed</code>, the function calls <code>set.seed(seed)</code> and draws from
-there, so the same <code>seed</code> and <code>n</code> always give the same data. The
-global stream is left where the simulation ended, as any seeded R code
-leaves it; set a seed again before later code that needs its own
-reproducible draws. With <code>seed = NULL</code> the function sets no seed and
-draws from the caller's stream, so
-<code>set.seed(s); generate_survival_data(seed = NULL)</code> reproduces
-<code>generate_survival_data(seed = s)</code>.</p>
+<p>With a <code>seed</code>, the default included, the function calls <code>set.seed(seed)</code>
+and draws from there, so the same <code>seed</code> and <code>n</code> always give the same
+data. It then puts the caller's random number stream back as it found it,
+even when it fails, so generating example data never changes what later
+code draws; an unseeded session stays unseeded. With <code>seed = NULL</code> the
+function sets no seed and draws from the caller's stream, advancing it as
+any random draw does, so <code>set.seed(s); generate_survival_data(seed = NULL)</code>
+reproduces <code>generate_survival_data(seed = s)</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
