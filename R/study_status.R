@@ -402,7 +402,8 @@ study_status <- function(root = getwd()) {
                            paste0("no _study.yml at this root; recovery may ",
                                   "be available with study-setup --recover; ",
                                   "if its Tracker ID cannot be inferred, run ",
-                                  "study-setup 42 --recover"))
+                                  "study-setup 42 --recover. ",
+                                  .study_setup_hint))
   } else {
     parsed <- tryCatch(
       study_config(root, require_data = FALSE),
@@ -421,7 +422,8 @@ study_status <- function(root = getwd()) {
       } else if (isFALSE(cfg$identity_verified)) {
         .status_row("_study.yml", "UNVERIFIED",
                     paste0("study: ", cfg$study, "; identity entered by ",
-                           "hand, confirm it with study-setup --verify"))
+                           "hand, confirm it with study-setup --verify. ",
+                           .study_setup_hint))
       } else {
         .status_row("_study.yml", "OK", paste0("study: ", cfg$study))
       }

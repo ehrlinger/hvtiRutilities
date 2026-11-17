@@ -23,6 +23,7 @@ test_that("study_config errors when no manifest exists, naming what it walked", 
   expect_error(study_config(bare), "_study.yml")
   expect_error(study_config(bare), "Walked")
   expect_error(study_config(bare), "study-setup --recover")
+  expect_error(study_config(bare), "shell command", fixed = TRUE)
 })
 
 test_that("study_config errors on a missing required built key", {

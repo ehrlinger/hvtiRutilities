@@ -258,6 +258,7 @@ test_that("missing study status includes both recovery forms", {
 
   expect_match(detail, "study-setup --recover", fixed = TRUE)
   expect_match(detail, "study-setup 42 --recover", fixed = TRUE)
+  expect_match(detail, "shell command", fixed = TRUE)
 })
 
 test_that("provenance is FAIL when a .qmd source has no sidecar", {
@@ -368,6 +369,7 @@ test_that("study_status reports a hand-entered identity as UNVERIFIED", {
 
   expect_equal(row$status, "UNVERIFIED")
   expect_match(row$detail, "study-setup --verify", fixed = TRUE)
+  expect_match(row$detail, "not an R function", fixed = TRUE)
 })
 
 test_that("print.study_status prints an UNVERIFIED identity", {

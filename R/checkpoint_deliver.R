@@ -298,7 +298,7 @@
   } else if (identical(reason, "identity unverified")) {
     .hvti_inform(length(pending), " checkpoint(s) saved locally and not pushed: ",
                  "identity unverified. Run study-setup --verify, then ",
-                 "study_checkpoint_push().")
+                 "study_checkpoint_push(). ", .study_setup_hint, ".")
   } else if (!is.null(reason) && reason != "no remote configured") {
     tags <- unlist(lapply(log[pending], function(e) e$tag))
     advice <- .cp_or(repair, "Run study_checkpoint_push() to retry.")

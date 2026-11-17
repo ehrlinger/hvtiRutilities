@@ -1,0 +1,1 @@
+* Every message that points to `study-setup` (`study_config()`, `study_status()` and a checkpoint left unpushed for an unverified identity) now says it is a shell command on the LRI servers, not an R function, and where its one-time setup is described. A user who ran `study-setup --verify` without that setup got only `command not found`.
