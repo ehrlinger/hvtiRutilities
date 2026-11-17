@@ -8,14 +8,6 @@
 # directory walk itself; study_root() is a thin accessor over it, not the other
 # way round.
 
-# Every message that sends a user to study-setup says what it is. Its name
-# reads like an R function, but it is a qhsprograms command that each user
-# defines once as a shell function, and only it may read Study Tracker.
-.study_setup_hint <- paste0(
-  "study-setup is a shell command on the LRI servers, not an R function; ",
-  "set it up once as the qhsprograms README describes (Shared runtime)"
-)
-
 .study_required <- function(require_data = TRUE) {
   if (!require_data) return("study")
   c("study", "built")
@@ -223,12 +215,8 @@ study_config <- function(start = getwd(), require_data = TRUE) {
 
   if (is.null(found)) {
     stop("study_config(): no _study.yml found.\n\n",
-         "Recovery may be available from CORR_STUDIES:\n",
-         "  study-setup --recover\n\n",
-         "If the Study Tracker ID cannot be determined from this ",
-         "repository:\n",
-         "  study-setup 42 --recover\n\n",
-         .study_setup_hint, ".\n\n",
+         "study_recover() restores it from CORR_STUDIES once that is ",
+         "available; it is planned, not live yet.\n\n",
          "Walked, in order:\n  ",
          paste(walked, collapse = "\n  "),
          "\nStart from inside a study tree.",

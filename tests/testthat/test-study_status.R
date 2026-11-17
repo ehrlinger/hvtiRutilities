@@ -252,13 +252,12 @@ test_that("study_status does not read an existing ancillary dataset", {
   expect_false(any(grepl("^cohort(?::|$)", status$checks$item)))
 })
 
-test_that("missing study status includes both recovery forms", {
+test_that("missing study status points to study_recover()", {
   status <- study_status(withr::local_tempdir())
   detail <- check_for(status, "_study.yml")$detail
 
-  expect_match(detail, "study-setup --recover", fixed = TRUE)
-  expect_match(detail, "study-setup 42 --recover", fixed = TRUE)
-  expect_match(detail, "shell command", fixed = TRUE)
+  expect_match(detail, "study_recover()", fixed = TRUE)
+  expect_no_match(detail, "study-setup", fixed = TRUE)
 })
 
 test_that("provenance is FAIL when a .qmd source has no sidecar", {
@@ -368,8 +367,8 @@ test_that("study_status reports a hand-entered identity as UNVERIFIED", {
   row <- check_for(study_status(root), "_study.yml")
 
   expect_equal(row$status, "UNVERIFIED")
-  expect_match(row$detail, "study-setup --verify", fixed = TRUE)
-  expect_match(row$detail, "not an R function", fixed = TRUE)
+  expect_match(row$detail, "study_verify()", fixed = TRUE)
+  expect_no_match(row$detail, "study-setup", fixed = TRUE)
 })
 
 test_that("print.study_status prints an UNVERIFIED identity", {

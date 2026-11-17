@@ -368,7 +368,7 @@ print.study_checkpoint <- function(x, ...) {
 #' Retries delivery of every checkpoint, closure and reopening in
 #' `.checkpoint/log.yml` that has not reached the remote yet.
 #' [study_checkpoint()] does this on every call; use this function
-#' after a network outage, or once `study-setup --verify` has verified a
+#' after a network outage, or once [study_verify()] has verified a
 #' manually entered identity. A promoted exploration's held checkpoints are
 #' delivered once `checkpoint: remote:` is set; promotion does not set it.
 #' On an exploration set up with `derived_from` that has not been
