@@ -31,4 +31,5 @@ is rewritten only when the set changes, and a \code{DESCRIPTION} that is not a s
 root <- file.path(tempdir(), "declare-example")
 dir.create(root, showWarnings = FALSE)
 study_declare("arrow", root)
+unlink(root, recursive = TRUE)
 }

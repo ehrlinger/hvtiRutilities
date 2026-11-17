@@ -45,10 +45,11 @@ mount point yields the same value and a share remount does not invalidate
 every committed report.
 }
 \examples{
-\donttest{
-d <- system.file("extdata", "macros", package = "hvtiRutilities")
-if (nzchar(d)) {
-  write_collision_report(sas_triage(d), tempfile(fileext = ".md"))
-}
-}
+d <- file.path(tempdir(), "macros")
+dir.create(d, showWarnings = FALSE)
+writeLines(c("\%macro hello(x);", "  \%put &x;", "\%mend hello;"),
+           file.path(d, "hello.sas"))
+out <- tempfile(fileext = ".md")
+write_collision_report(sas_triage(d), out)
+unlink(c(d, out), recursive = TRUE)
 }

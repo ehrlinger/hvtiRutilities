@@ -1,1 +1,3 @@
 * The README and the SAS procedures vignette use the new argument names, `class_cols` and `weight_col`, rather than the deprecated `class` and `weights`.
+
+* The `sas_triage()`, `write_macro_manifest()` and `write_collision_report()` examples now run: they looked for a macro library under `inst/extdata` that the package does not ship, so they did nothing. Each builds a one-macro library in `tempdir()` instead. Those examples, `study_declare()`'s and the dataset versioning vignette remove the files they create.

@@ -27,10 +27,11 @@ Run metadata belongs in the report, not here. This diverges from
 because the datasets it tracks genuinely change over time.
 }
 \examples{
-\donttest{
-d <- system.file("extdata", "macros", package = "hvtiRutilities")
-if (nzchar(d)) {
-  write_macro_manifest(sas_triage(d), tempfile(fileext = ".yaml"))
-}
-}
+d <- file.path(tempdir(), "macros")
+dir.create(d, showWarnings = FALSE)
+writeLines(c("\%macro hello(x);", "  \%put &x;", "\%mend hello;"),
+           file.path(d, "hello.sas"))
+out <- tempfile(fileext = ".yaml")
+write_macro_manifest(sas_triage(d), out)
+unlink(c(d, out), recursive = TRUE)
 }

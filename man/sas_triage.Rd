@@ -64,9 +64,11 @@ Ambiguity is resolved by a human writing an entry into \code{overrides} and
 re-running. This makes the result reproducible and auditable.
 }
 \examples{
-\donttest{
-d <- system.file("extdata", "macros", package = "hvtiRutilities")
-if (nzchar(d)) sas_triage(d)
-}
+d <- file.path(tempdir(), "macros")
+dir.create(d, showWarnings = FALSE)
+writeLines(c("\%macro hello(x);", "  \%put &x;", "\%mend hello;"),
+           file.path(d, "hello.sas"))
+sas_triage(d)
+unlink(d, recursive = TRUE)
 
 }

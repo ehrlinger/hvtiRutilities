@@ -21,6 +21,7 @@
 #' root <- file.path(tempdir(), "declare-example")
 #' dir.create(root, showWarnings = FALSE)
 #' study_declare("arrow", root)
+#' unlink(root, recursive = TRUE)
 study_declare <- function(packages = character(0), root = NULL) {
   root <- if (is.null(root)) study_root() else normalizePath(root, mustWork = TRUE)
   path <- file.path(root, "DESCRIPTION")

@@ -459,6 +459,11 @@ an extract once you know it moved.
 | **For an unregistered legacy file** | Use `update_manifest()` to record its current bytes; a checksum cannot recover an overwritten version |
 | **`.gitignore`** | Add `datasets/` — commit the manifest, not the data |
 
+```{r}
+#| include: false
+unlink(c(datasets_dir, manifest_path), recursive = TRUE)
+```
+
 ## Session Information
 
 ```{r}
