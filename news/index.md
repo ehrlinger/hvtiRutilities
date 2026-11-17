@@ -15,6 +15,15 @@
   dry-runs first and writes only with `yes = TRUE` or a yes at an
   interactive prompt.
 
+- [`study_config()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_config.md),
+  [`study_status()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_status.md)
+  and a checkpoint left unpushed for an unverified identity now point to
+  [`study_verify()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_verify.md)
+  and
+  [`study_recover()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_recover.md)
+  instead of the `study-setup` shell command. A user who followed the
+  old hint on the LRI servers got only `command not found`.
+
 - `study_verify(replace = TRUE)` replaces a typed identity that differs
   from the Study Tracker record with that record, after printing the
   differences. It passes `--accept-tracker`, so it works in RStudio,
