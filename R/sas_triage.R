@@ -200,10 +200,12 @@
 #' @export sas_triage
 #'
 #' @examples
-#' \donttest{
-#' d <- system.file("extdata", "macros", package = "hvtiRutilities")
-#' if (nzchar(d)) sas_triage(d)
-#' }
+#' d <- tempfile("macros")
+#' dir.create(d)
+#' writeLines(c("%macro hello(x);", "  %put &x;", "%mend hello;"),
+#'            file.path(d, "hello.sas"))
+#' sas_triage(d)
+#' unlink(d, recursive = TRUE)
 #'
 #' @importFrom stats setNames
 sas_triage <- function(dir, overrides = NULL) {

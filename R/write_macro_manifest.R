@@ -21,12 +21,13 @@
 #' @export write_macro_manifest
 #'
 #' @examples
-#' \donttest{
-#' d <- system.file("extdata", "macros", package = "hvtiRutilities")
-#' if (nzchar(d)) {
-#'   write_macro_manifest(sas_triage(d), tempfile(fileext = ".yaml"))
-#' }
-#' }
+#' d <- tempfile("macros")
+#' dir.create(d)
+#' writeLines(c("%macro hello(x);", "  %put &x;", "%mend hello;"),
+#'            file.path(d, "hello.sas"))
+#' out <- file.path(d, "manifest.yaml")
+#' write_macro_manifest(sas_triage(d), out)
+#' unlink(d, recursive = TRUE)
 write_macro_manifest <- function(x, path) {
   # File-level drop rows (rules 1-3) carry macro = "" so that base-R
   # `df[df$macro == name, ]` subsetting in the tests does not inject phantom
@@ -107,12 +108,13 @@ write_macro_manifest <- function(x, path) {
 #' @export write_collision_report
 #'
 #' @examples
-#' \donttest{
-#' d <- system.file("extdata", "macros", package = "hvtiRutilities")
-#' if (nzchar(d)) {
-#'   write_collision_report(sas_triage(d), tempfile(fileext = ".md"))
-#' }
-#' }
+#' d <- tempfile("macros")
+#' dir.create(d)
+#' writeLines(c("%macro hello(x);", "  %put &x;", "%mend hello;"),
+#'            file.path(d, "hello.sas"))
+#' out <- file.path(d, "collisions.md")
+#' write_collision_report(sas_triage(d), out)
+#' unlink(d, recursive = TRUE)
 write_collision_report <- function(x, path) {
   # nzchar() excludes file-level drop rows (macro = ""); see write_macro_manifest.
   defs <- x[!is.na(x$macro) & nzchar(x$macro), , drop = FALSE]
