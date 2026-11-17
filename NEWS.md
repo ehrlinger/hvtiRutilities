@@ -1,3 +1,9 @@
+# hvtiRutilities 1.5.25
+
+* New `study_verify()` and `study_recover()` run the qhsprograms `study-setup --verify` and `--recover` commands from R on the LRI servers, so a hint that sends a user to verify or recover no longer sends them to the shell. `study_verify()` loads the Study Tracker credentials into that command's process only. `study_recover()` dry-runs first and writes only with `yes = TRUE` or a yes at an interactive prompt.
+
+* `study_verify(replace = TRUE)` replaces a typed identity that differs from the Study Tracker record with that record, after printing the differences. It passes `--accept-tracker`, so it works in RStudio, where the command cannot ask; it needs a qhsprograms `study-setup` that has that flag. The default, `replace = FALSE`, changes nothing on a mismatch.
+
 # hvtiRutilities 1.5.24
 
 * A seeded call no longer changes the caller's random number stream. `generate_survival_data()` with a seed, its default `seed = 1024` included, and `cache_fit()` with a seed draw from `set.seed(seed)` as before and then put the caller's `.Random.seed` back as they found it, even on error, or remove it if the session had none; `cache_fit()` restores the caller's generator kinds as well. The data and the fitted results are unchanged. **Compatibility:** code that drew random numbers after one of these calls without setting its own seed drew from `set.seed(seed)` and now draws from wherever the caller's stream was, so its numbers change; seed that step yourself. A `cache_fit()` hit no longer calls `set.seed()`, and computed and loaded results still leave the stream alike. With `seed = NULL` both functions draw from, and advance, the caller's stream as before.

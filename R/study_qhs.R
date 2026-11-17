@@ -59,12 +59,17 @@
 #' file the function stops and says so.
 #'
 #' When the typed identity differs from the record, the differences are
-#' printed. The command offers to replace the typed identity only when it
-#' can ask at a terminal: in R started from a terminal it asks; in RStudio
-#' it cannot, and nothing changes. Correct `_study.yml` to match the record
-#' and call again.
+#' printed and, by default, nothing changes. Check them, then call again
+#' with `replace = TRUE` to take the Study Tracker record in place of the
+#' typed identity; the differences are printed again first. This works in
+#' RStudio, where the command cannot ask. In R started from a terminal the
+#' command also offers the replacement itself (`[y/N]`, default no).
+#' `replace = TRUE` needs the qhsprograms `study-setup` that has
+#' `--accept-tracker`.
 #'
 #' @param root The study root. Defaults to the working directory.
+#' @param replace `TRUE` to replace a typed identity that differs from the
+#'   Study Tracker record with that record. Defaults to `FALSE`.
 #'
 #' @return `TRUE`, invisibly, once the identity is verified. Stops with an
 #'   error otherwise.
@@ -76,13 +81,18 @@
 #' \dontrun{
 #' # On the LRI servers, from inside the study:
 #' study_verify()
+#' # After checking the differences it printed:
+#' study_verify(replace = TRUE)
 #' }
 #'
 #' @export
-study_verify <- function(root = getwd()) {
+study_verify <- function(root = getwd(), replace = FALSE) {
+  if (!isTRUE(replace) && !isFALSE(replace)) {
+    stop("study_verify(): replace must be TRUE or FALSE.", call. = FALSE)
+  }
   root <- normalizePath(root, mustWork = TRUE)
   .qhs_study_setup("study_verify",
-                   c("--verify", root),
+                   c("--verify", if (replace) "--accept-tracker", root),
                    tracker = TRUE)
 }
 
