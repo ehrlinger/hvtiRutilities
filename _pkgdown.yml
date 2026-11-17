@@ -116,6 +116,13 @@ reference:
   - generate_survival_data
   - sample_data
 
+- title: Echocardiographic Z-Scores
+  desc: Pediatric Heart Network BSA-adjusted z-scores and Haycock body surface area
+  contents:
+  - phn_zscore
+  - phn_zscore_table
+  - bsa_haycock
+
 - title: SAS Macro Canonicalization
   desc: Inventory a legacy SAS macro library and resolve name collisions
   contents:
