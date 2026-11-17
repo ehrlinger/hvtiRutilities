@@ -43,6 +43,31 @@ test_that("study_verify never passes --yes, which would refuse a mismatch", {
   expect_false(shQuote("--yes") %in% qhs$calls()[[1]]$args)
 })
 
+test_that("study_verify passes no replacement flag by default", {
+  qhs <- local_qhs()
+  study_verify(withr::local_tempdir())
+  expect_false(shQuote("--accept-tracker") %in% qhs$calls()[[1]]$args)
+})
+
+test_that("study_verify(replace = TRUE) passes --accept-tracker, not --yes", {
+  qhs <- local_qhs()
+  root <- withr::local_tempdir()
+  expect_true(study_verify(root, replace = TRUE))
+  args <- qhs$calls()[[1]]$args
+  expect_true(all(shQuote(c("--verify", "--accept-tracker",
+                            normalizePath(root))) %in% args))
+  expect_false(shQuote("--yes") %in% args)
+})
+
+test_that("study_verify rejects a replace that is not TRUE or FALSE", {
+  qhs <- local_qhs()
+  for (bad in list(NA, "yes", c(TRUE, TRUE), 1)) {
+    expect_error(study_verify(withr::local_tempdir(), replace = bad),
+                 "TRUE or FALSE")
+  }
+  expect_length(qhs$calls(), 0L)
+})
+
 test_that("study_verify stops before running without a credentials file", {
   qhs <- local_qhs(tracker = FALSE)
   expect_error(study_verify(withr::local_tempdir()), "not available yet")
