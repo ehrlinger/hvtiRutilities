@@ -1,5 +1,27 @@
 # Changelog
 
+## hvtiRutilities 1.5.25
+
+- New
+  [`study_verify()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_verify.md)
+  and
+  [`study_recover()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_recover.md)
+  run the qhsprograms `study-setup --verify` and `--recover` commands
+  from R on the LRI servers, so a hint that sends a user to verify or
+  recover no longer sends them to the shell.
+  [`study_verify()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_verify.md)
+  loads the Study Tracker credentials into that command’s process only.
+  [`study_recover()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_recover.md)
+  dry-runs first and writes only with `yes = TRUE` or a yes at an
+  interactive prompt.
+
+- `study_verify(replace = TRUE)` replaces a typed identity that differs
+  from the Study Tracker record with that record, after printing the
+  differences. It passes `--accept-tracker`, so it works in RStudio,
+  where the command cannot ask; it needs a qhsprograms `study-setup`
+  that has that flag. The default, `replace = FALSE`, changes nothing on
+  a mismatch.
+
 ## hvtiRutilities 1.5.24
 
 - A seeded call no longer changes the caller’s random number stream.
