@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.25</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.26</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -56,6 +56,10 @@
       <small>Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.5.26" id="hvtirutilities-1526">hvtiRutilities 1.5.26<a class="anchor" aria-label="anchor" href="#hvtirutilities-1526"></a></h2>
+<ul><li>New <code><a href="../reference/phn_zscore.html">phn_zscore()</a></code> computes Pediatric Heart Network (PHN) echocardiographic z-scores adjusted for body surface area, and the normal value for each child’s BSA, for all 34 structures of the PHN Normal Echocardiogram Database (Lopez et al., <em>Circ Cardiovasc Imaging</em> 2017): the aortic annulus, root, sinotubular junction and ascending aorta, the arch, the pulmonary annulus and arteries, the mitral and tricuspid diameters and areas, the coronary arteries, and the LV dimensions, areas, volumes and mass. It takes BSA, or height and weight at the echo. <code>units</code> is required, so a measurement in mm is never scored against a norm in cm. <code><a href="../reference/phn_zscore_table.html">phn_zscore_table()</a></code> returns the published coefficients (Table 2), and <code><a href="../reference/bsa_haycock.html">bsa_haycock()</a></code> the Haycock BSA the PHN used. Results match the paper’s worked example and the ParameterZ PHN calculator on every structure.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.5.25" id="hvtirutilities-1525">hvtiRutilities 1.5.25<a class="anchor" aria-label="anchor" href="#hvtirutilities-1525"></a></h2>
 <ul><li><p>New <code><a href="../reference/study_verify.html">study_verify()</a></code> and <code><a href="../reference/study_recover.html">study_recover()</a></code> run the qhsprograms <code>study-setup --verify</code> and <code>--recover</code> commands from R on the LRI servers, so a hint that sends a user to verify or recover no longer sends them to the shell. <code><a href="../reference/study_verify.html">study_verify()</a></code> loads the Study Tracker credentials into that command’s process only. <code><a href="../reference/study_recover.html">study_recover()</a></code> dry-runs first and writes only with <code>yes = TRUE</code> or a yes at an interactive prompt.</p></li>
