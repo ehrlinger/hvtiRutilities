@@ -264,7 +264,7 @@ guess.
   | repos | state |
   |----|----|
   | 11 active repos | `protect main`, active, **zero** approvals, `require_code_owner_review: false`. `hvtiGraphics`, the odd one out on 2026-09-02, now matches |
-  | `hvtiBoostmtree` | **archived**; `protect main` still active with **one** approval |
+  | `hvtiBoostmtree` | **deleted 2026-11-18**; until then archived, `protect main` active with **one** approval |
   | `hvtiEDAreports` | **archived**; ruleset named `main`, **`enforcement: disabled`** |
   | `hvtiRforests` | empty repository: no branches and no ruleset |
 
