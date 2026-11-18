@@ -4,7 +4,9 @@ Returns the coefficients
 [`phn_zscore()`](https://ehrlinger.github.io/hvtiRutilities/reference/phn_zscore.md)
 uses, exactly as published in Table 2 of Lopez et al. (2017): for each
 structure, its unit, the BSA exponent `alpha`, and the mean and standard
-deviation of the indexed value `measurement / BSA^alpha`.
+deviation of the indexed value `measurement / BSA^alpha`, with the
+echocardiographic view it was measured in or the formula it was derived
+by.
 
 ## Usage
 
@@ -16,8 +18,8 @@ phn_zscore_table()
 
 A `data.frame` with one row per structure (34 rows) and columns
 `structure` (the paper's abbreviation), `label` (the paper's
-definition), `unit` (the unit the mean and SD are in), `alpha`, `mean`
-and `sd`.
+definition), `view` (Table 2's "Echocardiographic View or Formula"),
+`unit` (the unit the mean and SD are in), `alpha`, `mean` and `sd`.
 
 ## References
 
@@ -35,9 +37,14 @@ ethnicity: the Pediatric Heart Network Normal Echocardiogram Database.
 
 ``` r
 subset(phn_zscore_table(), structure %in% c("ANN", "ROOT", "STJ", "AAO"))
-#>    structure                     label unit alpha mean   sd
-#> 7        ANN   Aortic annular diameter   cm   0.5 1.48 0.14
-#> 8       ROOT      Aortic root diameter   cm   0.5 2.06 0.18
-#> 9        STJ      Sinotubular junction   cm   0.5 1.69 0.16
-#> 10       AAO Ascending aortic diameter   cm   0.5 1.79 0.18
+#>    structure                     label                  view unit alpha mean
+#> 7        ANN   Aortic annular diameter Parasternal long axis   cm   0.5 1.48
+#> 8       ROOT      Aortic root diameter Parasternal long axis   cm   0.5 2.06
+#> 9        STJ      Sinotubular junction Parasternal long axis   cm   0.5 1.69
+#> 10       AAO Ascending aortic diameter Parasternal long axis   cm   0.5 1.79
+#>      sd
+#> 7  0.14
+#> 8  0.18
+#> 9  0.16
+#> 10 0.18
 ```

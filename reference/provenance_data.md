@@ -72,7 +72,7 @@ str(provenance_data("study", cfg = cfg))
 #>  $ path   : chr "00_datasets/built_20261118.parquet"
 #>  $ role   : chr "analysis"
 #>  $ bytes  : num 1162
-#>  $ mtime  : chr "2026-11-18T00:16:06Z"
+#>  $ mtime  : chr "2026-11-18T12:59:39Z"
 #>  $ sha256 : chr "a70fb80222cc62fdad5ebd24da671563bdd084a939a6c2fe792e5d11b218cca3"
 unlink(root, recursive = TRUE)
 ```

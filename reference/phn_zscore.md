@@ -86,16 +86,36 @@ axis) and `PVLAX` (long axis), main and branch pulmonary arteries `MPA`,
 ignores case.
 
 The paper defines `ROOT` only as "aortic root diameter", measured in the
-parasternal long axis by the pediatric quantification standards it
-cites; the ParameterZ PHN calculator labels it "Sinus of Valsalva".
-`LVEDA` is the LV short-axis end-diastolic *area* (cm^2); it is not
-interchangeable with `LVEDD`, the end-diastolic *diameter*.
+parasternal long axis (Table 2); the ParameterZ PHN calculator labels it
+"Sinus of Valsalva". `LVEDA` is the LV short-axis end-diastolic *area*
+(cm^2); it is not interchangeable with `LVEDD`, the end-diastolic
+*diameter*, nor with an LV area traced in an apical view.
+
+**Views and derived quantities.** A z-score is only as comparable as the
+measurement behind it, so match the view: the `view` column of
+[`phn_zscore_table()`](https://ehrlinger.github.io/hvtiRutilities/reference/phn_zscore_table.md)
+gives Table 2's view for each structure. Several structures were not
+measured directly but computed from others, and should be scored only
+when computed the same way:
+
+- `MVA` and `TVA`, the valve areas, are ellipses from the two annular
+  diameters, `pi/4 * AP * LAT`, not planimetered areas.
+
+- `LVEDV` and `LVEDVEPI` are `5/6 * area * length` (the bullet formula).
+
+- `LVM` is `1.05 * (LVEDVEPI - LVEDV)`.
+
+- The ratios are `LVMTV = LVM / LVEDV`, `LVTTD = LVPWT / LVEDD` and
+  `LVSI = LVEDL / LVEDD`.
 
 **What the model does not include.** The paper found age, sex and race
 effects that were statistically significant but under 5% in size, and so
 clinically insignificant; the published z-score uses the single mean and
 SD in Table 2, as here. The reference population is healthy, non-obese
-children aged 0 to 18 years.
+children aged 0 to 18 years. Its exclusions (Data Supplement, Table 1)
+include structural heart disease and a corrected gestational age under
+37 weeks at enrollment, so a premature infant is scored against term
+norms.
 
 ## References
 

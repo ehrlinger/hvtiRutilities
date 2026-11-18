@@ -161,15 +161,28 @@ branch pulmonary arteries <code>MPA</code>, <code>RPA</code>, <code>LPA</code>, 
 diameters <code>MVAP</code>, <code>MVLAT</code>, <code>TVAP</code>, <code>TVLAT</code>, and the LV dimensions <code>LVEDD</code>,
 <code>LVPWT</code>, <code>LVST</code>. Matching ignores case.</p>
 <p>The paper defines <code>ROOT</code> only as "aortic root diameter", measured in the
-parasternal long axis by the pediatric quantification standards it cites;
-the ParameterZ PHN calculator labels it "Sinus of Valsalva".
+parasternal long axis (Table 2); the ParameterZ PHN calculator labels it
+"Sinus of Valsalva".
 <code>LVEDA</code> is the LV short-axis end-diastolic <em>area</em> (cm^2); it is not
-interchangeable with <code>LVEDD</code>, the end-diastolic <em>diameter</em>.</p>
-<p><strong>What the model does not include.</strong> The paper found age, sex and race
+interchangeable with <code>LVEDD</code>, the end-diastolic <em>diameter</em>, nor with an LV
+area traced in an apical view.</p>
+<p><strong>Views and derived quantities.</strong> A z-score is only as comparable as the
+measurement behind it, so match the view: the <code>view</code> column of
+<code><a href="phn_zscore_table.html">phn_zscore_table()</a></code> gives Table 2's view for each structure. Several
+structures were not measured directly but computed from others, and
+should be scored only when computed the same way:</p><ul><li><p><code>MVA</code> and <code>TVA</code>, the valve areas, are ellipses from the two annular
+diameters, <code>pi/4 * AP * LAT</code>, not planimetered areas.</p></li>
+<li><p><code>LVEDV</code> and <code>LVEDVEPI</code> are <code>5/6 * area * length</code> (the bullet formula).</p></li>
+<li><p><code>LVM</code> is <code>1.05 * (LVEDVEPI - LVEDV)</code>.</p></li>
+<li><p>The ratios are <code>LVMTV = LVM / LVEDV</code>, <code>LVTTD = LVPWT / LVEDD</code> and
+<code>LVSI = LVEDL / LVEDD</code>.</p></li>
+</ul><p><strong>What the model does not include.</strong> The paper found age, sex and race
 effects that were statistically significant but under 5% in size, and so
 clinically insignificant; the published z-score uses the single mean and
 SD in Table 2, as here. The reference population is healthy, non-obese
-children aged 0 to 18 years.</p>
+children aged 0 to 18 years. Its exclusions (Data Supplement, Table 1)
+include structural heart disease and a corrected gestational age under 37
+weeks at enrollment, so a premature infant is scored against term norms.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
