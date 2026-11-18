@@ -71,16 +71,33 @@ diameters \code{MVAP}, \code{MVLAT}, \code{TVAP}, \code{TVLAT}, and the LV dimen
 \code{LVPWT}, \code{LVST}. Matching ignores case.
 
 The paper defines \code{ROOT} only as "aortic root diameter", measured in the
-parasternal long axis by the pediatric quantification standards it cites;
-the ParameterZ PHN calculator labels it "Sinus of Valsalva".
+parasternal long axis (Table 2); the ParameterZ PHN calculator labels it
+"Sinus of Valsalva".
 \code{LVEDA} is the LV short-axis end-diastolic \emph{area} (cm^2); it is not
-interchangeable with \code{LVEDD}, the end-diastolic \emph{diameter}.
+interchangeable with \code{LVEDD}, the end-diastolic \emph{diameter}, nor with an LV
+area traced in an apical view.
+
+\strong{Views and derived quantities.} A z-score is only as comparable as the
+measurement behind it, so match the view: the \code{view} column of
+\code{\link[=phn_zscore_table]{phn_zscore_table()}} gives Table 2's view for each structure. Several
+structures were not measured directly but computed from others, and
+should be scored only when computed the same way:
+\itemize{
+\item \code{MVA} and \code{TVA}, the valve areas, are ellipses from the two annular
+diameters, \code{pi/4 * AP * LAT}, not planimetered areas.
+\item \code{LVEDV} and \code{LVEDVEPI} are \code{5/6 * area * length} (the bullet formula).
+\item \code{LVM} is \code{1.05 * (LVEDVEPI - LVEDV)}.
+\item The ratios are \code{LVMTV = LVM / LVEDV}, \code{LVTTD = LVPWT / LVEDD} and
+\code{LVSI = LVEDL / LVEDD}.
+}
 
 \strong{What the model does not include.} The paper found age, sex and race
 effects that were statistically significant but under 5\% in size, and so
 clinically insignificant; the published z-score uses the single mean and
 SD in Table 2, as here. The reference population is healthy, non-obese
-children aged 0 to 18 years.
+children aged 0 to 18 years. Its exclusions (Data Supplement, Table 1)
+include structural heart disease and a corrected gestational age under 37
+weeks at enrollment, so a premature infant is scored against term norms.
 }
 \examples{
 # The paper's worked example: a mitral diameter of 11 mm at BSA 0.3 m^2

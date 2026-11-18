@@ -85,6 +85,44 @@
     "LV thickness-to-dimension ratio",
     "LV sphericity index"
   ),
+  # Table 2 column "Echocardiographic View or Formula". The formula rows are
+  # derived from other measurements, not measured directly.
+  view = c(
+    "Parasternal long axis",                      # MVAP
+    "Apical 4 chamber",                           # MVLAT
+    "pi/4 * MVAP * MVLAT",                        # MVA
+    "Parasternal long axis",                      # TVAP
+    "Apical 4 chamber",                           # TVLAT
+    "pi/4 * TVAP * TVLAT",                        # TVA
+    "Parasternal long axis",                      # ANN
+    "Parasternal long axis",                      # ROOT
+    "Parasternal long axis",                      # STJ
+    "Parasternal long axis",                      # AAO
+    "Suprasternal long axis",                     # ARCHPROX
+    "Suprasternal long axis",                     # ARCHDIST
+    "Suprasternal long axis",                     # ISTH
+    "Parasternal short axis",                     # LMCA
+    "Parasternal short axis",                     # LAD
+    "Parasternal short axis",                     # RCA
+    "Parasternal short axis",                     # PVSAX
+    "Parasternal long axis",                      # PVLAX
+    "Parasternal short axis",                     # MPA
+    "Parasternal short axis",                     # RPA
+    "Parasternal short axis",                     # LPA
+    "Parasternal short axis",                     # LVEDD
+    "Parasternal short axis",                     # LVPWT
+    "Parasternal short axis",                     # LVST
+    "Apical 4 chamber",                           # LVEDL
+    "Apical 4 chamber",                           # LVEDLEPI
+    "Parasternal short axis",                     # LVEDA
+    "Parasternal short axis",                     # LVEDAEPI
+    "5/6 * LVEDA * LVEDL",                        # LVEDV
+    "5/6 * LVEDAEPI * LVEDLEPI",                  # LVEDVEPI
+    "1.05 * (LVEDVEPI - LVEDV)",                  # LVM
+    "LVM / LVEDV",                                # LVMTV
+    "LVPWT / LVEDD",                              # LVTTD
+    "LVEDL / LVEDD"                               # LVSI
+  ),
   stringsAsFactors = FALSE
 )
 
@@ -147,11 +185,13 @@ bsa_haycock <- function(height_cm, weight_kg) {
 #' Returns the coefficients [phn_zscore()] uses, exactly as published in
 #' Table 2 of Lopez et al. (2017): for each structure, its unit, the BSA
 #' exponent `alpha`, and the mean and standard deviation of the indexed value
-#' `measurement / BSA^alpha`.
+#' `measurement / BSA^alpha`, with the echocardiographic view it was measured
+#' in or the formula it was derived by.
 #'
 #' @return A `data.frame` with one row per structure (34 rows) and columns
 #'   `structure` (the paper's abbreviation), `label` (the paper's definition),
-#'   `unit` (the unit the mean and SD are in), `alpha`, `mean` and `sd`.
+#'   `view` (Table 2's "Echocardiographic View or Formula"), `unit` (the unit
+#'   the mean and SD are in), `alpha`, `mean` and `sd`.
 #'
 #' @references
 #' Lopez L, Colan S, Stylianou M, et al. Relationship of echocardiographic
@@ -165,7 +205,7 @@ bsa_haycock <- function(height_cm, weight_kg) {
 #' @examples
 #' subset(phn_zscore_table(), structure %in% c("ANN", "ROOT", "STJ", "AAO"))
 phn_zscore_table <- function() {
-  .PHN_TABLE2[c("structure", "label", "unit", "alpha", "mean", "sd")]
+  .PHN_TABLE2[c("structure", "label", "view", "unit", "alpha", "mean", "sd")]
 }
 
 #' Pediatric Heart Network echocardiographic z-scores
@@ -211,16 +251,31 @@ phn_zscore_table <- function() {
 #' `LVPWT`, `LVST`. Matching ignores case.
 #'
 #' The paper defines `ROOT` only as "aortic root diameter", measured in the
-#' parasternal long axis by the pediatric quantification standards it cites;
-#' the ParameterZ PHN calculator labels it "Sinus of Valsalva".
+#' parasternal long axis (Table 2); the ParameterZ PHN calculator labels it
+#' "Sinus of Valsalva".
 #' `LVEDA` is the LV short-axis end-diastolic *area* (cm^2); it is not
-#' interchangeable with `LVEDD`, the end-diastolic *diameter*.
+#' interchangeable with `LVEDD`, the end-diastolic *diameter*, nor with an LV
+#' area traced in an apical view.
+#'
+#' **Views and derived quantities.** A z-score is only as comparable as the
+#' measurement behind it, so match the view: the `view` column of
+#' [phn_zscore_table()] gives Table 2's view for each structure. Several
+#' structures were not measured directly but computed from others, and
+#' should be scored only when computed the same way:
+#' * `MVA` and `TVA`, the valve areas, are ellipses from the two annular
+#'   diameters, `pi/4 * AP * LAT`, not planimetered areas.
+#' * `LVEDV` and `LVEDVEPI` are `5/6 * area * length` (the bullet formula).
+#' * `LVM` is `1.05 * (LVEDVEPI - LVEDV)`.
+#' * The ratios are `LVMTV = LVM / LVEDV`, `LVTTD = LVPWT / LVEDD` and
+#'   `LVSI = LVEDL / LVEDD`.
 #'
 #' **What the model does not include.** The paper found age, sex and race
 #' effects that were statistically significant but under 5% in size, and so
 #' clinically insignificant; the published z-score uses the single mean and
 #' SD in Table 2, as here. The reference population is healthy, non-obese
-#' children aged 0 to 18 years.
+#' children aged 0 to 18 years. Its exclusions (Data Supplement, Table 1)
+#' include structural heart disease and a corrected gestational age under 37
+#' weeks at enrollment, so a premature infant is scored against term norms.
 #'
 #' @param x Numeric vector of measurements.
 #' @param structure Character, the paper's abbreviation for the structure
