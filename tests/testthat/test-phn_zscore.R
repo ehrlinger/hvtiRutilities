@@ -95,6 +95,25 @@ test_that("the coefficient table is Table 2 of Lopez et al. 2017", {
   expect_equal(row("LVM"), c("g", "1.25", "53.02", "9.06"))
 })
 
+test_that("the table carries Table 2's view or formula for every structure", {
+  tb <- phn_zscore_table()
+  expect_identical(names(tb), c("structure", "label", "view", "unit", "alpha", "mean", "sd"))
+  expect_false(anyNA(tb$view))
+  expect_true(all(nzchar(tb$view)))
+  view <- function(s) tb$view[tb$structure == s]
+  expect_identical(view("MVAP"), "Parasternal long axis")
+  expect_identical(view("MVLAT"), "Apical 4 chamber")
+  expect_identical(view("MVA"), "pi/4 * MVAP * MVLAT")
+  expect_identical(view("ROOT"), "Parasternal long axis")
+  expect_identical(view("ISTH"), "Suprasternal long axis")
+  expect_identical(view("PVSAX"), "Parasternal short axis")
+  expect_identical(view("PVLAX"), "Parasternal long axis")
+  expect_identical(view("LVEDL"), "Apical 4 chamber")
+  expect_identical(view("LVEDA"), "Parasternal short axis")
+  expect_identical(view("LVM"), "1.05 * (LVEDVEPI - LVEDV)")
+  expect_identical(view("LVSI"), "LVEDL / LVEDD")
+})
+
 test_that("z is 0 at the predicted value, and units only rescale", {
   r <- phn_zscore(10, "ANN", "mm", bsa = 0.4)
   expect_equal(phn_zscore(r$predicted, "ANN", "mm", bsa = 0.4)$z, 0)

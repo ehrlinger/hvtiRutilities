@@ -9,13 +9,15 @@ phn_zscore_table()
 \value{
 A \code{data.frame} with one row per structure (34 rows) and columns
 \code{structure} (the paper's abbreviation), \code{label} (the paper's definition),
-\code{unit} (the unit the mean and SD are in), \code{alpha}, \code{mean} and \code{sd}.
+\code{view} (Table 2's "Echocardiographic View or Formula"), \code{unit} (the unit
+the mean and SD are in), \code{alpha}, \code{mean} and \code{sd}.
 }
 \description{
 Returns the coefficients \code{\link[=phn_zscore]{phn_zscore()}} uses, exactly as published in
 Table 2 of Lopez et al. (2017): for each structure, its unit, the BSA
 exponent \code{alpha}, and the mean and standard deviation of the indexed value
-\code{measurement / BSA^alpha}.
+\code{measurement / BSA^alpha}, with the echocardiographic view it was measured
+in or the formula it was derived by.
 }
 \examples{
 subset(phn_zscore_table(), structure \%in\% c("ANN", "ROOT", "STJ", "AAO"))
