@@ -157,7 +157,11 @@ folder is accepted too, such as <code>"00_datasets/built.csv"</code> (what
 file-name completion gives from the study root) or an absolute path, and
 is recorded by its file name alone. A relative path is read against the
 working directory, then the study root. A file in any other folder is
-refused.</p></dd>
+refused. It may be in any format <code><a href="read_clinical_data.html">read_clinical_data()</a></code> reads (<code>.sas7bdat</code>,
+<code>.csv</code>, <code>.xlsx</code>, <code>.xls</code>, <code>.rds</code>, <code>.rda</code>, <code>.RData</code> or <code>.parquet</code>); registration converts it
+to parquet whichever it is, except a release-aware registration, which
+records the catalog's file as it is. When R writes the file, prefer parquet to
+an R data file: tools outside R, such as SAS parity checks, can read it too.</p></dd>
 
 
 <dt id="arg-dataset">dataset<a class="anchor" aria-label="anchor" href="#arg-dataset"></a></dt>
@@ -278,10 +282,10 @@ from a second source or by a script outside the study's build.</p></li>
 <span class="r-in"><span>                 <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">root</span>, <span class="st">"00_datasets"</span>, <span class="st">"built.csv"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>                 row.names <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">register_data</span><span class="op">(</span>file <span class="op">=</span> <span class="st">"built.csv"</span>, key_cols <span class="op">=</span> <span class="st">"ccfid"</span>, root <span class="op">=</span> <span class="va">root</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Study: /tmp/RtmpCfFuNP/register-data-example</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Study: /tmp/RtmpQXYhAE/register-data-example</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [x] _study.yml — study: Example</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Example", study_tracker_id = 1L, root = "/tmp/RtmpCfFuNP/register-data-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Example", study_tracker_id = 1L, root = "/tmp/RtmpQXYhAE/register-data-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [x] manifest.yaml — 1 dataset entry verified by checksum</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [x] dataset — built.csv, registered as built_20261123.parquet</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [ ] provenance — no .qmd/.Rmd sources found; 0 sidecars</span>

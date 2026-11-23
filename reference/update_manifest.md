@@ -42,8 +42,8 @@ only performed when `options(manifest.allow_heavy_rowcount = TRUE)` is
 set. For any other format, or when heavy counting is disabled, supply
 `n_rows` explicitly.
 
-An **`.rds`** holding a data frame is read and, by default, converted
-the way
+An **`.rds`** holding a data frame, or an **`.rda`**/**`.RData`**
+holding exactly one, is read and, by default, converted the way
 [`read_built()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_built.md)
 caches a source: a `<name>.schema.csv` sidecar, recorded by
 `schema_sha256`, and a `<name>.parquet` beside the file, so a later
@@ -162,10 +162,11 @@ update_manifest(
 
 - as_parquet:
 
-  Logical. For an `.rds` given without `n_rows`: `TRUE` (the default)
-  writes a parquet and a schema sidecar beside it and records the
-  schema's hash; `FALSE` records only its row and column counts. Ignored
-  for other formats. Needs the arrow package when `TRUE`.
+  Logical. For an `.rds`, `.rda` or `.RData` given without `n_rows`:
+  `TRUE` (the default) writes a parquet and a schema sidecar beside it
+  and records the schema's hash; `FALSE` records only its row and column
+  counts. Ignored for other formats. Needs the arrow package when
+  `TRUE`.
 
 ## Value
 

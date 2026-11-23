@@ -20,6 +20,11 @@ readxl::read_excel()
 .rds
 R serialized objects via readRDS()
 
+.rda, .RData
+R data files via load(). The file must hold
+exactly one data frame, which is returned; other objects saved with
+it, such as a list of labels, are ignored.
+
 .parquet
 Parquet files via arrow::read_parquet()
 
@@ -45,6 +50,11 @@ readxl::read_excel()
 
 .rds
 R serialized objects via readRDS()
+
+.rda, .RData
+R data files via load(). The file must hold
+exactly one data frame, which is returned; other objects saved with
+it, such as a list of labels, are ignored.
 
 .parquet
 Parquet files via arrow::read_parquet()
@@ -129,6 +139,11 @@ silently converted to <code>.</code>).</p></dd>
 
 <dt><code>.rds</code></dt>
 <dd><p>R serialized objects via <code><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">readRDS()</a></code></p></dd>
+
+<dt><code>.rda</code>, <code>.RData</code></dt>
+<dd><p>R data files via <code><a href="https://rdrr.io/r/base/load.html" class="external-link">load()</a></code>. The file must hold
+exactly one data frame, which is returned; other objects saved with
+it, such as a list of labels, are ignored.</p></dd>
 
 <dt><code>.parquet</code></dt>
 <dd><p>Parquet files via <code><a href="https://arrow.apache.org/docs/r/reference/read_parquet.html" class="external-link">arrow::read_parquet()</a></code></p></dd>

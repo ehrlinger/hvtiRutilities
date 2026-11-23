@@ -61,7 +61,13 @@ register_data(
   completion gives from the study root) or an absolute path, and is
   recorded by its file name alone. A relative path is read against the
   working directory, then the study root. A file in any other folder is
-  refused.
+  refused. It may be in any format
+  [`read_clinical_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_clinical_data.md)
+  reads (`.sas7bdat`, `.csv`, `.xlsx`, `.xls`, `.rds`, `.rda`, `.RData`
+  or `.parquet`); registration converts it to parquet whichever it is,
+  except a release-aware registration, which records the catalog's file
+  as it is. When R writes the file, prefer parquet to an R data file:
+  tools outside R, such as SAS parity checks, can read it too.
 
 - dataset:
 
@@ -183,10 +189,10 @@ utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
                  file.path(root, "00_datasets", "built.csv"),
                  row.names = FALSE)
 register_data(file = "built.csv", key_cols = "ccfid", root = root)
-#> Study: /tmp/RtmpCfFuNP/register-data-example
+#> Study: /tmp/RtmpQXYhAE/register-data-example
 #> 
 #> [x] _study.yml — study: Example
-#> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Example", study_tracker_id = 1L, root = "/tmp/RtmpCfFuNP/register-data-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first
+#> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Example", study_tracker_id = 1L, root = "/tmp/RtmpQXYhAE/register-data-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first
 #> [x] manifest.yaml — 1 dataset entry verified by checksum
 #> [x] dataset — built.csv, registered as built_20261123.parquet
 #> [ ] provenance — no .qmd/.Rmd sources found; 0 sidecars

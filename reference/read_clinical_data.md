@@ -31,6 +31,12 @@ Supported formats:
   R serialized objects via
   [`readRDS()`](https://rdrr.io/r/base/readRDS.html)
 
+- `.rda`, `.RData`:
+
+  R data files via [`load()`](https://rdrr.io/r/base/load.html). The
+  file must hold exactly one data frame, which is returned; other
+  objects saved with it, such as a list of labels, are ignored.
+
 - `.parquet`:
 
   Parquet files via
