@@ -362,26 +362,29 @@ update_manifest <- function(file,
   invisible(manifest)
 }
 
-# The parquet an .rds converts to must not be another entry's data (a
-# registered dated version, or a file recorded under that name), nor a parquet
-# nothing records. One this .rds wrote before, whose entry records a schema,
-# is its own and is replaced.
+# The parquet and schema sidecar an R data file converts to must not be another
+# entry's data (a registered dated version, or a file recorded under that
+# name), nor a file nothing records, such as a data dictionary that happens to
+# be named <name>.schema.csv. Ones this file wrote before, whose entry records
+# a schema, are its own and are replaced.
 .refuse_parquet_clash <- function(file, manifest_path, derived) {
   datasets <- if (file.exists(manifest_path)) .read_manifest(manifest_path)$datasets else list()
   if (!is.list(datasets)) datasets <- list()
   recorded <- vapply(datasets, function(e) as.character(e$file %||% ""), "")
-  target <- basename(derived$parquet)
-  owner <- .cache_name_clash(file, datasets)
-  if (is.null(owner) && target %in% recorded) owner <- list(file = target)
-  if (!is.null(owner)) {
-    stop("update_manifest(): converting ", basename(file), " would write ", target, ", which is ", owner$file,
-         "'s data. Nothing was written. Rename ", basename(file), " or pass as_parquet = FALSE.", call. = FALSE)
-  }
+  version_owner <- .cache_name_clash(file, datasets)
   own <- Filter(function(e) identical(e$file, basename(file)) && !is.null(e$schema_sha256), datasets)
-  if (file.exists(derived$parquet) && !length(own)) {
-    stop("update_manifest(): ", target, " already exists beside ", basename(file), " and no manifest entry ",
-         "records it, so converting would overwrite it. Nothing was written. Move ", target,
-         " aside, or pass as_parquet = FALSE.", call. = FALSE)
+  for (path in c(derived$parquet, derived$schema)) {
+    target <- basename(path)
+    owner <- if (target %in% recorded) list(file = target) else version_owner
+    if (!is.null(owner)) {
+      stop("update_manifest(): converting ", basename(file), " would write ", target, ", which is ", owner$file,
+           "'s data. Nothing was written. Rename ", basename(file), " or pass as_parquet = FALSE.", call. = FALSE)
+    }
+    if (file.exists(path) && !length(own)) {
+      stop("update_manifest(): ", target, " already exists beside ", basename(file), " and no manifest entry ",
+           "records it, so converting would overwrite it. Nothing was written. Move ", target,
+           " aside, or pass as_parquet = FALSE.", call. = FALSE)
+    }
   }
   invisible(NULL)
 }

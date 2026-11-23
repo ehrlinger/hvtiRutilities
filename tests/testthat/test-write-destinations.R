@@ -225,6 +225,30 @@ test_that("update_manifest(file) will not convert over an unrecorded parquet, bu
   expect_identical(nrow(arrow::read_parquet(file.path(data_dir, "cohort.parquet"))), 6L)
 })
 
+test_that("update_manifest(file) will not convert over an unrecorded or recorded schema sidecar", {
+  skip_if_not_installed("arrow")
+  root <- file.path(withr::local_tempdir(), "study")
+  suppressMessages(study_setup(root, "Sidecar clash", 42L, renv = FALSE))
+  data_dir <- file.path(root, "00_datasets")
+  saveRDS(data.frame(id = 1:3), file.path(data_dir, "data.rds"))
+  saveRDS(data.frame(id = 1:3), file.path(data_dir, "dict.rds"))
+  writeLines(c("variable,label", "id,Patient"), file.path(data_dir, "data.schema.csv"))
+  writeLines(c("variable,label", "id,Patient"), file.path(data_dir, "dict.schema.csv"))
+  withr::local_dir(root)
+
+  # A dictionary that happens to carry the sidecar's name, recorded by nothing.
+  expect_error(update_manifest("data.rds"), "data.schema.csv already exists")
+  expect_identical(readLines(file.path(data_dir, "data.schema.csv")), c("variable,label", "id,Patient"))
+  expect_false(file.exists(file.path(data_dir, "data.parquet")))
+
+  # The same, recorded as a dataset of its own.
+  update_manifest("dict.schema.csv")
+  before <- readLines(file.path(root, "manifest.yaml"))
+  expect_error(update_manifest("dict.rds"), "dict.schema.csv, which is dict.schema.csv's data")
+  expect_identical(readLines(file.path(root, "manifest.yaml")), before)
+  expect_identical(readLines(file.path(data_dir, "dict.schema.csv")), c("variable,label", "id,Patient"))
+})
+
 test_that("update_manifest(file) leaves the sidecar and parquet alone when the manifest write fails", {
   skip_if_not_installed("arrow")
   root <- file.path(withr::local_tempdir(), "study")

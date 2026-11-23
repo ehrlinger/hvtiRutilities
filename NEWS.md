@@ -15,8 +15,9 @@
   it and records the shape and schema hash, as `read_built()` does for a
   source; the new `as_parquet = FALSE` lists the `.rds` as it is, with row and
   column counts but no schema. It refuses an `.rds` that does not hold a data
-  frame, and will not overwrite a parquet that another entry records or that
-  no entry records. A conversion that does not read back identically (a
+  frame, and will not overwrite a parquet or schema sidecar that another entry
+  records or that no entry records, such as a data dictionary that happens to
+  be named `<name>.schema.csv`. A conversion that does not read back identically (a
   local-time date-time column, say) stops with nothing written (#316).
 
 * `read_clinical_data()`, and so `register_data()` and `read_built()`, read
