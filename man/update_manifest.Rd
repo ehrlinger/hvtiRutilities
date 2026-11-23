@@ -16,7 +16,8 @@ update_manifest(
   role = c("source", "primary"),
   reader = NULL,
   verbose = FALSE,
-  dataset = NULL
+  dataset = NULL,
+  as_parquet = TRUE
 )
 }
 \arguments{
@@ -80,6 +81,11 @@ added or updated via \code{\link[base:message]{base::message()}}.  Defaults to
 registered dataset to update; \code{NULL} updates every one that changed.
 \code{"built"} is a second name for \code{"study"}. Ignored when
 \code{file} is given.}
+
+\item{as_parquet}{Logical. For an \code{.rds} given without \code{n_rows}: \code{TRUE}
+(the default) writes a parquet and a schema sidecar beside it and records
+the schema's hash; \code{FALSE} records only its row and column counts.
+Ignored for other formats. Needs the arrow package when \code{TRUE}.}
 }
 \value{
 With \code{file}, invisibly returns the updated manifest as a named
@@ -128,9 +134,15 @@ loads the entire dataset/workbook into memory; it is therefore disabled by
 default and only performed when
 \code{options(manifest.allow_heavy_rowcount = TRUE)} is set.  For any other
 format, or when heavy counting is disabled, supply \code{n_rows}
-explicitly. An \code{.rds} is derived data: register it with
-\code{\link[=register_data]{register_data()}}, which writes a parquet and records its shape and
-schema, rather than here, where it would get no schema hash.
+explicitly.
+
+An \strong{\code{.rds}} holding a data frame is read and, by default, converted the
+way \code{\link[=read_built]{read_built()}} caches a source: a \verb{<name>.schema.csv} sidecar,
+recorded by \code{schema_sha256}, and a \verb{<name>.parquet} beside the file, so
+a later change to its columns or types is caught. Its row and column
+counts come from the same read. \code{as_parquet = FALSE} lists it as it is,
+with the counts but no schema. Supplying \code{n_rows} skips the read, as
+for any other format.
 }
 \examples{
 dir <- file.path(tempdir(), "update-manifest-example")

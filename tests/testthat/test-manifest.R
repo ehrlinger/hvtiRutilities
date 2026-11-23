@@ -153,17 +153,20 @@ test_that("update_manifest [Excel] creates entry with correct row count", {
 })
 
 # ---------------------------------------------------------------------------
-# update_manifest — RDS (explicit n_rows required)
+# update_manifest — RDS (converted to parquet unless n_rows is given)
 # ---------------------------------------------------------------------------
 
-test_that("update_manifest [RDS] without n_rows points at register_data()", {
-  tmp <- tempdir()
+test_that("update_manifest [RDS] without n_rows writes the parquet and schema beside it", {
+  skip_if_not_installed("arrow")
+  tmp <- withr::local_tempdir()
   rds <- file.path(tmp, "cohort.rds")
   saveRDS(make_df(5), rds)
-  expect_error(
-    update_manifest(file = rds, manifest_path = file.path(tmp, "m_rds.yaml")),
-    "register_data()", fixed = TRUE
-  )
+  mpath <- file.path(tmp, "m_rds.yaml")
+  update_manifest(file = rds, manifest_path = mpath)
+  entry <- yaml::read_yaml(mpath)$datasets[[1L]]
+  expect_equal(entry$n_rows, 5L)
+  expect_false(is.null(entry$schema_sha256))
+  expect_true(file.exists(file.path(tmp, "cohort.parquet")))
 })
 
 test_that("update_manifest [RDS] succeeds with explicit n_rows", {
