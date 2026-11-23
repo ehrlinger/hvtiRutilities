@@ -21,6 +21,9 @@
 #'   \item{`.xlsx`, `.xls`}{Excel workbooks via
 #'     `readxl::read_excel()`}
 #'   \item{`.rds`}{R serialized objects via `readRDS()`}
+#'   \item{`.rda`, `.RData`}{R data files via `load()`. The file must hold
+#'     exactly one data frame, which is returned; other objects saved with
+#'     it, such as a list of labels, are ignored.}
 #'   \item{`.parquet`}{Parquet files via `arrow::read_parquet()`}
 #' }
 #'
@@ -198,7 +201,7 @@ read_clinical_data <- function(file, convert_types = FALSE, ...,
   if (!nzchar(ext))
     stop(
       "Cannot determine file type: '", file, "' has no extension. ",
-      "Supported formats: .sas7bdat, .csv, .xlsx, .xls, .rds, .parquet",
+      "Supported formats: .sas7bdat, .csv, .xlsx, .xls, .rds, .rda, .RData, .parquet",
       call. = FALSE
     )
 
@@ -210,13 +213,15 @@ read_clinical_data <- function(file, convert_types = FALSE, ...,
     xlsx     = ,
     xls      = readxl::read_excel(file),
     rds      = readRDS(file),
+    rda      = ,
+    rdata    = .read_rdata(file),
     parquet  = {
       if (!requireNamespace("arrow", quietly = TRUE)) study_need("arrow", caller = "read_clinical_data")
       arrow::read_parquet(file, mmap = FALSE)
     },
     stop(
       "Unsupported file type: '.", ext, "' in '", file, "'. ",
-      "Supported formats: .sas7bdat, .csv, .xlsx, .xls, .rds, .parquet",
+      "Supported formats: .sas7bdat, .csv, .xlsx, .xls, .rds, .rda, .RData, .parquet",
       call. = FALSE
     )
   )
@@ -229,4 +234,43 @@ read_clinical_data <- function(file, convert_types = FALSE, ...,
   }
 
   data
+}
+
+# An .rda/.RData file holds named objects rather than one value. The dataset is
+# its one data frame; anything saved beside it (labels, a codebook) is ignored.
+# None, or more than one, is ambiguous, so the reader names what it found.
+# `caller` prefixes the message with the function that refused the file and
+# says nothing was written, for a caller that writes only after reading.
+.read_rdata <- function(file, caller = NULL) {
+  refuse <- function(...) {
+    stop(if (!is.null(caller)) paste0(caller, "(): "), ..., if (!is.null(caller)) " Nothing was written.",
+         call. = FALSE)
+  }
+  env <- new.env(parent = emptyenv())
+  # A file that is not an R save warns ("has magic number") before it errors;
+  # the error says it all, so warnings are held back and passed on only after
+  # a load that worked.
+  held <- new.env(parent = emptyenv())
+  held$warnings <- list()
+  objects <- tryCatch(
+    withCallingHandlers(load(file, envir = env), warning = function(w) {
+      held$warnings <- c(held$warnings, list(w))
+      invokeRestart("muffleWarning")
+    }),
+    error = function(e) {
+      refuse(basename(file), " is not an R data file (.rda/.RData) that load() can read: ", conditionMessage(e), ".")
+    }
+  )
+  for (w in held$warnings) warning(w)
+  frames <- objects[vapply(objects, function(o) is.data.frame(env[[o]]), logical(1))]
+  if (length(frames) != 1L) {
+    found <- if (length(frames)) {
+      paste0(length(frames), " data frames (", paste(frames, collapse = ", "), ")")
+    } else {
+      paste0("no data frame (it holds ", if (length(objects)) paste(objects, collapse = ", ") else "nothing", ")")
+    }
+    refuse(basename(file), " holds ", found, ". A dataset file must hold exactly one data frame; save the one ",
+           "to read on its own, or as an .rds.")
+  }
+  env[[frames]]
 }

@@ -95,7 +95,8 @@
 #' format, or when heavy counting is disabled, supply `n_rows`
 #' explicitly.
 #'
-#' An **`.rds`** holding a data frame is read and, by default, converted the
+#' An **`.rds`** holding a data frame, or an **`.rda`**/**`.RData`** holding
+#' exactly one, is read and, by default, converted the
 #' way [read_built()] caches a source: a `<name>.schema.csv` sidecar,
 #' recorded by `schema_sha256`, and a `<name>.parquet` beside the file, so
 #' a later change to its columns or types is caught. Its row and column
@@ -152,7 +153,7 @@
 #'   registered dataset to update; `NULL` updates every one that changed.
 #'   `"built"` is a second name for `"study"`. Ignored when
 #'   `file` is given.
-#' @param as_parquet Logical. For an `.rds` given without `n_rows`: `TRUE`
+#' @param as_parquet Logical. For an `.rds`, `.rda` or `.RData` given without `n_rows`: `TRUE`
 #'   (the default) writes a parquet and a schema sidecar beside it and records
 #'   the schema's hash; `FALSE` records only its row and column counts.
 #'   Ignored for other formats. Needs the arrow package when `TRUE`.
@@ -232,7 +233,7 @@ update_manifest <- function(file,
   file <- .resolve_manifest_file(file)
   if (is.null(manifest_path)) manifest_path <- .single_manifest_path(file)
 
-  # An .rds is derived data. Unless the caller supplied its shape, it is read
+  # An R data file (.rds, .rda, .RData) is derived data. Unless the caller supplied its shape, it is read
   # here and, by default, converted the way read_built() caches a source: a
   # schema sidecar recorded by hash and a parquet beside it, so schema drift
   # on it is caught. as_parquet = FALSE lists it as it is, with no schema.
@@ -240,7 +241,8 @@ update_manifest <- function(file,
     stop("update_manifest(): `as_parquet` must be TRUE or FALSE.", call. = FALSE)
   }
   convert <- FALSE
-  if (identical(tolower(tools::file_ext(file)), "rds") && is.null(n_rows)) {
+  r_ext <- tolower(tools::file_ext(file))
+  if (r_ext %in% c("rds", "rda", "rdata") && is.null(n_rows)) {
     convert <- as_parquet
     if (convert) {
       .require_arrow("update_manifest")
@@ -248,7 +250,7 @@ update_manifest <- function(file,
       .refuse_parquet_clash(file, manifest_path, derived)
     }
     info <- file.info(file)
-    d <- readRDS(file)
+    d <- if (identical(r_ext, "rds")) readRDS(file) else .read_rdata(file, caller = "update_manifest")
     if (!is.data.frame(d)) {
       stop("update_manifest(): ", basename(file), " holds a ", class(d)[[1L]], ", not a data frame, so it is not ",
            "a dataset to record. Nothing was written.", call. = FALSE)

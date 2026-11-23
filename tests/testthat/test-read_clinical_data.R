@@ -63,6 +63,37 @@ test_that("read_clinical_data reads RDS files", {
   expect_equal(nrow(result), 150)
 })
 
+# RData reading ----
+
+test_that("read_clinical_data reads the one data frame in an .rda or .RData file", {
+  dir <- withr::local_tempdir()
+  cohort <- data.frame(id = 1:4, x = c(1, 2, 3, 4))
+  labels <- list(id = "Patient", x = "Measure")
+  save(cohort, labels, file = file.path(dir, "cohort.rda"))
+  save(cohort, file = file.path(dir, "cohort.RData"))
+
+  expect_identical(read_clinical_data(file.path(dir, "cohort.rda"), convert_types = FALSE), cohort)
+  expect_identical(read_clinical_data(file.path(dir, "cohort.RData"), convert_types = FALSE), cohort)
+})
+
+test_that("read_clinical_data refuses an .rda that holds no data frame, or more than one", {
+  dir <- withr::local_tempdir()
+  a <- data.frame(id = 1)
+  b <- data.frame(id = 2)
+  fit <- list(coef = 1)
+  save(a, b, file = file.path(dir, "two.rda"))
+  save(fit, file = file.path(dir, "none.rda"))
+
+  expect_error(read_clinical_data(file.path(dir, "two.rda")), "2 data frames \\(a, b\\)")
+  expect_error(read_clinical_data(file.path(dir, "none.rda")), "no data frame.*fit")
+})
+
+test_that("read_clinical_data names an .rda that is not an R data file", {
+  dir <- withr::local_tempdir()
+  utils::write.csv(data.frame(id = 1:2), file.path(dir, "cohort.rda"), row.names = FALSE)
+  expect_error(read_clinical_data(file.path(dir, "cohort.rda")), "cohort.rda is not an R data file")
+})
+
 # Excel reading ----
 
 test_that("read_clinical_data reads Excel files", {

@@ -48,6 +48,9 @@ silently converted to \code{.}).}
 \item{\code{.xlsx}, \code{.xls}}{Excel workbooks via
 \code{readxl::read_excel()}}
 \item{\code{.rds}}{R serialized objects via \code{readRDS()}}
+\item{\code{.rda}, \code{.RData}}{R data files via \code{load()}. The file must hold
+exactly one data frame, which is returned; other objects saved with
+it, such as a list of labels, are ignored.}
 \item{\code{.parquet}}{Parquet files via \code{arrow::read_parquet()}}
 }
 }

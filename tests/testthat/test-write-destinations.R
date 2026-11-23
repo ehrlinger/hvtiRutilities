@@ -107,6 +107,39 @@ test_that("update_manifest(file) converts an .rds to parquet and records its sha
   expect_identical(verify_manifest(file.path(root, "manifest.yaml"))$status, "OK")
 })
 
+test_that("update_manifest(file) converts an .rda or .RData the way it converts an .rds", {
+  skip_if_not_installed("arrow")
+  root <- file.path(withr::local_tempdir(), "study")
+  suppressMessages(study_setup(root, "Derived rda", 42L, renv = FALSE))
+  data_dir <- file.path(root, "00_datasets")
+  derived <- data.frame(id = 1:3, x = c(0.5, 1, 2))
+  labels <- list(id = "Patient")
+  save(derived, labels, file = file.path(data_dir, "derived.rda"))
+  save(derived, file = file.path(data_dir, "other.RData"))
+
+  withr::local_dir(root)
+  update_manifest("derived.rda")
+  update_manifest("other.RData", as_parquet = FALSE)
+
+  entries <- yaml::read_yaml(file.path(root, "manifest.yaml"))$datasets
+  expect_identical(vapply(entries, `[[`, 0L, "n_rows"), c(3L, 3L))
+  expect_false(is.null(entries[[1L]]$schema_sha256))
+  expect_null(entries[[2L]]$schema_sha256)
+  expect_equal(as.data.frame(arrow::read_parquet(file.path(data_dir, "derived.parquet"))), derived)
+  expect_false(file.exists(file.path(data_dir, "other.parquet")))
+})
+
+test_that("update_manifest(file) says it refused an .rda with no data frame, and wrote nothing", {
+  root <- file.path(withr::local_tempdir(), "study")
+  suppressMessages(study_setup(root, "Model rda", 42L, renv = FALSE))
+  fit <- list(coef = 1)
+  save(fit, file = file.path(root, "00_datasets", "model.rda"))
+
+  withr::local_dir(root)
+  expect_error(update_manifest("model.rda"), "^update_manifest\\(\\): model.rda holds no data frame.*Nothing was written")
+  expect_false(file.exists(file.path(root, "manifest.yaml")))
+})
+
 test_that("update_manifest(file, as_parquet = FALSE) lists an .rds as it is", {
   root <- file.path(withr::local_tempdir(), "study")
   suppressMessages(study_setup(root, "Listed rds", 42L, renv = FALSE))
