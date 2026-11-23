@@ -250,7 +250,7 @@ update_manifest <- function(file,
       .refuse_parquet_clash(file, manifest_path, derived)
     }
     info <- file.info(file)
-    d <- if (identical(r_ext, "rds")) readRDS(file) else .read_rdata(file)
+    d <- if (identical(r_ext, "rds")) readRDS(file) else .read_rdata(file, caller = "update_manifest")
     if (!is.data.frame(d)) {
       stop("update_manifest(): ", basename(file), " holds a ", class(d)[[1L]], ", not a data frame, so it is not ",
            "a dataset to record. Nothing was written.", call. = FALSE)

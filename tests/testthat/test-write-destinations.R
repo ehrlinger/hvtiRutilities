@@ -129,6 +129,17 @@ test_that("update_manifest(file) converts an .rda or .RData the way it converts 
   expect_false(file.exists(file.path(data_dir, "other.parquet")))
 })
 
+test_that("update_manifest(file) says it refused an .rda with no data frame, and wrote nothing", {
+  root <- file.path(withr::local_tempdir(), "study")
+  suppressMessages(study_setup(root, "Model rda", 42L, renv = FALSE))
+  fit <- list(coef = 1)
+  save(fit, file = file.path(root, "00_datasets", "model.rda"))
+
+  withr::local_dir(root)
+  expect_error(update_manifest("model.rda"), "^update_manifest\\(\\): model.rda holds no data frame.*Nothing was written")
+  expect_false(file.exists(file.path(root, "manifest.yaml")))
+})
+
 test_that("update_manifest(file, as_parquet = FALSE) lists an .rds as it is", {
   root <- file.path(withr::local_tempdir(), "study")
   suppressMessages(study_setup(root, "Listed rds", 42L, renv = FALSE))

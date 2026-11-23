@@ -688,3 +688,16 @@ test_that("register_data() takes file =; built =, its old name, still works with
                              "will be removed in a later release."))
   expect_true("echo.csv" %in% vapply(.read_manifest(file.path(root, "manifest.yaml"))$datasets, `[[`, "", "file"))
 })
+
+test_that("register_data registers an .rda built file and read_built reads it back", {
+  root <- registration_study()
+  built <- data.frame(id = 1:5, dead = c(1L, 1L, 0L, 0L, 0L), iv_dead = as.numeric(1:5))
+  labels <- list(id = "Patient")
+  save(built, labels, file = file.path(study_dir("datasets", root), "built.rda"))
+
+  register_data(root = root, "built.rda")
+
+  manifest <- .read_manifest(file.path(root, "manifest.yaml"))
+  expect_identical(manifest$datasets[[1L]]$n_rows, 5L)
+  expect_equal(read_built(study_config(root)), built, ignore_attr = TRUE)
+})

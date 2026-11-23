@@ -88,6 +88,12 @@ test_that("read_clinical_data refuses an .rda that holds no data frame, or more 
   expect_error(read_clinical_data(file.path(dir, "none.rda")), "no data frame.*fit")
 })
 
+test_that("read_clinical_data names an .rda that is not an R data file", {
+  dir <- withr::local_tempdir()
+  utils::write.csv(data.frame(id = 1:2), file.path(dir, "cohort.rda"), row.names = FALSE)
+  expect_error(read_clinical_data(file.path(dir, "cohort.rda")), "cohort.rda is not an R data file")
+})
+
 # Excel reading ----
 
 test_that("read_clinical_data reads Excel files", {
