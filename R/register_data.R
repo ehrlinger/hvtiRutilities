@@ -148,7 +148,8 @@
 #'   working directory, then the study root. A file in any other folder is
 #'   refused. It may be in any format [read_clinical_data()] reads (`.sas7bdat`,
 #'   `.csv`, `.xlsx`, `.xls`, `.rds` or `.parquet`); registration converts it
-#'   to parquet whichever it is. When R writes the file, prefer parquet to
+#'   to parquet whichever it is, except a release-aware registration, which
+#'   records the catalog's file as it is. When R writes the file, prefer parquet to
 #'   `.rds`: tools outside R, such as SAS parity checks, can read it too.
 #' @param dataset Character(1). The dataset's name. Choose it only with
 #'   `role = "named"`; `role = "study"` requires the default,
