@@ -71,6 +71,31 @@ test_that("the study manifest default refuses a file outside the datasets folder
   expect_identical(readLines(manifest), before)
 })
 
+test_that("update_manifest(file) finds a bare name in the datasets folder, as register_data() does", {
+  root <- file.path(withr::local_tempdir(), "study")
+  suppressMessages(study_setup(root, "Bare name", 42L, renv = FALSE))
+  utils::write.csv(data.frame(id = 1:3), file.path(root, "00_datasets", "tiny.csv"), row.names = FALSE)
+
+  withr::local_dir(file.path(root, "30_analyses"))
+  update_manifest("tiny.csv")
+
+  entries <- yaml::read_yaml(file.path(root, "manifest.yaml"))$datasets
+  expect_identical(entries[[1L]]$file, "tiny.csv")
+  expect_identical(entries[[1L]]$n_rows, 3L)
+  expect_error(update_manifest("absent.csv"), "Dataset file not found: absent.csv.*00_datasets")
+})
+
+test_that("update_manifest(file) sends an .rds to register_data() instead of asking for n_rows", {
+  root <- file.path(withr::local_tempdir(), "study")
+  suppressMessages(study_setup(root, "Derived rds", 42L, renv = FALSE))
+  saveRDS(data.frame(id = 1:3), file.path(root, "00_datasets", "derived.rds"))
+
+  withr::local_dir(root)
+  err <- expect_error(update_manifest("derived.rds"), "register_data\\(\\)")
+  expect_false(grepl("n_rows", conditionMessage(err), fixed = TRUE))
+  expect_false(file.exists(file.path(root, "manifest.yaml")))
+})
+
 test_that("study_setup() needs root outside a study", {
   here <- no_study_dir()
   expect_error(
