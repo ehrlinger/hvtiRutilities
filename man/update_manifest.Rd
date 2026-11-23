@@ -20,7 +20,9 @@ update_manifest(
 )
 }
 \arguments{
-\item{file}{Character. Path to the dataset file. Omit it inside a study to
+\item{file}{Character. Path to the dataset file. Inside a study, a relative
+name not found from the working directory is looked for in the study's
+datasets folder, as \code{\link[=register_data]{register_data()}} does. Omit it inside a study to
 register every changed dataset; see the description.}
 
 \item{manifest_path}{Character. Path to the manifest YAML file.
@@ -126,7 +128,9 @@ loads the entire dataset/workbook into memory; it is therefore disabled by
 default and only performed when
 \code{options(manifest.allow_heavy_rowcount = TRUE)} is set.  For any other
 format, or when heavy counting is disabled, supply \code{n_rows}
-explicitly.
+explicitly. An \code{.rds} is derived data: register it with
+\code{\link[=register_data]{register_data()}}, which writes a parquet and records its shape and
+schema, rather than here, where it would get no schema hash.
 }
 \examples{
 dir <- file.path(tempdir(), "update-manifest-example")

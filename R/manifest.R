@@ -43,6 +43,13 @@
       }
       nrow(readxl::read_excel(file))
     },
+    # Counting by readRDS() would still record no schema, so schema drift on
+    # derived data would go unnoticed; register_data() records both.
+    rds = stop(
+      "update_manifest(): ", basename(file), " is an .rds, which is derived data. Register derived data with ",
+      "register_data(), which writes a parquet and records its shape and schema. update_manifest(file) is for ",
+      "source extracts (csv, sas7bdat, xlsx, xls).", call. = FALSE
+    ),
     stop(
       "Cannot auto-detect n_rows for file type '.", ext, "'. ",
       "Supported formats: csv, sas7bdat, xlsx, xls. ",
@@ -93,9 +100,13 @@
 #' default and only performed when
 #' `options(manifest.allow_heavy_rowcount = TRUE)` is set.  For any other
 #' format, or when heavy counting is disabled, supply `n_rows`
-#' explicitly.
+#' explicitly. An `.rds` is derived data: register it with
+#' [register_data()], which writes a parquet and records its shape and
+#' schema, rather than here, where it would get no schema hash.
 #'
-#' @param file Character. Path to the dataset file. Omit it inside a study to
+#' @param file Character. Path to the dataset file. Inside a study, a relative
+#'   name not found from the working directory is looked for in the study's
+#'   datasets folder, as [register_data()] does. Omit it inside a study to
 #'   register every changed dataset; see the description.
 #' @param manifest_path Character. Path to the manifest YAML file.
 #'   Created if it does not exist. `NULL` (the default) writes the
@@ -214,9 +225,7 @@ update_manifest <- function(file,
       call. = FALSE
     )
   }
-  if (!file.exists(file)) {
-    stop("Dataset file not found: ", file)
-  }
+  file <- .resolve_manifest_file(file)
   if (is.null(manifest_path)) manifest_path <- .single_manifest_path(file)
 
   sha256 <- digest::digest(file, algo = "sha256", file = TRUE)
@@ -303,6 +312,27 @@ update_manifest <- function(file,
 # manifest's entries in the datasets folder it picks the same way below. A
 # file anywhere else would be recorded under the name of a different file, and
 # could replace that file's entry, so it needs an explicit manifest_path.
+# A relative name not found as given is looked for in the study's datasets
+# folder, where register_data() resolves its `file`, so a bare name works in
+# both. A file found as given wins, so .single_manifest_path() still refuses a
+# same-named file outside the datasets folder.
+.resolve_manifest_file <- function(file) {
+  if (file.exists(file)) return(file)
+  looked <- file
+  if (!.provenance_is_absolute(file)) {
+    cfg <- tryCatch(study_config(require_data = FALSE), error = function(e) {
+      if (!grepl("no _study.yml found", conditionMessage(e), fixed = TRUE)) stop(e)
+      NULL
+    })
+    if (!is.null(cfg)) {
+      in_data <- file.path(study_dir("datasets", cfg$root), file)
+      if (file.exists(in_data)) return(in_data)
+      looked <- c(looked, in_data)
+    }
+  }
+  stop("Dataset file not found: ", paste(looked, collapse = " or "), call. = FALSE)
+}
+
 .single_manifest_path <- function(file) {
   cfg <- tryCatch(study_config(require_data = FALSE), error = function(e) {
     if (!grepl("no _study.yml found", conditionMessage(e), fixed = TRUE)) stop(e)

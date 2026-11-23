@@ -156,13 +156,13 @@ test_that("update_manifest [Excel] creates entry with correct row count", {
 # update_manifest — RDS (explicit n_rows required)
 # ---------------------------------------------------------------------------
 
-test_that("update_manifest [RDS] errors without explicit n_rows", {
+test_that("update_manifest [RDS] without n_rows points at register_data()", {
   tmp <- tempdir()
   rds <- file.path(tmp, "cohort.rds")
   saveRDS(make_df(5), rds)
   expect_error(
     update_manifest(file = rds, manifest_path = file.path(tmp, "m_rds.yaml")),
-    "n_rows"
+    "register_data()", fixed = TRUE
   )
 })
 
