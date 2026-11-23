@@ -154,6 +154,74 @@ test_that("update_manifest(file) will not convert an .rds over a recorded parque
   expect_false(file.exists(file.path(data_dir, "derived.schema.csv")))
 })
 
+test_that("update_manifest(file) records nothing when the .rds does not round-trip through parquet", {
+  skip_if_not_installed("arrow")
+  root <- file.path(withr::local_tempdir(), "study")
+  suppressMessages(study_setup(root, "Round trip", 42L, renv = FALSE))
+  data_dir <- file.path(root, "00_datasets")
+  # A local-time POSIXct comes back from parquet with a different tzone.
+  saveRDS(data.frame(id = 1:2, t = as.POSIXct(c("2026-01-01", "2026-01-02"))), file.path(data_dir, "timed.rds"))
+
+  withr::local_dir(root)
+  expect_error(update_manifest("timed.rds"), "did not round-trip")
+  expect_false(file.exists(file.path(root, "manifest.yaml")))
+  expect_false(file.exists(file.path(data_dir, "timed.parquet")))
+  expect_false(file.exists(file.path(data_dir, "timed.schema.csv")))
+  expect_identical(list.files(data_dir, all.files = TRUE, no.. = TRUE), "timed.rds")
+})
+
+test_that("update_manifest(file) will not convert over an unrecorded parquet, but reconverts its own", {
+  skip_if_not_installed("arrow")
+  root <- file.path(withr::local_tempdir(), "study")
+  suppressMessages(study_setup(root, "Unrecorded parquet", 42L, renv = FALSE))
+  data_dir <- file.path(root, "00_datasets")
+  arrow::write_parquet(data.frame(id = 1:2), file.path(data_dir, "cohort.parquet"))
+  saveRDS(data.frame(id = 1:5), file.path(data_dir, "cohort.rds"))
+  parquet_sha <- digest::digest(file.path(data_dir, "cohort.parquet"), algo = "sha256", file = TRUE)
+
+  withr::local_dir(root)
+  expect_error(update_manifest("cohort.rds"), "cohort.parquet already exists")
+  expect_identical(digest::digest(file.path(data_dir, "cohort.parquet"), algo = "sha256", file = TRUE), parquet_sha)
+  expect_false(file.exists(file.path(root, "manifest.yaml")))
+
+  unlink(file.path(data_dir, "cohort.parquet"))
+  update_manifest("cohort.rds")
+  saveRDS(data.frame(id = 1:6), file.path(data_dir, "cohort.rds"))
+  update_manifest("cohort.rds")
+  expect_identical(yaml::read_yaml(file.path(root, "manifest.yaml"))$datasets[[1L]]$n_rows, 6L)
+  expect_identical(nrow(arrow::read_parquet(file.path(data_dir, "cohort.parquet"))), 6L)
+})
+
+test_that("update_manifest(file) leaves the sidecar and parquet alone when the manifest write fails", {
+  skip_if_not_installed("arrow")
+  root <- file.path(withr::local_tempdir(), "study")
+  suppressMessages(study_setup(root, "Manifest write fails", 42L, renv = FALSE))
+  data_dir <- file.path(root, "00_datasets")
+  saveRDS(data.frame(id = 1:3), file.path(data_dir, "derived.rds"))
+  withr::local_dir(root)
+  update_manifest("derived.rds")
+  sidecar <- readLines(file.path(data_dir, "derived.schema.csv"))
+  parquet_sha <- digest::digest(file.path(data_dir, "derived.parquet"), algo = "sha256", file = TRUE)
+
+  saveRDS(data.frame(id = 1:3, extra = "a"), file.path(data_dir, "derived.rds"))
+  local_mocked_bindings(.atomic_write = function(target, write_fn) stop("disk full"))
+  expect_error(update_manifest("derived.rds"), "disk full")
+  expect_identical(readLines(file.path(data_dir, "derived.schema.csv")), sidecar)
+  expect_identical(digest::digest(file.path(data_dir, "derived.parquet"), algo = "sha256", file = TRUE), parquet_sha)
+  expect_identical(sort(list.files(data_dir, all.files = TRUE, no.. = TRUE)),
+                   c("derived.parquet", "derived.rds", "derived.schema.csv"))
+})
+
+test_that("update_manifest(file) refuses an as_parquet that is not TRUE or FALSE", {
+  root <- file.path(withr::local_tempdir(), "study")
+  suppressMessages(study_setup(root, "Bad flag", 42L, renv = FALSE))
+  saveRDS(data.frame(id = 1:3), file.path(root, "00_datasets", "derived.rds"))
+  withr::local_dir(root)
+  expect_error(update_manifest("derived.rds", as_parquet = NA), "as_parquet")
+  expect_error(update_manifest("derived.rds", as_parquet = "TRUE"), "as_parquet")
+  expect_false(file.exists(file.path(root, "manifest.yaml")))
+})
+
 test_that("update_manifest() with no file refuses as_parquet", {
   expect_error(update_manifest(as_parquet = FALSE), "as_parquet")
 })

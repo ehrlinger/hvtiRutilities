@@ -236,9 +236,12 @@ update_manifest <- function(file,
   # here and, by default, converted the way read_built() caches a source: a
   # schema sidecar recorded by hash and a parquet beside it, so schema drift
   # on it is caught. as_parquet = FALSE lists it as it is, with no schema.
+  if (!is.logical(as_parquet) || length(as_parquet) != 1L || is.na(as_parquet)) {
+    stop("update_manifest(): `as_parquet` must be TRUE or FALSE.", call. = FALSE)
+  }
   convert <- FALSE
   if (identical(tolower(tools::file_ext(file)), "rds") && is.null(n_rows)) {
-    convert <- isTRUE(as_parquet)
+    convert <- as_parquet
     if (convert) {
       .require_arrow("update_manifest")
       derived <- .derived_paths(file)
@@ -253,10 +256,24 @@ update_manifest <- function(file,
     n_rows <- nrow(d)
     if (is.null(n_cols)) n_cols <- ncol(d)
     if (convert) {
-      schema_tmp <- tempfile(".schema-", tmpdir = dirname(file), fileext = ".csv")
-      on.exit(unlink(schema_tmp), add = TRUE)
+      # Both files are written and checked under temporary names beside their
+      # targets, and moved into place only once the manifest is written, so a
+      # conversion that fails, or a manifest that cannot be written, leaves
+      # the earlier sidecar, parquet and entry as they were.
+      temp_beside <- function(target) {
+        tempfile(pattern = paste0(basename(target), "."), tmpdir = dirname(target), fileext = ".tmp")
+      }
+      schema_tmp <- temp_beside(derived$schema)
+      parquet_tmp <- temp_beside(derived$parquet)
+      on.exit(unlink(c(schema_tmp, parquet_tmp)), add = TRUE)
       utils::write.csv(dataset_schema(d), schema_tmp, row.names = FALSE)
       schema_sha256 <- digest::digest(schema_tmp, algo = "sha256", file = TRUE)
+      arrow::write_parquet(d, parquet_tmp)
+      tryCatch(.verify_parquet_roundtrip(d, parquet_tmp, caller = "update_manifest"), error = function(e) {
+        stop("update_manifest(): ", basename(file), " did not round-trip through parquet: ",
+             sub("^.*did not round-trip -- ", "", sub(" The parquet was removed[.]$", "", conditionMessage(e))),
+             " Nothing was written. Pass as_parquet = FALSE to list it without a parquet.", call. = FALSE)
+      })
     }
   }
 
@@ -331,33 +348,38 @@ update_manifest <- function(file,
     if (verbose) message("Manifest entry added: ", entry$file)
   }
 
-  if (convert && !file.rename(schema_tmp, derived$schema)) {
-    stop("update_manifest(): could not write ", derived$schema, ". Nothing was recorded.", call. = FALSE)
-  }
   .atomic_write(manifest_path, function(tmp) .write_manifest(manifest, tmp))
   if (convert) {
-    .write_parquet_atomic(d, derived$parquet)
-    .verify_parquet_roundtrip(d, derived$parquet, caller = "update_manifest")
+    if (!file.rename(parquet_tmp, derived$parquet) || !file.rename(schema_tmp, derived$schema)) {
+      stop("update_manifest(): ", basename(file), " is recorded, but its parquet or schema sidecar could not be ",
+           "moved into place in ", dirname(file), ". Run update_manifest() on it again.", call. = FALSE)
+    }
     .stamp_source_state(manifest_path, entry$file, info)
     manifest <- .read_manifest(manifest_path)
   }
   invisible(manifest)
 }
 
-# The parquet an .rds converts to must not be another entry's data: a
-# registered dated version, or a dataset recorded under that name.
+# The parquet an .rds converts to must not be another entry's data (a
+# registered dated version, or a file recorded under that name), nor a parquet
+# nothing records. One this .rds wrote before, whose entry records a schema,
+# is its own and is replaced.
 .refuse_parquet_clash <- function(file, manifest_path, derived) {
-  if (!file.exists(manifest_path)) return(invisible(NULL))
-  datasets <- .read_manifest(manifest_path)$datasets
+  datasets <- if (file.exists(manifest_path)) .read_manifest(manifest_path)$datasets else list()
+  if (!is.list(datasets)) datasets <- list()
+  recorded <- vapply(datasets, function(e) as.character(e$file %||% ""), "")
+  target <- basename(derived$parquet)
   owner <- .cache_name_clash(file, datasets)
-  if (is.null(owner)) {
-    names <- vapply(if (is.list(datasets)) datasets else list(), function(e) as.character(e$file %||% ""), "")
-    if (basename(derived$parquet) %in% names) owner <- list(file = basename(derived$parquet))
-  }
+  if (is.null(owner) && target %in% recorded) owner <- list(file = target)
   if (!is.null(owner)) {
-    stop("update_manifest(): converting ", basename(file), " would write ", basename(derived$parquet),
-         ", which is ", owner$file, "'s data. Nothing was written. Rename ", basename(file),
-         " or pass as_parquet = FALSE.", call. = FALSE)
+    stop("update_manifest(): converting ", basename(file), " would write ", target, ", which is ", owner$file,
+         "'s data. Nothing was written. Rename ", basename(file), " or pass as_parquet = FALSE.", call. = FALSE)
+  }
+  own <- Filter(function(e) identical(e$file, basename(file)) && !is.null(e$schema_sha256), datasets)
+  if (file.exists(derived$parquet) && !length(own)) {
+    stop("update_manifest(): ", target, " already exists beside ", basename(file), " and no manifest entry ",
+         "records it, so converting would overwrite it. Nothing was written. Move ", target,
+         " aside, or pass as_parquet = FALSE.", call. = FALSE)
   }
   invisible(NULL)
 }
