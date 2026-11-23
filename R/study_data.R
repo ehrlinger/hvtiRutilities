@@ -172,7 +172,7 @@ built_manifest <- function(cfg = study_config(), dataset = "study") {
 # .cache_read(), so a collision is caught before any cache artifact --
 # .parquet, .schema.csv, or the manifest entry -- has been written for a
 # dataset that can never be read. SAS names are case-insensitive and cannot
-# collide this way; .csv, .xlsx and .rds sources can.
+# collide this way; .csv, .xlsx, .rds, .rda and .RData sources can.
 #
 # Defined ABOVE read_built()'s roxygen block, not between it and the function.
 # Roxygen attaches a block to the NEXT statement, so a definition placed in

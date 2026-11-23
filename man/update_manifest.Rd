@@ -82,7 +82,7 @@ registered dataset to update; \code{NULL} updates every one that changed.
 \code{"built"} is a second name for \code{"study"}. Ignored when
 \code{file} is given.}
 
-\item{as_parquet}{Logical. For an \code{.rds} given without \code{n_rows}: \code{TRUE}
+\item{as_parquet}{Logical. For an \code{.rds}, \code{.rda} or \code{.RData} given without \code{n_rows}: \code{TRUE}
 (the default) writes a parquet and a schema sidecar beside it and records
 the schema's hash; \code{FALSE} records only its row and column counts.
 Ignored for other formats. Needs the arrow package when \code{TRUE}.}
@@ -136,7 +136,8 @@ default and only performed when
 format, or when heavy counting is disabled, supply \code{n_rows}
 explicitly.
 
-An \strong{\code{.rds}} holding a data frame is read and, by default, converted the
+An \strong{\code{.rds}} holding a data frame, or an \strong{\code{.rda}}/\strong{\code{.RData}} holding
+exactly one, is read and, by default, converted the
 way \code{\link[=read_built]{read_built()}} caches a source: a \verb{<name>.schema.csv} sidecar,
 recorded by \code{schema_sha256}, and a \verb{<name>.parquet} beside the file, so
 a later change to its columns or types is caught. Its row and column

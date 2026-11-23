@@ -21,6 +21,9 @@
 #'   \item{`.xlsx`, `.xls`}{Excel workbooks via
 #'     `readxl::read_excel()`}
 #'   \item{`.rds`}{R serialized objects via `readRDS()`}
+#'   \item{`.rda`, `.RData`}{R data files via `load()`. The file must hold
+#'     exactly one data frame, which is returned; other objects saved with
+#'     it, such as a list of labels, are ignored.}
 #'   \item{`.parquet`}{Parquet files via `arrow::read_parquet()`}
 #' }
 #'
@@ -198,7 +201,7 @@ read_clinical_data <- function(file, convert_types = FALSE, ...,
   if (!nzchar(ext))
     stop(
       "Cannot determine file type: '", file, "' has no extension. ",
-      "Supported formats: .sas7bdat, .csv, .xlsx, .xls, .rds, .parquet",
+      "Supported formats: .sas7bdat, .csv, .xlsx, .xls, .rds, .rda, .RData, .parquet",
       call. = FALSE
     )
 
@@ -210,13 +213,15 @@ read_clinical_data <- function(file, convert_types = FALSE, ...,
     xlsx     = ,
     xls      = readxl::read_excel(file),
     rds      = readRDS(file),
+    rda      = ,
+    rdata    = .read_rdata(file),
     parquet  = {
       if (!requireNamespace("arrow", quietly = TRUE)) study_need("arrow", caller = "read_clinical_data")
       arrow::read_parquet(file, mmap = FALSE)
     },
     stop(
       "Unsupported file type: '.", ext, "' in '", file, "'. ",
-      "Supported formats: .sas7bdat, .csv, .xlsx, .xls, .rds, .parquet",
+      "Supported formats: .sas7bdat, .csv, .xlsx, .xls, .rds, .rda, .RData, .parquet",
       call. = FALSE
     )
   )
@@ -229,4 +234,23 @@ read_clinical_data <- function(file, convert_types = FALSE, ...,
   }
 
   data
+}
+
+# An .rda/.RData file holds named objects rather than one value. The dataset is
+# its one data frame; anything saved beside it (labels, a codebook) is ignored.
+# None, or more than one, is ambiguous, so the reader names what it found.
+.read_rdata <- function(file) {
+  env <- new.env(parent = emptyenv())
+  objects <- load(file, envir = env)
+  frames <- objects[vapply(objects, function(o) is.data.frame(env[[o]]), logical(1))]
+  if (length(frames) != 1L) {
+    found <- if (length(frames)) {
+      paste0(length(frames), " data frames (", paste(frames, collapse = ", "), ")")
+    } else {
+      paste0("no data frame (it holds ", if (length(objects)) paste(objects, collapse = ", ") else "nothing", ")")
+    }
+    stop(basename(file), " holds ", found, ". A dataset file must hold exactly one data frame; save the one ",
+         "to read on its own, or as an .rds.", call. = FALSE)
+  }
+  env[[frames]]
 }
