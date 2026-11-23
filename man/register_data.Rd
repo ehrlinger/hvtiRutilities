@@ -27,7 +27,10 @@ folder is accepted too, such as \code{"00_datasets/built.csv"} (what
 file-name completion gives from the study root) or an absolute path, and
 is recorded by its file name alone. A relative path is read against the
 working directory, then the study root. A file in any other folder is
-refused.}
+refused. It may be in any format \code{\link[=read_clinical_data]{read_clinical_data()}} reads (\code{.sas7bdat},
+\code{.csv}, \code{.xlsx}, \code{.xls}, \code{.rds} or \code{.parquet}); registration converts it
+to parquet whichever it is. When R writes the file, prefer parquet to
+\code{.rds}: tools outside R, such as SAS parity checks, can read it too.}
 
 \item{dataset}{Character(1). The dataset's name. Choose it only with
 \code{role = "named"}; \code{role = "study"} requires the default,
