@@ -43,13 +43,6 @@
       }
       nrow(readxl::read_excel(file))
     },
-    # Counting by readRDS() would still record no schema, so schema drift on
-    # derived data would go unnoticed; register_data() records both.
-    rds = stop(
-      "update_manifest(): ", basename(file), " is an .rds, which is derived data. Register derived data with ",
-      "register_data(), which writes a parquet and records its shape and schema. update_manifest(file) is for ",
-      "source extracts (csv, sas7bdat, xlsx, xls).", call. = FALSE
-    ),
     stop(
       "Cannot auto-detect n_rows for file type '.", ext, "'. ",
       "Supported formats: csv, sas7bdat, xlsx, xls. ",
@@ -100,9 +93,15 @@
 #' default and only performed when
 #' `options(manifest.allow_heavy_rowcount = TRUE)` is set.  For any other
 #' format, or when heavy counting is disabled, supply `n_rows`
-#' explicitly. An `.rds` is derived data: register it with
-#' [register_data()], which writes a parquet and records its shape and
-#' schema, rather than here, where it would get no schema hash.
+#' explicitly.
+#'
+#' An **`.rds`** holding a data frame is read and, by default, converted the
+#' way [read_built()] caches a source: a `<name>.schema.csv` sidecar,
+#' recorded by `schema_sha256`, and a `<name>.parquet` beside the file, so
+#' a later change to its columns or types is caught. Its row and column
+#' counts come from the same read. `as_parquet = FALSE` lists it as it is,
+#' with the counts but no schema. Supplying `n_rows` skips the read, as
+#' for any other format.
 #'
 #' @param file Character. Path to the dataset file. Inside a study, a relative
 #'   name not found from the working directory is looked for in the study's
@@ -153,6 +152,10 @@
 #'   registered dataset to update; `NULL` updates every one that changed.
 #'   `"built"` is a second name for `"study"`. Ignored when
 #'   `file` is given.
+#' @param as_parquet Logical. For an `.rds` given without `n_rows`: `TRUE`
+#'   (the default) writes a parquet and a schema sidecar beside it and records
+#'   the schema's hash; `FALSE` records only its row and column counts.
+#'   Ignored for other formats. Needs the arrow package when `TRUE`.
 #'
 #' @return With `file`, invisibly returns the updated manifest as a named
 #'   list. With no `file`, invisibly returns a data frame with one row per
@@ -187,7 +190,8 @@ update_manifest <- function(file,
                             role          = c("source", "primary"),
                             reader        = NULL,
                             verbose       = FALSE,
-                            dataset       = NULL) {
+                            dataset       = NULL,
+                            as_parquet    = TRUE) {
   # `sort_key` partially matches `sort_key_cols`, so R binds it; only the
   # notice is needed. The manifest field keeps its name, `sort_key`.
   if (.hvti_old_call(sys.call(), parent.frame(), renamed = "sort_key")) {
@@ -198,10 +202,10 @@ update_manifest <- function(file,
     # The no-file form registers whatever changed in the study; these describe
     # one file, so passing one here would be silently ignored.
     single <- c("manifest_path", "n_rows", "n_cols", "source", "sort_key_cols", "schema_sha256", "role",
-                "reader", "verbose")
+                "reader", "verbose", "as_parquet")
     absent <- c(missing(manifest_path), missing(n_rows), missing(n_cols), missing(source),
                 missing(sort_key_cols), missing(schema_sha256), missing(role), missing(reader),
-                missing(verbose))
+                missing(verbose), missing(as_parquet))
     given <- single[!absent]
     if (length(given)) {
       stop("update_manifest(): ", paste0("`", given, "`", collapse = ", "),
@@ -227,6 +231,34 @@ update_manifest <- function(file,
   }
   file <- .resolve_manifest_file(file)
   if (is.null(manifest_path)) manifest_path <- .single_manifest_path(file)
+
+  # An .rds is derived data. Unless the caller supplied its shape, it is read
+  # here and, by default, converted the way read_built() caches a source: a
+  # schema sidecar recorded by hash and a parquet beside it, so schema drift
+  # on it is caught. as_parquet = FALSE lists it as it is, with no schema.
+  convert <- FALSE
+  if (identical(tolower(tools::file_ext(file)), "rds") && is.null(n_rows)) {
+    convert <- isTRUE(as_parquet)
+    if (convert) {
+      .require_arrow("update_manifest")
+      derived <- .derived_paths(file)
+      .refuse_parquet_clash(file, manifest_path, derived)
+    }
+    info <- file.info(file)
+    d <- readRDS(file)
+    if (!is.data.frame(d)) {
+      stop("update_manifest(): ", basename(file), " holds a ", class(d)[[1L]], ", not a data frame, so it is not ",
+           "a dataset to record. Nothing was written.", call. = FALSE)
+    }
+    n_rows <- nrow(d)
+    if (is.null(n_cols)) n_cols <- ncol(d)
+    if (convert) {
+      schema_tmp <- tempfile(".schema-", tmpdir = dirname(file), fileext = ".csv")
+      on.exit(unlink(schema_tmp), add = TRUE)
+      utils::write.csv(dataset_schema(d), schema_tmp, row.names = FALSE)
+      schema_sha256 <- digest::digest(schema_tmp, algo = "sha256", file = TRUE)
+    }
+  }
 
   sha256 <- digest::digest(file, algo = "sha256", file = TRUE)
 
@@ -299,19 +331,37 @@ update_manifest <- function(file,
     if (verbose) message("Manifest entry added: ", entry$file)
   }
 
+  if (convert && !file.rename(schema_tmp, derived$schema)) {
+    stop("update_manifest(): could not write ", derived$schema, ". Nothing was recorded.", call. = FALSE)
+  }
   .atomic_write(manifest_path, function(tmp) .write_manifest(manifest, tmp))
+  if (convert) {
+    .write_parquet_atomic(d, derived$parquet)
+    .verify_parquet_roundtrip(d, derived$parquet, caller = "update_manifest")
+    .stamp_source_state(manifest_path, entry$file, info)
+    manifest <- .read_manifest(manifest_path)
+  }
   invisible(manifest)
 }
 
-# The single-file form's default: the enclosing study's manifest. Outside a
-# study there is none, so nothing is written into the working directory. Only
-# a missing _study.yml means "no study here"; any other study_config() error
-# is passed on.
-#
-# An entry records only basename(file), and verify_manifest() resolves a study
-# manifest's entries in the datasets folder it picks the same way below. A
-# file anywhere else would be recorded under the name of a different file, and
-# could replace that file's entry, so it needs an explicit manifest_path.
+# The parquet an .rds converts to must not be another entry's data: a
+# registered dated version, or a dataset recorded under that name.
+.refuse_parquet_clash <- function(file, manifest_path, derived) {
+  if (!file.exists(manifest_path)) return(invisible(NULL))
+  datasets <- .read_manifest(manifest_path)$datasets
+  owner <- .cache_name_clash(file, datasets)
+  if (is.null(owner)) {
+    names <- vapply(if (is.list(datasets)) datasets else list(), function(e) as.character(e$file %||% ""), "")
+    if (basename(derived$parquet) %in% names) owner <- list(file = basename(derived$parquet))
+  }
+  if (!is.null(owner)) {
+    stop("update_manifest(): converting ", basename(file), " would write ", basename(derived$parquet),
+         ", which is ", owner$file, "'s data. Nothing was written. Rename ", basename(file),
+         " or pass as_parquet = FALSE.", call. = FALSE)
+  }
+  invisible(NULL)
+}
+
 # A relative name not found as given is looked for in the study's datasets
 # folder, where register_data() resolves its `file`, so a bare name works in
 # both. A file found as given wins, so .single_manifest_path() still refuses a
@@ -333,6 +383,15 @@ update_manifest <- function(file,
   stop("Dataset file not found: ", paste(looked, collapse = " or "), call. = FALSE)
 }
 
+# The single-file form's default: the enclosing study's manifest. Outside a
+# study there is none, so nothing is written into the working directory. Only
+# a missing _study.yml means "no study here"; any other study_config() error
+# is passed on.
+#
+# An entry records only basename(file), and verify_manifest() resolves a study
+# manifest's entries in the datasets folder it picks the same way below. A
+# file anywhere else would be recorded under the name of a different file, and
+# could replace that file's entry, so it needs an explicit manifest_path.
 .single_manifest_path <- function(file) {
   cfg <- tryCatch(study_config(require_data = FALSE), error = function(e) {
     if (!grepl("no _study.yml found", conditionMessage(e), fixed = TRUE)) stop(e)

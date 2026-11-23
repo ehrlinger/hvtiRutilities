@@ -85,15 +85,77 @@ test_that("update_manifest(file) finds a bare name in the datasets folder, as re
   expect_error(update_manifest("absent.csv"), "Dataset file not found: absent.csv.*00_datasets")
 })
 
-test_that("update_manifest(file) sends an .rds to register_data() instead of asking for n_rows", {
+test_that("update_manifest(file) converts an .rds to parquet and records its shape and schema", {
+  skip_if_not_installed("arrow")
   root <- file.path(withr::local_tempdir(), "study")
   suppressMessages(study_setup(root, "Derived rds", 42L, renv = FALSE))
-  saveRDS(data.frame(id = 1:3), file.path(root, "00_datasets", "derived.rds"))
+  data_dir <- file.path(root, "00_datasets")
+  saveRDS(data.frame(id = 1:3, x = c(0.5, 1, 2)), file.path(data_dir, "derived.rds"))
 
   withr::local_dir(root)
-  err <- expect_error(update_manifest("derived.rds"), "register_data\\(\\)")
-  expect_false(grepl("n_rows", conditionMessage(err), fixed = TRUE))
+  update_manifest("derived.rds", source = "built by run sheet")
+
+  entry <- yaml::read_yaml(file.path(root, "manifest.yaml"))$datasets[[1L]]
+  expect_identical(entry$file, "derived.rds")
+  expect_identical(entry$n_rows, 3L)
+  expect_identical(entry$n_cols, 2L)
+  expect_identical(entry$source, "built by run sheet")
+  expect_identical(entry$schema_sha256,
+                   digest::digest(file.path(data_dir, "derived.schema.csv"), algo = "sha256", file = TRUE))
+  expect_equal(as.data.frame(arrow::read_parquet(file.path(data_dir, "derived.parquet"))),
+               readRDS(file.path(data_dir, "derived.rds")))
+  expect_identical(verify_manifest(file.path(root, "manifest.yaml"))$status, "OK")
+})
+
+test_that("update_manifest(file, as_parquet = FALSE) lists an .rds as it is", {
+  root <- file.path(withr::local_tempdir(), "study")
+  suppressMessages(study_setup(root, "Listed rds", 42L, renv = FALSE))
+  data_dir <- file.path(root, "00_datasets")
+  saveRDS(data.frame(id = 1:4, x = 1), file.path(data_dir, "listed.rds"))
+
+  withr::local_dir(root)
+  update_manifest("listed.rds", as_parquet = FALSE)
+
+  entry <- yaml::read_yaml(file.path(root, "manifest.yaml"))$datasets[[1L]]
+  expect_identical(entry$n_rows, 4L)
+  expect_identical(entry$n_cols, 2L)
+  expect_null(entry$schema_sha256)
+  expect_false(file.exists(file.path(data_dir, "listed.parquet")))
+  expect_false(file.exists(file.path(data_dir, "listed.schema.csv")))
+})
+
+test_that("update_manifest(file) refuses an .rds that does not hold a data frame", {
+  root <- file.path(withr::local_tempdir(), "study")
+  suppressMessages(study_setup(root, "Model rds", 42L, renv = FALSE))
+  saveRDS(list(a = 1), file.path(root, "00_datasets", "model.rds"))
+
+  withr::local_dir(root)
+  expect_error(update_manifest("model.rds"), "not a data frame")
+  expect_error(update_manifest("model.rds", as_parquet = FALSE), "not a data frame")
   expect_false(file.exists(file.path(root, "manifest.yaml")))
+})
+
+test_that("update_manifest(file) will not convert an .rds over a recorded parquet", {
+  skip_if_not_installed("arrow")
+  root <- file.path(withr::local_tempdir(), "study")
+  suppressMessages(study_setup(root, "Parquet clash", 42L, renv = FALSE))
+  data_dir <- file.path(root, "00_datasets")
+  arrow::write_parquet(data.frame(id = 1:2), file.path(data_dir, "derived.parquet"))
+  saveRDS(data.frame(id = 1:5), file.path(data_dir, "derived.rds"))
+
+  withr::local_dir(root)
+  update_manifest("derived.parquet", n_rows = 2L)
+  before <- readLines(file.path(root, "manifest.yaml"))
+  parquet_sha <- digest::digest(file.path(data_dir, "derived.parquet"), algo = "sha256", file = TRUE)
+
+  expect_error(update_manifest("derived.rds"), "derived.parquet's data")
+  expect_identical(readLines(file.path(root, "manifest.yaml")), before)
+  expect_identical(digest::digest(file.path(data_dir, "derived.parquet"), algo = "sha256", file = TRUE), parquet_sha)
+  expect_false(file.exists(file.path(data_dir, "derived.schema.csv")))
+})
+
+test_that("update_manifest() with no file refuses as_parquet", {
+  expect_error(update_manifest(as_parquet = FALSE), "as_parquet")
 })
 
 test_that("study_setup() needs root outside a study", {
