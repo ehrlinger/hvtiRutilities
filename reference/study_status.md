@@ -110,7 +110,7 @@ dataset, and by the `checkpoints` and `closure` rows when they apply.
 root <- file.path(tempdir(), "study-status-example")
 dir.create(root, showWarnings = FALSE)
 study_status(root)
-#> Study: /tmp/RtmpdXN7M0/study-status-example
+#> Study: /tmp/RtmpCfFuNP/study-status-example
 #> 
 #> [ ] _study.yml — no _study.yml at this root; study_recover() restores it from CORR_STUDIES once that is available (planned, not live yet)
 #> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first

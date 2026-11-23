@@ -40,10 +40,17 @@ row counting is considered "heavy" because it loads the entire
 dataset/workbook into memory; it is therefore disabled by default and
 only performed when `options(manifest.allow_heavy_rowcount = TRUE)` is
 set. For any other format, or when heavy counting is disabled, supply
-`n_rows` explicitly. An `.rds` is derived data: register it with
-[`register_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md),
-which writes a parquet and records its shape and schema, rather than
-here, where it would get no schema hash.
+`n_rows` explicitly.
+
+An **`.rds`** holding a data frame is read and, by default, converted
+the way
+[`read_built()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_built.md)
+caches a source: a `<name>.schema.csv` sidecar, recorded by
+`schema_sha256`, and a `<name>.parquet` beside the file, so a later
+change to its columns or types is caught. Its row and column counts come
+from the same read. `as_parquet = FALSE` lists it as it is, with the
+counts but no schema. Supplying `n_rows` skips the read, as for any
+other format.
 
 ## Usage
 
@@ -60,7 +67,8 @@ update_manifest(
   role = c("source", "primary"),
   reader = NULL,
   verbose = FALSE,
-  dataset = NULL
+  dataset = NULL,
+  as_parquet = TRUE
 )
 ```
 
@@ -151,6 +159,13 @@ update_manifest(
   Character(1) or `NULL`. With no `file`: the one registered dataset to
   update; `NULL` updates every one that changed. `"built"` is a second
   name for `"study"`. Ignored when `file` is given.
+
+- as_parquet:
+
+  Logical. For an `.rds` given without `n_rows`: `TRUE` (the default)
+  writes a parquet and a schema sidecar beside it and records the
+  schema's hash; `FALSE` records only its row and column counts. Ignored
+  for other formats. Needs the arrow package when `TRUE`.
 
 ## Value
 

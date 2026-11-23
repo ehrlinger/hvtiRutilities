@@ -35,9 +35,14 @@ loads the entire dataset/workbook into memory; it is therefore disabled by
 default and only performed when
 options(manifest.allow_heavy_rowcount = TRUE) is set.  For any other
 format, or when heavy counting is disabled, supply n_rows
-explicitly. An .rds is derived data: register it with
-register_data(), which writes a parquet and records its shape and
-schema, rather than here, where it would get no schema hash."><meta property="og:description" content="In a study, run with no arguments after rebuilding a registered
+explicitly.
+An .rds holding a data frame is read and, by default, converted the
+way read_built() caches a source: a &amp;lt;name&amp;gt;.schema.csv sidecar,
+recorded by schema_sha256, and a &amp;lt;name&amp;gt;.parquet beside the file, so
+a later change to its columns or types is caught. Its row and column
+counts come from the same read. as_parquet = FALSE lists it as it is,
+with the counts but no schema. Supplying n_rows skips the read, as
+for any other format."><meta property="og:description" content="In a study, run with no arguments after rebuilding a registered
 dataset: update_manifest(). It finds the study from the working
 directory, converts every registered dataset whose source file has changed
 to a new dated parquet (&amp;lt;name&amp;gt;_YYYYMMDD.parquet, or _r2,
@@ -73,9 +78,14 @@ loads the entire dataset/workbook into memory; it is therefore disabled by
 default and only performed when
 options(manifest.allow_heavy_rowcount = TRUE) is set.  For any other
 format, or when heavy counting is disabled, supply n_rows
-explicitly. An .rds is derived data: register it with
-register_data(), which writes a parquet and records its shape and
-schema, rather than here, where it would get no schema hash."></head><body>
+explicitly.
+An .rds holding a data frame is read and, by default, converted the
+way read_built() caches a source: a &amp;lt;name&amp;gt;.schema.csv sidecar,
+recorded by schema_sha256, and a &amp;lt;name&amp;gt;.parquet beside the file, so
+a later change to its columns or types is caught. Its row and column
+counts come from the same read. as_parquet = FALSE lists it as it is,
+with the counts but no schema. Supplying n_rows skips the read, as
+for any other format."></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -170,9 +180,14 @@ loads the entire dataset/workbook into memory; it is therefore disabled by
 default and only performed when
 <code>options(manifest.allow_heavy_rowcount = TRUE)</code> is set.  For any other
 format, or when heavy counting is disabled, supply <code>n_rows</code>
-explicitly. An <code>.rds</code> is derived data: register it with
-<code><a href="register_data.html">register_data()</a></code>, which writes a parquet and records its shape and
-schema, rather than here, where it would get no schema hash.</p>
+explicitly.</p>
+<p>An <strong><code>.rds</code></strong> holding a data frame is read and, by default, converted the
+way <code><a href="read_built.html">read_built()</a></code> caches a source: a <code>&lt;name&gt;.schema.csv</code> sidecar,
+recorded by <code>schema_sha256</code>, and a <code>&lt;name&gt;.parquet</code> beside the file, so
+a later change to its columns or types is caught. Its row and column
+counts come from the same read. <code>as_parquet = FALSE</code> lists it as it is,
+with the counts but no schema. Supplying <code>n_rows</code> skips the read, as
+for any other format.</p>
     </div>
 
     <div class="section level2">
@@ -189,7 +204,8 @@ schema, rather than here, where it would get no schema hash.</p>
 <span>  role <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"source"</span>, <span class="st">"primary"</span><span class="op">)</span>,</span>
 <span>  reader <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  dataset <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  dataset <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  as_parquet <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -280,6 +296,13 @@ added or updated via <code><a href="https://rdrr.io/r/base/message.html" class="
 registered dataset to update; <code>NULL</code> updates every one that changed.
 <code>"built"</code> is a second name for <code>"study"</code>. Ignored when
 <code>file</code> is given.</p></dd>
+
+
+<dt id="arg-as-parquet">as_parquet<a class="anchor" aria-label="anchor" href="#arg-as-parquet"></a></dt>
+<dd><p>Logical. For an <code>.rds</code> given without <code>n_rows</code>: <code>TRUE</code>
+(the default) writes a parquet and a schema sidecar beside it and records
+the schema's hash; <code>FALSE</code> records only its row and column counts.
+Ignored for other formats. Needs the arrow package when <code>TRUE</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
