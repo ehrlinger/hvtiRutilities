@@ -1,3 +1,36 @@
+# hvtiRutilities 1.5.27
+
+* `phn_zscore_table()` gains a `view` column, Table 2's "Echocardiographic View or Formula" for each structure, and the `phn_zscore()` documentation now says which PHN norms are derived rather than measured (valve areas as ellipses from two diameters, bullet-formula volumes, mass and the three ratios), so a planimetered area or an apical LV area is not scored against them by mistake. It also notes the reference population's exclusion of infants under 37 weeks' corrected gestational age (Lopez et al. 2017, Data Supplement Table 1).
+
+* `rmarkdown` is no longer in `Suggests`. Nothing in the package, its tests or
+  its vignettes called it. The Quarto vignette engine still reaches
+  `rmarkdown` through the `quarto` package, which imports it.
+
+* `update_manifest(file)` looks for a relative name in the study's datasets
+  folder when it is not found from the working directory, as `register_data()`
+  does, so `update_manifest("x.csv")` works from a job folder (#316).
+
+* `update_manifest(file)` records an `.rds` without being given `n_rows`. By
+  default it writes `<name>.parquet` and a `<name>.schema.csv` sidecar beside
+  it and records the shape and schema hash, as `read_built()` does for a
+  source; the new `as_parquet = FALSE` lists the `.rds` as it is, with row and
+  column counts but no schema. It refuses an `.rds` that does not hold a data
+  frame, and will not overwrite a parquet or schema sidecar that another entry
+  records or that no entry records, such as a data dictionary that happens to
+  be named `<name>.schema.csv`. A conversion that does not read back identically (a
+  local-time date-time column, say) stops with nothing written (#316).
+
+* `read_clinical_data()`, and so `register_data()` and `read_built()`, read
+  `.rda` and `.RData` files. The file must hold exactly one data frame, which
+  is the dataset; other objects saved with it, such as a list of labels, are
+  ignored, and a file with none or several stops with their names.
+  `update_manifest(file)` converts one to parquet as it does an `.rds`, or
+  lists it as it is with `as_parquet = FALSE` (#316).
+
+* `register_data()`'s help says which formats its `file` may be, that
+  registration converts each to parquet, and that parquet is preferred to an
+  R data file when R writes the file (#316).
+
 # hvtiRutilities 1.5.26
 
 * New `phn_zscore()` computes Pediatric Heart Network (PHN) echocardiographic z-scores adjusted for body surface area, and the normal value for each child's BSA, for all 34 structures of the PHN Normal Echocardiogram Database (Lopez et al., *Circ Cardiovasc Imaging* 2017): the aortic annulus, root, sinotubular junction and ascending aorta, the arch, the pulmonary annulus and arteries, the mitral and tricuspid diameters and areas, the coronary arteries, and the LV dimensions, areas, volumes and mass. It takes BSA, or height and weight at the echo. `units` is required, so a measurement in mm is never scored against a norm in cm. `phn_zscore_table()` returns the published coefficients (Table 2), and `bsa_haycock()` the Haycock BSA the PHN used. Results match the paper's worked example and the ParameterZ PHN calculator on every structure.
