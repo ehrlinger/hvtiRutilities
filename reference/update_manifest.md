@@ -40,7 +40,10 @@ row counting is considered "heavy" because it loads the entire
 dataset/workbook into memory; it is therefore disabled by default and
 only performed when `options(manifest.allow_heavy_rowcount = TRUE)` is
 set. For any other format, or when heavy counting is disabled, supply
-`n_rows` explicitly.
+`n_rows` explicitly. An `.rds` is derived data: register it with
+[`register_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md),
+which writes a parquet and records its shape and schema, rather than
+here, where it would get no schema hash.
 
 ## Usage
 
@@ -65,8 +68,12 @@ update_manifest(
 
 - file:
 
-  Character. Path to the dataset file. Omit it inside a study to
-  register every changed dataset; see the description.
+  Character. Path to the dataset file. Inside a study, a relative name
+  not found from the working directory is looked for in the study's
+  datasets folder, as
+  [`register_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md)
+  does. Omit it inside a study to register every changed dataset; see
+  the description.
 
 - manifest_path:
 
