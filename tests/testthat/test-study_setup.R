@@ -382,6 +382,26 @@ test_that("cleanup deletes tp.* files and binder.summaries.doc anywhere in the s
                                      "analyses/tp.run.log", "documents/binder.summaries.doc"))
 })
 
+test_that("cleanup deletes config.fixtemplate anywhere, edited or not", {
+  # The legacy fixtemplates step's config: a template-machinery file, deleted by
+  # name like binder.summaries.doc, so a study-edited copy goes too.
+  root <- withr::local_tempdir()
+  dir.create(file.path(root, "analyses"))
+  write_file(root, "config.fixtemplate", "study edited")
+  write_file(root, "analyses/sas/config.fixtemplate")
+  keep <- write_file(root, "analyses/config.fixtemplate.notes", "keep")
+
+  status <- study_setup(root, "Legacy study", 42L, adopt = TRUE, cleanup = TRUE,
+                        template_dir = local_corpus(), renv = FALSE)
+
+  expect_false(file.exists(file.path(root, "config.fixtemplate")))
+  expect_false(file.exists(file.path(root, "analyses/sas/config.fixtemplate")))
+  expect_identical(readLines(keep), "keep")
+  expect_setequal(attr(status, "cleanup")$deleted,
+                  c("config.fixtemplate", "analyses/sas/config.fixtemplate"))
+  expect_identical(attr(status, "cleanup")$removed_dirs, "analyses/sas")
+})
+
 test_that("cleanup removes templates and old_RF_templates folders left empty", {
   root <- withr::local_tempdir()
   dir.create(file.path(root, "analyses"))
