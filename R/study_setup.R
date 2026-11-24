@@ -106,7 +106,7 @@
 }
 
 # Template copies a legacy study carries: tp.* files, binder.summaries.doc,
-# config.fixtemplate (the legacy fixtemplates step's config) and the other
+# config.fixtemplates (the legacy fixtemplates step's config) and the other
 # files of the template corpus are copied in at study creation,
 # before any analysis, and are out of date from then on; the corpus they came
 # from is kept centrally. renv
@@ -186,7 +186,7 @@
       found$files <- c(found$files, inner$files)
       found$folders <- c(found$folders, inner$folders,
                          if (.study_cleanup_folder(name)) child)
-    } else if (startsWith(name, "tp.") || name %in% c("binder.summaries.doc", "config.fixtemplate") ||
+    } else if (startsWith(name, "tp.") || name %in% c("binder.summaries.doc", "config.fixtemplates") ||
                  (name %in% index$name && .study_template_copy(full, name, index))) {
       found$files <- c(found$files, child)
     }
@@ -425,7 +425,7 @@
 #' With `cleanup = TRUE`, the template copies a legacy study carries are
 #' deleted before anything else reads the study, anywhere in it: every file
 #' whose name starts with `tp.`, every `binder.summaries.doc`, every
-#' `config.fixtemplate`, and every other file whose name and exact
+#' `config.fixtemplates`, and every other file whose name and exact
 #' content match a file in the template
 #' corpus at `template_dir`. A study's own file that shares a name with a
 #' corpus file but differs from it (an edited `references.bib`, say) is
@@ -493,7 +493,7 @@
 #'   `"manual"`. An existing `_study.yml` is not rewritten, so
 #'   adoption keeps the recorded source.
 #' @param cleanup Logical. Delete the study's `tp.*` template copies,
-#'   `binder.summaries.doc` and `config.fixtemplate`, and remove the
+#'   `binder.summaries.doc` and `config.fixtemplates`, and remove the
 #'   template folders they leave
 #'   empty. See Details. Defaults to `adopt`: adopting a study cleans it,
 #'   including an adoption accepted at the prompt. Pass `FALSE` to adopt

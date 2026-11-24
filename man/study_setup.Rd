@@ -54,7 +54,7 @@ unavailable. A new \verb{_study.yml} records it as
 adoption keeps the recorded source.}
 
 \item{cleanup}{Logical. Delete the study's \verb{tp.*} template copies,
-\code{binder.summaries.doc} and \code{config.fixtemplate}, and remove the
+\code{binder.summaries.doc} and \code{config.fixtemplates}, and remove the
 template folders they leave
 empty. See Details. Defaults to \code{adopt}: adopting a study cleans it,
 including an adoption accepted at the prompt. Pass \code{FALSE} to adopt
@@ -111,7 +111,7 @@ left unchanged.
 With \code{cleanup = TRUE}, the template copies a legacy study carries are
 deleted before anything else reads the study, anywhere in it: every file
 whose name starts with \code{tp.}, every \code{binder.summaries.doc}, every
-\code{config.fixtemplate}, and every other file whose name and exact
+\code{config.fixtemplates}, and every other file whose name and exact
 content match a file in the template
 corpus at \code{template_dir}. A study's own file that shares a name with a
 corpus file but differs from it (an edited \code{references.bib}, say) is
