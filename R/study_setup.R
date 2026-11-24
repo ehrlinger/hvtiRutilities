@@ -105,8 +105,9 @@
                   default = FALSE)
 }
 
-# Template copies a legacy study carries: tp.* files, binder.summaries.doc and
-# the other files of the template corpus are copied in at study creation,
+# Template copies a legacy study carries: tp.* files, binder.summaries.doc,
+# config.fixtemplates (the legacy fixtemplates step's config) and the other
+# files of the template corpus are copied in at study creation,
 # before any analysis, and are out of date from then on; the corpus they came
 # from is kept centrally. renv
 # scans them for dependencies, which is why a legacy renv::init() asked for
@@ -185,7 +186,7 @@
       found$files <- c(found$files, inner$files)
       found$folders <- c(found$folders, inner$folders,
                          if (.study_cleanup_folder(name)) child)
-    } else if (startsWith(name, "tp.") || name == "binder.summaries.doc" ||
+    } else if (startsWith(name, "tp.") || name %in% c("binder.summaries.doc", "config.fixtemplates") ||
                  (name %in% index$name && .study_template_copy(full, name, index))) {
       found$files <- c(found$files, child)
     }
@@ -423,8 +424,9 @@
 #'
 #' With `cleanup = TRUE`, the template copies a legacy study carries are
 #' deleted before anything else reads the study, anywhere in it: every file
-#' whose name starts with `tp.`, every `binder.summaries.doc`, and
-#' every other file whose name and exact content match a file in the template
+#' whose name starts with `tp.`, every `binder.summaries.doc`, every
+#' `config.fixtemplates`, and every other file whose name and exact
+#' content match a file in the template
 #' corpus at `template_dir`. A study's own file that shares a name with a
 #' corpus file but differs from it (an edited `references.bib`, say) is
 #' kept, as are `.renvignore` and `.gitignore`. These files are
@@ -490,8 +492,9 @@
 #'   `TRUE` for `"tracker"` and `FALSE` for
 #'   `"manual"`. An existing `_study.yml` is not rewritten, so
 #'   adoption keeps the recorded source.
-#' @param cleanup Logical. Delete the study's `tp.*` template copies and
-#'   `binder.summaries.doc`, and remove the template folders they leave
+#' @param cleanup Logical. Delete the study's `tp.*` template copies,
+#'   `binder.summaries.doc` and `config.fixtemplates`, and remove the
+#'   template folders they leave
 #'   empty. See Details. Defaults to `adopt`: adopting a study cleans it,
 #'   including an adoption accepted at the prompt. Pass `FALSE` to adopt
 #'   without cleaning.
