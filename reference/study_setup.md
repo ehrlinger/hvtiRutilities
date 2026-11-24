@@ -16,23 +16,24 @@ agree on the study root. An existing project is left unchanged.
 
 With `cleanup = TRUE`, the template copies a legacy study carries are
 deleted before anything else reads the study, anywhere in it: every file
-whose name starts with `tp.`, every `binder.summaries.doc`, and every
-other file whose name and exact content match a file in the template
-corpus at `template_dir`. A study's own file that shares a name with a
-corpus file but differs from it (an edited `references.bib`, say) is
-kept, as are `.renvignore` and `.gitignore`. These files are copied in
-when a study is created, months before any analysis, and the corpus they
-came from is kept centrally, so no backup is made. A folder the
-deletions leave holding nothing (desktop litter such as `Thumbs.db`
-aside) is removed, whatever its name, as is an empty `templates` or
-`old_RF_templates*` folder; a folder still holding other files stays, as
-does one holding any folder the cleanup did not empty, and a top-level
-study folder is never removed. Symbolic links are neither followed nor
-deleted, and folders named `.git`, `.checkpoint` or `renv` are never
-entered, at any depth. The root and `template_dir` must not overlap. A
-file or folder that cannot be deleted is warned about and listed in the
-`"cleanup"` attribute's `left`; setup goes on. With no template corpus
-at `template_dir`, cleanup is skipped with a warning.
+whose name starts with `tp.`, every `binder.summaries.doc`, every
+`config.fixtemplates`, and every other file whose name and exact content
+match a file in the template corpus at `template_dir`. A study's own
+file that shares a name with a corpus file but differs from it (an
+edited `references.bib`, say) is kept, as are `.renvignore` and
+`.gitignore`. These files are copied in when a study is created, months
+before any analysis, and the corpus they came from is kept centrally, so
+no backup is made. A folder the deletions leave holding nothing (desktop
+litter such as `Thumbs.db` aside) is removed, whatever its name, as is
+an empty `templates` or `old_RF_templates*` folder; a folder still
+holding other files stays, as does one holding any folder the cleanup
+did not empty, and a top-level study folder is never removed. Symbolic
+links are neither followed nor deleted, and folders named `.git`,
+`.checkpoint` or `renv` are never entered, at any depth. The root and
+`template_dir` must not overlap. A file or folder that cannot be deleted
+is warned about and listed in the `"cleanup"` attribute's `left`; setup
+goes on. With no template corpus at `template_dir`, cleanup is skipped
+with a warning.
 
 With `renv = TRUE`, the study's `renv` environment is set up after any
 cleanup, in a separate R process. A complete environment is kept: a
@@ -128,11 +129,11 @@ study_setup(
 
 - cleanup:
 
-  Logical. Delete the study's `tp.*` template copies and
-  `binder.summaries.doc`, and remove the template folders they leave
-  empty. See Details. Defaults to `adopt`: adopting a study cleans it,
-  including an adoption accepted at the prompt. Pass `FALSE` to adopt
-  without cleaning.
+  Logical. Delete the study's `tp.*` template copies,
+  `binder.summaries.doc` and `config.fixtemplates`, and remove the
+  template folders they leave empty. See Details. Defaults to `adopt`:
+  adopting a study cleans it, including an adoption accepted at the
+  prompt. Pass `FALSE` to adopt without cleaning.
 
 - renv:
 
@@ -189,10 +190,10 @@ root. With `renv = TRUE` it carries a `"renv"` attribute,
 ``` r
 root <- file.path(tempdir(), "study-setup-example")
 study_setup(root, study = "Example", study_tracker_id = 1L, renv = FALSE)
-#> Study: /tmp/RtmpkdDtBn/study-setup-example
+#> Study: /tmp/RtmpzqOx06/study-setup-example
 #> 
 #> [x] _study.yml — study: Example
-#> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Example", study_tracker_id = 1L, root = "/tmp/RtmpkdDtBn/study-setup-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first
+#> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Example", study_tracker_id = 1L, root = "/tmp/RtmpzqOx06/study-setup-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first
 #> [ ] manifest.yaml — no manifest.yaml; register_data() creates it
 #> [ ] dataset — no default dataset registered; run register_data()
 #> [ ] provenance — no .qmd/.Rmd sources found; 0 sidecars

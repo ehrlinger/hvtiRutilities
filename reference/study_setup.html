@@ -11,8 +11,9 @@ study_root() agree on the study root. An existing project is
 left unchanged.
 With cleanup = TRUE, the template copies a legacy study carries are
 deleted before anything else reads the study, anywhere in it: every file
-whose name starts with tp., every binder.summaries.doc, and
-every other file whose name and exact content match a file in the template
+whose name starts with tp., every binder.summaries.doc, every
+config.fixtemplates, and every other file whose name and exact
+content match a file in the template
 corpus at template_dir. A study's own file that shares a name with a
 corpus file but differs from it (an edited references.bib, say) is
 kept, as are .renvignore and .gitignore. These files are
@@ -64,8 +65,9 @@ study_root() agree on the study root. An existing project is
 left unchanged.
 With cleanup = TRUE, the template copies a legacy study carries are
 deleted before anything else reads the study, anywhere in it: every file
-whose name starts with tp., every binder.summaries.doc, and
-every other file whose name and exact content match a file in the template
+whose name starts with tp., every binder.summaries.doc, every
+config.fixtemplates, and every other file whose name and exact
+content match a file in the template
 corpus at template_dir. A study's own file that shares a name with a
 corpus file but differs from it (an edited references.bib, say) is
 kept, as are .renvignore and .gitignore. These files are
@@ -176,8 +178,9 @@ directory is written, so that opening the project and
 left unchanged.</p>
 <p>With <code>cleanup = TRUE</code>, the template copies a legacy study carries are
 deleted before anything else reads the study, anywhere in it: every file
-whose name starts with <code>tp.</code>, every <code>binder.summaries.doc</code>, and
-every other file whose name and exact content match a file in the template
+whose name starts with <code>tp.</code>, every <code>binder.summaries.doc</code>, every
+<code>config.fixtemplates</code>, and every other file whose name and exact
+content match a file in the template
 corpus at <code>template_dir</code>. A study's own file that shares a name with a
 corpus file but differs from it (an edited <code>references.bib</code>, say) is
 kept, as are <code>.renvignore</code> and <code>.gitignore</code>. These files are
@@ -290,8 +293,9 @@ adoption keeps the recorded source.</p></dd>
 
 
 <dt id="arg-cleanup">cleanup<a class="anchor" aria-label="anchor" href="#arg-cleanup"></a></dt>
-<dd><p>Logical. Delete the study's <code>tp.*</code> template copies and
-<code>binder.summaries.doc</code>, and remove the template folders they leave
+<dd><p>Logical. Delete the study's <code>tp.*</code> template copies,
+<code>binder.summaries.doc</code> and <code>config.fixtemplates</code>, and remove the
+template folders they leave
 empty. See Details. Defaults to <code>adopt</code>: adopting a study cleans it,
 including an adoption accepted at the prompt. Pass <code>FALSE</code> to adopt
 without cleaning.</p></dd>
@@ -350,10 +354,10 @@ With <code>renv = TRUE</code> it carries a <code>"renv"</code> attribute,
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">root</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"study-setup-example"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">study_setup</span><span class="op">(</span><span class="va">root</span>, study <span class="op">=</span> <span class="st">"Example"</span>, study_tracker_id <span class="op">=</span> <span class="fl">1L</span>, renv <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Study: /tmp/RtmpkdDtBn/study-setup-example</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Study: /tmp/RtmpzqOx06/study-setup-example</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [x] _study.yml — study: Example</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Example", study_tracker_id = 1L, root = "/tmp/RtmpkdDtBn/study-setup-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Example", study_tracker_id = 1L, root = "/tmp/RtmpzqOx06/study-setup-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [ ] manifest.yaml — no manifest.yaml; register_data() creates it</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [ ] dataset — no default dataset registered; run register_data()</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [ ] provenance — no .qmd/.Rmd sources found; 0 sidecars</span>
