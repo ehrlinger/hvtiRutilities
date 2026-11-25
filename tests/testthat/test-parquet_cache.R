@@ -200,20 +200,6 @@ test_that("a promoted entry asks for arrow instead of reading the retired source
   expect_error(read_built(cfg), "reading it needs the arrow package", fixed = TRUE)
 })
 
-# Promote the 20-row fixture, then rebuild the retired source with 3 rows: a
-# read that returns 3 rows read the source instead of the dataset of record.
-promote_then_rebuild_source <- function(dir) {
-  make_study_fixture(dir, n = 20L)
-  cfg <- study_config(dir)
-  read_built(cfg)
-  mp <- file.path(dir, "manifest.yaml")
-  m <- yaml::read_yaml(mp)
-  m$datasets[[1]]$role <- "primary"
-  yaml::write_yaml(m, mp)
-  make_study_fixture(dir, n = 3L, n_events = 1L)
-  cfg
-}
-
 test_that("disabling the cache does not change what a promoted read returns", {
   # A promoted entry's parquet is the data, not a cache, so the option that
   # turns the cache off must not send the read to the rebuilt source.
