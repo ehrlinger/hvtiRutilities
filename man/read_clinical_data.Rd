@@ -51,7 +51,9 @@ silently converted to \code{.}).}
 \item{\code{.rda}, \code{.RData}}{R data files via \code{load()}. The file must hold
 exactly one data frame, which is returned; other objects saved with
 it, such as a list of labels, are ignored.}
-\item{\code{.parquet}}{Parquet files via \code{arrow::read_parquet()}}
+\item{\code{.parquet}}{Parquet files via \code{arrow::read_parquet()}. Needs
+the arrow package, which is suggested rather than imported; without
+it, \code{\link[=study_need]{study_need()}} installs it or says how.}
 }
 }
 \details{

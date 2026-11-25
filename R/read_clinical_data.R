@@ -24,7 +24,9 @@
 #'   \item{`.rda`, `.RData`}{R data files via `load()`. The file must hold
 #'     exactly one data frame, which is returned; other objects saved with
 #'     it, such as a list of labels, are ignored.}
-#'   \item{`.parquet`}{Parquet files via `arrow::read_parquet()`}
+#'   \item{`.parquet`}{Parquet files via `arrow::read_parquet()`. Needs
+#'     the arrow package, which is suggested rather than imported; without
+#'     it, [study_need()] installs it or says how.}
 #' }
 #'
 #' @details
