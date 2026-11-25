@@ -35,7 +35,7 @@ concept_of(
 
   Character vector of regular expressions for the study's transformation
   affixes. See
-  [`POOL_AFFIXES()`](https://ehrlinger.github.io/hvtiRutilities/reference/pool_conventions.md).
+  [POOL_AFFIXES](https://ehrlinger.github.io/hvtiRutilities/reference/pool_conventions.md).
 
 - plain_suffix:
 

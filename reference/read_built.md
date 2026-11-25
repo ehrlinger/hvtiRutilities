@@ -14,7 +14,10 @@ Whether the source changed is settled by its SHA-256 against the one
 recorded at registration, so each read of a registered dataset hashes
 its source once, as
 [`source_changed()`](https://ehrlinger.github.io/hvtiRutilities/reference/source_changed.md)
-does.
+does. Reading a registered version needs the arrow package, which is
+suggested rather than imported; without it,
+[`study_need()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_need.md)
+installs it or says how.
 
 A combined dataset (see
 [`register_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md))

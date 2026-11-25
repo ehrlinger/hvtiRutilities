@@ -40,7 +40,11 @@ Supported formats:
 - `.parquet`:
 
   Parquet files via
-  [`arrow::read_parquet()`](https://arrow.apache.org/docs/r/reference/read_parquet.html)
+  [`arrow::read_parquet()`](https://arrow.apache.org/docs/r/reference/read_parquet.html).
+  Needs the arrow package, which is suggested rather than imported;
+  without it,
+  [`study_need()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_need.md)
+  installs it or says how.
 
 ## Usage
 

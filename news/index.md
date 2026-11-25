@@ -1,5 +1,44 @@
 # Changelog
 
+## hvtiRutilities 1.5.28
+
+This release makes `arrow` optional, makes a promoted dataset read its
+parquet even with the parquet cache turned off, and widens the
+legacy-study cleanup by one file.
+
+- `arrow` moves from Imports to Suggests, so hvtiRutilities installs and
+  loads without it. Only the functions that touch parquet data need it:
+  [`register_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/register_data.md),
+  [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md),
+  [`read_built()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_built.md)
+  on a registered version and
+  [`read_clinical_data()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_clinical_data.md)
+  on a `.parquet` file ask for `arrow` through
+  [`study_need()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_need.md),
+  and their help pages now say so. A read of a promoted dataset now asks
+  too; it previously fell through to the retired source and failed in
+  `haven`.
+
+- A promoted dataset reads its parquet whatever
+  `options(hvtiRutilities.disable_parquet_cache)` says. The parquet is
+  the dataset of record, not a cache, but with the option set
+  [`read_built()`](https://ehrlinger.github.io/hvtiRutilities/reference/read_built.md)
+  returned the retired source instead, and a source rebuilt since
+  promotion gave the wrong rows. The option still turns the cache off
+  for every other dataset.
+
+- [`study_setup()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md)
+  cleanup now also deletes `config.fixtemplates`, the legacy
+  `fixtemplates` step’s config, anywhere in the study. Like `tp.*` files
+  and `binder.summaries.doc` it goes by name, so a study-edited copy is
+  deleted too.
+
+- The
+  [`concept_of()`](https://ehrlinger.github.io/hvtiRutilities/reference/concept_of.md)
+  help page links `POOL_AFFIXES` as the vector it is, rather than as
+  [`POOL_AFFIXES()`](https://ehrlinger.github.io/hvtiRutilities/reference/pool_conventions.md),
+  a function call that does not exist.
+
 ## hvtiRutilities 1.5.27
 
 - [`phn_zscore_table()`](https://ehrlinger.github.io/hvtiRutilities/reference/phn_zscore_table.md)

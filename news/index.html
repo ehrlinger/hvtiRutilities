@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.27</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.28</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -56,6 +56,14 @@
       <small>Source: <a href="https://github.com/ehrlinger/hvtiRutilities/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.5.28" id="hvtirutilities-1528">hvtiRutilities 1.5.28<a class="anchor" aria-label="anchor" href="#hvtirutilities-1528"></a></h2>
+<p>This release makes <code>arrow</code> optional, makes a promoted dataset read its parquet even with the parquet cache turned off, and widens the legacy-study cleanup by one file.</p>
+<ul><li><p><code>arrow</code> moves from Imports to Suggests, so hvtiRutilities installs and loads without it. Only the functions that touch parquet data need it: <code><a href="../reference/register_data.html">register_data()</a></code>, <code><a href="../reference/update_manifest.html">update_manifest()</a></code>, <code><a href="../reference/read_built.html">read_built()</a></code> on a registered version and <code><a href="../reference/read_clinical_data.html">read_clinical_data()</a></code> on a <code>.parquet</code> file ask for <code>arrow</code> through <code><a href="../reference/study_need.html">study_need()</a></code>, and their help pages now say so. A read of a promoted dataset now asks too; it previously fell through to the retired source and failed in <code>haven</code>.</p></li>
+<li><p>A promoted dataset reads its parquet whatever <code>options(hvtiRutilities.disable_parquet_cache)</code> says. The parquet is the dataset of record, not a cache, but with the option set <code><a href="../reference/read_built.html">read_built()</a></code> returned the retired source instead, and a source rebuilt since promotion gave the wrong rows. The option still turns the cache off for every other dataset.</p></li>
+<li><p><code><a href="../reference/study_setup.html">study_setup()</a></code> cleanup now also deletes <code>config.fixtemplates</code>, the legacy <code>fixtemplates</code> step’s config, anywhere in the study. Like <code>tp.*</code> files and <code>binder.summaries.doc</code> it goes by name, so a study-edited copy is deleted too.</p></li>
+<li><p>The <code><a href="../reference/concept_of.html">concept_of()</a></code> help page links <code>POOL_AFFIXES</code> as the vector it is, rather than as <code><a href="../reference/pool_conventions.html">POOL_AFFIXES()</a></code>, a function call that does not exist.</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.5.27" id="hvtirutilities-1527">hvtiRutilities 1.5.27<a class="anchor" aria-label="anchor" href="#hvtirutilities-1527"></a></h2>
 <ul><li><p><code><a href="../reference/phn_zscore_table.html">phn_zscore_table()</a></code> gains a <code>view</code> column, Table 2’s “Echocardiographic View or Formula” for each structure, and the <code><a href="../reference/phn_zscore.html">phn_zscore()</a></code> documentation now says which PHN norms are derived rather than measured (valve areas as ellipses from two diameters, bullet-formula volumes, mass and the three ratios), so a planimetered area or an apical LV area is not scored against them by mistake. It also notes the reference population’s exclusion of infants under 37 weeks’ corrected gestational age (Lopez et al. 2017, Data Supplement Table 1).</p></li>

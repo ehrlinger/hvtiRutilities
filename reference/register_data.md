@@ -12,10 +12,13 @@ folder, `<name>_YYYYMMDD.parquet`, with its column record beside it as
 and the job templates read, so the source file may be rebuilt freely;
 run
 [`update_manifest()`](https://ehrlinger.github.io/hvtiRutilities/reference/update_manifest.md)
-to register a rebuilt file as a new version. The date is the file's
-modification date unless `extract_date` is given. A release-aware
-registration (`catalog_dataset` and `release_id`) records the catalog's
-file as it is and converts nothing.
+to register a rebuilt file as a new version. Writing the parquet needs
+the arrow package, which is suggested rather than imported; without it,
+[`study_need()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_need.md)
+installs it or says how. The date is the file's modification date unless
+`extract_date` is given. A release-aware registration (`catalog_dataset`
+and `release_id`) records the catalog's file as it is and converts
+nothing.
 
 A dataset is registered once: registering it again stops with "already
 registered". So a study whose datasets are already registered adds
@@ -189,10 +192,10 @@ utils::write.csv(data.frame(ccfid = 1:3, age = c(61, 70, 55)),
                  file.path(root, "00_datasets", "built.csv"),
                  row.names = FALSE)
 register_data(file = "built.csv", key_cols = "ccfid", root = root)
-#> Study: /tmp/RtmpdGArDU/register-data-example
+#> Study: /tmp/RtmpMzGPPl/register-data-example
 #> 
 #> [x] _study.yml — study: Example
-#> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Example", study_tracker_id = 1L, root = "/tmp/RtmpdGArDU/register-data-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first
+#> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Example", study_tracker_id = 1L, root = "/tmp/RtmpMzGPPl/register-data-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first
 #> [x] manifest.yaml — 1 dataset entry verified by checksum
 #> [x] dataset — built.csv, registered as built_20261125.parquet
 #> [ ] provenance — no .qmd/.Rmd sources found; 0 sidecars

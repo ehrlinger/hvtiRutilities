@@ -8,6 +8,8 @@ and a message of class hvtiRutilities_source_changed says so and
 names update_manifest(). Whether the source changed is settled by its
 SHA-256 against the one recorded at registration, so each read of a
 registered dataset hashes its source once, as source_changed() does.
+Reading a registered version needs the arrow package, which is suggested
+rather than imported; without it, study_need() installs it or says how.
 A combined dataset (see register_data()) is still read when a
 dataset it was built from has been updated since. A message of class
 hvtiRutilities_parent_changed, which inherits
@@ -52,6 +54,8 @@ and a message of class hvtiRutilities_source_changed says so and
 names update_manifest(). Whether the source changed is settled by its
 SHA-256 against the one recorded at registration, so each read of a
 registered dataset hashes its source once, as source_changed() does.
+Reading a registered version needs the arrow package, which is suggested
+rather than imported; without it, study_need() installs it or says how.
 A combined dataset (see register_data()) is still read when a
 dataset it was built from has been updated since. A message of class
 hvtiRutilities_parent_changed, which inherits
@@ -95,7 +99,7 @@ the working file."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">hvtiRutilities</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.27</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.28</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -154,7 +158,9 @@ source file has been rebuilt since, the registered version is still read
 and a message of class <code>hvtiRutilities_source_changed</code> says so and
 names <code><a href="update_manifest.html">update_manifest()</a></code>. Whether the source changed is settled by its
 SHA-256 against the one recorded at registration, so each read of a
-registered dataset hashes its source once, as <code><a href="source_changed.html">source_changed()</a></code> does.</p>
+registered dataset hashes its source once, as <code><a href="source_changed.html">source_changed()</a></code> does.
+Reading a registered version needs the arrow package, which is suggested
+rather than imported; without it, <code><a href="study_need.html">study_need()</a></code> installs it or says how.</p>
 <p>A combined dataset (see <code><a href="register_data.html">register_data()</a></code>) is still read when a
 dataset it was built from has been updated since. A message of class
 <code>hvtiRutilities_parent_changed</code>, which inherits
