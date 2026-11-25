@@ -1,3 +1,24 @@
+# hvtiRutilities 1.5.28
+
+This release lets hvtiRutilities install where `arrow` cannot be built, and
+widens the legacy-study cleanup by one file.
+
+* `arrow` moves from Imports to Suggests, so hvtiRutilities installs on a
+  server that cannot build `arrow` (the LRI servers under R 4.6). Registering
+  or reading parquet data still requires it: `register_data()`,
+  `update_manifest()`, `read_built()` on a registered version and
+  `read_clinical_data()` on a `.parquet` file ask for `arrow` through
+  `study_need()`, and their help pages now say so. A read of a promoted
+  dataset now asks too; it previously fell through to the retired source and
+  failed in `haven`.
+
+* `study_setup()` cleanup now also deletes `config.fixtemplates`, the legacy
+  `fixtemplates` step's config, anywhere in the study. Like `tp.*` files and
+  `binder.summaries.doc` it goes by name, so a study-edited copy is deleted too.
+
+* The `concept_of()` help page links `POOL_AFFIXES` as the vector it is,
+  rather than as `POOL_AFFIXES()`, a function call that does not exist.
+
 # hvtiRutilities 1.5.27
 
 * `phn_zscore_table()` gains a `view` column, Table 2's "Echocardiographic View or Formula" for each structure, and the `phn_zscore()` documentation now says which PHN norms are derived rather than measured (valve areas as ellipses from two diameters, bullet-formula volumes, mass and the three ratios), so a planimetered area or an apical LV area is not scored against them by mistake. It also notes the reference population's exclusion of infants under 37 weeks' corrected gestational age (Lopez et al. 2017, Data Supplement Table 1).
