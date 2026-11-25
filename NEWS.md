@@ -1,7 +1,8 @@
 # hvtiRutilities 1.5.28
 
-This release lets hvtiRutilities install where `arrow` cannot be built, and
-widens the legacy-study cleanup by one file.
+This release lets hvtiRutilities install where `arrow` cannot be built, makes
+a promoted dataset read its parquet even with the parquet cache turned off,
+and widens the legacy-study cleanup by one file.
 
 * `arrow` moves from Imports to Suggests, so hvtiRutilities installs on a
   server that cannot build `arrow` (the LRI servers under R 4.6). Registering
@@ -11,6 +12,13 @@ widens the legacy-study cleanup by one file.
   `study_need()`, and their help pages now say so. A read of a promoted
   dataset now asks too; it previously fell through to the retired source and
   failed in `haven`.
+
+* A promoted dataset reads its parquet whatever
+  `options(hvtiRutilities.disable_parquet_cache)` says. The parquet is the
+  dataset of record, not a cache, but with the option set `read_built()`
+  returned the retired source instead, and a source rebuilt since promotion
+  gave the wrong rows. The option still turns the cache off for every other
+  dataset.
 
 * `study_setup()` cleanup now also deletes `config.fixtemplates`, the legacy
   `fixtemplates` step's config, anywhere in the study. Like `tp.*` files and
