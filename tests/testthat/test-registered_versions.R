@@ -317,6 +317,7 @@ test_that("update_manifest() keeps fields registration recorded", {
 })
 
 test_that("update_manifest() refuses a release-aware dataset by name", {
+  skip_if_not_installed("arrow")
   fx <- make_release_aware_study(withr::local_tempdir())
   withr::local_dir(fx$root)
   err <- expect_error(update_manifest(dataset = "study"), "release: block", fixed = TRUE)
@@ -334,6 +335,7 @@ test_that("update_manifest(file, ...) keeps its single-file behaviour", {
 })
 
 test_that("update_manifest() in a study with no registered dataset names register_data()", {
+  skip_if_not_installed("arrow")
   root <- file.path(withr::local_tempdir(), "study")
   suppressMessages(study_setup(root, "Empty study", 42L, renv = FALSE))
   withr::local_dir(root)
@@ -692,6 +694,7 @@ test_that("migration never removes a file another entry registered", {
 })
 
 test_that("migrating an untouched source dates it as a fresh registration would", {
+  skip_if_not_installed("arrow")
   root <- make_legacy_registered_study(withr::local_tempdir())
   path <- built_path(study_config(root))
   Sys.setFileTime(path, as.POSIXct("2026-10-01 12:00:00", tz = "UTC"))
@@ -844,6 +847,7 @@ test_that("a first-version registration is undone when the manifest write fails"
 })
 
 test_that("update_manifest() still stops for a study with no dataset contract", {
+  skip_if_not_installed("arrow")
   root <- file.path(withr::local_tempdir(), "study")
   suppressMessages(study_setup(root, "No dataset", 42L, renv = FALSE))
   withr::local_dir(root)
@@ -866,6 +870,7 @@ test_that("study_status reports a named dataset's registered version when its so
 })
 
 test_that("update_manifest() does not claim jobs keep reading a missing legacy source", {
+  skip_if_not_installed("arrow")
   root <- make_legacy_registered_study(withr::local_tempdir())
   unlink(built_path(study_config(root)))
   withr::local_dir(root)

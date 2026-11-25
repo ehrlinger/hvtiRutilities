@@ -200,6 +200,10 @@
          "has been retired and the parquet is the data.", call. = FALSE)
   }
 
+  # Likewise for arrow itself: a promoted entry's parquet is the data, and
+  # without arrow the early return below would read the retired source.
+  if (promoted) .require_arrow("read_built", "read")
+
   if (!.cache_enabled()) return(reader(path))
 
   # A parquet source has no cache: its derived name, <stem>.parquet, is the

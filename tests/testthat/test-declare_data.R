@@ -22,6 +22,7 @@ test_that("declaring the same file again is a no-op, and another file stops", {
 })
 
 test_that("a declared dataset registers its first version through update_manifest()", {
+  skip_if_not_installed("arrow")
   root <- declare_fixture()
   declare_data(root = root, file = "study_cohort.rds", key_cols = "ccfid")
   withr::local_dir(root)

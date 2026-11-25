@@ -180,6 +180,26 @@ test_that("a promoted entry is served from parquet when the source is gone", {
   expect_equal(m2$datasets[[1]]$file, "built_test.sas7bdat")
 })
 
+test_that("a promoted entry asks for arrow instead of reading the retired source", {
+  # Without arrow, .cache_enabled() is FALSE; the read must not fall through
+  # to the source, which no longer holds the data.
+  skip_if_no_arrow()
+  dir <- withr::local_tempdir()
+  make_study_fixture(dir, n = 20L)
+  cfg <- study_config(dir)
+  read_built(cfg)
+
+  mp <- file.path(dir, "manifest.yaml")
+  m <- yaml::read_yaml(mp)
+  m$datasets[[1]]$role <- "primary"
+  yaml::write_yaml(m, mp)
+  file.remove(file.path(dir, "datasets", "built_test.sas7bdat"))
+
+  local_mocked_bindings(.arrow_available = function() FALSE, .package_installed = function(pkg) pkg != "arrow",
+                        .need_root = function(root) NULL)
+  expect_error(read_built(cfg), "reading it needs the arrow package", fixed = TRUE)
+})
+
 test_that("a cache miss on a promoted entry reconverts without rewriting its provenance", {
   # Task 5c, item 6: if a promoted entry's parquet is lost while its retired
   # source happens to still be present, the ordinary miss path would replace

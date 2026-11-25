@@ -29,7 +29,6 @@ Description: Study and data utilities for the Cardiovascular Outcomes,
 Depends:
     R (>= 4.4.0)
 Imports:
-    arrow,
     digest,
     dplyr,
     haven,
@@ -42,6 +41,7 @@ Imports:
     withr,
     yaml
 Suggests:
+    arrow,
     callr,
     e1071,
     knitr,
