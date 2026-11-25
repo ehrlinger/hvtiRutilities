@@ -112,6 +112,14 @@
 # from is kept centrally. renv
 # scans them for dependencies, which is why a legacy renv::init() asked for
 # hundreds of packages.
+# The files cleanup deletes by name alone, whatever their content. Case is
+# ignored: studies copied through Windows shares carry these names in upper or
+# mixed case (TP.HAZARD.SAS, CONFIG.FIXTEMPLATES).
+.study_cleanup_by_name <- function(name) {
+  lower <- tolower(name)
+  startsWith(lower, "tp.") | lower %in% c("binder.summaries.doc", "config.fixtemplates")
+}
+
 .study_cleanup_folder <- function(name) {
   name == "templates" || startsWith(name, "old_RF_templates")
 }
@@ -121,7 +129,7 @@
 }
 
 # The template corpus (the folder studies were copied from, minus any .git):
-# name, size and MD5 of every file other than tp.* (deleted by name alone),
+# name, size and MD5 of every file other than those deleted by name alone,
 # desktop litter, and the .renvignore and .gitignore study_setup() relies on.
 .study_template_index <- function(template_dir) {
   if (!dir.exists(template_dir)) {
@@ -131,7 +139,7 @@
   rel <- list.files(template_dir, recursive = TRUE, all.files = TRUE, no.. = TRUE)
   rel <- rel[!vapply(strsplit(rel, "/", fixed = TRUE), function(p) ".git" %in% p, logical(1))]
   name <- basename(rel)
-  keep <- !startsWith(name, "tp.") & !vapply(name, .study_litter, logical(1)) &
+  keep <- !.study_cleanup_by_name(name) & !vapply(name, .study_litter, logical(1)) &
     !name %in% c(".renvignore", ".gitignore")
   full <- file.path(template_dir, rel[keep])
   data.frame(name = name[keep], size = file.size(full),
@@ -186,7 +194,7 @@
       found$files <- c(found$files, inner$files)
       found$folders <- c(found$folders, inner$folders,
                          if (.study_cleanup_folder(name)) child)
-    } else if (startsWith(name, "tp.") || name %in% c("binder.summaries.doc", "config.fixtemplates") ||
+    } else if (.study_cleanup_by_name(name) ||
                  (name %in% index$name && .study_template_copy(full, name, index))) {
       found$files <- c(found$files, child)
     }
@@ -425,7 +433,8 @@
 #' With `cleanup = TRUE`, the template copies a legacy study carries are
 #' deleted before anything else reads the study, anywhere in it: every file
 #' whose name starts with `tp.`, every `binder.summaries.doc`, every
-#' `config.fixtemplates`, and every other file whose name and exact
+#' `config.fixtemplates`, in any case (`TP.HAZARD.SAS` and
+#' `CONFIG.FIXTEMPLATES` too), and every other file whose name and exact
 #' content match a file in the template
 #' corpus at `template_dir`. A study's own file that shares a name with a
 #' corpus file but differs from it (an edited `references.bib`, say) is

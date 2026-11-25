@@ -111,7 +111,8 @@ left unchanged.
 With \code{cleanup = TRUE}, the template copies a legacy study carries are
 deleted before anything else reads the study, anywhere in it: every file
 whose name starts with \code{tp.}, every \code{binder.summaries.doc}, every
-\code{config.fixtemplates}, and every other file whose name and exact
+\code{config.fixtemplates}, in any case (\code{TP.HAZARD.SAS} and
+\code{CONFIG.FIXTEMPLATES} too), and every other file whose name and exact
 content match a file in the template
 corpus at \code{template_dir}. A study's own file that shares a name with a
 corpus file but differs from it (an edited \code{references.bib}, say) is

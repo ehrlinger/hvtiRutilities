@@ -403,6 +403,24 @@ test_that("cleanup deletes config.fixtemplates anywhere, edited or not", {
   expect_identical(attr(status, "cleanup")$removed_dirs, "analyses/sas")
 })
 
+test_that("cleanup matches tp.*, binder.summaries.doc and config.fixtemplates in any case", {
+  # Legacy studies copied through Windows shares carry these names in upper
+  # or mixed case; the name rules are about what the file is, not its case.
+  root <- withr::local_tempdir()
+  dir.create(file.path(root, "analyses"))
+  write_file(root, "CONFIG.FIXTEMPLATES", "STUDY=legacy_study")
+  write_file(root, "analyses/TP.Hazard.sas", "* template;")
+  write_file(root, "analyses/Binder.Summaries.DOC", "binder")
+  keep <- write_file(root, "analyses/stp.notes", "keep")
+
+  status <- study_setup(root, "Legacy study", 42L, adopt = TRUE, cleanup = TRUE,
+                        template_dir = local_corpus(), renv = FALSE)
+
+  expect_setequal(attr(status, "cleanup")$deleted,
+                  c("CONFIG.FIXTEMPLATES", "analyses/TP.Hazard.sas", "analyses/Binder.Summaries.DOC"))
+  expect_identical(readLines(keep), "keep")
+})
+
 test_that("cleanup removes templates and old_RF_templates folders left empty", {
   root <- withr::local_tempdir()
   dir.create(file.path(root, "analyses"))
