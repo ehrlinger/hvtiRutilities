@@ -130,6 +130,7 @@ test_that("update_manifest(file) converts an .rda or .RData the way it converts 
 })
 
 test_that("update_manifest(file) says it refused an .rda with no data frame, and wrote nothing", {
+  skip_if_not_installed("arrow")
   root <- file.path(withr::local_tempdir(), "study")
   suppressMessages(study_setup(root, "Model rda", 42L, renv = FALSE))
   fit <- list(coef = 1)
@@ -158,6 +159,7 @@ test_that("update_manifest(file, as_parquet = FALSE) lists an .rds as it is", {
 })
 
 test_that("update_manifest(file) refuses an .rds that does not hold a data frame", {
+  skip_if_not_installed("arrow")
   root <- file.path(withr::local_tempdir(), "study")
   suppressMessages(study_setup(root, "Model rds", 42L, renv = FALSE))
   saveRDS(list(a = 1), file.path(root, "00_datasets", "model.rds"))

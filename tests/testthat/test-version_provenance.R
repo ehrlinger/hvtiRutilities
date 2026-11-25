@@ -507,6 +507,7 @@ test_that("update_manifest() registers a rebuild beside a foreign record", {
 })
 
 test_that("a release-aware study leaves the release path and registers beside bd's record", {
+  skip_if_not_installed("arrow")
   fx <- make_release_aware_study(withr::local_tempdir())
   cfg <- study_config(fx$root)
   data <- file.path(study_dir("datasets", fx$root), cfg$built)
