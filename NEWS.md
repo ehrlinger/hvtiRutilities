@@ -1,15 +1,14 @@
 # hvtiRutilities 1.5.28
 
-This release lets hvtiRutilities install where `arrow` cannot be built, makes
-a promoted dataset read its parquet even with the parquet cache turned off,
-and widens the legacy-study cleanup by one file.
+This release makes `arrow` optional, makes a promoted dataset read its parquet
+even with the parquet cache turned off, and widens the legacy-study cleanup by
+one file.
 
-* `arrow` moves from Imports to Suggests, so hvtiRutilities installs on a
-  server that cannot build `arrow` (the LRI servers under R 4.6). Registering
-  or reading parquet data still requires it: `register_data()`,
-  `update_manifest()`, `read_built()` on a registered version and
-  `read_clinical_data()` on a `.parquet` file ask for `arrow` through
-  `study_need()`, and their help pages now say so. A read of a promoted
+* `arrow` moves from Imports to Suggests, so hvtiRutilities installs and loads
+  without it. Only the functions that touch parquet data need it:
+  `register_data()`, `update_manifest()`, `read_built()` on a registered
+  version and `read_clinical_data()` on a `.parquet` file ask for `arrow`
+  through `study_need()`, and their help pages now say so. A read of a promoted
   dataset now asks too; it previously fell through to the retired source and
   failed in `haven`.
 
