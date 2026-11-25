@@ -113,7 +113,7 @@ POOL_MIN_STEM <- 3L
 #' @param v Character scalar: the variable name.
 #' @param pool Character vector: the candidate pool `v` belongs to.
 #' @param affixes Character vector of regular expressions for the study's
-#'   transformation affixes. See [POOL_AFFIXES()].
+#'   transformation affixes. See [POOL_AFFIXES].
 #' @param plain_suffix Suffix carried by untransformed measurements.
 #' @param aliases Named character vector, `c(variable = concept)`,
 #'   declaring groupings no affix rule can reach. An alias on the variable

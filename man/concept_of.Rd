@@ -19,7 +19,7 @@ concept_of(
 \item{pool}{Character vector: the candidate pool \code{v} belongs to.}
 
 \item{affixes}{Character vector of regular expressions for the study's
-transformation affixes. See \code{\link[=POOL_AFFIXES]{POOL_AFFIXES()}}.}
+transformation affixes. See \link{POOL_AFFIXES}.}
 
 \item{plain_suffix}{Suffix carried by untransformed measurements.}
 
