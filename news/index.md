@@ -1,5 +1,13 @@
 # Changelog
 
+## hvtiRutilities 1.5.29
+
+- [`study_setup()`](https://ehrlinger.github.io/hvtiRutilities/reference/study_setup.md)
+  cleanup matches `tp.*`, `binder.summaries.doc` and
+  `config.fixtemplates` in any case, so `TP.HAZARD.SAS` or
+  `CONFIG.FIXTEMPLATES`, as legacy studies copied through Windows shares
+  carry them, is deleted too.
+
 ## hvtiRutilities 1.5.28
 
 This release makes `arrow` optional, makes a promoted dataset read its
