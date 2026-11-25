@@ -118,6 +118,8 @@
 #' `<name>_YYYYMMDD.schema.csv`. That parquet is what [read_built()]
 #' and the job templates read, so the source file may be rebuilt freely; run
 #' [update_manifest()] to register a rebuilt file as a new version.
+#' Writing the parquet needs the arrow package, which is suggested rather
+#' than imported; without it, [study_need()] installs it or says how.
 #' The date is the file's modification date unless `extract_date` is given.
 #' A release-aware registration
 #' (`catalog_dataset` and `release_id`) records the catalog's file as

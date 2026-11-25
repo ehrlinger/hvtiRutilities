@@ -60,6 +60,8 @@ and a message of class \code{hvtiRutilities_source_changed} says so and
 names \code{\link[=update_manifest]{update_manifest()}}. Whether the source changed is settled by its
 SHA-256 against the one recorded at registration, so each read of a
 registered dataset hashes its source once, as \code{\link[=source_changed]{source_changed()}} does.
+Reading a registered version needs the arrow package, which is suggested
+rather than imported; without it, \code{\link[=study_need]{study_need()}} installs it or says how.
 
 A combined dataset (see \code{\link[=register_data]{register_data()}}) is still read when a
 dataset it was built from has been updated since. A message of class

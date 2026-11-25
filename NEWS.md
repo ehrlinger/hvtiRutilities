@@ -1,3 +1,31 @@
+# hvtiRutilities 1.5.28
+
+This release makes `arrow` optional, makes a promoted dataset read its parquet
+even with the parquet cache turned off, and widens the legacy-study cleanup by
+one file.
+
+* `arrow` moves from Imports to Suggests, so hvtiRutilities installs and loads
+  without it. Only the functions that touch parquet data need it:
+  `register_data()`, `update_manifest()`, `read_built()` on a registered
+  version and `read_clinical_data()` on a `.parquet` file ask for `arrow`
+  through `study_need()`, and their help pages now say so. A read of a promoted
+  dataset now asks too; it previously fell through to the retired source and
+  failed in `haven`.
+
+* A promoted dataset reads its parquet whatever
+  `options(hvtiRutilities.disable_parquet_cache)` says. The parquet is the
+  dataset of record, not a cache, but with the option set `read_built()`
+  returned the retired source instead, and a source rebuilt since promotion
+  gave the wrong rows. The option still turns the cache off for every other
+  dataset.
+
+* `study_setup()` cleanup now also deletes `config.fixtemplates`, the legacy
+  `fixtemplates` step's config, anywhere in the study. Like `tp.*` files and
+  `binder.summaries.doc` it goes by name, so a study-edited copy is deleted too.
+
+* The `concept_of()` help page links `POOL_AFFIXES` as the vector it is,
+  rather than as `POOL_AFFIXES()`, a function call that does not exist.
+
 # hvtiRutilities 1.5.27
 
 * `phn_zscore_table()` gains a `view` column, Table 2's "Echocardiographic View or Formula" for each structure, and the `phn_zscore()` documentation now says which PHN norms are derived rather than measured (valve areas as ellipses from two diameters, bullet-formula volumes, mass and the three ratios), so a planimetered area or an apical LV area is not scored against them by mistake. It also notes the reference population's exclusion of infants under 37 weeks' corrected gestational age (Lopez et al. 2017, Data Supplement Table 1).

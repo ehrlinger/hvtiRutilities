@@ -200,6 +200,29 @@ test_that("a promoted entry asks for arrow instead of reading the retired source
   expect_error(read_built(cfg), "reading it needs the arrow package", fixed = TRUE)
 })
 
+test_that("disabling the cache does not change what a promoted read returns", {
+  # A promoted entry's parquet is the data, not a cache, so the option that
+  # turns the cache off must not send the read to the rebuilt source.
+  skip_if_no_arrow()
+  dir <- withr::local_tempdir()
+  cfg <- promote_then_rebuild_source(dir)
+
+  expect_equal(nrow(read_built(cfg)), 20L)
+  withr::local_options(hvtiRutilities.disable_parquet_cache = TRUE)
+  expect_equal(nrow(read_built(cfg)), 20L)
+})
+
+test_that("a promoted read without arrow stops even when its source is present", {
+  skip_if_no_arrow()
+  dir <- withr::local_tempdir()
+  cfg <- promote_then_rebuild_source(dir)
+
+  withr::local_options(hvtiRutilities.disable_parquet_cache = TRUE)
+  local_mocked_bindings(.arrow_available = function() FALSE, .package_installed = function(pkg) pkg != "arrow",
+                        .need_root = function(root) NULL)
+  expect_error(read_built(cfg), "reading it needs the arrow package", fixed = TRUE)
+})
+
 test_that("a cache miss on a promoted entry reconverts without rewriting its provenance", {
   # Task 5c, item 6: if a promoted entry's parquet is lost while its retired
   # source happens to still be present, the ordinary miss path would replace

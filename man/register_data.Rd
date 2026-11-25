@@ -106,6 +106,8 @@ Registration converts the file once to a dated parquet in the same folder,
 \verb{<name>_YYYYMMDD.schema.csv}. That parquet is what \code{\link[=read_built]{read_built()}}
 and the job templates read, so the source file may be rebuilt freely; run
 \code{\link[=update_manifest]{update_manifest()}} to register a rebuilt file as a new version.
+Writing the parquet needs the arrow package, which is suggested rather
+than imported; without it, \code{\link[=study_need]{study_need()}} installs it or says how.
 The date is the file's modification date unless \code{extract_date} is given.
 A release-aware registration
 (\code{catalog_dataset} and \code{release_id}) records the catalog's file as

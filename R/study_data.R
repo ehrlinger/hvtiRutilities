@@ -207,6 +207,8 @@ built_manifest <- function(cfg = study_config(), dataset = "study") {
 #' names [update_manifest()]. Whether the source changed is settled by its
 #' SHA-256 against the one recorded at registration, so each read of a
 #' registered dataset hashes its source once, as [source_changed()] does.
+#' Reading a registered version needs the arrow package, which is suggested
+#' rather than imported; without it, [study_need()] installs it or says how.
 #'
 #' A combined dataset (see [register_data()]) is still read when a
 #' dataset it was built from has been updated since. A message of class

@@ -48,6 +48,20 @@ make_study_fixture <- function(dir,
   dir
 }
 
+# Promote the 20-row fixture, then rebuild the retired source with 3 rows: a
+# read that returns 3 rows read the source instead of the dataset of record.
+promote_then_rebuild_source <- function(dir) {
+  make_study_fixture(dir, n = 20L)
+  cfg <- study_config(dir)
+  read_built(cfg)
+  mp <- file.path(dir, "manifest.yaml")
+  m <- yaml::read_yaml(mp)
+  m$datasets[[1]]$role <- "primary"
+  yaml::write_yaml(m, mp)
+  make_study_fixture(dir, n = 3L, n_events = 1L)
+  cfg
+}
+
 make_registered_study <- function(dir, ancillary = FALSE) {
   testthat::skip_if_not_installed("arrow")
   root <- file.path(dir, "study")

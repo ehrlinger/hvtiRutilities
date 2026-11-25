@@ -204,7 +204,10 @@
   # without arrow the early return below would read the retired source.
   if (promoted) .require_arrow("read_built", "read")
 
-  if (!.cache_enabled()) return(reader(path))
+  # The parquet of a promoted entry is the dataset of record, not a cache, so
+  # hvtiRutilities.disable_parquet_cache never applies to it: honoured here, it
+  # would return the retired source, rebuilt or not, in its place.
+  if (!promoted && !.cache_enabled()) return(reader(path))
 
   # A parquet source has no cache: its derived name, <stem>.parquet, is the
   # source itself, so writing the cache would overwrite the data being read.
