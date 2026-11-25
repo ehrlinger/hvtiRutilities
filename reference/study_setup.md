@@ -17,9 +17,10 @@ agree on the study root. An existing project is left unchanged.
 With `cleanup = TRUE`, the template copies a legacy study carries are
 deleted before anything else reads the study, anywhere in it: every file
 whose name starts with `tp.`, every `binder.summaries.doc`, every
-`config.fixtemplates`, and every other file whose name and exact content
-match a file in the template corpus at `template_dir`. A study's own
-file that shares a name with a corpus file but differs from it (an
+`config.fixtemplates`, in any case (`TP.HAZARD.SAS` and
+`CONFIG.FIXTEMPLATES` too), and every other file whose name and exact
+content match a file in the template corpus at `template_dir`. A study's
+own file that shares a name with a corpus file but differs from it (an
 edited `references.bib`, say) is kept, as are `.renvignore` and
 `.gitignore`. These files are copied in when a study is created, months
 before any analysis, and the corpus they came from is kept centrally, so
@@ -190,10 +191,10 @@ root. With `renv = TRUE` it carries a `"renv"` attribute,
 ``` r
 root <- file.path(tempdir(), "study-setup-example")
 study_setup(root, study = "Example", study_tracker_id = 1L, renv = FALSE)
-#> Study: /tmp/RtmpMzGPPl/study-setup-example
+#> Study: /tmp/RtmpVtKLW1/study-setup-example
 #> 
 #> [x] _study.yml — study: Example
-#> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Example", study_tracker_id = 1L, root = "/tmp/RtmpMzGPPl/study-setup-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first
+#> [ ] renv.lock — no renv.lock; set the study up with hvtiR::setup(study = "Example", study_tracker_id = 1L, root = "/tmp/RtmpVtKLW1/study-setup-example", adopt = TRUE), run with no project open, not renv::init(). Adopting deletes tp.* files: see hvtiR's "Start here" first
 #> [ ] manifest.yaml — no manifest.yaml; register_data() creates it
 #> [ ] dataset — no default dataset registered; run register_data()
 #> [ ] provenance — no .qmd/.Rmd sources found; 0 sidecars
